@@ -2,28 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public enum CombinationType
-{
-    HighDie,        // no combination — just the highest single die
-    Pair,           // 2 of a kind
-    TwoPair,        // 2 different pairs
-    ThreeOfAKind,   // 3 of a kind
-    Straight,       // sequential values (at least 5 consecutive)
-    FullHouse,      // 3 of a kind + pair
-    FourOfAKind,    // 4 of a kind (Poker)
-    Generala,       // 5 of a kind
-    DoubleGenerala  // 5 of a kind, second time in same run
-}
-
-[System.Serializable]
-public struct CombinationResult
-{
-    public CombinationType Type;
-    public int[] MatchingDice;      // values of dice that form the combo
-    public int[] RemainingDice;     // values of dice not in the combo
-    public int BaseDamage;
-}
-
 public static class CombinationDetector
 {
     /// Analyze a set of roll results and return the BEST combination found.
