@@ -52,6 +52,9 @@ public class GameManager : MonoBehaviour
     private int crapsAttempts = 0;
     private int crapsWins = 0;
 
+    // Movement state
+    private List<Vector2Int> currentReachableTiles;
+
     // Combat state
     private AttackPhase currentAttack;
     private DefensePhase currentDefense;
@@ -212,9 +215,9 @@ public class GameManager : MonoBehaviour
         int steps = player.State.SpeedDie.Roll();
         UIManager.Instance.ShowPhaseLabel($"YOUR MOVE ({steps} steps)");
 
-        var reachable = MovementManager.Instance.GetReachableTiles(
+        currentReachableTiles = MovementManager.Instance.GetReachableTiles(
             player.State.GridPosition, steps);
-        GridManager.Instance.HighlightTiles(reachable, Color.green);
+        GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
 
         // Wait for player to click a tile (handled by Update)
     }
@@ -587,15 +590,16 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         if (CurrentState != GameState.MovementPhase) return;
+        if (currentReachableTiles == null || currentReachableTiles.Count == 0) return;
 
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
 
-            // Check if clicked tile is reachable (valid and walkable)
-            if (GridManager.Instance.IsValidPosition(gridPos))
+            if (currentReachableTiles.Contains(gridPos))
             {
+                currentReachableTiles = null;
                 OnPlayerMoveSelected(gridPos);
             }
         }
