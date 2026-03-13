@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -21,34 +22,46 @@ public class RewardUI : MonoBehaviour
     [SerializeField] private TMP_Text cardBDescriptionText;
     [SerializeField] private Button cardBButton;
 
-    public event Action<int> OnRewardChosen; // 0 = A, 1 = B
+    private List<FaceUpgradeOffer> currentOffers;
+
+    public event Action<FaceUpgradeOffer> OnRewardChosen;
 
     void Awake()
     {
         if (cardAButton != null)
             cardAButton.onClick.AddListener(() =>
             {
-                OnRewardChosen?.Invoke(0);
+                if (currentOffers != null && currentOffers.Count > 0)
+                    OnRewardChosen?.Invoke(currentOffers[0]);
                 Hide();
             });
 
         if (cardBButton != null)
             cardBButton.onClick.AddListener(() =>
             {
-                OnRewardChosen?.Invoke(1);
+                if (currentOffers != null && currentOffers.Count > 1)
+                    OnRewardChosen?.Invoke(currentOffers[1]);
                 Hide();
             });
     }
 
-    public void Show(FaceUpgradeOffer offerA, FaceUpgradeOffer offerB)
+    public void ShowOffers(List<FaceUpgradeOffer> offers)
     {
+        currentOffers = offers;
         if (rewardPanel != null) rewardPanel.SetActive(true);
 
         if (titleText != null)
             titleText.text = "ENEMY DEFEATED!\nChoose a reward:";
 
-        SetupCard(cardATitleText, cardADescriptionText, offerA, "OPTION A");
-        SetupCard(cardBTitleText, cardBDescriptionText, offerB, "OPTION B");
+        if (offers.Count > 0)
+            SetupCard(cardA, cardATitleText, cardADescriptionText, offers[0], "OPTION A");
+        else if (cardA != null)
+            cardA.SetActive(false);
+
+        if (offers.Count > 1)
+            SetupCard(cardB, cardBTitleText, cardBDescriptionText, offers[1], "OPTION B");
+        else if (cardB != null)
+            cardB.SetActive(false);
     }
 
     public void Hide()
@@ -56,8 +69,10 @@ public class RewardUI : MonoBehaviour
         if (rewardPanel != null) rewardPanel.SetActive(false);
     }
 
-    private void SetupCard(TMP_Text title, TMP_Text desc, FaceUpgradeOffer offer, string label)
+    private void SetupCard(GameObject card, TMP_Text title, TMP_Text desc, FaceUpgradeOffer offer, string label)
     {
+        if (card != null) card.SetActive(true);
+
         if (title != null)
             title.text = $"{label}\n{offer.TargetDiceName}";
 

@@ -7,7 +7,7 @@ public class CombatLogUI : MonoBehaviour
 {
     [SerializeField] private TMP_Text logText;
     [SerializeField] private ScrollRect scrollRect;
-    [SerializeField] private int maxMessages = 50;
+    [SerializeField] private int maxMessages = 5;
 
     private readonly List<string> messages = new List<string>();
 
