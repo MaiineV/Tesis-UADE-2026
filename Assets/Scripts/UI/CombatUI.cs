@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -8,22 +8,38 @@ public class CombatUI : MonoBehaviour
 {
     public static CombatUI Instance;
 
-    [Header("Dice Display")]
+    [Header("Attack — Dice Display")]
     [SerializeField] private Transform diceContainer;
     [SerializeField] private GameObject dicePrefab;
 
-    [Header("Combo Preview")]
-    [SerializeField] private TMP_Text comboNameText;
-    [SerializeField] private TMP_Text comboDamageText;
+    [Header("Attack — Combo Preview")]
+    [SerializeField] private TMP_Text comboPreviewText;
 
-    [Header("Roll Info")]
+    [Header("Attack — Roll Counter")]
     [SerializeField] private TMP_Text rollCounterText;
 
-    [Header("Buttons")]
+    [Header("Attack — Buttons")]
     [SerializeField] private Button rerollButton;
     [SerializeField] private Button commitButton;
-    [SerializeField] private TMP_Text rerollButtonText;
-    [SerializeField] private TMP_Text commitButtonText;
+
+    [Header("Attack Panel")]
+    [SerializeField] private GameObject attackPanel;
+
+    [Header("Defense")]
+    [SerializeField] private GameObject defensePanel;
+    [SerializeField] private TMP_Text defenseTitle;
+    [SerializeField] private TMP_Text defenseRollsText;
+    [SerializeField] private TMP_Text defenseResultText;
+    [SerializeField] private TMP_Text defenseShieldText;
+    [SerializeField] private Button rollDefenseButton;
+
+    [Header("Enemy Attack")]
+    [SerializeField] private GameObject enemyAttackPanel;
+    [SerializeField] private TMP_Text enemyAttackTitle;
+    [SerializeField] private TMP_Text enemyRollText;
+    [SerializeField] private TMP_Text shieldAbsorbText;
+    [SerializeField] private TMP_Text netDamageText;
+    [SerializeField] private Button continueButton;
 
     private DieSlotUI[] dieSlots;
     private RollResult[] currentResults;
@@ -31,6 +47,8 @@ public class CombatUI : MonoBehaviour
     public event Action<string> OnDieLockToggled;
     public event Action OnRerollClicked;
     public event Action OnCommitClicked;
+    public event Action OnRollDefenseClicked;
+    public event Action OnContinueClicked;
 
     void Awake()
     {
@@ -40,10 +58,20 @@ public class CombatUI : MonoBehaviour
             rerollButton.onClick.AddListener(() => OnRerollClicked?.Invoke());
         if (commitButton != null)
             commitButton.onClick.AddListener(() => OnCommitClicked?.Invoke());
+        if (rollDefenseButton != null)
+            rollDefenseButton.onClick.AddListener(() => OnRollDefenseClicked?.Invoke());
+        if (continueButton != null)
+            continueButton.onClick.AddListener(() => OnContinueClicked?.Invoke());
     }
 
-    public void ShowDiceResults(RollResult[] results, DiceInstance[] dice, HashSet<string> lockedIds)
+    // ── Attack UI ──────────────────────────────────────────────
+
+    public void ShowAttackUI(RollResult[] results, HashSet<string> locked)
     {
+        SetPanel(attackPanel, true);
+        SetPanel(defensePanel, false);
+        SetPanel(enemyAttackPanel, false);
+
         currentResults = results;
         ClearDiceSlots();
 
@@ -56,18 +84,22 @@ public class CombatUI : MonoBehaviour
             var slot = go.GetComponent<DieSlotUI>();
             if (slot == null) slot = go.AddComponent<DieSlotUI>();
 
-            var matchingDie = dice.FirstOrDefault(d => d.Id == results[i].DiceId);
-            bool isLocked = lockedIds.Contains(results[i].DiceId);
+            bool isLocked = locked != null && locked.Contains(results[i].DiceId);
             string diceId = results[i].DiceId;
 
-            slot.Setup(results[i].Value, matchingDie?.BaseData, isLocked);
-            slot.OnClicked += () => OnDieLockToggled?.Invoke(diceId);
+            slot.Setup(results[i].Value, null, isLocked);
+            slot.OnClicked += () => OnDieClicked(diceId);
 
             dieSlots[i] = slot;
         }
     }
 
-    public void UpdateLockState(string diceId, bool isLocked)
+    public void OnDieClicked(string diceId)
+    {
+        OnDieLockToggled?.Invoke(diceId);
+    }
+
+    public void UpdateDieLock(string diceId, bool isLocked)
     {
         if (dieSlots == null || currentResults == null) return;
 
@@ -83,37 +115,116 @@ public class CombatUI : MonoBehaviour
 
     public void UpdateComboPreview(CombinationResult combo)
     {
-        if (comboNameText != null)
-            comboNameText.text = FormatComboName(combo.Type);
-
-        if (comboDamageText != null)
-            comboDamageText.text = $"{combo.BaseDamage} dmg";
+        if (comboPreviewText != null)
+            comboPreviewText.text = $"Best combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} dmg";
     }
 
-    public void UpdateRollCounter(int currentRoll, int maxRolls)
+    public void UpdateRollCounter(int current, int max)
     {
         if (rollCounterText != null)
-            rollCounterText.text = $"Roll {currentRoll}/{maxRolls}";
+            rollCounterText.text = $"Roll {current}/{max}";
     }
 
-    public void SetRerollButtonEnabled(bool enabled)
+    public void SetRerollEnabled(bool enabled)
     {
         if (rerollButton != null)
             rerollButton.interactable = enabled;
     }
 
-    public void SetCommitButtonEnabled(bool enabled)
+    public void SetCommitEnabled(bool enabled)
     {
         if (commitButton != null)
             commitButton.interactable = enabled;
     }
 
-    public void ClearDiceSlots()
+    // ── Defense UI ─────────────────────────────────────────────
+
+    public void ShowDefenseUI(int availableRolls)
+    {
+        SetPanel(attackPanel, false);
+        SetPanel(defensePanel, true);
+        SetPanel(enemyAttackPanel, false);
+
+        if (defenseTitle != null)
+            defenseTitle.text = $"DEFENSE PHASE ({availableRolls} rolls left)";
+
+        if (defenseRollsText != null)
+            defenseRollsText.text = $"{availableRolls} rolls available";
+
+        if (defenseResultText != null) defenseResultText.text = "";
+        if (defenseShieldText != null) defenseShieldText.text = "";
+
+        if (rollDefenseButton != null)
+            rollDefenseButton.interactable = availableRolls > 0;
+    }
+
+    public void ShowDefenseRollResult(CombinationResult combo)
+    {
+        if (defenseResultText != null)
+            defenseResultText.text = $"Shield combo: {FormatComboName(combo.Type)}";
+    }
+
+    public void UpdateDefenseRolls(int remaining)
+    {
+        if (defenseTitle != null)
+            defenseTitle.text = $"DEFENSE PHASE ({remaining} rolls left)";
+
+        if (defenseRollsText != null)
+            defenseRollsText.text = $"{remaining} rolls remaining";
+
+        if (rollDefenseButton != null)
+            rollDefenseButton.interactable = remaining > 0;
+    }
+
+    public void UpdateDefenseShield(int shieldValue)
+    {
+        if (defenseShieldText != null)
+            defenseShieldText.text = $"{shieldValue} shield";
+    }
+
+    // ── Enemy Attack UI ────────────────────────────────────────
+
+    public void ShowEnemyAttackResult(int rawDamage, int shield, int netDamage)
+    {
+        SetPanel(attackPanel, false);
+        SetPanel(defensePanel, false);
+        SetPanel(enemyAttackPanel, true);
+
+        if (enemyAttackTitle != null)
+            enemyAttackTitle.text = "ENEMY ATTACKS!";
+
+        if (enemyRollText != null)
+            enemyRollText.text = $"Enemy rolls: {rawDamage} damage";
+
+        if (shieldAbsorbText != null)
+            shieldAbsorbText.text = $"Your shield absorbs: {shield}";
+
+        if (netDamageText != null)
+            netDamageText.text = netDamage > 0
+                ? $"You take: {netDamage} damage"
+                : "Fully blocked!";
+    }
+
+    public void HideCombatUI()
+    {
+        SetPanel(attackPanel, false);
+        SetPanel(defensePanel, false);
+        SetPanel(enemyAttackPanel, false);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────
+
+    private void ClearDiceSlots()
     {
         if (diceContainer == null) return;
         for (int i = diceContainer.childCount - 1; i >= 0; i--)
             Destroy(diceContainer.GetChild(i).gameObject);
         dieSlots = null;
+    }
+
+    private void SetPanel(GameObject panel, bool active)
+    {
+        if (panel != null) panel.SetActive(active);
     }
 
     private string FormatComboName(CombinationType type)
