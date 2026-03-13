@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:/Users/agust/.claude/projects/C--Users-agust-Documents-GitHub-Tesis-UADE-2026/settings\"*)",
+      "Read(//c/Users/agust/.claude/**)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "mcp__mcp-unity__get_scene_info",
+      "mcp__mcp-unity__update_gameobject",
+      "mcp__mcp-unity__update_component",
+      "Bash(find \"C:\\\\Users\\\\agust\\\\Documents\\\\GitHub\\\\Tesis-UADE-2026\\\\Assets\" -type f -name \"*.unity\" 2>/dev/null | head -20)",
+      "Bash(find \"C:\\\\Users\\\\agust\\\\Documents\\\\GitHub\\\\Tesis-UADE-2026\" -maxdepth 1 -type f | grep -E \"\\\\.\\(md|txt|json\\)$\")"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mcp-unity"
+  ]
+}
