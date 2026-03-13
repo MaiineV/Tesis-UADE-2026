@@ -137,14 +137,3 @@ public class CrapsMode
         }
     }
 }
-
-[System.Serializable]
-public struct CrapsResult
-{
-    public bool Success;
-    public CombinationType BetCombo;
-    public CombinationType ActualCombo;
-    public float DamageMultiplier;
-    public int HPChange;            // positive = heal, negative = self-damage
-    public int FinalDamage;
-}
