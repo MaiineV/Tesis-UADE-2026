@@ -22,6 +22,14 @@ public class DieSlotUI : MonoBehaviour
 
     public event Action OnClicked;
 
+    public void Initialize(TMP_Text valueTextRef, TMP_Text typeLabelRef, Image backgroundRef, Image lockBorderRef)
+    {
+        valueText = valueTextRef;
+        typeLabel = typeLabelRef;
+        background = backgroundRef;
+        lockBorder = lockBorderRef;
+    }
+
     public void Setup(int value, DiceData data, bool locked)
     {
         if (valueText != null)

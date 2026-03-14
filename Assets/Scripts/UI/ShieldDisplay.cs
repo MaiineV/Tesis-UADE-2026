@@ -19,6 +19,13 @@ public class ShieldDisplay : MonoBehaviour
             shieldText.color = ShieldColor;
     }
 
+    public void Initialize(TMP_Text shieldTextRef)
+    {
+        shieldText = shieldTextRef;
+        if (shieldText != null)
+            shieldText.color = ShieldColor;
+    }
+
     public void UpdateShield(int value)
     {
         if (shieldText != null)

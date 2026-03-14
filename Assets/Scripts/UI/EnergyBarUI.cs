@@ -32,6 +32,13 @@ public class EnergyBarUI : MonoBehaviour
             crapsReadyText.gameObject.SetActive(false);
     }
 
+    public void Initialize(Image fillBarRef, TMP_Text energyTextRef, TMP_Text crapsReadyTextRef)
+    {
+        fillBar = fillBarRef;
+        energyText = energyTextRef;
+        crapsReadyText = crapsReadyTextRef;
+    }
+
     void Update()
     {
         if (!isFull) return;

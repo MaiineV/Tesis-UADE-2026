@@ -11,6 +11,12 @@ public class CombatLogUI : MonoBehaviour
 
     private readonly List<string> messages = new List<string>();
 
+    public void Initialize(TMP_Text logTextRef, ScrollRect scrollRectRef)
+    {
+        logText = logTextRef;
+        scrollRect = scrollRectRef;
+    }
+
     public void AddMessage(string message)
     {
         messages.Add($"> {message}");

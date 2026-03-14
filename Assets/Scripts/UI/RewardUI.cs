@@ -28,21 +28,50 @@ public class RewardUI : MonoBehaviour
 
     void Awake()
     {
+        WireButtons();
+    }
+
+    public void Initialize(
+        GameObject rewardPanelRef, TMP_Text titleRef,
+        GameObject cardARef, TMP_Text cardATitleRef, TMP_Text cardADescRef, Button cardABtnRef,
+        GameObject cardBRef, TMP_Text cardBTitleRef, TMP_Text cardBDescRef, Button cardBBtnRef)
+    {
+        rewardPanel = rewardPanelRef;
+        titleText = titleRef;
+        cardA = cardARef;
+        cardATitleText = cardATitleRef;
+        cardADescriptionText = cardADescRef;
+        cardAButton = cardABtnRef;
+        cardB = cardBRef;
+        cardBTitleText = cardBTitleRef;
+        cardBDescriptionText = cardBDescRef;
+        cardBButton = cardBBtnRef;
+        WireButtons();
+    }
+
+    private void WireButtons()
+    {
         if (cardAButton != null)
+        {
+            cardAButton.onClick.RemoveAllListeners();
             cardAButton.onClick.AddListener(() =>
             {
                 if (currentOffers != null && currentOffers.Count > 0)
                     OnRewardChosen?.Invoke(currentOffers[0]);
                 Hide();
             });
+        }
 
         if (cardBButton != null)
+        {
+            cardBButton.onClick.RemoveAllListeners();
             cardBButton.onClick.AddListener(() =>
             {
                 if (currentOffers != null && currentOffers.Count > 1)
                     OnRewardChosen?.Invoke(currentOffers[1]);
                 Hide();
             });
+        }
     }
 
     public void ShowOffers(List<FaceUpgradeOffer> offers)

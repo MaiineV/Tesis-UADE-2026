@@ -27,6 +27,12 @@ public class HealthBarUI : MonoBehaviour
         currentFill = 1f;
     }
 
+    public void Initialize(Image fillBarRef, TMP_Text hpTextRef)
+    {
+        fillBar = fillBarRef;
+        hpText = hpTextRef;
+    }
+
     void Update()
     {
         if (fillBar == null) return;

@@ -14,8 +14,25 @@ public class VictoryUI : MonoBehaviour
 
     void Awake()
     {
+        WireButton();
+    }
+
+    public void Initialize(GameObject panelRef, TMP_Text titleRef, TMP_Text statsRef, Button restartRef)
+    {
+        panel = panelRef;
+        titleText = titleRef;
+        statsText = statsRef;
+        restartButton = restartRef;
+        WireButton();
+    }
+
+    private void WireButton()
+    {
         if (restartButton != null)
+        {
+            restartButton.onClick.RemoveAllListeners();
             restartButton.onClick.AddListener(() => OnRestartClicked?.Invoke());
+        }
     }
 
     public void Show(RunStats stats)

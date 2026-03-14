@@ -67,6 +67,16 @@ public class GameManager : MonoBehaviour
         Instance = this;
     }
 
+    public void InitializeData(CharacterData character, EnemyData goblin, EnemyData orc,
+        GameObject playerPrefabRef, GameObject enemyPrefabRef)
+    {
+        if (PrototypeCharacter == null) PrototypeCharacter = character;
+        if (GoblinData == null) GoblinData = goblin;
+        if (OrcData == null) OrcData = orc;
+        if (playerPrefab == null) playerPrefab = playerPrefabRef;
+        if (enemyPrefab == null) enemyPrefab = enemyPrefabRef;
+    }
+
     private void OnEnable()
     {
         SubscribeToEvents();

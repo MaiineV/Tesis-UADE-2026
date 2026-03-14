@@ -26,12 +26,12 @@ public class EnemyEntity : MonoBehaviour
 
         for (int i = 0; i < State.BaseData.AttackDiceCount; i++)
         {
-            totalDamage += Random.Range(1, State.BaseData.AttackDiceFaces + 1);
+            totalDamage += UnityEngine.Random.Range(1, State.BaseData.AttackDiceFaces + 1);
         }
 
         if (State.IsEnraged)
         {
-            bool crit = Random.value < 0.6f;
+            bool crit = UnityEngine.Random.value < 0.6f;
             State.CurrentEnergy = 0;
             if (crit)
             {

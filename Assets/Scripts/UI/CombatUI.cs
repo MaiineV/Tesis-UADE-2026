@@ -53,15 +53,65 @@ public class CombatUI : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        WireButtons();
+    }
 
+    public void Initialize(
+        Transform diceContainerRef, GameObject dicePrefabRef,
+        TMP_Text comboPreviewRef, TMP_Text rollCounterRef,
+        Button rerollRef, Button commitRef,
+        GameObject attackPanelRef,
+        GameObject defensePanelRef, TMP_Text defenseTitleRef,
+        TMP_Text defenseRollsRef, TMP_Text defenseResultRef,
+        TMP_Text defenseShieldRef, Button rollDefenseRef,
+        GameObject enemyAttackPanelRef, TMP_Text enemyAttackTitleRef,
+        TMP_Text enemyRollRef, TMP_Text shieldAbsorbRef,
+        TMP_Text netDamageRef, Button continueRef)
+    {
+        diceContainer = diceContainerRef;
+        dicePrefab = dicePrefabRef;
+        comboPreviewText = comboPreviewRef;
+        rollCounterText = rollCounterRef;
+        rerollButton = rerollRef;
+        commitButton = commitRef;
+        attackPanel = attackPanelRef;
+        defensePanel = defensePanelRef;
+        defenseTitle = defenseTitleRef;
+        defenseRollsText = defenseRollsRef;
+        defenseResultText = defenseResultRef;
+        defenseShieldText = defenseShieldRef;
+        rollDefenseButton = rollDefenseRef;
+        enemyAttackPanel = enemyAttackPanelRef;
+        enemyAttackTitle = enemyAttackTitleRef;
+        enemyRollText = enemyRollRef;
+        shieldAbsorbText = shieldAbsorbRef;
+        netDamageText = netDamageRef;
+        continueButton = continueRef;
+        WireButtons();
+    }
+
+    private void WireButtons()
+    {
         if (rerollButton != null)
+        {
+            rerollButton.onClick.RemoveAllListeners();
             rerollButton.onClick.AddListener(() => OnRerollClicked?.Invoke());
+        }
         if (commitButton != null)
+        {
+            commitButton.onClick.RemoveAllListeners();
             commitButton.onClick.AddListener(() => OnCommitClicked?.Invoke());
+        }
         if (rollDefenseButton != null)
+        {
+            rollDefenseButton.onClick.RemoveAllListeners();
             rollDefenseButton.onClick.AddListener(() => OnRollDefenseClicked?.Invoke());
+        }
         if (continueButton != null)
+        {
+            continueButton.onClick.RemoveAllListeners();
             continueButton.onClick.AddListener(() => OnContinueClicked?.Invoke());
+        }
     }
 
     // ── Attack UI ──────────────────────────────────────────────

@@ -1,0 +1,736 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+public class UIBuilder : MonoBehaviour
+{
+    // Colors
+    private static Color PanelBgColor;
+    private static Color TextColor;
+    private static Color AccentGold;
+    private static Color HPColor;
+    private static Color EnergyColor;
+    private static Color ShieldColor;
+    private static Color D6Color;
+    private static Color D8Color;
+    private static Color D12Color;
+    private static Color DarkBg;
+
+    static UIBuilder()
+    {
+        ColorUtility.TryParseHtmlString("#1e1e3a", out PanelBgColor);
+        ColorUtility.TryParseHtmlString("#e0e0e0", out TextColor);
+        ColorUtility.TryParseHtmlString("#ffd54f", out AccentGold);
+        ColorUtility.TryParseHtmlString("#e53935", out HPColor);
+        ColorUtility.TryParseHtmlString("#ffb300", out EnergyColor);
+        ColorUtility.TryParseHtmlString("#78909c", out ShieldColor);
+        ColorUtility.TryParseHtmlString("#42a5f5", out D6Color);
+        ColorUtility.TryParseHtmlString("#66bb6a", out D8Color);
+        ColorUtility.TryParseHtmlString("#ab47bc", out D12Color);
+        ColorUtility.TryParseHtmlString("#1a1a2e", out DarkBg);
+    }
+
+    public void BuildAllUI(Canvas canvas)
+    {
+        var canvasTransform = canvas.transform;
+
+        // ── HUD Panel (always visible, top) ──
+        var hudPanel = CreatePanel("HUDPanel", canvasTransform,
+            new Vector2(0, 1), new Vector2(1, 1),
+            new Vector2(0, -10), new Vector2(0, -10),
+            150f, anchorTopStretch: true);
+
+        // Health Bar
+        var healthBarGO = CreatePanel("HealthBar", hudPanel.transform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var healthRT = healthBarGO.GetComponent<RectTransform>();
+        healthRT.anchorMin = new Vector2(0, 0.5f);
+        healthRT.anchorMax = new Vector2(0, 0.5f);
+        healthRT.pivot = new Vector2(0, 0.5f);
+        healthRT.anchoredPosition = new Vector2(20, 20);
+        healthRT.sizeDelta = new Vector2(300, 35);
+
+        var hpBgImage = healthBarGO.GetComponent<Image>();
+        hpBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+
+        var hpFillGO = CreateChildImage("HPFill", healthBarGO.transform, HPColor);
+        var hpFillRT = hpFillGO.GetComponent<RectTransform>();
+        hpFillRT.anchorMin = Vector2.zero;
+        hpFillRT.anchorMax = Vector2.one;
+        hpFillRT.offsetMin = new Vector2(2, 2);
+        hpFillRT.offsetMax = new Vector2(-2, -2);
+        var hpFillImage = hpFillGO.GetComponent<Image>();
+        hpFillImage.type = Image.Type.Filled;
+        hpFillImage.fillMethod = Image.FillMethod.Horizontal;
+
+        var hpText = CreateTMPText("HPText", healthBarGO.transform, "100/100", 16,
+            TextAlignmentOptions.Center, Color.white);
+        StretchFull(hpText.GetComponent<RectTransform>());
+
+        var healthBarUI = healthBarGO.AddComponent<HealthBarUI>();
+        healthBarUI.Initialize(hpFillImage, hpText);
+
+        // Energy Bar
+        var energyBarGO = CreatePanel("EnergyBar", hudPanel.transform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var energyRT = energyBarGO.GetComponent<RectTransform>();
+        energyRT.anchorMin = new Vector2(0, 0.5f);
+        energyRT.anchorMax = new Vector2(0, 0.5f);
+        energyRT.pivot = new Vector2(0, 0.5f);
+        energyRT.anchoredPosition = new Vector2(20, -20);
+        energyRT.sizeDelta = new Vector2(300, 25);
+
+        var energyBgImage = energyBarGO.GetComponent<Image>();
+        energyBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+
+        var energyFillGO = CreateChildImage("EnergyFill", energyBarGO.transform, EnergyColor);
+        var energyFillRT = energyFillGO.GetComponent<RectTransform>();
+        energyFillRT.anchorMin = Vector2.zero;
+        energyFillRT.anchorMax = Vector2.one;
+        energyFillRT.offsetMin = new Vector2(2, 2);
+        energyFillRT.offsetMax = new Vector2(-2, -2);
+        var energyFillImage = energyFillGO.GetComponent<Image>();
+        energyFillImage.type = Image.Type.Filled;
+        energyFillImage.fillMethod = Image.FillMethod.Horizontal;
+        energyFillImage.fillAmount = 0f;
+
+        var energyText = CreateTMPText("EnergyText", energyBarGO.transform, "0%", 14,
+            TextAlignmentOptions.Center, Color.white);
+        StretchFull(energyText.GetComponent<RectTransform>());
+
+        var crapsReadyText = CreateTMPText("CrapsReadyText", energyBarGO.transform, "CRAPS MODE READY", 14,
+            TextAlignmentOptions.Center, AccentGold);
+        var crapsReadyRT = crapsReadyText.GetComponent<RectTransform>();
+        crapsReadyRT.anchorMin = new Vector2(1, 0.5f);
+        crapsReadyRT.anchorMax = new Vector2(1, 0.5f);
+        crapsReadyRT.pivot = new Vector2(0, 0.5f);
+        crapsReadyRT.anchoredPosition = new Vector2(10, 0);
+        crapsReadyRT.sizeDelta = new Vector2(200, 25);
+        crapsReadyText.gameObject.SetActive(false);
+
+        var energyBarUI = energyBarGO.AddComponent<EnergyBarUI>();
+        energyBarUI.Initialize(energyFillImage, energyText, crapsReadyText);
+
+        // Shield Display
+        var shieldGO = new GameObject("ShieldDisplay");
+        shieldGO.transform.SetParent(hudPanel.transform, false);
+        var shieldRT = shieldGO.AddComponent<RectTransform>();
+        shieldRT.anchorMin = new Vector2(0, 0.5f);
+        shieldRT.anchorMax = new Vector2(0, 0.5f);
+        shieldRT.pivot = new Vector2(0, 0.5f);
+        shieldRT.anchoredPosition = new Vector2(340, 20);
+        shieldRT.sizeDelta = new Vector2(150, 35);
+
+        var shieldText = CreateTMPText("ShieldText", shieldGO.transform, "", 18,
+            TextAlignmentOptions.Left, ShieldColor);
+        StretchFull(shieldText.GetComponent<RectTransform>());
+
+        var shieldDisplay = shieldGO.AddComponent<ShieldDisplay>();
+        shieldDisplay.Initialize(shieldText);
+
+        // Phase Label (centered, large)
+        var phaseLabel = CreateTMPText("PhaseLabel", hudPanel.transform, "", 36,
+            TextAlignmentOptions.Center, AccentGold);
+        var phaseLabelRT = phaseLabel.GetComponent<RectTransform>();
+        phaseLabelRT.anchorMin = new Vector2(0.5f, 0.5f);
+        phaseLabelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        phaseLabelRT.sizeDelta = new Vector2(600, 60);
+        phaseLabel.fontStyle = FontStyles.Bold;
+        phaseLabel.gameObject.SetActive(false);
+
+        // ── Combat Panel ──
+        var combatPanel = CreatePanel("CombatPanel", canvasTransform,
+            new Vector2(0, 0), new Vector2(1, 0),
+            new Vector2(10, 10), new Vector2(-10, 10),
+            280f, anchorBottomStretch: true);
+        // Note: SetActive(false) is deferred until after CombatUI is added below
+
+        // -- Attack Panel --
+        var attackPanel = CreatePanel("AttackPanel", combatPanel.transform,
+            Vector2.zero, Vector2.one,
+            Vector2.zero, Vector2.zero, 0);
+        StretchFull(attackPanel.GetComponent<RectTransform>());
+
+        // Dice Container with HorizontalLayoutGroup
+        var diceContainer = new GameObject("DiceContainer");
+        diceContainer.transform.SetParent(attackPanel.transform, false);
+        var diceContainerRT = diceContainer.AddComponent<RectTransform>();
+        diceContainerRT.anchorMin = new Vector2(0, 0.4f);
+        diceContainerRT.anchorMax = new Vector2(1, 1);
+        diceContainerRT.offsetMin = new Vector2(20, 0);
+        diceContainerRT.offsetMax = new Vector2(-20, -10);
+        var hlg = diceContainer.AddComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 10;
+        hlg.childAlignment = TextAnchor.MiddleCenter;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = false;
+
+        // Combo preview text
+        var comboPreview = CreateTMPText("ComboPreview", attackPanel.transform,
+            "Best combo: --", 18, TextAlignmentOptions.Left, TextColor);
+        var comboRT = comboPreview.GetComponent<RectTransform>();
+        comboRT.anchorMin = new Vector2(0, 0);
+        comboRT.anchorMax = new Vector2(0.5f, 0.4f);
+        comboRT.offsetMin = new Vector2(20, 10);
+        comboRT.offsetMax = new Vector2(-10, -5);
+
+        // Roll counter text
+        var rollCounter = CreateTMPText("RollCounter", attackPanel.transform,
+            "Roll 0/3", 16, TextAlignmentOptions.Left, ShieldColor);
+        var rollCounterRT = rollCounter.GetComponent<RectTransform>();
+        rollCounterRT.anchorMin = new Vector2(0, 0);
+        rollCounterRT.anchorMax = new Vector2(0.3f, 0.15f);
+        rollCounterRT.offsetMin = new Vector2(20, 0);
+        rollCounterRT.offsetMax = new Vector2(-10, 0);
+
+        // Reroll Button
+        var rerollButton = CreateButton("RerollButton", attackPanel.transform,
+            "REROLL", D6Color);
+        var rerollBtnRT = rerollButton.GetComponent<RectTransform>();
+        rerollBtnRT.anchorMin = new Vector2(0.55f, 0.05f);
+        rerollBtnRT.anchorMax = new Vector2(0.75f, 0.35f);
+        rerollBtnRT.offsetMin = Vector2.zero;
+        rerollBtnRT.offsetMax = Vector2.zero;
+
+        // Commit Button
+        var commitButton = CreateButton("CommitButton", attackPanel.transform,
+            "COMMIT ATTACK", AccentGold);
+        var commitBtnRT = commitButton.GetComponent<RectTransform>();
+        commitBtnRT.anchorMin = new Vector2(0.77f, 0.05f);
+        commitBtnRT.anchorMax = new Vector2(0.98f, 0.35f);
+        commitBtnRT.offsetMin = Vector2.zero;
+        commitBtnRT.offsetMax = Vector2.zero;
+
+        // -- Defense Panel --
+        var defensePanel = CreatePanel("DefensePanel", combatPanel.transform,
+            Vector2.zero, Vector2.one,
+            Vector2.zero, Vector2.zero, 0);
+        StretchFull(defensePanel.GetComponent<RectTransform>());
+        defensePanel.SetActive(false);
+
+        var defenseTitle = CreateTMPText("DefenseTitle", defensePanel.transform,
+            "DEFENSE PHASE", 24, TextAlignmentOptions.Center, AccentGold);
+        var defenseTitleRT = defenseTitle.GetComponent<RectTransform>();
+        defenseTitleRT.anchorMin = new Vector2(0, 0.75f);
+        defenseTitleRT.anchorMax = new Vector2(1, 1);
+        defenseTitleRT.offsetMin = Vector2.zero;
+        defenseTitleRT.offsetMax = Vector2.zero;
+        defenseTitle.fontStyle = FontStyles.Bold;
+
+        var defenseRollsText = CreateTMPText("DefenseRolls", defensePanel.transform,
+            "", 18, TextAlignmentOptions.Center, TextColor);
+        SetRect(defenseRollsText, 0, 0.55f, 1, 0.75f);
+
+        var defenseResultText = CreateTMPText("DefenseResult", defensePanel.transform,
+            "", 18, TextAlignmentOptions.Center, TextColor);
+        SetRect(defenseResultText, 0, 0.35f, 1, 0.55f);
+
+        var defenseShieldText = CreateTMPText("DefenseShield", defensePanel.transform,
+            "", 20, TextAlignmentOptions.Center, ShieldColor);
+        SetRect(defenseShieldText, 0, 0.15f, 1, 0.35f);
+
+        var rollDefenseButton = CreateButton("RollDefenseButton", defensePanel.transform,
+            "ROLL DEFENSE", ShieldColor);
+        SetRect(rollDefenseButton, 0.3f, 0.02f, 0.7f, 0.18f);
+
+        // -- Enemy Attack Panel --
+        var enemyAttackPanel = CreatePanel("EnemyAttackPanel", combatPanel.transform,
+            Vector2.zero, Vector2.one,
+            Vector2.zero, Vector2.zero, 0);
+        StretchFull(enemyAttackPanel.GetComponent<RectTransform>());
+        enemyAttackPanel.SetActive(false);
+
+        var enemyAttackTitle = CreateTMPText("EnemyAttackTitle", enemyAttackPanel.transform,
+            "ENEMY ATTACKS!", 24, TextAlignmentOptions.Center, HPColor);
+        SetRect(enemyAttackTitle, 0, 0.75f, 1, 1);
+        enemyAttackTitle.fontStyle = FontStyles.Bold;
+
+        var enemyRollText = CreateTMPText("EnemyRollText", enemyAttackPanel.transform,
+            "", 18, TextAlignmentOptions.Center, TextColor);
+        SetRect(enemyRollText, 0, 0.55f, 1, 0.75f);
+
+        var shieldAbsorbText = CreateTMPText("ShieldAbsorbText", enemyAttackPanel.transform,
+            "", 18, TextAlignmentOptions.Center, ShieldColor);
+        SetRect(shieldAbsorbText, 0, 0.35f, 1, 0.55f);
+
+        var netDamageText = CreateTMPText("NetDamageText", enemyAttackPanel.transform,
+            "", 20, TextAlignmentOptions.Center, HPColor);
+        SetRect(netDamageText, 0, 0.15f, 1, 0.35f);
+
+        var continueButton = CreateButton("ContinueButton", enemyAttackPanel.transform,
+            "CONTINUE", TextColor);
+        SetRect(continueButton, 0.3f, 0.02f, 0.7f, 0.18f);
+
+        // -- Dice Slot Prefab (stored in memory, not on disk) --
+        var dicePrefab = CreateDiceSlotPrefab();
+
+        // ── CombatUI component ──
+        var combatUIGO = combatPanel;
+        var combatUI = combatUIGO.AddComponent<CombatUI>();
+        combatUI.Initialize(
+            diceContainer.transform,
+            dicePrefab,
+            comboPreview,
+            rollCounter,
+            rerollButton.GetComponent<Button>(),
+            commitButton.GetComponent<Button>(),
+            attackPanel,
+            defensePanel,
+            defenseTitle,
+            defenseRollsText,
+            defenseResultText,
+            defenseShieldText,
+            rollDefenseButton.GetComponent<Button>(),
+            enemyAttackPanel,
+            enemyAttackTitle,
+            enemyRollText,
+            shieldAbsorbText,
+            netDamageText,
+            continueButton.GetComponent<Button>()
+        );
+
+        // Now hide combat panel (after CombatUI.Awake has set Instance)
+        combatPanel.SetActive(false);
+
+        // ── Craps Overlay ──
+        var crapsOverlay = CreateOverlayPanel("CrapsOverlay", canvasTransform);
+        // SetActive(false) deferred until after CrapsUI is added
+
+        var crapsInner = CreatePanel("CrapsInner", crapsOverlay.transform,
+            new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f),
+            Vector2.zero, Vector2.zero, 0);
+        StretchAnchors(crapsInner.GetComponent<RectTransform>(), 0.1f, 0.1f, 0.9f, 0.9f);
+
+        // Bet panel (the main content)
+        var betPanel = crapsInner;
+
+        var betTitle = CreateTMPText("BetTitle", betPanel.transform,
+            "CRAPS MODE ACTIVATED!\nPredict your next combo:", 22,
+            TextAlignmentOptions.Center, AccentGold);
+        SetRect(betTitle, 0, 0.75f, 1, 1);
+        betTitle.fontStyle = FontStyles.Bold;
+
+        // Bet Buttons - 2 rows of 3
+        string[] betNames = { "Pair", "Three of a Kind", "Straight", "Full House", "Four of a Kind", "Generala" };
+        GameObject[] betButtons = new GameObject[6];
+        for (int i = 0; i < 6; i++)
+        {
+            int row = i / 3;
+            int col = i % 3;
+            float xMin = 0.05f + col * 0.31f;
+            float xMax = xMin + 0.28f;
+            float yMax = 0.7f - row * 0.35f;
+            float yMin = yMax - 0.3f;
+
+            betButtons[i] = CreateButton($"Bet{betNames[i].Replace(" ", "")}", betPanel.transform,
+                betNames[i], AccentGold);
+            SetRect(betButtons[i], xMin, yMin, xMax, yMax);
+        }
+
+        // Result panel (hidden inside craps overlay)
+        var resultPanel = CreatePanel("CrapsResultPanel", crapsOverlay.transform,
+            Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 0);
+        StretchAnchors(resultPanel.GetComponent<RectTransform>(), 0.15f, 0.15f, 0.85f, 0.85f);
+        resultPanel.SetActive(false);
+
+        var resultBg = resultPanel.GetComponent<Image>();
+
+        var resultTitle = CreateTMPText("ResultTitle", resultPanel.transform,
+            "", 28, TextAlignmentOptions.Center, AccentGold);
+        SetRect(resultTitle, 0, 0.7f, 1, 1);
+        resultTitle.fontStyle = FontStyles.Bold;
+
+        var resultBetText = CreateTMPText("ResultBetText", resultPanel.transform,
+            "", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(resultBetText, 0, 0.5f, 1, 0.7f);
+
+        var resultActualText = CreateTMPText("ResultActualText", resultPanel.transform,
+            "", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(resultActualText, 0, 0.3f, 1, 0.5f);
+
+        var resultDamageText = CreateTMPText("ResultDamageText", resultPanel.transform,
+            "", 22, TextAlignmentOptions.Center, AccentGold);
+        SetRect(resultDamageText, 0, 0.1f, 1, 0.3f);
+
+        var crapsUI = crapsOverlay.AddComponent<CrapsUI>();
+        crapsUI.Initialize(
+            betPanel,
+            betTitle,
+            betButtons[0].GetComponent<Button>(),
+            betButtons[1].GetComponent<Button>(),
+            betButtons[2].GetComponent<Button>(),
+            betButtons[3].GetComponent<Button>(),
+            betButtons[4].GetComponent<Button>(),
+            betButtons[5].GetComponent<Button>(),
+            resultPanel,
+            resultTitle,
+            resultBetText,
+            resultActualText,
+            resultDamageText,
+            resultBg
+        );
+        crapsOverlay.SetActive(false);
+
+        // ── Reward Overlay ──
+        var rewardOverlay = CreateOverlayPanel("RewardOverlay", canvasTransform);
+
+        var rewardPanel = rewardOverlay; // the overlay IS the panel
+
+        var rewardTitle = CreateTMPText("RewardTitle", rewardPanel.transform,
+            "ENEMY DEFEATED!\nChoose a reward:", 24, TextAlignmentOptions.Center, AccentGold);
+        SetRect(rewardTitle, 0, 0.75f, 1, 0.95f);
+        rewardTitle.fontStyle = FontStyles.Bold;
+
+        // Card A
+        var cardA = CreatePanel("CardA", rewardPanel.transform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var cardABg = cardA.GetComponent<Image>();
+        cardABg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.95f);
+        SetRect(cardA, 0.05f, 0.1f, 0.47f, 0.72f);
+
+        var cardATitle = CreateTMPText("CardATitle", cardA.transform,
+            "OPTION A", 20, TextAlignmentOptions.Center, AccentGold);
+        SetRect(cardATitle, 0.05f, 0.55f, 0.95f, 0.95f);
+        cardATitle.fontStyle = FontStyles.Bold;
+
+        var cardADesc = CreateTMPText("CardADesc", cardA.transform,
+            "", 16, TextAlignmentOptions.Center, TextColor);
+        SetRect(cardADesc, 0.05f, 0.25f, 0.95f, 0.55f);
+
+        var cardAButton = CreateButton("CardAButton", cardA.transform, "CHOOSE", AccentGold);
+        SetRect(cardAButton, 0.2f, 0.05f, 0.8f, 0.22f);
+
+        // Card B
+        var cardB = CreatePanel("CardB", rewardPanel.transform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var cardBBg = cardB.GetComponent<Image>();
+        cardBBg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.95f);
+        SetRect(cardB, 0.53f, 0.1f, 0.95f, 0.72f);
+
+        var cardBTitle = CreateTMPText("CardBTitle", cardB.transform,
+            "OPTION B", 20, TextAlignmentOptions.Center, AccentGold);
+        SetRect(cardBTitle, 0.05f, 0.55f, 0.95f, 0.95f);
+        cardBTitle.fontStyle = FontStyles.Bold;
+
+        var cardBDesc = CreateTMPText("CardBDesc", cardB.transform,
+            "", 16, TextAlignmentOptions.Center, TextColor);
+        SetRect(cardBDesc, 0.05f, 0.25f, 0.95f, 0.55f);
+
+        var cardBButton = CreateButton("CardBButton", cardB.transform, "CHOOSE", AccentGold);
+        SetRect(cardBButton, 0.2f, 0.05f, 0.8f, 0.22f);
+
+        var rewardUI = rewardOverlay.AddComponent<RewardUI>();
+        rewardUI.Initialize(
+            rewardPanel,
+            rewardTitle,
+            cardA, cardATitle, cardADesc, cardAButton.GetComponent<Button>(),
+            cardB, cardBTitle, cardBDesc, cardBButton.GetComponent<Button>()
+        );
+        rewardOverlay.SetActive(false);
+
+        // ── Game Over Overlay ──
+        var gameOverOverlay = CreateOverlayPanel("GameOverOverlay", canvasTransform);
+
+        var gameOverTitle = CreateTMPText("GameOverTitle", gameOverOverlay.transform,
+            "GAME OVER", 40, TextAlignmentOptions.Center, HPColor);
+        SetRect(gameOverTitle, 0, 0.6f, 1, 0.9f);
+        gameOverTitle.fontStyle = FontStyles.Bold;
+
+        var gameOverStats = CreateTMPText("GameOverStats", gameOverOverlay.transform,
+            "", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(gameOverStats, 0.1f, 0.25f, 0.9f, 0.6f);
+
+        var gameOverRestart = CreateButton("GameOverRestart", gameOverOverlay.transform,
+            "TRY AGAIN", AccentGold);
+        SetRect(gameOverRestart, 0.3f, 0.08f, 0.7f, 0.22f);
+
+        var gameOverUI = gameOverOverlay.AddComponent<GameOverUI>();
+        gameOverUI.Initialize(gameOverOverlay, gameOverTitle, gameOverStats,
+            gameOverRestart.GetComponent<Button>());
+        gameOverOverlay.SetActive(false);
+
+        // ── Victory Overlay ──
+        var victoryOverlay = CreateOverlayPanel("VictoryOverlay", canvasTransform);
+
+        var victoryTitle = CreateTMPText("VictoryTitle", victoryOverlay.transform,
+            "VICTORY!", 40, TextAlignmentOptions.Center, AccentGold);
+        SetRect(victoryTitle, 0, 0.6f, 1, 0.9f);
+        victoryTitle.fontStyle = FontStyles.Bold;
+
+        var victoryStats = CreateTMPText("VictoryStats", victoryOverlay.transform,
+            "", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(victoryStats, 0.1f, 0.25f, 0.9f, 0.6f);
+
+        var victoryRestart = CreateButton("VictoryRestart", victoryOverlay.transform,
+            "PLAY AGAIN", AccentGold);
+        SetRect(victoryRestart, 0.3f, 0.08f, 0.7f, 0.22f);
+
+        var victoryUI = victoryOverlay.AddComponent<VictoryUI>();
+        victoryUI.Initialize(victoryOverlay, victoryTitle, victoryStats,
+            victoryRestart.GetComponent<Button>());
+        victoryOverlay.SetActive(false);
+
+        // ── Combat Log ──
+        var combatLogGO = CreatePanel("CombatLog", canvasTransform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var combatLogRT = combatLogGO.GetComponent<RectTransform>();
+        combatLogRT.anchorMin = new Vector2(1, 0);
+        combatLogRT.anchorMax = new Vector2(1, 0);
+        combatLogRT.pivot = new Vector2(1, 0);
+        combatLogRT.anchoredPosition = new Vector2(-10, 300);
+        combatLogRT.sizeDelta = new Vector2(350, 200);
+        var combatLogBg = combatLogGO.GetComponent<Image>();
+        combatLogBg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.7f);
+
+        // ScrollRect setup
+        var scrollViewport = new GameObject("Viewport");
+        scrollViewport.transform.SetParent(combatLogGO.transform, false);
+        var viewportRT = scrollViewport.AddComponent<RectTransform>();
+        StretchFull(viewportRT);
+        viewportRT.offsetMin = new Vector2(10, 5);
+        viewportRT.offsetMax = new Vector2(-10, -5);
+        var viewportMask = scrollViewport.AddComponent<Mask>();
+        var viewportImage = scrollViewport.AddComponent<Image>();
+        viewportImage.color = Color.clear;
+        viewportMask.showMaskGraphic = false;
+
+        var logContent = new GameObject("LogContent");
+        logContent.transform.SetParent(scrollViewport.transform, false);
+        var logContentRT = logContent.AddComponent<RectTransform>();
+        logContentRT.anchorMin = new Vector2(0, 0);
+        logContentRT.anchorMax = new Vector2(1, 1);
+        logContentRT.offsetMin = Vector2.zero;
+        logContentRT.offsetMax = Vector2.zero;
+        logContentRT.pivot = new Vector2(0, 0);
+
+        var logText = CreateTMPText("LogText", logContent.transform, "", 14,
+            TextAlignmentOptions.BottomLeft, TextColor);
+        StretchFull(logText.GetComponent<RectTransform>());
+        logText.enableWordWrapping = true;
+        logText.overflowMode = TextOverflowModes.Truncate;
+
+        var scrollRect = combatLogGO.AddComponent<ScrollRect>();
+        scrollRect.viewport = viewportRT;
+        scrollRect.content = logContentRT;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+        var combatLogUI = combatLogGO.AddComponent<CombatLogUI>();
+        combatLogUI.Initialize(logText, scrollRect);
+
+        // ── Wire UIManager ──
+        var uiManager = UIManager.Instance;
+        if (uiManager != null)
+        {
+            uiManager.Initialize(
+                healthBarUI,
+                energyBarUI,
+                shieldDisplay,
+                phaseLabel,
+                combatPanel,
+                crapsOverlay,
+                rewardOverlay,
+                gameOverOverlay,
+                victoryOverlay
+            );
+        }
+    }
+
+    // ── Factory Helpers ──
+
+    private GameObject CreateDiceSlotPrefab()
+    {
+        var prefab = new GameObject("DieSlotPrefab");
+        prefab.SetActive(false);
+
+        var rt = prefab.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(80, 80);
+
+        var bg = prefab.AddComponent<Image>();
+        bg.color = D6Color;
+
+        // Value text (large, centered)
+        var valueText = CreateTMPText("ValueText", prefab.transform, "0", 32,
+            TextAlignmentOptions.Center, Color.white);
+        StretchFull(valueText.GetComponent<RectTransform>());
+        valueText.fontStyle = FontStyles.Bold;
+
+        // Type label (small, bottom)
+        var typeLabel = CreateTMPText("TypeLabel", prefab.transform, "d6", 12,
+            TextAlignmentOptions.Bottom, new Color(1, 1, 1, 0.7f));
+        var typeLabelRT = typeLabel.GetComponent<RectTransform>();
+        typeLabelRT.anchorMin = Vector2.zero;
+        typeLabelRT.anchorMax = new Vector2(1, 0.3f);
+        typeLabelRT.offsetMin = Vector2.zero;
+        typeLabelRT.offsetMax = Vector2.zero;
+
+        // Lock border (hidden by default)
+        var lockBorderGO = CreateChildImage("LockBorder", prefab.transform, AccentGold);
+        var lockBorderRT = lockBorderGO.GetComponent<RectTransform>();
+        StretchFull(lockBorderRT);
+        lockBorderRT.offsetMin = new Vector2(-3, -3);
+        lockBorderRT.offsetMax = new Vector2(3, 3);
+        var lockBorderImage = lockBorderGO.GetComponent<Image>();
+        lockBorderImage.type = Image.Type.Sliced;
+        // Make it look like a border by clearing the center
+        lockBorderImage.fillCenter = false;
+        lockBorderGO.SetActive(false);
+
+        // Add DieSlotUI component
+        var dieSlot = prefab.AddComponent<DieSlotUI>();
+        dieSlot.Initialize(valueText, typeLabel, bg, lockBorderImage);
+
+        // Keep it out of the scene hierarchy
+        DontDestroyOnLoad(prefab);
+
+        return prefab;
+    }
+
+    private GameObject CreatePanel(string name, Transform parent,
+        Vector2 anchorMin, Vector2 anchorMax,
+        Vector2 offsetMin, Vector2 offsetMax,
+        float height = 0,
+        bool anchorTopStretch = false,
+        bool anchorBottomStretch = false)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        var img = go.AddComponent<Image>();
+        img.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.85f);
+
+        if (anchorTopStretch)
+        {
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(0.5f, 1);
+            rt.offsetMin = new Vector2(offsetMin.x, 0);
+            rt.offsetMax = new Vector2(offsetMax.x, 0);
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, height);
+        }
+        else if (anchorBottomStretch)
+        {
+            rt.anchorMin = new Vector2(0, 0);
+            rt.anchorMax = new Vector2(1, 0);
+            rt.pivot = new Vector2(0.5f, 0);
+            rt.offsetMin = offsetMin;
+            rt.offsetMax = new Vector2(offsetMax.x, height + offsetMin.y);
+        }
+        else
+        {
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.offsetMin = offsetMin;
+            rt.offsetMax = offsetMax;
+        }
+
+        return go;
+    }
+
+    private GameObject CreateOverlayPanel(string name, Transform parent)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        StretchFull(rt);
+
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0, 0, 0, 0.85f);
+
+        return go;
+    }
+
+    private TMP_Text CreateTMPText(string name, Transform parent, string text, float fontSize,
+        TextAlignmentOptions alignment, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(200, 40);
+
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = fontSize;
+        tmp.alignment = alignment;
+        tmp.color = color;
+        tmp.enableWordWrapping = false;
+        tmp.raycastTarget = false;
+
+        return tmp;
+    }
+
+    private GameObject CreateChildImage(string name, Transform parent, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        go.AddComponent<RectTransform>();
+        var img = go.AddComponent<Image>();
+        img.color = color;
+
+        return go;
+    }
+
+    private GameObject CreateButton(string name, Transform parent, string label, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(160, 40);
+
+        var img = go.AddComponent<Image>();
+        img.color = new Color(color.r * 0.3f, color.g * 0.3f, color.b * 0.3f, 0.9f);
+
+        var btn = go.AddComponent<Button>();
+        var colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
+        colors.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        btn.colors = colors;
+
+        var labelText = CreateTMPText($"{name}Label", go.transform, label, 16,
+            TextAlignmentOptions.Center, color);
+        StretchFull(labelText.GetComponent<RectTransform>());
+        labelText.raycastTarget = false;
+
+        return go;
+    }
+
+    private void StretchFull(RectTransform rt)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+
+    private void StretchAnchors(RectTransform rt, float xMin, float yMin, float xMax, float yMax)
+    {
+        rt.anchorMin = new Vector2(xMin, yMin);
+        rt.anchorMax = new Vector2(xMax, yMax);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+
+    private void SetRect(GameObject go, float xMin, float yMin, float xMax, float yMax)
+    {
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(xMin, yMin);
+        rt.anchorMax = new Vector2(xMax, yMax);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+
+    private void SetRect(TMP_Text tmp, float xMin, float yMin, float xMax, float yMax)
+    {
+        SetRect(tmp.gameObject, xMin, yMin, xMax, yMax);
+    }
+}

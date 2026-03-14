@@ -38,6 +38,36 @@ public class CrapsUI : MonoBehaviour
 
     void Awake()
     {
+        WireBetButtons();
+    }
+
+    public void Initialize(
+        GameObject betPanelRef, TMP_Text betTitleRef,
+        Button pairBtn, Button threeBtn, Button straightBtn,
+        Button fullHouseBtn, Button fourBtn, Button generalaBtn,
+        GameObject resultPanelRef, TMP_Text resultTitleRef,
+        TMP_Text resultBetRef, TMP_Text resultActualRef,
+        TMP_Text resultDamageRef, Image resultBgRef)
+    {
+        betPanel = betPanelRef;
+        betTitle = betTitleRef;
+        betPairButton = pairBtn;
+        betThreeOfAKindButton = threeBtn;
+        betStraightButton = straightBtn;
+        betFullHouseButton = fullHouseBtn;
+        betFourOfAKindButton = fourBtn;
+        betGeneralaButton = generalaBtn;
+        resultPanel = resultPanelRef;
+        resultTitle = resultTitleRef;
+        resultBetText = resultBetRef;
+        resultActualText = resultActualRef;
+        resultDamageText = resultDamageRef;
+        resultBackground = resultBgRef;
+        WireBetButtons();
+    }
+
+    private void WireBetButtons()
+    {
         SetupBetButton(betPairButton, CombinationType.Pair);
         SetupBetButton(betThreeOfAKindButton, CombinationType.ThreeOfAKind);
         SetupBetButton(betStraightButton, CombinationType.Straight);

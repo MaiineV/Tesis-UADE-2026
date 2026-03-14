@@ -29,6 +29,21 @@ public class UIManager : MonoBehaviour
         Instance = this;
     }
 
+    public void Initialize(HealthBarUI healthBarRef, EnergyBarUI energyBarRef, ShieldDisplay shieldRef,
+        TMP_Text phaseLabelRef, GameObject combatPanelRef, GameObject crapsOverlayRef,
+        GameObject rewardOverlayRef, GameObject gameOverOverlayRef, GameObject victoryOverlayRef)
+    {
+        healthBar = healthBarRef;
+        energyBar = energyBarRef;
+        shieldDisplay = shieldRef;
+        phaseLabel = phaseLabelRef;
+        combatPanel = combatPanelRef;
+        crapsOverlay = crapsOverlayRef;
+        rewardOverlay = rewardOverlayRef;
+        gameOverOverlay = gameOverOverlayRef;
+        victoryOverlay = victoryOverlayRef;
+    }
+
     // --- HUD forwarding ---
 
     public void UpdateHP(int current, int max)
