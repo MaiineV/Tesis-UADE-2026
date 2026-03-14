@@ -178,7 +178,7 @@ public class UIBuilder : MonoBehaviour
 
         // Roll counter text
         var rollCounter = CreateTMPText("RollCounter", attackPanel.transform,
-            "Roll 0/3", 16, TextAlignmentOptions.Left, ShieldColor);
+            "Roll 0/3", 16, TextAlignmentOptions.Left, TextColor);
         var rollCounterRT = rollCounter.GetComponent<RectTransform>();
         rollCounterRT.anchorMin = new Vector2(0, 0);
         rollCounterRT.anchorMax = new Vector2(0.3f, 0.15f);
@@ -686,7 +686,7 @@ public class UIBuilder : MonoBehaviour
         rt.sizeDelta = new Vector2(160, 40);
 
         var img = go.AddComponent<Image>();
-        img.color = new Color(color.r * 0.3f, color.g * 0.3f, color.b * 0.3f, 0.9f);
+        img.color = new Color(color.r * 0.55f, color.g * 0.55f, color.b * 0.55f, 0.95f);
 
         var btn = go.AddComponent<Button>();
         var colors = btn.colors;

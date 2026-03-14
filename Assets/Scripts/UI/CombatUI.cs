@@ -43,6 +43,7 @@ public class CombatUI : MonoBehaviour
 
     private DieSlotUI[] dieSlots;
     private RollResult[] currentResults;
+    private DiceBag currentBag;
 
     public event Action<string> OnDieLockToggled;
     public event Action OnRerollClicked;
@@ -116,13 +117,14 @@ public class CombatUI : MonoBehaviour
 
     // ── Attack UI ──────────────────────────────────────────────
 
-    public void ShowAttackUI(RollResult[] results, HashSet<string> locked)
+    public void ShowAttackUI(RollResult[] results, HashSet<string> locked, DiceBag bag = null)
     {
         SetPanel(attackPanel, true);
         SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, false);
 
         currentResults = results;
+        currentBag = bag;
         ClearDiceSlots();
 
         dieSlots = new DieSlotUI[results.Length];
@@ -131,13 +133,22 @@ public class CombatUI : MonoBehaviour
             if (dicePrefab == null || diceContainer == null) continue;
 
             var go = Instantiate(dicePrefab, diceContainer);
+            go.SetActive(true);
             var slot = go.GetComponent<DieSlotUI>();
             if (slot == null) slot = go.AddComponent<DieSlotUI>();
 
             bool isLocked = locked != null && locked.Contains(results[i].DiceId);
             string diceId = results[i].DiceId;
 
-            slot.Setup(results[i].Value, null, isLocked);
+            // Look up DiceData from bag for correct coloring
+            DiceData diceData = null;
+            if (bag != null)
+            {
+                var diceInstance = bag.Dice.Find(d => d.Id == diceId);
+                if (diceInstance != null) diceData = diceInstance.BaseData;
+            }
+
+            slot.Setup(results[i].Value, diceData, isLocked);
             slot.OnClicked += () => OnDieClicked(diceId);
 
             dieSlots[i] = slot;

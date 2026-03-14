@@ -161,7 +161,8 @@ public class GameManager : MonoBehaviour
         // Destroy old player
         if (player != null)
         {
-            GridManager.Instance.ClearOccupant(player.State.GridPosition);
+            if (GridManager.Instance != null)
+                GridManager.Instance.ClearOccupant(player.State.GridPosition);
             Destroy(player.gameObject);
             player = null;
         }
@@ -171,7 +172,8 @@ public class GameManager : MonoBehaviour
         {
             if (enemy != null)
             {
-                GridManager.Instance.ClearOccupant(enemy.State.GridPosition);
+                if (GridManager.Instance != null)
+                    GridManager.Instance.ClearOccupant(enemy.State.GridPosition);
                 Destroy(enemy.gameObject);
             }
         }
@@ -182,7 +184,8 @@ public class GameManager : MonoBehaviour
         if (oldGrid != null) Destroy(oldGrid);
 
         // Hide all UI
-        UIManager.Instance.HideAllPanels();
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideAllPanels();
     }
 
     private void SetupRoom()
@@ -264,7 +267,7 @@ public class GameManager : MonoBehaviour
 
         foreach (var enemy in enemies)
         {
-            if (!enemy.State.IsAlive) continue;
+            if (enemy == null || !enemy.State.IsAlive) continue;
 
             bool collision = EnemyMovement.MoveEnemyTowardPlayer(enemy, player);
             if (collision)
@@ -341,7 +344,7 @@ public class GameManager : MonoBehaviour
         int[] values = results.Select(r => r.Value).ToArray();
         var preview = CombinationDetector.Evaluate(values, generalaScoredThisRun);
 
-        CombatUI.Instance.ShowAttackUI(results, currentAttack.LockedDiceIds);
+        CombatUI.Instance.ShowAttackUI(results, currentAttack.LockedDiceIds, player.State.Bag);
         CombatUI.Instance.UpdateComboPreview(preview);
         CombatUI.Instance.UpdateRollCounter(currentAttack.CurrentRoll, currentAttack.MaxRolls);
         CombatUI.Instance.SetRerollEnabled(currentAttack.CanRollAgain);
@@ -360,7 +363,7 @@ public class GameManager : MonoBehaviour
         int[] values = currentAttack.CurrentResults.Select(r => r.Value).ToArray();
         var preview = CombinationDetector.Evaluate(values, generalaScoredThisRun);
 
-        CombatUI.Instance.ShowAttackUI(currentAttack.CurrentResults, currentAttack.LockedDiceIds);
+        CombatUI.Instance.ShowAttackUI(currentAttack.CurrentResults, currentAttack.LockedDiceIds, player.State.Bag);
         CombatUI.Instance.UpdateComboPreview(preview);
     }
 
@@ -412,6 +415,7 @@ public class GameManager : MonoBehaviour
             generalaScoredThisRun = true;
 
         // Apply damage to enemy
+        if (currentCombatEnemy == null) return;
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
 

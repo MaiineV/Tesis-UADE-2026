@@ -41,7 +41,7 @@ public class EnergyBarUI : MonoBehaviour
 
     void Update()
     {
-        if (!isFull) return;
+        if (!isFull || fillBar == null) return;
 
         float t = Mathf.PingPong(Time.time * pulseSpeed, 1f);
         float scale = Mathf.Lerp(pulseMinScale, pulseMaxScale, t);
@@ -50,6 +50,8 @@ public class EnergyBarUI : MonoBehaviour
 
     public void UpdateEnergy(float normalized)
     {
+        if (fillBar == null) return;
+
         normalized = Mathf.Clamp01(normalized);
         fillBar.fillAmount = normalized;
 

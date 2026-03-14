@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d366a0a7fe4f0a4fb34fca06567b040, type: 3}
+  m_Name: Orc
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  EnemyName: Orc
+  Sprite: {fileID: 0}
+  EnemyColor: {r: 0.9372549, g: 0.3254902, b: 0.3137255, a: 1}
+  MaxHP: 60
+  AttackDiceCount: 2
+  AttackDiceFaces: 8
+  SpeedMin: 1
+  SpeedMax: 2
+  MaxEnergy: 40
+  EnergyPerRound: 12
+  Behavior: 0
