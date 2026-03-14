@@ -68,27 +68,23 @@ public class DieSlotUI : MonoBehaviour
 
     private IEnumerator RollShakeAnimation()
     {
-        float duration = 0.3f;
+        float duration = 0.2f;
         float elapsed = 0f;
-        RectTransform rt = GetComponent<RectTransform>();
-        if (rt == null) yield break;
-
-        Vector2 originalPos = rt.anchoredPosition;
-        float intensity = 5f;
+        Vector3 originalScale = transform.localScale;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-            float shake = intensity * (1f - t);
-            rt.anchoredPosition = originalPos + new Vector2(
-                UnityEngine.Random.Range(-shake, shake),
-                UnityEngine.Random.Range(-shake, shake)
-            );
+            // Pop in: scale from 0 to 1.1, then settle to 1
+            float scale = t < 0.6f
+                ? Mathf.Lerp(0f, 1.1f, t / 0.6f)
+                : Mathf.Lerp(1.1f, 1f, (t - 0.6f) / 0.4f);
+            transform.localScale = originalScale * scale;
             yield return null;
         }
 
-        rt.anchoredPosition = originalPos;
+        transform.localScale = originalScale;
     }
 
     private IEnumerator LockPulseAnimation()
