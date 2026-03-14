@@ -72,7 +72,8 @@ public class CrapsMode
         return type == CombinationType.Pair ||
                type == CombinationType.ThreeOfAKind ||
                type == CombinationType.FourOfAKind ||
-               type == CombinationType.Generala;
+               type == CombinationType.Generala ||
+               type == CombinationType.DoubleGenerala;
     }
 
     private int GetComboRank(CombinationType type)
@@ -85,6 +86,7 @@ public class CrapsMode
             case CombinationType.FullHouse: return 4;
             case CombinationType.FourOfAKind: return 5;
             case CombinationType.Generala: return 6;
+            case CombinationType.DoubleGenerala: return 7;
             default: return 0;
         }
     }
@@ -99,6 +101,7 @@ public class CrapsMode
             case CombinationType.FullHouse: return 1.75f;
             case CombinationType.FourOfAKind: return 2.0f;
             case CombinationType.Generala: return 3.0f;
+            case CombinationType.DoubleGenerala: return 3.0f;
             default: return 1.0f;
         }
     }
@@ -113,6 +116,7 @@ public class CrapsMode
             case CombinationType.FullHouse: return 0.8f;
             case CombinationType.FourOfAKind: return 0.75f;
             case CombinationType.Generala: return 0.5f;
+            case CombinationType.DoubleGenerala: return 0.5f;
             default: return 1.0f;
         }
     }
@@ -123,6 +127,7 @@ public class CrapsMode
         {
             case CombinationType.Straight: return 10;
             case CombinationType.Generala: return 20;
+            case CombinationType.DoubleGenerala: return 20;
             default: return 0;
         }
     }
@@ -133,6 +138,7 @@ public class CrapsMode
         {
             case CombinationType.FourOfAKind: return -5;
             case CombinationType.Generala: return -10;
+            case CombinationType.DoubleGenerala: return -10;
             default: return 0;
         }
     }

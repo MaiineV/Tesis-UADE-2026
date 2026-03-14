@@ -62,7 +62,7 @@ public class PlayerState
     {
         int blocked = Mathf.Min(ShieldValue, rawDamage);
         int actualDamage = rawDamage - blocked;
-        ShieldValue = Mathf.Max(0, ShieldValue - rawDamage);
+        ShieldValue = Mathf.Max(0, ShieldValue - blocked);
         CurrentHP = Mathf.Max(0, CurrentHP - actualDamage);
     }
 

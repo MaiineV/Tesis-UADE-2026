@@ -8,6 +8,10 @@ public static class CombinationDetector
     /// "Best" = highest damage output.
     public static CombinationResult Evaluate(int[] diceValues, bool hasGeneralaThisRun)
     {
+        if (diceValues == null || diceValues.Length == 0)
+            return new CombinationResult { Type = CombinationType.HighDie, BaseDamage = 0,
+                MatchingDice = new int[0], RemainingDice = new int[0] };
+
         // Build frequency map
         Dictionary<int, int> freq = new Dictionary<int, int>();
         foreach (int v in diceValues)
@@ -128,6 +132,7 @@ public static class CombinationDetector
     {
         var results = new List<CombinationResult>();
         var uniqueSorted = diceValues.Distinct().OrderBy(v => v).ToList();
+        if (uniqueSorted.Count == 0) return results;
 
         // Find longest consecutive run
         int bestStart = uniqueSorted[0];

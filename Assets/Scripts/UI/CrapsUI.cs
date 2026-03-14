@@ -79,11 +79,14 @@ public class CrapsUI : MonoBehaviour
     private void SetupBetButton(Button button, CombinationType combo)
     {
         if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() =>
             {
                 OnBetSelected?.Invoke(combo);
                 HideBetOverlay();
             });
+        }
     }
 
     public void ShowBetOverlay()
