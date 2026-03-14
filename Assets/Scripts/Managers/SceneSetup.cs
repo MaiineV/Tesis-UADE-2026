@@ -53,6 +53,8 @@ public class SceneSetup : MonoBehaviour
         EnsureManager<EnergyManager>("EnergyManager");
         EnsureManager<DiceManager>("DiceManager");
         EnsureManager<UIManager>("UIManager");
+        EnsureManager<FloatingDamageUI>("FloatingDamageUI");
+        EnsureManager<ScreenFlashUI>("ScreenFlashUI");
 
         // GameManager is created last since it depends on others
         EnsureManager<GameManager>("GameManager");

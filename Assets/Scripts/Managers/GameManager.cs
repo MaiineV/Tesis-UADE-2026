@@ -203,7 +203,11 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateEnergy(0f);
         UIManager.Instance.UpdateShield(0);
 
-        // 7. Begin movement phase
+        // 7. Clear combat log
+        var combatLog = FindObjectOfType<CombatLogUI>();
+        if (combatLog != null) combatLog.Clear();
+
+        // 8. Begin movement phase
         TransitionTo(GameState.MovementPhase);
         BeginPlayerMovement();
     }
@@ -214,6 +218,7 @@ public class GameManager : MonoBehaviour
     {
         int steps = player.State.SpeedDie.Roll();
         UIManager.Instance.ShowPhaseLabel($"YOUR MOVE ({steps} steps)");
+        Log($"Speed roll: {steps} tiles");
 
         currentReachableTiles = MovementManager.Instance.GetReachableTiles(
             player.State.GridPosition, steps);
@@ -273,6 +278,7 @@ public class GameManager : MonoBehaviour
 
         UIManager.Instance.ShowPhaseLabel("COMBAT!");
         UIManager.Instance.ShowCombatPanel();
+        Log($"Combat started with {enemy.State.BaseData.EnemyName}!");
 
         // Update HUD with enemy info
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
@@ -374,6 +380,17 @@ public class GameManager : MonoBehaviour
             var crapsUI = FindObjectOfType<CrapsUI>();
             if (crapsUI != null) crapsUI.ShowResult(crapsResult);
 
+            // Screen flash for craps
+            if (ScreenFlashUI.Instance != null)
+            {
+                if (crapsResult.Success)
+                    ScreenFlashUI.Instance.FlashCrapsSuccess();
+                else
+                    ScreenFlashUI.Instance.FlashCrapsFailure();
+            }
+
+            Log(crapsResult.Success ? "Craps bet WON!" : "Craps bet LOST!");
+
             EnergyManager.Instance.ResetPlayerEnergy();
             UIManager.Instance.UpdateEnergy(0f);
         }
@@ -385,6 +402,12 @@ public class GameManager : MonoBehaviour
         // Apply damage to enemy
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
+
+        // Visual feedback: floating damage number
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowDamage(damage, currentCombatEnemy.transform.position);
+
+        Log($"You dealt {damage} damage ({combo.Type})");
 
         // Track best combo
         if (damage > bestComboDamage)
@@ -478,7 +501,15 @@ public class GameManager : MonoBehaviour
         {
             EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
             UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+
+            // Visual feedback
+            if (ScreenFlashUI.Instance != null)
+                ScreenFlashUI.Instance.FlashDamage();
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowDamage(netDamage, player.transform.position);
         }
+
+        Log($"{currentCombatEnemy.State.BaseData.EnemyName} dealt {netDamage} damage (shield absorbed {shieldValue})");
 
         CombatUI.Instance.ShowEnemyAttackResult(rawDamage, shieldValue, netDamage);
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
@@ -532,12 +563,22 @@ public class GameManager : MonoBehaviour
     private void HandleEnemyDeath()
     {
         enemiesDefeated++;
+        string enemyName = currentCombatEnemy.State.BaseData.EnemyName;
         UIManager.Instance.ShowPhaseLabel("ENEMY DEFEATED!");
+        Log($"{enemyName} has been slain!");
 
         // Remove enemy from grid
         GridManager.Instance.ClearOccupant(currentCombatEnemy.State.GridPosition);
-        currentCombatEnemy.gameObject.SetActive(false);
 
+        // Play death animation, then proceed
+        currentCombatEnemy.PlayDeathAnimation(() =>
+        {
+            OnEnemyDeathAnimationComplete();
+        });
+    }
+
+    private void OnEnemyDeathAnimationComplete()
+    {
         if (enemiesDefeated == 1)
         {
             // Show reward
@@ -661,5 +702,11 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         action?.Invoke();
+    }
+
+    private void Log(string message)
+    {
+        var combatLog = FindObjectOfType<CombatLogUI>();
+        if (combatLog != null) combatLog.AddMessage(message);
     }
 }

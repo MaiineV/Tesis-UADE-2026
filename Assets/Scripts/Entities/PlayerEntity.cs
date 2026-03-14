@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class PlayerEntity : MonoBehaviour
@@ -5,20 +7,56 @@ public class PlayerEntity : MonoBehaviour
     public PlayerState State { get; private set; }
     public SpriteRenderer Visual;
 
+    [SerializeField] private float moveSpeed = 5f; // tiles per second (0.2s per tile)
+
+    public bool IsMoving { get; private set; }
+
     public void Initialize(CharacterData data, Vector2Int startPosition)
     {
         State = PlayerState.Create(data);
         State.GridPosition = startPosition;
 
-        // Placeholder visual: colored square
-        Visual.color = data.CharacterColor;
-        transform.position = GridManager.Instance.GridToWorld(startPosition); // TODO: Depends on US-03
+        if (Visual == null) Visual = GetComponent<SpriteRenderer>();
+        if (Visual != null) Visual.color = data.CharacterColor;
+        transform.position = GridManager.Instance.GridToWorld(startPosition);
     }
 
     public void MoveTo(Vector2Int newPosition)
     {
         State.GridPosition = newPosition;
-        // For prototype: instant teleport. Later: animate movement.
-        transform.position = GridManager.Instance.GridToWorld(newPosition); // TODO: Depends on US-03
+        transform.position = GridManager.Instance.GridToWorld(newPosition);
+    }
+
+    /// Animated move along a path. Calls onComplete when done.
+    public void MoveAlongPath(Vector2Int[] path, Action onComplete = null)
+    {
+        StartCoroutine(MoveAlongPathRoutine(path, onComplete));
+    }
+
+    private IEnumerator MoveAlongPathRoutine(Vector2Int[] path, Action onComplete)
+    {
+        IsMoving = true;
+
+        foreach (var tile in path)
+        {
+            Vector3 target = GridManager.Instance.GridToWorld(tile);
+            Vector3 start = transform.position;
+            float duration = 1f / moveSpeed;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                transform.position = Vector3.Lerp(start, target, t);
+                yield return null;
+            }
+
+            transform.position = target;
+            State.GridPosition = tile;
+        }
+
+        IsMoving = false;
+        onComplete?.Invoke();
     }
 }
