@@ -121,23 +121,23 @@ public class GameManager : MonoBehaviour
         UnsubscribeFromEvents();
         SubscribeToEvents();
 
-        // Bind CrapsUI
-        var crapsUI = FindObjectOfType<CrapsUI>();
+        // Bind CrapsUI (inactive by default — pass true to include inactive)
+        var crapsUI = FindObjectOfType<CrapsUI>(true);
         if (crapsUI != null)
             crapsUI.OnBetSelected += OnCrapsBetPlaced;
 
         // Bind RewardUI
-        var rewardUI = FindObjectOfType<RewardUI>();
+        var rewardUI = FindObjectOfType<RewardUI>(true);
         if (rewardUI != null)
             rewardUI.OnRewardChosen += OnRewardSelected;
 
         // Bind GameOverUI
-        var gameOverUI = FindObjectOfType<GameOverUI>();
+        var gameOverUI = FindObjectOfType<GameOverUI>(true);
         if (gameOverUI != null)
             gameOverUI.OnRestartClicked += RestartRun;
 
         // Bind VictoryUI
-        var victoryUI = FindObjectOfType<VictoryUI>();
+        var victoryUI = FindObjectOfType<VictoryUI>(true);
         if (victoryUI != null)
             victoryUI.OnRestartClicked += RestartRun;
 
@@ -394,7 +394,7 @@ public class GameManager : MonoBehaviour
             }
 
             // Show craps result
-            var crapsUI = FindObjectOfType<CrapsUI>();
+            var crapsUI = FindObjectOfType<CrapsUI>(true);
             if (crapsUI != null) crapsUI.ShowResult(crapsResult);
 
             // Screen flash for craps
@@ -539,7 +539,7 @@ public class GameManager : MonoBehaviour
         {
             TransitionTo(GameState.GameOver);
             UIManager.Instance.HideCombatPanel();
-            var gameOverUI = FindObjectOfType<GameOverUI>();
+            var gameOverUI = FindObjectOfType<GameOverUI>(true);
             if (gameOverUI != null)
                 gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
             UIManager.Instance.ShowGameOverOverlay();
@@ -598,27 +598,14 @@ public class GameManager : MonoBehaviour
 
     private void OnEnemyDeathAnimationComplete()
     {
-        if (enemiesDefeated == 1)
-        {
-            // Show reward
-            TransitionTo(GameState.RewardSelection);
-            var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-            UIManager.Instance.HideCombatPanel();
+        UIManager.Instance.HideCombatPanel();
 
-            var rewardUI = FindObjectOfType<RewardUI>();
-            if (rewardUI != null) rewardUI.ShowOffers(offers);
-            UIManager.Instance.ShowRewardOverlay();
-        }
-        else if (enemiesDefeated >= 2)
-        {
-            // Victory!
-            TransitionTo(GameState.Victory);
-            UIManager.Instance.HideCombatPanel();
-
-            var victoryUI = FindObjectOfType<VictoryUI>();
-            if (victoryUI != null) victoryUI.Show(GetRunStats());
-            UIManager.Instance.ShowVictoryOverlay();
-        }
+        // Always offer a reward after killing an enemy
+        TransitionTo(GameState.RewardSelection);
+        var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+        var rewardUI = FindObjectOfType<RewardUI>(true);
+        if (rewardUI != null) rewardUI.ShowOffers(offers);
+        UIManager.Instance.ShowRewardOverlay();
     }
 
     // Called by RewardUI when player picks a reward
@@ -632,9 +619,16 @@ public class GameManager : MonoBehaviour
         Log($"Upgrade applied: {offer.Upgrade.Description}");
 
         UIManager.Instance.HideRewardOverlay();
-        UIManager.Instance.HideCombatPanel();
 
-        // Back to movement phase
+        // Check if any enemies remain alive on the grid
+        bool enemiesRemain = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+        if (!enemiesRemain)
+        {
+            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED!");
+            Log("All enemies defeated! Move freely.");
+        }
+
+        // Always return to movement phase — fight remaining enemies or explore freely
         TransitionTo(GameState.MovementPhase);
         BeginPlayerMovement();
     }
