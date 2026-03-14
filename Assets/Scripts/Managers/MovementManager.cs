@@ -106,15 +106,15 @@ public class MovementManager : MonoBehaviour
     {
         GridManager.Instance.ClearOccupant(player.State.GridPosition);
 
-        foreach (var step in path)
+        for (int i = 0; i < path.Count; i++)
         {
+            var step = path[i];
             // Check for enemy at this tile
             var tile = GridManager.Instance.GetTile(step);
             if (tile.Occupant != null && tile.Occupant.TryGetComponent<EnemyEntity>(out var enemy))
             {
-                // Collision! Stop at tile before enemy
-                player.MoveTo(step);
-                GridManager.Instance.SetOccupant(step, player.gameObject);
+                // Stop at the tile BEFORE the enemy (stay in current position if first step)
+                GridManager.Instance.SetOccupant(player.State.GridPosition, player.gameObject);
                 OnCollisionWithEnemy?.Invoke(enemy);
                 return enemy;
             }

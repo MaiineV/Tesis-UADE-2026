@@ -701,6 +701,7 @@ public class GameManager : MonoBehaviour
     private PlayerEntity SpawnPlayer(CharacterData data, Vector2Int pos)
     {
         var go = Instantiate(playerPrefab, GridManager.Instance.GridToWorld(pos), Quaternion.identity);
+        go.SetActive(true);
         var entity = go.GetComponent<PlayerEntity>();
         entity.Initialize(data, pos);
         GridManager.Instance.SetOccupant(pos, go);
@@ -710,6 +711,7 @@ public class GameManager : MonoBehaviour
     private EnemyEntity SpawnEnemy(EnemyData data, Vector2Int pos)
     {
         var go = Instantiate(enemyPrefab, GridManager.Instance.GridToWorld(pos), Quaternion.identity);
+        go.SetActive(true);
         var entity = go.GetComponent<EnemyEntity>();
         entity.Initialize(data, pos);
         GridManager.Instance.SetOccupant(pos, go);

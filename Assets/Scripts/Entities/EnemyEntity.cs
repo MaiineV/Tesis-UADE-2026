@@ -15,8 +15,23 @@ public class EnemyEntity : MonoBehaviour
     {
         State = EnemyState.Create(data, position);
         if (Visual == null) Visual = GetComponent<SpriteRenderer>();
-        if (Visual != null) Visual.color = data.EnemyColor;
+        if (Visual != null)
+        {
+            if (Visual.sprite == null)
+                Visual.sprite = CreateSquareSprite();
+            Visual.color = data.EnemyColor;
+        }
         transform.position = GridManager.Instance.GridToWorld(position);
+    }
+
+    private static Sprite CreateSquareSprite()
+    {
+        var tex = new Texture2D(32, 32);
+        var pixels = new Color[32 * 32];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
+        tex.SetPixels(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
     }
 
     /// Roll attack. Returns final damage value.
