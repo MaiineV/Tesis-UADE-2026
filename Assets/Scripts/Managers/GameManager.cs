@@ -359,11 +359,13 @@ public class GameManager : MonoBehaviour
 
         currentAttack.ToggleLock(diceId);
 
+        // Only update the lock visual on the specific die — no full recreate
+        bool nowLocked = currentAttack.LockedDiceIds.Contains(diceId);
+        CombatUI.Instance.UpdateDieLock(diceId, nowLocked);
+
         // Recalculate combo preview
         int[] values = currentAttack.CurrentResults.Select(r => r.Value).ToArray();
         var preview = CombinationDetector.Evaluate(values, generalaScoredThisRun);
-
-        CombatUI.Instance.ShowAttackUI(currentAttack.CurrentResults, currentAttack.LockedDiceIds, player.State.Bag);
         CombatUI.Instance.UpdateComboPreview(preview);
     }
 
