@@ -476,6 +476,7 @@ public class GameManager : MonoBehaviour
             CombatUI.Instance.UpdateDefenseShield(shield);
             EnergyManager.Instance.ProcessCombatAction(CombatActionType.Defended);
             UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+            Log($"Shield: {shield} points");
 
             StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
         }
@@ -610,6 +611,7 @@ public class GameManager : MonoBehaviour
         // Apply upgrade
         var die = player.State.Bag.Dice.First(d => d.Id == offer.TargetDiceId);
         DiceUpgrader.ApplyUpgrade(die, offer.Upgrade);
+        Log($"Upgrade applied: {offer.Upgrade.Description}");
 
         UIManager.Instance.HideRewardOverlay();
         UIManager.Instance.HideCombatPanel();
@@ -704,9 +706,13 @@ public class GameManager : MonoBehaviour
         action?.Invoke();
     }
 
+    private CombatLogUI cachedCombatLog;
+
     private void Log(string message)
     {
-        var combatLog = FindObjectOfType<CombatLogUI>();
-        if (combatLog != null) combatLog.AddMessage(message);
+        if (cachedCombatLog == null)
+            cachedCombatLog = FindObjectOfType<CombatLogUI>();
+        if (cachedCombatLog != null)
+            cachedCombatLog.AddMessage(message);
     }
 }
