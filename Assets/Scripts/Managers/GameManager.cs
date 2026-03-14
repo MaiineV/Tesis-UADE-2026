@@ -372,8 +372,10 @@ public class GameManager : MonoBehaviour
             if (crapsResult.Success) crapsWins++;
             if (crapsResult.HPChange != 0)
             {
-                if (crapsResult.HPChange > 0) player.State.Heal(crapsResult.HPChange);
-                else player.State.TakeDamage(-crapsResult.HPChange);
+                if (crapsResult.HPChange > 0)
+                    player.State.Heal(crapsResult.HPChange);
+                else
+                    player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP + crapsResult.HPChange);
             }
 
             // Show craps result
