@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
     {
         MainMenu,
         RoomSetup,
+        InventorySetup,
+        MovementRoll,
         MovementPhase,
         PreCombat,
         CrapsBet,
@@ -91,13 +93,14 @@ public class GameManager : MonoBehaviour
 
     private void SubscribeToEvents()
     {
-        // CombatUI events
         if (CombatUI.Instance != null)
         {
             CombatUI.Instance.OnRerollClicked += OnPlayerRoll;
             CombatUI.Instance.OnDieLockToggled += OnDiceToggleLock;
             CombatUI.Instance.OnCommitClicked += OnPlayerCommitAttack;
-            CombatUI.Instance.OnRollDefenseClicked += OnPlayerDefenseRoll;
+            CombatUI.Instance.OnRollDefenseClicked += OnDefenseReroll;
+            CombatUI.Instance.OnDefenseDieLockToggled += OnDefenseDieLock;
+            CombatUI.Instance.OnDefenseCommitClicked += OnDefenseCommit;
             CombatUI.Instance.OnContinueClicked += OnContinueAfterEnemyAttack;
         }
     }
@@ -109,7 +112,9 @@ public class GameManager : MonoBehaviour
             CombatUI.Instance.OnRerollClicked -= OnPlayerRoll;
             CombatUI.Instance.OnDieLockToggled -= OnDiceToggleLock;
             CombatUI.Instance.OnCommitClicked -= OnPlayerCommitAttack;
-            CombatUI.Instance.OnRollDefenseClicked -= OnPlayerDefenseRoll;
+            CombatUI.Instance.OnRollDefenseClicked -= OnDefenseReroll;
+            CombatUI.Instance.OnDefenseDieLockToggled -= OnDefenseDieLock;
+            CombatUI.Instance.OnDefenseCommitClicked -= OnDefenseCommit;
             CombatUI.Instance.OnContinueClicked -= OnContinueAfterEnemyAttack;
         }
     }
@@ -120,6 +125,16 @@ public class GameManager : MonoBehaviour
         // Re-subscribe since UI singletons may have initialized after us
         UnsubscribeFromEvents();
         SubscribeToEvents();
+
+        // Bind InventoryBuilderUI
+        var inventoryBuilderUI = FindObjectOfType<InventoryBuilderUI>(true);
+        if (inventoryBuilderUI != null)
+            inventoryBuilderUI.OnInventoryConfirmed += OnInventoryConfirmed;
+
+        // Bind MovementRollUI
+        var movementRollUI = FindObjectOfType<MovementRollUI>(true);
+        if (movementRollUI != null)
+            movementRollUI.OnRollClicked += OnMovementRollClicked;
 
         // Bind CrapsUI (inactive by default — pass true to include inactive)
         var crapsUI = FindObjectOfType<CrapsUI>(true);
@@ -220,8 +235,23 @@ public class GameManager : MonoBehaviour
         var combatLog = FindObjectOfType<CombatLogUI>();
         if (combatLog != null) combatLog.Clear();
 
-        // 8. Begin movement phase
-        TransitionTo(GameState.MovementPhase);
+        // 8. Show inventory builder
+        TransitionTo(GameState.InventorySetup);
+        UIManager.Instance.ShowInventoryBuilder(player.State.FullInventory, player.State.CombatDiceSlots);
+    }
+
+    // ── INVENTORY ──
+
+    private void OnInventoryConfirmed(System.Collections.Generic.List<DiceInstance> selectedDice)
+    {
+        if (CurrentState != GameState.InventorySetup) return;
+
+        // Fill bag with selected dice
+        player.State.Bag = new DiceBag { MaxPower = player.State.BaseData.StartingPowerBudget };
+        foreach (var die in selectedDice)
+            player.State.Bag.Dice.Add(die); // bypass power check — selection already validated
+
+        Log($"Inventario listo: {selectedDice.Count} dados seleccionados");
         BeginPlayerMovement();
     }
 
@@ -229,15 +259,42 @@ public class GameManager : MonoBehaviour
 
     private void BeginPlayerMovement()
     {
+        bool enemiesAlive = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+
+        if (!enemiesAlive)
+        {
+            // No enemies — free movement, no dice roll required
+            TransitionTo(GameState.MovementPhase);
+            UIManager.Instance.ShowPhaseLabel("MOVIMIENTO LIBRE");
+            currentReachableTiles = MovementManager.Instance.GetReachableTiles(
+                player.State.GridPosition, 100);
+            GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
+            return;
+        }
+
+        TransitionTo(GameState.MovementRoll);
+        UIManager.Instance.ShowMovementRollPanel(
+            player.State.BaseData.SpeedMin,
+            player.State.BaseData.SpeedMax);
+    }
+
+    private void OnMovementRollClicked()
+    {
+        if (CurrentState != GameState.MovementRoll) return;
+
         int steps = player.State.SpeedDie.Roll();
-        UIManager.Instance.ShowPhaseLabel($"YOUR MOVE ({steps} steps)");
+        UIManager.Instance.ShowMovementRollResult(steps);
         Log($"Speed roll: {steps} tiles");
 
-        currentReachableTiles = MovementManager.Instance.GetReachableTiles(
-            player.State.GridPosition, steps);
-        GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
-
-        // Wait for player to click a tile (handled by Update)
+        StartCoroutine(DelayedAction(0.8f, () =>
+        {
+            UIManager.Instance.HideMovementRollPanel();
+            TransitionTo(GameState.MovementPhase);
+            UIManager.Instance.ShowPhaseLabel($"TU TURNO ({steps} pasos)");
+            currentReachableTiles = MovementManager.Instance.GetReachableTiles(
+                player.State.GridPosition, steps);
+            GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
+        }));
     }
 
     // Called by input system when player clicks a reachable tile
@@ -340,12 +397,8 @@ public class GameManager : MonoBehaviour
 
         var results = currentAttack.PerformRoll(player.State.Bag);
 
-        // Evaluate best combo for display
-        int[] values = results.Select(r => r.Value).ToArray();
-        var preview = CombinationDetector.Evaluate(values, generalaScoredThisRun);
-
         CombatUI.Instance.ShowAttackUI(results, currentAttack.LockedDiceIds, player.State.Bag);
-        CombatUI.Instance.UpdateComboPreview(preview);
+        CombatUI.Instance.ClearComboPreview();
         CombatUI.Instance.UpdateRollCounter(currentAttack.CurrentRoll, currentAttack.MaxRolls);
         CombatUI.Instance.SetRerollEnabled(currentAttack.CanRollAgain);
         CombatUI.Instance.SetCommitEnabled(true);
@@ -363,10 +416,20 @@ public class GameManager : MonoBehaviour
         bool nowLocked = currentAttack.LockedDiceIds.Contains(diceId);
         CombatUI.Instance.UpdateDieLock(diceId, nowLocked);
 
-        // Recalculate combo preview
-        int[] values = currentAttack.CurrentResults.Select(r => r.Value).ToArray();
-        var preview = CombinationDetector.Evaluate(values, generalaScoredThisRun);
-        CombatUI.Instance.UpdateComboPreview(preview);
+        // Show combo based on locked dice only
+        if (currentAttack.LockedDiceIds.Count == 0)
+        {
+            CombatUI.Instance.ClearComboPreview();
+        }
+        else
+        {
+            int[] lockedValues = currentAttack.CurrentResults
+                .Where(r => currentAttack.LockedDiceIds.Contains(r.DiceId))
+                .Select(r => r.Value)
+                .ToArray();
+            var preview = CombinationDetector.Evaluate(lockedValues, generalaScoredThisRun);
+            CombatUI.Instance.UpdateComboPreview(preview);
+        }
     }
 
     // Called by UI: "Commit Attack" button
@@ -458,7 +521,7 @@ public class GameManager : MonoBehaviour
     {
         currentDefense = new DefensePhase(rollsUsedForAttack);
 
-        if (currentDefense.AvailableRolls <= 0)
+        if (currentDefense.MaxRolls <= 0)
         {
             player.State.ShieldValue = 0;
             UIManager.Instance.UpdateShield(0);
@@ -467,37 +530,72 @@ public class GameManager : MonoBehaviour
         }
 
         TransitionTo(GameState.DefensePhase);
-        UIManager.Instance.ShowPhaseLabel("DEFENSE");
-        CombatUI.Instance.ShowDefenseUI(currentDefense.AvailableRolls);
+        UIManager.Instance.ShowPhaseLabel("DEFENSA");
+
+        // Auto-first roll
+        OnDefenseReroll();
     }
 
-    // Called by UI: "Roll Defense" button
-    public void OnPlayerDefenseRoll()
+    // Called by UI: reroll button (same as attack reroll mechanic)
+    public void OnDefenseReroll()
     {
         if (CurrentState != GameState.DefensePhase) return;
+        if (currentDefense.CurrentRoll > 0 && !currentDefense.CanRollAgain) return;
 
-        currentDefense.PerformDefenseRoll(player.State.Bag, generalaScoredThisRun);
+        var results = currentDefense.PerformRoll(player.State.Bag);
 
-        // Show defense roll results
-        var lastResult = currentDefense.DefenseResults.Last();
-        CombatUI.Instance.ShowDefenseRollResult(lastResult);
+        CombatUI.Instance.ShowDefenseDiceUI(results, currentDefense.LockedDiceIds, player.State.Bag);
+        CombatUI.Instance.ClearDefenseComboPreview();
+        CombatUI.Instance.UpdateDefenseRollCounter(currentDefense.CurrentRoll, currentDefense.MaxRolls);
+        CombatUI.Instance.SetDefenseRerollEnabled(currentDefense.CanRollAgain);
+        CombatUI.Instance.SetDefenseCommitEnabled(true);
+    }
 
-        int remaining = currentDefense.AvailableRolls - currentDefense.DefenseResults.Count;
-        CombatUI.Instance.UpdateDefenseRolls(remaining);
+    // Called by UI: lock/unlock a defense die
+    public void OnDefenseDieLock(string diceId)
+    {
+        if (CurrentState != GameState.DefensePhase) return;
+        if (!currentDefense.HasRolled) return;
 
-        if (currentDefense.DefenseResults.Count >= currentDefense.AvailableRolls)
+        currentDefense.ToggleLock(diceId);
+        bool nowLocked = currentDefense.LockedDiceIds.Contains(diceId);
+        CombatUI.Instance.UpdateDefenseDieLock(diceId, nowLocked);
+
+        // Show combo from locked dice only
+        if (currentDefense.LockedDiceIds.Count == 0)
         {
-            // All defense rolls done
-            int shield = currentDefense.CalculateShield();
-            player.State.ShieldValue = shield;
-            UIManager.Instance.UpdateShield(shield);
-            CombatUI.Instance.UpdateDefenseShield(shield);
-            EnergyManager.Instance.ProcessCombatAction(CombatActionType.Defended);
-            UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
-            Log($"Shield: {shield} points");
-
-            StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
+            CombatUI.Instance.ClearDefenseComboPreview();
         }
+        else
+        {
+            int[] lockedValues = currentDefense.CurrentResults
+                .Where(r => currentDefense.LockedDiceIds.Contains(r.DiceId))
+                .Select(r => r.Value)
+                .ToArray();
+            var preview = CombinationDetector.Evaluate(lockedValues, generalaScoredThisRun);
+            CombatUI.Instance.UpdateDefenseComboPreview(preview);
+        }
+    }
+
+    // Called by UI: commit defense button
+    public void OnDefenseCommit()
+    {
+        if (CurrentState != GameState.DefensePhase) return;
+        if (!currentDefense.HasRolled) return;
+
+        int shield = currentDefense.Commit(generalaScoredThisRun);
+        player.State.ShieldValue = shield;
+        UIManager.Instance.UpdateShield(shield);
+        CombatUI.Instance.UpdateDefenseShield(shield);
+
+        string comboName = currentDefense.FinalCombination.Type == CombinationType.HighDie
+            ? "None" : currentDefense.FinalCombination.Type.ToString();
+        Log($"Escudo: {shield} ({comboName})");
+
+        EnergyManager.Instance.ProcessCombatAction(CombatActionType.Defended);
+        UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+
+        StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
     }
 
     // ── ENEMY ATTACK ──

@@ -162,14 +162,14 @@ public class UIBuilder : MonoBehaviour
         var hlg = diceContainer.AddComponent<HorizontalLayoutGroup>();
         hlg.spacing = 10;
         hlg.childAlignment = TextAnchor.MiddleCenter;
-        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandWidth = true;
         hlg.childForceExpandHeight = false;
         hlg.childControlWidth = false;
         hlg.childControlHeight = false;
 
         // Combo preview text
         var comboPreview = CreateTMPText("ComboPreview", attackPanel.transform,
-            "Best combo: --", 18, TextAlignmentOptions.Left, TextColor);
+            "Combo: \u2014", 18, TextAlignmentOptions.Left, TextColor);
         var comboRT = comboPreview.GetComponent<RectTransform>();
         comboRT.anchorMin = new Vector2(0, 0);
         comboRT.anchorMax = new Vector2(0.5f, 0.4f);
@@ -210,30 +210,49 @@ public class UIBuilder : MonoBehaviour
         StretchFull(defensePanel.GetComponent<RectTransform>());
         defensePanel.SetActive(false);
 
+        // Defense Dice Container (mirrors attack diceContainer)
+        var defenseDiceContainer = new GameObject("DefenseDiceContainer");
+        defenseDiceContainer.transform.SetParent(defensePanel.transform, false);
+        var defenseDiceRT = defenseDiceContainer.AddComponent<RectTransform>();
+        defenseDiceRT.anchorMin = new Vector2(0, 0.42f);
+        defenseDiceRT.anchorMax = new Vector2(1, 1);
+        defenseDiceRT.offsetMin = new Vector2(20, 0);
+        defenseDiceRT.offsetMax = new Vector2(-20, -10);
+        var defenseHLG = defenseDiceContainer.AddComponent<HorizontalLayoutGroup>();
+        defenseHLG.spacing = 10;
+        defenseHLG.childAlignment = TextAnchor.MiddleCenter;
+        defenseHLG.childForceExpandWidth = true;
+        defenseHLG.childForceExpandHeight = false;
+        defenseHLG.childControlWidth = false;
+        defenseHLG.childControlHeight = false;
+
         var defenseTitle = CreateTMPText("DefenseTitle", defensePanel.transform,
-            "DEFENSE PHASE", 24, TextAlignmentOptions.Center, AccentGold);
-        var defenseTitleRT = defenseTitle.GetComponent<RectTransform>();
-        defenseTitleRT.anchorMin = new Vector2(0, 0.75f);
-        defenseTitleRT.anchorMax = new Vector2(1, 1);
-        defenseTitleRT.offsetMin = Vector2.zero;
-        defenseTitleRT.offsetMax = Vector2.zero;
+            "DEFENSA", 20, TextAlignmentOptions.Center, AccentGold);
+        SetRect(defenseTitle, 0, 0.31f, 1, 0.43f);
         defenseTitle.fontStyle = FontStyles.Bold;
 
-        var defenseRollsText = CreateTMPText("DefenseRolls", defensePanel.transform,
-            "", 18, TextAlignmentOptions.Center, TextColor);
-        SetRect(defenseRollsText, 0, 0.55f, 1, 0.75f);
-
-        var defenseResultText = CreateTMPText("DefenseResult", defensePanel.transform,
-            "", 18, TextAlignmentOptions.Center, TextColor);
-        SetRect(defenseResultText, 0, 0.35f, 1, 0.55f);
+        var defenseComboPreview = CreateTMPText("DefenseComboPreview", defensePanel.transform,
+            "Escudo: \u2014", 18, TextAlignmentOptions.Left, TextColor);
+        SetRect(defenseComboPreview, 0, 0.21f, 0.7f, 0.31f);
+        defenseComboPreview.GetComponent<RectTransform>().offsetMin = new Vector2(20, 0);
 
         var defenseShieldText = CreateTMPText("DefenseShield", defensePanel.transform,
-            "", 20, TextAlignmentOptions.Center, ShieldColor);
-        SetRect(defenseShieldText, 0, 0.15f, 1, 0.35f);
+            "", 18, TextAlignmentOptions.Right, ShieldColor);
+        SetRect(defenseShieldText, 0.5f, 0.21f, 1, 0.31f);
+        defenseShieldText.GetComponent<RectTransform>().offsetMax = new Vector2(-20, 0);
+
+        var defenseRollsText = CreateTMPText("DefenseRolls", defensePanel.transform,
+            "Roll 0/1", 16, TextAlignmentOptions.Left, TextColor);
+        SetRect(defenseRollsText, 0, 0.13f, 0.5f, 0.21f);
+        defenseRollsText.GetComponent<RectTransform>().offsetMin = new Vector2(20, 0);
 
         var rollDefenseButton = CreateButton("RollDefenseButton", defensePanel.transform,
-            "ROLL DEFENSE", ShieldColor);
-        SetRect(rollDefenseButton, 0.3f, 0.02f, 0.7f, 0.18f);
+            "REROLL", ShieldColor);
+        SetRect(rollDefenseButton, 0.02f, 0.02f, 0.47f, 0.14f);
+
+        var commitDefenseButton = CreateButton("CommitDefenseButton", defensePanel.transform,
+            "CONFIRMAR DEFENSA", AccentGold);
+        SetRect(commitDefenseButton, 0.51f, 0.02f, 0.98f, 0.14f);
 
         // -- Enemy Attack Panel --
         var enemyAttackPanel = CreatePanel("EnemyAttackPanel", combatPanel.transform,
@@ -280,7 +299,7 @@ public class UIBuilder : MonoBehaviour
             defensePanel,
             defenseTitle,
             defenseRollsText,
-            defenseResultText,
+            defenseComboPreview,
             defenseShieldText,
             rollDefenseButton.GetComponent<Button>(),
             enemyAttackPanel,
@@ -289,6 +308,10 @@ public class UIBuilder : MonoBehaviour
             shieldAbsorbText,
             netDamageText,
             continueButton.GetComponent<Button>()
+        );
+        combatUI.InitializeDefense(
+            defenseDiceContainer.transform,
+            commitDefenseButton.GetComponent<Button>()
         );
 
         // Now hide combat panel (after CombatUI.Awake has set Instance)
@@ -521,6 +544,78 @@ public class UIBuilder : MonoBehaviour
         var combatLogUI = combatLogGO.AddComponent<CombatLogUI>();
         combatLogUI.Initialize(logText, scrollRect);
 
+        // ── Inventory Builder Overlay ──
+        var inventoryOverlay = CreateOverlayPanel("InventoryBuilderOverlay", canvasTransform);
+
+        var invTitle = CreateTMPText("InvTitle", inventoryOverlay.transform,
+            "SELECCIONA TU INVENTARIO DE COMBATE", 26, TextAlignmentOptions.Center, AccentGold);
+        SetRect(invTitle, 0.05f, 0.86f, 0.95f, 0.97f);
+        invTitle.fontStyle = FontStyles.Bold;
+
+        var invCounter = CreateTMPText("InvCounter", inventoryOverlay.transform,
+            "0/5 dados seleccionados", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(invCounter, 0.05f, 0.78f, 0.95f, 0.88f);
+
+        var invCardContainer = new GameObject("InvCardContainer");
+        invCardContainer.transform.SetParent(inventoryOverlay.transform, false);
+        var invCardContainerRT = invCardContainer.AddComponent<RectTransform>();
+        invCardContainerRT.anchorMin = new Vector2(0.05f, 0.22f);
+        invCardContainerRT.anchorMax = new Vector2(0.95f, 0.78f);
+        invCardContainerRT.offsetMin = Vector2.zero;
+        invCardContainerRT.offsetMax = Vector2.zero;
+        var invHLG = invCardContainer.AddComponent<HorizontalLayoutGroup>();
+        invHLG.spacing = 14;
+        invHLG.childAlignment = TextAnchor.MiddleCenter;
+        invHLG.childForceExpandWidth = false;
+        invHLG.childForceExpandHeight = false;
+        invHLG.childControlWidth = false;
+        invHLG.childControlHeight = false;
+
+        var invConfirmButton = CreateButton("InvConfirmButton", inventoryOverlay.transform,
+            "CONFIRMAR INVENTARIO", AccentGold);
+        SetRect(invConfirmButton, 0.25f, 0.07f, 0.75f, 0.18f);
+
+        var invCardPrefab = CreateInventoryCardPrefab();
+
+        var inventoryBuilderUI = inventoryOverlay.AddComponent<InventoryBuilderUI>();
+        inventoryBuilderUI.Initialize(
+            invCounter,
+            invCardContainer.transform,
+            invConfirmButton.GetComponent<Button>(),
+            invCardPrefab
+        );
+        inventoryOverlay.SetActive(false);
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetInventoryBuilderUI(inventoryBuilderUI);
+
+        // ── Movement Roll Panel ──
+        var movementRollPanel = CreatePanel("MovementRollPanel", canvasTransform,
+            new Vector2(0.3f, 0.35f), new Vector2(0.7f, 0.65f),
+            Vector2.zero, Vector2.zero, 0);
+
+        var movementRollInfo = CreateTMPText("MovementRollInfo", movementRollPanel.transform,
+            "Tirar dado de movimiento", 20, TextAlignmentOptions.Center, TextColor);
+        SetRect(movementRollInfo, 0.05f, 0.58f, 0.95f, 0.95f);
+        movementRollInfo.enableWordWrapping = true;
+
+        var movementRollResult = CreateTMPText("MovementRollResult", movementRollPanel.transform,
+            "", 32, TextAlignmentOptions.Center, AccentGold);
+        SetRect(movementRollResult, 0.05f, 0.32f, 0.95f, 0.58f);
+        movementRollResult.fontStyle = FontStyles.Bold;
+
+        var movementRollButton = CreateButton("MovementRollButton", movementRollPanel.transform,
+            "TIRAR DADO", D6Color);
+        SetRect(movementRollButton, 0.15f, 0.06f, 0.85f, 0.30f);
+
+        var movementRollUI = movementRollPanel.AddComponent<MovementRollUI>();
+        movementRollUI.Initialize(
+            movementRollInfo,
+            movementRollResult,
+            movementRollButton.GetComponent<Button>()
+        );
+        movementRollPanel.SetActive(false);
+
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
         if (uiManager != null)
@@ -534,12 +629,71 @@ public class UIBuilder : MonoBehaviour
                 crapsOverlay,
                 rewardOverlay,
                 gameOverOverlay,
-                victoryOverlay
+                victoryOverlay,
+                movementRollUI
             );
         }
     }
 
     // ── Factory Helpers ──
+
+    private GameObject CreateInventoryCardPrefab()
+    {
+        var prefab = new GameObject("InventoryCardPrefab");
+        prefab.SetActive(false);
+
+        var rt = prefab.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(100, 120);
+
+        var bg = prefab.AddComponent<Image>();
+        bg.color = D6Color;
+
+        // Selected border (gold, hidden by default)
+        var borderGO = CreateChildImage("SelectBorder", prefab.transform, AccentGold);
+        var borderRT = borderGO.GetComponent<RectTransform>();
+        StretchFull(borderRT);
+        borderRT.offsetMin = new Vector2(-4, -4);
+        borderRT.offsetMax = new Vector2(4, 4);
+        var borderImg = borderGO.GetComponent<Image>();
+        borderImg.fillCenter = false;
+        borderGO.SetActive(false);
+
+        var btn = prefab.AddComponent<Button>();
+        var btnColors = btn.colors;
+        btnColors.normalColor = Color.white;
+        btnColors.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+        btnColors.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        btn.colors = btnColors;
+
+        // Die name (large, centered top)
+        var nameText = CreateTMPText("DieNameText", prefab.transform, "d6", 30,
+            TextAlignmentOptions.Center, Color.white);
+        var nameRT = nameText.GetComponent<RectTransform>();
+        nameRT.anchorMin = new Vector2(0, 0.45f);
+        nameRT.anchorMax = new Vector2(1, 0.95f);
+        nameRT.offsetMin = Vector2.zero;
+        nameRT.offsetMax = Vector2.zero;
+        nameText.fontStyle = FontStyles.Bold;
+
+        // Range (small, bottom)
+        var rangeText = CreateTMPText("RangeText", prefab.transform, "1\u20136", 14,
+            TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.85f));
+        var rangeRT = rangeText.GetComponent<RectTransform>();
+        rangeRT.anchorMin = new Vector2(0, 0.08f);
+        rangeRT.anchorMax = new Vector2(1, 0.45f);
+        rangeRT.offsetMin = Vector2.zero;
+        rangeRT.offsetMax = Vector2.zero;
+
+        prefab.AddComponent<InventoryDieCardUI>();
+        // refs wired in Awake() per-instance — no Initialize needed
+
+        var layout = prefab.AddComponent<LayoutElement>();
+        layout.minWidth = 100;
+        layout.minHeight = 120;
+
+        DontDestroyOnLoad(prefab);
+        return prefab;
+    }
 
     private GameObject CreateDiceSlotPrefab()
     {
@@ -551,6 +705,18 @@ public class UIBuilder : MonoBehaviour
 
         var bg = prefab.AddComponent<Image>();
         bg.color = D6Color;
+        
+        // Lock border (hidden by default)
+        var lockBorderGO = CreateChildImage("LockBorder", prefab.transform, AccentGold);
+        var lockBorderRT = lockBorderGO.GetComponent<RectTransform>();
+        StretchFull(lockBorderRT);
+        lockBorderRT.offsetMin = new Vector2(-3, -3);
+        lockBorderRT.offsetMax = new Vector2(3, 3);
+        var lockBorderImage = lockBorderGO.GetComponent<Image>();
+        lockBorderImage.type = Image.Type.Sliced;
+        // Make it look like a border by clearing the center
+        lockBorderImage.fillCenter = false;
+        lockBorderGO.SetActive(false);
 
         // Value text (large, centered)
         var valueText = CreateTMPText("ValueText", prefab.transform, "0", 32,
@@ -567,21 +733,13 @@ public class UIBuilder : MonoBehaviour
         typeLabelRT.offsetMin = Vector2.zero;
         typeLabelRT.offsetMax = Vector2.zero;
 
-        // Lock border (hidden by default)
-        var lockBorderGO = CreateChildImage("LockBorder", prefab.transform, AccentGold);
-        var lockBorderRT = lockBorderGO.GetComponent<RectTransform>();
-        StretchFull(lockBorderRT);
-        lockBorderRT.offsetMin = new Vector2(-3, -3);
-        lockBorderRT.offsetMax = new Vector2(3, 3);
-        var lockBorderImage = lockBorderGO.GetComponent<Image>();
-        lockBorderImage.type = Image.Type.Sliced;
-        // Make it look like a border by clearing the center
-        lockBorderImage.fillCenter = false;
-        lockBorderGO.SetActive(false);
-
         // Add DieSlotUI component
         var dieSlot = prefab.AddComponent<DieSlotUI>();
         dieSlot.Initialize(valueText, typeLabel, bg, lockBorderImage);
+
+        var layoutElement = prefab.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 80;
+        layoutElement.minWidth = 80;
 
         // Keep it out of the scene hierarchy
         DontDestroyOnLoad(prefab);

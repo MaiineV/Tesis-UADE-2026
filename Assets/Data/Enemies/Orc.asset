@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Orc
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   EnemyName: Orc
-  Sprite: {fileID: 0}
+  Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   EnemyColor: {r: 0.9372549, g: 0.3254902, b: 0.3137255, a: 1}
   MaxHP: 60
   AttackDiceCount: 2

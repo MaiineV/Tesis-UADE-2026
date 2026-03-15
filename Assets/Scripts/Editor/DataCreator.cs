@@ -42,13 +42,17 @@ public static class DataCreator
 
     static void CreateDie(string name, int faces, int[] defaultFaces, int powerCost, Color color)
     {
+        string path = $"Assets/Data/Dice/{name}.asset";
+        if (AssetDatabase.LoadAssetAtPath<DiceData>(path) != null)
+            AssetDatabase.DeleteAsset(path);
+
         var die = ScriptableObject.CreateInstance<DiceData>();
         die.DiceName = name;
         die.NumberOfFaces = faces;
         die.DefaultFaces = defaultFaces;
         die.PowerCost = powerCost;
         die.DiceColor = color;
-        AssetDatabase.CreateAsset(die, $"Assets/Data/Dice/{name}.asset");
+        AssetDatabase.CreateAsset(die, path);
     }
 
     static void CreateCharacters()
@@ -72,12 +76,16 @@ public static class DataCreator
             new DiceLoadout { DiceType = d6, Quantity = 4 },
             new DiceLoadout { DiceType = d8, Quantity = 2 }
         };
+        warrior.CombatDiceSlots = 5;
 
         warrior.AffinityCombo = CombinationType.FourOfAKind;
         warrior.AffinityDamageBonus = 1.25f;
         warrior.UnlockedByDefault = true;
 
-        AssetDatabase.CreateAsset(warrior, "Assets/Data/Characters/Warrior.asset");
+        string warriorPath = "Assets/Data/Characters/Warrior.asset";
+        if (AssetDatabase.LoadAssetAtPath<CharacterData>(warriorPath) != null)
+            AssetDatabase.DeleteAsset(warriorPath);
+        AssetDatabase.CreateAsset(warrior, warriorPath);
     }
 
     static void CreateEnemies()
@@ -102,7 +110,10 @@ public static class DataCreator
         enemy.MaxEnergy = maxEnergy;
         enemy.EnergyPerRound = energyPerRound;
         enemy.Behavior = behavior;
-        AssetDatabase.CreateAsset(enemy, $"Assets/Data/Enemies/{name}.asset");
+        string enemyPath = $"Assets/Data/Enemies/{name}.asset";
+        if (AssetDatabase.LoadAssetAtPath<EnemyData>(enemyPath) != null)
+            AssetDatabase.DeleteAsset(enemyPath);
+        AssetDatabase.CreateAsset(enemy, enemyPath);
     }
 
     static Color HexColor(string hex)

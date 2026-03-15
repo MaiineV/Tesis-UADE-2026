@@ -28,10 +28,12 @@ public class CombatUI : MonoBehaviour
     [Header("Defense")]
     [SerializeField] private GameObject defensePanel;
     [SerializeField] private TMP_Text defenseTitle;
-    [SerializeField] private TMP_Text defenseRollsText;
-    [SerializeField] private TMP_Text defenseResultText;
+    [SerializeField] private TMP_Text defenseRollCounterText;
+    [SerializeField] private TMP_Text defenseComboPreviewText;
     [SerializeField] private TMP_Text defenseShieldText;
     [SerializeField] private Button rollDefenseButton;
+    [SerializeField] private Button commitDefenseButton;
+    [SerializeField] private Transform defenseDiceContainer;
 
     [Header("Enemy Attack")]
     [SerializeField] private GameObject enemyAttackPanel;
@@ -41,14 +43,26 @@ public class CombatUI : MonoBehaviour
     [SerializeField] private TMP_Text netDamageText;
     [SerializeField] private Button continueButton;
 
+    // Attack state
     private DieSlotUI[] dieSlots;
     private RollResult[] currentResults;
     private DiceBag currentBag;
 
+    // Defense state
+    private DieSlotUI[] defenseSlots;
+    private RollResult[] defenseResults;
+
+    // Attack events
     public event Action<string> OnDieLockToggled;
     public event Action OnRerollClicked;
     public event Action OnCommitClicked;
+
+    // Defense events
+    public event Action<string> OnDefenseDieLockToggled;
     public event Action OnRollDefenseClicked;
+    public event Action OnDefenseCommitClicked;
+
+    // Enemy attack event
     public event Action OnContinueClicked;
 
     void Awake()
@@ -63,7 +77,7 @@ public class CombatUI : MonoBehaviour
         Button rerollRef, Button commitRef,
         GameObject attackPanelRef,
         GameObject defensePanelRef, TMP_Text defenseTitleRef,
-        TMP_Text defenseRollsRef, TMP_Text defenseResultRef,
+        TMP_Text defenseRollCounterRef, TMP_Text defenseComboPreviewRef,
         TMP_Text defenseShieldRef, Button rollDefenseRef,
         GameObject enemyAttackPanelRef, TMP_Text enemyAttackTitleRef,
         TMP_Text enemyRollRef, TMP_Text shieldAbsorbRef,
@@ -78,8 +92,8 @@ public class CombatUI : MonoBehaviour
         attackPanel = attackPanelRef;
         defensePanel = defensePanelRef;
         defenseTitle = defenseTitleRef;
-        defenseRollsText = defenseRollsRef;
-        defenseResultText = defenseResultRef;
+        defenseRollCounterText = defenseRollCounterRef;
+        defenseComboPreviewText = defenseComboPreviewRef;
         defenseShieldText = defenseShieldRef;
         rollDefenseButton = rollDefenseRef;
         enemyAttackPanel = enemyAttackPanelRef;
@@ -89,6 +103,17 @@ public class CombatUI : MonoBehaviour
         netDamageText = netDamageRef;
         continueButton = continueRef;
         WireButtons();
+    }
+
+    public void InitializeDefense(Transform defenseDiceContainerRef, Button commitDefenseRef)
+    {
+        defenseDiceContainer = defenseDiceContainerRef;
+        commitDefenseButton = commitDefenseRef;
+        if (commitDefenseButton != null)
+        {
+            commitDefenseButton.onClick.RemoveAllListeners();
+            commitDefenseButton.onClick.AddListener(() => OnDefenseCommitClicked?.Invoke());
+        }
     }
 
     private void WireButtons()
@@ -125,59 +150,28 @@ public class CombatUI : MonoBehaviour
 
         currentResults = results;
         currentBag = bag;
-        ClearDiceSlots();
-
-        dieSlots = new DieSlotUI[results.Length];
-        for (int i = 0; i < results.Length; i++)
-        {
-            if (dicePrefab == null || diceContainer == null) continue;
-
-            var go = Instantiate(dicePrefab, diceContainer);
-            go.SetActive(true);
-            var slot = go.GetComponent<DieSlotUI>();
-            if (slot == null) slot = go.AddComponent<DieSlotUI>();
-
-            bool isLocked = locked != null && locked.Contains(results[i].DiceId);
-            string diceId = results[i].DiceId;
-
-            // Look up DiceData from bag for correct coloring
-            DiceData diceData = null;
-            if (bag != null)
-            {
-                var diceInstance = bag.Dice.Find(d => d.Id == diceId);
-                if (diceInstance != null) diceData = diceInstance.BaseData;
-            }
-
-            slot.Setup(results[i].Value, diceData, isLocked);
-            slot.OnClicked += () => OnDieClicked(diceId);
-
-            dieSlots[i] = slot;
-        }
+        ClearDiceSlots(diceContainer, ref dieSlots);
+        dieSlots = BuildDiceSlots(results, locked, bag, diceContainer, OnDieClicked);
     }
 
-    public void OnDieClicked(string diceId)
-    {
-        OnDieLockToggled?.Invoke(diceId);
-    }
+    public void OnDieClicked(string diceId) => OnDieLockToggled?.Invoke(diceId);
 
     public void UpdateDieLock(string diceId, bool isLocked)
-    {
-        if (dieSlots == null || currentResults == null) return;
-
-        for (int i = 0; i < currentResults.Length; i++)
-        {
-            if (currentResults[i].DiceId == diceId && dieSlots[i] != null)
-            {
-                dieSlots[i].SetLocked(isLocked);
-                break;
-            }
-        }
-    }
+        => UpdateSlotLock(diceId, isLocked, currentResults, dieSlots);
 
     public void UpdateComboPreview(CombinationResult combo)
     {
+        if (comboPreviewText == null) return;
+        if (combo.Type == CombinationType.HighDie)
+            comboPreviewText.text = "Combo: None";
+        else
+            comboPreviewText.text = $"Combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} dmg";
+    }
+
+    public void ClearComboPreview()
+    {
         if (comboPreviewText != null)
-            comboPreviewText.text = $"Best combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} dmg";
+            comboPreviewText.text = "Combo: \u2014";
     }
 
     public void UpdateRollCounter(int current, int max)
@@ -188,59 +182,69 @@ public class CombatUI : MonoBehaviour
 
     public void SetRerollEnabled(bool enabled)
     {
-        if (rerollButton != null)
-            rerollButton.interactable = enabled;
+        if (rerollButton != null) rerollButton.interactable = enabled;
     }
 
     public void SetCommitEnabled(bool enabled)
     {
-        if (commitButton != null)
-            commitButton.interactable = enabled;
+        if (commitButton != null) commitButton.interactable = enabled;
     }
 
     // ── Defense UI ─────────────────────────────────────────────
 
-    public void ShowDefenseUI(int availableRolls)
+    public void ShowDefenseDiceUI(RollResult[] results, HashSet<string> locked, DiceBag bag = null)
     {
         SetPanel(attackPanel, false);
         SetPanel(defensePanel, true);
         SetPanel(enemyAttackPanel, false);
 
-        if (defenseTitle != null)
-            defenseTitle.text = $"DEFENSE PHASE ({availableRolls} rolls left)";
-
-        if (defenseRollsText != null)
-            defenseRollsText.text = $"{availableRolls} rolls available";
-
-        if (defenseResultText != null) defenseResultText.text = "";
-        if (defenseShieldText != null) defenseShieldText.text = "";
-
-        if (rollDefenseButton != null)
-            rollDefenseButton.interactable = availableRolls > 0;
+        defenseResults = results;
+        ClearDiceSlots(defenseDiceContainer, ref defenseSlots);
+        defenseSlots = BuildDiceSlots(results, locked, bag, defenseDiceContainer, OnDefenseDieClicked);
     }
 
-    public void ShowDefenseRollResult(CombinationResult combo)
+    public void OnDefenseDieClicked(string diceId) => OnDefenseDieLockToggled?.Invoke(diceId);
+
+    public void UpdateDefenseDieLock(string diceId, bool isLocked)
+        => UpdateSlotLock(diceId, isLocked, defenseResults, defenseSlots);
+
+    public void UpdateDefenseComboPreview(CombinationResult combo)
     {
-        if (defenseResultText != null)
-            defenseResultText.text = $"Shield combo: {FormatComboName(combo.Type)}";
+        if (defenseComboPreviewText == null) return;
+        if (combo.Type == CombinationType.HighDie)
+            defenseComboPreviewText.text = "Escudo: None";
+        else
+            defenseComboPreviewText.text = $"Escudo: {FormatComboName(combo.Type)}";
     }
 
-    public void UpdateDefenseRolls(int remaining)
+    public void ClearDefenseComboPreview()
+    {
+        if (defenseComboPreviewText != null)
+            defenseComboPreviewText.text = "Escudo: \u2014";
+    }
+
+    public void UpdateDefenseRollCounter(int current, int max)
     {
         if (defenseTitle != null)
-            defenseTitle.text = $"DEFENSE PHASE ({remaining} rolls left)";
+            defenseTitle.text = $"DEFENSA — Roll {current}/{max}";
+        if (defenseRollCounterText != null)
+            defenseRollCounterText.text = $"Roll {current}/{max}";
+    }
 
-        if (defenseRollsText != null)
-            defenseRollsText.text = $"{remaining} rolls remaining";
+    public void SetDefenseRerollEnabled(bool enabled)
+    {
+        if (rollDefenseButton != null) rollDefenseButton.interactable = enabled;
+    }
 
-        if (rollDefenseButton != null)
-            rollDefenseButton.interactable = remaining > 0;
+    public void SetDefenseCommitEnabled(bool enabled)
+    {
+        if (commitDefenseButton != null) commitDefenseButton.interactable = enabled;
     }
 
     public void UpdateDefenseShield(int shieldValue)
     {
         if (defenseShieldText != null)
-            defenseShieldText.text = $"{shieldValue} shield";
+            defenseShieldText.text = shieldValue > 0 ? $"Escudo: {shieldValue}" : "";
     }
 
     // ── Enemy Attack UI ────────────────────────────────────────
@@ -251,19 +255,11 @@ public class CombatUI : MonoBehaviour
         SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, true);
 
-        if (enemyAttackTitle != null)
-            enemyAttackTitle.text = "ENEMY ATTACKS!";
-
-        if (enemyRollText != null)
-            enemyRollText.text = $"Enemy rolls: {rawDamage} damage";
-
-        if (shieldAbsorbText != null)
-            shieldAbsorbText.text = $"Your shield absorbs: {shield}";
-
+        if (enemyAttackTitle != null) enemyAttackTitle.text = "ENEMY ATTACKS!";
+        if (enemyRollText != null) enemyRollText.text = $"Enemy rolls: {rawDamage} damage";
+        if (shieldAbsorbText != null) shieldAbsorbText.text = $"Your shield absorbs: {shield}";
         if (netDamageText != null)
-            netDamageText.text = netDamage > 0
-                ? $"You take: {netDamage} damage"
-                : "Fully blocked!";
+            netDamageText.text = netDamage > 0 ? $"You take: {netDamage} damage" : "Fully blocked!";
     }
 
     public void HideCombatUI()
@@ -273,14 +269,58 @@ public class CombatUI : MonoBehaviour
         SetPanel(enemyAttackPanel, false);
     }
 
-    // ── Helpers ────────────────────────────────────────────────
+    // ── Shared Helpers ─────────────────────────────────────────
 
-    private void ClearDiceSlots()
+    private DieSlotUI[] BuildDiceSlots(RollResult[] results, HashSet<string> locked,
+        DiceBag bag, Transform container, Action<string> clickCallback)
     {
-        if (diceContainer == null) return;
-        for (int i = diceContainer.childCount - 1; i >= 0; i--)
-            Destroy(diceContainer.GetChild(i).gameObject);
-        dieSlots = null;
+        if (results == null || container == null || dicePrefab == null)
+            return new DieSlotUI[0];
+
+        var slots = new DieSlotUI[results.Length];
+        for (int i = 0; i < results.Length; i++)
+        {
+            var go = Instantiate(dicePrefab, container);
+            go.SetActive(true);
+            var slot = go.GetComponent<DieSlotUI>();
+            if (slot == null) slot = go.AddComponent<DieSlotUI>();
+
+            bool isLocked = locked != null && locked.Contains(results[i].DiceId);
+            string diceId = results[i].DiceId;
+
+            DiceData diceData = null;
+            if (bag != null)
+            {
+                var inst = bag.Dice.Find(d => d.Id == diceId);
+                if (inst != null) diceData = inst.BaseData;
+            }
+
+            slot.Setup(results[i].Value, diceData, isLocked);
+            slot.OnClicked += () => clickCallback?.Invoke(diceId);
+            slots[i] = slot;
+        }
+        return slots;
+    }
+
+    private void UpdateSlotLock(string diceId, bool isLocked, RollResult[] results, DieSlotUI[] slots)
+    {
+        if (slots == null || results == null) return;
+        for (int i = 0; i < results.Length; i++)
+        {
+            if (results[i].DiceId == diceId && slots[i] != null)
+            {
+                slots[i].SetLocked(isLocked);
+                break;
+            }
+        }
+    }
+
+    private void ClearDiceSlots(Transform container, ref DieSlotUI[] slots)
+    {
+        if (container == null) return;
+        for (int i = container.childCount - 1; i >= 0; i--)
+            Destroy(container.GetChild(i).gameObject);
+        slots = null;
     }
 
     private void SetPanel(GameObject panel, bool active)
@@ -292,16 +332,16 @@ public class CombatUI : MonoBehaviour
     {
         switch (type)
         {
-            case CombinationType.HighDie: return "High Die";
-            case CombinationType.Pair: return "Pair";
-            case CombinationType.TwoPair: return "Two Pair";
-            case CombinationType.ThreeOfAKind: return "Three of a Kind";
-            case CombinationType.Straight: return "Straight";
-            case CombinationType.FullHouse: return "Full House";
-            case CombinationType.FourOfAKind: return "Four of a Kind";
-            case CombinationType.Generala: return "GENERALA!";
+            case CombinationType.HighDie:        return "High Die";
+            case CombinationType.Pair:           return "Pair";
+            case CombinationType.TwoPair:        return "Two Pair";
+            case CombinationType.ThreeOfAKind:   return "Three of a Kind";
+            case CombinationType.Straight:       return "Straight";
+            case CombinationType.FullHouse:      return "Full House";
+            case CombinationType.FourOfAKind:    return "Four of a Kind";
+            case CombinationType.Generala:       return "GENERALA!";
             case CombinationType.DoubleGenerala: return "DOUBLE GENERALA!!";
-            default: return type.ToString();
+            default:                             return type.ToString();
         }
     }
 }

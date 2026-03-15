@@ -21,6 +21,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject rewardOverlay;
     [SerializeField] private GameObject gameOverOverlay;
     [SerializeField] private GameObject victoryOverlay;
+    [SerializeField] private MovementRollUI movementRollUI;
+    [SerializeField] private InventoryBuilderUI inventoryBuilderUI;
 
     private Coroutine phaseLabelCoroutine;
 
@@ -31,7 +33,8 @@ public class UIManager : MonoBehaviour
 
     public void Initialize(HealthBarUI healthBarRef, EnergyBarUI energyBarRef, ShieldDisplay shieldRef,
         TMP_Text phaseLabelRef, GameObject combatPanelRef, GameObject crapsOverlayRef,
-        GameObject rewardOverlayRef, GameObject gameOverOverlayRef, GameObject victoryOverlayRef)
+        GameObject rewardOverlayRef, GameObject gameOverOverlayRef, GameObject victoryOverlayRef,
+        MovementRollUI movementRollRef = null)
     {
         healthBar = healthBarRef;
         energyBar = energyBarRef;
@@ -42,6 +45,12 @@ public class UIManager : MonoBehaviour
         rewardOverlay = rewardOverlayRef;
         gameOverOverlay = gameOverOverlayRef;
         victoryOverlay = victoryOverlayRef;
+        movementRollUI = movementRollRef;
+    }
+
+    public void SetInventoryBuilderUI(InventoryBuilderUI invBuilderRef)
+    {
+        inventoryBuilderUI = invBuilderRef;
     }
 
     // --- HUD forwarding ---
@@ -99,6 +108,14 @@ public class UIManager : MonoBehaviour
     public void ShowVictoryOverlay() => SetPanel(victoryOverlay, true);
     public void HideVictoryOverlay() => SetPanel(victoryOverlay, false);
 
+    public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, int slots)
+        => inventoryBuilderUI?.Show(inventory, slots);
+    public void HideInventoryBuilder() => inventoryBuilderUI?.Hide();
+
+    public void ShowMovementRollPanel(int min, int max) => movementRollUI?.Show(min, max);
+    public void ShowMovementRollResult(int steps) => movementRollUI?.ShowResult(steps);
+    public void HideMovementRollPanel() => movementRollUI?.Hide();
+
     public void HideAllPanels()
     {
         HideCombatPanel();
@@ -106,6 +123,8 @@ public class UIManager : MonoBehaviour
         HideRewardOverlay();
         HideGameOverOverlay();
         HideVictoryOverlay();
+        HideMovementRollPanel();
+        HideInventoryBuilder();
     }
 
     private void SetPanel(GameObject panel, bool active)

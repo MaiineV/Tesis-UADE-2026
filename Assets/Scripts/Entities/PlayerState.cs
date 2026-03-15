@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerState
@@ -10,7 +11,9 @@ public class PlayerState
     public int MaxHP;
 
     // Dice
-    public DiceBag Bag;       // TODO: Depends on US-02
+    public List<DiceInstance> FullInventory; // all dice the player owns
+    public int CombatDiceSlots;              // how many dice to select for combat
+    public DiceBag Bag;       // selected combat dice (subset of FullInventory)
     public SpeedDie SpeedDie; // TODO: Depends on US-02
 
     // Energy
@@ -35,16 +38,20 @@ public class PlayerState
         state.ShieldValue = 0;
         state.CrapsModeAvailable = false;
 
-        // Build starting dice bag
-        state.Bag = new DiceBag { MaxPower = data.StartingPowerBudget };
+        // Build full inventory from starting dice
+        state.FullInventory = new List<DiceInstance>();
         foreach (var loadout in data.StartingDice)
         {
             for (int i = 0; i < loadout.Quantity; i++)
-            {
-                var instance = DiceInstance.Create(loadout.DiceType);
-                state.Bag.TryAdd(instance);
-            }
+                state.FullInventory.Add(DiceInstance.Create(loadout.DiceType));
         }
+        // CombatDiceSlots defined in CharacterData; fallback to full inventory count
+        state.CombatDiceSlots = data.CombatDiceSlots > 0
+            ? data.CombatDiceSlots
+            : state.FullInventory.Count;
+
+        // Bag starts empty — filled by inventory builder before combat
+        state.Bag = new DiceBag { MaxPower = data.StartingPowerBudget };
 
         // Build speed die
         state.SpeedDie = new SpeedDie

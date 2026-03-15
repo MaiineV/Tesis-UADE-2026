@@ -20,6 +20,7 @@ public class CharacterData : ScriptableObject
 
     [Header("Starting Dice")]
     public DiceLoadout[] StartingDice;
+    public int CombatDiceSlots; // cuántos dados se pueden llevar al combate
 
     [Header("Affinity")]
     public CombinationType AffinityCombo;
