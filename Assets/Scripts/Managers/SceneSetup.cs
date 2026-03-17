@@ -67,6 +67,8 @@ public class SceneSetup : MonoBehaviour
         EnsureManager<MovementManager>("MovementManager");
         EnsureManager<EnergyManager>("EnergyManager");
         EnsureManager<DiceManager>("DiceManager");
+        EnsureManager<AudioManager>("AudioManager");
+        EnsureManager<SoundLibrary>("SoundLibrary");
         EnsureManager<UIManager>("UIManager");
         EnsureManager<FloatingDamageUI>("FloatingDamageUI");
         EnsureManager<ScreenFlashUI>("ScreenFlashUI");

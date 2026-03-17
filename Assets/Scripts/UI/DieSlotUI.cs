@@ -72,6 +72,11 @@ public class DieSlotUI : MonoBehaviour
         float elapsed = 0f;
         Vector3 originalScale = transform.localScale;
 
+        // Start looping dice roll sound for this die
+        var rollSource = SoundLibrary.Instance != null
+            ? AudioManager.PlayLoop(SoundLibrary.Instance.DiceRoll, 0.3f)
+            : null;
+
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -85,6 +90,13 @@ public class DieSlotUI : MonoBehaviour
         }
 
         transform.localScale = originalScale;
+
+        // Stop the loop when this die settles
+        if (rollSource != null)
+        {
+            rollSource.loop = false;
+            rollSource.Stop();
+        }
     }
 
     private IEnumerator LockPulseAnimation()

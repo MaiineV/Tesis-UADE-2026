@@ -143,6 +143,10 @@ public class MovementManager : MonoBehaviour
 
             player.transform.position = target;
             player.State.GridPosition = step;
+
+            // Footstep sound per tile
+            if (SoundLibrary.Instance != null)
+                AudioManager.PlayWithPitch(SoundLibrary.Instance.Footstep, 0.6f);
         }
 
         GridManager.Instance.SetOccupant(player.State.GridPosition, player.gameObject);
@@ -191,6 +195,10 @@ public class MovementManager : MonoBehaviour
             bool stepDone = false;
             enemy.AnimateMoveTo(nextTile, () => stepDone = true);
             while (!stepDone) yield return null;
+
+            // Footstep sound per tile
+            if (SoundLibrary.Instance != null)
+                AudioManager.PlayWithPitch(SoundLibrary.Instance.Footstep, 0.5f);
         }
 
         GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);

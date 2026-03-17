@@ -128,6 +128,83 @@ public class UIBuilder : MonoBehaviour
         var shieldDisplay = shieldGO.AddComponent<ShieldDisplay>();
         shieldDisplay.Initialize(shieldText);
 
+        // ── Volume Slider (top-right of HUD) ──
+        var volumePanel = new GameObject("VolumePanel");
+        volumePanel.transform.SetParent(hudPanel.transform, false);
+        var volumePanelRT = volumePanel.AddComponent<RectTransform>();
+        volumePanelRT.anchorMin = new Vector2(1, 0.5f);
+        volumePanelRT.anchorMax = new Vector2(1, 0.5f);
+        volumePanelRT.pivot = new Vector2(1, 0.5f);
+        volumePanelRT.anchoredPosition = new Vector2(-20, 20);
+        volumePanelRT.sizeDelta = new Vector2(180, 30);
+
+        // Volume icon
+        var volumeIcon = CreateTMPText("VolumeIcon", volumePanel.transform, "\u266a", 18,
+            TextAlignmentOptions.Left, TextColor);
+        var volumeIconRT = volumeIcon.GetComponent<RectTransform>();
+        volumeIconRT.anchorMin = new Vector2(0, 0);
+        volumeIconRT.anchorMax = new Vector2(0, 1);
+        volumeIconRT.pivot = new Vector2(0, 0.5f);
+        volumeIconRT.anchoredPosition = Vector2.zero;
+        volumeIconRT.sizeDelta = new Vector2(25, 0);
+
+        // Slider GO
+        var sliderGO = new GameObject("VolumeSlider");
+        sliderGO.transform.SetParent(volumePanel.transform, false);
+        var sliderRT = sliderGO.AddComponent<RectTransform>();
+        sliderRT.anchorMin = new Vector2(0, 0);
+        sliderRT.anchorMax = new Vector2(1, 1);
+        sliderRT.offsetMin = new Vector2(25, 4);
+        sliderRT.offsetMax = new Vector2(0, -4);
+
+        // Background
+        var sliderBg = CreateChildImage("SliderBg", sliderGO.transform, new Color(0.1f, 0.1f, 0.1f, 0.8f));
+        StretchFull(sliderBg.GetComponent<RectTransform>());
+
+        // Fill Area
+        var fillArea = new GameObject("FillArea");
+        fillArea.transform.SetParent(sliderGO.transform, false);
+        var fillAreaRT = fillArea.AddComponent<RectTransform>();
+        fillAreaRT.anchorMin = Vector2.zero;
+        fillAreaRT.anchorMax = Vector2.one;
+        fillAreaRT.offsetMin = new Vector2(2, 2);
+        fillAreaRT.offsetMax = new Vector2(-2, -2);
+
+        var fillGO = CreateChildImage("Fill", fillArea.transform, AccentGold);
+        var fillRT = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = Vector2.one;
+        fillRT.offsetMin = Vector2.zero;
+        fillRT.offsetMax = Vector2.zero;
+
+        // Handle area
+        var handleArea = new GameObject("HandleSlideArea");
+        handleArea.transform.SetParent(sliderGO.transform, false);
+        var handleAreaRT = handleArea.AddComponent<RectTransform>();
+        handleAreaRT.anchorMin = Vector2.zero;
+        handleAreaRT.anchorMax = Vector2.one;
+        handleAreaRT.offsetMin = new Vector2(2, 0);
+        handleAreaRT.offsetMax = new Vector2(-2, 0);
+
+        var handleGO = CreateChildImage("Handle", handleArea.transform, Color.white);
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = new Vector2(12, 0);
+        handleRT.anchorMin = new Vector2(0, 0);
+        handleRT.anchorMax = new Vector2(0, 1);
+
+        // Slider component
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.targetGraphic = handleGO.GetComponent<Image>();
+        slider.fillRect = fillRT;
+        slider.handleRect = handleRT;
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.wholeNumbers = false;
+        slider.direction = Slider.Direction.LeftToRight;
+
+        var volumeSliderUI = volumePanel.AddComponent<VolumeSliderUI>();
+        volumeSliderUI.Initialize(slider);
+
         // Phase Label (centered, large)
         var phaseLabel = CreateTMPText("PhaseLabel", hudPanel.transform, "", 36,
             TextAlignmentOptions.Center, AccentGold);

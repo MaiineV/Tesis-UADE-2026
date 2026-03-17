@@ -508,6 +508,10 @@ public class GameManager : MonoBehaviour
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
 
+        // Attack sound
+        if (SoundLibrary.Instance != null)
+            AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
+
         // Visual feedback: floating damage number
         if (FloatingDamageUI.Instance != null)
             FloatingDamageUI.Instance.ShowDamage(damage, currentCombatEnemy.transform.position);
@@ -642,6 +646,10 @@ public class GameManager : MonoBehaviour
         {
             EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
             UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+
+            // Damage sound
+            if (SoundLibrary.Instance != null)
+                AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
 
             // Visual feedback
             if (ScreenFlashUI.Instance != null)
