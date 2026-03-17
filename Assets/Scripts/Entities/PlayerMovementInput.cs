@@ -34,10 +34,10 @@ public class PlayerMovementInput : MonoBehaviour
                 awaitingMovementInput = false;
                 GridManager.Instance.ClearHighlights();
 
-                // Find path and move
+                // Find path and move (animated)
                 var path = MovementManager.Instance.FindPath(
                     currentPlayer.State.GridPosition, gridPos);
-                MovementManager.Instance.MovePlayerAlongPath(currentPlayer, path);
+                MovementManager.Instance.MovePlayerAlongPathAnimated(currentPlayer, path, (_) => { });
             }
         }
     }

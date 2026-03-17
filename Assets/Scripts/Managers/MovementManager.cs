@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -101,30 +102,98 @@ public class MovementManager : MonoBehaviour
         return new List<Vector2Int>(); // no path found
     }
 
-    /// Move player step by step. Returns the enemy if collision occurs, null otherwise.
-    public EnemyEntity MovePlayerAlongPath(PlayerEntity player, List<Vector2Int> path)
+    /// Move player step by step (animated). Calls onComplete with enemy if collision, null otherwise.
+    public void MovePlayerAlongPathAnimated(PlayerEntity player, List<Vector2Int> path, Action<EnemyEntity> onComplete)
+    {
+        StartCoroutine(MovePlayerAlongPathRoutine(player, path, onComplete));
+    }
+
+    private IEnumerator MovePlayerAlongPathRoutine(PlayerEntity player, List<Vector2Int> path, Action<EnemyEntity> onComplete)
     {
         GridManager.Instance.ClearOccupant(player.State.GridPosition);
+        float moveSpeed = 5f; // tiles per second (0.2s per tile)
 
         for (int i = 0; i < path.Count; i++)
         {
             var step = path[i];
-            // Check for enemy at this tile
+
+            // Check for enemy at this tile before moving
             var tile = GridManager.Instance.GetTile(step);
             if (tile.Occupant != null && tile.Occupant.TryGetComponent<EnemyEntity>(out var enemy))
             {
-                // Stop at the tile BEFORE the enemy (stay in current position if first step)
                 GridManager.Instance.SetOccupant(player.State.GridPosition, player.gameObject);
                 OnCollisionWithEnemy?.Invoke(enemy);
-                return enemy;
+                onComplete?.Invoke(enemy);
+                yield break;
             }
 
-            player.MoveTo(step);
+            // Animate one step
+            Vector3 start = player.transform.position;
+            Vector3 target = GridManager.Instance.GridToWorld(step);
+            float duration = 1f / moveSpeed;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                player.transform.position = Vector3.Lerp(start, target, t);
+                yield return null;
+            }
+
+            player.transform.position = target;
+            player.State.GridPosition = step;
         }
 
-        // No collision -- player reached destination
         GridManager.Instance.SetOccupant(player.State.GridPosition, player.gameObject);
         OnMovementCompleted?.Invoke(player.State.GridPosition);
-        return null;
+        onComplete?.Invoke(null);
+    }
+
+    /// Move enemy toward player (animated). Caller provides steps (from speed die roll). Calls onComplete(true) on collision.
+    public void MoveEnemyAnimated(EnemyEntity enemy, PlayerEntity player, int steps, Action<bool> onComplete)
+    {
+        StartCoroutine(MoveEnemyAnimatedRoutine(enemy, player, steps, onComplete));
+    }
+
+    private IEnumerator MoveEnemyAnimatedRoutine(EnemyEntity enemy, PlayerEntity player, int steps, Action<bool> onComplete)
+    {
+        var path = FindPath(enemy.State.GridPosition, player.State.GridPosition);
+        if (path.Count == 0)
+        {
+            onComplete?.Invoke(false);
+            yield break;
+        }
+
+        int stepsToTake = Mathf.Min(steps, path.Count);
+        GridManager.Instance.ClearOccupant(enemy.State.GridPosition);
+
+        for (int i = 0; i < stepsToTake; i++)
+        {
+            Vector2Int nextTile = path[i];
+
+            // Check if next tile is the player
+            if (nextTile == player.State.GridPosition)
+            {
+                if (i > 0)
+                {
+                    GridManager.Instance.SetOccupant(path[i - 1], enemy.gameObject);
+                }
+                else
+                {
+                    GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
+                }
+                onComplete?.Invoke(true);
+                yield break;
+            }
+
+            // Animate step using EnemyEntity's existing animation
+            bool stepDone = false;
+            enemy.AnimateMoveTo(nextTile, () => stepDone = true);
+            while (!stepDone) yield return null;
+        }
+
+        GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
+        onComplete?.Invoke(false);
     }
 }

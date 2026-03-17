@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
 
     // Movement state
     private List<Vector2Int> currentReachableTiles;
+    private bool isAnimating;
 
     // Combat state
     private AttackPhase currentAttack;
@@ -303,39 +304,62 @@ public class GameManager : MonoBehaviour
         if (CurrentState != GameState.MovementPhase) return;
 
         GridManager.Instance.ClearHighlights();
+        isAnimating = true;
 
         var path = MovementManager.Instance.FindPath(player.State.GridPosition, target);
-        var enemy = MovementManager.Instance.MovePlayerAlongPath(player, path);
-
-        if (enemy != null)
+        MovementManager.Instance.MovePlayerAlongPathAnimated(player, path, (enemy) =>
         {
-            EnterCombat(enemy);
-        }
-        else
-        {
-            // Enemy turn
-            ProcessEnemyMovement();
-        }
+            isAnimating = false;
+            if (enemy != null)
+                EnterCombat(enemy);
+            else
+                ProcessEnemyMovement();
+        });
     }
 
     private void ProcessEnemyMovement()
     {
+        StartCoroutine(ProcessEnemyMovementRoutine());
+    }
+
+    private IEnumerator ProcessEnemyMovementRoutine()
+    {
+        isAnimating = true;
         UIManager.Instance.ShowPhaseLabel("ENEMY MOVE");
+        yield return new WaitForSeconds(0.4f);
 
         foreach (var enemy in enemies)
         {
             if (enemy == null || !enemy.State.IsAlive) continue;
 
-            bool collision = EnemyMovement.MoveEnemyTowardPlayer(enemy, player);
-            if (collision)
+            // Roll speed die and show result
+            int steps = enemy.State.SpeedDie.Roll();
+            UIManager.Instance.ShowPhaseLabel($"{enemy.State.BaseData.EnemyName} rolls {steps}!");
+            Log($"{enemy.State.BaseData.EnemyName} speed roll: {steps}");
+            yield return new WaitForSeconds(0.5f);
+
+            // Animate movement
+            bool? collision = null;
+            MovementManager.Instance.MoveEnemyAnimated(enemy, player, steps, (col) =>
             {
+                collision = col;
+            });
+
+            // Wait for animation to finish
+            while (collision == null) yield return null;
+
+            if (collision.Value)
+            {
+                isAnimating = false;
                 EnterCombat(enemy);
-                return;
+                yield break;
             }
+
+            // Pause between enemies
+            yield return new WaitForSeconds(0.3f);
         }
 
-        // No collision — back to player movement
-        TransitionTo(GameState.MovementPhase);
+        isAnimating = false;
         BeginPlayerMovement();
     }
 
@@ -742,7 +766,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (CurrentState != GameState.MovementPhase) return;
+        if (isAnimating || CurrentState != GameState.MovementPhase) return;
         if (currentReachableTiles == null || currentReachableTiles.Count == 0) return;
 
         if (Input.GetMouseButtonDown(0))
