@@ -14,18 +14,41 @@ public class GridManager : MonoBehaviour
     private TileData[,] tiles;
     private TileVisual[,] tileVisuals;
 
+    public Vector2Int? LadderPosition { get; private set; }
+
     private static readonly Color GridTileColor = new Color(0.086f, 0.129f, 0.243f); // #16213e
     private static readonly Color ObstacleColor = new Color(0.059f, 0.059f, 0.137f); // #0f0f23
+    private static readonly Color LadderColor = new Color(1f, 0.835f, 0.31f);        // #ffd54f
 
     void Awake()
     {
         Instance = this;
     }
 
+    // Legacy method — generates with random obstacles (no layout)
     public void GenerateGrid()
     {
+        int obstacleCount = Random.Range(4, 7);
+        var layout = RoomGenerator.GenerateRoom(Width, Height, obstacleCount, 0);
+        // Use only obstacles from layout, ignore spawns
+        GenerateGridInternal(layout.Obstacles, null);
+    }
+
+    // New method — generates from a pre-computed RoomLayout
+    public void GenerateGrid(RoomLayout layout)
+    {
+        GenerateGridInternal(layout.Obstacles, layout.LadderPosition);
+    }
+
+    private void GenerateGridInternal(List<Vector2Int> obstacles, Vector2Int? ladderPos)
+    {
+        // Destroy old grid if exists
+        var oldGrid = GameObject.Find("Grid");
+        if (oldGrid != null) Object.Destroy(oldGrid);
+
         tiles = new TileData[Width, Height];
         tileVisuals = new TileVisual[Width, Height];
+        LadderPosition = ladderPos;
 
         Transform gridParent = new GameObject("Grid").transform;
 
@@ -37,7 +60,8 @@ public class GridManager : MonoBehaviour
                 {
                     Position = new Vector2Int(x, y),
                     IsWalkable = true,
-                    Occupant = null
+                    Occupant = null,
+                    Type = TileType.Normal
                 };
 
                 GameObject tileGO = new GameObject($"Tile_{x}_{y}");
@@ -50,22 +74,24 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        PlaceRandomObstacles(Random.Range(4, 7));
-    }
-
-    private void PlaceRandomObstacles(int count)
-    {
-        int placed = 0;
-        while (placed < count)
+        // Place obstacles
+        if (obstacles != null)
         {
-            int x = Random.Range(1, Width - 1);
-            int y = Random.Range(1, Height - 1);
-            if (tiles[x, y].IsWalkable && tiles[x, y].Occupant == null)
+            foreach (var obs in obstacles)
             {
-                tiles[x, y].IsWalkable = false;
-                tileVisuals[x, y].SetColor(ObstacleColor);
-                placed++;
+                tiles[obs.x, obs.y].IsWalkable = false;
+                tiles[obs.x, obs.y].Type = TileType.Obstacle;
+                tileVisuals[obs.x, obs.y].SetColor(ObstacleColor);
             }
+        }
+
+        // Place ladder
+        if (ladderPos.HasValue)
+        {
+            var lp = ladderPos.Value;
+            tiles[lp.x, lp.y].Type = TileType.Ladder;
+            tiles[lp.x, lp.y].IsWalkable = true;
+            tileVisuals[lp.x, lp.y].SetAsLadder(LadderColor);
         }
     }
 
@@ -132,7 +158,10 @@ public class GridManager : MonoBehaviour
             {
                 if (tiles[x, y].IsWalkable)
                 {
-                    tileVisuals[x, y].ResetColor();
+                    if (tiles[x, y].Type == TileType.Ladder)
+                        tileVisuals[x, y].SetAsLadder(LadderColor);
+                    else
+                        tileVisuals[x, y].ResetColor();
                 }
             }
         }

@@ -45,6 +45,8 @@ public class GameOverUI : MonoBehaviour
         if (statsText != null)
         {
             statsText.text = $"You were defeated by {killedBy}\n" +
+                             $"Levels cleared: {stats.LevelsCleared}\n" +
+                             $"Enemies defeated: {stats.EnemiesDefeated}\n" +
                              $"Rounds fought: {stats.RoundsFought}\n" +
                              $"Damage dealt: {stats.DamageDealt}\n" +
                              $"Best combo: {FormatCombo(stats.BestCombo)} ({stats.BestComboDamage} dmg)";

@@ -11,6 +11,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private EnergyBarUI energyBar;
     [SerializeField] private ShieldDisplay shieldDisplay;
 
+    [Header("Level")]
+    [SerializeField] private TMP_Text levelText;
+
     [Header("Phase Label")]
     [SerializeField] private TMP_Text phaseLabel;
     [SerializeField] private float phaseLabelDuration = 1.5f;
@@ -68,6 +71,18 @@ public class UIManager : MonoBehaviour
     public void UpdateShield(int value)
     {
         if (shieldDisplay != null) shieldDisplay.UpdateShield(value);
+    }
+
+    // --- Level ---
+
+    public void SetLevelText(TMP_Text levelRef)
+    {
+        levelText = levelRef;
+    }
+
+    public void UpdateLevel(int level)
+    {
+        if (levelText != null) levelText.text = $"Level {level}";
     }
 
     // --- Phase Label ---

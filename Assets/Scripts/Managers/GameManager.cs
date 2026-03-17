@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
         EnemyAttack,
         RoundEnd,
         RewardSelection,
+        LevelTransition,
         GameOver,
         Victory
     }
@@ -42,10 +43,13 @@ public class GameManager : MonoBehaviour
     private int enemiesDefeated = 0;
     private bool generalaScoredThisRun = false;
 
+    // Level progression
+    private int currentLevel = 0;
+
     // Craps instance (CrapsMode is a plain class, not MonoBehaviour)
     private CrapsMode crapsMode = new CrapsMode();
 
-    // Statistics (for end screen)
+    // Statistics (for end screen — accumulate across levels)
     private int totalRoundsFought = 0;
     private int totalDamageDealt = 0;
     private int totalDamageTaken = 0;
@@ -53,6 +57,7 @@ public class GameManager : MonoBehaviour
     private int bestComboDamage = 0;
     private int crapsAttempts = 0;
     private int crapsWins = 0;
+    private int totalEnemiesDefeated = 0;
 
     // Movement state
     private List<Vector2Int> currentReachableTiles;
@@ -165,11 +170,17 @@ public class GameManager : MonoBehaviour
 
     public void StartRun()
     {
-        // Clean up previous run
+        // Clean up everything from previous run
         CleanupPreviousRun();
 
-        TransitionTo(GameState.RoomSetup);
-        SetupRoom();
+        // Reset run-level state
+        currentLevel = 0;
+        totalEnemiesDefeated = 0;
+        generalaScoredThisRun = false;
+        ResetStats();
+
+        // Start first level
+        SetupNextLevel();
     }
 
     private void CleanupPreviousRun()
@@ -183,6 +194,21 @@ public class GameManager : MonoBehaviour
             player = null;
         }
 
+        CleanupEnemiesAndGrid();
+
+        // Hide all UI
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideAllPanels();
+    }
+
+    private void CleanupForNextLevel()
+    {
+        // Destroy enemies only, preserve player
+        CleanupEnemiesAndGrid();
+    }
+
+    private void CleanupEnemiesAndGrid()
+    {
         // Destroy old enemies
         foreach (var enemy in enemies)
         {
@@ -198,47 +224,101 @@ public class GameManager : MonoBehaviour
         // Destroy old grid
         var oldGrid = GameObject.Find("Grid");
         if (oldGrid != null) Destroy(oldGrid);
-
-        // Hide all UI
-        if (UIManager.Instance != null)
-            UIManager.Instance.HideAllPanels();
     }
 
-    private void SetupRoom()
+    private void SetupNextLevel()
     {
-        // 1. Generate grid
-        GridManager.Instance.GenerateGrid();
+        currentLevel++;
+        bool isFirstLevel = (currentLevel == 1);
 
-        // 2. Spawn player
-        Vector2Int playerSpawn = new Vector2Int(1, 1);
-        player = SpawnPlayer(PrototypeCharacter, playerSpawn);
+        TransitionTo(GameState.RoomSetup);
 
-        // 3. Spawn enemies
+        // Generate room layout
+        int enemyCount = LevelConfig.GetEnemyCount(currentLevel);
+        int obstacleCount = LevelConfig.GetObstacleCount(currentLevel);
+        var layout = RoomGenerator.GenerateRoom(
+            GridManager.Instance.Width,
+            GridManager.Instance.Height,
+            obstacleCount,
+            enemyCount);
+
+        // Generate grid with layout
+        GridManager.Instance.GenerateGrid(layout);
+
+        if (isFirstLevel)
+        {
+            // Spawn new player
+            player = SpawnPlayer(PrototypeCharacter, layout.PlayerSpawn);
+            EnergyManager.Instance.Initialize(player.State);
+        }
+        else
+        {
+            // Reposition existing player
+            if (player != null)
+            {
+                GridManager.Instance.ClearOccupant(player.State.GridPosition);
+                player.State.GridPosition = layout.PlayerSpawn;
+                player.State.ShieldValue = 0;
+                player.transform.position = GridManager.Instance.GridToWorld(layout.PlayerSpawn);
+                GridManager.Instance.SetOccupant(layout.PlayerSpawn, player.gameObject);
+            }
+        }
+
+        // Spawn enemies with scaling
         enemies.Clear();
-        enemies.Add(SpawnEnemy(GoblinData, new Vector2Int(6, 5)));
-        enemies.Add(SpawnEnemy(OrcData, new Vector2Int(5, 3)));
-
-        // 4. Initialize energy
-        EnergyManager.Instance.Initialize(player.State);
-
-        // 5. Reset run state
         enemiesDefeated = 0;
-        generalaScoredThisRun = false;
         crapsMode = new CrapsMode();
-        ResetStats();
 
-        // 6. Update HUD
+        var enemyTypes = LevelConfig.GetEnemyTypes(currentLevel, enemyCount);
+        float hpMult = LevelConfig.GetHPMultiplier(currentLevel);
+
+        for (int i = 0; i < enemyTypes.Count && i < layout.EnemySpawns.Count; i++)
+        {
+            EnemyData baseData = enemyTypes[i] == "Orc" ? OrcData : GoblinData;
+            var scaledData = CreateScaledEnemyData(baseData, hpMult);
+            enemies.Add(SpawnEnemy(scaledData, layout.EnemySpawns[i]));
+        }
+
+        // Update HUD
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
-        UIManager.Instance.UpdateEnergy(0f);
-        UIManager.Instance.UpdateShield(0);
+        UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+        UIManager.Instance.UpdateShield(player.State.ShieldValue);
+        UIManager.Instance.UpdateLevel(currentLevel);
 
-        // 7. Clear combat log
+        // Clear combat log
         var combatLog = FindObjectOfType<CombatLogUI>();
         if (combatLog != null) combatLog.Clear();
 
-        // 8. Show inventory builder
-        TransitionTo(GameState.InventorySetup);
-        UIManager.Instance.ShowInventoryBuilder(player.State.FullInventory, player.State.CombatDiceSlots);
+        Log($"--- LEVEL {currentLevel} ---");
+
+        if (isFirstLevel)
+        {
+            // Show inventory builder for first level only
+            TransitionTo(GameState.InventorySetup);
+            UIManager.Instance.ShowInventoryBuilder(player.State.FullInventory, player.State.CombatDiceSlots);
+        }
+        else
+        {
+            // Skip inventory — go straight to movement
+            BeginPlayerMovement();
+        }
+    }
+
+    private EnemyData CreateScaledEnemyData(EnemyData baseData, float hpMultiplier)
+    {
+        var scaled = ScriptableObject.CreateInstance<EnemyData>();
+        scaled.EnemyName = baseData.EnemyName;
+        scaled.Sprite = baseData.Sprite;
+        scaled.EnemyColor = baseData.EnemyColor;
+        scaled.MaxHP = Mathf.RoundToInt(baseData.MaxHP * hpMultiplier);
+        scaled.AttackDiceCount = baseData.AttackDiceCount;
+        scaled.AttackDiceFaces = baseData.AttackDiceFaces;
+        scaled.SpeedMin = baseData.SpeedMin;
+        scaled.SpeedMax = baseData.SpeedMax;
+        scaled.MaxEnergy = baseData.MaxEnergy;
+        scaled.EnergyPerRound = baseData.EnergyPerRound;
+        scaled.Behavior = baseData.Behavior;
+        return scaled;
     }
 
     // ── INVENTORY ──
@@ -264,9 +344,17 @@ public class GameManager : MonoBehaviour
 
         if (!enemiesAlive)
         {
+            // Check if player is already on the ladder
+            if (GridManager.Instance.LadderPosition.HasValue &&
+                player.State.GridPosition == GridManager.Instance.LadderPosition.Value)
+            {
+                StartLevelTransition();
+                return;
+            }
+
             // No enemies — free movement, no dice roll required
             TransitionTo(GameState.MovementPhase);
-            UIManager.Instance.ShowPhaseLabel("MOVIMIENTO LIBRE");
+            UIManager.Instance.ShowPhaseLabel("HEAD TO THE LADDER!");
             currentReachableTiles = MovementManager.Instance.GetReachableTiles(
                 player.State.GridPosition, 100);
             GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
@@ -311,10 +399,42 @@ public class GameManager : MonoBehaviour
         {
             isAnimating = false;
             if (enemy != null)
+            {
                 EnterCombat(enemy);
+            }
             else
-                ProcessEnemyMovement();
+            {
+                // Check ladder after movement
+                CheckLadderTransition();
+            }
         });
+    }
+
+    private void CheckLadderTransition()
+    {
+        bool enemiesAlive = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+
+        if (!enemiesAlive && GridManager.Instance.LadderPosition.HasValue &&
+            player.State.GridPosition == GridManager.Instance.LadderPosition.Value)
+        {
+            StartLevelTransition();
+            return;
+        }
+
+        ProcessEnemyMovement();
+    }
+
+    private void StartLevelTransition()
+    {
+        TransitionTo(GameState.LevelTransition);
+        UIManager.Instance.ShowPhaseLabel($"LEVEL {currentLevel} COMPLETE!");
+        Log($"Level {currentLevel} complete!");
+
+        StartCoroutine(DelayedAction(1.5f, () =>
+        {
+            CleanupForNextLevel();
+            SetupNextLevel();
+        }));
     }
 
     private void ProcessEnemyMovement()
@@ -712,6 +832,7 @@ public class GameManager : MonoBehaviour
     private void HandleEnemyDeath()
     {
         enemiesDefeated++;
+        totalEnemiesDefeated++;
         string enemyName = currentCombatEnemy.State.BaseData.EnemyName;
         UIManager.Instance.ShowPhaseLabel("ENEMY DEFEATED!");
         Log($"{enemyName} has been slain!");
@@ -754,11 +875,11 @@ public class GameManager : MonoBehaviour
         bool enemiesRemain = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
         if (!enemiesRemain)
         {
-            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED!");
-            Log("All enemies defeated! Move freely.");
+            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Head to the ladder!");
+            Log("All enemies defeated! Head to the ladder!");
         }
 
-        // Always return to movement phase — fight remaining enemies or explore freely
+        // Always return to movement phase — fight remaining enemies or move to ladder
         TransitionTo(GameState.MovementPhase);
         BeginPlayerMovement();
     }
@@ -809,7 +930,8 @@ public class GameManager : MonoBehaviour
             BestComboDamage = bestComboDamage,
             CrapsAttempts = crapsAttempts,
             CrapsWins = crapsWins,
-            EnemiesDefeated = enemiesDefeated
+            EnemiesDefeated = totalEnemiesDefeated,
+            LevelsCleared = currentLevel - 1
         };
     }
 

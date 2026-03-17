@@ -11,7 +11,7 @@ public struct FullRollResult { public RollResult[] Results; public int RollNumbe
 public struct CombinationResult { public CombinationType Type; public int[] MatchingDice; public int[] RemainingDice; public int BaseDamage; }
 
 [System.Serializable]
-public struct RunStats { public int RoundsFought; public int DamageDealt; public int DamageTaken; public CombinationType BestCombo; public int BestComboDamage; public int CrapsAttempts; public int CrapsWins; public int EnemiesDefeated; }
+public struct RunStats { public int RoundsFought; public int DamageDealt; public int DamageTaken; public CombinationType BestCombo; public int BestComboDamage; public int CrapsAttempts; public int CrapsWins; public int EnemiesDefeated; public int LevelsCleared; }
 
 [System.Serializable]
 public class FaceUpgrade { public FaceUpgradeType Type; public int TargetFaceIndex; public int Value; public string Description; }

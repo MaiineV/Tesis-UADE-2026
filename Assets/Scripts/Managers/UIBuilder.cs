@@ -128,6 +128,23 @@ public class UIBuilder : MonoBehaviour
         var shieldDisplay = shieldGO.AddComponent<ShieldDisplay>();
         shieldDisplay.Initialize(shieldText);
 
+        // Level Indicator
+        var levelTextGO = new GameObject("LevelText");
+        levelTextGO.transform.SetParent(hudPanel.transform, false);
+        var levelTextRT = levelTextGO.AddComponent<RectTransform>();
+        levelTextRT.anchorMin = new Vector2(0.5f, 0.5f);
+        levelTextRT.anchorMax = new Vector2(0.5f, 0.5f);
+        levelTextRT.pivot = new Vector2(0.5f, 0.5f);
+        levelTextRT.anchoredPosition = new Vector2(0, 40);
+        levelTextRT.sizeDelta = new Vector2(200, 40);
+        var levelTMP = levelTextGO.AddComponent<TextMeshProUGUI>();
+        levelTMP.text = "Level 1";
+        levelTMP.fontSize = 22;
+        levelTMP.alignment = TextAlignmentOptions.Center;
+        levelTMP.color = AccentGold;
+        levelTMP.fontStyle = FontStyles.Bold;
+        levelTMP.raycastTarget = false;
+
         // ── Volume Slider (top-right of HUD) ──
         var volumePanel = new GameObject("VolumePanel");
         volumePanel.transform.SetParent(hudPanel.transform, false);
@@ -709,6 +726,7 @@ public class UIBuilder : MonoBehaviour
                 victoryOverlay,
                 movementRollUI
             );
+            uiManager.SetLevelText(levelTMP);
         }
     }
 
