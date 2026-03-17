@@ -488,6 +488,7 @@ public class GameManager : MonoBehaviour
     private void EnterCombat(EnemyEntity enemy)
     {
         currentCombatEnemy = enemy;
+        crapsMode = new CrapsMode();
         TransitionTo(GameState.PreCombat);
 
         UIManager.Instance.ShowPhaseLabel("COMBAT!");
@@ -527,7 +528,12 @@ public class GameManager : MonoBehaviour
     {
         TransitionTo(GameState.AttackPhase);
         currentAttack = new AttackPhase();
-        UIManager.Instance.ShowPhaseLabel("YOUR ATTACK");
+        UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "CRAPS ROUND" : "YOUR ATTACK");
+
+        if (crapsMode.IsActive)
+            CombatUI.Instance.ShowCrapsBetIndicator(crapsMode.BetCombo);
+        else
+            CombatUI.Instance.HideCrapsBetIndicator();
 
         // Auto-perform first roll
         OnPlayerRoll();
@@ -586,10 +592,12 @@ public class GameManager : MonoBehaviour
         int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
 
         // Apply craps modifier if active
+        bool crapsWon = false;
         if (crapsMode.IsActive)
         {
             var crapsResult = crapsMode.Resolve(combo.Type, damage);
             damage = crapsResult.FinalDamage;
+            crapsWon = crapsResult.Success;
 
             if (crapsResult.Success) crapsWins++;
             if (crapsResult.HPChange != 0)
@@ -600,9 +608,12 @@ public class GameManager : MonoBehaviour
                     player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP + crapsResult.HPChange);
             }
 
-            // Show craps result
-            var crapsUI = FindObjectOfType<CrapsUI>(true);
-            if (crapsUI != null) crapsUI.ShowResult(crapsResult);
+            // Show craps result as toast
+            if (CrapsToastUI.Instance != null)
+                CrapsToastUI.Instance.ShowResult(crapsResult);
+
+            // Hide bet indicator
+            CombatUI.Instance.HideCrapsBetIndicator();
 
             // Screen flash for craps
             if (ScreenFlashUI.Instance != null)
@@ -628,13 +639,23 @@ public class GameManager : MonoBehaviour
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
 
-        // Attack sound
+        // Attack sound — deeper pitch for craps wins
         if (SoundLibrary.Instance != null)
-            AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
+        {
+            if (crapsWon)
+                AudioManager.PlayWithLowPitch(SoundLibrary.Instance.AttackToEnemy);
+            else
+                AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
+        }
 
-        // Visual feedback: floating damage number
+        // Visual feedback — enhanced for craps wins
         if (FloatingDamageUI.Instance != null)
-            FloatingDamageUI.Instance.ShowDamage(damage, currentCombatEnemy.transform.position);
+        {
+            if (crapsWon)
+                FloatingDamageUI.Instance.ShowCrapsDamage(damage, currentCombatEnemy.transform.position);
+            else
+                FloatingDamageUI.Instance.ShowDamage(damage, currentCombatEnemy.transform.position);
+        }
 
         Log($"You dealt {damage} damage ({combo.Type})");
 

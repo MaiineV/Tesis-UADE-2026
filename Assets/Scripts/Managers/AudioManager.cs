@@ -57,6 +57,13 @@ public class AudioManager : MonoBehaviour
         Instance.PlaySFX(clip, volumeScale, Random.Range(0.85f, 1.15f));
     }
 
+    /// <summary>Play a 2D sound with low pitch (0.65–0.75) for impactful hits.</summary>
+    public static void PlayWithLowPitch(AudioClip clip, float volumeScale = 1f)
+    {
+        if (Instance == null || clip == null) return;
+        Instance.PlaySFX(clip, volumeScale, Random.Range(0.65f, 0.75f));
+    }
+
     /// <summary>Play a looping 2D sound. Returns the AudioSource so caller can Stop() it.</summary>
     public static AudioSource PlayLoop(AudioClip clip, float volumeScale = 1f)
     {

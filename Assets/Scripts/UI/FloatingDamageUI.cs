@@ -11,6 +11,7 @@ public class FloatingDamageUI : MonoBehaviour
     private static readonly Color DamageColor;
     private static readonly Color HealColor;
     private static readonly Color StepCounterColor;
+    private static readonly Color CrapsColor;
 
     static FloatingDamageUI()
     {
@@ -20,6 +21,7 @@ public class FloatingDamageUI : MonoBehaviour
         HealColor = green;
         ColorUtility.TryParseHtmlString("#ffd54f", out Color gold);
         StepCounterColor = gold;
+        CrapsColor = gold;
     }
 
     void Awake()
@@ -52,9 +54,63 @@ public class FloatingDamageUI : MonoBehaviour
         SpawnText($"+{amount}", worldPosition, HealColor);
     }
 
+    public void ShowCrapsDamage(int amount, Vector3 worldPosition)
+    {
+        SpawnCrapsText($"-{amount}!", worldPosition);
+    }
+
     public void ShowText(string text, Vector3 worldPosition, Color color)
     {
         SpawnText(text, worldPosition, color);
+    }
+
+    private void SpawnCrapsText(string text, Vector3 worldPosition)
+    {
+        var go = new GameObject("FloatingCrapsDamage");
+        go.transform.SetParent(worldCanvas.transform, false);
+        go.transform.position = worldPosition + Vector3.up * 0.5f;
+
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = 12f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = CrapsColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+
+        var rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(4f, 1.5f);
+
+        StartCoroutine(AnimateCrapsText(go, tmp, 1.2f));
+    }
+
+    private IEnumerator AnimateCrapsText(GameObject go, TextMeshProUGUI tmp, float duration)
+    {
+        float elapsed = 0f;
+        Vector3 startPos = go.transform.position;
+        Color startColor = tmp.color;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            go.transform.position = startPos + Vector3.up * (t * 2.0f);
+
+            if (t > 0.5f)
+            {
+                float fadeT = (t - 0.5f) * 2f;
+                tmp.color = new Color(startColor.r, startColor.g, startColor.b, 1f - fadeT);
+            }
+
+            float scale = t < 0.1f ? Mathf.Lerp(0.5f, 1.5f, t / 0.1f) :
+                          t < 0.25f ? Mathf.Lerp(1.5f, 1f, (t - 0.1f) / 0.15f) : 1f;
+            go.transform.localScale = Vector3.one * scale;
+
+            yield return null;
+        }
+
+        Destroy(go);
     }
 
     private void SpawnText(string text, Vector3 worldPosition, Color color)

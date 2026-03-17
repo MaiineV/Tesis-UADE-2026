@@ -22,6 +22,9 @@ public class CombatUI : MonoBehaviour
     [SerializeField] private Button rerollButton;
     [SerializeField] private Button commitButton;
 
+    [Header("Attack — Craps Bet Indicator")]
+    [SerializeField] private TMP_Text crapsBetIndicator;
+
     [Header("Attack Panel")]
     [SerializeField] private GameObject attackPanel;
 
@@ -267,6 +270,27 @@ public class CombatUI : MonoBehaviour
         SetPanel(attackPanel, false);
         SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, false);
+        HideCrapsBetIndicator();
+    }
+
+    // ── Craps Bet Indicator ─────────────────────────────────────
+
+    public void SetCrapsBetIndicator(TMP_Text indicator)
+    {
+        crapsBetIndicator = indicator;
+    }
+
+    public void ShowCrapsBetIndicator(CombinationType bet)
+    {
+        if (crapsBetIndicator == null) return;
+        crapsBetIndicator.text = $"Craps Bet: {FormatComboName(bet)}";
+        crapsBetIndicator.gameObject.SetActive(true);
+    }
+
+    public void HideCrapsBetIndicator()
+    {
+        if (crapsBetIndicator != null)
+            crapsBetIndicator.gameObject.SetActive(false);
     }
 
     // ── Shared Helpers ─────────────────────────────────────────

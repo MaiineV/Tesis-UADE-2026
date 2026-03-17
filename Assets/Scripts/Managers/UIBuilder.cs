@@ -261,6 +261,17 @@ public class UIBuilder : MonoBehaviour
         hlg.childControlWidth = false;
         hlg.childControlHeight = false;
 
+        // Craps bet indicator (shown during craps round)
+        var crapsBetIndicator = CreateTMPText("CrapsBetIndicator", attackPanel.transform,
+            "", 16, TextAlignmentOptions.Right, AccentGold);
+        crapsBetIndicator.fontStyle = FontStyles.Bold;
+        var crapsBetRT = crapsBetIndicator.GetComponent<RectTransform>();
+        crapsBetRT.anchorMin = new Vector2(0.5f, 0);
+        crapsBetRT.anchorMax = new Vector2(1, 0.4f);
+        crapsBetRT.offsetMin = new Vector2(10, 10);
+        crapsBetRT.offsetMax = new Vector2(-20, -5);
+        crapsBetIndicator.gameObject.SetActive(false);
+
         // Combo preview text
         var comboPreview = CreateTMPText("ComboPreview", attackPanel.transform,
             "Combo: \u2014", 18, TextAlignmentOptions.Left, TextColor);
@@ -407,6 +418,7 @@ public class UIBuilder : MonoBehaviour
             defenseDiceContainer.transform,
             commitDefenseButton.GetComponent<Button>()
         );
+        combatUI.SetCrapsBetIndicator(crapsBetIndicator);
 
         // Now hide combat panel (after CombatUI.Awake has set Instance)
         combatPanel.SetActive(false);
@@ -446,31 +458,6 @@ public class UIBuilder : MonoBehaviour
             SetRect(betButtons[i], xMin, yMin, xMax, yMax);
         }
 
-        // Result panel (hidden inside craps overlay)
-        var resultPanel = CreatePanel("CrapsResultPanel", crapsOverlay.transform,
-            Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 0);
-        StretchAnchors(resultPanel.GetComponent<RectTransform>(), 0.15f, 0.15f, 0.85f, 0.85f);
-        resultPanel.SetActive(false);
-
-        var resultBg = resultPanel.GetComponent<Image>();
-
-        var resultTitle = CreateTMPText("ResultTitle", resultPanel.transform,
-            "", 28, TextAlignmentOptions.Center, AccentGold);
-        SetRect(resultTitle, 0, 0.7f, 1, 1);
-        resultTitle.fontStyle = FontStyles.Bold;
-
-        var resultBetText = CreateTMPText("ResultBetText", resultPanel.transform,
-            "", 20, TextAlignmentOptions.Center, TextColor);
-        SetRect(resultBetText, 0, 0.5f, 1, 0.7f);
-
-        var resultActualText = CreateTMPText("ResultActualText", resultPanel.transform,
-            "", 20, TextAlignmentOptions.Center, TextColor);
-        SetRect(resultActualText, 0, 0.3f, 1, 0.5f);
-
-        var resultDamageText = CreateTMPText("ResultDamageText", resultPanel.transform,
-            "", 22, TextAlignmentOptions.Center, AccentGold);
-        SetRect(resultDamageText, 0, 0.1f, 1, 0.3f);
-
         var crapsUI = crapsOverlay.AddComponent<CrapsUI>();
         crapsUI.Initialize(
             betPanel,
@@ -480,15 +467,43 @@ public class UIBuilder : MonoBehaviour
             betButtons[2].GetComponent<Button>(),
             betButtons[3].GetComponent<Button>(),
             betButtons[4].GetComponent<Button>(),
-            betButtons[5].GetComponent<Button>(),
-            resultPanel,
-            resultTitle,
-            resultBetText,
-            resultActualText,
-            resultDamageText,
-            resultBg
+            betButtons[5].GetComponent<Button>()
         );
         crapsOverlay.SetActive(false);
+
+        // ── Craps Toast (top-left, below HUD) ──
+        var crapsToastGO = new GameObject("CrapsToast");
+        crapsToastGO.transform.SetParent(canvasTransform, false);
+        var toastRT = crapsToastGO.AddComponent<RectTransform>();
+        toastRT.anchorMin = new Vector2(0, 1);
+        toastRT.anchorMax = new Vector2(0, 1);
+        toastRT.pivot = new Vector2(0, 1);
+        toastRT.anchoredPosition = new Vector2(10, -165);
+        toastRT.sizeDelta = new Vector2(320, 100);
+
+        var toastBg = crapsToastGO.AddComponent<Image>();
+        toastBg.color = new Color(0.18f, 0.49f, 0.2f, 0.95f);
+
+        var toastTitle = CreateTMPText("ToastTitle", crapsToastGO.transform,
+            "", 20, TextAlignmentOptions.Left, AccentGold);
+        toastTitle.fontStyle = FontStyles.Bold;
+        var toastTitleRT = toastTitle.GetComponent<RectTransform>();
+        toastTitleRT.anchorMin = new Vector2(0, 0.55f);
+        toastTitleRT.anchorMax = new Vector2(1, 1);
+        toastTitleRT.offsetMin = new Vector2(10, 0);
+        toastTitleRT.offsetMax = new Vector2(-10, -5);
+
+        var toastDetails = CreateTMPText("ToastDetails", crapsToastGO.transform,
+            "", 14, TextAlignmentOptions.Left, TextColor);
+        var toastDetailsRT = toastDetails.GetComponent<RectTransform>();
+        toastDetailsRT.anchorMin = new Vector2(0, 0);
+        toastDetailsRT.anchorMax = new Vector2(1, 0.55f);
+        toastDetailsRT.offsetMin = new Vector2(10, 5);
+        toastDetailsRT.offsetMax = new Vector2(-10, 0);
+
+        var crapsToastUI = crapsToastGO.AddComponent<CrapsToastUI>();
+        crapsToastUI.Initialize(crapsToastGO, toastBg, toastTitle, toastDetails);
+        crapsToastGO.SetActive(false);
 
         // ── Reward Overlay ──
         var rewardOverlay = CreateOverlayPanel("RewardOverlay", canvasTransform);
