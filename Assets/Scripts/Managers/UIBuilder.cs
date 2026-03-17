@@ -725,6 +725,40 @@ public class UIBuilder : MonoBehaviour
         );
         movementRollPanel.SetActive(false);
 
+        // ── Enemy Info Panel (right side, shown during combat) ──
+        var enemyInfoPanel = CreatePanel("EnemyInfoPanel", canvasTransform,
+            new Vector2(0.75f, 0.45f), new Vector2(0.98f, 0.62f),
+            Vector2.zero, Vector2.zero, 0);
+
+        var enemyNameText = CreateTMPText("EnemyNameText", enemyInfoPanel.transform,
+            "", 20, TextAlignmentOptions.Center, AccentGold);
+        SetRect(enemyNameText, 0.05f, 0.60f, 0.95f, 0.95f);
+        enemyNameText.fontStyle = FontStyles.Bold;
+
+        // HP bar background
+        var hpBarBg = CreateChildImage("HPBarBg", enemyInfoPanel.transform, DarkBg);
+        SetRect(hpBarBg, 0.08f, 0.30f, 0.92f, 0.55f);
+
+        // HP bar fill
+        var hpBarFillGO = CreateChildImage("HPBarFill", hpBarBg.transform, Color.white);
+        var hpBarFillRT = hpBarFillGO.GetComponent<RectTransform>();
+        hpBarFillRT.anchorMin = Vector2.zero;
+        hpBarFillRT.anchorMax = Vector2.one;
+        hpBarFillRT.offsetMin = Vector2.zero;
+        hpBarFillRT.offsetMax = Vector2.zero;
+        var hpBarFillImage = hpBarFillGO.GetComponent<Image>();
+        hpBarFillImage.type = Image.Type.Filled;
+        hpBarFillImage.fillMethod = Image.FillMethod.Horizontal;
+        hpBarFillImage.fillAmount = 1f;
+
+        var enemyHpText = CreateTMPText("EnemyHPText", enemyInfoPanel.transform,
+            "", 14, TextAlignmentOptions.Center, TextColor);
+        SetRect(enemyHpText, 0.05f, 0.05f, 0.95f, 0.30f);
+
+        var enemyInfoUI = enemyInfoPanel.AddComponent<EnemyInfoUI>();
+        enemyInfoUI.Initialize(enemyNameText, hpBarFillImage, enemyHpText);
+        enemyInfoPanel.SetActive(false);
+
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
         if (uiManager != null)
@@ -742,6 +776,7 @@ public class UIBuilder : MonoBehaviour
                 movementRollUI
             );
             uiManager.SetLevelText(levelTMP);
+            uiManager.SetEnemyInfoUI(enemyInfoUI);
         }
     }
 

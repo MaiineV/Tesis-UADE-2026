@@ -26,6 +26,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject victoryOverlay;
     [SerializeField] private MovementRollUI movementRollUI;
     [SerializeField] private InventoryBuilderUI inventoryBuilderUI;
+    [SerializeField] private EnemyInfoUI enemyInfoUI;
 
     private Coroutine phaseLabelCoroutine;
 
@@ -54,6 +55,11 @@ public class UIManager : MonoBehaviour
     public void SetInventoryBuilderUI(InventoryBuilderUI invBuilderRef)
     {
         inventoryBuilderUI = invBuilderRef;
+    }
+
+    public void SetEnemyInfoUI(EnemyInfoUI enemyInfoRef)
+    {
+        enemyInfoUI = enemyInfoRef;
     }
 
     // --- HUD forwarding ---
@@ -131,6 +137,12 @@ public class UIManager : MonoBehaviour
     public void ShowMovementRollResult(int steps) => movementRollUI?.ShowResult(steps);
     public void HideMovementRollPanel() => movementRollUI?.Hide();
 
+    // --- Enemy Info ---
+
+    public void ShowEnemyInfo(EnemyEntity enemy) => enemyInfoUI?.Show(enemy);
+    public void HideEnemyInfo() => enemyInfoUI?.Hide();
+    public void UpdateEnemyHP(int current, int max) => enemyInfoUI?.UpdateHP(current, max);
+
     public void HideAllPanels()
     {
         HideCombatPanel();
@@ -140,6 +152,7 @@ public class UIManager : MonoBehaviour
         HideVictoryOverlay();
         HideMovementRollPanel();
         HideInventoryBuilder();
+        HideEnemyInfo();
     }
 
     private void SetPanel(GameObject panel, bool active)

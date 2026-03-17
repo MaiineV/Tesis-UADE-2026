@@ -493,6 +493,7 @@ public class GameManager : MonoBehaviour
 
         UIManager.Instance.ShowPhaseLabel("COMBAT!");
         UIManager.Instance.ShowCombatPanel();
+        UIManager.Instance.ShowEnemyInfo(enemy);
         Log($"Combat started with {enemy.State.BaseData.EnemyName}!");
 
         // Update HUD with enemy info
@@ -638,6 +639,7 @@ public class GameManager : MonoBehaviour
         if (currentCombatEnemy == null) return;
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
+        UIManager.Instance.UpdateEnemyHP(currentCombatEnemy.State.CurrentHP, currentCombatEnemy.State.MaxHP);
 
         // Attack sound — deeper pitch for craps wins
         if (SoundLibrary.Instance != null)
@@ -810,6 +812,7 @@ public class GameManager : MonoBehaviour
         {
             TransitionTo(GameState.GameOver);
             UIManager.Instance.HideCombatPanel();
+            UIManager.Instance.HideEnemyInfo();
             var gameOverUI = FindObjectOfType<GameOverUI>(true);
             if (gameOverUI != null)
                 gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
@@ -871,6 +874,7 @@ public class GameManager : MonoBehaviour
     private void OnEnemyDeathAnimationComplete()
     {
         UIManager.Instance.HideCombatPanel();
+        UIManager.Instance.HideEnemyInfo();
 
         // Always offer a reward after killing an enemy
         TransitionTo(GameState.RewardSelection);
