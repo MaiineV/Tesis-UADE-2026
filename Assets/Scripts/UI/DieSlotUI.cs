@@ -48,8 +48,9 @@ public class DieSlotUI : MonoBehaviour
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() => OnClicked?.Invoke());
 
-        // Roll shake animation
-        StartCoroutine(RollShakeAnimation());
+        // Roll shake animation (skip for locked dice on reroll)
+        if (!locked)
+            StartCoroutine(RollShakeAnimation());
     }
 
     public void SetLocked(bool locked)
