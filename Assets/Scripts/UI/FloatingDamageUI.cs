@@ -10,6 +10,7 @@ public class FloatingDamageUI : MonoBehaviour
 
     private static readonly Color DamageColor;
     private static readonly Color HealColor;
+    private static readonly Color StepCounterColor;
 
     static FloatingDamageUI()
     {
@@ -17,6 +18,8 @@ public class FloatingDamageUI : MonoBehaviour
         DamageColor = red;
         ColorUtility.TryParseHtmlString("#66bb6a", out Color green);
         HealColor = green;
+        ColorUtility.TryParseHtmlString("#ffd54f", out Color gold);
+        StepCounterColor = gold;
     }
 
     void Awake()
@@ -104,5 +107,86 @@ public class FloatingDamageUI : MonoBehaviour
         }
 
         Destroy(go);
+    }
+
+    // ── Step Counter ──
+
+    public GameObject ShowStepCounter(Transform target, int steps)
+    {
+        EnsureWorldCanvas();
+
+        var go = new GameObject("StepCounter");
+        go.transform.SetParent(worldCanvas.transform, false);
+        go.transform.position = target.position + Vector3.up * 0.6f;
+
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = steps.ToString();
+        tmp.fontSize = 8f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = StepCounterColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+
+        var rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(4f, 1f);
+
+        StartCoroutine(FollowTarget(go, target));
+        return go;
+    }
+
+    public void UpdateStepCounter(GameObject counter, int remaining)
+    {
+        if (counter == null) return;
+        var tmp = counter.GetComponent<TextMeshProUGUI>();
+        if (tmp != null) tmp.text = remaining.ToString();
+        StartCoroutine(PulseScale(counter, 0.15f));
+    }
+
+    public void HideStepCounter(GameObject counter)
+    {
+        if (counter == null) return;
+        var tmp = counter.GetComponent<TextMeshProUGUI>();
+        if (tmp != null)
+            StartCoroutine(FadeOutAndDestroy(counter, tmp, 0.3f));
+        else
+            Destroy(counter);
+    }
+
+    private IEnumerator FollowTarget(GameObject go, Transform target)
+    {
+        while (go != null && target != null)
+        {
+            go.transform.position = target.position + Vector3.up * 0.6f;
+            yield return null;
+        }
+    }
+
+    private IEnumerator PulseScale(GameObject go, float duration)
+    {
+        if (go == null) yield break;
+        float elapsed = 0f;
+        while (elapsed < duration && go != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float scale = t < 0.5f ? Mathf.Lerp(1f, 1.3f, t * 2f) : Mathf.Lerp(1.3f, 1f, (t - 0.5f) * 2f);
+            go.transform.localScale = Vector3.one * scale;
+            yield return null;
+        }
+        if (go != null) go.transform.localScale = Vector3.one;
+    }
+
+    private IEnumerator FadeOutAndDestroy(GameObject go, TextMeshProUGUI tmp, float duration)
+    {
+        float elapsed = 0f;
+        Color startColor = tmp.color;
+        while (elapsed < duration && go != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            tmp.color = new Color(startColor.r, startColor.g, startColor.b, 1f - t);
+            yield return null;
+        }
+        if (go != null) Destroy(go);
     }
 }

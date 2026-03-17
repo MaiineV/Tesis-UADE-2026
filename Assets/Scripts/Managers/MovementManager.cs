@@ -172,6 +172,11 @@ public class MovementManager : MonoBehaviour
         int stepsToTake = Mathf.Min(steps, path.Count);
         GridManager.Instance.ClearOccupant(enemy.State.GridPosition);
 
+        // Show floating step counter above enemy
+        GameObject stepCounter = null;
+        if (FloatingDamageUI.Instance != null)
+            stepCounter = FloatingDamageUI.Instance.ShowStepCounter(enemy.transform, stepsToTake);
+
         for (int i = 0; i < stepsToTake; i++)
         {
             Vector2Int nextTile = path[i];
@@ -187,6 +192,8 @@ public class MovementManager : MonoBehaviour
                 {
                     GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
                 }
+                if (FloatingDamageUI.Instance != null)
+                    FloatingDamageUI.Instance.HideStepCounter(stepCounter);
                 onComplete?.Invoke(true);
                 yield break;
             }
@@ -196,11 +203,18 @@ public class MovementManager : MonoBehaviour
             enemy.AnimateMoveTo(nextTile, () => stepDone = true);
             while (!stepDone) yield return null;
 
+            // Update step counter
+            int remaining = stepsToTake - (i + 1);
+            if (FloatingDamageUI.Instance != null && remaining > 0)
+                FloatingDamageUI.Instance.UpdateStepCounter(stepCounter, remaining);
+
             // Footstep sound per tile
             if (SoundLibrary.Instance != null)
                 AudioManager.PlayWithPitch(SoundLibrary.Instance.Footstep, 0.5f);
         }
 
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.HideStepCounter(stepCounter);
         GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
         onComplete?.Invoke(false);
     }
