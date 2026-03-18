@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Experimental.Rendering;
 
 public class PixelationFeature : ScriptableRendererFeature
@@ -19,7 +20,7 @@ public class PixelationFeature : ScriptableRendererFeature
     static readonly int s_PixelSizeId = Shader.PropertyToID("_PixelSize");
     static readonly int s_NormalEdgeStrengthId = Shader.PropertyToID("_NormalEdgeStrength");
     static readonly int s_DepthEdgeStrengthId = Shader.PropertyToID("_DepthEdgeStrength");
-    static readonly int s_ScreenSizeId = Shader.PropertyToID("_ScreenSize");
+    static readonly int s_PixelationScreenSizeId = Shader.PropertyToID("_PixelationScreenSize");
 
     public override void Create()
     {
@@ -44,7 +45,7 @@ public class PixelationFeature : ScriptableRendererFeature
         m_Material.SetFloat(s_PixelSizeId, pixelSize);
         m_Material.SetFloat(s_NormalEdgeStrengthId, normalEdgeStrength);
         m_Material.SetFloat(s_DepthEdgeStrengthId, depthEdgeStrength);
-        m_Material.SetVector(s_ScreenSizeId, new Vector4(
+        m_Material.SetVector(s_PixelationScreenSizeId, new Vector4(
             cam.pixelWidth, cam.pixelHeight,
             1f / cam.pixelWidth, 1f / cam.pixelHeight));
 

@@ -18,6 +18,7 @@ Shader "Custom/Pixelation"
             #pragma vertex Vert
             #pragma fragment Frag
 
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
@@ -25,25 +26,34 @@ Shader "Custom/Pixelation"
             float _PixelSize;
             float _NormalEdgeStrength;
             float _DepthEdgeStrength;
-            float4 _ScreenSize;
+            float4 _PixelationScreenSize;
 
             float getDepth(float2 baseUV, int x, int y)
             {
-                return SampleSceneDepth(baseUV + float2(x, y) * _ScreenSize.zw * _PixelSize);
+                return SampleSceneDepth(baseUV + float2(x, y) * _PixelationScreenSize.zw * _PixelSize);
             }
 
             float3 getNormal(float2 baseUV, int x, int y)
             {
-                return SampleSceneNormals(baseUV + float2(x, y) * _ScreenSize.zw * _PixelSize);
+                return SampleSceneNormals(baseUV + float2(x, y) * _PixelationScreenSize.zw * _PixelSize);
             }
 
             float depthEdgeIndicator(float2 baseUV, float depth)
             {
                 float diff = 0.0;
-                diff += clamp(getDepth(baseUV, 1, 0) - depth, 0.0, 1.0);
-                diff += clamp(getDepth(baseUV, -1, 0) - depth, 0.0, 1.0);
-                diff += clamp(getDepth(baseUV, 0, 1) - depth, 0.0, 1.0);
-                diff += clamp(getDepth(baseUV, 0, -1) - depth, 0.0, 1.0);
+                // In reversed-Z (Unity default on PC): near=1, far=0
+                // Farther neighbors have smaller depth, so flip subtraction
+                #if UNITY_REVERSED_Z
+                    diff += clamp(depth - getDepth(baseUV, 1, 0), 0.0, 1.0);
+                    diff += clamp(depth - getDepth(baseUV, -1, 0), 0.0, 1.0);
+                    diff += clamp(depth - getDepth(baseUV, 0, 1), 0.0, 1.0);
+                    diff += clamp(depth - getDepth(baseUV, 0, -1), 0.0, 1.0);
+                #else
+                    diff += clamp(getDepth(baseUV, 1, 0) - depth, 0.0, 1.0);
+                    diff += clamp(getDepth(baseUV, -1, 0) - depth, 0.0, 1.0);
+                    diff += clamp(getDepth(baseUV, 0, 1) - depth, 0.0, 1.0);
+                    diff += clamp(getDepth(baseUV, 0, -1) - depth, 0.0, 1.0);
+                #endif
                 return floor(smoothstep(0.01, 0.02, diff) * 2.0) / 2.0;
             }
 
@@ -83,9 +93,9 @@ Shader "Custom/Pixelation"
 
                 // Pixelate UV
                 float2 uv = input.texcoord;
-                float2 screenPixel = uv * _ScreenSize.xy;
+                float2 screenPixel = uv * _PixelationScreenSize.xy;
                 float2 snappedPixel = floor(screenPixel / _PixelSize) * _PixelSize + _PixelSize * 0.5;
-                float2 pixelatedUV = snappedPixel * _ScreenSize.zw;
+                float2 pixelatedUV = snappedPixel * _PixelationScreenSize.zw;
 
                 half4 texel = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_PointClamp, pixelatedUV, 0);
 
