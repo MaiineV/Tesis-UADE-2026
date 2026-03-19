@@ -69,9 +69,9 @@ MonoBehaviour:
   m_Name: PixelationFeature
   m_EditorClassIdentifier: Assembly-CSharp::PixelationFeature
   m_Active: 1
-  pixelSize: 6
-  normalEdgeStrength: 0.3
-  depthEdgeStrength: 0.4
+  pixelSize: 4
+  normalEdgeStrength: 0.567
+  depthEdgeStrength: 0.492
 --- !u!114 &7833122117494664109
 MonoBehaviour:
   m_ObjectHideFlags: 0
