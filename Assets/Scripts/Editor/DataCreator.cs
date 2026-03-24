@@ -40,7 +40,7 @@ public static class DataCreator
         CreateDie("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 3, HexColor("#ab47bc"));
     }
 
-    static void CreateDie(string name, int faces, int[] defaultFaces, int powerCost, Color color)
+    static void CreateDie(string name, int faces, int[] defaultFaces, float powerCost, Color color)
     {
         string path = $"Assets/Data/Dice/{name}.asset";
         if (AssetDatabase.LoadAssetAtPath<DiceData>(path) != null)
@@ -65,7 +65,7 @@ public static class DataCreator
         warrior.Description = "A balanced fighter with strong dice combinations.";
         warrior.CharacterColor = HexColor("#4fc3f7");
         warrior.MaxHP = 100;
-        warrior.StartingPowerBudget = 8;
+        warrior.StartingPowerBudget = 5f;
         warrior.SpeedMin = 2;
         warrior.SpeedMax = 5;
 
@@ -92,12 +92,13 @@ public static class DataCreator
     {
         EnsureFolder("Assets/Data/Enemies");
 
-        CreateEnemy("Goblin", 40, 2, 6, 1, 3, 50f, 15f, EnemyBehavior.Aggressive, HexColor("#66bb6a"));
-        CreateEnemy("Orc", 60, 2, 8, 1, 2, 40f, 12f, EnemyBehavior.Aggressive, HexColor("#ef5350"));
+        CreateEnemy("Goblin", 40, 2, 6, 1, 3, 50f, 15f, EnemyBehavior.Aggressive, HexColor("#66bb6a"), 5, 10);
+        CreateEnemy("Orc", 60, 2, 8, 1, 2, 40f, 12f, EnemyBehavior.Aggressive, HexColor("#ef5350"), 10, 20);
     }
 
     static void CreateEnemy(string name, int hp, int atkCount, int atkFaces, int spdMin, int spdMax,
-        float maxEnergy, float energyPerRound, EnemyBehavior behavior, Color color)
+        float maxEnergy, float energyPerRound, EnemyBehavior behavior, Color color,
+        int goldDropMin = 5, int goldDropMax = 15)
     {
         var enemy = ScriptableObject.CreateInstance<EnemyData>();
         enemy.EnemyName = name;
@@ -110,6 +111,8 @@ public static class DataCreator
         enemy.MaxEnergy = maxEnergy;
         enemy.EnergyPerRound = energyPerRound;
         enemy.Behavior = behavior;
+        enemy.GoldDropMin = goldDropMin;
+        enemy.GoldDropMax = goldDropMax;
         string enemyPath = $"Assets/Data/Enemies/{name}.asset";
         if (AssetDatabase.LoadAssetAtPath<EnemyData>(enemyPath) != null)
             AssetDatabase.DeleteAsset(enemyPath);

@@ -12,7 +12,9 @@ public class CharacterData : ScriptableObject
 
     [Header("Base Stats")]
     public int MaxHP;
-    public int StartingPowerBudget;
+    public float StartingPowerBudget;
+    public int Dexterity;
+    public int Speed;
 
     [Header("Speed Die")]
     public int SpeedMin;
@@ -20,7 +22,7 @@ public class CharacterData : ScriptableObject
 
     [Header("Starting Dice")]
     public DiceLoadout[] StartingDice;
-    public int CombatDiceSlots; // cuántos dados se pueden llevar al combate
+    public int CombatDiceSlots;
 
     [Header("Affinity")]
     public CombinationType AffinityCombo;

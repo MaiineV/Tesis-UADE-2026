@@ -3,46 +3,67 @@ using System.Collections;
 
 public class TileVisual : MonoBehaviour
 {
-    private SpriteRenderer spriteRenderer;
+    private MeshRenderer meshRenderer;
+    private MaterialPropertyBlock propBlock;
     private Color defaultColor;
     private Coroutine pulseCoroutine;
 
-    private static Sprite sharedSprite;
+    private static readonly int ColorID = Shader.PropertyToID("_Color");
+    private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
 
     public void Initialize(Color color)
     {
-        spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+        // Create a flat cube as the tile
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.transform.SetParent(transform, false);
+        cube.transform.localPosition = Vector3.zero;
+        cube.transform.localScale = new Vector3(0.92f, 0.08f, 0.92f);
 
-        if (sharedSprite == null)
-        {
-            Texture2D tex = new Texture2D(1, 1);
-            tex.SetPixel(0, 0, Color.white);
-            tex.Apply();
-            sharedSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1);
-        }
+        meshRenderer = cube.GetComponent<MeshRenderer>();
+        propBlock = new MaterialPropertyBlock();
 
-        spriteRenderer.sprite = sharedSprite;
+        // Remove collider from visual cube (we handle clicks via raycast on ground plane)
+        var col = cube.GetComponent<Collider>();
+        if (col != null) Object.Destroy(col);
+
         defaultColor = color;
-        spriteRenderer.color = color;
+        SetColor(color);
     }
 
     public void SetColor(Color color)
     {
-        spriteRenderer.color = color;
+        if (meshRenderer == null || propBlock == null) return;
+        meshRenderer.GetPropertyBlock(propBlock);
+        propBlock.SetColor(ColorID, color);
+        propBlock.SetColor(BaseColorID, color);
+        meshRenderer.SetPropertyBlock(propBlock);
     }
 
     public void ResetColor()
     {
-        spriteRenderer.color = defaultColor;
+        SetColor(defaultColor);
     }
 
     public void SetAsLadder(Color ladderColor)
     {
         defaultColor = ladderColor;
-        spriteRenderer.color = ladderColor;
+        SetColor(ladderColor);
 
         if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
         pulseCoroutine = StartCoroutine(PulseRoutine(ladderColor));
+    }
+
+    public void SetAsDoor(Color doorColor)
+    {
+        defaultColor = doorColor;
+        SetColor(doorColor);
+
+        // Make door tiles slightly taller
+        var cube = meshRenderer.transform;
+        cube.localScale = new Vector3(0.92f, 0.15f, 0.92f);
+
+        if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
+        pulseCoroutine = StartCoroutine(PulseRoutine(doorColor));
     }
 
     private IEnumerator PulseRoutine(Color baseColor)
@@ -53,7 +74,7 @@ public class TileVisual : MonoBehaviour
         while (true)
         {
             float t = (Mathf.Sin(Time.time * speed) + 1f) / 2f;
-            spriteRenderer.color = Color.Lerp(baseColor, bright, t);
+            SetColor(Color.Lerp(baseColor, bright, t));
             yield return null;
         }
     }

@@ -14,9 +14,7 @@ public class PlayerMovementInput : MonoBehaviour
         reachableTiles = MovementManager.Instance.GetReachableTiles(
             player.State.GridPosition, movementPoints);
 
-        // Highlight reachable tiles
         GridManager.Instance.HighlightTiles(reachableTiles, Color.green);
-
         awaitingMovementInput = true;
     }
 
@@ -26,19 +24,31 @@ public class PlayerMovementInput : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
+            Vector2Int gridPos = GetGridPosFromMouse();
 
             if (reachableTiles.Contains(gridPos))
             {
                 awaitingMovementInput = false;
                 GridManager.Instance.ClearHighlights();
 
-                // Find path and move (animated)
                 var path = MovementManager.Instance.FindPath(
                     currentPlayer.State.GridPosition, gridPos);
                 MovementManager.Instance.MovePlayerAlongPathAnimated(currentPlayer, path, (_) => { });
             }
         }
+    }
+
+    private Vector2Int GetGridPosFromMouse()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+        if (groundPlane.Raycast(ray, out float distance))
+        {
+            Vector3 hitPoint = ray.GetPoint(distance);
+            return GridManager.Instance.WorldToGrid(hitPoint);
+        }
+
+        return new Vector2Int(-1, -1);
     }
 }

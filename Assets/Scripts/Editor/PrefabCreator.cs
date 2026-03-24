@@ -18,17 +18,21 @@ public class PrefabCreator
         EnsureDirectory("Assets/Prefabs");
 
         var go = new GameObject("Player");
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = CreateSquareSprite();
+
+        // 3D cube visual (blue)
+        var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        visual.name = "Visual";
+        visual.transform.SetParent(go.transform, false);
+        visual.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+        var col = visual.GetComponent<Collider>();
+        if (col != null) Object.DestroyImmediate(col);
+
+        var mr = visual.GetComponent<MeshRenderer>();
         ColorUtility.TryParseHtmlString("#4fc3f7", out Color playerColor);
-        sr.color = playerColor;
-        sr.sortingOrder = 10;
 
         go.AddComponent<PlayerEntity>();
-
-        // Assign the SpriteRenderer to the Visual field
         var entity = go.GetComponent<PlayerEntity>();
-        entity.Visual = sr;
+        entity.Visual = mr;
 
         PrefabUtility.SaveAsPrefabAsset(go, path);
         Object.DestroyImmediate(go);
@@ -41,32 +45,24 @@ public class PrefabCreator
         EnsureDirectory("Assets/Prefabs");
 
         var go = new GameObject("Enemy");
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = CreateSquareSprite();
-        sr.color = Color.red;
-        sr.sortingOrder = 10;
+
+        // 3D cube visual
+        var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        visual.name = "Visual";
+        visual.transform.SetParent(go.transform, false);
+        visual.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+        var col = visual.GetComponent<Collider>();
+        if (col != null) Object.DestroyImmediate(col);
+
+        var mr = visual.GetComponent<MeshRenderer>();
 
         go.AddComponent<EnemyEntity>();
-
         var entity = go.GetComponent<EnemyEntity>();
-        entity.Visual = sr;
+        entity.Visual = mr;
 
         PrefabUtility.SaveAsPrefabAsset(go, path);
         Object.DestroyImmediate(go);
         Debug.Log("Created Enemy prefab at " + path);
-    }
-
-    private static Sprite CreateSquareSprite()
-    {
-        // Create a simple 4x4 white texture as placeholder sprite
-        var tex = new Texture2D(4, 4);
-        var colors = new Color[16];
-        for (int i = 0; i < colors.Length; i++) colors[i] = Color.white;
-        tex.SetPixels(colors);
-        tex.Apply();
-        tex.filterMode = FilterMode.Point;
-
-        return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
     }
 
     private static void EnsureDirectory(string path)

@@ -6,7 +6,7 @@ public class DiceData : ScriptableObject
     public string DiceName;
     public int NumberOfFaces;
     public int[] DefaultFaces;
-    public int PowerCost;
+    public float PowerCost;
     public Sprite Icon;
     public Color DiceColor;
 }

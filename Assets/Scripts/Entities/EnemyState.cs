@@ -8,7 +8,7 @@ public class EnemyState
     public int MaxHP;
     public Vector2Int GridPosition;
     public float CurrentEnergy;
-    public SpeedDie SpeedDie; // TODO: Depends on US-02
+    public SpeedDie SpeedDie;
 
     public bool IsAlive => CurrentHP > 0;
     public bool IsEnraged => CurrentEnergy >= BaseData.MaxEnergy;

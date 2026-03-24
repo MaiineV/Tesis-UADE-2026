@@ -10,11 +10,15 @@ public class PlayerState
     public int CurrentHP;
     public int MaxHP;
 
+    // Stats
+    public int Dexterity;
+    public int Speed;
+
     // Dice
-    public List<DiceInstance> FullInventory; // all dice the player owns
-    public int CombatDiceSlots;              // how many dice to select for combat
-    public DiceBag Bag;       // selected combat dice (subset of FullInventory)
-    public SpeedDie SpeedDie; // TODO: Depends on US-02
+    public List<DiceInstance> FullInventory;
+    public int CombatDiceSlots;
+    public DiceBag Bag;
+    public SpeedDie SpeedDie;
 
     // Energy
     public float CurrentEnergy;
@@ -27,16 +31,28 @@ public class PlayerState
     public int ShieldValue;
     public bool CrapsModeAvailable;
 
+    // Economy
+    public int Gold;
+
+    // Items
+    public bool HasPotion;
+    public int PotionCount;
+
     public static PlayerState Create(CharacterData data)
     {
         var state = new PlayerState();
         state.BaseData = data;
         state.CurrentHP = data.MaxHP;
         state.MaxHP = data.MaxHP;
+        state.Dexterity = data.Dexterity;
+        state.Speed = data.Speed;
         state.MaxEnergy = 100f;
         state.CurrentEnergy = 0f;
         state.ShieldValue = 0;
         state.CrapsModeAvailable = false;
+        state.Gold = 0;
+        state.HasPotion = true;
+        state.PotionCount = 1;
 
         // Build full inventory from starting dice
         state.FullInventory = new List<DiceInstance>();
@@ -45,15 +61,12 @@ public class PlayerState
             for (int i = 0; i < loadout.Quantity; i++)
                 state.FullInventory.Add(DiceInstance.Create(loadout.DiceType));
         }
-        // CombatDiceSlots defined in CharacterData; fallback to full inventory count
         state.CombatDiceSlots = data.CombatDiceSlots > 0
             ? data.CombatDiceSlots
             : state.FullInventory.Count;
 
-        // Bag starts empty — filled by inventory builder before combat
         state.Bag = new DiceBag { MaxPower = data.StartingPowerBudget };
 
-        // Build speed die
         state.SpeedDie = new SpeedDie
         {
             MinValue = data.SpeedMin,

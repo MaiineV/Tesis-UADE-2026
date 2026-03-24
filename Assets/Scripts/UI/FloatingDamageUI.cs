@@ -54,6 +54,12 @@ public class FloatingDamageUI : MonoBehaviour
         SpawnText($"+{amount}", worldPosition, HealColor);
     }
 
+    public void ShowGold(int amount, Vector3 worldPosition)
+    {
+        ColorUtility.TryParseHtmlString("#ffd54f", out Color goldColor);
+        SpawnText($"+{amount}G", worldPosition + Vector3.up * 0.3f, goldColor);
+    }
+
     public void ShowCrapsDamage(int amount, Vector3 worldPosition)
     {
         SpawnCrapsText($"-{amount}!", worldPosition);

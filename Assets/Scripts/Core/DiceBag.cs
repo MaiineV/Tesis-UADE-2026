@@ -4,19 +4,19 @@ using System.Collections.Generic;
 public class DiceBag
 {
     public List<DiceInstance> Dice = new List<DiceInstance>();
-    public int MaxPower;
+    public float MaxPower;
 
-    public int CurrentPower
+    public float CurrentPower
     {
         get
         {
-            int total = 0;
+            float total = 0;
             foreach (var d in Dice) total += d.PowerCost;
             return total;
         }
     }
 
-    public int RemainingPower => MaxPower - CurrentPower;
+    public float RemainingPower => MaxPower - CurrentPower;
 
     public bool CanAdd(DiceInstance die)
     {

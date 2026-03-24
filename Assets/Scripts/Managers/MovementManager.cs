@@ -129,7 +129,7 @@ public class MovementManager : MonoBehaviour
 
             // Animate one step
             Vector3 start = player.transform.position;
-            Vector3 target = GridManager.Instance.GridToWorld(step);
+            Vector3 target = GridManager.Instance.GridToWorld(step) + new Vector3(0, 0.4f, 0);
             float duration = 1f / moveSpeed;
             float elapsed = 0f;
 

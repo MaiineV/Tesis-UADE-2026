@@ -23,4 +23,13 @@ public class EnemyData : ScriptableObject
 
     [Header("Behavior")]
     public EnemyBehavior Behavior;
+
+    [Header("Ranged")]
+    public bool IsRanged;
+    public int PreferredRange;
+    public int Accuracy;
+
+    [Header("Loot")]
+    public int GoldDropMin;
+    public int GoldDropMax;
 }

@@ -5,39 +5,63 @@ using UnityEngine;
 public class EnemyEntity : MonoBehaviour
 {
     public EnemyState State { get; private set; }
-    public SpriteRenderer Visual;
+    public MeshRenderer Visual;
 
-    [SerializeField] private float moveSpeed = 3.3f; // tiles per second (0.3s per tile)
+    [SerializeField] private float moveSpeed = 3.3f;
 
     public bool IsMoving { get; private set; }
+
+    private MaterialPropertyBlock propBlock;
+    private static readonly int ColorID = Shader.PropertyToID("_Color");
+    private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
 
     public void Initialize(EnemyData data, Vector2Int position)
     {
         State = EnemyState.Create(data, position);
-        if (Visual == null) Visual = GetComponent<SpriteRenderer>();
-        if (Visual != null)
+        if (Visual == null) Visual = GetComponentInChildren<MeshRenderer>(true);
+        if (Visual == null)
         {
-            if (Visual.sprite == null)
-                Visual.sprite = CreateSquareSprite();
-            Visual.color = data.EnemyColor;
+            // Fallback: create visual at runtime
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = "Visual";
+            cube.transform.SetParent(transform, false);
+            cube.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            var col = cube.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Visual = cube.GetComponent<MeshRenderer>();
         }
-        transform.position = GridManager.Instance.GridToWorld(position);
+        propBlock = new MaterialPropertyBlock();
+        SetColor(data.EnemyColor);
+        transform.position = GridManager.Instance.GridToWorld(position) + new Vector3(0, 0.4f, 0);
     }
 
-    private static Sprite CreateSquareSprite()
+    private void SetColor(Color color)
     {
-        var tex = new Texture2D(32, 32);
-        var pixels = new Color[32 * 32];
-        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
-        tex.SetPixels(pixels);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
+        if (Visual == null) return;
+        // Set on material directly (reliable in URP)
+        Visual.material.color = color;
+        Visual.material.SetColor(BaseColorID, color);
+        // Also set via property block for override support
+        if (propBlock != null)
+        {
+            Visual.GetPropertyBlock(propBlock);
+            propBlock.SetColor(ColorID, color);
+            propBlock.SetColor(BaseColorID, color);
+            Visual.SetPropertyBlock(propBlock);
+        }
     }
 
-    /// Roll attack. Returns final damage value.
     public int RollAttack()
     {
         int totalDamage = 0;
+
+        // Ranged accuracy check
+        if (State.BaseData.IsRanged)
+        {
+            int hitCheck = UnityEngine.Random.Range(1, 101);
+            if (hitCheck > State.BaseData.Accuracy)
+                return 0; // miss
+        }
 
         for (int i = 0; i < State.BaseData.AttackDiceCount; i++)
         {
@@ -61,10 +85,9 @@ public class EnemyEntity : MonoBehaviour
     public void MoveTo(Vector2Int newPosition)
     {
         State.GridPosition = newPosition;
-        transform.position = GridManager.Instance.GridToWorld(newPosition);
+        transform.position = GridManager.Instance.GridToWorld(newPosition) + new Vector3(0, 0.4f, 0);
     }
 
-    /// Animated move to a single tile. Calls onComplete when done.
     public void AnimateMoveTo(Vector2Int newPosition, Action onComplete = null)
     {
         StartCoroutine(AnimateMoveRoutine(newPosition, onComplete));
@@ -74,7 +97,7 @@ public class EnemyEntity : MonoBehaviour
     {
         IsMoving = true;
         Vector3 start = transform.position;
-        Vector3 target = GridManager.Instance.GridToWorld(newPosition);
+        Vector3 target = GridManager.Instance.GridToWorld(newPosition) + new Vector3(0, 0.4f, 0);
         float duration = 1f / moveSpeed;
         float elapsed = 0f;
 
@@ -92,7 +115,6 @@ public class EnemyEntity : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    /// Death animation: fade out and shrink over 0.5s, then deactivate.
     public void PlayDeathAnimation(Action onComplete = null)
     {
         StartCoroutine(DeathRoutine(onComplete));
@@ -103,28 +125,27 @@ public class EnemyEntity : MonoBehaviour
         float duration = 0.5f;
         float elapsed = 0f;
         Vector3 startScale = transform.localScale;
-        Color startColor = Visual != null ? Visual.color : Color.white;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-
-            // Shrink
             transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
 
-            // Fade
+            // Fade via material
             if (Visual != null)
-                Visual.color = new Color(startColor.r, startColor.g, startColor.b, 1f - t);
+            {
+                Color c = State.BaseData.EnemyColor;
+                c.a = 1f - t;
+                Visual.material.color = c;
+                Visual.material.SetColor(BaseColorID, c);
+            }
 
             yield return null;
         }
 
         gameObject.SetActive(false);
-
-        // Reset for potential reuse
         transform.localScale = startScale;
-        if (Visual != null) Visual.color = startColor;
 
         onComplete?.Invoke();
     }

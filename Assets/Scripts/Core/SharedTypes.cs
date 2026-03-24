@@ -26,7 +26,7 @@ public struct CrapsResult { public bool Success; public CombinationType BetCombo
 public struct DiceLoadout { public DiceData DiceType; public int Quantity; }
 
 [System.Serializable]
-public struct BagSummary { public int TotalDice; public int UsedPower; public int MaxPower; public int RemainingPower; public List<DiceSummary> DiceList; }
+public struct BagSummary { public int TotalDice; public float UsedPower; public float MaxPower; public float RemainingPower; public List<DiceSummary> DiceList; }
 
 [System.Serializable]
-public struct DiceSummary { public string Id; public string TypeName; public int[] Faces; public int PowerCost; public Color Color; }
+public struct DiceSummary { public string Id; public string TypeName; public int[] Faces; public float PowerCost; public Color Color; }

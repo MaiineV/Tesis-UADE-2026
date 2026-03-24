@@ -6,7 +6,7 @@ public class DiceInstance
     public string Id;
     public DiceData BaseData;
     public int[] CurrentFaces;
-    public int PowerCost;
+    public float PowerCost;
 
     public static DiceInstance Create(DiceData data)
     {

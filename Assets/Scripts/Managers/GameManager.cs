@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class GameManager : MonoBehaviour
         InventorySetup,
         MovementRoll,
         MovementPhase,
+        BowTargeting,
         PreCombat,
         CrapsBet,
         AttackPhase,
@@ -23,6 +25,7 @@ public class GameManager : MonoBehaviour
         RoundEnd,
         RewardSelection,
         LevelTransition,
+        RoomTransition,
         GameOver,
         Victory
     }
@@ -33,6 +36,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CharacterData PrototypeCharacter;
     [SerializeField] private EnemyData GoblinData;
     [SerializeField] private EnemyData OrcData;
+    [SerializeField] private EnemyData ArcherData;
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject enemyPrefab;
 
@@ -40,16 +44,17 @@ public class GameManager : MonoBehaviour
     private PlayerEntity player;
     private List<EnemyEntity> enemies = new List<EnemyEntity>();
     private EnemyEntity currentCombatEnemy;
+    private List<EnemyEntity> waitingEnemies = new List<EnemyEntity>();
     private int enemiesDefeated = 0;
     private bool generalaScoredThisRun = false;
 
-    // Level progression
+    // Level/dungeon
     private int currentLevel = 0;
 
-    // Craps instance (CrapsMode is a plain class, not MonoBehaviour)
+    // Craps
     private CrapsMode crapsMode = new CrapsMode();
 
-    // Statistics (for end screen — accumulate across levels)
+    // Statistics
     private int totalRoundsFought = 0;
     private int totalDamageDealt = 0;
     private int totalDamageTaken = 0;
@@ -66,6 +71,9 @@ public class GameManager : MonoBehaviour
     // Combat state
     private AttackPhase currentAttack;
     private DefensePhase currentDefense;
+
+    // Bow targeting
+    private List<Vector2Int> bowTargetTiles;
 
     // Events
     public static event Action<GameState> OnStateChanged;
@@ -85,15 +93,13 @@ public class GameManager : MonoBehaviour
         if (enemyPrefab == null) enemyPrefab = enemyPrefabRef;
     }
 
-    private void OnEnable()
+    public void SetArcherData(EnemyData archer)
     {
-        SubscribeToEvents();
+        if (ArcherData == null) ArcherData = archer;
     }
 
-    private void OnDisable()
-    {
-        UnsubscribeFromEvents();
-    }
+    private void OnEnable() { SubscribeToEvents(); }
+    private void OnDisable() { UnsubscribeFromEvents(); }
 
     // ──────────── EVENT WIRING ────────────
 
@@ -125,44 +131,48 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Late-bind events that may not be ready at OnEnable time
     private void Start()
     {
-        // Re-subscribe since UI singletons may have initialized after us
         UnsubscribeFromEvents();
         SubscribeToEvents();
 
-        // Bind InventoryBuilderUI
         var inventoryBuilderUI = FindObjectOfType<InventoryBuilderUI>(true);
         if (inventoryBuilderUI != null)
             inventoryBuilderUI.OnInventoryConfirmed += OnInventoryConfirmed;
 
-        // Bind MovementRollUI
         var movementRollUI = FindObjectOfType<MovementRollUI>(true);
         if (movementRollUI != null)
             movementRollUI.OnRollClicked += OnMovementRollClicked;
 
-        // Bind CrapsUI (inactive by default — pass true to include inactive)
         var crapsUI = FindObjectOfType<CrapsUI>(true);
         if (crapsUI != null)
             crapsUI.OnBetSelected += OnCrapsBetPlaced;
 
-        // Bind RewardUI
         var rewardUI = FindObjectOfType<RewardUI>(true);
         if (rewardUI != null)
             rewardUI.OnRewardChosen += OnRewardSelected;
 
-        // Bind GameOverUI
         var gameOverUI = FindObjectOfType<GameOverUI>(true);
         if (gameOverUI != null)
             gameOverUI.OnRestartClicked += RestartRun;
 
-        // Bind VictoryUI
         var victoryUI = FindObjectOfType<VictoryUI>(true);
         if (victoryUI != null)
             victoryUI.OnRestartClicked += RestartRun;
 
-        // Auto-start the run
+        // Bind exploration actions
+        if (ExplorationActionsUI.Instance != null)
+        {
+            ExplorationActionsUI.Instance.OnBowSelected += OnBowActionSelected;
+            ExplorationActionsUI.Instance.OnPotionSelected += OnPotionActionSelected;
+            ExplorationActionsUI.Instance.OnFleeSelected += OnFleeActionSelected;
+            ExplorationActionsUI.Instance.OnForceDoorSelected += OnForceDoorSelected;
+        }
+
+        // Bind shop
+        if (ShopUI.Instance != null)
+            ShopUI.Instance.OnBuyClicked += OnShopBuy;
+
         StartRun();
     }
 
@@ -170,22 +180,28 @@ public class GameManager : MonoBehaviour
 
     public void StartRun()
     {
-        // Clean up everything from previous run
         CleanupPreviousRun();
 
-        // Reset run-level state
         currentLevel = 0;
         totalEnemiesDefeated = 0;
         generalaScoredThisRun = false;
         ResetStats();
 
-        // Start first level
-        SetupNextLevel();
+        // Generate dungeon floor
+        DungeonManager.Instance.GenerateFloor(Random.Range(8, 15));
+
+        // Update minimap
+        if (MinimapUI.Instance != null)
+        {
+            MinimapUI.Instance.BuildMinimap(DungeonManager.Instance.Rooms);
+            MinimapUI.Instance.UpdateCurrentRoom(DungeonManager.Instance.StartRoomPosition);
+        }
+
+        SetupCurrentRoom(true);
     }
 
     private void CleanupPreviousRun()
     {
-        // Destroy old player
         if (player != null)
         {
             if (GridManager.Instance != null)
@@ -196,20 +212,12 @@ public class GameManager : MonoBehaviour
 
         CleanupEnemiesAndGrid();
 
-        // Hide all UI
         if (UIManager.Instance != null)
             UIManager.Instance.HideAllPanels();
     }
 
-    private void CleanupForNextLevel()
-    {
-        // Destroy enemies only, preserve player
-        CleanupEnemiesAndGrid();
-    }
-
     private void CleanupEnemiesAndGrid()
     {
-        // Destroy old enemies
         foreach (var enemy in enemies)
         {
             if (enemy != null)
@@ -220,88 +228,188 @@ public class GameManager : MonoBehaviour
             }
         }
         enemies.Clear();
+        waitingEnemies.Clear();
 
-        // Destroy old grid
         var oldGrid = GameObject.Find("Grid");
         if (oldGrid != null) Destroy(oldGrid);
     }
 
-    private void SetupNextLevel()
+    private void SetupCurrentRoom(bool isFirstRoom)
     {
-        currentLevel++;
-        bool isFirstLevel = (currentLevel == 1);
+        var room = DungeonManager.Instance.CurrentRoom;
+        if (room == null) return;
 
+        currentLevel++;
         TransitionTo(GameState.RoomSetup);
 
         // Generate room layout
-        int enemyCount = LevelConfig.GetEnemyCount(currentLevel);
-        int obstacleCount = LevelConfig.GetObstacleCount(currentLevel);
+        int enemyCount = GetEnemyCountForRoom(room);
+        int obstacleCount = Random.Range(3, 6);
         var layout = RoomGenerator.GenerateRoom(
             GridManager.Instance.Width,
             GridManager.Instance.Height,
             obstacleCount,
             enemyCount);
 
-        // Generate grid with layout
-        GridManager.Instance.GenerateGrid(layout);
+        // Generate grid with doors
+        GridManager.Instance.GenerateGrid(layout, room.DoorConnections);
 
-        if (isFirstLevel)
+        if (isFirstRoom && player == null)
         {
-            // Spawn new player
             player = SpawnPlayer(PrototypeCharacter, layout.PlayerSpawn);
             EnergyManager.Instance.Initialize(player.State);
         }
-        else
+        else if (player != null)
         {
-            // Reposition existing player
-            if (player != null)
-            {
-                GridManager.Instance.ClearOccupant(player.State.GridPosition);
-                player.State.GridPosition = layout.PlayerSpawn;
-                player.State.ShieldValue = 0;
-                player.transform.position = GridManager.Instance.GridToWorld(layout.PlayerSpawn);
-                GridManager.Instance.SetOccupant(layout.PlayerSpawn, player.gameObject);
-            }
+            // Reposition existing player at the entry point
+            GridManager.Instance.ClearOccupant(player.State.GridPosition);
+            var entryPos = layout.PlayerSpawn;
+            player.State.GridPosition = entryPos;
+            player.State.ShieldValue = 0;
+            player.transform.position = GridManager.Instance.GridToWorld(entryPos) + new Vector3(0, 0.4f, 0);
+            GridManager.Instance.SetOccupant(entryPos, player.gameObject);
         }
 
-        // Spawn enemies with scaling
+        // Spawn enemies based on room type
         enemies.Clear();
         enemiesDefeated = 0;
         crapsMode = new CrapsMode();
 
-        var enemyTypes = LevelConfig.GetEnemyTypes(currentLevel, enemyCount);
-        float hpMult = LevelConfig.GetHPMultiplier(currentLevel);
-
-        for (int i = 0; i < enemyTypes.Count && i < layout.EnemySpawns.Count; i++)
+        if (room.Type == RoomType.Combat || room.Type == RoomType.Boss)
         {
-            EnemyData baseData = enemyTypes[i] == "Orc" ? OrcData : GoblinData;
-            var scaledData = CreateScaledEnemyData(baseData, hpMult);
-            enemies.Add(SpawnEnemy(scaledData, layout.EnemySpawns[i]));
+            SpawnEnemiesForRoom(room, layout);
+        }
+        else if (room.Type == RoomType.Shop)
+        {
+            GenerateShopItems(room);
+            Log("Bienvenido a la tienda!");
+        }
+        else if (room.Type == RoomType.Potion)
+        {
+            if (player != null)
+            {
+                player.State.HasPotion = true;
+                player.State.PotionCount = 1;
+                Log("Pocion recargada!");
+            }
         }
 
         // Update HUD
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
         UIManager.Instance.UpdateShield(player.State.ShieldValue);
+        UIManager.Instance.UpdateGold(player.State.Gold);
         UIManager.Instance.UpdateLevel(currentLevel);
 
-        // Clear combat log
         var combatLog = FindObjectOfType<CombatLogUI>();
         if (combatLog != null) combatLog.Clear();
 
-        Log($"--- LEVEL {currentLevel} ---");
+        string roomLabel = room.Type.ToString().ToUpper();
+        Log($"--- {roomLabel} ROOM ---");
 
-        if (isFirstLevel)
+        if (isFirstRoom)
         {
-            // Show inventory builder for first level only
             TransitionTo(GameState.InventorySetup);
-            UIManager.Instance.ShowInventoryBuilder(player.State.FullInventory, player.State.CombatDiceSlots);
+            UIManager.Instance.ShowInventoryBuilder(
+                player.State.FullInventory,
+                player.State.CombatDiceSlots,
+                player.State.BaseData.StartingPowerBudget);
         }
         else
         {
-            // Skip inventory — go straight to movement
+            // If shop room, show first available item
+            if (room.Type == RoomType.Shop && ShopUI.Instance != null)
+            {
+                ShowNextShopItem(room);
+            }
+
             BeginPlayerMovement();
         }
+    }
+
+    private void ShowNextShopItem(RoomData room)
+    {
+        foreach (var item in room.ShopItems)
+        {
+            if (!item.Purchased)
+            {
+                ShopUI.Instance.ShowItem(item, player.State.Gold);
+                return;
+            }
+        }
+        // All purchased
+        if (ShopUI.Instance != null) ShopUI.Instance.Hide();
+    }
+
+    private int GetEnemyCountForRoom(RoomData room)
+    {
+        if (room.Type == RoomType.Shop || room.Type == RoomType.Potion) return 0;
+        if (room.Type == RoomType.Boss) return 1;
+
+        // Check if room has saved enemies
+        if (room.Enemies.Count > 0)
+            return room.Enemies.Count(e => e.IsAlive);
+
+        return Random.Range(1, 3);
+    }
+
+    private void SpawnEnemiesForRoom(RoomData room, RoomLayout layout)
+    {
+        float hpMult = LevelConfig.GetHPMultiplier(currentLevel);
+
+        if (room.Enemies.Count > 0)
+        {
+            // Re-spawn saved enemies with their HP
+            int spawnIdx = 0;
+            foreach (var saved in room.Enemies)
+            {
+                if (!saved.IsAlive) continue;
+                if (spawnIdx >= layout.EnemySpawns.Count) break;
+
+                EnemyData baseData = GetEnemyDataByName(saved.EnemyType);
+                var scaledData = CreateScaledEnemyData(baseData, 1f);
+                scaledData.MaxHP = saved.MaxHP;
+                var entity = SpawnEnemy(scaledData, layout.EnemySpawns[spawnIdx]);
+                entity.State.CurrentHP = saved.CurrentHP;
+                enemies.Add(entity);
+                spawnIdx++;
+            }
+        }
+        else
+        {
+            // Fresh enemies
+            int count = GetEnemyCountForRoom(room);
+            for (int i = 0; i < count && i < layout.EnemySpawns.Count; i++)
+            {
+                EnemyData baseData;
+                if (room.Type == RoomType.Boss)
+                {
+                    baseData = OrcData;
+                    hpMult *= 2f; // Boss has 2x HP
+                }
+                else
+                {
+                    // Mix enemy types including archer
+                    float roll = Random.value;
+                    if (roll < 0.2f && ArcherData != null)
+                        baseData = ArcherData;
+                    else if (roll < 0.5f)
+                        baseData = OrcData;
+                    else
+                        baseData = GoblinData;
+                }
+
+                var scaledData = CreateScaledEnemyData(baseData, hpMult);
+                enemies.Add(SpawnEnemy(scaledData, layout.EnemySpawns[i]));
+            }
+        }
+    }
+
+    private EnemyData GetEnemyDataByName(string name)
+    {
+        if (name == "Orc") return OrcData;
+        if (name == "Archer" && ArcherData != null) return ArcherData;
+        return GoblinData;
     }
 
     private EnemyData CreateScaledEnemyData(EnemyData baseData, float hpMultiplier)
@@ -318,19 +426,23 @@ public class GameManager : MonoBehaviour
         scaled.MaxEnergy = baseData.MaxEnergy;
         scaled.EnergyPerRound = baseData.EnergyPerRound;
         scaled.Behavior = baseData.Behavior;
+        scaled.IsRanged = baseData.IsRanged;
+        scaled.PreferredRange = baseData.PreferredRange;
+        scaled.Accuracy = baseData.Accuracy;
+        scaled.GoldDropMin = baseData.GoldDropMin;
+        scaled.GoldDropMax = baseData.GoldDropMax;
         return scaled;
     }
 
     // ── INVENTORY ──
 
-    private void OnInventoryConfirmed(System.Collections.Generic.List<DiceInstance> selectedDice)
+    private void OnInventoryConfirmed(List<DiceInstance> selectedDice)
     {
         if (CurrentState != GameState.InventorySetup) return;
 
-        // Fill bag with selected dice
         player.State.Bag = new DiceBag { MaxPower = player.State.BaseData.StartingPowerBudget };
         foreach (var die in selectedDice)
-            player.State.Bag.Dice.Add(die); // bypass power check — selection already validated
+            player.State.Bag.Dice.Add(die);
 
         Log($"Inventario listo: {selectedDice.Count} dados seleccionados");
         BeginPlayerMovement();
@@ -344,20 +456,16 @@ public class GameManager : MonoBehaviour
 
         if (!enemiesAlive)
         {
-            // Check if player is already on the ladder
-            if (GridManager.Instance.LadderPosition.HasValue &&
-                player.State.GridPosition == GridManager.Instance.LadderPosition.Value)
-            {
-                StartLevelTransition();
-                return;
-            }
+            // Room cleared — check door proximity or show move freely
+            if (DungeonManager.Instance.CurrentRoom != null)
+                DungeonManager.Instance.MarkCurrentRoomCleared();
 
-            // No enemies — free movement, no dice roll required
             TransitionTo(GameState.MovementPhase);
-            UIManager.Instance.ShowPhaseLabel("HEAD TO THE LADDER!");
+            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Go to a door.");
             currentReachableTiles = MovementManager.Instance.GetReachableTiles(
                 player.State.GridPosition, 100);
             GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
+            ShowExplorationUI();
             return;
         }
 
@@ -365,6 +473,24 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.ShowMovementRollPanel(
             player.State.BaseData.SpeedMin,
             player.State.BaseData.SpeedMax);
+        ShowExplorationUI();
+    }
+
+    private void ShowExplorationUI()
+    {
+        if (ExplorationActionsUI.Instance != null)
+        {
+            bool onDoor = IsPlayerOnDoor();
+            ExplorationActionsUI.Instance.SetExplorationMode(
+                player.State.HasPotion, player.State.PotionCount, onDoor);
+            ExplorationActionsUI.Instance.Show();
+        }
+    }
+
+    private bool IsPlayerOnDoor()
+    {
+        var tile = GridManager.Instance.GetTile(player.State.GridPosition);
+        return tile != null && tile.Type == TileType.Door;
     }
 
     private void OnMovementRollClicked()
@@ -386,12 +512,12 @@ public class GameManager : MonoBehaviour
         }));
     }
 
-    // Called by input system when player clicks a reachable tile
     public void OnPlayerMoveSelected(Vector2Int target)
     {
         if (CurrentState != GameState.MovementPhase) return;
 
         GridManager.Instance.ClearHighlights();
+        UIManager.Instance.HideExplorationActions();
         isAnimating = true;
 
         var path = MovementManager.Instance.FindPath(player.State.GridPosition, target);
@@ -404,37 +530,254 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Check ladder after movement
-                CheckLadderTransition();
+                // Check if player landed on a door
+                CheckDoorTransition();
             }
         });
     }
 
-    private void CheckLadderTransition()
+    private void CheckDoorTransition()
     {
-        bool enemiesAlive = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
-
-        if (!enemiesAlive && GridManager.Instance.LadderPosition.HasValue &&
-            player.State.GridPosition == GridManager.Instance.LadderPosition.Value)
+        var tile = GridManager.Instance.GetTile(player.State.GridPosition);
+        if (tile != null && tile.Type == TileType.Door && tile.DoorDirection != null)
         {
-            StartLevelTransition();
-            return;
+            bool enemiesAlive = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+            if (!enemiesAlive)
+            {
+                // Auto-transition to next room
+                StartRoomTransition(tile.DoorDirection);
+                return;
+            }
         }
 
         ProcessEnemyMovement();
     }
 
-    private void StartLevelTransition()
+    private void StartRoomTransition(string direction)
     {
-        TransitionTo(GameState.LevelTransition);
-        UIManager.Instance.ShowPhaseLabel($"LEVEL {currentLevel} COMPLETE!");
-        Log($"Level {currentLevel} complete!");
+        // Save current room state
+        DungeonManager.Instance.SaveEnemyState(enemies);
 
-        StartCoroutine(DelayedAction(1.5f, () =>
+        TransitionTo(GameState.RoomTransition);
+        UIManager.Instance.ShowPhaseLabel("ENTERING NEW ROOM...");
+
+        StartCoroutine(DelayedAction(1f, () =>
         {
-            CleanupForNextLevel();
-            SetupNextLevel();
+            CleanupEnemiesAndGrid();
+            bool success = DungeonManager.Instance.TransitionToRoom(direction);
+            if (success)
+            {
+                // Update minimap
+                if (MinimapUI.Instance != null)
+                    MinimapUI.Instance.UpdateCurrentRoom(DungeonManager.Instance.CurrentRoom.FloorPosition);
+
+                SetupCurrentRoom(false);
+            }
+            else
+            {
+                BeginPlayerMovement();
+            }
         }));
+    }
+
+    // ── EXPLORATION ACTIONS ──
+
+    private void OnBowActionSelected()
+    {
+        if (CurrentState != GameState.MovementPhase && CurrentState != GameState.MovementRoll) return;
+
+        UIManager.Instance.HideMovementRollPanel();
+        TransitionTo(GameState.BowTargeting);
+
+        // Highlight 5x5 area
+        bowTargetTiles = GridManager.Instance.GetTilesInRange(player.State.GridPosition, 5);
+        GridManager.Instance.ClearHighlights();
+        GridManager.Instance.HighlightTiles(bowTargetTiles, new Color(1f, 0.4f, 0.4f, 0.5f));
+        UIManager.Instance.ShowPhaseLabel("SELECT BOW TARGET");
+    }
+
+    private void OnPotionActionSelected()
+    {
+        if (CurrentState != GameState.MovementPhase && CurrentState != GameState.MovementRoll) return;
+        if (!player.State.HasPotion || player.State.PotionCount <= 0) return;
+
+        UIManager.Instance.HideMovementRollPanel();
+        UIManager.Instance.HideExplorationActions();
+
+        var result = ExplorationActions.AttemptPotion(
+            player.State.Dexterity, 10, player.State.MaxHP);
+
+        player.State.Heal(result.healAmount);
+        player.State.PotionCount--;
+        if (player.State.PotionCount <= 0) player.State.HasPotion = false;
+
+        UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+        Log($"Pocion usada! Curado {result.healAmount} HP (roll: {result.roll}, {result.healPercent:0}%)");
+
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowHeal(result.healAmount, player.transform.position);
+
+        // Potion consumes the turn
+        ProcessEnemyMovement();
+    }
+
+    private void OnFleeActionSelected()
+    {
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat
+            && CurrentState != GameState.CrapsBet) return;
+
+        var result = ExplorationActions.AttemptFlee(player.State.Speed);
+        Log($"Intento de huida: roll {result.roll}, chance {result.successChance}%");
+
+        if (result.success)
+        {
+            // Pay 10% max HP
+            int hpCost = Mathf.RoundToInt(player.State.MaxHP * 0.1f);
+            player.State.CurrentHP = Mathf.Max(1, player.State.CurrentHP - hpCost);
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+
+            Log($"Huida exitosa! Perdiste {hpCost} HP");
+            UIManager.Instance.ShowPhaseLabel("FLED!");
+            UIManager.Instance.HideCombatPanel();
+            UIManager.Instance.HideEnemyInfo();
+            UIManager.Instance.HideCrapsOverlay();
+
+            currentCombatEnemy = null;
+
+            // Move away from enemies
+            StartCoroutine(DelayedAction(0.5f, () =>
+            {
+                BeginPlayerMovement();
+            }));
+        }
+        else
+        {
+            Log("Huida fallida! Turno perdido.");
+            UIManager.Instance.ShowPhaseLabel("FLEE FAILED!");
+
+            // Enemy gets a free attack
+            StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
+        }
+    }
+
+    private void OnForceDoorSelected()
+    {
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat) return;
+        if (!IsPlayerOnDoor()) return;
+
+        var tile = GridManager.Instance.GetTile(player.State.GridPosition);
+        var result = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 10);
+        Log($"Forzar puerta: roll {result.roll}, chance {result.successChance}%");
+
+        if (result.success)
+        {
+            // Enemies lose 25% HP
+            foreach (var enemy in enemies)
+            {
+                if (enemy != null && enemy.State.IsAlive)
+                {
+                    int damage = Mathf.RoundToInt(enemy.State.MaxHP * 0.25f);
+                    enemy.State.TakeDamage(damage);
+                    Log($"{enemy.State.BaseData.EnemyName} pierde {damage} HP por forzar puerta");
+                }
+            }
+
+            DungeonManager.Instance.SaveEnemyState(enemies);
+            UIManager.Instance.HideCombatPanel();
+            UIManager.Instance.HideEnemyInfo();
+            StartRoomTransition(tile.DoorDirection);
+        }
+        else
+        {
+            Log("Forzar puerta fallido! Turno perdido.");
+            UIManager.Instance.ShowPhaseLabel("FORCE FAILED!");
+            StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
+        }
+    }
+
+    private void GenerateShopItems(RoomData room)
+    {
+        if (room.ShopItems.Count > 0) return; // Already generated
+
+        // Generate 3 shop items: a potion refill, a dice upgrade, and a random die
+        room.ShopItems.Add(new ShopItemData
+        {
+            ItemName = "Pocion",
+            Description = "Recarga tu pocion (1 uso)",
+            GoldCost = 15,
+            DiceType = null,
+            Purchased = false
+        });
+
+        room.ShopItems.Add(new ShopItemData
+        {
+            ItemName = "d10",
+            Description = "Un dado de 10 caras (costo 2)",
+            GoldCost = 25,
+            DiceType = "d10",
+            Purchased = false
+        });
+
+        room.ShopItems.Add(new ShopItemData
+        {
+            ItemName = "d12",
+            Description = "Un dado de 12 caras (costo 2.5)",
+            GoldCost = 40,
+            DiceType = "d12",
+            Purchased = false
+        });
+
+        // Show shop items in log
+        foreach (var item in room.ShopItems)
+        {
+            if (!item.Purchased)
+                Log($"  [{item.ItemName}] - {item.GoldCost}G: {item.Description}");
+        }
+    }
+
+    private void OnShopBuy(ShopItemData item)
+    {
+        if (player.State.Gold < item.GoldCost) return;
+
+        player.State.Gold -= item.GoldCost;
+        item.Purchased = true;
+        UIManager.Instance.UpdateGold(player.State.Gold);
+
+        // Apply item effect
+        if (item.ItemName == "Pocion")
+        {
+            player.State.HasPotion = true;
+            player.State.PotionCount = 1;
+            Log($"Comprado: Pocion por {item.GoldCost}G - Pocion recargada!");
+        }
+        else if (item.DiceType != null)
+        {
+            // Find the dice data from existing inventory to clone the type
+            DiceData diceData = null;
+            foreach (var die in player.State.FullInventory)
+            {
+                if (die.BaseData.DiceName == item.DiceType)
+                {
+                    diceData = die.BaseData;
+                    break;
+                }
+            }
+
+            if (diceData != null)
+            {
+                var newDie = DiceInstance.Create(diceData);
+                player.State.FullInventory.Add(newDie);
+                Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Dado agregado al inventario!");
+            }
+            else
+            {
+                Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
+            }
+        }
+        else
+        {
+            Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
+        }
     }
 
     private void ProcessEnemyMovement()
@@ -452,20 +795,17 @@ public class GameManager : MonoBehaviour
         {
             if (enemy == null || !enemy.State.IsAlive) continue;
 
-            // Roll speed die and show result
             int steps = enemy.State.SpeedDie.Roll();
             UIManager.Instance.ShowPhaseLabel($"{enemy.State.BaseData.EnemyName} rolls {steps}!");
             Log($"{enemy.State.BaseData.EnemyName} speed roll: {steps}");
             yield return new WaitForSeconds(0.5f);
 
-            // Animate movement
             bool? collision = null;
             MovementManager.Instance.MoveEnemyAnimated(enemy, player, steps, (col) =>
             {
                 collision = col;
             });
 
-            // Wait for animation to finish
             while (collision == null) yield return null;
 
             if (collision.Value)
@@ -475,7 +815,6 @@ public class GameManager : MonoBehaviour
                 yield break;
             }
 
-            // Pause between enemies
             yield return new WaitForSeconds(0.3f);
         }
 
@@ -489,22 +828,36 @@ public class GameManager : MonoBehaviour
     {
         currentCombatEnemy = enemy;
         crapsMode = new CrapsMode();
+
+        // Track other enemies as "waiting" for double combat
+        waitingEnemies.Clear();
+        foreach (var e in enemies)
+        {
+            if (e != null && e.State.IsAlive && e != enemy)
+                waitingEnemies.Add(e);
+        }
+
         TransitionTo(GameState.PreCombat);
 
         UIManager.Instance.ShowPhaseLabel("COMBAT!");
         UIManager.Instance.ShowCombatPanel();
         UIManager.Instance.ShowEnemyInfo(enemy);
+        UIManager.Instance.HideExplorationActions();
         Log($"Combat started with {enemy.State.BaseData.EnemyName}!");
 
-        // Update HUD with enemy info
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
 
-        // Check craps
+        // Show flee/force door buttons during combat
+        if (ExplorationActionsUI.Instance != null)
+        {
+            ExplorationActionsUI.Instance.SetCombatMode(IsPlayerOnDoor());
+            ExplorationActionsUI.Instance.Show();
+        }
+
         if (player.State.CrapsModeAvailable)
         {
             TransitionTo(GameState.CrapsBet);
             UIManager.Instance.ShowCrapsOverlay();
-            // Wait for player to select a bet
         }
         else
         {
@@ -512,7 +865,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Called by CrapsUI when player places craps bet
     public void OnCrapsBetPlaced(CombinationType bet)
     {
         if (CurrentState != GameState.CrapsBet) return;
@@ -536,11 +888,9 @@ public class GameManager : MonoBehaviour
         else
             CombatUI.Instance.HideCrapsBetIndicator();
 
-        // Auto-perform first roll
         OnPlayerRoll();
     }
 
-    // Called by UI: "Roll" / "Reroll" button
     public void OnPlayerRoll()
     {
         if (CurrentState != GameState.AttackPhase) return;
@@ -555,19 +905,15 @@ public class GameManager : MonoBehaviour
         CombatUI.Instance.SetCommitEnabled(true);
     }
 
-    // Called by UI: click on a die to lock/unlock
     public void OnDiceToggleLock(string diceId)
     {
         if (CurrentState != GameState.AttackPhase) return;
         if (currentAttack.CurrentRoll == 0) return;
 
         currentAttack.ToggleLock(diceId);
-
-        // Only update the lock visual on the specific die — no full recreate
         bool nowLocked = currentAttack.LockedDiceIds.Contains(diceId);
         CombatUI.Instance.UpdateDieLock(diceId, nowLocked);
 
-        // Show combo based on locked dice only
         if (currentAttack.LockedDiceIds.Count == 0)
         {
             CombatUI.Instance.ClearComboPreview();
@@ -583,7 +929,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Called by UI: "Commit Attack" button
     public void OnPlayerCommitAttack()
     {
         if (CurrentState != GameState.AttackPhase) return;
@@ -592,7 +937,6 @@ public class GameManager : MonoBehaviour
         var combo = currentAttack.Commit(generalaScoredThisRun);
         int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
 
-        // Apply craps modifier if active
         bool crapsWon = false;
         if (crapsMode.IsActive)
         {
@@ -609,14 +953,10 @@ public class GameManager : MonoBehaviour
                     player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP + crapsResult.HPChange);
             }
 
-            // Show craps result as toast
             if (CrapsToastUI.Instance != null)
                 CrapsToastUI.Instance.ShowResult(crapsResult);
-
-            // Hide bet indicator
             CombatUI.Instance.HideCrapsBetIndicator();
 
-            // Screen flash for craps
             if (ScreenFlashUI.Instance != null)
             {
                 if (crapsResult.Success)
@@ -626,22 +966,18 @@ public class GameManager : MonoBehaviour
             }
 
             Log(crapsResult.Success ? "Craps bet WON!" : "Craps bet LOST!");
-
             EnergyManager.Instance.ResetPlayerEnergy();
             UIManager.Instance.UpdateEnergy(0f);
         }
 
-        // Track Generala
         if (combo.Type == CombinationType.Generala)
             generalaScoredThisRun = true;
 
-        // Apply damage to enemy
         if (currentCombatEnemy == null) return;
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
         UIManager.Instance.UpdateEnemyHP(currentCombatEnemy.State.CurrentHP, currentCombatEnemy.State.MaxHP);
 
-        // Attack sound — deeper pitch for craps wins
         if (SoundLibrary.Instance != null)
         {
             if (crapsWon)
@@ -650,7 +986,6 @@ public class GameManager : MonoBehaviour
                 AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
         }
 
-        // Visual feedback — enhanced for craps wins
         if (FloatingDamageUI.Instance != null)
         {
             if (crapsWon)
@@ -661,19 +996,16 @@ public class GameManager : MonoBehaviour
 
         Log($"You dealt {damage} damage ({combo.Type})");
 
-        // Track best combo
         if (damage > bestComboDamage)
         {
             bestComboDamage = damage;
             bestCombo = combo.Type;
         }
 
-        // Grant energy
         EnergyManager.Instance.ProcessCombatAction(CombatActionType.DealtDamage, combo.Type);
         UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
 
-        // Check enemy death
         if (!currentCombatEnemy.State.IsAlive)
         {
             EnergyManager.Instance.ProcessCombatAction(CombatActionType.KilledEnemy);
@@ -682,7 +1014,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Move to defense
         StartDefensePhase(currentAttack.RollsUsed);
     }
 
@@ -702,12 +1033,9 @@ public class GameManager : MonoBehaviour
 
         TransitionTo(GameState.DefensePhase);
         UIManager.Instance.ShowPhaseLabel("DEFENSA");
-
-        // Auto-first roll
         OnDefenseReroll();
     }
 
-    // Called by UI: reroll button (same as attack reroll mechanic)
     public void OnDefenseReroll()
     {
         if (CurrentState != GameState.DefensePhase) return;
@@ -722,7 +1050,6 @@ public class GameManager : MonoBehaviour
         CombatUI.Instance.SetDefenseCommitEnabled(true);
     }
 
-    // Called by UI: lock/unlock a defense die
     public void OnDefenseDieLock(string diceId)
     {
         if (CurrentState != GameState.DefensePhase) return;
@@ -732,7 +1059,6 @@ public class GameManager : MonoBehaviour
         bool nowLocked = currentDefense.LockedDiceIds.Contains(diceId);
         CombatUI.Instance.UpdateDefenseDieLock(diceId, nowLocked);
 
-        // Show combo from locked dice only
         if (currentDefense.LockedDiceIds.Count == 0)
         {
             CombatUI.Instance.ClearDefenseComboPreview();
@@ -748,7 +1074,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Called by UI: commit defense button
     public void OnDefenseCommit()
     {
         if (CurrentState != GameState.DefensePhase) return;
@@ -776,11 +1101,16 @@ public class GameManager : MonoBehaviour
         TransitionTo(GameState.EnemyAttack);
         UIManager.Instance.ShowPhaseLabel("ENEMY ATTACKS!");
 
+        if (currentCombatEnemy == null || !currentCombatEnemy.State.IsAlive)
+        {
+            OnContinueAfterEnemyAttack();
+            return;
+        }
+
         int rawDamage = currentCombatEnemy.RollAttack();
         int shieldValue = player.State.ShieldValue;
         int netDamage = DamageResolver.ResolveEnemyAttack(rawDamage, shieldValue);
 
-        // Apply damage directly (bypass PlayerState.TakeDamage shield logic since we already resolved it)
         player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - netDamage);
         player.State.ShieldValue = 0;
         totalDamageTaken += netDamage;
@@ -790,11 +1120,8 @@ public class GameManager : MonoBehaviour
             EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
             UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
 
-            // Damage sound
             if (SoundLibrary.Instance != null)
                 AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
-
-            // Visual feedback
             if (ScreenFlashUI.Instance != null)
                 ScreenFlashUI.Instance.FlashDamage();
             if (FloatingDamageUI.Instance != null)
@@ -807,12 +1134,12 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         UIManager.Instance.UpdateShield(0);
 
-        // Check player death
         if (!player.State.IsAlive)
         {
             TransitionTo(GameState.GameOver);
             UIManager.Instance.HideCombatPanel();
             UIManager.Instance.HideEnemyInfo();
+            UIManager.Instance.HideExplorationActions();
             var gameOverUI = FindObjectOfType<GameOverUI>(true);
             if (gameOverUI != null)
                 gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
@@ -820,18 +1147,42 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Wait for player to click "Continue" (handled by OnContinueAfterEnemyAttack)
+        // Advance waiting enemies 1 tile (double combat)
+        AdvanceWaitingEnemies();
     }
 
-    // Called by CombatUI continue button after enemy attack
+    private void AdvanceWaitingEnemies()
+    {
+        foreach (var waiting in waitingEnemies.ToList())
+        {
+            if (waiting == null || !waiting.State.IsAlive) continue;
+
+            var path = MovementManager.Instance.FindPath(
+                waiting.State.GridPosition, player.State.GridPosition);
+            if (path.Count > 0)
+            {
+                var nextTile = path[0];
+                if (nextTile != player.State.GridPosition)
+                {
+                    GridManager.Instance.ClearOccupant(waiting.State.GridPosition);
+                    waiting.MoveTo(nextTile);
+                    GridManager.Instance.SetOccupant(nextTile, waiting.gameObject);
+                }
+                else
+                {
+                    // Reached player — joins combat next round
+                    Log($"{waiting.State.BaseData.EnemyName} joined the combat!");
+                }
+            }
+        }
+    }
+
     private void OnContinueAfterEnemyAttack()
     {
         if (CurrentState != GameState.EnemyAttack) return;
 
-        // Next round
         totalRoundsFought++;
         TransitionTo(GameState.RoundEnd);
-
         StartCoroutine(NextRoundDelay());
     }
 
@@ -839,7 +1190,6 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
 
-        // Check craps for next round
         if (player.State.CrapsModeAvailable)
         {
             TransitionTo(GameState.CrapsBet);
@@ -861,55 +1211,84 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.ShowPhaseLabel("ENEMY DEFEATED!");
         Log($"{enemyName} has been slain!");
 
-        // Remove enemy from grid
-        GridManager.Instance.ClearOccupant(currentCombatEnemy.State.GridPosition);
+        // Gold drop — fallback to 5-15 if data has no gold configured
+        int goldMin = currentCombatEnemy.State.BaseData.GoldDropMin;
+        int goldMax = currentCombatEnemy.State.BaseData.GoldDropMax;
+        if (goldMin <= 0 && goldMax <= 0) { goldMin = 5; goldMax = 15; }
+        int goldDrop = Random.Range(goldMin, goldMax + 1);
+        player.State.Gold += goldDrop;
+        UIManager.Instance.UpdateGold(player.State.Gold);
+        Log($"+{goldDrop} Gold");
 
-        // Play death animation, then proceed
-        currentCombatEnemy.PlayDeathAnimation(() =>
-        {
-            OnEnemyDeathAnimationComplete();
-        });
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowGold(goldDrop, currentCombatEnemy.transform.position);
+
+        GridManager.Instance.ClearOccupant(currentCombatEnemy.State.GridPosition);
+        currentCombatEnemy.PlayDeathAnimation(OnEnemyDeathAnimationComplete);
     }
 
     private void OnEnemyDeathAnimationComplete()
     {
         UIManager.Instance.HideCombatPanel();
         UIManager.Instance.HideEnemyInfo();
+        UIManager.Instance.HideExplorationActions();
 
-        // Always offer a reward after killing an enemy
-        TransitionTo(GameState.RewardSelection);
-        var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-        var rewardUI = FindObjectOfType<RewardUI>(true);
-        if (rewardUI != null) rewardUI.ShowOffers(offers);
-        UIManager.Instance.ShowRewardOverlay();
+        // Check if more enemies to fight
+        bool moreEnemies = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+
+        if (moreEnemies)
+        {
+            // Offer reward, then continue
+            TransitionTo(GameState.RewardSelection);
+            var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+            var rewardUI = FindObjectOfType<RewardUI>(true);
+            if (rewardUI != null) rewardUI.ShowOffers(offers);
+            UIManager.Instance.ShowRewardOverlay();
+        }
+        else
+        {
+            // All enemies dead — boss check
+            var currentRoom = DungeonManager.Instance.CurrentRoom;
+            if (currentRoom != null && currentRoom.Type == RoomType.Boss)
+            {
+                TransitionTo(GameState.Victory);
+                UIManager.Instance.ShowPhaseLabel("BOSS DEFEATED! VICTORY!");
+                var victoryUI = FindObjectOfType<VictoryUI>(true);
+                if (victoryUI != null) victoryUI.Show(GetRunStats());
+                UIManager.Instance.ShowVictoryOverlay();
+                return;
+            }
+
+            // Room cleared
+            TransitionTo(GameState.RewardSelection);
+            var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+            var rewardUI = FindObjectOfType<RewardUI>(true);
+            if (rewardUI != null) rewardUI.ShowOffers(offers);
+            UIManager.Instance.ShowRewardOverlay();
+        }
     }
 
-    // Called by RewardUI when player picks a reward
     public void OnRewardSelected(FaceUpgradeOffer offer)
     {
         if (CurrentState != GameState.RewardSelection) return;
 
-        // Apply upgrade
         var die = player.State.Bag.Dice.First(d => d.Id == offer.TargetDiceId);
         DiceUpgrader.ApplyUpgrade(die, offer.Upgrade);
         Log($"Upgrade applied: {offer.Upgrade.Description}");
 
         UIManager.Instance.HideRewardOverlay();
 
-        // Check if any enemies remain alive on the grid
         bool enemiesRemain = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
         if (!enemiesRemain)
         {
-            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Head to the ladder!");
-            Log("All enemies defeated! Head to the ladder!");
+            UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Go to a door!");
+            DungeonManager.Instance.MarkCurrentRoomCleared();
         }
 
-        // Always return to movement phase — fight remaining enemies or move to ladder
         TransitionTo(GameState.MovementPhase);
         BeginPlayerMovement();
     }
 
-    // Called by UI: restart button
     public void RestartRun()
     {
         UIManager.Instance.HideAllPanels();
@@ -920,20 +1299,124 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (isAnimating || CurrentState != GameState.MovementPhase) return;
-        if (currentReachableTiles == null || currentReachableTiles.Count == 0) return;
+        if (isAnimating) return;
 
         if (Input.GetMouseButtonDown(0))
         {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
-
-            if (currentReachableTiles.Contains(gridPos))
+            if (CurrentState == GameState.MovementPhase)
             {
-                currentReachableTiles = null;
-                OnPlayerMoveSelected(gridPos);
+                HandleMovementClick();
+            }
+            else if (CurrentState == GameState.BowTargeting)
+            {
+                HandleBowClick();
             }
         }
+    }
+
+    private void HandleMovementClick()
+    {
+        if (currentReachableTiles == null || currentReachableTiles.Count == 0) return;
+
+        Vector2Int gridPos = GetGridPosFromMouse();
+        if (currentReachableTiles.Contains(gridPos))
+        {
+            currentReachableTiles = null;
+            OnPlayerMoveSelected(gridPos);
+        }
+    }
+
+    private void HandleBowClick()
+    {
+        if (bowTargetTiles == null) return;
+
+        Vector2Int gridPos = GetGridPosFromMouse();
+        if (!bowTargetTiles.Contains(gridPos))
+        {
+            // Cancel bow
+            GridManager.Instance.ClearHighlights();
+            bowTargetTiles = null;
+            BeginPlayerMovement();
+            return;
+        }
+
+        GridManager.Instance.ClearHighlights();
+        bowTargetTiles = null;
+        UIManager.Instance.HideExplorationActions();
+
+        // Check if enemy is on target tile
+        EnemyEntity targetEnemy = null;
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null && enemy.State.IsAlive && enemy.State.GridPosition == gridPos)
+            {
+                targetEnemy = enemy;
+                break;
+            }
+        }
+
+        if (targetEnemy == null)
+        {
+            Log("No hay enemigo en esa casilla!");
+            UIManager.Instance.ShowPhaseLabel("MISS - No target!");
+            ProcessEnemyMovement();
+            return;
+        }
+
+        var result = ExplorationActions.AttemptBow(player.State.Dexterity, 10);
+        Log($"Arco: roll {result.roll}, chance {result.hitChance}%");
+
+        if (result.hit)
+        {
+            int damage = ExplorationActions.CalculateBowDamage(result.roll);
+            targetEnemy.State.TakeDamage(damage);
+            Log($"Impacto! {damage} de daño a {targetEnemy.State.BaseData.EnemyName}");
+            UIManager.Instance.ShowPhaseLabel("BOW HIT!");
+
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowDamage(damage, targetEnemy.transform.position);
+
+            if (!targetEnemy.State.IsAlive)
+            {
+                HandleBowKill(targetEnemy);
+                return;
+            }
+        }
+        else
+        {
+            Log("Arco falló!");
+            UIManager.Instance.ShowPhaseLabel("BOW MISS!");
+        }
+
+        ProcessEnemyMovement();
+    }
+
+    private void HandleBowKill(EnemyEntity target)
+    {
+        totalEnemiesDefeated++;
+        int bGoldMin = target.State.BaseData.GoldDropMin;
+        int bGoldMax = target.State.BaseData.GoldDropMax;
+        if (bGoldMin <= 0 && bGoldMax <= 0) { bGoldMin = 5; bGoldMax = 15; }
+        int goldDrop = Random.Range(bGoldMin, bGoldMax + 1);
+        player.State.Gold += goldDrop;
+        UIManager.Instance.UpdateGold(player.State.Gold);
+        GridManager.Instance.ClearOccupant(target.State.GridPosition);
+        target.PlayDeathAnimation(() => ProcessEnemyMovement());
+    }
+
+    private Vector2Int GetGridPosFromMouse()
+    {
+        // Raycast from camera to XZ ground plane for 3D isometric
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+        if (groundPlane.Raycast(ray, out float distance))
+        {
+            Vector3 hitPoint = ray.GetPoint(distance);
+            return GridManager.Instance.WorldToGrid(hitPoint);
+        }
+
+        return new Vector2Int(-1, -1);
     }
 
     // ── HELPERS ──
@@ -973,7 +1456,7 @@ public class GameManager : MonoBehaviour
 
     private PlayerEntity SpawnPlayer(CharacterData data, Vector2Int pos)
     {
-        var go = Instantiate(playerPrefab, GridManager.Instance.GridToWorld(pos), Quaternion.identity);
+        var go = Instantiate(playerPrefab, GridManager.Instance.GridToWorld(pos) + new Vector3(0, 0.4f, 0), Quaternion.identity);
         go.SetActive(true);
         var entity = go.GetComponent<PlayerEntity>();
         entity.Initialize(data, pos);
@@ -983,7 +1466,7 @@ public class GameManager : MonoBehaviour
 
     private EnemyEntity SpawnEnemy(EnemyData data, Vector2Int pos)
     {
-        var go = Instantiate(enemyPrefab, GridManager.Instance.GridToWorld(pos), Quaternion.identity);
+        var go = Instantiate(enemyPrefab, GridManager.Instance.GridToWorld(pos) + new Vector3(0, 0.4f, 0), Quaternion.identity);
         go.SetActive(true);
         var entity = go.GetComponent<EnemyEntity>();
         entity.Initialize(data, pos);

@@ -5,44 +5,60 @@ using UnityEngine;
 public class PlayerEntity : MonoBehaviour
 {
     public PlayerState State { get; private set; }
-    public SpriteRenderer Visual;
+    public MeshRenderer Visual;
 
-    [SerializeField] private float moveSpeed = 5f; // tiles per second (0.2s per tile)
+    [SerializeField] private float moveSpeed = 5f;
 
     public bool IsMoving { get; private set; }
+
+    private MaterialPropertyBlock propBlock;
+    private static readonly int ColorID = Shader.PropertyToID("_Color");
+    private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
 
     public void Initialize(CharacterData data, Vector2Int startPosition)
     {
         State = PlayerState.Create(data);
         State.GridPosition = startPosition;
 
-        if (Visual == null) Visual = GetComponent<SpriteRenderer>();
-        if (Visual != null)
+        if (Visual == null) Visual = GetComponentInChildren<MeshRenderer>(true);
+        if (Visual == null)
         {
-            if (Visual.sprite == null)
-                Visual.sprite = CreateSquareSprite();
-            Visual.color = data.CharacterColor;
+            // Fallback: create visual at runtime
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = "Visual";
+            cube.transform.SetParent(transform, false);
+            cube.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            var col = cube.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Visual = cube.GetComponent<MeshRenderer>();
         }
-        transform.position = GridManager.Instance.GridToWorld(startPosition);
+        propBlock = new MaterialPropertyBlock();
+        SetColor(data.CharacterColor);
+        transform.position = GridManager.Instance.GridToWorld(startPosition) + new Vector3(0, 0.4f, 0);
     }
 
-    private static Sprite CreateSquareSprite()
+    private void SetColor(Color color)
     {
-        var tex = new Texture2D(32, 32);
-        var pixels = new Color[32 * 32];
-        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
-        tex.SetPixels(pixels);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
+        if (Visual == null) return;
+        // Set on material directly (reliable in URP)
+        Visual.material.color = color;
+        Visual.material.SetColor(BaseColorID, color);
+        // Also set via property block for override support
+        if (propBlock != null)
+        {
+            Visual.GetPropertyBlock(propBlock);
+            propBlock.SetColor(ColorID, color);
+            propBlock.SetColor(BaseColorID, color);
+            Visual.SetPropertyBlock(propBlock);
+        }
     }
 
     public void MoveTo(Vector2Int newPosition)
     {
         State.GridPosition = newPosition;
-        transform.position = GridManager.Instance.GridToWorld(newPosition);
+        transform.position = GridManager.Instance.GridToWorld(newPosition) + new Vector3(0, 0.4f, 0);
     }
 
-    /// Animated move along a path. Calls onComplete when done.
     public void MoveAlongPath(Vector2Int[] path, Action onComplete = null)
     {
         StartCoroutine(MoveAlongPathRoutine(path, onComplete));
@@ -54,7 +70,7 @@ public class PlayerEntity : MonoBehaviour
 
         foreach (var tile in path)
         {
-            Vector3 target = GridManager.Instance.GridToWorld(tile);
+            Vector3 target = GridManager.Instance.GridToWorld(tile) + new Vector3(0, 0.4f, 0);
             Vector3 start = transform.position;
             float duration = 1f / moveSpeed;
             float elapsed = 0f;

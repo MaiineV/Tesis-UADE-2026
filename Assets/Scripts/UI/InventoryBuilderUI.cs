@@ -9,6 +9,7 @@ public class InventoryBuilderUI : MonoBehaviour
     public static InventoryBuilderUI Instance;
 
     private TMP_Text counterText;
+    private TMP_Text budgetText;
     private Transform cardContainer;
     private Button confirmButton;
     private GameObject cardPrefab;
@@ -16,14 +17,17 @@ public class InventoryBuilderUI : MonoBehaviour
     private List<InventoryDieCardUI> cards = new List<InventoryDieCardUI>();
     private List<DiceInstance> selectedDice = new List<DiceInstance>();
     private int requiredCount;
+    private float maxPowerBudget;
+    private float usedPower;
 
     public event Action<List<DiceInstance>> OnInventoryConfirmed;
 
     void Awake() { Instance = this; }
 
-    public void Initialize(TMP_Text counter, Transform container, Button confirm, GameObject prefab)
+    public void Initialize(TMP_Text counter, TMP_Text budget, Transform container, Button confirm, GameObject prefab)
     {
         counterText = counter;
+        budgetText = budget;
         cardContainer = container;
         confirmButton = confirm;
         cardPrefab = prefab;
@@ -31,11 +35,13 @@ public class InventoryBuilderUI : MonoBehaviour
         confirmButton.onClick.AddListener(OnConfirmClicked);
     }
 
-    public void Show(List<DiceInstance> available, int slotsRequired)
+    public void Show(List<DiceInstance> available, int slotsRequired, float powerBudget)
     {
         gameObject.SetActive(true);
         selectedDice.Clear();
+        usedPower = 0;
         requiredCount = slotsRequired;
+        maxPowerBudget = powerBudget;
         BuildCards(available);
         UpdateCounter();
     }
@@ -71,12 +77,15 @@ public class InventoryBuilderUI : MonoBehaviour
     {
         if (card.IsSelected)
         {
+            usedPower -= card.DiceInstance.PowerCost;
             selectedDice.Remove(card.DiceInstance);
             card.SetSelected(false);
         }
         else
         {
             if (selectedDice.Count >= requiredCount) return;
+            if (usedPower + card.DiceInstance.PowerCost > maxPowerBudget) return;
+            usedPower += card.DiceInstance.PowerCost;
             selectedDice.Add(card.DiceInstance);
             card.SetSelected(true);
         }
@@ -87,6 +96,8 @@ public class InventoryBuilderUI : MonoBehaviour
     {
         if (counterText != null)
             counterText.text = $"{selectedDice.Count}/{requiredCount} dados seleccionados";
+        if (budgetText != null)
+            budgetText.text = $"Poder: {usedPower:0.#}/{maxPowerBudget:0.#}";
         if (confirmButton != null)
             confirmButton.interactable = selectedDice.Count == requiredCount;
     }

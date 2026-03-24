@@ -9,40 +9,43 @@ public class GridManager : MonoBehaviour
     public int Width = 8;
     public int Height = 8;
     public float TileSize = 1f;
-    public Vector2 GridOrigin;
+    public Vector3 GridOrigin = Vector3.zero;
 
     private TileData[,] tiles;
     private TileVisual[,] tileVisuals;
 
     public Vector2Int? LadderPosition { get; private set; }
 
-    private static readonly Color GridTileColor = new Color(0.086f, 0.129f, 0.243f); // #16213e
-    private static readonly Color ObstacleColor = new Color(0.059f, 0.059f, 0.137f); // #0f0f23
-    private static readonly Color LadderColor = new Color(1f, 0.835f, 0.31f);        // #ffd54f
+    private static readonly Color GridTileColor = new Color(0.086f, 0.129f, 0.243f);
+    private static readonly Color ObstacleColor = new Color(0.059f, 0.059f, 0.137f);
+    private static readonly Color LadderColor = new Color(1f, 0.835f, 0.31f);
+    private static readonly Color DoorColor = new Color(0.75f, 0.55f, 0.2f);
 
     void Awake()
     {
         Instance = this;
     }
 
-    // Legacy method — generates with random obstacles (no layout)
     public void GenerateGrid()
     {
         int obstacleCount = Random.Range(4, 7);
         var layout = RoomGenerator.GenerateRoom(Width, Height, obstacleCount, 0);
-        // Use only obstacles from layout, ignore spawns
-        GenerateGridInternal(layout.Obstacles, null);
+        GenerateGridInternal(layout.Obstacles, null, null);
     }
 
-    // New method — generates from a pre-computed RoomLayout
     public void GenerateGrid(RoomLayout layout)
     {
-        GenerateGridInternal(layout.Obstacles, layout.LadderPosition);
+        GenerateGridInternal(layout.Obstacles, layout.LadderPosition, null);
     }
 
-    private void GenerateGridInternal(List<Vector2Int> obstacles, Vector2Int? ladderPos)
+    public void GenerateGrid(RoomLayout layout, Dictionary<string, Vector2Int> doorConnections)
     {
-        // Destroy old grid if exists
+        GenerateGridInternal(layout.Obstacles, null, doorConnections);
+    }
+
+    private void GenerateGridInternal(List<Vector2Int> obstacles, Vector2Int? ladderPos, Dictionary<string, Vector2Int> doors)
+    {
+        // Destroy old grid
         var oldGrid = GameObject.Find("Grid");
         if (oldGrid != null) Object.Destroy(oldGrid);
 
@@ -61,7 +64,8 @@ public class GridManager : MonoBehaviour
                     Position = new Vector2Int(x, y),
                     IsWalkable = true,
                     Occupant = null,
-                    Type = TileType.Normal
+                    Type = TileType.Normal,
+                    DoorDirection = null
                 };
 
                 GameObject tileGO = new GameObject($"Tile_{x}_{y}");
@@ -79,9 +83,15 @@ public class GridManager : MonoBehaviour
         {
             foreach (var obs in obstacles)
             {
+                if (obs.x < 0 || obs.x >= Width || obs.y < 0 || obs.y >= Height) continue;
                 tiles[obs.x, obs.y].IsWalkable = false;
                 tiles[obs.x, obs.y].Type = TileType.Obstacle;
                 tileVisuals[obs.x, obs.y].SetColor(ObstacleColor);
+
+                // Make obstacle tiles taller cubes
+                var cube = tileVisuals[obs.x, obs.y].GetComponentInChildren<MeshRenderer>();
+                if (cube != null)
+                    cube.transform.localScale = new Vector3(0.92f, 0.5f, 0.92f);
             }
         }
 
@@ -93,23 +103,52 @@ public class GridManager : MonoBehaviour
             tiles[lp.x, lp.y].IsWalkable = true;
             tileVisuals[lp.x, lp.y].SetAsLadder(LadderColor);
         }
+
+        // Place doors on edges
+        if (doors != null)
+        {
+            foreach (var kvp in doors)
+            {
+                var doorTile = GetDoorTilePosition(kvp.Key);
+                if (doorTile.x < 0 || doorTile.x >= Width || doorTile.y < 0 || doorTile.y >= Height) continue;
+
+                tiles[doorTile.x, doorTile.y].Type = TileType.Door;
+                tiles[doorTile.x, doorTile.y].IsWalkable = true;
+                tiles[doorTile.x, doorTile.y].DoorDirection = kvp.Key;
+
+                // Clear obstacle if one was placed on door tile
+                tileVisuals[doorTile.x, doorTile.y].SetAsDoor(DoorColor);
+            }
+        }
     }
 
+    private Vector2Int GetDoorTilePosition(string direction)
+    {
+        int midX = Width / 2;
+        int midY = Height / 2;
+        switch (direction)
+        {
+            case "N": return new Vector2Int(midX, Height - 1);
+            case "S": return new Vector2Int(midX, 0);
+            case "E": return new Vector2Int(Width - 1, midY);
+            case "W": return new Vector2Int(0, midY);
+            default: return Vector2Int.zero;
+        }
+    }
+
+    // 3D isometric coordinate conversion
     public Vector3 GridToWorld(Vector2Int gridPos)
     {
-        return new Vector3(
-            GridOrigin.x + gridPos.x * TileSize + TileSize / 2,
-            GridOrigin.y + gridPos.y * TileSize + TileSize / 2,
-            0
-        );
+        float x = gridPos.x * TileSize;
+        float z = gridPos.y * TileSize;
+        return new Vector3(GridOrigin.x + x, 0f, GridOrigin.z + z);
     }
 
     public Vector2Int WorldToGrid(Vector3 worldPos)
     {
-        return new Vector2Int(
-            Mathf.FloorToInt((worldPos.x - GridOrigin.x) / TileSize),
-            Mathf.FloorToInt((worldPos.y - GridOrigin.y) / TileSize)
-        );
+        float x = (worldPos.x - GridOrigin.x) / TileSize;
+        float z = (worldPos.z - GridOrigin.z) / TileSize;
+        return new Vector2Int(Mathf.RoundToInt(x), Mathf.RoundToInt(z));
     }
 
     public bool IsValidPosition(Vector2Int pos)
@@ -126,6 +165,7 @@ public class GridManager : MonoBehaviour
 
     public TileData GetTile(Vector2Int pos)
     {
+        if (pos.x < 0 || pos.x >= Width || pos.y < 0 || pos.y >= Height) return null;
         return tiles[pos.x, pos.y];
     }
 
@@ -136,7 +176,8 @@ public class GridManager : MonoBehaviour
 
     public void ClearOccupant(Vector2Int pos)
     {
-        tiles[pos.x, pos.y].Occupant = null;
+        if (pos.x >= 0 && pos.x < Width && pos.y >= 0 && pos.y < Height)
+            tiles[pos.x, pos.y].Occupant = null;
     }
 
     public void HighlightTiles(List<Vector2Int> positions, Color color)
@@ -160,10 +201,39 @@ public class GridManager : MonoBehaviour
                 {
                     if (tiles[x, y].Type == TileType.Ladder)
                         tileVisuals[x, y].SetAsLadder(LadderColor);
+                    else if (tiles[x, y].Type == TileType.Door)
+                        tileVisuals[x, y].SetAsDoor(DoorColor);
                     else
                         tileVisuals[x, y].ResetColor();
                 }
             }
         }
+    }
+
+    // Get all door tiles
+    public List<TileData> GetDoorTiles()
+    {
+        var doorTiles = new List<TileData>();
+        for (int x = 0; x < Width; x++)
+            for (int y = 0; y < Height; y++)
+                if (tiles[x, y].Type == TileType.Door)
+                    doorTiles.Add(tiles[x, y]);
+        return doorTiles;
+    }
+
+    // Get tiles within range for bow targeting
+    public List<Vector2Int> GetTilesInRange(Vector2Int center, int range)
+    {
+        var result = new List<Vector2Int>();
+        int halfRange = range / 2;
+        for (int x = center.x - halfRange; x <= center.x + halfRange; x++)
+        {
+            for (int y = center.y - halfRange; y <= center.y + halfRange; y++)
+            {
+                if (x >= 0 && x < Width && y >= 0 && y < Height)
+                    result.Add(new Vector2Int(x, y));
+            }
+        }
+        return result;
     }
 }

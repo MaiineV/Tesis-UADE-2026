@@ -232,6 +232,116 @@ public class UIBuilder : MonoBehaviour
         phaseLabel.fontStyle = FontStyles.Bold;
         phaseLabel.gameObject.SetActive(false);
 
+        // ── Gold Display (HUD) ──
+        var goldTextGO = new GameObject("GoldText");
+        goldTextGO.transform.SetParent(hudPanel.transform, false);
+        var goldTextRT = goldTextGO.AddComponent<RectTransform>();
+        goldTextRT.anchorMin = new Vector2(1, 0.5f);
+        goldTextRT.anchorMax = new Vector2(1, 0.5f);
+        goldTextRT.pivot = new Vector2(1, 0.5f);
+        goldTextRT.anchoredPosition = new Vector2(-20, -20);
+        goldTextRT.sizeDelta = new Vector2(150, 30);
+        var goldTMP = goldTextGO.AddComponent<TextMeshProUGUI>();
+        goldTMP.text = "0 G";
+        goldTMP.fontSize = 20;
+        goldTMP.alignment = TextAlignmentOptions.Right;
+        goldTMP.color = AccentGold;
+        goldTMP.fontStyle = FontStyles.Bold;
+        goldTMP.raycastTarget = false;
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetGoldText(goldTMP);
+
+        // ── Exploration Action Buttons (left side) ──
+        var explorationPanel = CreatePanel("ExplorationPanel", canvasTransform,
+            new Vector2(0, 0.3f), new Vector2(0, 0.7f),
+            new Vector2(100, 0), new Vector2(100, 0), 0);
+        var explorationPanelRT = explorationPanel.GetComponent<RectTransform>();
+        explorationPanelRT.sizeDelta = new Vector2(150, 0);
+        explorationPanel.GetComponent<Image>().color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.85f);
+
+        var vlg = explorationPanel.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 8;
+        vlg.padding = new RectOffset(10, 10, 10, 10);
+        vlg.childAlignment = TextAnchor.UpperCenter;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+
+        var moveBtn = CreateButton("MoveBtn", explorationPanel.transform, "MOVER", D6Color);
+        var moveBtnLE = moveBtn.AddComponent<LayoutElement>();
+        moveBtnLE.preferredHeight = 36;
+
+        var bowBtn = CreateButton("BowBtn", explorationPanel.transform, "ARCO", new Color(0.9f, 0.4f, 0.3f));
+        var bowBtnLE = bowBtn.AddComponent<LayoutElement>();
+        bowBtnLE.preferredHeight = 36;
+
+        var potionBtn = CreateButton("PotionBtn", explorationPanel.transform, "POCION", new Color(0.3f, 0.8f, 0.5f));
+        var potionBtnLE = potionBtn.AddComponent<LayoutElement>();
+        potionBtnLE.preferredHeight = 36;
+
+        var potionCountText = CreateTMPText("PotionCount", potionBtn.transform, "x1", 12,
+            TextAlignmentOptions.Right, Color.white);
+        var potionCountRT = potionCountText.GetComponent<RectTransform>();
+        potionCountRT.anchorMin = new Vector2(0.6f, 0);
+        potionCountRT.anchorMax = Vector2.one;
+        potionCountRT.offsetMin = Vector2.zero;
+        potionCountRT.offsetMax = new Vector2(-4, 0);
+
+        var fleeBtn = CreateButton("FleeBtn", explorationPanel.transform, "HUIR", new Color(0.8f, 0.6f, 0.2f));
+        var fleeBtnLE = fleeBtn.AddComponent<LayoutElement>();
+        fleeBtnLE.preferredHeight = 36;
+        fleeBtn.SetActive(false);
+
+        var forceDoorBtn = CreateButton("ForceDoorBtn", explorationPanel.transform, "FORZAR", ShieldColor);
+        var forceDoorBtnLE = forceDoorBtn.AddComponent<LayoutElement>();
+        forceDoorBtnLE.preferredHeight = 36;
+        forceDoorBtn.SetActive(false);
+
+        var explorationActionsUI = explorationPanel.AddComponent<ExplorationActionsUI>();
+        explorationActionsUI.Initialize(
+            moveBtn.GetComponent<Button>(),
+            bowBtn.GetComponent<Button>(),
+            potionBtn.GetComponent<Button>(),
+            fleeBtn.GetComponent<Button>(),
+            forceDoorBtn.GetComponent<Button>(),
+            potionCountText);
+        explorationPanel.SetActive(false);
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetExplorationActionsUI(explorationActionsUI);
+
+        // ── Minimap (top-right corner) ──
+        var minimapPanel = CreatePanel("MinimapPanel", canvasTransform,
+            new Vector2(1, 1), new Vector2(1, 1),
+            Vector2.zero, Vector2.zero, 0);
+        var minimapPanelRT = minimapPanel.GetComponent<RectTransform>();
+        minimapPanelRT.pivot = new Vector2(1, 1);
+        minimapPanelRT.anchoredPosition = new Vector2(-10, -160);
+        minimapPanelRT.sizeDelta = new Vector2(180, 140);
+        minimapPanel.GetComponent<Image>().color = new Color(0, 0, 0, 0.6f);
+
+        var minimapLabel = CreateTMPText("MinimapLabel", minimapPanel.transform, "MAP", 12,
+            TextAlignmentOptions.Center, AccentGold);
+        var minimapLabelRT = minimapLabel.GetComponent<RectTransform>();
+        minimapLabelRT.anchorMin = new Vector2(0, 0.85f);
+        minimapLabelRT.anchorMax = Vector2.one;
+        minimapLabelRT.offsetMin = Vector2.zero;
+        minimapLabelRT.offsetMax = Vector2.zero;
+
+        var minimapCellContainer = new GameObject("MinimapCells");
+        minimapCellContainer.transform.SetParent(minimapPanel.transform, false);
+        var minimapCellContainerRT = minimapCellContainer.AddComponent<RectTransform>();
+        minimapCellContainerRT.anchorMin = new Vector2(0.1f, 0.05f);
+        minimapCellContainerRT.anchorMax = new Vector2(0.9f, 0.85f);
+        minimapCellContainerRT.offsetMin = Vector2.zero;
+        minimapCellContainerRT.offsetMax = Vector2.zero;
+
+        var minimapUI = minimapPanel.AddComponent<MinimapUI>();
+        minimapUI.Initialize(minimapCellContainer.transform);
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetMinimapUI(minimapUI);
+
         // ── Combat Panel ──
         var combatPanel = CreatePanel("CombatPanel", canvasTransform,
             new Vector2(0, 0), new Vector2(1, 0),
@@ -562,6 +672,45 @@ public class UIBuilder : MonoBehaviour
         );
         rewardOverlay.SetActive(false);
 
+        // ── Shop Overlay ──
+        var shopOverlay = CreateOverlayPanel("ShopOverlay", canvasTransform);
+
+        var shopInner = CreatePanel("ShopInner", shopOverlay.transform,
+            new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f),
+            Vector2.zero, Vector2.zero, 0);
+        StretchAnchors(shopInner.GetComponent<RectTransform>(), 0.2f, 0.2f, 0.8f, 0.8f);
+
+        var shopTitle = CreateTMPText("ShopTitle", shopInner.transform,
+            "TIENDA", 28, TextAlignmentOptions.Center, AccentGold);
+        SetRect(shopTitle, 0.05f, 0.82f, 0.95f, 0.97f);
+        shopTitle.fontStyle = FontStyles.Bold;
+
+        var shopItemName = CreateTMPText("ShopItemName", shopInner.transform,
+            "", 22, TextAlignmentOptions.Center, TextColor);
+        SetRect(shopItemName, 0.1f, 0.62f, 0.9f, 0.78f);
+        shopItemName.fontStyle = FontStyles.Bold;
+
+        var shopItemDesc = CreateTMPText("ShopItemDesc", shopInner.transform,
+            "", 16, TextAlignmentOptions.Center, TextColor);
+        SetRect(shopItemDesc, 0.1f, 0.42f, 0.9f, 0.62f);
+        shopItemDesc.enableWordWrapping = true;
+
+        var shopItemPrice = CreateTMPText("ShopItemPrice", shopInner.transform,
+            "", 24, TextAlignmentOptions.Center, AccentGold);
+        SetRect(shopItemPrice, 0.1f, 0.28f, 0.9f, 0.42f);
+        shopItemPrice.fontStyle = FontStyles.Bold;
+
+        var shopBuyBtn = CreateButton("ShopBuyBtn", shopInner.transform, "COMPRAR", AccentGold);
+        SetRect(shopBuyBtn, 0.1f, 0.08f, 0.48f, 0.24f);
+
+        var shopCancelBtn = CreateButton("ShopCancelBtn", shopInner.transform, "CERRAR", ShieldColor);
+        SetRect(shopCancelBtn, 0.52f, 0.08f, 0.9f, 0.24f);
+
+        var shopUI = shopOverlay.AddComponent<ShopUI>();
+        shopUI.Initialize(shopItemName, shopItemDesc, shopItemPrice,
+            shopBuyBtn.GetComponent<Button>(), shopCancelBtn.GetComponent<Button>());
+        shopOverlay.SetActive(false);
+
         // ── Game Over Overlay ──
         var gameOverOverlay = CreateOverlayPanel("GameOverOverlay", canvasTransform);
 
@@ -663,7 +812,11 @@ public class UIBuilder : MonoBehaviour
 
         var invCounter = CreateTMPText("InvCounter", inventoryOverlay.transform,
             "0/5 dados seleccionados", 20, TextAlignmentOptions.Center, TextColor);
-        SetRect(invCounter, 0.05f, 0.78f, 0.95f, 0.88f);
+        SetRect(invCounter, 0.05f, 0.81f, 0.50f, 0.88f);
+
+        var invBudget = CreateTMPText("InvBudget", inventoryOverlay.transform,
+            "Poder: 0/8", 20, TextAlignmentOptions.Center, AccentGold);
+        SetRect(invBudget, 0.50f, 0.81f, 0.95f, 0.88f);
 
         var invCardContainer = new GameObject("InvCardContainer");
         invCardContainer.transform.SetParent(inventoryOverlay.transform, false);
@@ -689,6 +842,7 @@ public class UIBuilder : MonoBehaviour
         var inventoryBuilderUI = inventoryOverlay.AddComponent<InventoryBuilderUI>();
         inventoryBuilderUI.Initialize(
             invCounter,
+            invBudget,
             invCardContainer.transform,
             invConfirmButton.GetComponent<Button>(),
             invCardPrefab
@@ -820,14 +974,23 @@ public class UIBuilder : MonoBehaviour
         nameRT.offsetMax = Vector2.zero;
         nameText.fontStyle = FontStyles.Bold;
 
-        // Range (small, bottom)
+        // Range (small, middle)
         var rangeText = CreateTMPText("RangeText", prefab.transform, "1\u20136", 14,
             TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.85f));
         var rangeRT = rangeText.GetComponent<RectTransform>();
-        rangeRT.anchorMin = new Vector2(0, 0.08f);
-        rangeRT.anchorMax = new Vector2(1, 0.45f);
+        rangeRT.anchorMin = new Vector2(0, 0.28f);
+        rangeRT.anchorMax = new Vector2(1, 0.50f);
         rangeRT.offsetMin = Vector2.zero;
         rangeRT.offsetMax = Vector2.zero;
+
+        // Cost (small, bottom)
+        var costText = CreateTMPText("CostText", prefab.transform, "Costo: 1", 12,
+            TextAlignmentOptions.Center, AccentGold);
+        var costRT = costText.GetComponent<RectTransform>();
+        costRT.anchorMin = new Vector2(0, 0.04f);
+        costRT.anchorMax = new Vector2(1, 0.26f);
+        costRT.offsetMin = Vector2.zero;
+        costRT.offsetMax = Vector2.zero;
 
         prefab.AddComponent<InventoryDieCardUI>();
         // refs wired in Awake() per-instance — no Initialize needed

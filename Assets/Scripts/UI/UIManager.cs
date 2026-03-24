@@ -129,13 +129,39 @@ public class UIManager : MonoBehaviour
     public void ShowVictoryOverlay() => SetPanel(victoryOverlay, true);
     public void HideVictoryOverlay() => SetPanel(victoryOverlay, false);
 
-    public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, int slots)
-        => inventoryBuilderUI?.Show(inventory, slots);
+    public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, int slots, float powerBudget)
+        => inventoryBuilderUI?.Show(inventory, slots, powerBudget);
     public void HideInventoryBuilder() => inventoryBuilderUI?.Hide();
 
     public void ShowMovementRollPanel(int min, int max) => movementRollUI?.Show(min, max);
     public void ShowMovementRollResult(int steps) => movementRollUI?.ShowResult(steps);
     public void HideMovementRollPanel() => movementRollUI?.Hide();
+
+    // --- Gold ---
+
+    [SerializeField] private TMPro.TMP_Text goldText;
+
+    public void SetGoldText(TMPro.TMP_Text goldRef) { goldText = goldRef; }
+
+    public void UpdateGold(int amount)
+    {
+        if (goldText != null) goldText.text = $"{amount} G";
+    }
+
+    // --- Exploration Actions ---
+
+    private ExplorationActionsUI explorationActionsUI;
+
+    public void SetExplorationActionsUI(ExplorationActionsUI ui) { explorationActionsUI = ui; }
+    public void ShowExplorationActions() { if (explorationActionsUI != null) explorationActionsUI.Show(); }
+    public void HideExplorationActions() { if (explorationActionsUI != null) explorationActionsUI.Hide(); }
+
+    // --- Minimap ---
+
+    private MinimapUI minimapUI;
+
+    public void SetMinimapUI(MinimapUI ui) { minimapUI = ui; }
+    public MinimapUI GetMinimapUI() => minimapUI;
 
     // --- Enemy Info ---
 
@@ -153,6 +179,7 @@ public class UIManager : MonoBehaviour
         HideMovementRollPanel();
         HideInventoryBuilder();
         HideEnemyInfo();
+        HideExplorationActions();
     }
 
     private void SetPanel(GameObject panel, bool active)
