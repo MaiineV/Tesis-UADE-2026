@@ -15,6 +15,7 @@ MonoBehaviour:
   EnemyName: Orc
   Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   EnemyColor: {r: 0.9372549, g: 0.3254902, b: 0.3137255, a: 1}
+  ModelPrefab: {fileID: 4886868960383466008, guid: 7f507159d1ed2454c8c19de6529035df, type: 3}
   MaxHP: 60
   AttackDiceCount: 2
   AttackDiceFaces: 8
@@ -23,3 +24,8 @@ MonoBehaviour:
   MaxEnergy: 40
   EnergyPerRound: 12
   Behavior: 0
+  IsRanged: 0
+  PreferredRange: 0
+  Accuracy: 0
+  GoldDropMin: 0
+  GoldDropMax: 0

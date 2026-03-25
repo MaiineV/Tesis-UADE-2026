@@ -23,7 +23,7 @@ public class SceneSetup : MonoBehaviour
         if (cam == null) return;
 
         cam.orthographic = true;
-        cam.orthographicSize = 8f;
+        cam.orthographicSize = 4.6f;
 
         // Isometric camera: 30° pitch, 45° yaw
         cam.transform.rotation = Quaternion.Euler(35f, 45f, 0f);

@@ -18,20 +18,40 @@ public class EnemyEntity : MonoBehaviour
     public void Initialize(EnemyData data, Vector2Int position)
     {
         State = EnemyState.Create(data, position);
-        if (Visual == null) Visual = GetComponentInChildren<MeshRenderer>(true);
-        if (Visual == null)
+
+        // If a 3D model prefab is assigned, instantiate it
+        if (data.ModelPrefab != null)
         {
-            // Fallback: create visual at runtime
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = "Visual";
-            cube.transform.SetParent(transform, false);
-            cube.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-            var col = cube.GetComponent<Collider>();
-            if (col != null) DestroyImmediate(col);
-            Visual = cube.GetComponent<MeshRenderer>();
+            // Disable SpriteRenderer on root so the 2D placeholder doesn't cover the model
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
+
+            // Remove any existing visual children
+            foreach (Transform child in transform)
+                Destroy(child.gameObject);
+
+            var modelInstance = Instantiate(data.ModelPrefab, transform);
+            modelInstance.name = "Model";
+            Visual = modelInstance.GetComponentInChildren<MeshRenderer>(true);
         }
-        propBlock = new MaterialPropertyBlock();
-        SetColor(data.EnemyColor);
+        else
+        {
+            if (Visual == null) Visual = GetComponentInChildren<MeshRenderer>(true);
+            if (Visual == null)
+            {
+                // Fallback: create visual at runtime
+                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.name = "Visual";
+                cube.transform.SetParent(transform, false);
+                cube.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+                var col = cube.GetComponent<Collider>();
+                if (col != null) DestroyImmediate(col);
+                Visual = cube.GetComponent<MeshRenderer>();
+            }
+            propBlock = new MaterialPropertyBlock();
+            SetColor(data.EnemyColor);
+        }
+
         transform.position = GridManager.Instance.GridToWorld(position) + new Vector3(0, 0.4f, 0);
     }
 

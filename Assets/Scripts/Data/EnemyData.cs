@@ -7,6 +7,7 @@ public class EnemyData : ScriptableObject
     public string EnemyName;
     public Sprite Sprite;
     public Color EnemyColor;
+    public GameObject ModelPrefab;
 
     [Header("Stats")]
     public int MaxHP;

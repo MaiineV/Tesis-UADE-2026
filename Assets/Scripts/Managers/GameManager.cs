@@ -431,6 +431,7 @@ public class GameManager : MonoBehaviour
         scaled.Accuracy = baseData.Accuracy;
         scaled.GoldDropMin = baseData.GoldDropMin;
         scaled.GoldDropMax = baseData.GoldDropMax;
+        scaled.ModelPrefab = baseData.ModelPrefab;
         return scaled;
     }
 

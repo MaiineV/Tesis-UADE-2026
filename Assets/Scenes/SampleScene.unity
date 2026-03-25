@@ -509,6 +509,7 @@ MonoBehaviour:
   PrototypeCharacter: {fileID: 11400000, guid: cdb45127973ab0345911b609267b4341, type: 2}
   GoblinData: {fileID: 11400000, guid: 2bd2491e3196a234e82b6bebf27be436, type: 2}
   OrcData: {fileID: 11400000, guid: 3940e4daf5c45a34bb998e09c63b6971, type: 2}
+  ArcherData: {fileID: 0}
   playerPrefab: {fileID: 3373296147817135953, guid: 05b1d934fb26c6a4883af8386fcd1b73, type: 3}
   enemyPrefab: {fileID: 6360164929874497939, guid: 20f34bb7a4f017d4298421c968405f9a, type: 3}
 --- !u!4 &1346351205
