@@ -451,6 +451,8 @@ public class GameManager : MonoBehaviour
         scaled.IsRanged = baseData.IsRanged;
         scaled.PreferredRange = baseData.PreferredRange;
         scaled.Accuracy = baseData.Accuracy;
+        scaled.Precision = baseData.Precision;
+        scaled.FiresFirst = baseData.FiresFirst;
         scaled.GoldDropMin = baseData.GoldDropMin;
         scaled.GoldDropMax = baseData.GoldDropMax;
         scaled.ModelPrefab = baseData.ModelPrefab;
@@ -918,7 +920,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            StartAttackPhase();
+            ProcessArcherPreAttack();
         }
     }
 
@@ -929,6 +931,80 @@ public class GameManager : MonoBehaviour
         crapsMode.PlaceBet(bet);
         crapsAttempts++;
         UIManager.Instance.HideCrapsOverlay();
+        ProcessArcherPreAttack();
+    }
+
+    // ── ARCHER PRE-ATTACK ──
+
+    private void ProcessArcherPreAttack()
+    {
+        if (currentCombatEnemy == null || !currentCombatEnemy.State.IsAlive) { StartAttackPhase(); return; }
+        if (!currentCombatEnemy.State.BaseData.FiresFirst) { StartAttackPhase(); return; }
+
+        int damage = Random.Range(1, 7) + currentCombatEnemy.State.BaseData.Precision;
+        var dodge = ExplorationActions.AttemptDodge(player.State.Dexterity, currentCombatEnemy.State.BaseData.Precision);
+
+        Log($"Archer fires! d6+{currentCombatEnemy.State.BaseData.Precision} = {damage}");
+        UIManager.Instance.ShowPhaseLabel("ARCHER FIRES!");
+
+        StartCoroutine(ArcherPreAttackRoutine(damage, dodge));
+    }
+
+    private IEnumerator ArcherPreAttackRoutine(int damage, (bool dodged, int playerRoll, int enemyRoll) dodge)
+    {
+        // Arrow visual: lerp from enemy to player
+        var arrowObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        arrowObj.name = "Arrow";
+        arrowObj.transform.localScale = new Vector3(0.1f, 0.1f, 0.4f);
+        var arrowCol = arrowObj.GetComponent<Collider>();
+        if (arrowCol != null) Destroy(arrowCol);
+        ColorUtility.TryParseHtmlString("#ffa726", out Color arrowColor);
+        arrowObj.GetComponent<MeshRenderer>().material.color = arrowColor;
+
+        Vector3 start = currentCombatEnemy.transform.position + Vector3.up * 0.5f;
+        Vector3 end = player.transform.position + Vector3.up * 0.5f;
+        float t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * 4f;
+            arrowObj.transform.position = Vector3.Lerp(start, end, t);
+            arrowObj.transform.LookAt(end);
+            yield return null;
+        }
+        Destroy(arrowObj);
+
+        if (dodge.dodged)
+        {
+            Log($"Player dodged! (d6+Dex={dodge.playerRoll} vs d6+Prec={dodge.enemyRoll})");
+            UIManager.Instance.ShowPhaseLabel("DODGED!");
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowText("DODGE!", player.transform.position, Color.yellow);
+        }
+        else
+        {
+            player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - damage);
+            totalDamageTaken += damage;
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+            Log($"Arrow hit! {damage} damage (d6+Dex={dodge.playerRoll} vs d6+Prec={dodge.enemyRoll})");
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowDamage(damage, player.transform.position);
+            if (ScreenFlashUI.Instance != null) ScreenFlashUI.Instance.FlashDamage();
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        if (!player.State.IsAlive)
+        {
+            TransitionTo(GameState.GameOver);
+            UIManager.Instance.HideCombatPanel();
+            UIManager.Instance.HideEnemyInfo();
+            UIManager.Instance.HideExplorationActions();
+            var gameOverUI = FindObjectOfType<GameOverUI>(true);
+            if (gameOverUI != null) gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
+            UIManager.Instance.ShowGameOverOverlay();
+            yield break;
+        }
+
         StartAttackPhase();
     }
 
@@ -1254,7 +1330,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            StartAttackPhase();
+            ProcessArcherPreAttack();
         }
     }
 

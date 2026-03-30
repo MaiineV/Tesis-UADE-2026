@@ -38,6 +38,17 @@ public static class ExplorationActions
         return (check <= successChance, total, successChance);
     }
 
+    // Dodge: d6 + scaled dex vs d6 + precision
+    public static (bool dodged, int playerRoll, int enemyRoll) AttemptDodge(int playerDex, int enemyPrecision)
+    {
+        int playerRoll = Random.Range(1, 7) + (playerDex / 5); // d6 + scaled dex
+        int enemyRoll = Random.Range(1, 7) + enemyPrecision;   // d6 + precision
+        return (playerRoll > enemyRoll, playerRoll, enemyRoll);
+    }
+
+    // Force door HP cost
+    public static int ForceDoorHPCost() { return 3; }
+
     // Force Door: d10 + Dexterity → success%
     public static (bool success, int roll, int successChance) AttemptForceDoor(int dexterity, int dexterityMax)
     {

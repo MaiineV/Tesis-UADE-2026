@@ -29,6 +29,8 @@ public class EnemyData : ScriptableObject
     public bool IsRanged;
     public int PreferredRange;
     public int Accuracy;
+    public int Precision;
+    public bool FiresFirst;
 
     [Header("Loot")]
     public int GoldDropMin;

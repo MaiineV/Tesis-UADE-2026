@@ -222,9 +222,9 @@ public class SceneSetup : MonoBehaviour
         data.EnemyName = "Archer";
         ColorUtility.TryParseHtmlString("#ffa726", out Color c);
         data.EnemyColor = c;
-        data.MaxHP = 30;
+        data.MaxHP = 18;
         data.AttackDiceCount = 1;
-        data.AttackDiceFaces = 8;
+        data.AttackDiceFaces = 6;
         data.SpeedMin = 1;
         data.SpeedMax = 3;
         data.MaxEnergy = 40f;
@@ -233,8 +233,10 @@ public class SceneSetup : MonoBehaviour
         data.IsRanged = true;
         data.PreferredRange = 3;
         data.Accuracy = 60;
-        data.GoldDropMin = 8;
-        data.GoldDropMax = 18;
+        data.Precision = 3;
+        data.FiresFirst = true;
+        data.GoldDropMin = 10;
+        data.GoldDropMax = 10;
         return data;
     }
 
