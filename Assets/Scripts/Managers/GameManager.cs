@@ -75,6 +75,14 @@ public class GameManager : MonoBehaviour
     // Bow targeting
     private List<Vector2Int> bowTargetTiles;
 
+    // Potion room pickup
+    private GameObject _potionPickupObj;
+    private Vector2Int _potionPickupTile;
+
+    // Boss portal
+    private GameObject _portalObj;
+    private Vector2Int _portalTile;
+
     // Events
     public static event Action<GameState> OnStateChanged;
 
@@ -286,11 +294,24 @@ public class GameManager : MonoBehaviour
         }
         else if (room.Type == RoomType.Potion)
         {
-            if (player != null)
+            if (!room.PotionCollected)
             {
-                player.State.HasPotion = true;
-                player.State.PotionCount = 1;
-                Log("Pocion recargada!");
+                var center = new Vector2Int(GridManager.Instance.Width / 2, GridManager.Instance.Height / 2);
+                _potionPickupTile = center;
+                _potionPickupObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _potionPickupObj.name = "PotionPickup";
+                _potionPickupObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
+                _potionPickupObj.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+                var potionRenderer = _potionPickupObj.GetComponent<MeshRenderer>();
+                ColorUtility.TryParseHtmlString("#66bb6a", out Color potionColor);
+                potionRenderer.material.color = potionColor;
+                var potionCol = _potionPickupObj.GetComponent<Collider>();
+                if (potionCol != null) Destroy(potionCol);
+                Log("A potion awaits! Walk to it to collect.");
+            }
+            else
+            {
+                Log("Room is empty.");
             }
         }
 
@@ -534,6 +555,29 @@ public class GameManager : MonoBehaviour
         MovementManager.Instance.MovePlayerAlongPathAnimated(player, path, (enemy) =>
         {
             isAnimating = false;
+
+            // Check potion pickup
+            if (_potionPickupObj != null && player.State.GridPosition == _potionPickupTile)
+            {
+                player.State.HasPotion = true;
+                player.State.PotionCount = 1;
+                var room = DungeonManager.Instance.CurrentRoom;
+                if (room != null) room.PotionCollected = true;
+                Destroy(_potionPickupObj);
+                _potionPickupObj = null;
+                UIManager.Instance.ShowPhaseLabel("POTION COLLECTED!");
+                Log("Potion collected!");
+                if (FloatingDamageUI.Instance != null)
+                    FloatingDamageUI.Instance.ShowText("POTION!", player.transform.position, Color.green);
+            }
+
+            // Check portal pickup
+            if (_portalObj != null && player.State.GridPosition == _portalTile)
+            {
+                AdvanceToNextFloor();
+                return;
+            }
+
             if (enemy != null)
             {
                 EnterCombat(enemy);

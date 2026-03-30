@@ -19,6 +19,7 @@ public class RoomData
     public Vector2Int PlayerSpawn;
     public List<Vector2Int> EnemySpawns = new List<Vector2Int>();
     public bool LayoutGenerated;
+    public bool PotionCollected;
 }
 
 [System.Serializable]
