@@ -8,6 +8,9 @@ public class EnemyInfoUI : MonoBehaviour
     [SerializeField] private Image hpFillBar;
     [SerializeField] private TMP_Text hpText;
     [SerializeField] private float smoothSpeed = 5f;
+    private Button targetButton;
+
+    public event System.Action OnTargetClicked;
 
     private static readonly Color ColorGreen = new Color(0.31f, 0.78f, 0.47f);
     private static readonly Color ColorYellow = new Color(1f, 0.76f, 0f);
@@ -71,6 +74,27 @@ public class EnemyInfoUI : MonoBehaviour
 
         if (hpText != null)
             hpText.text = $"{current}/{max}";
+    }
+
+    public void SetTargetButton(Button btn)
+    {
+        targetButton = btn;
+        if (targetButton != null)
+            targetButton.onClick.AddListener(() => OnTargetClicked?.Invoke());
+    }
+
+    public void ShowTargetButton(bool show)
+    {
+        if (targetButton != null) targetButton.gameObject.SetActive(show);
+    }
+
+    public void HighlightTarget(bool highlighted)
+    {
+        if (enemyNameText != null)
+        {
+            ColorUtility.TryParseHtmlString(highlighted ? "#ffd54f" : "#e0e0e0", out Color c);
+            enemyNameText.color = c;
+        }
     }
 
     public void Hide()

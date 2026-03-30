@@ -83,6 +83,10 @@ public class GameManager : MonoBehaviour
     private GameObject _portalObj;
     private Vector2Int _portalTile;
 
+    // Multi-enemy combat
+    private List<EnemyEntity> _activeCombatEnemies = new List<EnemyEntity>();
+    private int _targetEnemyIndex = 0;
+
     // Events
     public static event Action<GameState> OnStateChanged;
 
@@ -180,6 +184,15 @@ public class GameManager : MonoBehaviour
         // Bind shop
         if (ShopUI.Instance != null)
             ShopUI.Instance.OnBuyClicked += OnShopBuy;
+
+        // Wire target selection buttons
+        if (UIManager.Instance != null)
+        {
+            var enemyInfo1 = UIManager.Instance.GetEnemyInfoUI();
+            var enemyInfo2 = UIManager.Instance.GetSecondEnemyInfoUI();
+            if (enemyInfo1 != null) enemyInfo1.OnTargetClicked += () => OnTargetSelected(0);
+            if (enemyInfo2 != null) enemyInfo2.OnTargetClicked += () => OnTargetSelected(1);
+        }
 
         StartRun();
     }
@@ -888,28 +901,49 @@ public class GameManager : MonoBehaviour
         currentCombatEnemy = enemy;
         crapsMode = new CrapsMode();
 
-        // Track other enemies as "waiting" for double combat
+        // Check all enemies for adjacency to player
+        _activeCombatEnemies.Clear();
         waitingEnemies.Clear();
+        _activeCombatEnemies.Add(enemy);
+
         foreach (var e in enemies)
         {
             if (e != null && e.State.IsAlive && e != enemy)
-                waitingEnemies.Add(e);
+            {
+                int dist = Mathf.Abs(e.State.GridPosition.x - player.State.GridPosition.x)
+                         + Mathf.Abs(e.State.GridPosition.y - player.State.GridPosition.y);
+                if (dist <= 1)
+                    _activeCombatEnemies.Add(e);
+                else
+                    waitingEnemies.Add(e);
+            }
         }
+
+        _targetEnemyIndex = 0;
 
         TransitionTo(GameState.PreCombat);
 
-        UIManager.Instance.ShowPhaseLabel("COMBAT!");
+        UIManager.Instance.ShowPhaseLabel(_activeCombatEnemies.Count > 1 ? "DOUBLE COMBAT!" : "COMBAT!");
         UIManager.Instance.ShowCombatPanel();
         UIManager.Instance.ShowEnemyInfo(enemy);
+
+        // Show second enemy info if double combat
+        if (_activeCombatEnemies.Count > 1)
+            UIManager.Instance.ShowSecondEnemyInfo(_activeCombatEnemies[1]);
+
         UIManager.Instance.HideExplorationActions();
         Log($"Combat started with {enemy.State.BaseData.EnemyName}!");
+        if (_activeCombatEnemies.Count > 1)
+            Log($"{_activeCombatEnemies[1].State.BaseData.EnemyName} also engages!");
 
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
 
         // Show flee/force door buttons during combat
         if (ExplorationActionsUI.Instance != null)
         {
-            ExplorationActionsUI.Instance.SetCombatMode(IsPlayerOnDoor());
+            var currentRoom = DungeonManager.Instance.CurrentRoom;
+            bool isBossRoom = currentRoom != null && currentRoom.Type == RoomType.Boss;
+            ExplorationActionsUI.Instance.SetCombatMode(IsPlayerOnDoor(), player.State.CurrentHP, isBossRoom);
             ExplorationActionsUI.Instance.Show();
         }
 
@@ -932,6 +966,37 @@ public class GameManager : MonoBehaviour
         crapsAttempts++;
         UIManager.Instance.HideCrapsOverlay();
         ProcessArcherPreAttack();
+    }
+
+    // ── TARGET SELECTION ──
+
+    private void OnTargetSelected(int index)
+    {
+        if (index >= 0 && index < _activeCombatEnemies.Count)
+        {
+            _targetEnemyIndex = index;
+            currentCombatEnemy = _activeCombatEnemies[index];
+            UIManager.Instance.ShowEnemyInfo(currentCombatEnemy);
+            Log($"Target: {currentCombatEnemy.State.BaseData.EnemyName}");
+
+            // Highlight selected
+            var info1 = UIManager.Instance.GetEnemyInfoUI();
+            var info2 = UIManager.Instance.GetSecondEnemyInfoUI();
+            if (info1 != null) info1.HighlightTarget(index == 0);
+            if (info2 != null) info2.HighlightTarget(index == 1);
+        }
+    }
+
+    private void showTargetSelectionIfNeeded()
+    {
+        if (_activeCombatEnemies.Count > 1)
+        {
+            UIManager.Instance.ShowTargetSelection(true);
+        }
+        else
+        {
+            UIManager.Instance.ShowTargetSelection(false);
+        }
     }
 
     // ── ARCHER PRE-ATTACK ──
@@ -1015,6 +1080,8 @@ public class GameManager : MonoBehaviour
         TransitionTo(GameState.AttackPhase);
         currentAttack = new AttackPhase();
         UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "CRAPS ROUND" : "YOUR ATTACK");
+
+        showTargetSelectionIfNeeded();
 
         if (crapsMode.IsActive)
             CombatUI.Instance.ShowCrapsBetIndicator(crapsMode.BetCombo);
@@ -1109,7 +1176,12 @@ public class GameManager : MonoBehaviour
         if (currentCombatEnemy == null) return;
         currentCombatEnemy.State.TakeDamage(damage);
         totalDamageDealt += damage;
-        UIManager.Instance.UpdateEnemyHP(currentCombatEnemy.State.CurrentHP, currentCombatEnemy.State.MaxHP);
+
+        // Update the correct enemy HP panel
+        if (_targetEnemyIndex == 0 || _activeCombatEnemies.Count <= 1)
+            UIManager.Instance.UpdateEnemyHP(currentCombatEnemy.State.CurrentHP, currentCombatEnemy.State.MaxHP);
+        else
+            UIManager.Instance.UpdateSecondEnemyHP(currentCombatEnemy.State.CurrentHP, currentCombatEnemy.State.MaxHP);
 
         if (SoundLibrary.Instance != null)
         {
@@ -1233,59 +1305,77 @@ public class GameManager : MonoBehaviour
     {
         TransitionTo(GameState.EnemyAttack);
         UIManager.Instance.ShowPhaseLabel("ENEMY ATTACKS!");
+        StartCoroutine(MultiEnemyAttackRoutine());
+    }
 
-        if (currentCombatEnemy == null || !currentCombatEnemy.State.IsAlive)
+    private IEnumerator MultiEnemyAttackRoutine()
+    {
+        // Build attack order from active combat enemies
+        var attackOrder = new List<EnemyEntity>(_activeCombatEnemies);
+        attackOrder.RemoveAll(e => e == null || !e.State.IsAlive);
+
+        if (attackOrder.Count == 0)
         {
             OnContinueAfterEnemyAttack();
-            return;
+            yield break;
         }
 
-        int rawDamage = currentCombatEnemy.RollAttack();
-        int shieldValue = player.State.ShieldValue;
-        int netDamage = DamageResolver.ResolveEnemyAttack(rawDamage, shieldValue);
-
-        player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - netDamage);
-        player.State.ShieldValue = 0;
-        totalDamageTaken += netDamage;
-
-        if (netDamage > 0)
+        // Sort by speed descending
+        attackOrder.Sort((a, b) =>
         {
-            EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
-            UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+            int speedA = Random.Range(a.State.BaseData.SpeedMin, a.State.BaseData.SpeedMax + 1);
+            int speedB = Random.Range(b.State.BaseData.SpeedMin, b.State.BaseData.SpeedMax + 1);
+            return speedB.CompareTo(speedA);
+        });
 
-            if (SoundLibrary.Instance != null)
-                AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
-            if (ScreenFlashUI.Instance != null)
-                ScreenFlashUI.Instance.FlashDamage();
-            if (FloatingDamageUI.Instance != null)
-                FloatingDamageUI.Instance.ShowDamage(netDamage, player.transform.position);
-        }
-
-        Log($"{currentCombatEnemy.State.BaseData.EnemyName} dealt {netDamage} damage (shield absorbed {shieldValue})");
-
-        CombatUI.Instance.ShowEnemyAttackResult(rawDamage, shieldValue, netDamage);
-        UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
-        UIManager.Instance.UpdateShield(0);
-
-        if (!player.State.IsAlive)
+        foreach (var enemy in attackOrder)
         {
-            TransitionTo(GameState.GameOver);
-            UIManager.Instance.HideCombatPanel();
-            UIManager.Instance.HideEnemyInfo();
-            UIManager.Instance.HideExplorationActions();
-            var gameOverUI = FindObjectOfType<GameOverUI>(true);
-            if (gameOverUI != null)
-                gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
-            UIManager.Instance.ShowGameOverOverlay();
-            return;
+            if (enemy == null || !enemy.State.IsAlive) continue;
+            UIManager.Instance.ShowPhaseLabel($"{enemy.State.BaseData.EnemyName} ATTACKS!");
+
+            int rawDamage = enemy.RollAttack();
+            int shieldValue = player.State.ShieldValue;
+            int netDamage = DamageResolver.ResolveEnemyAttack(rawDamage, shieldValue);
+
+            player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - netDamage);
+            player.State.ShieldValue = 0;
+            totalDamageTaken += netDamage;
+
+            if (netDamage > 0)
+            {
+                EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
+                UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+                if (SoundLibrary.Instance != null) AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
+                if (ScreenFlashUI.Instance != null) ScreenFlashUI.Instance.FlashDamage();
+                if (FloatingDamageUI.Instance != null) FloatingDamageUI.Instance.ShowDamage(netDamage, player.transform.position);
+            }
+
+            Log($"{enemy.State.BaseData.EnemyName} dealt {netDamage} damage");
+            CombatUI.Instance.ShowEnemyAttackResult(rawDamage, shieldValue, netDamage);
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+            UIManager.Instance.UpdateShield(0);
+
+            if (!player.State.IsAlive)
+            {
+                TransitionTo(GameState.GameOver);
+                UIManager.Instance.HideCombatPanel();
+                UIManager.Instance.HideEnemyInfo();
+                UIManager.Instance.HideExplorationActions();
+                var gameOverUI = FindObjectOfType<GameOverUI>(true);
+                if (gameOverUI != null) gameOverUI.Show(GetRunStats(), enemy.State.BaseData.EnemyName);
+                UIManager.Instance.ShowGameOverOverlay();
+                yield break;
+            }
+
+            yield return new WaitForSeconds(0.8f);
         }
 
-        // Advance waiting enemies 1 tile (double combat)
         AdvanceWaitingEnemies();
     }
 
     private void AdvanceWaitingEnemies()
     {
+        var toPromote = new List<EnemyEntity>();
         foreach (var waiting in waitingEnemies.ToList())
         {
             if (waiting == null || !waiting.State.IsAlive) continue;
@@ -1300,12 +1390,28 @@ public class GameManager : MonoBehaviour
                     GridManager.Instance.ClearOccupant(waiting.State.GridPosition);
                     waiting.MoveTo(nextTile);
                     GridManager.Instance.SetOccupant(nextTile, waiting.gameObject);
+
+                    // Check if now adjacent
+                    int dist = Mathf.Abs(nextTile.x - player.State.GridPosition.x)
+                             + Mathf.Abs(nextTile.y - player.State.GridPosition.y);
+                    if (dist <= 1)
+                        toPromote.Add(waiting);
                 }
                 else
                 {
-                    // Reached player — joins combat next round
-                    Log($"{waiting.State.BaseData.EnemyName} joined the combat!");
+                    toPromote.Add(waiting);
                 }
+            }
+        }
+
+        foreach (var promoted in toPromote)
+        {
+            waitingEnemies.Remove(promoted);
+            if (!_activeCombatEnemies.Contains(promoted))
+            {
+                _activeCombatEnemies.Add(promoted);
+                Log($"{promoted.State.BaseData.EnemyName} joined the combat!");
+                UIManager.Instance.ShowSecondEnemyInfo(promoted);
             }
         }
     }
@@ -1340,6 +1446,16 @@ public class GameManager : MonoBehaviour
     {
         enemiesDefeated++;
         totalEnemiesDefeated++;
+        _activeCombatEnemies.Remove(currentCombatEnemy);
+        UIManager.Instance.HideSecondEnemyInfo();
+        UIManager.Instance.ShowTargetSelection(false);
+
+        // If there are remaining active enemies, switch target
+        if (_activeCombatEnemies.Count > 0)
+        {
+            _targetEnemyIndex = 0;
+        }
+
         string enemyName = currentCombatEnemy.State.BaseData.EnemyName;
         UIManager.Instance.ShowPhaseLabel("ENEMY DEFEATED!");
         Log($"{enemyName} has been slain!");

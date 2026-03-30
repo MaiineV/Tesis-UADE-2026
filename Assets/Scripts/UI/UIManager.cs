@@ -176,9 +176,39 @@ public class UIManager : MonoBehaviour
 
     // --- Enemy Info ---
 
+    private EnemyInfoUI secondEnemyInfoUI;
+
+    public void SetSecondEnemyInfoUI(EnemyInfoUI ui) { secondEnemyInfoUI = ui; }
+
     public void ShowEnemyInfo(EnemyEntity enemy) => enemyInfoUI?.Show(enemy);
-    public void HideEnemyInfo() => enemyInfoUI?.Hide();
+    public void HideEnemyInfo()
+    {
+        enemyInfoUI?.Hide();
+        secondEnemyInfoUI?.Hide();
+    }
     public void UpdateEnemyHP(int current, int max) => enemyInfoUI?.UpdateHP(current, max);
+
+    public void ShowSecondEnemyInfo(EnemyEntity enemy)
+    {
+        if (secondEnemyInfoUI != null) secondEnemyInfoUI.Show(enemy);
+    }
+    public void HideSecondEnemyInfo()
+    {
+        if (secondEnemyInfoUI != null) secondEnemyInfoUI.Hide();
+    }
+    public void UpdateSecondEnemyHP(int current, int max)
+    {
+        if (secondEnemyInfoUI != null) secondEnemyInfoUI.UpdateHP(current, max);
+    }
+
+    public EnemyInfoUI GetEnemyInfoUI() => enemyInfoUI;
+    public EnemyInfoUI GetSecondEnemyInfoUI() => secondEnemyInfoUI;
+
+    public void ShowTargetSelection(bool show)
+    {
+        if (enemyInfoUI != null) enemyInfoUI.ShowTargetButton(show);
+        if (secondEnemyInfoUI != null) secondEnemyInfoUI.ShowTargetButton(show);
+    }
 
     public void HideAllPanels()
     {

@@ -966,9 +966,53 @@ public class UIBuilder : MonoBehaviour
             "", 14, TextAlignmentOptions.Center, TextColor);
         SetRect(enemyHpText, 0.05f, 0.05f, 0.95f, 0.30f);
 
+        // Target button for first enemy
+        var targetBtn1 = CreateButton("TargetBtn1", enemyInfoPanel.transform, "TARGET", AccentGold);
+        SetRect(targetBtn1, 0.6f, 0.02f, 0.95f, 0.28f);
+        targetBtn1.SetActive(false);
+
         var enemyInfoUI = enemyInfoPanel.AddComponent<EnemyInfoUI>();
         enemyInfoUI.Initialize(enemyNameText, hpBarFillImage, enemyHpText);
+        enemyInfoUI.SetTargetButton(targetBtn1.GetComponent<Button>());
         enemyInfoPanel.SetActive(false);
+
+        // ── Second Enemy Info Panel (below the first) ──
+        var enemyInfo2Panel = CreatePanel("EnemyInfo2Panel", canvasTransform,
+            new Vector2(0.75f, 0.30f), new Vector2(0.98f, 0.44f),
+            Vector2.zero, Vector2.zero, 0);
+
+        var enemy2NameText = CreateTMPText("Enemy2NameText", enemyInfo2Panel.transform,
+            "", 18, TextAlignmentOptions.Center, AccentGold);
+        SetRect(enemy2NameText, 0.05f, 0.60f, 0.95f, 0.95f);
+        enemy2NameText.fontStyle = FontStyles.Bold;
+
+        var hp2BarBg = CreateChildImage("HP2BarBg", enemyInfo2Panel.transform, DarkBg);
+        SetRect(hp2BarBg, 0.08f, 0.30f, 0.92f, 0.55f);
+
+        var hp2BarFillGO = CreateChildImage("HP2BarFill", hp2BarBg.transform, Color.white);
+        var hp2BarFillRT = hp2BarFillGO.GetComponent<RectTransform>();
+        hp2BarFillRT.anchorMin = Vector2.zero;
+        hp2BarFillRT.anchorMax = Vector2.one;
+        hp2BarFillRT.offsetMin = Vector2.zero;
+        hp2BarFillRT.offsetMax = Vector2.zero;
+        var hp2BarFillImage = hp2BarFillGO.GetComponent<Image>();
+        hp2BarFillImage.type = Image.Type.Filled;
+        hp2BarFillImage.fillMethod = Image.FillMethod.Horizontal;
+        hp2BarFillImage.fillAmount = 1f;
+
+        var enemy2HpText = CreateTMPText("Enemy2HPText", enemyInfo2Panel.transform,
+            "", 14, TextAlignmentOptions.Center, TextColor);
+        SetRect(enemy2HpText, 0.05f, 0.05f, 0.95f, 0.30f);
+
+        // Target button for second enemy
+        var targetBtn2 = CreateButton("TargetBtn2", enemyInfo2Panel.transform, "TARGET", AccentGold);
+        SetRect(targetBtn2, 0.6f, 0.02f, 0.95f, 0.28f);
+        targetBtn2.SetActive(false);
+
+        var enemyInfo2UI = enemyInfo2Panel.AddComponent<EnemyInfoUI>();
+        enemyInfo2UI.Initialize(enemy2NameText, hp2BarFillImage, enemy2HpText);
+        enemyInfo2UI.SetTargetButton(targetBtn2.GetComponent<Button>());
+        enemyInfo2Panel.SetActive(false);
 
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
@@ -988,6 +1032,7 @@ public class UIBuilder : MonoBehaviour
             );
             uiManager.SetLevelText(levelTMP);
             uiManager.SetEnemyInfoUI(enemyInfoUI);
+            uiManager.SetSecondEnemyInfoUI(enemyInfo2UI);
         }
     }
 
