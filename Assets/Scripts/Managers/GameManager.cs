@@ -625,7 +625,11 @@ public class GameManager : MonoBehaviour
         Log($"Pocion usada! Curado {result.healAmount} HP (roll: {result.roll}, {result.healPercent:0}%)");
 
         if (FloatingDamageUI.Instance != null)
+        {
             FloatingDamageUI.Instance.ShowHeal(result.healAmount, player.transform.position);
+            FloatingDamageUI.Instance.ShowText($"d10:{result.roll} ({result.healPercent:0}%)",
+                player.transform.position + Vector3.up * 0.5f, Color.cyan);
+        }
 
         // Potion consumes the turn
         ProcessEnemyMovement();

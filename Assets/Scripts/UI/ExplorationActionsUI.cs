@@ -54,11 +54,12 @@ public class ExplorationActionsUI : MonoBehaviour
     {
         moveButton.gameObject.SetActive(true);
         bowButton.gameObject.SetActive(true);
-        potionButton.gameObject.SetActive(hasPotion && potionCount > 0);
+        potionButton.gameObject.SetActive(true);
+        potionButton.interactable = hasPotion && potionCount > 0;
         fleeButton.gameObject.SetActive(false);
         forceDoorButton.gameObject.SetActive(false);
         if (potionCountText != null)
-            potionCountText.text = $"x{potionCount}";
+            potionCountText.text = (hasPotion && potionCount > 0) ? $"x{potionCount}" : "USED";
     }
 
     public void SetCombatMode(bool onDoorTile)
