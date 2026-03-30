@@ -696,39 +696,76 @@ public class UIBuilder : MonoBehaviour
         var shopOverlay = CreateOverlayPanel("ShopOverlay", canvasTransform);
 
         var shopInner = CreatePanel("ShopInner", shopOverlay.transform,
-            new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f),
+            new Vector2(0.1f, 0.15f), new Vector2(0.9f, 0.85f),
             Vector2.zero, Vector2.zero, 0);
-        StretchAnchors(shopInner.GetComponent<RectTransform>(), 0.2f, 0.2f, 0.8f, 0.8f);
+        StretchAnchors(shopInner.GetComponent<RectTransform>(), 0.1f, 0.15f, 0.9f, 0.85f);
 
         var shopTitle = CreateTMPText("ShopTitle", shopInner.transform,
             "TIENDA", 28, TextAlignmentOptions.Center, AccentGold);
-        SetRect(shopTitle, 0.05f, 0.82f, 0.95f, 0.97f);
+        SetRect(shopTitle, 0.05f, 0.85f, 0.95f, 0.97f);
         shopTitle.fontStyle = FontStyles.Bold;
 
-        var shopItemName = CreateTMPText("ShopItemName", shopInner.transform,
-            "", 22, TextAlignmentOptions.Center, TextColor);
+        // Legacy single-item fields (hidden when multi-item is used)
+        var shopItemName = CreateTMPText("ShopItemName", shopInner.transform, "", 22, TextAlignmentOptions.Center, TextColor);
         SetRect(shopItemName, 0.1f, 0.62f, 0.9f, 0.78f);
-        shopItemName.fontStyle = FontStyles.Bold;
-
-        var shopItemDesc = CreateTMPText("ShopItemDesc", shopInner.transform,
-            "", 16, TextAlignmentOptions.Center, TextColor);
+        shopItemName.gameObject.SetActive(false);
+        var shopItemDesc = CreateTMPText("ShopItemDesc", shopInner.transform, "", 16, TextAlignmentOptions.Center, TextColor);
         SetRect(shopItemDesc, 0.1f, 0.42f, 0.9f, 0.62f);
-        shopItemDesc.enableWordWrapping = true;
-
-        var shopItemPrice = CreateTMPText("ShopItemPrice", shopInner.transform,
-            "", 24, TextAlignmentOptions.Center, AccentGold);
+        shopItemDesc.gameObject.SetActive(false);
+        var shopItemPrice = CreateTMPText("ShopItemPrice", shopInner.transform, "", 24, TextAlignmentOptions.Center, AccentGold);
         SetRect(shopItemPrice, 0.1f, 0.28f, 0.9f, 0.42f);
-        shopItemPrice.fontStyle = FontStyles.Bold;
-
+        shopItemPrice.gameObject.SetActive(false);
         var shopBuyBtn = CreateButton("ShopBuyBtn", shopInner.transform, "COMPRAR", AccentGold);
         SetRect(shopBuyBtn, 0.1f, 0.08f, 0.48f, 0.24f);
-
+        shopBuyBtn.SetActive(false);
         var shopCancelBtn = CreateButton("ShopCancelBtn", shopInner.transform, "CERRAR", ShieldColor);
         SetRect(shopCancelBtn, 0.52f, 0.08f, 0.9f, 0.24f);
+        shopCancelBtn.SetActive(false);
+
+        // 3 item slots
+        var slotNames = new TMP_Text[3];
+        var slotDescs = new TMP_Text[3];
+        var slotPrices = new TMP_Text[3];
+        var slotBuyBtns = new Button[3];
+
+        for (int s = 0; s < 3; s++)
+        {
+            float xMin = 0.02f + s * 0.33f;
+            float xMax = xMin + 0.30f;
+
+            var slotPanel = CreatePanel($"ShopSlot{s}", shopInner.transform,
+                Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+            SetRect(slotPanel, xMin, 0.18f, xMax, 0.82f);
+
+            slotNames[s] = CreateTMPText($"SlotName{s}", slotPanel.transform,
+                "", 20, TextAlignmentOptions.Center, TextColor);
+            SetRect(slotNames[s], 0.05f, 0.70f, 0.95f, 0.92f);
+            slotNames[s].fontStyle = FontStyles.Bold;
+
+            slotDescs[s] = CreateTMPText($"SlotDesc{s}", slotPanel.transform,
+                "", 14, TextAlignmentOptions.Center, TextColor);
+            SetRect(slotDescs[s], 0.05f, 0.40f, 0.95f, 0.68f);
+            slotDescs[s].enableWordWrapping = true;
+
+            slotPrices[s] = CreateTMPText($"SlotPrice{s}", slotPanel.transform,
+                "", 22, TextAlignmentOptions.Center, AccentGold);
+            SetRect(slotPrices[s], 0.05f, 0.22f, 0.95f, 0.40f);
+            slotPrices[s].fontStyle = FontStyles.Bold;
+
+            var buyBtn = CreateButton($"SlotBuy{s}", slotPanel.transform, "COMPRAR", AccentGold);
+            SetRect(buyBtn, 0.1f, 0.04f, 0.9f, 0.20f);
+            slotBuyBtns[s] = buyBtn.GetComponent<Button>();
+        }
+
+        // Leave button at bottom
+        var shopLeaveBtn = CreateButton("ShopLeaveBtn", shopInner.transform, "SALIR", ShieldColor);
+        SetRect(shopLeaveBtn, 0.35f, 0.03f, 0.65f, 0.14f);
 
         var shopUI = shopOverlay.AddComponent<ShopUI>();
         shopUI.Initialize(shopItemName, shopItemDesc, shopItemPrice,
             shopBuyBtn.GetComponent<Button>(), shopCancelBtn.GetComponent<Button>());
+        shopUI.InitializeMultiSlot(slotNames, slotDescs, slotPrices, slotBuyBtns,
+            shopLeaveBtn.GetComponent<Button>());
         shopOverlay.SetActive(false);
 
         // ── Game Over Overlay ──

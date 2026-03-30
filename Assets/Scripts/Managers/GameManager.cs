@@ -351,16 +351,8 @@ public class GameManager : MonoBehaviour
 
     private void ShowNextShopItem(RoomData room)
     {
-        foreach (var item in room.ShopItems)
-        {
-            if (!item.Purchased)
-            {
-                ShopUI.Instance.ShowItem(item, player.State.Gold);
-                return;
-            }
-        }
-        // All purchased
-        if (ShopUI.Instance != null) ShopUI.Instance.Hide();
+        if (ShopUI.Instance != null)
+            ShopUI.Instance.ShowAllItems(room.ShopItems, player.State.Gold);
     }
 
     private int GetEnemyCountForRoom(RoomData room)
@@ -758,33 +750,24 @@ public class GameManager : MonoBehaviour
     {
         if (room.ShopItems.Count > 0) return; // Already generated
 
-        // Generate 3 shop items: a potion refill, a dice upgrade, and a random die
-        room.ShopItems.Add(new ShopItemData
+        var pool = new List<ShopItemData>
         {
-            ItemName = "Pocion",
-            Description = "Recarga tu pocion (1 uso)",
-            GoldCost = 15,
-            DiceType = null,
-            Purchased = false
-        });
+            new ShopItemData { ItemName = "Pocion", Description = "Recarga tu pocion", GoldCost = 15, ItemType = ShopItemType.PotionRefill },
+            new ShopItemData { ItemName = "d6 Bonus", Description = "Un dado d6 extra", GoldCost = 10, ItemType = ShopItemType.DiceAdd, DiceType = "d6" },
+            new ShopItemData { ItemName = "d10", Description = "Dado de 10 caras (costo 2)", GoldCost = 25, ItemType = ShopItemType.DiceAdd, DiceType = "d10" },
+            new ShopItemData { ItemName = "d12", Description = "Dado de 12 caras (costo 2.5)", GoldCost = 40, ItemType = ShopItemType.DiceAdd, DiceType = "d12" },
+            new ShopItemData { ItemName = "Destreza+5", Description = "Aumenta Destreza en 5", GoldCost = 20, ItemType = ShopItemType.StatBoostDex },
+            new ShopItemData { ItemName = "Velocidad+1", Description = "Aumenta Velocidad en 1", GoldCost = 30, ItemType = ShopItemType.StatBoostSpeed },
+        };
 
-        room.ShopItems.Add(new ShopItemData
+        // Shuffle and pick 3
+        for (int i = pool.Count - 1; i > 0; i--)
         {
-            ItemName = "d10",
-            Description = "Un dado de 10 caras (costo 2)",
-            GoldCost = 25,
-            DiceType = "d10",
-            Purchased = false
-        });
-
-        room.ShopItems.Add(new ShopItemData
-        {
-            ItemName = "d12",
-            Description = "Un dado de 12 caras (costo 2.5)",
-            GoldCost = 40,
-            DiceType = "d12",
-            Purchased = false
-        });
+            int j = Random.Range(0, i + 1);
+            var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+        }
+        for (int i = 0; i < 3 && i < pool.Count; i++)
+            room.ShopItems.Add(pool[i]);
 
         // Show shop items in log
         foreach (var item in room.ShopItems)
@@ -802,41 +785,56 @@ public class GameManager : MonoBehaviour
         item.Purchased = true;
         UIManager.Instance.UpdateGold(player.State.Gold);
 
-        // Apply item effect
-        if (item.ItemName == "Pocion")
+        switch (item.ItemType)
         {
-            player.State.HasPotion = true;
-            player.State.PotionCount = 1;
-            Log($"Comprado: Pocion por {item.GoldCost}G - Pocion recargada!");
-        }
-        else if (item.DiceType != null)
-        {
-            // Find the dice data from existing inventory to clone the type
-            DiceData diceData = null;
-            foreach (var die in player.State.FullInventory)
-            {
-                if (die.BaseData.DiceName == item.DiceType)
-                {
-                    diceData = die.BaseData;
-                    break;
-                }
-            }
+            case ShopItemType.PotionRefill:
+                player.State.HasPotion = true;
+                player.State.PotionCount = 1;
+                Log($"Comprado: Pocion por {item.GoldCost}G - Pocion recargada!");
+                break;
 
-            if (diceData != null)
-            {
-                var newDie = DiceInstance.Create(diceData);
-                player.State.FullInventory.Add(newDie);
-                Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Dado agregado al inventario!");
-            }
-            else
-            {
+            case ShopItemType.DiceAdd:
+                DiceData diceData = null;
+                foreach (var die in player.State.FullInventory)
+                {
+                    if (die.BaseData.DiceName == item.DiceType)
+                    {
+                        diceData = die.BaseData;
+                        break;
+                    }
+                }
+                if (diceData != null)
+                {
+                    var newDie = DiceInstance.Create(diceData);
+                    player.State.FullInventory.Add(newDie);
+                    Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Dado agregado!");
+                }
+                else
+                {
+                    Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
+                }
+                break;
+
+            case ShopItemType.StatBoostDex:
+                player.State.Dexterity += 5;
+                UIManager.Instance.UpdateDexterity(player.State.Dexterity);
+                Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Destreza +5!");
+                break;
+
+            case ShopItemType.StatBoostSpeed:
+                player.State.Speed += 1;
+                Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Velocidad +1!");
+                break;
+
+            default:
                 Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
-            }
+                break;
         }
-        else
-        {
-            Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
-        }
+
+        // Refresh shop display
+        var room = DungeonManager.Instance.CurrentRoom;
+        if (room != null && ShopUI.Instance != null)
+            ShopUI.Instance.ShowAllItems(room.ShopItems, player.State.Gold);
     }
 
     private void ProcessEnemyMovement()
