@@ -18,6 +18,7 @@ public class MinimapUI : MonoBehaviour
     private static readonly Color BossColor = new Color(0.937f, 0.325f, 0.314f, 0.8f);
     private static readonly Color ShopColor = new Color(0.26f, 0.765f, 0.416f, 0.8f);
     private static readonly Color PotionColor = new Color(0.447f, 0.624f, 0.812f, 0.8f);
+    private static readonly Color ForcedDoorColor = new Color(1f, 0.65f, 0.15f, 0.9f);
 
     void Awake() { Instance = this; }
 
@@ -103,7 +104,7 @@ public class MinimapUI : MonoBehaviour
             }
             else if (room.Discovered)
             {
-                img.color = GetRoomColor(room);
+                img.color = GetRoomColorWithForcedDoors(room);
                 SetLabel(label, room);
             }
             else
@@ -133,8 +134,17 @@ public class MinimapUI : MonoBehaviour
             case RoomType.Boss: label.text = "B"; break;
             case RoomType.Shop: label.text = "T"; break;
             case RoomType.Potion: label.text = "P"; break;
-            default: label.text = ""; break;
+            default:
+                label.text = (room.ForcedDoors != null && room.ForcedDoors.Count > 0) ? "F" : "";
+                break;
         }
+    }
+
+    private Color GetRoomColorWithForcedDoors(RoomData room)
+    {
+        if (room.ForcedDoors != null && room.ForcedDoors.Count > 0)
+            return ForcedDoorColor;
+        return GetRoomColor(room);
     }
 
     private void ClearCells()

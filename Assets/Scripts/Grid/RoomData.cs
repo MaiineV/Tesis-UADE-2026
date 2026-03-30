@@ -20,6 +20,7 @@ public class RoomData
     public List<Vector2Int> EnemySpawns = new List<Vector2Int>();
     public bool LayoutGenerated;
     public bool PotionCollected;
+    public List<string> ForcedDoors = new List<string>();
 }
 
 [System.Serializable]

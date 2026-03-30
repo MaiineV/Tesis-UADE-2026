@@ -62,13 +62,16 @@ public class ExplorationActionsUI : MonoBehaviour
             potionCountText.text = (hasPotion && potionCount > 0) ? $"x{potionCount}" : "USED";
     }
 
-    public void SetCombatMode(bool onDoorTile)
+    public void SetCombatMode(bool onDoorTile, int playerHP = 999, bool isBossRoom = false)
     {
         moveButton.gameObject.SetActive(false);
         bowButton.gameObject.SetActive(false);
         potionButton.gameObject.SetActive(false);
         fleeButton.gameObject.SetActive(true);
+
+        bool canForce = onDoorTile && !isBossRoom && playerHP >= 3;
         forceDoorButton.gameObject.SetActive(onDoorTile);
+        forceDoorButton.interactable = canForce;
     }
 
     public void HideAll()

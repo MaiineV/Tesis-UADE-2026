@@ -731,34 +731,36 @@ public class GameManager : MonoBehaviour
         if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat) return;
         if (!IsPlayerOnDoor()) return;
 
+        var room = DungeonManager.Instance.CurrentRoom;
+        if (room != null && room.Type == RoomType.Boss)
+        {
+            Log("No se puede forzar la puerta del Boss!");
+            UIManager.Instance.ShowPhaseLabel("CANNOT FORCE BOSS DOOR!");
+            return;
+        }
+
+        int hpCost = ExplorationActions.ForceDoorHPCost();
+        if (player.State.CurrentHP < hpCost)
+        {
+            Log($"Necesitas al menos {hpCost} HP para forzar la puerta!");
+            return;
+        }
+
+        player.State.CurrentHP -= hpCost;
+        UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+        Log($"Puerta forzada! -{hpCost} HP");
+        UIManager.Instance.ShowPhaseLabel("DOOR FORCED!");
+
         var tile = GridManager.Instance.GetTile(player.State.GridPosition);
-        var result = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 100);
-        Log($"Forzar puerta: roll {result.roll}, chance {result.successChance}%");
 
-        if (result.success)
-        {
-            // Enemies lose 25% HP
-            foreach (var enemy in enemies)
-            {
-                if (enemy != null && enemy.State.IsAlive)
-                {
-                    int damage = Mathf.RoundToInt(enemy.State.MaxHP * 0.25f);
-                    enemy.State.TakeDamage(damage);
-                    Log($"{enemy.State.BaseData.EnemyName} pierde {damage} HP por forzar puerta");
-                }
-            }
+        // Mark door as forced
+        if (room != null && tile.DoorDirection != null && !room.ForcedDoors.Contains(tile.DoorDirection))
+            room.ForcedDoors.Add(tile.DoorDirection);
 
-            DungeonManager.Instance.SaveEnemyState(enemies);
-            UIManager.Instance.HideCombatPanel();
-            UIManager.Instance.HideEnemyInfo();
-            StartRoomTransition(tile.DoorDirection);
-        }
-        else
-        {
-            Log("Forzar puerta fallido! Turno perdido.");
-            UIManager.Instance.ShowPhaseLabel("FORCE FAILED!");
-            StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
-        }
+        DungeonManager.Instance.SaveEnemyState(enemies);
+        UIManager.Instance.HideCombatPanel();
+        UIManager.Instance.HideEnemyInfo();
+        StartRoomTransition(tile.DoorDirection);
     }
 
     private void GenerateShopItems(RoomData room)
