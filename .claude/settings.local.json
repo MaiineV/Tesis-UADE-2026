@@ -1,15 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls \"C:/Users/agust/.claude/projects/C--Users-agust-Documents-GitHub-Tesis-UADE-2026/settings\"*)",
-      "Read(//c/Users/agust/.claude/**)",
-      "WebSearch",
-      "WebFetch(domain:github.com)",
-      "mcp__mcp-unity__get_scene_info",
-      "mcp__mcp-unity__update_gameobject",
-      "mcp__mcp-unity__update_component",
-      "Bash(find \"C:\\\\Users\\\\agust\\\\Documents\\\\GitHub\\\\Tesis-UADE-2026\\\\Assets\" -type f -name \"*.unity\" 2>/dev/null | head -20)",
-      "Bash(find \"C:\\\\Users\\\\agust\\\\Documents\\\\GitHub\\\\Tesis-UADE-2026\" -maxdepth 1 -type f | grep -E \"\\\\.\\(md|txt|json\\)$\")"
+      "Read(//c/Users/Educabot/Desktop/**)",
+      "Read(//c/Users/Educabot/Desktop/Personal/**)",
+      "Bash(find /c/Users/Educabot/Desktop/Personal/Unity/Scholar-Duel -maxdepth 3 -iname *.md -o -iname *.docx -o -iname *.pdf)",
+      "Bash(find /c/Users/Educabot/Unity/Projects/Proyect-T -maxdepth 4 -iname *.md -o -iname *.docx -o -iname *.pdf)",
+      "Bash(find /c/Users/Educabot/Unity/Projects/Proyect-T -maxdepth 5 -type f -name *.md)",
+      "Bash(find /c/Users/Educabot/Unity/Projects/Proyect_T -maxdepth 5 -iname *.md)",
+      "Bash(find /c/Users/Educabot/Unity/Projects/Proyect_T -maxdepth 5 -iname *gdd* -o -iname *game*design*)",
+      "Bash(mkdir -p \"/c/Users/Educabot/Unity/Projects/Tesis-UADE-2026/Assets/8.Documents\")",
+      "Bash(mkdir -p \"/c/Users/Educabot/Unity/Projects/Tesis-UADE-2026/Assets/8.Diagrams\")",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(cp \"Assets/8.Documents/Game Design Document.md\" /tmp/GDD_backup.md)",
+      "Bash(cp CLAUDE.md /tmp/CLAUDE_backup.md)",
+      "Bash(git checkout:*)",
+      "Bash(mv .claude/settings.local.json /tmp/settings_local_backup.json)",
+      "Bash(mv CLAUDE.md /tmp/CLAUDE_main_backup.md)",
+      "Bash(ls:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

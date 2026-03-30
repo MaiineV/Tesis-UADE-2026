@@ -1,7 +1,26 @@
 # Roguelite Dice Dungeon — Project Rules
 
 ## Project Overview
-Roguelite dungeon crawler prototype in Unity (C#). Dice are everything: inventory, weapon, movement, defense. Combat uses Generala (Yahtzee) mechanics. Single-room prototype with 2 enemies.
+**[Untitled] Dice Roguelite** — A turn-based roguelite dungeon crawler built in Unity 6.3 for PC. Dice are the core mechanic: the player builds a dice loadout, explores procedural isometric dungeons, and uses a Yahtzee/Generala-style combo system for combat. Casino aesthetic with deep build-crafting through face enchanting, special dice, and passives.
+
+## Team
+- 6-person development team — Game Development B.S. (UADE 2026)
+- Members: Gabriel Guerrero, Franco Delocca, Franco N., Santiago Bocco + Maine, Sebiche
+
+## Tech Stack
+- **Engine**: Unity 6.3 (C#)
+- **Render Pipeline**: 2D URP
+- **Input**: New Input System
+- **UI**: TextMeshPro + uGUI (Canvas-based)
+- **Target platform**: PC (itch.io / Steam)
+- **Perspective**: Fixed isometric
+
+---
+
+# Design Documents
+
+## GDD
+- `Assets/8.Documents/Game Design Document.md` — Full game design. Covers: concept, glossary, core loop, combat system, dice bag, combos, exploration, enemies, dungeon structure, shop, economy, formulas.
 
 ## Spec Documents
 All design specs are in `spec-docs/`. Read `spec-docs/README.md` for the index. Each spec contains C# code examples, data structures, and acceptance criteria.
@@ -116,3 +135,92 @@ These types are in `Assets/Scripts/Core/` and `Assets/Scripts/Data/`. Do NOT red
 | Energy max (player)  | 100   |
 | Energy max (goblin)  | 50    |
 | Energy max (orc)     | 40    |
+
+---
+
+# Game Design Rules
+
+## Game Identity
+
+1. **Dice are EVERYTHING** — They're not RNG, they're the build, the inventory, the identity.
+2. **Simple core, items break rules** — Base = roll to move, roll to hit. Items add combos, defense, ranged, healing. Isaac philosophy.
+3. **2 AP per turn** — Move + Attack. Order matters. Unused AP are lost.
+4. **Threshold tension** — Every attack is a bet: hit the threshold or deal zero. Crits reward risk.
+5. **Strategy over reflexes** — Pure turn-based. The difficulty is thinking.
+6. **Roguelite progression** — Each run is unique: dice, items, passives, rooms.
+
+## Official Terminology
+
+| Term | Meaning | DO NOT use |
+|---|---|---|
+| **Dice Bag** | The player's loadout/inventory | Backpack, inventory |
+| **Hit Threshold** | Minimum die result to deal damage | Accuracy, difficulty |
+| **AP (Action Points)** | 2 per turn: move + attack | Turn points, actions |
+| **Floor** | One procedural dungeon level | Level, stage |
+| **Room** | A single space in the floor grid | Chamber, area |
+| **Run** | Complete playthrough from start to victory/defeat | Match, session |
+| **Craps Mode** | The super bet mechanic (item/unlock) | Special attack, ultimate |
+| **Face Enchanting** | Modifying a specific face of a die | Upgrading, leveling |
+| **Miss/Hit/Crit** | Attack results based on threshold | Fail/success/bonus |
+| **Dice Power Budget** | The loadout cost limit | Slots, capacity |
+
+## Combat Flow
+
+```
+Run
+ └─ Floor (procedural dungeon)
+     └─ Room (isometric grid)
+         └─ Combat (triggered on adjacency)
+             ├─ Player Turn (2 AP)
+             │   ├─ Move (1 AP) — roll movement die, move tiles
+             │   └─ Attack (1 AP) — roll weapon die vs threshold
+             └─ Enemy Turn
+                 └─ Roll attack die → result = damage (always hits)
+```
+
+---
+
+# Naming Conventions
+
+| Element | Convention | Example |
+|---|---|---|
+| Classes/Structs | `PascalCase` | `DiceBag`, `ComboResolver` |
+| ScriptableObjects | `PascalCase` + Data suffix | `DiceData`, `EnemyData` |
+| Interfaces | `I` prefix | `IService`, `IComboScorer` |
+| Public methods | `PascalCase` | `RollDice()`, `BuildCombo()` |
+| Private methods | `camelCase` | `evaluateCombo()` |
+| Private fields | `_camelCase` | `_currentDice` |
+| Enums | `PascalCase` | `CombinationType.FullHouse` |
+| Constants | `PascalCase` | `MaxDiceCount` |
+
+---
+
+# Behavioral Rules
+
+## Do
+- Read existing code before modifying
+- Follow the ScriptableObject data pattern for any new game data
+- Use C# events (`System.Action<T>`) for cross-system communication
+- Mark suggestions with `[SUGGESTION]` when proposing new mechanics
+- Mark unresolved design questions with `[TBD]`
+- Validate new mechanics against the game identity pillars
+- Consider dice physics feel in all combat-related code
+
+## Don't
+- Hardcode gameplay numbers — always use ScriptableObjects
+- Add new enums without explicit int values and spacing
+- Change the combat flow (2 AP → Move → Attack vs Threshold) without team discussion
+- Add base mechanics that should be items (defense, ranged, healing, flee are all item territory)
+- Remove or rename existing ScriptableObject fields (breaks asset references)
+
+---
+
+# Performance Standards
+
+## Hard Rules
+- NO LINQ in hot paths
+- NO per-frame allocations
+- NO `Instantiate`/`Destroy` in gameplay — use Object Pooling
+- Dice physics can use Rigidbody but must pool dice objects
+- Structs over classes where possible for data
+- Enum/int keys over strings
