@@ -252,6 +252,26 @@ public class UIBuilder : MonoBehaviour
         if (UIManager.Instance != null)
             UIManager.Instance.SetGoldText(goldTMP);
 
+        // Dexterity Display
+        var dexTextGO = new GameObject("DexterityText");
+        dexTextGO.transform.SetParent(hudPanel.transform, false);
+        var dexTextRT = dexTextGO.AddComponent<RectTransform>();
+        dexTextRT.anchorMin = new Vector2(1, 0.5f);
+        dexTextRT.anchorMax = new Vector2(1, 0.5f);
+        dexTextRT.pivot = new Vector2(1, 0.5f);
+        dexTextRT.anchoredPosition = new Vector2(-20, -50);
+        dexTextRT.sizeDelta = new Vector2(150, 30);
+        var dexTMP = dexTextGO.AddComponent<TextMeshProUGUI>();
+        dexTMP.text = "DEX: 0";
+        dexTMP.fontSize = 18;
+        dexTMP.alignment = TextAlignmentOptions.Right;
+        dexTMP.color = TextColor;
+        dexTMP.fontStyle = FontStyles.Bold;
+        dexTMP.raycastTarget = false;
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.SetDexterityText(dexTMP);
+
         // ── Exploration Action Buttons (left side) ──
         var explorationPanel = CreatePanel("ExplorationPanel", canvasTransform,
             new Vector2(0, 0.3f), new Vector2(0, 0.7f),

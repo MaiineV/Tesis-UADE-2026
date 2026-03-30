@@ -148,6 +148,17 @@ public class UIManager : MonoBehaviour
         if (goldText != null) goldText.text = $"{amount} G";
     }
 
+    // --- Dexterity ---
+
+    [SerializeField] private TMPro.TMP_Text _dexterityText;
+
+    public void SetDexterityText(TMPro.TMP_Text dexRef) { _dexterityText = dexRef; }
+
+    public void UpdateDexterity(int value)
+    {
+        if (_dexterityText != null) _dexterityText.text = $"DEX: {value}";
+    }
+
     // --- Exploration Actions ---
 
     private ExplorationActionsUI explorationActionsUI;

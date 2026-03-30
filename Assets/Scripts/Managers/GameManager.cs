@@ -299,6 +299,7 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
         UIManager.Instance.UpdateShield(player.State.ShieldValue);
         UIManager.Instance.UpdateGold(player.State.Gold);
+        UIManager.Instance.UpdateDexterity(player.State.Dexterity);
         UIManager.Instance.UpdateLevel(currentLevel);
 
         var combatLog = FindObjectOfType<CombatLogUI>();
@@ -606,7 +607,7 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.HideExplorationActions();
 
         var result = ExplorationActions.AttemptPotion(
-            player.State.Dexterity, 10, player.State.MaxHP);
+            player.State.Dexterity, 100, player.State.MaxHP);
 
         player.State.Heal(result.healAmount);
         player.State.PotionCount--;
@@ -667,7 +668,7 @@ public class GameManager : MonoBehaviour
         if (!IsPlayerOnDoor()) return;
 
         var tile = GridManager.Instance.GetTile(player.State.GridPosition);
-        var result = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 10);
+        var result = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 100);
         Log($"Forzar puerta: roll {result.roll}, chance {result.successChance}%");
 
         if (result.success)
@@ -1364,7 +1365,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        var result = ExplorationActions.AttemptBow(player.State.Dexterity, 10);
+        var result = ExplorationActions.AttemptBow(player.State.Dexterity, 100);
         Log($"Arco: roll {result.roll}, chance {result.hitChance}%");
 
         if (result.hit)

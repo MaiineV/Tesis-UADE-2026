@@ -140,7 +140,7 @@ public class SceneSetup : MonoBehaviour
         data.CharacterColor = c;
         data.MaxHP = 100;
         data.StartingPowerBudget = 5f;
-        data.Dexterity = 3;
+        data.Dexterity = 20;
         data.Speed = 3;
         data.SpeedMin = 2;
         data.SpeedMax = 5;
