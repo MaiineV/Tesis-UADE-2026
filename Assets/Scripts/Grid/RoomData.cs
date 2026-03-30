@@ -28,6 +28,8 @@ public class EnemySaveData
     public int CurrentHP;
     public int MaxHP;
     public bool IsAlive;
+    public Vector2Int GridPosition;
+    public float CurrentEnergy;
 }
 
 [System.Serializable]

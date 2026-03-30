@@ -55,7 +55,9 @@ public class DungeonManager : MonoBehaviour
                 EnemyType = enemy.State.BaseData.EnemyName,
                 CurrentHP = enemy.State.CurrentHP,
                 MaxHP = enemy.State.MaxHP,
-                IsAlive = enemy.State.IsAlive
+                IsAlive = enemy.State.IsAlive,
+                GridPosition = enemy.State.GridPosition,
+                CurrentEnergy = enemy.State.CurrentEnergy
             });
         }
     }

@@ -360,7 +360,7 @@ public class GameManager : MonoBehaviour
 
         if (room.Enemies.Count > 0)
         {
-            // Re-spawn saved enemies with their HP
+            // Re-spawn saved enemies with their HP, position, and energy
             int spawnIdx = 0;
             foreach (var saved in room.Enemies)
             {
@@ -370,8 +370,16 @@ public class GameManager : MonoBehaviour
                 EnemyData baseData = GetEnemyDataByName(saved.EnemyType);
                 var scaledData = CreateScaledEnemyData(baseData, 1f);
                 scaledData.MaxHP = saved.MaxHP;
-                var entity = SpawnEnemy(scaledData, layout.EnemySpawns[spawnIdx]);
+
+                // Use saved position if walkable, otherwise fallback to layout spawn
+                Vector2Int spawnPos = saved.GridPosition;
+                var tile = GridManager.Instance.GetTile(spawnPos);
+                if (tile == null || !tile.IsWalkable || tile.Occupant != null)
+                    spawnPos = layout.EnemySpawns[spawnIdx];
+
+                var entity = SpawnEnemy(scaledData, spawnPos);
                 entity.State.CurrentHP = saved.CurrentHP;
+                entity.State.CurrentEnergy = saved.CurrentEnergy;
                 enemies.Add(entity);
                 spawnIdx++;
             }
@@ -644,6 +652,7 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.HideEnemyInfo();
             UIManager.Instance.HideCrapsOverlay();
 
+            DungeonManager.Instance.SaveEnemyState(enemies);
             currentCombatEnemy = null;
 
             // Move away from enemies
