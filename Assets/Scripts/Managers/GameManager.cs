@@ -233,6 +233,9 @@ public class GameManager : MonoBehaviour
 
         CleanupEnemiesAndGrid();
 
+        if (_potionPickupObj != null) { Destroy(_potionPickupObj); _potionPickupObj = null; }
+        if (_portalObj != null) { Destroy(_portalObj); _portalObj = null; }
+
         if (UIManager.Instance != null)
             UIManager.Instance.HideAllPanels();
     }
@@ -250,6 +253,7 @@ public class GameManager : MonoBehaviour
         }
         enemies.Clear();
         waitingEnemies.Clear();
+        _activeCombatEnemies.Clear();
 
         var oldGrid = GameObject.Find("Grid");
         if (oldGrid != null) Destroy(oldGrid);
