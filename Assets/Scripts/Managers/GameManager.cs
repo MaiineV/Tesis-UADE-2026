@@ -1308,11 +1308,30 @@ public class GameManager : MonoBehaviour
             var currentRoom = DungeonManager.Instance.CurrentRoom;
             if (currentRoom != null && currentRoom.Type == RoomType.Boss)
             {
-                TransitionTo(GameState.Victory);
-                UIManager.Instance.ShowPhaseLabel("BOSS DEFEATED! VICTORY!");
-                var victoryUI = FindObjectOfType<VictoryUI>(true);
-                if (victoryUI != null) victoryUI.Show(GetRunStats());
-                UIManager.Instance.ShowVictoryOverlay();
+                Log("BOSS DEFEATED! A portal appears...");
+                UIManager.Instance.ShowPhaseLabel("BOSS DEFEATED!");
+
+                // Spawn portal at center
+                var center = new Vector2Int(GridManager.Instance.Width / 2, GridManager.Instance.Height / 2);
+                _portalTile = center;
+                _portalObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                _portalObj.name = "Portal";
+                _portalObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
+                _portalObj.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
+                var portalRenderer = _portalObj.GetComponent<MeshRenderer>();
+                ColorUtility.TryParseHtmlString("#ffd54f", out Color portalColor);
+                portalRenderer.material.color = portalColor;
+                var col = _portalObj.GetComponent<Collider>();
+                if (col != null) Destroy(col);
+
+                DungeonManager.Instance.MarkCurrentRoomCleared();
+
+                // Show reward first, then player can move to portal
+                TransitionTo(GameState.RewardSelection);
+                var bossOffers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+                var bossRewardUI = FindObjectOfType<RewardUI>(true);
+                if (bossRewardUI != null) bossRewardUI.ShowOffers(bossOffers);
+                UIManager.Instance.ShowRewardOverlay();
                 return;
             }
 
@@ -1350,6 +1369,26 @@ public class GameManager : MonoBehaviour
     {
         UIManager.Instance.HideAllPanels();
         StartRun();
+    }
+
+    private void AdvanceToNextFloor()
+    {
+        Log("Advancing to next floor...");
+        UIManager.Instance.ShowPhaseLabel("NEXT FLOOR!");
+        if (_portalObj != null) { Destroy(_portalObj); _portalObj = null; }
+
+        TransitionTo(GameState.LevelTransition);
+        StartCoroutine(DelayedAction(1f, () =>
+        {
+            CleanupEnemiesAndGrid();
+            DungeonManager.Instance.GenerateFloor(10);
+            if (MinimapUI.Instance != null)
+            {
+                MinimapUI.Instance.BuildMinimap(DungeonManager.Instance.Rooms);
+                MinimapUI.Instance.UpdateCurrentRoom(DungeonManager.Instance.CurrentRoom.FloorPosition);
+            }
+            SetupCurrentRoom(false);
+        }));
     }
 
     // ── INPUT HANDLING ──
