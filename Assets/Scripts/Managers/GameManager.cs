@@ -86,6 +86,7 @@ public class GameManager : MonoBehaviour
     // Multi-enemy combat
     private List<EnemyEntity> _activeCombatEnemies = new List<EnemyEntity>();
     private int _targetEnemyIndex = 0;
+    private bool _awaitingTargetSelection;
 
     // Events
     public static event Action<GameState> OnStateChanged;
@@ -990,6 +991,14 @@ public class GameManager : MonoBehaviour
             var info2 = UIManager.Instance.GetSecondEnemyInfoUI();
             if (info1 != null) info1.HighlightTarget(index == 0);
             if (info2 != null) info2.HighlightTarget(index == 1);
+
+            // If we were awaiting target selection, proceed with attack
+            if (_awaitingTargetSelection)
+            {
+                _awaitingTargetSelection = false;
+                UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "CRAPS ROUND" : "YOUR ATTACK");
+                OnPlayerRoll();
+            }
         }
     }
 
@@ -1085,7 +1094,6 @@ public class GameManager : MonoBehaviour
     {
         TransitionTo(GameState.AttackPhase);
         currentAttack = new AttackPhase();
-        UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "CRAPS ROUND" : "YOUR ATTACK");
 
         showTargetSelectionIfNeeded();
 
@@ -1094,12 +1102,22 @@ public class GameManager : MonoBehaviour
         else
             CombatUI.Instance.HideCrapsBetIndicator();
 
+        // Force target selection before first roll when multiple enemies
+        if (_activeCombatEnemies.Count > 1)
+        {
+            _awaitingTargetSelection = true;
+            UIManager.Instance.ShowPhaseLabel("SELECT TARGET");
+            return;
+        }
+
+        UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "CRAPS ROUND" : "YOUR ATTACK");
         OnPlayerRoll();
     }
 
     public void OnPlayerRoll()
     {
         if (CurrentState != GameState.AttackPhase) return;
+        if (_awaitingTargetSelection) return;
         if (currentAttack.CurrentRoll > 0 && !currentAttack.CanRollAgain) return;
 
         var results = currentAttack.PerformRoll(player.State.Bag);
@@ -1453,14 +1471,6 @@ public class GameManager : MonoBehaviour
         enemiesDefeated++;
         totalEnemiesDefeated++;
         _activeCombatEnemies.Remove(currentCombatEnemy);
-        UIManager.Instance.HideSecondEnemyInfo();
-        UIManager.Instance.ShowTargetSelection(false);
-
-        // If there are remaining active enemies, switch target
-        if (_activeCombatEnemies.Count > 0)
-        {
-            _targetEnemyIndex = 0;
-        }
 
         string enemyName = currentCombatEnemy.State.BaseData.EnemyName;
         UIManager.Instance.ShowPhaseLabel("ENEMY DEFEATED!");
@@ -1479,7 +1489,52 @@ public class GameManager : MonoBehaviour
             FloatingDamageUI.Instance.ShowGold(goldDrop, currentCombatEnemy.transform.position);
 
         GridManager.Instance.ClearOccupant(currentCombatEnemy.State.GridPosition);
-        currentCombatEnemy.PlayDeathAnimation(OnEnemyDeathAnimationComplete);
+
+        // Promote waiting enemies before checking if combat continues
+        AdvanceWaitingEnemies();
+
+        // A4: Update enemy info UI after death
+        if (_activeCombatEnemies.Count == 1)
+        {
+            _targetEnemyIndex = 0;
+            currentCombatEnemy.PlayDeathAnimation(() =>
+            {
+                // Switch to remaining enemy
+                var remaining = _activeCombatEnemies[0];
+                currentCombatEnemy = remaining;
+                UIManager.Instance.ShowEnemyInfo(remaining);
+                UIManager.Instance.HideSecondEnemyInfo();
+                UIManager.Instance.ShowTargetSelection(false);
+                onEnemyDeathCombatContinue();
+            });
+        }
+        else if (_activeCombatEnemies.Count > 1)
+        {
+            _targetEnemyIndex = 0;
+            currentCombatEnemy.PlayDeathAnimation(() =>
+            {
+                // Update both panels with remaining enemies
+                currentCombatEnemy = _activeCombatEnemies[0];
+                UIManager.Instance.ShowEnemyInfo(_activeCombatEnemies[0]);
+                UIManager.Instance.ShowSecondEnemyInfo(_activeCombatEnemies[1]);
+                showTargetSelectionIfNeeded();
+                onEnemyDeathCombatContinue();
+            });
+        }
+        else
+        {
+            // All active enemies dead — play death anim then check room clear
+            UIManager.Instance.HideSecondEnemyInfo();
+            UIManager.Instance.ShowTargetSelection(false);
+            currentCombatEnemy.PlayDeathAnimation(OnEnemyDeathAnimationComplete);
+        }
+    }
+
+    private void onEnemyDeathCombatContinue()
+    {
+        // Continue combat — skip reward for intermediate kills
+        UIManager.Instance.ShowCombatPanel();
+        StartEnemyAttack();
     }
 
     private void OnEnemyDeathAnimationComplete()
@@ -1488,58 +1543,43 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.HideEnemyInfo();
         UIManager.Instance.HideExplorationActions();
 
-        // Check if more enemies to fight
-        bool moreEnemies = enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
-
-        if (moreEnemies)
+        // All active combat enemies are dead — show reward
+        var currentRoom = DungeonManager.Instance.CurrentRoom;
+        if (currentRoom != null && currentRoom.Type == RoomType.Boss)
         {
-            // Offer reward, then continue
+            Log("BOSS DEFEATED! A portal appears...");
+            UIManager.Instance.ShowPhaseLabel("BOSS DEFEATED!");
+
+            // Spawn portal at center
+            var center = new Vector2Int(GridManager.Instance.Width / 2, GridManager.Instance.Height / 2);
+            _portalTile = center;
+            _portalObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _portalObj.name = "Portal";
+            _portalObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
+            _portalObj.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
+            var portalRenderer = _portalObj.GetComponent<MeshRenderer>();
+            ColorUtility.TryParseHtmlString("#ffd54f", out Color portalColor);
+            portalRenderer.material.color = portalColor;
+            var col = _portalObj.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+
+            DungeonManager.Instance.MarkCurrentRoomCleared();
+
+            // Show reward first, then player can move to portal
             TransitionTo(GameState.RewardSelection);
-            var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-            var rewardUI = FindObjectOfType<RewardUI>(true);
-            if (rewardUI != null) rewardUI.ShowOffers(offers);
+            var bossOffers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+            var bossRewardUI = FindObjectOfType<RewardUI>(true);
+            if (bossRewardUI != null) bossRewardUI.ShowOffers(bossOffers);
             UIManager.Instance.ShowRewardOverlay();
+            return;
         }
-        else
-        {
-            // All enemies dead — boss check
-            var currentRoom = DungeonManager.Instance.CurrentRoom;
-            if (currentRoom != null && currentRoom.Type == RoomType.Boss)
-            {
-                Log("BOSS DEFEATED! A portal appears...");
-                UIManager.Instance.ShowPhaseLabel("BOSS DEFEATED!");
 
-                // Spawn portal at center
-                var center = new Vector2Int(GridManager.Instance.Width / 2, GridManager.Instance.Height / 2);
-                _portalTile = center;
-                _portalObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                _portalObj.name = "Portal";
-                _portalObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
-                _portalObj.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
-                var portalRenderer = _portalObj.GetComponent<MeshRenderer>();
-                ColorUtility.TryParseHtmlString("#ffd54f", out Color portalColor);
-                portalRenderer.material.color = portalColor;
-                var col = _portalObj.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-
-                DungeonManager.Instance.MarkCurrentRoomCleared();
-
-                // Show reward first, then player can move to portal
-                TransitionTo(GameState.RewardSelection);
-                var bossOffers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-                var bossRewardUI = FindObjectOfType<RewardUI>(true);
-                if (bossRewardUI != null) bossRewardUI.ShowOffers(bossOffers);
-                UIManager.Instance.ShowRewardOverlay();
-                return;
-            }
-
-            // Room cleared
-            TransitionTo(GameState.RewardSelection);
-            var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-            var rewardUI = FindObjectOfType<RewardUI>(true);
-            if (rewardUI != null) rewardUI.ShowOffers(offers);
-            UIManager.Instance.ShowRewardOverlay();
-        }
+        // Room cleared
+        TransitionTo(GameState.RewardSelection);
+        var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
+        var rewardUI = FindObjectOfType<RewardUI>(true);
+        if (rewardUI != null) rewardUI.ShowOffers(offers);
+        UIManager.Instance.ShowRewardOverlay();
     }
 
     public void OnRewardSelected(FaceUpgradeOffer offer)
