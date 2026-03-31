@@ -1125,6 +1125,100 @@ public class UIBuilder : MonoBehaviour
                 DiceDiscardUI.Instance.OnCancelClicked?.Invoke();
         });
 
+        // ── Active Buffs UI ──
+        // Toggle button in the HUD (bottom-left of HUD panel)
+        var buffsToggleBtn = CreateButton("BuffsToggleBtn", hudPanel.transform, "BUFFS", D12Color);
+        var buffsToggleBtnRT = buffsToggleBtn.GetComponent<RectTransform>();
+        buffsToggleBtnRT.anchorMin = new Vector2(0, 0);
+        buffsToggleBtnRT.anchorMax = new Vector2(0, 0);
+        buffsToggleBtnRT.pivot = new Vector2(0, 0);
+        buffsToggleBtnRT.anchoredPosition = new Vector2(20, 8);
+        buffsToggleBtnRT.sizeDelta = new Vector2(100, 30);
+
+        // Buffs panel (right side, below minimap)
+        var buffsPanel = CreatePanel("ActiveBuffsPanel", canvasTransform,
+            new Vector2(1, 1), new Vector2(1, 1),
+            Vector2.zero, Vector2.zero, 0);
+        var buffsPanelRT = buffsPanel.GetComponent<RectTransform>();
+        buffsPanelRT.pivot = new Vector2(1, 1);
+        buffsPanelRT.anchoredPosition = new Vector2(-10, -310);
+        buffsPanelRT.sizeDelta = new Vector2(280, 250);
+        buffsPanel.GetComponent<Image>().color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.92f);
+
+        // Buffs panel title
+        var buffsPanelTitle = CreateTMPText("BuffsPanelTitle", buffsPanel.transform, "BUFFS ACTIVOS", 16,
+            TextAlignmentOptions.Center, AccentGold);
+        buffsPanelTitle.fontStyle = FontStyles.Bold;
+        var buffsTitleRT = buffsPanelTitle.GetComponent<RectTransform>();
+        buffsTitleRT.anchorMin = new Vector2(0, 1);
+        buffsTitleRT.anchorMax = new Vector2(1, 1);
+        buffsTitleRT.pivot = new Vector2(0.5f, 1);
+        buffsTitleRT.anchoredPosition = new Vector2(0, -5);
+        buffsTitleRT.sizeDelta = new Vector2(0, 30);
+
+        // Scroll area for buff cards
+        var buffsScrollGO = new GameObject("BuffsScroll");
+        buffsScrollGO.transform.SetParent(buffsPanel.transform, false);
+        var buffsScrollRT = buffsScrollGO.AddComponent<RectTransform>();
+        buffsScrollRT.anchorMin = new Vector2(0, 0);
+        buffsScrollRT.anchorMax = new Vector2(1, 1);
+        buffsScrollRT.offsetMin = new Vector2(8, 8);
+        buffsScrollRT.offsetMax = new Vector2(-8, -35);
+        var buffsScrollImg = buffsScrollGO.AddComponent<Image>();
+        buffsScrollImg.color = new Color(0, 0, 0, 0.2f);
+        var buffsScroll = buffsScrollGO.AddComponent<ScrollRect>();
+
+        var buffsContent = new GameObject("BuffsContent");
+        buffsContent.transform.SetParent(buffsScrollGO.transform, false);
+        var buffsContentRT = buffsContent.AddComponent<RectTransform>();
+        buffsContentRT.anchorMin = new Vector2(0, 1);
+        buffsContentRT.anchorMax = new Vector2(1, 1);
+        buffsContentRT.pivot = new Vector2(0.5f, 1);
+        buffsContentRT.anchoredPosition = Vector2.zero;
+        buffsContentRT.sizeDelta = new Vector2(0, 0);
+        var buffsVLG = buffsContent.AddComponent<VerticalLayoutGroup>();
+        buffsVLG.spacing = 4;
+        buffsVLG.padding = new RectOffset(4, 4, 4, 4);
+        buffsVLG.childAlignment = TextAnchor.UpperCenter;
+        buffsVLG.childForceExpandWidth = true;
+        buffsVLG.childForceExpandHeight = false;
+        var buffsCSF = buffsContent.AddComponent<ContentSizeFitter>();
+        buffsCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        buffsScroll.content = buffsContentRT;
+        buffsScroll.vertical = true;
+        buffsScroll.horizontal = false;
+
+        // Tooltip for buff hover
+        var buffsTooltip = new GameObject("BuffsTooltip");
+        buffsTooltip.transform.SetParent(canvasTransform, false);
+        var buffsTooltipRT = buffsTooltip.AddComponent<RectTransform>();
+        buffsTooltipRT.sizeDelta = new Vector2(220, 70);
+        var buffsTooltipImg = buffsTooltip.AddComponent<Image>();
+        buffsTooltipImg.color = new Color(DarkBg.r, DarkBg.g, DarkBg.b, 0.95f);
+
+        var tooltipTitleTMP = CreateTMPText("TooltipTitle", buffsTooltip.transform, "", 14,
+            TextAlignmentOptions.Left, AccentGold);
+        tooltipTitleTMP.fontStyle = FontStyles.Bold;
+        var tooltipTitleRT = tooltipTitleTMP.GetComponent<RectTransform>();
+        tooltipTitleRT.anchorMin = new Vector2(0, 0.55f);
+        tooltipTitleRT.anchorMax = new Vector2(1, 1);
+        tooltipTitleRT.offsetMin = new Vector2(8, 0);
+        tooltipTitleRT.offsetMax = new Vector2(-8, -4);
+
+        var tooltipDescTMP = CreateTMPText("TooltipDesc", buffsTooltip.transform, "", 12,
+            TextAlignmentOptions.Left, TextColor);
+        tooltipDescTMP.enableWordWrapping = true;
+        var tooltipDescRT = tooltipDescTMP.GetComponent<RectTransform>();
+        tooltipDescRT.anchorMin = new Vector2(0, 0);
+        tooltipDescRT.anchorMax = new Vector2(1, 0.55f);
+        tooltipDescRT.offsetMin = new Vector2(8, 4);
+        tooltipDescRT.offsetMax = new Vector2(-8, 0);
+
+        // Add ActiveBuffsUI component and initialize
+        var activeBuffsUI = buffsPanel.AddComponent<ActiveBuffsUI>();
+        activeBuffsUI.Initialize(buffsPanel, buffsContent.transform, buffsToggleBtn,
+            buffsTooltip, tooltipTitleTMP, tooltipDescTMP);
+
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
         if (uiManager != null)
@@ -1144,6 +1238,8 @@ public class UIBuilder : MonoBehaviour
             uiManager.SetLevelText(levelTMP);
             uiManager.SetEnemyInfoUI(enemyInfoUI);
             uiManager.SetSecondEnemyInfoUI(enemyInfo2UI);
+            uiManager.SetDiceDiscardUI(diceDiscardUI);
+            uiManager.SetActiveBuffsUI(activeBuffsUI);
         }
     }
 

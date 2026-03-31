@@ -308,6 +308,10 @@ public class GameManager : MonoBehaviour
         {
             player = SpawnPlayer(PrototypeCharacter, layout.PlayerSpawn);
             EnergyManager.Instance.Initialize(player.State);
+
+            // Wire ActiveBuffsUI with player state
+            if (ActiveBuffsUI.Instance != null)
+                ActiveBuffsUI.Instance.SetPlayerState(player.State);
         }
         else if (player != null)
         {
