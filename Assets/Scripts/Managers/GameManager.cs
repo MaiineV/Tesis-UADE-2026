@@ -84,6 +84,9 @@ public class GameManager : MonoBehaviour
     private GameObject _portalObj;
     private Vector2Int _portalTile;
 
+    // Room entry direction (opposite of the door used to enter)
+    private string _lastEntryDirection;
+
     // Multi-enemy combat
     private List<EnemyEntity> _activeCombatEnemies = new List<EnemyEntity>();
     private int _targetEnemyIndex = 0;
@@ -304,9 +307,25 @@ public class GameManager : MonoBehaviour
         }
         else if (player != null)
         {
-            // Reposition existing player at the entry point
+            // Reposition existing player at the entry door (opposite of the door used)
             GridManager.Instance.ClearOccupant(player.State.GridPosition);
-            var entryPos = layout.PlayerSpawn;
+
+            Vector2Int entryPos;
+            if (_lastEntryDirection != null)
+            {
+                var doorSpawn = getSpawnNearDoor(_lastEntryDirection);
+                // Fall back to layout spawn if the tile is blocked
+                if (GridManager.Instance.IsValidPosition(doorSpawn) && !GridManager.Instance.IsOccupied(doorSpawn))
+                    entryPos = doorSpawn;
+                else
+                    entryPos = layout.PlayerSpawn;
+                _lastEntryDirection = null;
+            }
+            else
+            {
+                entryPos = layout.PlayerSpawn;
+            }
+
             player.State.GridPosition = entryPos;
             player.State.ShieldValue = 0;
             player.transform.position = GridManager.Instance.GridToWorld(entryPos) + new Vector3(0, 0.4f, 0);
@@ -699,6 +718,9 @@ public class GameManager : MonoBehaviour
         // Save current room state
         DungeonManager.Instance.SaveEnemyState(enemies);
 
+        // Store the opposite direction so we spawn at the correct door in the new room
+        _lastEntryDirection = getOppositeDirection(direction);
+
         TransitionTo(GameState.RoomTransition);
         UIManager.Instance.ShowPhaseLabel("ENTERING NEW ROOM...");
 
@@ -719,6 +741,33 @@ public class GameManager : MonoBehaviour
                 BeginPlayerMovement();
             }
         }));
+    }
+
+    private string getOppositeDirection(string dir)
+    {
+        switch (dir)
+        {
+            case "N": return "S";
+            case "S": return "N";
+            case "E": return "W";
+            case "W": return "E";
+            default: return null;
+        }
+    }
+
+    private Vector2Int getSpawnNearDoor(string doorDirection)
+    {
+        int midX = GridManager.Instance.Width / 2;
+        int midY = GridManager.Instance.Height / 2;
+
+        switch (doorDirection)
+        {
+            case "N": return new Vector2Int(midX, GridManager.Instance.Height - 2);
+            case "S": return new Vector2Int(midX, 1);
+            case "E": return new Vector2Int(GridManager.Instance.Width - 2, midY);
+            case "W": return new Vector2Int(1, midY);
+            default:  return new Vector2Int(midX, midY);
+        }
     }
 
     // ── EXPLORATION ACTIONS ──
@@ -1981,6 +2030,7 @@ public class GameManager : MonoBehaviour
         {
             CleanupEnemiesAndGrid();
             DungeonManager.Instance.GenerateFloor(10);
+            _lastEntryDirection = null; // New floor uses default spawn
             if (MinimapUI.Instance != null)
             {
                 MinimapUI.Instance.BuildMinimap(DungeonManager.Instance.Rooms);
