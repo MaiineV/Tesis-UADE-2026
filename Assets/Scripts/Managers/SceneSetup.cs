@@ -160,6 +160,8 @@ public class SceneSetup : MonoBehaviour
             new DiceLoadout { DiceType = d12, Quantity = 1 }
         };
         data.CombatDiceSlots = 5;
+        data.MinCombatDiceSlots = 3;
+        data.AvailablePoolDice = new[] { d6, d8, d12 };
 
         data.AffinityCombo = CombinationType.FourOfAKind;
         data.AffinityDamageBonus = 1.25f;

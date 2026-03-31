@@ -863,7 +863,7 @@ public class UIBuilder : MonoBehaviour
         var inventoryOverlay = CreateOverlayPanel("InventoryBuilderOverlay", canvasTransform);
 
         var invTitle = CreateTMPText("InvTitle", inventoryOverlay.transform,
-            "SELECCIONA TU INVENTARIO DE COMBATE", 26, TextAlignmentOptions.Center, AccentGold);
+            "ELIGE TUS DADOS (3\u20135)", 26, TextAlignmentOptions.Center, AccentGold);
         SetRect(invTitle, 0.05f, 0.86f, 0.95f, 0.97f);
         invTitle.fontStyle = FontStyles.Bold;
 
@@ -882,13 +882,12 @@ public class UIBuilder : MonoBehaviour
         invCardContainerRT.anchorMax = new Vector2(0.95f, 0.78f);
         invCardContainerRT.offsetMin = Vector2.zero;
         invCardContainerRT.offsetMax = Vector2.zero;
-        var invHLG = invCardContainer.AddComponent<HorizontalLayoutGroup>();
-        invHLG.spacing = 14;
-        invHLG.childAlignment = TextAnchor.MiddleCenter;
-        invHLG.childForceExpandWidth = false;
-        invHLG.childForceExpandHeight = false;
-        invHLG.childControlWidth = false;
-        invHLG.childControlHeight = false;
+        var invGrid = invCardContainer.AddComponent<GridLayoutGroup>();
+        invGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        invGrid.constraintCount = 5;
+        invGrid.cellSize = new Vector2(100, 120);
+        invGrid.spacing = new Vector2(14, 14);
+        invGrid.childAlignment = TextAnchor.MiddleCenter;
 
         var invConfirmButton = CreateButton("InvConfirmButton", inventoryOverlay.transform,
             "CONFIRMAR INVENTARIO", AccentGold);

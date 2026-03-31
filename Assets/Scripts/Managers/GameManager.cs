@@ -372,7 +372,8 @@ public class GameManager : MonoBehaviour
         {
             TransitionTo(GameState.InventorySetup);
             UIManager.Instance.ShowInventoryBuilder(
-                player.State.FullInventory,
+                player.State.BaseData.AvailablePoolDice,
+                player.State.MinCombatDiceSlots,
                 player.State.CombatDiceSlots,
                 player.State.BaseData.StartingPowerBudget);
         }

@@ -23,6 +23,10 @@ public class CharacterData : ScriptableObject
     [Header("Starting Dice")]
     public DiceLoadout[] StartingDice;
     public int CombatDiceSlots;
+    public int MinCombatDiceSlots;
+
+    [Header("Random Pool")]
+    public DiceData[] AvailablePoolDice;
 
     [Header("Affinity")]
     public CombinationType AffinityCombo;

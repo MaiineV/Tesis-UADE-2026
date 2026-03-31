@@ -129,6 +129,10 @@ public class UIManager : MonoBehaviour
     public void ShowVictoryOverlay() => SetPanel(victoryOverlay, true);
     public void HideVictoryOverlay() => SetPanel(victoryOverlay, false);
 
+    public void ShowInventoryBuilder(DiceData[] availableTypes, int minSlots, int maxSlots, float powerBudget)
+        => inventoryBuilderUI?.Show(availableTypes, minSlots, maxSlots, powerBudget);
+
+    // Legacy overload for backwards compatibility
     public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, int slots, float powerBudget)
         => inventoryBuilderUI?.Show(inventory, slots, powerBudget);
     public void HideInventoryBuilder() => inventoryBuilderUI?.Hide();

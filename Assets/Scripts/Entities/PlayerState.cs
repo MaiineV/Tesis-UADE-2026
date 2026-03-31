@@ -17,6 +17,7 @@ public class PlayerState
     // Dice
     public List<DiceInstance> FullInventory;
     public int CombatDiceSlots;
+    public int MinCombatDiceSlots;
     public DiceBag Bag;
     public SpeedDie SpeedDie;
 
@@ -64,6 +65,9 @@ public class PlayerState
         state.CombatDiceSlots = data.CombatDiceSlots > 0
             ? data.CombatDiceSlots
             : state.FullInventory.Count;
+        state.MinCombatDiceSlots = data.MinCombatDiceSlots > 0
+            ? data.MinCombatDiceSlots
+            : 3;
 
         state.Bag = new DiceBag { MaxPower = data.StartingPowerBudget };
 

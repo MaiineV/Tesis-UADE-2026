@@ -16,7 +16,8 @@ public class InventoryBuilderUI : MonoBehaviour
 
     private List<InventoryDieCardUI> cards = new List<InventoryDieCardUI>();
     private List<DiceInstance> selectedDice = new List<DiceInstance>();
-    private int requiredCount;
+    private int _minCount;
+    private int _maxCount;
     private float maxPowerBudget;
     private float usedPower;
 
@@ -35,12 +36,28 @@ public class InventoryBuilderUI : MonoBehaviour
         confirmButton.onClick.AddListener(OnConfirmClicked);
     }
 
+    public void Show(DiceData[] availableTypes, int minSlots, int maxSlots, float powerBudget)
+    {
+        gameObject.SetActive(true);
+        selectedDice.Clear();
+        usedPower = 0;
+        _minCount = minSlots;
+        _maxCount = maxSlots;
+        maxPowerBudget = powerBudget;
+
+        var pool = generateRandomPool(availableTypes, 10);
+        BuildCards(pool);
+        UpdateCounter();
+    }
+
+    // Legacy overload kept for backwards compatibility
     public void Show(List<DiceInstance> available, int slotsRequired, float powerBudget)
     {
         gameObject.SetActive(true);
         selectedDice.Clear();
         usedPower = 0;
-        requiredCount = slotsRequired;
+        _minCount = slotsRequired;
+        _maxCount = slotsRequired;
         maxPowerBudget = powerBudget;
         BuildCards(available);
         UpdateCounter();
@@ -50,6 +67,17 @@ public class InventoryBuilderUI : MonoBehaviour
     {
         gameObject.SetActive(false);
         ClearCards();
+    }
+
+    private List<DiceInstance> generateRandomPool(DiceData[] availableTypes, int poolSize)
+    {
+        var pool = new List<DiceInstance>(poolSize);
+        for (int i = 0; i < poolSize; i++)
+        {
+            int idx = UnityEngine.Random.Range(0, availableTypes.Length);
+            pool.Add(DiceInstance.Create(availableTypes[idx]));
+        }
+        return pool;
     }
 
     private void BuildCards(List<DiceInstance> available)
@@ -83,7 +111,7 @@ public class InventoryBuilderUI : MonoBehaviour
         }
         else
         {
-            if (selectedDice.Count >= requiredCount) return;
+            if (selectedDice.Count >= _maxCount) return;
             if (usedPower + card.DiceInstance.PowerCost > maxPowerBudget) return;
             usedPower += card.DiceInstance.PowerCost;
             selectedDice.Add(card.DiceInstance);
@@ -94,17 +122,26 @@ public class InventoryBuilderUI : MonoBehaviour
 
     private void UpdateCounter()
     {
+        bool inRange = selectedDice.Count >= _minCount && selectedDice.Count <= _maxCount;
+
         if (counterText != null)
-            counterText.text = $"{selectedDice.Count}/{requiredCount} dados seleccionados";
+        {
+            if (_minCount == _maxCount)
+                counterText.text = $"{selectedDice.Count}/{_maxCount} dados seleccionados";
+            else
+                counterText.text = $"{selectedDice.Count}/{_minCount}\u2013{_maxCount} dados seleccionados";
+        }
+
         if (budgetText != null)
             budgetText.text = $"Poder: {usedPower:0.#}/{maxPowerBudget:0.#}";
+
         if (confirmButton != null)
-            confirmButton.interactable = selectedDice.Count == requiredCount;
+            confirmButton.interactable = inRange;
     }
 
     private void OnConfirmClicked()
     {
-        if (selectedDice.Count != requiredCount) return;
+        if (selectedDice.Count < _minCount || selectedDice.Count > _maxCount) return;
         Hide();
         OnInventoryConfirmed?.Invoke(new List<DiceInstance>(selectedDice));
     }
