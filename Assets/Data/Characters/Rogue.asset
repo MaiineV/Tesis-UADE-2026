@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e2843bc747fb384ba377cf6de39fa9a, type: 3}
+  m_Name: Rogue
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterData
+  CharacterName: Rogue
+  ClassName: Rogue
+  Description: A swift gambler who squeezes massive value out of humble d6s.
+  Portrait: {fileID: 0}
+  CharacterColor: {r: 1, g: 0.43529412, b: 0, a: 1}
+  MaxHP: 90
+  StartingPowerBudget: 6
+  Dexterity: 2
+  Speed: 3
+  SpeedMin: 2
+  SpeedMax: 5
+  StartingDice:
+  - DiceType: {fileID: 11400000, guid: 009661765a857994c93ebfafc97390d6, type: 2}
+    Quantity: 6
+  CombatDiceSlots: 6
+  AffinityCombo: 1
+  AffinityDamageBonus: 1.3
+  UnlockedByDefault: 0
+  UnlockDescription: Unlock by reaching Floor 2 with the Warrior.

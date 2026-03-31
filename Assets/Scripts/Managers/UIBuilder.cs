@@ -111,23 +111,6 @@ public class UIBuilder : MonoBehaviour
         var energyBarUI = energyBarGO.AddComponent<EnergyBarUI>();
         energyBarUI.Initialize(energyFillImage, energyText, crapsReadyText);
 
-        // Shield Display
-        var shieldGO = new GameObject("ShieldDisplay");
-        shieldGO.transform.SetParent(hudPanel.transform, false);
-        var shieldRT = shieldGO.AddComponent<RectTransform>();
-        shieldRT.anchorMin = new Vector2(0, 0.5f);
-        shieldRT.anchorMax = new Vector2(0, 0.5f);
-        shieldRT.pivot = new Vector2(0, 0.5f);
-        shieldRT.anchoredPosition = new Vector2(340, 20);
-        shieldRT.sizeDelta = new Vector2(150, 35);
-
-        var shieldText = CreateTMPText("ShieldText", shieldGO.transform, "", 18,
-            TextAlignmentOptions.Left, ShieldColor);
-        StretchFull(shieldText.GetComponent<RectTransform>());
-
-        var shieldDisplay = shieldGO.AddComponent<ShieldDisplay>();
-        shieldDisplay.Initialize(shieldText);
-
         // Level Indicator
         var levelTextGO = new GameObject("LevelText");
         levelTextGO.transform.SetParent(hudPanel.transform, false);
@@ -418,57 +401,6 @@ public class UIBuilder : MonoBehaviour
         commitBtnRT.offsetMin = Vector2.zero;
         commitBtnRT.offsetMax = Vector2.zero;
 
-        // -- Defense Panel --
-        var defensePanel = CreatePanel("DefensePanel", combatPanel.transform,
-            Vector2.zero, Vector2.one,
-            Vector2.zero, Vector2.zero, 0);
-        StretchFull(defensePanel.GetComponent<RectTransform>());
-        defensePanel.SetActive(false);
-
-        // Defense Dice Container (mirrors attack diceContainer)
-        var defenseDiceContainer = new GameObject("DefenseDiceContainer");
-        defenseDiceContainer.transform.SetParent(defensePanel.transform, false);
-        var defenseDiceRT = defenseDiceContainer.AddComponent<RectTransform>();
-        defenseDiceRT.anchorMin = new Vector2(0, 0.42f);
-        defenseDiceRT.anchorMax = new Vector2(1, 1);
-        defenseDiceRT.offsetMin = new Vector2(20, 0);
-        defenseDiceRT.offsetMax = new Vector2(-20, -10);
-        var defenseHLG = defenseDiceContainer.AddComponent<HorizontalLayoutGroup>();
-        defenseHLG.spacing = 10;
-        defenseHLG.childAlignment = TextAnchor.MiddleCenter;
-        defenseHLG.childForceExpandWidth = true;
-        defenseHLG.childForceExpandHeight = false;
-        defenseHLG.childControlWidth = false;
-        defenseHLG.childControlHeight = false;
-
-        var defenseTitle = CreateTMPText("DefenseTitle", defensePanel.transform,
-            "DEFENSA", 20, TextAlignmentOptions.Center, AccentGold);
-        SetRect(defenseTitle, 0, 0.31f, 1, 0.43f);
-        defenseTitle.fontStyle = FontStyles.Bold;
-
-        var defenseComboPreview = CreateTMPText("DefenseComboPreview", defensePanel.transform,
-            "Escudo: \u2014", 18, TextAlignmentOptions.Left, TextColor);
-        SetRect(defenseComboPreview, 0, 0.21f, 0.7f, 0.31f);
-        defenseComboPreview.GetComponent<RectTransform>().offsetMin = new Vector2(20, 0);
-
-        var defenseShieldText = CreateTMPText("DefenseShield", defensePanel.transform,
-            "", 18, TextAlignmentOptions.Right, ShieldColor);
-        SetRect(defenseShieldText, 0.5f, 0.21f, 1, 0.31f);
-        defenseShieldText.GetComponent<RectTransform>().offsetMax = new Vector2(-20, 0);
-
-        var defenseRollsText = CreateTMPText("DefenseRolls", defensePanel.transform,
-            "Roll 0/1", 16, TextAlignmentOptions.Left, TextColor);
-        SetRect(defenseRollsText, 0, 0.13f, 0.5f, 0.21f);
-        defenseRollsText.GetComponent<RectTransform>().offsetMin = new Vector2(20, 0);
-
-        var rollDefenseButton = CreateButton("RollDefenseButton", defensePanel.transform,
-            "REROLL", ShieldColor);
-        SetRect(rollDefenseButton, 0.02f, 0.02f, 0.47f, 0.14f);
-
-        var commitDefenseButton = CreateButton("CommitDefenseButton", defensePanel.transform,
-            "CONFIRMAR DEFENSA", AccentGold);
-        SetRect(commitDefenseButton, 0.51f, 0.02f, 0.98f, 0.14f);
-
         // -- Enemy Attack Panel --
         var enemyAttackPanel = CreatePanel("EnemyAttackPanel", combatPanel.transform,
             Vector2.zero, Vector2.one,
@@ -485,10 +417,6 @@ public class UIBuilder : MonoBehaviour
             "", 18, TextAlignmentOptions.Center, TextColor);
         SetRect(enemyRollText, 0, 0.55f, 1, 0.75f);
 
-        var shieldAbsorbText = CreateTMPText("ShieldAbsorbText", enemyAttackPanel.transform,
-            "", 18, TextAlignmentOptions.Center, ShieldColor);
-        SetRect(shieldAbsorbText, 0, 0.35f, 1, 0.55f);
-
         var netDamageText = CreateTMPText("NetDamageText", enemyAttackPanel.transform,
             "", 20, TextAlignmentOptions.Center, HPColor);
         SetRect(netDamageText, 0, 0.15f, 1, 0.35f);
@@ -496,6 +424,25 @@ public class UIBuilder : MonoBehaviour
         var continueButton = CreateButton("ContinueButton", enemyAttackPanel.transform,
             "CONTINUE", TextColor);
         SetRect(continueButton, 0.3f, 0.02f, 0.7f, 0.18f);
+
+        // -- Movement Selection controls (inside attackPanel) --
+        var movementTotalText = CreateTMPText("MovementTotalText", attackPanel.transform,
+            "Movimiento: 0 tiles", 16, TextAlignmentOptions.Center, AccentGold);
+        var moveTotalRT = movementTotalText.GetComponent<RectTransform>();
+        moveTotalRT.anchorMin = new Vector2(0, 0.37f);
+        moveTotalRT.anchorMax = new Vector2(1, 0.47f);
+        moveTotalRT.offsetMin = new Vector2(20, 0);
+        moveTotalRT.offsetMax = new Vector2(-20, 0);
+        movementTotalText.gameObject.SetActive(false);
+
+        var confirmMovementButton = CreateButton("ConfirmMovementButton", attackPanel.transform,
+            "CONFIRMAR MOVIMIENTO", AccentGold);
+        var confirmMoveRT = confirmMovementButton.GetComponent<RectTransform>();
+        confirmMoveRT.anchorMin = new Vector2(0.3f, 0.05f);
+        confirmMoveRT.anchorMax = new Vector2(0.98f, 0.35f);
+        confirmMoveRT.offsetMin = Vector2.zero;
+        confirmMoveRT.offsetMax = Vector2.zero;
+        confirmMovementButton.SetActive(false);
 
         // -- Dice Slot Prefab (stored in memory, not on disk) --
         var dicePrefab = CreateDiceSlotPrefab();
@@ -511,22 +458,15 @@ public class UIBuilder : MonoBehaviour
             rerollButton.GetComponent<Button>(),
             commitButton.GetComponent<Button>(),
             attackPanel,
-            defensePanel,
-            defenseTitle,
-            defenseRollsText,
-            defenseComboPreview,
-            defenseShieldText,
-            rollDefenseButton.GetComponent<Button>(),
             enemyAttackPanel,
             enemyAttackTitle,
             enemyRollText,
-            shieldAbsorbText,
             netDamageText,
             continueButton.GetComponent<Button>()
         );
-        combatUI.InitializeDefense(
-            defenseDiceContainer.transform,
-            commitDefenseButton.GetComponent<Button>()
+        combatUI.InitializeMovementSelection(
+            movementTotalText,
+            confirmMovementButton.GetComponent<Button>()
         );
         combatUI.SetCrapsBetIndicator(crapsBetIndicator);
 
@@ -852,33 +792,6 @@ public class UIBuilder : MonoBehaviour
         if (UIManager.Instance != null)
             UIManager.Instance.SetInventoryBuilderUI(inventoryBuilderUI);
 
-        // ── Movement Roll Panel ──
-        var movementRollPanel = CreatePanel("MovementRollPanel", canvasTransform,
-            new Vector2(0.3f, 0.35f), new Vector2(0.7f, 0.65f),
-            Vector2.zero, Vector2.zero, 0);
-
-        var movementRollInfo = CreateTMPText("MovementRollInfo", movementRollPanel.transform,
-            "Tirar dado de movimiento", 20, TextAlignmentOptions.Center, TextColor);
-        SetRect(movementRollInfo, 0.05f, 0.58f, 0.95f, 0.95f);
-        movementRollInfo.enableWordWrapping = true;
-
-        var movementRollResult = CreateTMPText("MovementRollResult", movementRollPanel.transform,
-            "", 32, TextAlignmentOptions.Center, AccentGold);
-        SetRect(movementRollResult, 0.05f, 0.32f, 0.95f, 0.58f);
-        movementRollResult.fontStyle = FontStyles.Bold;
-
-        var movementRollButton = CreateButton("MovementRollButton", movementRollPanel.transform,
-            "TIRAR DADO", D6Color);
-        SetRect(movementRollButton, 0.15f, 0.06f, 0.85f, 0.30f);
-
-        var movementRollUI = movementRollPanel.AddComponent<MovementRollUI>();
-        movementRollUI.Initialize(
-            movementRollInfo,
-            movementRollResult,
-            movementRollButton.GetComponent<Button>()
-        );
-        movementRollPanel.SetActive(false);
-
         // ── Enemy Info Panel (right side, shown during combat) ──
         var enemyInfoPanel = CreatePanel("EnemyInfoPanel", canvasTransform,
             new Vector2(0.75f, 0.45f), new Vector2(0.98f, 0.62f),
@@ -920,14 +833,12 @@ public class UIBuilder : MonoBehaviour
             uiManager.Initialize(
                 healthBarUI,
                 energyBarUI,
-                shieldDisplay,
                 phaseLabel,
                 combatPanel,
                 crapsOverlay,
                 rewardOverlay,
                 gameOverOverlay,
-                victoryOverlay,
-                movementRollUI
+                victoryOverlay
             );
             uiManager.SetLevelText(levelTMP);
             uiManager.SetEnemyInfoUI(enemyInfoUI);

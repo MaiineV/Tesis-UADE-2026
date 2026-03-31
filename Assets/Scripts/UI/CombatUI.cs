@@ -8,62 +8,50 @@ public class CombatUI : MonoBehaviour
 {
     public static CombatUI Instance;
 
-    [Header("Attack — Dice Display")]
+    [Header("Dice Display")]
     [SerializeField] private Transform diceContainer;
     [SerializeField] private GameObject dicePrefab;
 
-    [Header("Attack — Combo Preview")]
+    [Header("Combo / Status Text")]
     [SerializeField] private TMP_Text comboPreviewText;
-
-    [Header("Attack — Roll Counter")]
     [SerializeField] private TMP_Text rollCounterText;
 
-    [Header("Attack — Buttons")]
+    [Header("Movement Selection")]
+    [SerializeField] private TMP_Text movementTotalText;
+    [SerializeField] private Button confirmMovementButton;
+
+    [Header("Generala Phase Buttons")]
     [SerializeField] private Button rerollButton;
     [SerializeField] private Button commitButton;
 
-    [Header("Attack — Craps Bet Indicator")]
+    [Header("Craps Bet Indicator")]
     [SerializeField] private TMP_Text crapsBetIndicator;
 
-    [Header("Attack Panel")]
+    [Header("Combat Panel")]
     [SerializeField] private GameObject attackPanel;
 
-    [Header("Defense")]
-    [SerializeField] private GameObject defensePanel;
-    [SerializeField] private TMP_Text defenseTitle;
-    [SerializeField] private TMP_Text defenseRollCounterText;
-    [SerializeField] private TMP_Text defenseComboPreviewText;
-    [SerializeField] private TMP_Text defenseShieldText;
-    [SerializeField] private Button rollDefenseButton;
-    [SerializeField] private Button commitDefenseButton;
-    [SerializeField] private Transform defenseDiceContainer;
-
-    [Header("Enemy Attack")]
+    [Header("Enemy Attack Panel")]
     [SerializeField] private GameObject enemyAttackPanel;
     [SerializeField] private TMP_Text enemyAttackTitle;
     [SerializeField] private TMP_Text enemyRollText;
-    [SerializeField] private TMP_Text shieldAbsorbText;
     [SerializeField] private TMP_Text netDamageText;
     [SerializeField] private Button continueButton;
 
-    // Attack state
+    // Internal state
     private DieSlotUI[] dieSlots;
     private RollResult[] currentResults;
     private DiceBag currentBag;
+    private bool _inMovementSelectionMode;
+    private HashSet<string> _selectedMovementIds = new HashSet<string>();
 
-    // Defense state
-    private DieSlotUI[] defenseSlots;
-    private RollResult[] defenseResults;
+    // Movement selection events
+    public event Action<string> OnMovementDieToggled;
+    public event Action OnConfirmMovementClicked;
 
-    // Attack events
+    // Generala phase events
     public event Action<string> OnDieLockToggled;
     public event Action OnRerollClicked;
     public event Action OnCommitClicked;
-
-    // Defense events
-    public event Action<string> OnDefenseDieLockToggled;
-    public event Action OnRollDefenseClicked;
-    public event Action OnDefenseCommitClicked;
 
     // Enemy attack event
     public event Action OnContinueClicked;
@@ -79,12 +67,8 @@ public class CombatUI : MonoBehaviour
         TMP_Text comboPreviewRef, TMP_Text rollCounterRef,
         Button rerollRef, Button commitRef,
         GameObject attackPanelRef,
-        GameObject defensePanelRef, TMP_Text defenseTitleRef,
-        TMP_Text defenseRollCounterRef, TMP_Text defenseComboPreviewRef,
-        TMP_Text defenseShieldRef, Button rollDefenseRef,
         GameObject enemyAttackPanelRef, TMP_Text enemyAttackTitleRef,
-        TMP_Text enemyRollRef, TMP_Text shieldAbsorbRef,
-        TMP_Text netDamageRef, Button continueRef)
+        TMP_Text enemyRollRef, TMP_Text netDamageRef, Button continueRef)
     {
         diceContainer = diceContainerRef;
         dicePrefab = dicePrefabRef;
@@ -93,29 +77,22 @@ public class CombatUI : MonoBehaviour
         rerollButton = rerollRef;
         commitButton = commitRef;
         attackPanel = attackPanelRef;
-        defensePanel = defensePanelRef;
-        defenseTitle = defenseTitleRef;
-        defenseRollCounterText = defenseRollCounterRef;
-        defenseComboPreviewText = defenseComboPreviewRef;
-        defenseShieldText = defenseShieldRef;
-        rollDefenseButton = rollDefenseRef;
         enemyAttackPanel = enemyAttackPanelRef;
         enemyAttackTitle = enemyAttackTitleRef;
         enemyRollText = enemyRollRef;
-        shieldAbsorbText = shieldAbsorbRef;
         netDamageText = netDamageRef;
         continueButton = continueRef;
         WireButtons();
     }
 
-    public void InitializeDefense(Transform defenseDiceContainerRef, Button commitDefenseRef)
+    public void InitializeMovementSelection(TMP_Text movementTotalRef, Button confirmMovementRef)
     {
-        defenseDiceContainer = defenseDiceContainerRef;
-        commitDefenseButton = commitDefenseRef;
-        if (commitDefenseButton != null)
+        movementTotalText = movementTotalRef;
+        confirmMovementButton = confirmMovementRef;
+        if (confirmMovementButton != null)
         {
-            commitDefenseButton.onClick.RemoveAllListeners();
-            commitDefenseButton.onClick.AddListener(() => OnDefenseCommitClicked?.Invoke());
+            confirmMovementButton.onClick.RemoveAllListeners();
+            confirmMovementButton.onClick.AddListener(() => OnConfirmMovementClicked?.Invoke());
         }
     }
 
@@ -131,33 +108,100 @@ public class CombatUI : MonoBehaviour
             commitButton.onClick.RemoveAllListeners();
             commitButton.onClick.AddListener(() => OnCommitClicked?.Invoke());
         }
-        if (rollDefenseButton != null)
-        {
-            rollDefenseButton.onClick.RemoveAllListeners();
-            rollDefenseButton.onClick.AddListener(() => OnRollDefenseClicked?.Invoke());
-        }
         if (continueButton != null)
         {
             continueButton.onClick.RemoveAllListeners();
             continueButton.onClick.AddListener(() => OnContinueClicked?.Invoke());
         }
+        if (confirmMovementButton != null)
+        {
+            confirmMovementButton.onClick.RemoveAllListeners();
+            confirmMovementButton.onClick.AddListener(() => OnConfirmMovementClicked?.Invoke());
+        }
     }
 
-    // ── Attack UI ──────────────────────────────────────────────
+    // ── Pick & Roll — Movement Selection ───────────────────────
 
-    public void ShowAttackUI(RollResult[] results, HashSet<string> locked, DiceBag bag = null)
+    // Shows all dice after the initial roll. Player clicks dice to assign to movement.
+    public void ShowPickMovementUI(RollResult[] allResults, DiceBag bag)
     {
+        _inMovementSelectionMode = true;
+        _selectedMovementIds.Clear();
+
         SetPanel(attackPanel, true);
-        SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, false);
 
-        currentResults = results;
+        currentResults = allResults;
         currentBag = bag;
         ClearDiceSlots(diceContainer, ref dieSlots);
-        dieSlots = BuildDiceSlots(results, locked, bag, diceContainer, OnDieClicked);
+        dieSlots = BuildDiceSlots(allResults, new HashSet<string>(), bag, diceContainer, OnDieClickedInternal);
+
+        if (comboPreviewText != null)
+            comboPreviewText.text = "Elegí dados para moverse (cara = tiles)";
+        if (rollCounterText != null)
+            rollCounterText.text = "PICK & ROLL — Roll 1/3";
+
+        if (movementTotalText != null)
+        {
+            movementTotalText.text = "Movimiento: 0 tiles";
+            movementTotalText.gameObject.SetActive(true);
+        }
+        if (rerollButton != null) rerollButton.gameObject.SetActive(false);
+        if (commitButton != null) commitButton.gameObject.SetActive(false);
+        if (confirmMovementButton != null)
+        {
+            confirmMovementButton.gameObject.SetActive(true);
+            confirmMovementButton.interactable = true;
+        }
+        HideCrapsBetIndicator();
     }
 
-    public void OnDieClicked(string diceId) => OnDieLockToggled?.Invoke(diceId);
+    // Called by GameManager when a die is toggled for movement
+    public void ToggleMovementDieSelection(string diceId, bool isSelected, int totalSteps)
+    {
+        if (isSelected) _selectedMovementIds.Add(diceId);
+        else _selectedMovementIds.Remove(diceId);
+
+        UpdateSlotLock(diceId, isSelected, currentResults, dieSlots);
+
+        if (movementTotalText != null)
+            movementTotalText.text = totalSteps > 0
+                ? $"Movimiento: {totalSteps} tiles"
+                : "Sin movimiento (0 tiles)";
+    }
+
+    // ── Generala Phase ──────────────────────────────────────────
+
+    // Shows remaining dice (non-movement) for the Generala lock/reroll/commit phase
+    public void ShowGeneralaUI(RollResult[] remainingDice, HashSet<string> locked, DiceBag bag = null)
+    {
+        _inMovementSelectionMode = false;
+
+        SetPanel(attackPanel, true);
+        SetPanel(enemyAttackPanel, false);
+
+        currentResults = remainingDice;
+        currentBag = bag;
+        ClearDiceSlots(diceContainer, ref dieSlots);
+
+        if (remainingDice != null && remainingDice.Length > 0)
+            dieSlots = BuildDiceSlots(remainingDice, locked, bag, diceContainer, OnDieClickedInternal);
+        else
+            dieSlots = new DieSlotUI[0];
+
+        if (movementTotalText != null) movementTotalText.gameObject.SetActive(false);
+        if (confirmMovementButton != null) confirmMovementButton.gameObject.SetActive(false);
+        if (rerollButton != null) rerollButton.gameObject.SetActive(true);
+        if (commitButton != null) commitButton.gameObject.SetActive(true);
+    }
+
+    private void OnDieClickedInternal(string diceId)
+    {
+        if (_inMovementSelectionMode)
+            OnMovementDieToggled?.Invoke(diceId);
+        else
+            OnDieLockToggled?.Invoke(diceId);
+    }
 
     public void UpdateDieLock(string diceId, bool isLocked)
         => UpdateSlotLock(diceId, isLocked, currentResults, dieSlots);
@@ -166,7 +210,7 @@ public class CombatUI : MonoBehaviour
     {
         if (comboPreviewText == null) return;
         if (combo.Type == CombinationType.HighDie)
-            comboPreviewText.text = "Combo: None";
+            comboPreviewText.text = "Combo: ninguno";
         else
             comboPreviewText.text = $"Combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} dmg";
     }
@@ -193,84 +237,25 @@ public class CombatUI : MonoBehaviour
         if (commitButton != null) commitButton.interactable = enabled;
     }
 
-    // ── Defense UI ─────────────────────────────────────────────
-
-    public void ShowDefenseDiceUI(RollResult[] results, HashSet<string> locked, DiceBag bag = null)
-    {
-        SetPanel(attackPanel, false);
-        SetPanel(defensePanel, true);
-        SetPanel(enemyAttackPanel, false);
-
-        defenseResults = results;
-        ClearDiceSlots(defenseDiceContainer, ref defenseSlots);
-        defenseSlots = BuildDiceSlots(results, locked, bag, defenseDiceContainer, OnDefenseDieClicked);
-    }
-
-    public void OnDefenseDieClicked(string diceId) => OnDefenseDieLockToggled?.Invoke(diceId);
-
-    public void UpdateDefenseDieLock(string diceId, bool isLocked)
-        => UpdateSlotLock(diceId, isLocked, defenseResults, defenseSlots);
-
-    public void UpdateDefenseComboPreview(CombinationResult combo)
-    {
-        if (defenseComboPreviewText == null) return;
-        if (combo.Type == CombinationType.HighDie)
-            defenseComboPreviewText.text = "Escudo: None";
-        else
-            defenseComboPreviewText.text = $"Escudo: {FormatComboName(combo.Type)}";
-    }
-
-    public void ClearDefenseComboPreview()
-    {
-        if (defenseComboPreviewText != null)
-            defenseComboPreviewText.text = "Escudo: \u2014";
-    }
-
-    public void UpdateDefenseRollCounter(int current, int max)
-    {
-        if (defenseTitle != null)
-            defenseTitle.text = $"DEFENSA — Roll {current}/{max}";
-        if (defenseRollCounterText != null)
-            defenseRollCounterText.text = $"Roll {current}/{max}";
-    }
-
-    public void SetDefenseRerollEnabled(bool enabled)
-    {
-        if (rollDefenseButton != null) rollDefenseButton.interactable = enabled;
-    }
-
-    public void SetDefenseCommitEnabled(bool enabled)
-    {
-        if (commitDefenseButton != null) commitDefenseButton.interactable = enabled;
-    }
-
-    public void UpdateDefenseShield(int shieldValue)
-    {
-        if (defenseShieldText != null)
-            defenseShieldText.text = shieldValue > 0 ? $"Escudo: {shieldValue}" : "";
-    }
-
-    // ── Enemy Attack UI ────────────────────────────────────────
+    // ── Enemy Attack Panel ──────────────────────────────────────
 
     public void ShowEnemyAttackResult(int rawDamage, int shield, int netDamage)
     {
         SetPanel(attackPanel, false);
-        SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, true);
 
-        if (enemyAttackTitle != null) enemyAttackTitle.text = "ENEMY ATTACKS!";
-        if (enemyRollText != null) enemyRollText.text = $"Enemy rolls: {rawDamage} damage";
-        if (shieldAbsorbText != null) shieldAbsorbText.text = $"Your shield absorbs: {shield}";
+        if (enemyAttackTitle != null) enemyAttackTitle.text = "ENEMIGO ATACA!";
+        if (enemyRollText != null) enemyRollText.text = $"Daño del enemigo: {rawDamage}";
         if (netDamageText != null)
-            netDamageText.text = netDamage > 0 ? $"You take: {netDamage} damage" : "Fully blocked!";
+            netDamageText.text = netDamage > 0 ? $"Recibís: {netDamage} de daño" : "Sin daño!";
     }
 
     public void HideCombatUI()
     {
         SetPanel(attackPanel, false);
-        SetPanel(defensePanel, false);
         SetPanel(enemyAttackPanel, false);
         HideCrapsBetIndicator();
+        _inMovementSelectionMode = false;
     }
 
     // ── Craps Bet Indicator ─────────────────────────────────────
@@ -283,7 +268,7 @@ public class CombatUI : MonoBehaviour
     public void ShowCrapsBetIndicator(CombinationType bet)
     {
         if (crapsBetIndicator == null) return;
-        crapsBetIndicator.text = $"Craps Bet: {FormatComboName(bet)}";
+        crapsBetIndicator.text = $"Apuesta Craps: {FormatComboName(bet)}";
         crapsBetIndicator.gameObject.SetActive(true);
     }
 
@@ -293,7 +278,7 @@ public class CombatUI : MonoBehaviour
             crapsBetIndicator.gameObject.SetActive(false);
     }
 
-    // ── Shared Helpers ─────────────────────────────────────────
+    // ── Shared Helpers ──────────────────────────────────────────
 
     private DieSlotUI[] BuildDiceSlots(RollResult[] results, HashSet<string> locked,
         DiceBag bag, Transform container, Action<string> clickCallback)

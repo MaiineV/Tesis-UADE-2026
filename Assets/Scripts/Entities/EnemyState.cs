@@ -8,7 +8,6 @@ public class EnemyState
     public int MaxHP;
     public Vector2Int GridPosition;
     public float CurrentEnergy;
-    public SpeedDie SpeedDie;
 
     public bool IsAlive => CurrentHP > 0;
     public bool IsEnraged => CurrentEnergy >= BaseData.MaxEnergy;
@@ -21,12 +20,7 @@ public class EnemyState
             CurrentHP = data.MaxHP,
             MaxHP = data.MaxHP,
             GridPosition = position,
-            CurrentEnergy = 0,
-            SpeedDie = new SpeedDie
-            {
-                MinValue = data.SpeedMin,
-                MaxValue = data.SpeedMax
-            }
+            CurrentEnergy = 0
         };
     }
 
@@ -35,6 +29,7 @@ public class EnemyState
         CurrentHP = Mathf.Max(0, CurrentHP - amount);
     }
 
+    // Enemy gains flat energy per round (per EnemyData.EnergyPerRound)
     public void GainEnergy()
     {
         CurrentEnergy = Mathf.Min(BaseData.MaxEnergy, CurrentEnergy + BaseData.EnergyPerRound);

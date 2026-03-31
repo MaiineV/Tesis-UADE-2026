@@ -16,7 +16,6 @@ public class InventoryBuilderUI : MonoBehaviour
 
     private List<InventoryDieCardUI> cards = new List<InventoryDieCardUI>();
     private List<DiceInstance> selectedDice = new List<DiceInstance>();
-    private int requiredCount;
     private float maxPowerBudget;
     private float usedPower;
 
@@ -35,12 +34,11 @@ public class InventoryBuilderUI : MonoBehaviour
         confirmButton.onClick.AddListener(OnConfirmClicked);
     }
 
-    public void Show(List<DiceInstance> available, int slotsRequired, float powerBudget)
+    public void Show(List<DiceInstance> available, float powerBudget)
     {
         gameObject.SetActive(true);
         selectedDice.Clear();
         usedPower = 0;
-        requiredCount = slotsRequired;
         maxPowerBudget = powerBudget;
         BuildCards(available);
         UpdateCounter();
@@ -83,7 +81,6 @@ public class InventoryBuilderUI : MonoBehaviour
         }
         else
         {
-            if (selectedDice.Count >= requiredCount) return;
             if (usedPower + card.DiceInstance.PowerCost > maxPowerBudget) return;
             usedPower += card.DiceInstance.PowerCost;
             selectedDice.Add(card.DiceInstance);
@@ -95,16 +92,16 @@ public class InventoryBuilderUI : MonoBehaviour
     private void UpdateCounter()
     {
         if (counterText != null)
-            counterText.text = $"{selectedDice.Count}/{requiredCount} dados seleccionados";
+            counterText.text = $"{selectedDice.Count} dados seleccionados";
         if (budgetText != null)
             budgetText.text = $"Poder: {usedPower:0.#}/{maxPowerBudget:0.#}";
         if (confirmButton != null)
-            confirmButton.interactable = selectedDice.Count == requiredCount;
+            confirmButton.interactable = selectedDice.Count > 0;
     }
 
     private void OnConfirmClicked()
     {
-        if (selectedDice.Count != requiredCount) return;
+        if (selectedDice.Count == 0) return;
         Hide();
         OnInventoryConfirmed?.Invoke(new List<DiceInstance>(selectedDice));
     }

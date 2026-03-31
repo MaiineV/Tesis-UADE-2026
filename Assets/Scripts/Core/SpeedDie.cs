@@ -1,13 +1,2 @@
-using UnityEngine;
-
-[System.Serializable]
-public class SpeedDie
-{
-    public int MinValue;
-    public int MaxValue;
-
-    public int Roll()
-    {
-        return Random.Range(MinValue, MaxValue + 1);
-    }
-}
+// REMOVED — SpeedDie is eliminated per GDD. Movement comes from combat dice face values.
+// Kept as empty file to avoid breaking scene/prefab references.

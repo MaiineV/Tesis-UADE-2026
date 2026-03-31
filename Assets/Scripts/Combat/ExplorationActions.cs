@@ -2,14 +2,12 @@ using UnityEngine;
 
 public static class ExplorationActions
 {
-    // Bow: d20 + Dexterity → hit%
-    public static (bool hit, int roll, int hitChance) AttemptBow(int dexterity, int dexterityMax)
+    // Bow: d20 flat roll — item mechanic placeholder
+    // Hit if roll >= 11 (~50% base). Dexterity removed (not a GDD stat).
+    public static (bool hit, int roll) AttemptBow()
     {
         int roll = Random.Range(1, 21); // d20
-        int total = roll + dexterity;
-        int hitChance = Mathf.RoundToInt((total / (float)(20 + dexterityMax)) * 100f);
-        int check = Random.Range(1, 101);
-        return (check <= hitChance, total, hitChance);
+        return (roll >= 11, roll);
     }
 
     // Bow damage: flat value based on roll
@@ -18,33 +16,29 @@ public static class ExplorationActions
         return Mathf.Max(1, roll);
     }
 
-    // Potion: d10 + Dexterity → heal% of max HP (never fails)
-    public static (int healAmount, int roll, float healPercent) AttemptPotion(int dexterity, int dexterityMax, int maxHP)
+    // Potion: d10 flat roll → heal amount (item mechanic placeholder)
+    // Dexterity removed (not a GDD stat).
+    public static (int healAmount, int roll) AttemptPotion(int maxHP)
     {
         int roll = Random.Range(1, 11); // d10
-        int total = roll + dexterity;
-        float healPercent = total / (float)(10 + dexterityMax) * 100f;
-        int healAmount = Mathf.Max(1, Mathf.RoundToInt(maxHP * healPercent / 100f));
-        return (healAmount, total, healPercent);
+        int healAmount = Mathf.Max(1, roll * 2);
+        return (healAmount, roll);
     }
 
-    // Flee: d10 + Speed → success%
-    public static (bool success, int roll, int successChance) AttemptFlee(int speed)
+    // Flee: d10 flat roll — success if roll >= 6 (~50% base).
+    // GDD note: leaving adjacency triggers Opportunity Attack (1d6 both sides).
+    // Speed removed (not a player GDD stat).
+    public static (bool success, int roll) AttemptFlee()
     {
         int roll = Random.Range(1, 11); // d10
-        int total = roll + speed;
-        int successChance = Mathf.Min(95, total * 5);
-        int check = Random.Range(1, 101);
-        return (check <= successChance, total, successChance);
+        return (roll >= 6, roll);
     }
 
-    // Force Door: d10 + Dexterity → success%
-    public static (bool success, int roll, int successChance) AttemptForceDoor(int dexterity, int dexterityMax)
+    // Force Door: d10 flat roll — success if roll >= 7 (~40% base).
+    // Dexterity removed (not a GDD stat).
+    public static (bool success, int roll) AttemptForceDoor()
     {
         int roll = Random.Range(1, 11); // d10
-        int total = roll + dexterity;
-        int successChance = Mathf.RoundToInt((total / (float)(10 + dexterityMax)) * 100f);
-        int check = Random.Range(1, 101);
-        return (check <= successChance, total, successChance);
+        return (roll >= 7, roll);
     }
 }

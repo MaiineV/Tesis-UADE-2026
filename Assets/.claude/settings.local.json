@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Sebastarbucks/Unity/Tesis-UADE-2026/Assets/Data -type f -name *.asset)",
+      "Bash(find /c/Users/Sebastarbucks/Unity/Tesis-UADE-2026/Assets/Prefabs -type f -name *.prefab)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mcp-unity"
+  ]
+}

@@ -58,9 +58,6 @@ public class EnergyManager : MonoBehaviour
                 else if (combo == CombinationType.Generala ||
                          combo == CombinationType.DoubleGenerala) gain = 50;
                 break;
-            case CombatActionType.Defended:
-                gain = 5;
-                break;
             case CombatActionType.TookDamage:
                 gain = 5;
                 break;

@@ -1,28 +1,34 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
+// Handles the Generala Phase of Pick & Roll.
+// Flow: PerformRoll (initial roll) → SetMovementDice → PerformRoll (rerolls) → Commit
 public class AttackPhase
 {
     public int MaxRolls = 3;
     public int CurrentRoll = 0;
-    public RollResult[] CurrentResults;
+    public RollResult[] AllInitialResults;          // All dice from the initial roll
+    public RollResult[] CurrentResults;             // Dice available for Generala (excludes movement dice)
     public HashSet<string> LockedDiceIds = new HashSet<string>();
+    public HashSet<string> MovementDiceIds = new HashSet<string>();
     public CombinationResult FinalCombination;
     public int RollsUsed => CurrentRoll;
 
-    // Called when player clicks "Roll" or "Reroll"
+    // Called once at the start (PickAndRoll state) and again for rerolls (GeneralaPhase)
     public RollResult[] PerformRoll(DiceBag bag)
     {
         CurrentRoll++;
 
         if (CurrentRoll == 1)
         {
-            // First roll: roll everything
-            CurrentResults = bag.RollAll();
+            // Initial roll: roll ALL dice
+            AllInitialResults = bag.RollAll();
+            CurrentResults = AllInitialResults;
         }
         else
         {
-            // Subsequent rolls: only reroll unlocked dice
+            // Reroll: only reroll unlocked dice from the Generala pool
             for (int i = 0; i < CurrentResults.Length; i++)
             {
                 if (!LockedDiceIds.Contains(CurrentResults[i].DiceId))
@@ -36,6 +42,28 @@ public class AttackPhase
         return CurrentResults;
     }
 
+    // Called after player confirms movement dice selection.
+    // Filters out movement dice from Generala pool.
+    public void SetMovementDice(IEnumerable<string> movementIds)
+    {
+        MovementDiceIds = new HashSet<string>(movementIds);
+        LockedDiceIds.ExceptWith(MovementDiceIds);
+        CurrentResults = AllInitialResults
+            .Where(r => !MovementDiceIds.Contains(r.DiceId))
+            .ToArray();
+    }
+
+    // Returns total movement tiles from the selected movement dice
+    public int GetMovementSteps()
+    {
+        if (AllInitialResults == null) return 0;
+        int steps = 0;
+        foreach (var r in AllInitialResults)
+            if (MovementDiceIds.Contains(r.DiceId))
+                steps += r.Value;
+        return steps;
+    }
+
     public void ToggleLock(string diceId)
     {
         if (LockedDiceIds.Contains(diceId))
@@ -46,9 +74,18 @@ public class AttackPhase
 
     public bool CanRollAgain => CurrentRoll < MaxRolls;
 
-    // Player commits to current dice — evaluate best combo
     public CombinationResult Commit(bool hasGeneralaThisRun)
     {
+        if (CurrentResults == null || CurrentResults.Length == 0)
+        {
+            FinalCombination = new CombinationResult
+            {
+                Type = CombinationType.HighDie,
+                BaseDamage = 0,
+                MatchingDice = new int[0]
+            };
+            return FinalCombination;
+        }
         int[] values = CurrentResults.Select(r => r.Value).ToArray();
         FinalCombination = CombinationDetector.Evaluate(values, hasGeneralaThisRun);
         return FinalCombination;

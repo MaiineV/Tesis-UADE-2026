@@ -9,7 +9,6 @@ public class UIManager : MonoBehaviour
     [Header("HUD")]
     [SerializeField] private HealthBarUI healthBar;
     [SerializeField] private EnergyBarUI energyBar;
-    [SerializeField] private ShieldDisplay shieldDisplay;
 
     [Header("Level")]
     [SerializeField] private TMP_Text levelText;
@@ -24,7 +23,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject rewardOverlay;
     [SerializeField] private GameObject gameOverOverlay;
     [SerializeField] private GameObject victoryOverlay;
-    [SerializeField] private MovementRollUI movementRollUI;
     [SerializeField] private InventoryBuilderUI inventoryBuilderUI;
     [SerializeField] private EnemyInfoUI enemyInfoUI;
 
@@ -35,21 +33,18 @@ public class UIManager : MonoBehaviour
         Instance = this;
     }
 
-    public void Initialize(HealthBarUI healthBarRef, EnergyBarUI energyBarRef, ShieldDisplay shieldRef,
+    public void Initialize(HealthBarUI healthBarRef, EnergyBarUI energyBarRef,
         TMP_Text phaseLabelRef, GameObject combatPanelRef, GameObject crapsOverlayRef,
-        GameObject rewardOverlayRef, GameObject gameOverOverlayRef, GameObject victoryOverlayRef,
-        MovementRollUI movementRollRef = null)
+        GameObject rewardOverlayRef, GameObject gameOverOverlayRef, GameObject victoryOverlayRef)
     {
         healthBar = healthBarRef;
         energyBar = energyBarRef;
-        shieldDisplay = shieldRef;
         phaseLabel = phaseLabelRef;
         combatPanel = combatPanelRef;
         crapsOverlay = crapsOverlayRef;
         rewardOverlay = rewardOverlayRef;
         gameOverOverlay = gameOverOverlayRef;
         victoryOverlay = victoryOverlayRef;
-        movementRollUI = movementRollRef;
     }
 
     public void SetInventoryBuilderUI(InventoryBuilderUI invBuilderRef)
@@ -62,7 +57,7 @@ public class UIManager : MonoBehaviour
         enemyInfoUI = enemyInfoRef;
     }
 
-    // --- HUD forwarding ---
+    // --- HUD ---
 
     public void UpdateHP(int current, int max)
     {
@@ -72,11 +67,6 @@ public class UIManager : MonoBehaviour
     public void UpdateEnergy(float normalized)
     {
         if (energyBar != null) energyBar.UpdateEnergy(normalized);
-    }
-
-    public void UpdateShield(int value)
-    {
-        if (shieldDisplay != null) shieldDisplay.UpdateShield(value);
     }
 
     // --- Level ---
@@ -112,30 +102,26 @@ public class UIManager : MonoBehaviour
         phaseLabelCoroutine = null;
     }
 
-    // --- Panel show/hide ---
+    // --- Panels ---
 
-    public void ShowCombatPanel() => SetPanel(combatPanel, true);
-    public void HideCombatPanel() => SetPanel(combatPanel, false);
+    public void ShowCombatPanel()  => SetPanel(combatPanel, true);
+    public void HideCombatPanel()  => SetPanel(combatPanel, false);
 
     public void ShowCrapsOverlay() => SetPanel(crapsOverlay, true);
     public void HideCrapsOverlay() => SetPanel(crapsOverlay, false);
 
-    public void ShowRewardOverlay() => SetPanel(rewardOverlay, true);
-    public void HideRewardOverlay() => SetPanel(rewardOverlay, false);
+    public void ShowRewardOverlay()   => SetPanel(rewardOverlay, true);
+    public void HideRewardOverlay()   => SetPanel(rewardOverlay, false);
 
     public void ShowGameOverOverlay() => SetPanel(gameOverOverlay, true);
     public void HideGameOverOverlay() => SetPanel(gameOverOverlay, false);
 
-    public void ShowVictoryOverlay() => SetPanel(victoryOverlay, true);
-    public void HideVictoryOverlay() => SetPanel(victoryOverlay, false);
+    public void ShowVictoryOverlay()  => SetPanel(victoryOverlay, true);
+    public void HideVictoryOverlay()  => SetPanel(victoryOverlay, false);
 
-    public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, int slots, float powerBudget)
-        => inventoryBuilderUI?.Show(inventory, slots, powerBudget);
+    public void ShowInventoryBuilder(System.Collections.Generic.List<DiceInstance> inventory, float powerBudget)
+        => inventoryBuilderUI?.Show(inventory, powerBudget);
     public void HideInventoryBuilder() => inventoryBuilderUI?.Hide();
-
-    public void ShowMovementRollPanel(int min, int max) => movementRollUI?.Show(min, max);
-    public void ShowMovementRollResult(int steps) => movementRollUI?.ShowResult(steps);
-    public void HideMovementRollPanel() => movementRollUI?.Hide();
 
     // --- Gold ---
 
@@ -166,7 +152,7 @@ public class UIManager : MonoBehaviour
     // --- Enemy Info ---
 
     public void ShowEnemyInfo(EnemyEntity enemy) => enemyInfoUI?.Show(enemy);
-    public void HideEnemyInfo() => enemyInfoUI?.Hide();
+    public void HideEnemyInfo()                  => enemyInfoUI?.Hide();
     public void UpdateEnemyHP(int current, int max) => enemyInfoUI?.UpdateHP(current, max);
 
     public void HideAllPanels()
@@ -176,7 +162,6 @@ public class UIManager : MonoBehaviour
         HideRewardOverlay();
         HideGameOverOverlay();
         HideVictoryOverlay();
-        HideMovementRollPanel();
         HideInventoryBuilder();
         HideEnemyInfo();
         HideExplorationActions();

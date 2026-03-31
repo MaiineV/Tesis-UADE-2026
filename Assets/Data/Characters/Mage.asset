@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e2843bc747fb384ba377cf6de39fa9a, type: 3}
+  m_Name: Mage
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterData
+  CharacterName: Mage
+  ClassName: Mage
+  Description: A glass cannon who chases Straights for devastating damage.
+  Portrait: {fileID: 0}
+  CharacterColor: {r: 0.67058825, g: 0.2784314, b: 0.7372549, a: 1}
+  MaxHP: 80
+  StartingPowerBudget: 8
+  Dexterity: 1
+  Speed: 2
+  SpeedMin: 2
+  SpeedMax: 4
+  StartingDice:
+  - DiceType: {fileID: 11400000, guid: 009661765a857994c93ebfafc97390d6, type: 2}
+    Quantity: 2
+  - DiceType: {fileID: 11400000, guid: c9c08a8b76d7dc844936313a67c8c567, type: 2}
+    Quantity: 3
+  CombatDiceSlots: 5
+  AffinityCombo: 4
+  AffinityDamageBonus: 1.2
+  UnlockedByDefault: 0
+  UnlockDescription: Unlock by completing a run with the Warrior.

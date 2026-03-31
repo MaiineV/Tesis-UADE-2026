@@ -20,7 +20,7 @@
 # Design Documents
 
 ## GDD
-- `Assets/8.Documents/Game Design Document.md` — Full game design. Covers: concept, glossary, core loop, combat system, dice bag, combos, exploration, enemies, dungeon structure, shop, economy, formulas.
+- `Assets/Documents/Game Design Document.md` — Full game design. Covers: concept, glossary, core loop, combat system (Pick & Roll), dice bag, combos, Generala phase, Craps Mode, exploration, enemies, dungeon structure, shop, economy, formulas.
 
 ## Spec Documents
 All design specs are in `spec-docs/`. Read `spec-docs/README.md` for the index. Each spec contains C# code examples, data structures, and acceptance criteria.
@@ -59,16 +59,16 @@ You have the Unity MCP server available. **Use it** to:
 Assets/
 ├── Scripts/
 │   ├── Managers/       → GameManager, GridManager, CombatManager, etc.
-│   ├── Core/           → DiceInstance, DiceBag, SpeedDie, CombinationDetector, etc.
+│   ├── Core/           → DiceInstance, DiceBag, CombinationDetector, GeneralaPhase, etc.
 │   ├── Data/           → ScriptableObject class definitions (DiceData, CharacterData, etc.)
 │   ├── Entities/       → PlayerEntity, PlayerState, EnemyEntity, EnemyState, EnemyAI
 │   ├── Grid/           → TileData, TileVisual
-│   ├── Combat/         → AttackPhase, DefensePhase, CrapsMode, DamageResolver
-│   └── UI/             → All UI scripts (CombatUI, DiceBagUI, HealthBarUI, etc.)
+│   ├── Combat/         → PickAndRoll, GeneralaPhase, CrapsMode, DamageResolver, OpportunityAttack
+│   └── UI/             → All UI scripts (CombatUI, DiceBagUI, HealthBarUI, EnergyBarUI, etc.)
 ├── Data/               → ScriptableObject INSTANCES (.asset files)
-│   ├── Dice/           → d6.asset, d8.asset, d12.asset
-│   ├── Characters/     → Warrior.asset
-│   └── Enemies/        → Goblin.asset, Orc.asset
+│   ├── Dice/           → d6.asset, d8.asset, d10.asset, d12.asset
+│   ├── Characters/     → Warrior.asset, Mage.asset, Rogue.asset
+│   └── Enemies/        → Goblin.asset, Orc.asset, CardArcher.asset
 ├── Prefabs/            → Player.prefab, Enemy.prefab, Tile.prefab, etc.
 └── Scenes/
     └── GameScene.unity
@@ -79,9 +79,11 @@ These types are in `Assets/Scripts/Core/` and `Assets/Scripts/Data/`. Do NOT red
 - `DiceData` (ScriptableObject)
 - `CharacterData` (ScriptableObject)
 - `EnemyData` (ScriptableObject)
-- `DiceInstance`, `DiceBag`, `SpeedDie`
+- `DiceInstance`, `DiceBag`
 - `RollResult`, `FullRollResult`, `CombinationResult`
 - Enums: `CombinationType`, `TurnPhase`, `RoomState`, `FaceUpgradeType`, `EnemyBehavior`, `CombatActionType`
+
+> **NOTE:** `SpeedDie` is ELIMINATED. Movement comes from combat dice (face value = tiles). Do NOT create or use `SpeedDie`.
 
 ### Git Rules
 - Work on a feature branch: `us-{XX}-{short-name}`
@@ -118,23 +120,45 @@ These types are in `Assets/Scripts/Core/` and `Assets/Scripts/Data/`. Do NOT red
 | Accent/Gold    | #ffd54f |
 
 ### Balance Values (use ScriptableObjects, but these are the defaults)
-| Parameter            | Value |
-|----------------------|-------|
-| Player HP            | 100   |
-| Player power budget  | 8     |
-| Player speed die     | 2–5   |
-| Starting dice        | 4×d6 + 2×d8 |
-| Goblin HP            | 40    |
-| Goblin attack        | 2×d6  |
-| Goblin speed         | 1–3   |
-| Orc HP               | 60    |
-| Orc attack           | 2×d8  |
-| Orc speed            | 1–2   |
-| Grid size            | 8×8   |
-| Obstacles            | 4–6   |
-| Energy max (player)  | 100   |
-| Energy max (goblin)  | 50    |
-| Energy max (orc)     | 40    |
+
+**Player (Warrior)**
+| Parameter              | Value       |
+|------------------------|-------------|
+| HP                     | 100         |
+| Power Budget           | 8           |
+| Starting dice          | 4×d6 + 2×d8 |
+| Energy max             | 100         |
+| Affinity combo         | Full House (+20% dmg) |
+
+**Enemies**
+| Parameter              | Goblin (Croupier) | Orc (Chip Golem) |
+|------------------------|-------------------|------------------|
+| HP                     | 40                | 60               |
+| Attack dice            | 2×d6              | 2×d8             |
+| Movement tiles         | 1–3               | 1–2              |
+| Energy max             | 50                | 40               |
+| Energy per round       | +15               | +12              |
+| Enrage (at max energy) | 60% × 2 dmg, reset | 60% × 2 dmg, reset |
+
+**Power Budget costs per die type**
+| Die | Cost | Face range |
+|-----|------|------------|
+| d6  | 1    | 1–6        |
+| d8  | 2    | 1–8        |
+| d10 | 3    | 1–10       |
+| d12 | 4    | 1–12       |
+
+**Dungeon**
+| Parameter  | Value |
+|------------|-------|
+| Grid size  | 8×8   |
+| Obstacles  | 4–6   |
+| Rooms/floor | 8–14 |
+
+**Opportunity Attack (base mechanic)**
+| Parameter | Value |
+|-----------|-------|
+| Damage when leaving adjacency | 1d6 (both sides) |
 
 ---
 
@@ -143,40 +167,93 @@ These types are in `Assets/Scripts/Core/` and `Assets/Scripts/Data/`. Do NOT red
 ## Game Identity
 
 1. **Dice are EVERYTHING** — They're not RNG, they're the build, the inventory, the identity.
-2. **Simple core, items break rules** — Base = roll to move, roll to hit. Items add combos, defense, ranged, healing. Isaac philosophy.
-3. **2 AP per turn** — Move + Attack. Order matters. Unused AP are lost.
-4. **Threshold tension** — Every attack is a bet: hit the threshold or deal zero. Crits reward risk.
-5. **Strategy over reflexes** — Pure turn-based. The difficulty is thinking.
-6. **Roguelite progression** — Each run is unique: dice, items, passives, rooms.
+2. **Simple core, items break rules** — Base = roll to move + Generala combo for damage. Items add defense, ranged, healing, rule-breaking. Isaac philosophy.
+3. **Pick & Roll** — Every turn: roll all dice, pick some for movement (face = tiles), use the rest for Generala. No AP system.
+4. **Combo tension** — Sacrifice dice for movement or keep them for a better Generala hand? Every split is a decision.
+5. **Bet the moment** — Craps Mode (when energy = 100): call your combo before rolling for bonus damage, or pay the penalty.
+6. **Strategy over reflexes** — Pure turn-based. The difficulty is thinking.
+7. **Roguelite progression** — Each run is unique: dice, items, passives, rooms.
 
 ## Official Terminology
 
 | Term | Meaning | DO NOT use |
 |---|---|---|
 | **Dice Bag** | The player's loadout/inventory | Backpack, inventory |
-| **Hit Threshold** | Minimum die result to deal damage | Accuracy, difficulty |
-| **AP (Action Points)** | 2 per turn: move + attack | Turn points, actions |
+| **Power Budget** | The loadout cost limit (charm notch system) | Slots, capacity |
+| **Pick & Roll** | The turn system: pick movement dice, then Generala | AP system, action points |
+| **Movement Dice** | Dice chosen from the roll for movement (face = tiles) | Speed dice, movement roll |
+| **Generala Phase** | The lock/reroll/commit attack phase (Yahtzee rules) | Attack phase, combat roll |
+| **Combo** | The Generala hand result (Pair, Straight, etc.) | Hand, combination |
 | **Floor** | One procedural dungeon level | Level, stage |
 | **Room** | A single space in the floor grid | Chamber, area |
 | **Run** | Complete playthrough from start to victory/defeat | Match, session |
-| **Craps Mode** | The super bet mechanic (item/unlock) | Special attack, ultimate |
-| **Face Enchanting** | Modifying a specific face of a die | Upgrading, leveling |
-| **Miss/Hit/Crit** | Attack results based on threshold | Fail/success/bonus |
-| **Dice Power Budget** | The loadout cost limit | Slots, capacity |
+| **Craps Mode** | Core bet mechanic — call combo before rolling when energy = 100 | Special attack, ultimate |
+| **Energy Bar** | Builds during combat, enables Craps Mode at 100/100 | Mana, charge |
+| **Opportunity Attack** | 1d6 mutual damage when leaving adjacency | Escape penalty |
+| **Face Enchanting** | Modifying a specific face of a die (item/shop service) | Upgrading, leveling |
+| **Enraged** | Enemy state at max energy — 60% chance ×2 damage | Powered up, berserk |
 
 ## Combat Flow
 
 ```
-Run
- └─ Floor (procedural dungeon)
-     └─ Room (isometric grid)
-         └─ Combat (triggered on adjacency)
-             ├─ Player Turn (2 AP)
-             │   ├─ Move (1 AP) — roll movement die, move tiles
-             │   └─ Attack (1 AP) — roll weapon die vs threshold
-             └─ Enemy Turn
-                 └─ Roll attack die → result = damage (always hits)
+Run (3-4 floors)
+ └─ Floor (8-14 rooms, procedural)
+     └─ Room (8×8 isometric grid, 4-6 obstacles)
+         └─ Combat (triggered on adjacency — NO scene transition)
+             ├─ [Optional] CRAPS BET — if energy = 100, call your combo before rolling
+             ├─ Player Turn — Pick & Roll
+             │   ├─ 1. Roll ALL dice from Dice Bag
+             │   ├─ 2. Pick movement dice (face value = tiles, sum = total movement)
+             │   ├─ 3. Move on grid (BFS pathfinding, single continuous path)
+             │   ├─ 4. Generala Phase — lock/reroll up to 3 total rolls
+             │   └─ 5. Commit — best combo → damage formula → apply to adjacent enemy
+             │         (Craps Mode bonus/penalty applies here if active)
+             └─ Enemy Turn (each enemy in sequence)
+                 ├─ Roll movement → move toward player (BFS)
+                 ├─ If adjacent → roll attack dice → result = direct damage (always hits)
+                 └─ If energy full → Enraged: 60% chance to deal ×2 damage, energy resets
 ```
+
+### Opportunity Attack
+When either the player OR an enemy **leaves adjacency range**:
+- Both roll 1d6 → result = direct damage to the one escaping
+- This is a base mechanic — escaping always has a cost
+- Smoke Bomb item negates the enemy's 1d6 (player still deals theirs)
+
+### Generala Combo Damage Table
+| Combo | Requirement | Formula | Example (d6s) |
+|-------|-------------|---------|----------------|
+| High Die | No combo | highest × 1 | [6] = 6 |
+| Pair | 2 equal | sum of pair × 1.5 | [4,4] = 12 |
+| Two Pair | 2+2 equal | sum of both × 1.2 | [3,3,5,5] = 19 |
+| Three of a Kind | 3 equal | sum × 2 | [5,5,5] = 30 |
+| Straight | 4+ consecutive | 30 + highest | [3,4,5,6] = 36 |
+| Full House | 3+2 equal | 35 + sum all | [4,4,4,6,6] = 59 |
+| Four of a Kind | 4 equal | sum × 3 | [5,5,5,5] = 60 |
+| Generala | 5 equal | sum × 5 | [5,5,5,5,5] = 125 |
+| Double Generala | 6 equal | sum × 8 | [5,5,5,5,5,5] = 240 |
+
+### Craps Mode Energy Gain Table
+| Action | Energy |
+|--------|--------|
+| Deal damage (any combo) | +10 |
+| Three of a Kind or better | +15 |
+| Full House | +20 |
+| Four of a Kind | +25 |
+| Generala / Double Generala | +50 |
+| Take damage | +5 |
+| Kill an enemy | +10 |
+
+### Craps Bet Outcomes
+| Bet | Hit | Miss |
+|-----|-----|------|
+| Pair | +25% dmg | −10% dmg |
+| Three of a Kind | +50% dmg | −15% dmg |
+| Straight | +50% dmg + heal 10 HP | −15% dmg |
+| Full House | +75% dmg | −20% dmg |
+| Four of a Kind | +100% dmg (×2) | −25% dmg + 5 HP lost |
+| Generala | +200% dmg (×3) + heal 20 HP | −50% dmg + 10 HP lost |
+"Or better" counts as a hit. After resolving (hit or miss), energy resets to 0.
 
 ---
 
@@ -209,9 +286,12 @@ Run
 ## Don't
 - Hardcode gameplay numbers — always use ScriptableObjects
 - Add new enums without explicit int values and spacing
-- Change the combat flow (2 AP → Move → Attack vs Threshold) without team discussion
-- Add base mechanics that should be items (defense, ranged, healing, flee are all item territory)
+- Change the Pick & Roll flow without team discussion
+- Add base mechanics that should be items: defense, ranged, healing, hit & run, cleave, split movement are ALL item territory
 - Remove or rename existing ScriptableObject fields (breaks asset references)
+- Use or create `SpeedDie` — it is eliminated. Movement comes from combat dice.
+- Implement a "Hit Threshold" for the player — damage comes from the Generala combo formula, not a threshold check
+- Implement AP (Action Points) — the system is Pick & Roll, not AP-based
 
 ---
 

@@ -13,10 +13,12 @@ public class CharacterData : ScriptableObject
     [Header("Base Stats")]
     public int MaxHP;
     public float StartingPowerBudget;
-    public int Dexterity;
-    public int Speed;
 
-    [Header("Speed Die")]
+    // Legacy fields — kept to avoid breaking .asset serialization. Not used in gameplay.
+    [HideInInspector] public int Dexterity;
+    [HideInInspector] public int Speed;
+
+    [Header("Enemy Speed Range")]
     public int SpeedMin;
     public int SpeedMax;
 

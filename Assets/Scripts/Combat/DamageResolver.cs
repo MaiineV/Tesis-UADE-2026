@@ -2,24 +2,18 @@ using UnityEngine;
 
 public class DamageResolver
 {
-    /// Apply player attack to enemy
+    // Player attack: combo base damage + affinity bonus
     public static int ResolvePlayerAttack(CombinationResult combo, CharacterData character)
     {
         int damage = combo.BaseDamage;
-
-        // Apply affinity bonus
         if (combo.Type == character.AffinityCombo)
-        {
             damage = Mathf.RoundToInt(damage * character.AffinityDamageBonus);
-        }
-
         return damage;
     }
 
-    /// Apply enemy attack to player, considering shield
-    public static int ResolveEnemyAttack(int enemyRawDamage, int playerShield)
+    // Enemy attack: direct damage — shield is item territory, not a base mechanic
+    public static int ResolveEnemyAttack(int enemyRawDamage)
     {
-        int netDamage = Mathf.Max(0, enemyRawDamage - playerShield);
-        return netDamage;
+        return Mathf.Max(0, enemyRawDamage);
     }
 }

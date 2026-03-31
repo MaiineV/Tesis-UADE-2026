@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 697a713efec7cb84ca1152e1ff68bf71, type: 3}
-  m_Name: d12
+  m_Name: d10
   m_EditorClassIdentifier: Assembly-CSharp::DiceData
-  DiceName: d12
-  NumberOfFaces: 12
-  DefaultFaces: 0100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c000000
-  PowerCost: 4
+  DiceName: d10
+  NumberOfFaces: 10
+  DefaultFaces: 0100000002000000030000000400000005000000060000000700000008000000090000000a000000
+  PowerCost: 3
   Icon: {fileID: 0}
-  DiceColor: {r: 0.67058825, g: 0.2784314, b: 0.7372549, a: 1}
+  DiceColor: {r: 1, g: 0.59607846, b: 0, a: 1}
