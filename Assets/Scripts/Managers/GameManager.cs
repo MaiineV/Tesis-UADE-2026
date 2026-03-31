@@ -707,7 +707,6 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
 
             Log($"Huida exitosa! Perdiste {hpCost} HP");
-            UIManager.Instance.ShowPhaseLabel("FLED!");
             UIManager.Instance.HideCombatPanel();
             UIManager.Instance.HideEnemyInfo();
             UIManager.Instance.HideCrapsOverlay();
@@ -715,11 +714,12 @@ public class GameManager : MonoBehaviour
             DungeonManager.Instance.SaveEnemyState(enemies);
             currentCombatEnemy = null;
 
-            // Move away from enemies
-            StartCoroutine(DelayedAction(0.5f, () =>
-            {
-                BeginPlayerMovement();
-            }));
+            // Roll speed die and auto-move away from enemies
+            int fleeSteps = player.State.SpeedDie.Roll();
+            Log($"Flee speed roll: {fleeSteps} tiles");
+            UIManager.Instance.ShowPhaseLabel($"FLED! Rolling {fleeSteps} steps");
+
+            StartCoroutine(FleeMovementRoutine(fleeSteps));
         }
         else
         {
@@ -729,6 +729,75 @@ public class GameManager : MonoBehaviour
             // Enemy gets a free attack
             StartCoroutine(DelayedAction(0.5f, StartEnemyAttack));
         }
+    }
+
+    private IEnumerator FleeMovementRoutine(int steps)
+    {
+        yield return new WaitForSeconds(0.6f);
+
+        Vector2Int destination = findFleeDestination(steps);
+        if (destination == player.State.GridPosition)
+        {
+            // No reachable flee tile — just resume exploration
+            BeginPlayerMovement();
+            yield break;
+        }
+
+        var path = MovementManager.Instance.FindPath(player.State.GridPosition, destination);
+        if (path.Count == 0)
+        {
+            BeginPlayerMovement();
+            yield break;
+        }
+
+        TransitionTo(GameState.MovementPhase);
+        isAnimating = true;
+        GridManager.Instance.ClearHighlights();
+
+        MovementManager.Instance.MovePlayerAlongPathAnimated(player, path, (enemy) =>
+        {
+            isAnimating = false;
+
+            if (enemy != null)
+            {
+                // Bumped into another enemy while fleeing — enter combat
+                EnterCombat(enemy);
+            }
+            else
+            {
+                BeginPlayerMovement();
+            }
+        });
+    }
+
+    private Vector2Int findFleeDestination(int steps)
+    {
+        var reachable = MovementManager.Instance.GetReachableTiles(player.State.GridPosition, steps);
+        if (reachable.Count == 0) return player.State.GridPosition;
+
+        Vector2Int bestTile = player.State.GridPosition;
+        int bestDistance = -1;
+
+        for (int i = 0; i < reachable.Count; i++)
+        {
+            var tile = reachable[i];
+            int totalDist = 0;
+            for (int j = 0; j < enemies.Count; j++)
+            {
+                var e = enemies[j];
+                if (e == null || !e.State.IsAlive) continue;
+                totalDist += Mathf.Abs(tile.x - e.State.GridPosition.x)
+                           + Mathf.Abs(tile.y - e.State.GridPosition.y);
+            }
+
+            if (totalDist > bestDistance)
+            {
+                bestDistance = totalDist;
+                bestTile = tile;
+            }
+        }
+
+        return bestTile;
     }
 
     private void OnForceDoorSelected()
