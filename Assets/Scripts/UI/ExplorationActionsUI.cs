@@ -57,7 +57,8 @@ public class ExplorationActionsUI : MonoBehaviour
         potionButton.gameObject.SetActive(true);
         potionButton.interactable = hasPotion && potionCount > 0;
         fleeButton.gameObject.SetActive(false);
-        forceDoorButton.gameObject.SetActive(false);
+        forceDoorButton.gameObject.SetActive(onDoorTile);
+        forceDoorButton.interactable = onDoorTile;
         if (potionCountText != null)
             potionCountText.text = (hasPotion && potionCount > 0) ? $"x{potionCount}" : "USED";
     }

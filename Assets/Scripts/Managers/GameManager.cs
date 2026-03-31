@@ -548,9 +548,9 @@ public class GameManager : MonoBehaviour
     {
         if (ExplorationActionsUI.Instance != null)
         {
-            bool onDoor = IsPlayerOnDoor();
+            bool nearDoor = isPlayerNearDoor();
             ExplorationActionsUI.Instance.SetExplorationMode(
-                player.State.HasPotion, player.State.PotionCount, onDoor);
+                player.State.HasPotion, player.State.PotionCount, nearDoor);
             ExplorationActionsUI.Instance.Show();
         }
     }
@@ -559,6 +559,43 @@ public class GameManager : MonoBehaviour
     {
         var tile = GridManager.Instance.GetTile(player.State.GridPosition);
         return tile != null && tile.Type == TileType.Door;
+    }
+
+    private bool isPlayerAdjacentToDoor()
+    {
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        foreach (var dir in dirs)
+        {
+            var pos = player.State.GridPosition + dir;
+            var tile = GridManager.Instance.GetTile(pos);
+            if (tile != null && tile.Type == TileType.Door)
+                return true;
+        }
+        return false;
+    }
+
+    private bool isPlayerNearDoor()
+    {
+        return IsPlayerOnDoor() || isPlayerAdjacentToDoor();
+    }
+
+    private string getAdjacentDoorDirection()
+    {
+        // First check if standing on door
+        var currentTile = GridManager.Instance.GetTile(player.State.GridPosition);
+        if (currentTile != null && currentTile.Type == TileType.Door)
+            return currentTile.DoorDirection;
+
+        // Then check adjacent
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        foreach (var dir in dirs)
+        {
+            var pos = player.State.GridPosition + dir;
+            var tile = GridManager.Instance.GetTile(pos);
+            if (tile != null && tile.Type == TileType.Door && tile.DoorDirection != null)
+                return tile.DoorDirection;
+        }
+        return null;
     }
 
     private void OnMovementRollClicked()
@@ -832,8 +869,9 @@ public class GameManager : MonoBehaviour
 
     private void OnForceDoorSelected()
     {
-        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat) return;
-        if (!IsPlayerOnDoor()) return;
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat
+            && CurrentState != GameState.MovementPhase) return;
+        if (!isPlayerNearDoor()) return;
 
         var room = DungeonManager.Instance.CurrentRoom;
         if (room != null && room.Type == RoomType.Boss)
@@ -857,16 +895,21 @@ public class GameManager : MonoBehaviour
         _bossHasResistance = false;
         BossPassivesUI.Instance?.Hide();
 
-        var tile = GridManager.Instance.GetTile(player.State.GridPosition);
+        // Show dice animation (guaranteed success)
+        var fakeResult = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 100);
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowText($"d10:{fakeResult.roll} FORCED!", player.transform.position, Color.yellow);
+
+        string doorDir = getAdjacentDoorDirection();
 
         // Mark door as forced
-        if (room != null && tile.DoorDirection != null && !room.ForcedDoors.Contains(tile.DoorDirection))
-            room.ForcedDoors.Add(tile.DoorDirection);
+        if (room != null && doorDir != null && !room.ForcedDoors.Contains(doorDir))
+            room.ForcedDoors.Add(doorDir);
 
         DungeonManager.Instance.SaveEnemyState(enemies);
         UIManager.Instance.HideCombatPanel();
         UIManager.Instance.HideEnemyInfo();
-        StartRoomTransition(tile.DoorDirection);
+        StartRoomTransition(doorDir);
     }
 
     private void GenerateShopItems(RoomData room)
@@ -1184,7 +1227,7 @@ public class GameManager : MonoBehaviour
         {
             var currentRoom = DungeonManager.Instance.CurrentRoom;
             bool isBossRoom = currentRoom != null && currentRoom.Type == RoomType.Boss;
-            ExplorationActionsUI.Instance.SetCombatMode(IsPlayerOnDoor(), player.State.CurrentHP, isBossRoom);
+            ExplorationActionsUI.Instance.SetCombatMode(isPlayerNearDoor(), player.State.CurrentHP, isBossRoom);
             ExplorationActionsUI.Instance.Show();
         }
 
