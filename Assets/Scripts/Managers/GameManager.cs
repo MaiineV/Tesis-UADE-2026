@@ -427,6 +427,13 @@ public class GameManager : MonoBehaviour
         {
             // Fresh enemies
             int count = GetEnemyCountForRoom(room);
+
+            // Floor 1 non-boss rooms: only 1 goblin
+            if (_currentFloor == 1 && room.Type != RoomType.Boss)
+            {
+                count = 1;
+            }
+
             for (int i = 0; i < count && i < layout.EnemySpawns.Count; i++)
             {
                 EnemyData baseData;
@@ -434,6 +441,11 @@ public class GameManager : MonoBehaviour
                 {
                     baseData = OrcData;
                     hpMult *= 2f; // Boss has 2x HP
+                }
+                else if (_currentFloor == 1)
+                {
+                    // Floor 1: only goblins
+                    baseData = GoblinData;
                 }
                 else
                 {
@@ -861,6 +873,13 @@ public class GameManager : MonoBehaviour
             new ShopItemData { ItemName = "Destreza+5", Description = "Aumenta Destreza en 5", GoldCost = 20, ItemType = ShopItemType.StatBoostDex },
             new ShopItemData { ItemName = "Velocidad+1", Description = "Aumenta Velocidad en 1", GoldCost = 30, ItemType = ShopItemType.StatBoostSpeed },
         };
+
+        // Floor 1: halve all shop prices
+        if (_currentFloor == 1)
+        {
+            for (int i = 0; i < pool.Count; i++)
+                pool[i].GoldCost = pool[i].GoldCost / 2;
+        }
 
         // Shuffle and pick 3
         for (int i = pool.Count - 1; i > 0; i--)

@@ -4,8 +4,10 @@ using UnityEngine;
 public static class LevelConfig
 {
     // Enemy count: starts at 2, grows by 1 every 2 levels, max 5
+    // Floor 1 is easier: only 1 enemy
     public static int GetEnemyCount(int level)
     {
+        if (level == 1) return 1;
         return Mathf.Min(2 + (level - 1) / 2, 5);
     }
 
@@ -32,6 +34,14 @@ public static class LevelConfig
     public static List<string> GetEnemyTypes(int level, int enemyCount)
     {
         var types = new List<string>();
+
+        // Floor 1: only goblins
+        if (level == 1)
+        {
+            for (int i = 0; i < enemyCount; i++)
+                types.Add("Goblin");
+            return types;
+        }
 
         for (int i = 0; i < enemyCount; i++)
         {
