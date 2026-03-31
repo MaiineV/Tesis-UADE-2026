@@ -997,6 +997,9 @@ public class GameManager : MonoBehaviour
             new ShopItemData { ItemName = "d12", Description = "Dado de 12 caras (costo 2.5)", GoldCost = 40, ItemType = ShopItemType.DiceAdd, DiceType = "d12" },
             new ShopItemData { ItemName = "Destreza+5", Description = "Aumenta Destreza en 5", GoldCost = 20, ItemType = ShopItemType.StatBoostDex },
             new ShopItemData { ItemName = "Velocidad+1", Description = "Aumenta Velocidad en 1", GoldCost = 30, ItemType = ShopItemType.StatBoostSpeed },
+            new ShopItemData { ItemName = "Daño +10%", Description = "Aumenta daño en 10%", GoldCost = 35, ItemType = ShopItemType.Buff, BuffType = RunBuffType.DamageBoost, BuffValue = 0.1f },
+            new ShopItemData { ItemName = "Tirada Extra", Description = "Una tirada extra en combate", GoldCost = 45, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ExtraRoll, BuffValue = 1f },
+            new ShopItemData { ItemName = "Escudo Inicial +5", Description = "Escudo al iniciar combate", GoldCost = 25, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ShieldOnCombatStart, BuffValue = 5f },
         };
 
         // Floor 1: halve all shop prices

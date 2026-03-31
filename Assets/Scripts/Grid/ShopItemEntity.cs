@@ -8,6 +8,7 @@ public class ShopItemEntity : MonoBehaviour
     private static readonly Color ColorGold;
     private static readonly Color ColorGreen;
     private static readonly Color ColorCyan;
+    private static readonly Color ColorPurple;
 
     static ShopItemEntity()
     {
@@ -17,6 +18,8 @@ public class ShopItemEntity : MonoBehaviour
         ColorGreen = green;
         ColorUtility.TryParseHtmlString("#4fc3f7", out Color cyan);
         ColorCyan = cyan;
+        ColorUtility.TryParseHtmlString("#ab47bc", out Color purple);
+        ColorPurple = purple;
     }
 
     public void Initialize(ShopItemData data, Vector2Int gridPos)
@@ -37,6 +40,9 @@ public class ShopItemEntity : MonoBehaviour
                 break;
             case ShopItemType.PotionRefill:
                 itemColor = ColorGreen;
+                break;
+            case ShopItemType.Buff:
+                itemColor = ColorPurple;
                 break;
             default: // StatBoostDex, StatBoostSpeed
                 itemColor = ColorCyan;
