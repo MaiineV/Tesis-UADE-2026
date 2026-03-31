@@ -92,6 +92,10 @@ public class GameManager : MonoBehaviour
     // Shop items on grid
     private List<ShopItemEntity> _shopItemEntities = new List<ShopItemEntity>();
 
+    // Boss passive
+    private CombinationType _bossResistedCombo;
+    private bool _bossHasResistance;
+
     // Events
     public static event Action<GameState> OnStateChanged;
 
@@ -494,6 +498,7 @@ public class GameManager : MonoBehaviour
         scaled.GoldDropMin = baseData.GoldDropMin;
         scaled.GoldDropMax = baseData.GoldDropMax;
         scaled.ModelPrefab = baseData.ModelPrefab;
+        scaled.HasComboResistance = baseData.HasComboResistance;
         return scaled;
     }
 
@@ -724,6 +729,8 @@ public class GameManager : MonoBehaviour
 
         if (result.success)
         {
+            _bossHasResistance = false;
+            BossPassivesUI.Instance?.Hide();
             // Pay 10% max HP
             int hpCost = Mathf.RoundToInt(player.State.MaxHP * 0.1f);
             player.State.CurrentHP = Mathf.Max(1, player.State.CurrentHP - hpCost);
@@ -847,6 +854,8 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         Log($"Puerta forzada! -{hpCost} HP");
         UIManager.Instance.ShowPhaseLabel("DOOR FORCED!");
+        _bossHasResistance = false;
+        BossPassivesUI.Instance?.Hide();
 
         var tile = GridManager.Instance.GetTile(player.State.GridPosition);
 
@@ -1164,6 +1173,17 @@ public class GameManager : MonoBehaviour
             ExplorationActionsUI.Instance.Show();
         }
 
+        // Boss passive: combo resistance
+        var combatRoom = DungeonManager.Instance.CurrentRoom;
+        if (combatRoom != null && combatRoom.Type == RoomType.Boss
+            && enemy.State.BaseData.HasComboResistance)
+        {
+            var combos = System.Enum.GetValues(typeof(CombinationType));
+            _bossResistedCombo = (CombinationType)combos.GetValue(Random.Range(0, combos.Length));
+            _bossHasResistance = true;
+            BossPassivesUI.Instance?.Show(_bossResistedCombo);
+        }
+
         if (player.State.CrapsModeAvailable)
         {
             TransitionTo(GameState.CrapsBet);
@@ -1370,6 +1390,13 @@ public class GameManager : MonoBehaviour
 
         var combo = currentAttack.Commit(generalaScoredThisRun);
         int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
+
+        // Boss passive: halve damage for resisted combo
+        if (_bossHasResistance && combo.Type == _bossResistedCombo)
+        {
+            damage = Mathf.RoundToInt(damage * 0.5f);
+            Log($"Boss resists {_bossResistedCombo}! Damage halved.");
+        }
 
         bool crapsWon = false;
         if (crapsMode.IsActive)
@@ -1732,6 +1759,8 @@ public class GameManager : MonoBehaviour
         else
         {
             // All active enemies dead — play death anim then check room clear
+            _bossHasResistance = false;
+            BossPassivesUI.Instance?.Hide();
             UIManager.Instance.HideSecondEnemyInfo();
             UIManager.Instance.ShowTargetSelection(false);
             currentCombatEnemy.PlayDeathAnimation(OnEnemyDeathAnimationComplete);
@@ -1747,6 +1776,8 @@ public class GameManager : MonoBehaviour
 
     private void OnEnemyDeathAnimationComplete()
     {
+        _bossHasResistance = false;
+        BossPassivesUI.Instance?.Hide();
         UIManager.Instance.HideCombatPanel();
         UIManager.Instance.HideEnemyInfo();
         UIManager.Instance.HideExplorationActions();

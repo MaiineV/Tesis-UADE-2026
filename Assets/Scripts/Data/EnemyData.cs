@@ -35,4 +35,7 @@ public class EnemyData : ScriptableObject
     [Header("Loot")]
     public int GoldDropMin;
     public int GoldDropMax;
+
+    [Header("Passives")]
+    public bool HasComboResistance;
 }
