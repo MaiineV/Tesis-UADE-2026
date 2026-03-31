@@ -214,6 +214,21 @@ public class UIManager : MonoBehaviour
         if (secondEnemyInfoUI != null) secondEnemyInfoUI.ShowTargetButton(show);
     }
 
+    // --- Dice Discard ---
+
+    private DiceDiscardUI diceDiscardUI;
+
+    public void SetDiceDiscardUI(DiceDiscardUI ui) { diceDiscardUI = ui; }
+    public void ShowDiceDiscard() { if (diceDiscardUI != null) diceDiscardUI.gameObject.SetActive(true); }
+    public void HideDiceDiscard() { if (diceDiscardUI != null) diceDiscardUI.Hide(); }
+
+    // --- Active Buffs ---
+
+    private ActiveBuffsUI activeBuffsUI;
+
+    public void SetActiveBuffsUI(ActiveBuffsUI ui) { activeBuffsUI = ui; }
+    public void RefreshBuffs() { if (activeBuffsUI != null) activeBuffsUI.Refresh(); }
+
     public void HideAllPanels()
     {
         HideCombatPanel();
@@ -225,6 +240,7 @@ public class UIManager : MonoBehaviour
         HideInventoryBuilder();
         HideEnemyInfo();
         HideExplorationActions();
+        HideDiceDiscard();
     }
 
     private void SetPanel(GameObject panel, bool active)

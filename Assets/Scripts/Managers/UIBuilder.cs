@@ -1055,6 +1055,76 @@ public class UIBuilder : MonoBehaviour
         bossPassivesUI.Initialize(bossPassivesGO, bpTitle, bpBody);
         bossPassivesGO.SetActive(false);
 
+        // ── Dice Discard Overlay ──
+        var diceDiscardOverlay = CreateOverlayPanel("DiceDiscardOverlay", canvasTransform);
+        diceDiscardOverlay.SetActive(false);
+
+        var discardPanel = CreatePanel("DiscardPanel", diceDiscardOverlay.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero, 0);
+        var discardPanelRT = discardPanel.GetComponent<RectTransform>();
+        discardPanelRT.sizeDelta = new Vector2(320, 450);
+        discardPanelRT.anchoredPosition = Vector2.zero;
+
+        var discardTitle = CreateTMPText("DiscardTitle", discardPanel.transform,
+            "BOLSA LLENA - Descarta un dado", 18, TextAlignmentOptions.Center, AccentGold);
+        var discardTitleRT = discardTitle.GetComponent<RectTransform>();
+        discardTitleRT.anchorMin = new Vector2(0, 1);
+        discardTitleRT.anchorMax = new Vector2(1, 1);
+        discardTitleRT.pivot = new Vector2(0.5f, 1);
+        discardTitleRT.anchoredPosition = new Vector2(0, -10);
+        discardTitleRT.sizeDelta = new Vector2(0, 35);
+        discardTitle.fontStyle = FontStyles.Bold;
+
+        // Scroll area for dice list
+        var discardScrollGO = new GameObject("DiscardScroll");
+        discardScrollGO.transform.SetParent(discardPanel.transform, false);
+        var discardScrollRT = discardScrollGO.AddComponent<RectTransform>();
+        discardScrollRT.anchorMin = new Vector2(0, 0.12f);
+        discardScrollRT.anchorMax = new Vector2(1, 0.9f);
+        discardScrollRT.offsetMin = new Vector2(10, 0);
+        discardScrollRT.offsetMax = new Vector2(-10, 0);
+        var discardScrollImg = discardScrollGO.AddComponent<Image>();
+        discardScrollImg.color = new Color(0, 0, 0, 0.3f);
+        var discardScroll = discardScrollGO.AddComponent<ScrollRect>();
+
+        var discardContent = new GameObject("Content");
+        discardContent.transform.SetParent(discardScrollGO.transform, false);
+        var discardContentRT = discardContent.AddComponent<RectTransform>();
+        discardContentRT.anchorMin = new Vector2(0, 1);
+        discardContentRT.anchorMax = new Vector2(1, 1);
+        discardContentRT.pivot = new Vector2(0.5f, 1);
+        discardContentRT.anchoredPosition = Vector2.zero;
+        discardContentRT.sizeDelta = new Vector2(0, 0);
+        var discardVLG = discardContent.AddComponent<VerticalLayoutGroup>();
+        discardVLG.spacing = 5;
+        discardVLG.padding = new RectOffset(5, 5, 5, 5);
+        discardVLG.childAlignment = TextAnchor.UpperCenter;
+        discardVLG.childForceExpandWidth = true;
+        discardVLG.childForceExpandHeight = false;
+        var discardCSF = discardContent.AddComponent<ContentSizeFitter>();
+        discardCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        discardScroll.content = discardContentRT;
+        discardScroll.vertical = true;
+        discardScroll.horizontal = false;
+
+        // Cancel button
+        var discardCancelBtn = CreateButton("DiscardCancelBtn", discardPanel.transform, "CANCELAR", TextColor);
+        var discardCancelBtnRT = discardCancelBtn.GetComponent<RectTransform>();
+        discardCancelBtnRT.anchorMin = new Vector2(0.5f, 0);
+        discardCancelBtnRT.anchorMax = new Vector2(0.5f, 0);
+        discardCancelBtnRT.pivot = new Vector2(0.5f, 0);
+        discardCancelBtnRT.anchoredPosition = new Vector2(0, 10);
+        discardCancelBtnRT.sizeDelta = new Vector2(140, 35);
+
+        var diceDiscardUI = diceDiscardOverlay.AddComponent<DiceDiscardUI>();
+        diceDiscardUI.Initialize(diceDiscardOverlay, discardContent.transform, discardTitle);
+        discardCancelBtn.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            if (DiceDiscardUI.Instance != null)
+                DiceDiscardUI.Instance.OnCancelClicked?.Invoke();
+        });
+
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
         if (uiManager != null)

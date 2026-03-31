@@ -99,6 +99,10 @@ public class GameManager : MonoBehaviour
     private CombinationType _bossResistedCombo;
     private bool _bossHasResistance;
 
+    // Dice discard pending purchase
+    private ShopItemData _pendingDicePurchase;
+    private DiceInstance _pendingNewDie;
+
     // Events
     public static event Action<GameState> OnStateChanged;
 
@@ -1144,21 +1148,51 @@ public class GameManager : MonoBehaviour
 
             case ShopItemType.DiceAdd:
                 DiceData diceData = null;
-                foreach (var die in player.State.FullInventory)
+                // Look up DiceData from AvailablePoolDice first, then fallback to inventory
+                if (player.State.BaseData.AvailablePoolDice != null)
                 {
-                    if (die.BaseData.DiceName == item.DiceType)
+                    foreach (var poolDie in player.State.BaseData.AvailablePoolDice)
                     {
-                        diceData = die.BaseData;
-                        break;
+                        if (poolDie != null && poolDie.DiceName == item.DiceType)
+                        {
+                            diceData = poolDie;
+                            break;
+                        }
+                    }
+                }
+                if (diceData == null)
+                {
+                    foreach (var die in player.State.FullInventory)
+                    {
+                        if (die.BaseData.DiceName == item.DiceType)
+                        {
+                            diceData = die.BaseData;
+                            break;
+                        }
                     }
                 }
                 if (diceData != null)
                 {
                     var newDie = DiceInstance.Create(diceData);
+
+                    // Check if bag can fit the new die
+                    if (player.State.Bag != null && !player.State.Bag.CanAdd(newDie))
+                    {
+                        // Bag full — show discard UI
+                        _pendingDicePurchase = item;
+                        _pendingNewDie = newDie;
+                        // Refund gold temporarily (will re-deduct on confirm)
+                        player.State.Gold += item.GoldCost;
+                        item.Purchased = false;
+                        UIManager.Instance.UpdateGold(player.State.Gold);
+                        showDiceDiscardUI();
+                        return;
+                    }
+
                     player.State.FullInventory.Add(newDie);
 
                     // Also add to active combat bag if budget allows
-                    if (player.State.Bag != null && player.State.Bag.CanAdd(newDie))
+                    if (player.State.Bag != null)
                         player.State.Bag.TryAdd(newDie);
 
                     Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Dado agregado!");
@@ -1200,6 +1234,62 @@ public class GameManager : MonoBehaviour
         // Hide proximity UI after purchase
         if (ShopUI.Instance != null)
             ShopUI.Instance.HideProximity();
+    }
+
+    private void showDiceDiscardUI()
+    {
+        if (DiceDiscardUI.Instance == null) return;
+        DiceDiscardUI.Instance.OnDiceDiscarded = onDiceDiscarded;
+        DiceDiscardUI.Instance.OnCancelClicked = onDiscardCancelled;
+        DiceDiscardUI.Instance.Show(player.State.Bag.Dice, _pendingNewDie);
+    }
+
+    private void onDiceDiscarded(string diceId)
+    {
+        if (_pendingDicePurchase == null || _pendingNewDie == null) return;
+
+        // Remove the discarded die from bag and inventory
+        player.State.Bag.Remove(diceId);
+        player.State.FullInventory.RemoveAll(d => d.Id == diceId);
+
+        // Now complete the purchase
+        player.State.Gold -= _pendingDicePurchase.GoldCost;
+        _pendingDicePurchase.Purchased = true;
+        UIManager.Instance.UpdateGold(player.State.Gold);
+
+        player.State.FullInventory.Add(_pendingNewDie);
+        player.State.Bag.TryAdd(_pendingNewDie);
+
+        Log($"Descartaste un dado y compraste: {_pendingDicePurchase.ItemName} por {_pendingDicePurchase.GoldCost}G");
+
+        // Remove shop entity from grid
+        for (int i = _shopItemEntities.Count - 1; i >= 0; i--)
+        {
+            var entity = _shopItemEntities[i];
+            if (entity != null && entity.ItemData == _pendingDicePurchase)
+            {
+                entity.Remove();
+                _shopItemEntities.RemoveAt(i);
+                break;
+            }
+        }
+
+        _pendingDicePurchase = null;
+        _pendingNewDie = null;
+
+        if (DiceDiscardUI.Instance != null)
+            DiceDiscardUI.Instance.Hide();
+        if (ShopUI.Instance != null)
+            ShopUI.Instance.HideProximity();
+    }
+
+    private void onDiscardCancelled()
+    {
+        _pendingDicePurchase = null;
+        _pendingNewDie = null;
+
+        if (DiceDiscardUI.Instance != null)
+            DiceDiscardUI.Instance.Hide();
     }
 
     private void ProcessEnemyMovement()
