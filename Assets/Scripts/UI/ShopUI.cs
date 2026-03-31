@@ -30,6 +30,8 @@ public class ShopUI : MonoBehaviour
 
     void Awake() { Instance = this; }
 
+    public bool IsActive => gameObject.activeSelf;
+
     public void Initialize(TMP_Text nameText, TMP_Text descText, TMP_Text priceText, Button buy, Button cancel)
     {
         itemNameText = nameText;
@@ -148,7 +150,8 @@ public class ShopUI : MonoBehaviour
             buyButton.gameObject.SetActive(true);
             buyButton.interactable = !item.Purchased && playerGold >= item.GoldCost;
         }
-        if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+        // Show close/cancel button on proximity shop view
+        if (cancelButton != null) cancelButton.gameObject.SetActive(true);
     }
 
     /// Hide the proximity buy panel

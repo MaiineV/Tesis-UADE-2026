@@ -71,6 +71,33 @@ public class EnemyEntity : MonoBehaviour
         }
     }
 
+    private Coroutine _bossPulseCoroutine;
+
+    public void StartBossPulse()
+    {
+        if (_bossPulseCoroutine != null) StopCoroutine(_bossPulseCoroutine);
+        _bossPulseCoroutine = StartCoroutine(BossPulseRoutine());
+    }
+
+    private IEnumerator BossPulseRoutine()
+    {
+        Color baseColor = State.BaseData.EnemyColor;
+        Color bright = Color.white;
+        float speed = 2f;
+
+        while (true)
+        {
+            float t = (Mathf.Sin(Time.time * speed) + 1f) / 2f;
+            Color c = Color.Lerp(baseColor, bright, t * 0.4f);
+            if (Visual != null)
+            {
+                Visual.material.color = c;
+                Visual.material.SetColor(BaseColorID, c);
+            }
+            yield return null;
+        }
+    }
+
     public int RollAttack()
     {
         int totalDamage = 0;

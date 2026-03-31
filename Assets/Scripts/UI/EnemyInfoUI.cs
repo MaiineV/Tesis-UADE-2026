@@ -15,14 +15,18 @@ public class EnemyInfoUI : MonoBehaviour
     private static readonly Color ColorGreen = new Color(0.31f, 0.78f, 0.47f);
     private static readonly Color ColorYellow = new Color(1f, 0.76f, 0f);
     private static readonly Color ColorRed;
+    private static readonly Color ColorBossPurple;
 
     private float targetFill;
     private float currentFill;
+    private bool _isBoss;
 
     static EnemyInfoUI()
     {
         ColorUtility.TryParseHtmlString("#e53935", out Color red);
         ColorRed = red;
+        ColorUtility.TryParseHtmlString("#ab47bc", out Color purple);
+        ColorBossPurple = purple;
     }
 
     public void Initialize(TMP_Text nameRef, Image fillRef, TMP_Text hpTextRef)
@@ -49,17 +53,22 @@ public class EnemyInfoUI : MonoBehaviour
         UpdateColor(currentFill);
     }
 
-    public void Show(EnemyEntity enemy)
+    public void Show(EnemyEntity enemy, bool isBoss = false)
     {
+        _isBoss = isBoss;
+
         if (enemyNameText != null)
-            enemyNameText.text = enemy.State.BaseData.EnemyName;
+            enemyNameText.text = isBoss ? "BOSS" : enemy.State.BaseData.EnemyName;
 
         targetFill = 1f;
         currentFill = 1f;
         if (hpFillBar != null)
         {
             hpFillBar.fillAmount = 1f;
-            UpdateColor(1f);
+            if (isBoss)
+                hpFillBar.color = ColorBossPurple;
+            else
+                UpdateColor(1f);
         }
 
         UpdateHP(enemy.State.CurrentHP, enemy.State.MaxHP);
@@ -105,6 +114,12 @@ public class EnemyInfoUI : MonoBehaviour
     private void UpdateColor(float ratio)
     {
         if (hpFillBar == null) return;
+
+        if (_isBoss)
+        {
+            hpFillBar.color = ColorBossPurple;
+            return;
+        }
 
         if (ratio > 0.5f)
             hpFillBar.color = ColorGreen;

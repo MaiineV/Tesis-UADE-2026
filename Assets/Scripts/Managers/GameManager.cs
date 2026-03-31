@@ -351,6 +351,9 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // Update door colors based on room state
+        GridManager.Instance.UpdateDoorColors();
+
         // Update HUD
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
@@ -528,6 +531,9 @@ public class GameManager : MonoBehaviour
             if (DungeonManager.Instance.CurrentRoom != null)
                 DungeonManager.Instance.MarkCurrentRoomCleared();
 
+            // Update door colors to green since room is cleared
+            GridManager.Instance.UpdateDoorColors();
+
             TransitionTo(GameState.MovementPhase);
             UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Go to a door.");
             currentReachableTiles = MovementManager.Instance.GetReachableTiles(
@@ -605,6 +611,9 @@ public class GameManager : MonoBehaviour
         int steps = player.State.SpeedDie.Roll();
         UIManager.Instance.ShowMovementRollResult(steps);
         Log($"Speed roll: {steps} tiles");
+
+        // Task 1: Hide exploration actions after rolling so player must pick a tile
+        UIManager.Instance.HideExplorationActions();
 
         StartCoroutine(DelayedAction(0.8f, () =>
         {
@@ -881,7 +890,7 @@ public class GameManager : MonoBehaviour
     private void OnForceDoorSelected()
     {
         if (CurrentState != GameState.AttackPhase && CurrentState != GameState.PreCombat
-            && CurrentState != GameState.MovementPhase) return;
+            && CurrentState != GameState.MovementPhase && CurrentState != GameState.MovementRoll) return;
         if (!isPlayerNearDoor()) return;
 
         var room = DungeonManager.Instance.CurrentRoom;
@@ -898,6 +907,9 @@ public class GameManager : MonoBehaviour
             Log($"Necesitas al menos {hpCost} HP para forzar la puerta!");
             return;
         }
+
+        // Hide movement roll panel if forcing door from MovementRoll state
+        UIManager.Instance.HideMovementRollPanel();
 
         player.State.CurrentHP -= hpCost;
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
@@ -1091,6 +1103,11 @@ public class GameManager : MonoBehaviour
                 {
                     var newDie = DiceInstance.Create(diceData);
                     player.State.FullInventory.Add(newDie);
+
+                    // Also add to active combat bag if budget allows
+                    if (player.State.Bag != null && player.State.Bag.CanAdd(newDie))
+                        player.State.Bag.TryAdd(newDie);
+
                     Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Dado agregado!");
                 }
                 else
@@ -1218,9 +1235,16 @@ public class GameManager : MonoBehaviour
 
         TransitionTo(GameState.PreCombat);
 
+        var combatRoomRef = DungeonManager.Instance.CurrentRoom;
+        bool isBossRoom = combatRoomRef != null && combatRoomRef.Type == RoomType.Boss;
+
         UIManager.Instance.ShowPhaseLabel(_activeCombatEnemies.Count > 1 ? "DOUBLE COMBAT!" : "COMBAT!");
         UIManager.Instance.ShowCombatPanel();
-        UIManager.Instance.ShowEnemyInfo(enemy);
+        UIManager.Instance.ShowEnemyInfo(enemy, isBossRoom);
+
+        // Boss pulsing effect on sprite
+        if (isBossRoom)
+            enemy.StartBossPulse();
 
         // Show second enemy info if double combat
         if (_activeCombatEnemies.Count > 1)
@@ -1915,12 +1939,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Room cleared
-        TransitionTo(GameState.RewardSelection);
-        var offers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-        var rewardUI = FindObjectOfType<RewardUI>(true);
-        if (rewardUI != null) rewardUI.ShowOffers(offers);
-        UIManager.Instance.ShowRewardOverlay();
+        // Non-boss enemies: skip reward selection, go directly to movement
+        BeginPlayerMovement();
     }
 
     public void OnRewardSelected(FaceUpgradeOffer offer)
@@ -1992,6 +2012,9 @@ public class GameManager : MonoBehaviour
 
     private void HandleMovementClick()
     {
+        // Block background clicks while shop panel is open
+        if (ShopUI.Instance != null && ShopUI.Instance.IsActive) return;
+
         if (currentReachableTiles == null || currentReachableTiles.Count == 0) return;
 
         Vector2Int gridPos = GetGridPosFromMouse();

@@ -180,7 +180,7 @@ public class UIManager : MonoBehaviour
 
     public void SetSecondEnemyInfoUI(EnemyInfoUI ui) { secondEnemyInfoUI = ui; }
 
-    public void ShowEnemyInfo(EnemyEntity enemy) => enemyInfoUI?.Show(enemy);
+    public void ShowEnemyInfo(EnemyEntity enemy, bool isBoss = false) => enemyInfoUI?.Show(enemy, isBoss);
     public void HideEnemyInfo()
     {
         enemyInfoUI?.Hide();

@@ -21,6 +21,21 @@ public class GridManager : MonoBehaviour
     private static readonly Color LadderColor = new Color(1f, 0.835f, 0.31f);
     private static readonly Color DoorColor = new Color(0.75f, 0.55f, 0.2f);
 
+    // Door color coding by state
+    private static readonly Color DoorColorGreen;  // cleared / passable
+    private static readonly Color DoorColorYellow; // forceable (enemies alive, not boss)
+    private static readonly Color DoorColorRed;    // locked / boss room
+
+    static GridManager()
+    {
+        ColorUtility.TryParseHtmlString("#66bb6a", out Color green);
+        DoorColorGreen = green;
+        ColorUtility.TryParseHtmlString("#ffb300", out Color yellow);
+        DoorColorYellow = yellow;
+        ColorUtility.TryParseHtmlString("#e53935", out Color red);
+        DoorColorRed = red;
+    }
+
     void Awake()
     {
         Instance = this;
@@ -202,12 +217,19 @@ public class GridManager : MonoBehaviour
                     if (tiles[x, y].Type == TileType.Ladder)
                         tileVisuals[x, y].SetAsLadder(LadderColor);
                     else if (tiles[x, y].Type == TileType.Door)
+                    {
+                        // Preserve door color coding — UpdateDoorColors will set proper colors
+                        // Use default door color as fallback
                         tileVisuals[x, y].SetAsDoor(DoorColor);
+                    }
                     else
                         tileVisuals[x, y].ResetColor();
                 }
             }
         }
+
+        // Re-apply door color coding after clearing highlights
+        UpdateDoorColors();
     }
 
     // Get all door tiles
@@ -219,6 +241,54 @@ public class GridManager : MonoBehaviour
                 if (tiles[x, y].Type == TileType.Door)
                     doorTiles.Add(tiles[x, y]);
         return doorTiles;
+    }
+
+    // Update door tile colors based on connected room state
+    public void UpdateDoorColors()
+    {
+        if (tiles == null || DungeonManager.Instance == null) return;
+
+        var currentRoom = DungeonManager.Instance.CurrentRoom;
+        if (currentRoom == null) return;
+
+        bool roomCleared = currentRoom.Cleared;
+
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                if (tiles[x, y].Type != TileType.Door) continue;
+                string dir = tiles[x, y].DoorDirection;
+                if (dir == null) continue;
+
+                Color doorColor;
+
+                if (roomCleared)
+                {
+                    // All doors green when room is cleared
+                    doorColor = DoorColorGreen;
+                }
+                else
+                {
+                    // Check connected room type
+                    var targetPos = DungeonManager.Instance.GetConnectedRoomPosition(dir);
+                    if (targetPos.HasValue)
+                    {
+                        var targetRoom = DungeonManager.Instance.GetRoom(targetPos.Value);
+                        if (targetRoom != null && targetRoom.Type == RoomType.Boss)
+                            doorColor = DoorColorRed;
+                        else
+                            doorColor = DoorColorYellow; // forceable
+                    }
+                    else
+                    {
+                        doorColor = DoorColorRed; // no connection = locked
+                    }
+                }
+
+                tileVisuals[x, y].SetAsDoor(doorColor);
+            }
+        }
     }
 
     // Get tiles within range for bow targeting
