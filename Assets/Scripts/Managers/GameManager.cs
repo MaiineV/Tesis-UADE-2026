@@ -88,6 +88,9 @@ public class GameManager : MonoBehaviour
     private int _targetEnemyIndex = 0;
     private bool _awaitingTargetSelection;
 
+    // Shop items on grid
+    private List<ShopItemEntity> _shopItemEntities = new List<ShopItemEntity>();
+
     // Events
     public static event Action<GameState> OnStateChanged;
 
@@ -256,6 +259,14 @@ public class GameManager : MonoBehaviour
         waitingEnemies.Clear();
         _activeCombatEnemies.Clear();
 
+        // Cleanup shop item entities
+        foreach (var shopEntity in _shopItemEntities)
+        {
+            if (shopEntity != null)
+                Destroy(shopEntity.gameObject);
+        }
+        _shopItemEntities.Clear();
+
         var oldGrid = GameObject.Find("Grid");
         if (oldGrid != null) Destroy(oldGrid);
     }
@@ -308,6 +319,7 @@ public class GameManager : MonoBehaviour
         else if (room.Type == RoomType.Shop)
         {
             GenerateShopItems(room);
+            spawnShopItemEntities(room);
             Log("Bienvenido a la tienda!");
         }
         else if (room.Type == RoomType.Potion)
@@ -357,12 +369,6 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // If shop room, show first available item
-            if (room.Type == RoomType.Shop && ShopUI.Instance != null)
-            {
-                ShowNextShopItem(room);
-            }
-
             BeginPlayerMovement();
         }
     }
@@ -589,6 +595,9 @@ public class GameManager : MonoBehaviour
                 AdvanceToNextFloor();
                 return;
             }
+
+            // Check shop item proximity in shop rooms
+            checkShopItemProximity();
 
             if (enemy != null)
             {
@@ -860,11 +869,111 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < 3 && i < pool.Count; i++)
             room.ShopItems.Add(pool[i]);
 
+        // Assign tile positions across room center row
+        Vector2Int[] shopPositions = {
+            new Vector2Int(2, 4),
+            new Vector2Int(4, 4),
+            new Vector2Int(6, 4)
+        };
+
+        for (int i = 0; i < room.ShopItems.Count; i++)
+        {
+            Vector2Int pos = shopPositions[i];
+            var tile = GridManager.Instance.GetTile(pos);
+            if (tile == null || !tile.IsWalkable || tile.Occupant != null)
+            {
+                // Find nearby walkable tile
+                pos = findNearbyWalkableTile(pos);
+            }
+            room.ShopItems[i].TilePosition = pos;
+        }
+
         // Show shop items in log
         foreach (var item in room.ShopItems)
         {
             if (!item.Purchased)
                 Log($"  [{item.ItemName}] - {item.GoldCost}G: {item.Description}");
+        }
+    }
+
+    private Vector2Int findNearbyWalkableTile(Vector2Int center)
+    {
+        // Search outward in a small radius
+        for (int r = 1; r <= 3; r++)
+        {
+            for (int dx = -r; dx <= r; dx++)
+            {
+                for (int dy = -r; dy <= r; dy++)
+                {
+                    var candidate = new Vector2Int(center.x + dx, center.y + dy);
+                    var tile = GridManager.Instance.GetTile(candidate);
+                    if (tile != null && tile.IsWalkable && tile.Occupant == null)
+                        return candidate;
+                }
+            }
+        }
+        return center;
+    }
+
+    private void spawnShopItemEntities(RoomData room)
+    {
+        _shopItemEntities.Clear();
+
+        foreach (var item in room.ShopItems)
+        {
+            if (item.Purchased) continue;
+
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = $"ShopItem_{item.ItemName}";
+            var entity = go.AddComponent<ShopItemEntity>();
+            entity.Initialize(item, item.TilePosition);
+            _shopItemEntities.Add(entity);
+        }
+    }
+
+    private void checkShopItemProximity()
+    {
+        var room = DungeonManager.Instance.CurrentRoom;
+        if (room == null || room.Type != RoomType.Shop) return;
+
+        ShopItemData closestItem = null;
+        int closestDist = int.MaxValue;
+
+        for (int i = 0; i < _shopItemEntities.Count; i++)
+        {
+            var entity = _shopItemEntities[i];
+            if (entity == null || !entity.gameObject.activeSelf) continue;
+
+            int dist = Mathf.Abs(player.State.GridPosition.x - entity.GridPosition.x)
+                     + Mathf.Abs(player.State.GridPosition.y - entity.GridPosition.y);
+
+            if (dist <= 2 && dist < closestDist)
+            {
+                closestDist = dist;
+                closestItem = entity.ItemData;
+            }
+        }
+
+        if (closestItem != null)
+        {
+            if (closestDist <= 1)
+            {
+                // Adjacent — show buy panel
+                if (ShopUI.Instance != null)
+                    ShopUI.Instance.ShowProximityItem(closestItem, player.State.Gold);
+            }
+            else
+            {
+                // Within 2 tiles — show info in log
+                Log($"Nearby: [{closestItem.ItemName}] - {closestItem.GoldCost}G");
+                if (ShopUI.Instance != null)
+                    ShopUI.Instance.HideProximity();
+            }
+        }
+        else
+        {
+            if (ShopUI.Instance != null)
+                ShopUI.Instance.HideProximity();
         }
     }
 
@@ -922,10 +1031,21 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
-        // Refresh shop display
-        var room = DungeonManager.Instance.CurrentRoom;
-        if (room != null && ShopUI.Instance != null)
-            ShopUI.Instance.ShowAllItems(room.ShopItems, player.State.Gold);
+        // Remove matching ShopItemEntity from the grid
+        for (int i = _shopItemEntities.Count - 1; i >= 0; i--)
+        {
+            var entity = _shopItemEntities[i];
+            if (entity != null && entity.ItemData == item)
+            {
+                entity.Remove();
+                _shopItemEntities.RemoveAt(i);
+                break;
+            }
+        }
+
+        // Hide proximity UI after purchase
+        if (ShopUI.Instance != null)
+            ShopUI.Instance.HideProximity();
     }
 
     private void ProcessEnemyMovement()

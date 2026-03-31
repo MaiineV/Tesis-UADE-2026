@@ -120,4 +120,40 @@ public class ShopUI : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
+
+    /// Show a single item in compact proximity view (reuses legacy single-item fields)
+    public void ShowProximityItem(ShopItemData item, int playerGold)
+    {
+        currentItem = item;
+        gameObject.SetActive(true);
+
+        // Hide multi-slot UI
+        for (int i = 0; i < 3; i++)
+        {
+            if (slotNameTexts[i] != null)
+                slotNameTexts[i].transform.parent.gameObject.SetActive(false);
+        }
+        if (leaveButton != null) leaveButton.gameObject.SetActive(false);
+
+        // Show legacy single-item fields
+        if (itemNameText != null) { itemNameText.gameObject.SetActive(true); itemNameText.text = item.ItemName; }
+        if (itemDescText != null) { itemDescText.gameObject.SetActive(true); itemDescText.text = item.Description; }
+        if (itemPriceText != null)
+        {
+            itemPriceText.gameObject.SetActive(true);
+            itemPriceText.text = item.Purchased ? "SOLD" : $"{item.GoldCost} G";
+        }
+        if (buyButton != null)
+        {
+            buyButton.gameObject.SetActive(true);
+            buyButton.interactable = !item.Purchased && playerGold >= item.GoldCost;
+        }
+        if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+    }
+
+    /// Hide the proximity buy panel
+    public void HideProximity()
+    {
+        gameObject.SetActive(false);
+    }
 }
