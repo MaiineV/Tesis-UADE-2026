@@ -71,13 +71,27 @@ public class InventoryBuilderUI : MonoBehaviour
 
     private List<DiceInstance> generateRandomPool(DiceData[] availableTypes, int poolSize)
     {
-        var pool = new List<DiceInstance>(poolSize);
+        if (availableTypes == null || availableTypes.Length == 0)
+        {
+            Debug.LogError("[InventoryBuilderUI] availableTypes is null or empty! Creating fallback d6 pool.");
+            var pool = new List<DiceInstance>(poolSize);
+            var fallback = ScriptableObject.CreateInstance<DiceData>();
+            fallback.DiceName = "d6";
+            fallback.NumberOfFaces = 6;
+            fallback.DefaultFaces = new[] { 1, 2, 3, 4, 5, 6 };
+            fallback.PowerCost = 1f;
+            for (int i = 0; i < poolSize; i++)
+                pool.Add(DiceInstance.Create(fallback));
+            return pool;
+        }
+
+        var result = new List<DiceInstance>(poolSize);
         for (int i = 0; i < poolSize; i++)
         {
             int idx = UnityEngine.Random.Range(0, availableTypes.Length);
-            pool.Add(DiceInstance.Create(availableTypes[idx]));
+            result.Add(DiceInstance.Create(availableTypes[idx]));
         }
-        return pool;
+        return result;
     }
 
     private void BuildCards(List<DiceInstance> available)

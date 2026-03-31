@@ -116,6 +116,16 @@ public class SceneSetup : MonoBehaviour
         if (gm == null) return;
 
         var warrior = LoadOrCreateCharacterData();
+
+        // Ensure AvailablePoolDice is always set (persisted asset may lack it)
+        if (warrior.AvailablePoolDice == null || warrior.AvailablePoolDice.Length == 0)
+        {
+            var d6 = CreateDiceData("d6", 6, new[] { 1, 2, 3, 4, 5, 6 }, 1f, "#42a5f5");
+            var d8 = CreateDiceData("d8", 8, new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, 1.5f, "#66bb6a");
+            var d12 = CreateDiceData("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 2.5f, "#ab47bc");
+            warrior.AvailablePoolDice = new[] { d6, d8, d12 };
+        }
+
         var goblin = LoadOrCreateEnemyData("Goblin", 40, 2, 6, 1, 3, 50f, 15f, "#66bb6a", 5, 10);
         var orc = LoadOrCreateEnemyData("Orc", 60, 2, 8, 1, 2, 40f, 12f, "#ef5350", 10, 20);
         orc.HasComboResistance = true;
