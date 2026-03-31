@@ -118,6 +118,7 @@ public class SceneSetup : MonoBehaviour
         var warrior = LoadOrCreateCharacterData();
         var goblin = LoadOrCreateEnemyData("Goblin", 40, 2, 6, 1, 3, 50f, 15f, "#66bb6a", 5, 10);
         var orc = LoadOrCreateEnemyData("Orc", 60, 2, 8, 1, 2, 40f, 12f, "#ef5350", 10, 20);
+        orc.HasComboResistance = true;
         var archer = LoadOrCreateArcherData();
 
         var playerPrefab = CreateEntityPrefab("PlayerPrefab", "#4fc3f7", typeof(PlayerEntity), PrimitiveType.Cube);

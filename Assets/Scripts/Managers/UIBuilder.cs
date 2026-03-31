@@ -1014,6 +1014,48 @@ public class UIBuilder : MonoBehaviour
         enemyInfo2UI.SetTargetButton(targetBtn2.GetComponent<Button>());
         enemyInfo2Panel.SetActive(false);
 
+        // ── Boss Passives UI (top-right, below minimap) ──
+        var bossPassivesGO = new GameObject("BossPassivesPanel");
+        bossPassivesGO.transform.SetParent(canvasTransform, false);
+        var bpRT = bossPassivesGO.AddComponent<RectTransform>();
+        bpRT.anchorMin = new Vector2(1, 1);
+        bpRT.anchorMax = new Vector2(1, 1);
+        bpRT.pivot = new Vector2(1, 1);
+        bpRT.anchoredPosition = new Vector2(-10, -310);
+        bpRT.sizeDelta = new Vector2(250, 80);
+
+        var bpBg = bossPassivesGO.AddComponent<Image>();
+        bpBg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.85f);
+
+        // Red border
+        var bpBorder = CreateChildImage("BossBorder", bossPassivesGO.transform, Color.red);
+        var bpBorderRT = bpBorder.GetComponent<RectTransform>();
+        StretchFull(bpBorderRT);
+        bpBorderRT.offsetMin = new Vector2(-2, -2);
+        bpBorderRT.offsetMax = new Vector2(2, 2);
+        bpBorder.GetComponent<Image>().fillCenter = false;
+
+        var bpTitle = CreateTMPText("BPTitle", bossPassivesGO.transform,
+            "PASIVAS DEL JEFE", 14, TextAlignmentOptions.Center, HPColor);
+        bpTitle.fontStyle = FontStyles.Bold;
+        var bpTitleRT = bpTitle.GetComponent<RectTransform>();
+        bpTitleRT.anchorMin = new Vector2(0, 0.55f);
+        bpTitleRT.anchorMax = new Vector2(1, 1);
+        bpTitleRT.offsetMin = new Vector2(8, 0);
+        bpTitleRT.offsetMax = new Vector2(-8, -4);
+
+        var bpBody = CreateTMPText("BPBody", bossPassivesGO.transform,
+            "", 12, TextAlignmentOptions.Center, TextColor);
+        var bpBodyRT = bpBody.GetComponent<RectTransform>();
+        bpBodyRT.anchorMin = new Vector2(0, 0);
+        bpBodyRT.anchorMax = new Vector2(1, 0.55f);
+        bpBodyRT.offsetMin = new Vector2(8, 4);
+        bpBodyRT.offsetMax = new Vector2(-8, 0);
+
+        var bossPassivesUI = bossPassivesGO.AddComponent<BossPassivesUI>();
+        bossPassivesUI.Initialize(bossPassivesGO, bpTitle, bpBody);
+        bossPassivesGO.SetActive(false);
+
         // ── Wire UIManager ──
         var uiManager = UIManager.Instance;
         if (uiManager != null)
