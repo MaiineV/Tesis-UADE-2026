@@ -1214,6 +1214,21 @@ public class GameManager : MonoBehaviour
                 Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Velocidad +1!");
                 break;
 
+            case ShopItemType.Buff:
+                var buff = new RunBuffData
+                {
+                    Type = item.BuffType,
+                    Title = item.ItemName,
+                    Description = item.Description,
+                    Value = item.BuffValue,
+                    IsFromShop = true
+                };
+                player.State.ActiveBuffs.Add(buff);
+                Debug.Log($"[Buff] Comprado buff: {buff.Title} ({buff.Type}) valor={buff.Value} por {item.GoldCost}G");
+                Log($"Comprado: {item.ItemName} por {item.GoldCost}G - Buff activo!");
+                UIManager.Instance.RefreshBuffs();
+                break;
+
             default:
                 Log($"Comprado: {item.ItemName} por {item.GoldCost}G");
                 break;
@@ -1375,6 +1390,15 @@ public class GameManager : MonoBehaviour
         }
 
         _targetEnemyIndex = 0;
+
+        // Apply ShieldOnCombatStart buff
+        int shieldBuff = (int)player.State.GetBuffTotal(RunBuffType.ShieldOnCombatStart);
+        if (shieldBuff > 0)
+        {
+            player.State.ShieldValue += shieldBuff;
+            UIManager.Instance.UpdateShield(player.State.ShieldValue);
+            Log($"Shield buff: +{shieldBuff} shield at combat start!");
+        }
 
         TransitionTo(GameState.PreCombat);
 
@@ -1564,6 +1588,7 @@ public class GameManager : MonoBehaviour
     {
         TransitionTo(GameState.AttackPhase);
         currentAttack = new AttackPhase();
+        currentAttack.MaxRolls = 3 + (int)player.State.GetBuffTotal(RunBuffType.ExtraRoll);
 
         showTargetSelectionIfNeeded();
 
@@ -1630,6 +1655,15 @@ public class GameManager : MonoBehaviour
 
         var combo = currentAttack.Commit(generalaScoredThisRun);
         int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
+
+        // Apply DamageBoost buff
+        float dmgBoost = player.State.GetBuffTotal(RunBuffType.DamageBoost);
+        if (dmgBoost > 0f)
+        {
+            int boosted = Mathf.RoundToInt(damage * (1f + dmgBoost));
+            Debug.Log($"[Buff] DamageBoost applied: {damage} -> {boosted} (x{1f + dmgBoost:F2})");
+            damage = boosted;
+        }
 
         // Boss passive: halve damage for resisted combo
         if (_bossHasResistance && combo.Type == _bossResistedCombo)
