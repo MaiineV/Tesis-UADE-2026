@@ -94,6 +94,35 @@ public static class DataCreator
 
         CreateEnemy("Goblin", 40, 2, 6, 1, 3, 50f, 15f, EnemyBehavior.Aggressive, HexColor("#66bb6a"), 5, 10);
         CreateEnemy("Orc", 60, 2, 8, 1, 2, 40f, 12f, EnemyBehavior.Aggressive, HexColor("#ef5350"), 10, 20);
+        CreateArcher();
+    }
+
+    static void CreateArcher()
+    {
+        var archer = ScriptableObject.CreateInstance<EnemyData>();
+        archer.EnemyName = "Archer";
+        archer.EnemyColor = HexColor("#ffa726");
+        archer.MaxHP = 18;
+        archer.AttackDiceCount = 1;
+        archer.AttackDiceFaces = 6;
+        archer.SpeedMin = 1;
+        archer.SpeedMax = 3;
+        archer.MaxEnergy = 40f;
+        archer.EnergyPerRound = 10f;
+        archer.Behavior = EnemyBehavior.Ranged;
+        archer.IsRanged = true;
+        archer.PreferredRange = 3;
+        archer.Accuracy = 60;
+        archer.Precision = 3;
+        archer.FiresFirst = true;
+        archer.GoldDropMin = 10;
+        archer.GoldDropMax = 10;
+        archer.HasComboResistance = false;
+
+        string path = "Assets/Data/Enemies/Archer.asset";
+        if (AssetDatabase.LoadAssetAtPath<EnemyData>(path) != null)
+            AssetDatabase.DeleteAsset(path);
+        AssetDatabase.CreateAsset(archer, path);
     }
 
     static void CreateEnemy(string name, int hp, int atkCount, int atkFaces, int spdMin, int spdMax,
