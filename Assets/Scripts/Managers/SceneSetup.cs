@@ -216,9 +216,10 @@ public class SceneSetup : MonoBehaviour
 
     private EnemyData LoadOrCreateArcherData()
     {
-        var loaded = Resources.Load<EnemyData>("Archer");
-        if (loaded != null) return loaded;
-
+#if UNITY_EDITOR
+        var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyData>("Assets/Data/Enemies/Archer.asset");
+        if (asset != null) return asset;
+#endif
         var data = ScriptableObject.CreateInstance<EnemyData>();
         data.EnemyName = "Archer";
         ColorUtility.TryParseHtmlString("#ffa726", out Color c);
