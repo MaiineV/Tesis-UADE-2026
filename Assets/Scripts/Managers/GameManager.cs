@@ -764,6 +764,17 @@ public class GameManager : MonoBehaviour
         var result = ExplorationActions.AttemptFlee(player.State.Speed);
         Log($"Intento de huida: roll {result.roll}, chance {result.successChance}%");
 
+        // Show probability result
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowProbabilityResult("d10", result.roll, result.successChance, result.success, player.transform.position);
+
+        StartCoroutine(fleeResultRoutine(result));
+    }
+
+    private IEnumerator fleeResultRoutine((bool success, int roll, int successChance) result)
+    {
+        yield return new WaitForSeconds(1.5f);
+
         if (result.success)
         {
             _bossHasResistance = false;
@@ -1341,6 +1352,12 @@ public class GameManager : MonoBehaviour
         }
         Destroy(arrowObj);
 
+        // Show dodge probability result
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowProbabilityResult(
+                $"d6+Dex", dodge.playerRoll, 0, dodge.dodged,
+                player.transform.position + Vector3.right * 0.5f);
+
         if (dodge.dodged)
         {
             Log($"Player dodged! (d6+Dex={dodge.playerRoll} vs d6+Prec={dodge.enemyRoll})");
@@ -1359,7 +1376,7 @@ public class GameManager : MonoBehaviour
             if (ScreenFlashUI.Instance != null) ScreenFlashUI.Instance.FlashDamage();
         }
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1.5f);
 
         if (!player.State.IsAlive)
         {
@@ -1654,6 +1671,12 @@ public class GameManager : MonoBehaviour
             int shieldValue = player.State.ShieldValue;
             int netDamage = DamageResolver.ResolveEnemyAttack(rawDamage, shieldValue);
 
+            // Show dice breakdown above enemy
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowText(
+                    $"{enemy.State.BaseData.AttackDiceCount}d{enemy.State.BaseData.AttackDiceFaces}={rawDamage}",
+                    enemy.transform.position, Color.white);
+
             player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - netDamage);
             player.State.ShieldValue = 0;
             totalDamageTaken += netDamage;
@@ -1684,7 +1707,7 @@ public class GameManager : MonoBehaviour
                 yield break;
             }
 
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(1.5f);
         }
 
         AdvanceWaitingEnemies();
@@ -2019,6 +2042,16 @@ public class GameManager : MonoBehaviour
         var result = ExplorationActions.AttemptBow(player.State.Dexterity, 100);
         Log($"Arco: roll {result.roll}, chance {result.hitChance}%");
 
+        StartCoroutine(handleBowResultRoutine(targetEnemy, result));
+    }
+
+    private IEnumerator handleBowResultRoutine(EnemyEntity targetEnemy, (bool hit, int roll, int hitChance) result)
+    {
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowProbabilityResult("d20", result.roll, result.hitChance, result.hit, targetEnemy.transform.position);
+
+        yield return new WaitForSeconds(1.5f);
+
         if (result.hit)
         {
             int damage = ExplorationActions.CalculateBowDamage(result.roll);
@@ -2032,7 +2065,7 @@ public class GameManager : MonoBehaviour
             if (!targetEnemy.State.IsAlive)
             {
                 HandleBowKill(targetEnemy);
-                return;
+                yield break;
             }
         }
         else

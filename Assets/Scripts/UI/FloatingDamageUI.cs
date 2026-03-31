@@ -70,6 +70,64 @@ public class FloatingDamageUI : MonoBehaviour
         SpawnText(text, worldPosition, color);
     }
 
+    public void ShowProbabilityResult(string dieType, int roll, int chance, bool success, Vector3 worldPosition)
+    {
+        string resultText = success ? "HIT!" : "MISS";
+        Color color = success ? HealColor : DamageColor;
+        string text = $"{dieType}:{roll} ({chance}%) {resultText}";
+        spawnProbabilityText(text, worldPosition, color);
+    }
+
+    private void spawnProbabilityText(string text, Vector3 worldPosition, Color color)
+    {
+        var go = new GameObject("FloatingProbability");
+        go.transform.SetParent(worldCanvas.transform, false);
+        go.transform.position = worldPosition + Vector3.up * 0.5f;
+
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = 7f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = color;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+
+        var rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(6f, 1f);
+
+        StartCoroutine(animateProbabilityText(go, tmp, 2f));
+    }
+
+    private IEnumerator animateProbabilityText(GameObject go, TextMeshProUGUI tmp, float duration)
+    {
+        float elapsed = 0f;
+        Vector3 startPos = go.transform.position;
+        Color startColor = tmp.color;
+        float holdTime = 1.5f;
+
+        // Hold phase (1.5s)
+        while (elapsed < holdTime)
+        {
+            elapsed += Time.deltaTime;
+            go.transform.position = startPos + Vector3.up * (elapsed * 0.2f);
+            yield return null;
+        }
+
+        // Fade phase (0.5s)
+        float fadeStart = elapsed;
+        float fadeDuration = duration - holdTime;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float fadeT = (elapsed - fadeStart) / fadeDuration;
+            go.transform.position = startPos + Vector3.up * (elapsed * 0.2f);
+            tmp.color = new Color(startColor.r, startColor.g, startColor.b, 1f - fadeT);
+            yield return null;
+        }
+
+        Destroy(go);
+    }
+
     private void SpawnCrapsText(string text, Vector3 worldPosition)
     {
         var go = new GameObject("FloatingCrapsDamage");
