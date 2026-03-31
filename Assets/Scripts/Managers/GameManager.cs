@@ -1089,6 +1089,15 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.ShowPhaseLabel("ENEMY MOVE");
         yield return new WaitForSeconds(0.4f);
 
+        // Build blocked tiles set from all alive enemies
+        var enemyPositions = new HashSet<Vector2Int>();
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var e = enemies[i];
+            if (e != null && e.State != null && e.State.IsAlive)
+                enemyPositions.Add(e.State.GridPosition);
+        }
+
         foreach (var enemy in enemies)
         {
             if (enemy == null || !enemy.State.IsAlive) continue;
@@ -1098,13 +1107,19 @@ public class GameManager : MonoBehaviour
             Log($"{enemy.State.BaseData.EnemyName} speed roll: {steps}");
             yield return new WaitForSeconds(0.5f);
 
+            // Remove self from blocked set so enemy can pathfind from own position
+            enemyPositions.Remove(enemy.State.GridPosition);
+
             bool? collision = null;
-            MovementManager.Instance.MoveEnemyAnimated(enemy, player, steps, (col) =>
+            MovementManager.Instance.MoveEnemyAnimated(enemy, player, steps, enemyPositions, (col) =>
             {
                 collision = col;
             });
 
             while (collision == null) yield return null;
+
+            // Update blocked set with enemy's new position
+            enemyPositions.Add(enemy.State.GridPosition);
 
             if (collision.Value)
             {
@@ -1634,13 +1649,25 @@ public class GameManager : MonoBehaviour
 
     private void AdvanceWaitingEnemies()
     {
+        // Build blocked tiles from all enemies (waiting + active)
+        var blockedTiles = new HashSet<Vector2Int>();
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var e = enemies[i];
+            if (e != null && e.State != null && e.State.IsAlive)
+                blockedTiles.Add(e.State.GridPosition);
+        }
+
         var toPromote = new List<EnemyEntity>();
         foreach (var waiting in waitingEnemies.ToList())
         {
             if (waiting == null || !waiting.State.IsAlive) continue;
 
+            // Remove self from blocked set
+            blockedTiles.Remove(waiting.State.GridPosition);
+
             var path = MovementManager.Instance.FindPath(
-                waiting.State.GridPosition, player.State.GridPosition);
+                waiting.State.GridPosition, player.State.GridPosition, blockedTiles);
             if (path.Count > 0)
             {
                 var nextTile = path[0];
@@ -1650,6 +1677,9 @@ public class GameManager : MonoBehaviour
                     waiting.MoveTo(nextTile);
                     GridManager.Instance.SetOccupant(nextTile, waiting.gameObject);
 
+                    // Update blocked set
+                    blockedTiles.Add(nextTile);
+
                     // Check if now adjacent
                     int dist = Mathf.Abs(nextTile.x - player.State.GridPosition.x)
                              + Mathf.Abs(nextTile.y - player.State.GridPosition.y);
@@ -1658,8 +1688,14 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
+                    blockedTiles.Add(waiting.State.GridPosition);
                     toPromote.Add(waiting);
                 }
+            }
+            else
+            {
+                // Re-add self if no path found
+                blockedTiles.Add(waiting.State.GridPosition);
             }
         }
 

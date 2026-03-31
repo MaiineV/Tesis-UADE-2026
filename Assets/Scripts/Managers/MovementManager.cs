@@ -102,6 +102,51 @@ public class MovementManager : MonoBehaviour
         return new List<Vector2Int>(); // no path found
     }
 
+    /// Find shortest path avoiding blocked tiles (enemy-occupied)
+    public List<Vector2Int> FindPath(Vector2Int start, Vector2Int target, HashSet<Vector2Int> blockedTiles)
+    {
+        var visited = new Dictionary<Vector2Int, Vector2Int>();
+        var queue = new Queue<Vector2Int>();
+
+        queue.Enqueue(start);
+        visited[start] = start;
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (current == target)
+            {
+                var path = new List<Vector2Int>();
+                var node = target;
+                while (node != start)
+                {
+                    path.Add(node);
+                    node = visited[node];
+                }
+                path.Reverse();
+                return path;
+            }
+
+            Vector2Int[] directions = {
+                Vector2Int.up, Vector2Int.down,
+                Vector2Int.left, Vector2Int.right
+            };
+
+            foreach (var dir in directions)
+            {
+                Vector2Int next = current + dir;
+                if (!visited.ContainsKey(next) && GridManager.Instance.IsValidPosition(next)
+                    && !blockedTiles.Contains(next))
+                {
+                    visited[next] = current;
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        return new List<Vector2Int>();
+    }
+
     /// Move player step by step (animated). Calls onComplete with enemy if collision, null otherwise.
     public void MovePlayerAlongPathAnimated(PlayerEntity player, List<Vector2Int> path, Action<EnemyEntity> onComplete)
     {
@@ -157,12 +202,21 @@ public class MovementManager : MonoBehaviour
     /// Move enemy toward player (animated). Caller provides steps (from speed die roll). Calls onComplete(true) on collision.
     public void MoveEnemyAnimated(EnemyEntity enemy, PlayerEntity player, int steps, Action<bool> onComplete)
     {
-        StartCoroutine(MoveEnemyAnimatedRoutine(enemy, player, steps, onComplete));
+        StartCoroutine(MoveEnemyAnimatedRoutine(enemy, player, steps, null, onComplete));
     }
 
-    private IEnumerator MoveEnemyAnimatedRoutine(EnemyEntity enemy, PlayerEntity player, int steps, Action<bool> onComplete)
+    /// Move enemy toward player avoiding blocked tiles (other enemies).
+    public void MoveEnemyAnimated(EnemyEntity enemy, PlayerEntity player, int steps, HashSet<Vector2Int> blockedTiles, Action<bool> onComplete)
     {
-        var path = FindPath(enemy.State.GridPosition, player.State.GridPosition);
+        StartCoroutine(MoveEnemyAnimatedRoutine(enemy, player, steps, blockedTiles, onComplete));
+    }
+
+    private IEnumerator MoveEnemyAnimatedRoutine(EnemyEntity enemy, PlayerEntity player, int steps, HashSet<Vector2Int> blockedTiles, Action<bool> onComplete)
+    {
+        var path = blockedTiles != null
+            ? FindPath(enemy.State.GridPosition, player.State.GridPosition, blockedTiles)
+            : FindPath(enemy.State.GridPosition, player.State.GridPosition);
+
         if (path.Count == 0)
         {
             onComplete?.Invoke(false);
@@ -198,10 +252,34 @@ public class MovementManager : MonoBehaviour
                 yield break;
             }
 
+            // Check if next tile is now occupied by another enemy
+            if (blockedTiles != null && blockedTiles.Contains(nextTile))
+            {
+                GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
+                if (FloatingDamageUI.Instance != null)
+                    FloatingDamageUI.Instance.HideStepCounter(stepCounter);
+                onComplete?.Invoke(false);
+                yield break;
+            }
+
+            // Track old position for blocked tiles update
+            Vector2Int oldPos = enemy.State.GridPosition;
+
             // Animate step using EnemyEntity's existing animation
             bool stepDone = false;
             enemy.AnimateMoveTo(nextTile, () => stepDone = true);
             while (!stepDone) yield return null;
+
+            // Update occupant immediately per step
+            GridManager.Instance.ClearOccupant(oldPos);
+            GridManager.Instance.SetOccupant(nextTile, enemy.gameObject);
+
+            // Update blocked tiles set so other enemies see the new position
+            if (blockedTiles != null)
+            {
+                blockedTiles.Remove(oldPos);
+                blockedTiles.Add(nextTile);
+            }
 
             // Update step counter
             int remaining = stepsToTake - (i + 1);
@@ -215,7 +293,7 @@ public class MovementManager : MonoBehaviour
 
         if (FloatingDamageUI.Instance != null)
             FloatingDamageUI.Instance.HideStepCounter(stepCounter);
-        GridManager.Instance.SetOccupant(enemy.State.GridPosition, enemy.gameObject);
+        // Occupant already set per-step, no need to set again
         onComplete?.Invoke(false);
     }
 }
