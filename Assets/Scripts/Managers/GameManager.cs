@@ -479,16 +479,20 @@ public class GameManager : MonoBehaviour
                 }
                 else if (_currentFloor == 1)
                 {
-                    // Floor 1: only goblins
-                    baseData = GoblinData;
-                }
-                else
-                {
-                    // Mix enemy types including archer
+                    // Floor 1: goblins with 20% archer chance
                     float roll = Random.value;
                     if (roll < 0.2f && ArcherData != null)
                         baseData = ArcherData;
-                    else if (roll < 0.5f)
+                    else
+                        baseData = GoblinData;
+                }
+                else
+                {
+                    // Floor 2+: mix enemy types with 30% archer
+                    float roll = Random.value;
+                    if (roll < 0.3f && ArcherData != null)
+                        baseData = ArcherData;
+                    else if (roll < 0.6f)
                         baseData = OrcData;
                     else
                         baseData = GoblinData;
