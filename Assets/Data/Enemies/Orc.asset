@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Orc
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   EnemyName: Orc
-  Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  Sprite: {fileID: 0}
   EnemyColor: {r: 0.9372549, g: 0.3254902, b: 0.3137255, a: 1}
-  ModelPrefab: {fileID: 4886868960383466008, guid: 7f507159d1ed2454c8c19de6529035df, type: 3}
+  ModelPrefab: {fileID: 0}
   MaxHP: 60
   AttackDiceCount: 2
   AttackDiceFaces: 8
@@ -27,5 +27,8 @@ MonoBehaviour:
   IsRanged: 0
   PreferredRange: 0
   Accuracy: 0
-  GoldDropMin: 0
-  GoldDropMax: 0
+  Precision: 0
+  FiresFirst: 0
+  GoldDropMin: 10
+  GoldDropMax: 20
+  HasComboResistance: 0

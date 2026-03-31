@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Goblin
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   EnemyName: Goblin
-  Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  Sprite: {fileID: 0}
   EnemyColor: {r: 0.4, g: 0.73333335, b: 0.41568628, a: 1}
+  ModelPrefab: {fileID: 0}
   MaxHP: 40
   AttackDiceCount: 2
   AttackDiceFaces: 6
@@ -23,3 +24,11 @@ MonoBehaviour:
   MaxEnergy: 50
   EnergyPerRound: 15
   Behavior: 0
+  IsRanged: 0
+  PreferredRange: 0
+  Accuracy: 0
+  Precision: 0
+  FiresFirst: 0
+  GoldDropMin: 5
+  GoldDropMax: 10
+  HasComboResistance: 0

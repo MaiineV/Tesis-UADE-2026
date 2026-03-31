@@ -15,18 +15,18 @@ MonoBehaviour:
   CharacterName: Warrior
   ClassName: Warrior
   Description: A balanced fighter with strong dice combinations.
-  Portrait: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  Portrait: {fileID: 0}
   CharacterColor: {r: 0.30980393, g: 0.7647059, b: 0.96862745, a: 1}
   MaxHP: 100
-  StartingPowerBudget: 8
+  StartingPowerBudget: 5
+  Dexterity: 0
+  Speed: 0
   SpeedMin: 2
   SpeedMax: 5
   StartingDice:
   - DiceType: {fileID: 11400000, guid: 009661765a857994c93ebfafc97390d6, type: 2}
     Quantity: 4
   - DiceType: {fileID: 11400000, guid: c9c08a8b76d7dc844936313a67c8c567, type: 2}
-    Quantity: 2
-  - DiceType: {fileID: 11400000, guid: 6c0292f288106034abdad76369f275cd, type: 2}
     Quantity: 2
   CombatDiceSlots: 5
   AffinityCombo: 6
