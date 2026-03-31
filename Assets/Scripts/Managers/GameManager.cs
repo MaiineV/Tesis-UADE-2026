@@ -50,6 +50,7 @@ public class GameManager : MonoBehaviour
 
     // Level/dungeon
     private int currentLevel = 0;
+    private int _currentFloor = 1;
 
     // Craps
     private CrapsMode crapsMode = new CrapsMode();
@@ -208,6 +209,7 @@ public class GameManager : MonoBehaviour
         CleanupPreviousRun();
 
         currentLevel = 0;
+        _currentFloor = 1;
         totalEnemiesDefeated = 0;
         generalaScoredThisRun = false;
         ResetStats();
@@ -393,7 +395,7 @@ public class GameManager : MonoBehaviour
 
     private void SpawnEnemiesForRoom(RoomData room, RoomLayout layout)
     {
-        float hpMult = LevelConfig.GetHPMultiplier(currentLevel);
+        float hpMult = LevelConfig.GetHPMultiplier(_currentFloor);
 
         if (room.Enemies.Count > 0)
         {
@@ -1798,6 +1800,7 @@ public class GameManager : MonoBehaviour
 
     private void AdvanceToNextFloor()
     {
+        _currentFloor++;
         Log("Advancing to next floor...");
         UIManager.Instance.ShowPhaseLabel("NEXT FLOOR!");
         if (_portalObj != null) { Destroy(_portalObj); _portalObj = null; }
