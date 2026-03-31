@@ -1533,13 +1533,11 @@ public class GameManager : MonoBehaviour
             yield break;
         }
 
-        // Sort by speed descending
-        attackOrder.Sort((a, b) =>
-        {
-            int speedA = Random.Range(a.State.BaseData.SpeedMin, a.State.BaseData.SpeedMax + 1);
-            int speedB = Random.Range(b.State.BaseData.SpeedMin, b.State.BaseData.SpeedMax + 1);
-            return speedB.CompareTo(speedA);
-        });
+        // Roll speed once per enemy, then sort by speed descending
+        var speedRolls = new Dictionary<EnemyEntity, int>();
+        for (int i = 0; i < attackOrder.Count; i++)
+            speedRolls[attackOrder[i]] = Random.Range(attackOrder[i].State.BaseData.SpeedMin, attackOrder[i].State.BaseData.SpeedMax + 1);
+        attackOrder.Sort((a, b) => speedRolls[b].CompareTo(speedRolls[a]));
 
         foreach (var enemy in attackOrder)
         {
@@ -1721,9 +1719,9 @@ public class GameManager : MonoBehaviour
 
     private void onEnemyDeathCombatContinue()
     {
-        // Continue combat — skip reward for intermediate kills
+        // Continue combat — player gets to attack remaining enemies before enemy turn
         UIManager.Instance.ShowCombatPanel();
-        StartEnemyAttack();
+        StartAttackPhase();
     }
 
     private void OnEnemyDeathAnimationComplete()
