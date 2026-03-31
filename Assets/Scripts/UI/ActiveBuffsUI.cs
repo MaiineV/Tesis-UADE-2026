@@ -17,6 +17,12 @@ public class ActiveBuffsUI : MonoBehaviour
 
     private List<GameObject> _cardInstances = new List<GameObject>();
     private PlayerState _playerState;
+    private RectTransform _tooltipRT;
+
+    private static readonly Color _panelBg = new Color(0.118f, 0.118f, 0.227f, 0.9f);   // #1e1e3a
+    private static readonly Color _textColor = new Color(0.878f, 0.878f, 0.878f, 1f);    // #e0e0e0
+    private static readonly Color _purple = new Color(0.671f, 0.278f, 0.737f, 1f);       // #ab47bc
+    private static readonly Color _gold = new Color(1f, 0.835f, 0.310f, 1f);             // #ffd54f
 
     void Awake()
     {
@@ -40,10 +46,13 @@ public class ActiveBuffsUI : MonoBehaviour
                 btn.onClick.AddListener(TogglePanel);
         }
 
+        if (_tooltipGO != null)
+        {
+            _tooltipRT = _tooltipGO.GetComponent<RectTransform>();
+            _tooltipGO.SetActive(false);
+        }
         if (_panel != null)
             _panel.SetActive(false);
-        if (_tooltipGO != null)
-            _tooltipGO.SetActive(false);
     }
 
     public void SetPlayerState(PlayerState state)
@@ -77,8 +86,6 @@ public class ActiveBuffsUI : MonoBehaviour
 
     private void createEmptyCard()
     {
-        ColorUtility.TryParseHtmlString("#e0e0e0", out Color textColor);
-
         var card = new GameObject("EmptyBuff");
         card.transform.SetParent(_listParent, false);
         var rt = card.AddComponent<RectTransform>();
@@ -87,7 +94,7 @@ public class ActiveBuffsUI : MonoBehaviour
         var tmp = card.AddComponent<TextMeshProUGUI>();
         tmp.text = "Sin buffs activos";
         tmp.fontSize = 16;
-        tmp.color = new Color(textColor.r, textColor.g, textColor.b, 0.6f);
+        tmp.color = new Color(_textColor.r, _textColor.g, _textColor.b, 0.6f);
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.fontStyle = FontStyles.Italic;
         tmp.raycastTarget = false;
@@ -97,17 +104,12 @@ public class ActiveBuffsUI : MonoBehaviour
 
     private void createBuffCard(RunBuffData buff)
     {
-        ColorUtility.TryParseHtmlString("#1e1e3a", out Color panelBg);
-        ColorUtility.TryParseHtmlString("#e0e0e0", out Color textColor);
-        ColorUtility.TryParseHtmlString("#ab47bc", out Color purple);
-        ColorUtility.TryParseHtmlString("#ffd54f", out Color gold);
-
         var card = new GameObject($"BuffCard_{buff.Type}");
         card.transform.SetParent(_listParent, false);
         var cardRT = card.AddComponent<RectTransform>();
         cardRT.sizeDelta = new Vector2(260, 45);
         var cardImg = card.AddComponent<Image>();
-        cardImg.color = new Color(panelBg.r, panelBg.g, panelBg.b, 0.9f);
+        cardImg.color = _panelBg;
 
         var hlg = card.AddComponent<HorizontalLayoutGroup>();
         hlg.spacing = 8;
@@ -124,7 +126,7 @@ public class ActiveBuffsUI : MonoBehaviour
         iconLE.preferredWidth = 8;
         iconLE.preferredHeight = 30;
         var iconImg = iconGO.AddComponent<Image>();
-        iconImg.color = purple;
+        iconImg.color = _purple;
 
         // Name
         var nameGO = new GameObject("Name");
@@ -135,7 +137,7 @@ public class ActiveBuffsUI : MonoBehaviour
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         nameTMP.text = buff.Title;
         nameTMP.fontSize = 14;
-        nameTMP.color = textColor;
+        nameTMP.color = _textColor;
         nameTMP.alignment = TextAlignmentOptions.Left;
         nameTMP.raycastTarget = false;
 
@@ -148,7 +150,7 @@ public class ActiveBuffsUI : MonoBehaviour
         var valTMP = valGO.AddComponent<TextMeshProUGUI>();
         valTMP.text = formatBuffValue(buff);
         valTMP.fontSize = 14;
-        valTMP.color = gold;
+        valTMP.color = _gold;
         valTMP.alignment = TextAlignmentOptions.Right;
         valTMP.fontStyle = FontStyles.Bold;
         valTMP.raycastTarget = false;
@@ -206,16 +208,12 @@ public class ActiveBuffsUI : MonoBehaviour
     void Update()
     {
         // Follow mouse for tooltip
-        if (_tooltipGO != null && _tooltipGO.activeSelf)
+        if (_tooltipGO != null && _tooltipGO.activeSelf && _tooltipRT != null)
         {
-            var rt = _tooltipGO.GetComponent<RectTransform>();
-            if (rt != null)
-            {
-                Vector2 pos;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    rt.parent as RectTransform, Input.mousePosition, null, out pos);
-                rt.anchoredPosition = pos + new Vector2(15, -15);
-            }
+            Vector2 pos;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _tooltipRT.parent as RectTransform, Input.mousePosition, null, out pos);
+            _tooltipRT.anchoredPosition = pos + new Vector2(15, -15);
         }
     }
 
