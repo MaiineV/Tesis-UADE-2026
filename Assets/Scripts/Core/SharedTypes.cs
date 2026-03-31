@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum ShopItemType { PotionRefill = 0, DiceAdd = 10, StatBoostDex = 20, StatBoostSpeed = 30 }
+public enum ShopItemType { PotionRefill = 0, DiceAdd = 10, StatBoostDex = 20, StatBoostSpeed = 30, Buff = 40 }
 
 [System.Serializable]
 public struct RollResult { public string DiceId; public int FaceIndex; public int Value; }
@@ -32,3 +32,6 @@ public struct BagSummary { public int TotalDice; public float UsedPower; public 
 
 [System.Serializable]
 public struct DiceSummary { public string Id; public string TypeName; public int[] Faces; public float PowerCost; public Color Color; }
+
+[System.Serializable]
+public class RunBuffData { public RunBuffType Type; public string Title; public string Description; public float Value; public bool IsFromShop; }

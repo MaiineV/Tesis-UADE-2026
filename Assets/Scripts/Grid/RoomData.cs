@@ -44,4 +44,6 @@ public class ShopItemData
     public bool Purchased;
     public string DiceType; // "d6", "d8", "d10", "d12" for dice items
     public ShopItemType ItemType;
+    public RunBuffType BuffType;
+    public float BuffValue;
 }

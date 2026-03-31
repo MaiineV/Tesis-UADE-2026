@@ -39,6 +39,9 @@ public class PlayerState
     public bool HasPotion;
     public int PotionCount;
 
+    // Buffs
+    public List<RunBuffData> ActiveBuffs;
+
     public static PlayerState Create(CharacterData data)
     {
         var state = new PlayerState();
@@ -54,6 +57,7 @@ public class PlayerState
         state.Gold = 0;
         state.HasPotion = true;
         state.PotionCount = 1;
+        state.ActiveBuffs = new List<RunBuffData>();
 
         // Build full inventory from starting dice
         state.FullInventory = new List<DiceInstance>();
@@ -93,5 +97,17 @@ public class PlayerState
     public void Heal(int amount)
     {
         CurrentHP = Mathf.Min(MaxHP, CurrentHP + amount);
+    }
+
+    public float GetBuffTotal(RunBuffType type)
+    {
+        float total = 0f;
+        if (ActiveBuffs == null) return total;
+        for (int i = 0; i < ActiveBuffs.Count; i++)
+        {
+            if (ActiveBuffs[i].Type == type)
+                total += ActiveBuffs[i].Value;
+        }
+        return total;
     }
 }
