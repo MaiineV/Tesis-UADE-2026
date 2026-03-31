@@ -1260,8 +1260,6 @@ public class GameManager : MonoBehaviour
         // Show flee/force door buttons during combat
         if (ExplorationActionsUI.Instance != null)
         {
-            var currentRoom = DungeonManager.Instance.CurrentRoom;
-            bool isBossRoom = currentRoom != null && currentRoom.Type == RoomType.Boss;
             ExplorationActionsUI.Instance.SetCombatMode(isPlayerNearDoor(), player.State.CurrentHP, isBossRoom);
             ExplorationActionsUI.Instance.Show();
         }
