@@ -333,6 +333,17 @@ public class GameManager : MonoBehaviour
 
     private void CleanupPreviousRun()
     {
+        // Clear boss debuff state before destroying player
+        _debuffsActive = false;
+        _bossHasResistance = false;
+        _preDebuffMaxHP = 0;
+        _bossResistedCombo = default;
+        if (player != null)
+            player.State.ActiveDebuffs.Clear();
+        BossPassivesUI.Instance?.Hide();
+        if (ActiveBuffsUI.Instance != null)
+            ActiveBuffsUI.Instance.Refresh();
+
         if (player != null)
         {
             if (GridManager.Instance != null)
