@@ -17,7 +17,16 @@
       "Bash(git checkout:*)",
       "Bash(mv .claude/settings.local.json /tmp/settings_local_backup.json)",
       "Bash(mv CLAUDE.md /tmp/CLAUDE_main_backup.md)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(gh search:*)",
+      "WebSearch",
+      "Bash(pip list:*)",
+      "Bash(pip3 list:*)",
+      "Bash(pdftotext:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \":*)",
+      "Bash(python:*)",
+      "Bash(PYTHONUTF8=1 python -c \"\nimport fitz\ndoc = fitz.open\\(r'C:\\\\Users\\\\Educabot\\\\Desktop\\\\Dice & Dungeons — GDD.pdf'\\)\nfor i in range\\(25, min\\(35, doc.page_count\\)\\):\n    page = doc[i]\n    text = page.get_text\\(\\)\n    print\\(f'\\\\n===== PAGE {i+1} ====='\\)\n    print\\(text\\)\n\")"
     ]
   },
   "enableAllProjectMcpServers": true,

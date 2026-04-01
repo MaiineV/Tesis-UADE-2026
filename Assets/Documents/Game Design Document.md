@@ -1,1059 +1,1082 @@
-# Game Design Document
+# Game Design Document V2
 
-## Game Summary
-* **Working Title:** [Untitled] — Dice-Based Roguelite Dungeon Crawler
-* **Genre:** Roguelite Dungeon Crawler, Turn-Based
-* **Perspective:** Fixed Isometric
-* **Engine:** Unity 6.3 (C#)
-* **Platform:** PC (itch.io / Steam)
-* **Controls:** Mouse (grid click + dice drag)
-* **Target Audience:** Strategy gamers, roguelite fans, tabletop gaming community
-* **Run Duration:** ~1 hour 40 minutes (3-4 floors, ~25 min each)
-* **Team:** 6 — Game Development B.S. (UADE 2026)
-* **Stage:** Concept / Pre-Prototype
+## Resumen del Juego
 
-## Concept
-A turn-based roguelite where dice are your inventory, your weapon, your movement, and your identity. Build your dice loadout, explore procedural dungeons, and use a Generala/Yahtzee combo system for combat where every roll is a bet on how far you move, how hard you hit, and whether your build pays off.
+**Título de trabajo:** [Sin título] — Roguelite de mazmorras basado en dados
 
-The base system is deliberately simple: roll all your dice, pick which ones move you, and use the rest to build combos for damage. Items, passives, and special dice break those rules in interesting ways — that's where the depth comes from. Inspired by The Binding of Isaac's philosophy (clean core that items transform), Balatro's combo escalation (base hands are weak, builds make them devastating), and classic Generala/Yahtzee (lock, reroll, chase the combo).
+**Concepto en una línea:** Un roguelite por turnos donde los dados son tu inventario, tu arma, tu movimiento y tu defensa: armá tu bolsa de dados, explorá mazmorras procedurales y dominá el sistema de combos estilo Generala para sobrevivir.
+
+| Campo | Detalle |
+|---|---|
+| Género | Roguelite dungeon crawler, por turnos |
+| Perspectiva | Isométrica fija |
+| Motor | Unity 6.3 (C#) |
+| Plataforma | PC (itch.io / Steam) |
+| Controles | Mouse (click en grilla + arrastrar dados) |
+| Público objetivo | Jugadores de estrategia, fans de roguelites, comunidad de juegos de mesa |
+| Duración de una run | ~1 hora 40 minutos |
+| Equipo | 6 personas — Licenciatura en Desarrollo de Videojuegos (UADE) |
+| Etapa | Concepto / Pre-Prototipo |
+
+*Fuente: GDD PDF p6*
+
+## Concepto
+
+**Elevator Pitch:** Imaginá la profundidad estratégica de Balatro (donde cada carta importa y cada build cuenta) pero dentro de las mazmorras procedurales de The Binding of Isaac. En vez de cartas, tus herramientas son dados físicos que coleccionás, encantás cara por cara, y tirás para atacar, defenderte y moverte. El combate usa un sistema estilo Generala: tres tiradas, reservás dados, armás combos. Cuanto mejor el combo, más daño hacés. Pero las tiradas usadas para atacar son tiradas que no tenés para defenderte. Cada decisión importa. Cada dado cuenta.
+
+**Oportunidad de mercado:**
+1. **Nicho desatendido:** ningún roguelite combina dados físicos como sistema de build permanente con exploración de mazmorras. Dicey Dungeons usa dados como recursos consumibles. Dice A Million logra la sensación de dados pero no tiene exploración ni gameplay espacial.
+2. **Momentum del género:** Balatro (2024) demostró que "juego de mesa + roguelite" tiene demanda masiva — vendió millones en su primer mes.
+3. **La brecha entre Isaac y Balatro:** Isaac tiene exploración pero exige reflejos. Balatro tiene estrategia pero no tiene exploración. Este juego une las dos mitades.
+4. **Accesibilidad de la Generala:** el sistema de combos es universalmente conocido y fácil de aprender. En Argentina la variante local se juega desde la infancia, barrera de entrada extremadamente baja.
+
+*Fuente: GDD PDF p6-7*
 
 ## Gameplay
-* Grid-based turn system — roll dice, split between movement and combat
-* Every die has dual purpose: move OR attack (never both)
-* Generala/Yahtzee combo system: lock dice, reroll up to 3 times, combos determine damage
-* Base combos deal moderate damage — items and face enchanting make them devastating
-* No base defense — items grant shields, lifesteal, evasion, and damage reduction
-* Enemies always hit — their roll IS the damage
-* Items and passives layer complexity on top of a simple core (Isaac model)
-* Procedural isometric dungeons with room-based exploration
-* Deep build-crafting via dice enchanting, items, passives, and special dice
-* D&D-inspired character classes with unique playstyles
-* Meta-progression with unlockable content across runs
 
-## Art Direction
-* **Style:** Pixel-Poly (3D Low Poly + Pixel Art Shader)
-* **Perspective:** Fixed isometric, no camera rotation
-* **Palette:** Dark tones + casino neons (table green, dice red, chip gold)
-* **Visual Exception:** Dice rotate with real physics when rolled — they are the visual protagonist
-* **Visual Hierarchy:** Dice > Player > Enemies > Environment
-* Each floor has a distinct casino-themed aesthetic [TBD by art team]
+**Público objetivo:**
+- **Primario:** Jugadores de PC (18-35) que disfrutan roguelites de estrategia y juegos de mesa digitales. Conocen Balatro, Isaac, Dicey Dungeons.
+- **Secundario:** Jugadores argentinos/latinoamericanos que conocen la Generala desde siempre.
 
-## Game Feel & Visual Feedback
-* Every roll has impact — dice hit the table with physics, bounce, settle. The screen reacts.
-* Combos explode visually — Generala fills the screen with effects, Poker shakes it.
-* The split decision (move vs attack) creates visible tension — dice drag from pool to movement slots.
-* Numbers must feel satisfying — damage numbers scale visually with their value.
-* The gambling tension never stops — every Generala phase is a bet on whether to keep or reroll.
+*Fuente: GDD PDF p8*
 
----
+## Dirección de Arte
 
-# Glossary
+**Estilo: Pixel-Poly** (3D Low Poly + Pixel Art Shader)
 
-## The World
+Notas de implementación (reunión 03/24):
+- Pixel art shader logrado bajando la resolución de cámara y usando filtrado "point" en texturas.
+- Los dados muestran el resultado de la tirada vía UI overlay para el número (evita pixelación durante el giro).
+- Textura de paleta única con UV mapping para colorear modelos.
 
-### **Grid (Grilla)**
-The entire game world is built on a permanent tile grid. No free movement — all displacement happens tile by tile. The grid is active both inside and outside combat. There is no scene transition when combat begins. The grid is always visible during combat.
+**Paleta de colores:**
+- Fondos: tonos oscuros
+- Verde mesa de casino
+- Rojo dado
+- Dorado fichas de casino
+- Neones para efectos especiales y UI destacada
+- Paleta específica por piso: TBD por el equipo de arte
 
-### **Adjacency (Adyacencia)**
-Prototype: 4-tile cardinal adjacency (up, down, left, right). No diagonals.
-Future: migrate to hexagonal grid for optimal tactical gameplay.
+### Decisiones de Arte
 
-### **Obstacles (Obstaculos)**
-Rooms contain fixed blocked tiles (pillars, tables, casino furniture, etc.). They cannot be passed through and add tactical depth to movement and positioning.
-
-## Dice Terms
-
-### **Dice Bag (Bolsa de Dados)**
-The player's dice loadout — their inventory, build, and identity. Contains all combat dice (e.g., 4×d6 + 2×d8). All dice are rolled every turn and split between movement and Generala. Managed by a Power Budget system.
-
-### **Power Budget (Presupuesto de Poder)**
-The loadout cost limit. Each die has a power cost (d6=1, d8=2, d10=3, d12=4). The player's total dice cannot exceed their budget. Hollow Knight charm notch system — forces meaningful choices about which dice to carry.
-
-### **Movement Dice (Dados de Movimiento)**
-Dice the player picks from their roll to use for movement. Face value = tiles. No multiplier. These dice are removed from the Generala pool for that turn. The sum of all movement dice = total tiles available.
-
-### **Generala Phase (Fase de Generala)**
-After picking movement dice, remaining dice enter the Generala phase. The player can lock dice and reroll up to 3 times total, then commits to evaluate the best combo for damage. Full Yahtzee/Generala rules.
-
-### **Special Dice**
-Dice with built-in effects that trigger on specific face results. Follow power budget rules but add synergy layers.
-
-## Combat Results
-
-### **Combo (Combinación)**
-The Generala hand formed by the dice after the player commits. Combo type determines the damage formula. Higher combos = more damage. See Combo Table.
-
-## Player Stats
-
-### **Life Points (HP/Vida)**
-Core health resource. Reaching 0 HP ends the run.
-
-### **Speed (Velocidad)**
-[ELIMINATED — movement comes from combat dice. "Dice are everything."]
-
-### **Dexterity (Destreza)**
-[TBD — may modify item effectiveness via items]
-
-## Economy
-
-### **Gold (Oro)**
-Currency dropped by enemies on defeat. Spent in Shop rooms. Always visible in HUD.
-
-## Official Terminology
-
-| Term | Meaning | DO NOT use |
+| Criterio | Elección | Justificación |
 |---|---|---|
-| **Dice Bag** | The player's dice loadout/inventory | Backpack, inventory |
-| **Power Budget** | The loadout cost limit (notch system) | Slots, capacity |
-| **Generala Phase** | The lock/reroll/combo attack phase | Attack phase, combat roll |
-| **Movement Dice** | Dice picked for movement (face=tiles) | Speed dice, movement roll |
-| **Floor** | One procedural dungeon level | Level, stage |
-| **Room** | A single space in the floor grid | Chamber, area |
-| **Run** | Complete playthrough from start to victory/defeat | Match, session |
-| **Craps Mode** | Core bet mechanic — bet on combo before rolling when energy is full | Special attack, ultimate |
-| **Energy Bar** | Builds during combat, enables Craps Mode at 100/100 | Mana, charge |
-| **Face Enchanting** | Modifying a specific face of a die | Upgrading, leveling |
-| **Combo** | The Generala hand (Pair, Straight, etc.) | Hand, combination |
+| Estilo | Low-poly 3D + pixel art post-process shader | Rápido de producir, estética única, ideal para equipo de 6 |
+| Perspectiva | Isométrica fija, sin rotación de cámara | Simplifica arte y desarrollo, foco en grilla táctica |
+| Excepción visual | Los dados rotan con física real al tirarlos | Son el protagonista visual, merecen tratamiento especial |
+| Paleta | Tonos oscuros + neones casino (verde mesa, rojo dado, dorado ficha) | Alto contraste = legibilidad. Atmósfera casino sin ser genérica |
+| Jerarquía visual | Dados > Jugador > Enemigos > Entorno | El jugador siempre sabe dónde mirar |
+
+### Jerarquía Visual
+1. **Dados** — siempre el elemento más prominente en pantalla
+2. **Jugador** — segundo en jerarquía
+3. **Enemigos** — claramente identificables
+4. **Entorno** — siempre subordinado al gameplay
+
+### Animaciones
+Mínimas: Idle, Walk, y Die/Disappear.
+
+### Estilos 3D Evaluados
+
+| Estilo | Resultado |
+|---|---|
+| Low-poly angular/puntiagudo (AI + retopología manual) | Descartado visualmente |
+| Ultra-simple geométrico (formas básicas) | Preferido por el equipo |
+| Voxel/Blockbench estilo Hytale | Alternativa pero no favorito |
+
+*Fuente: GDD PDF p33-34*
+
+## Game Feel y Feedback Visual
+
+5 principios de game feel:
+
+1. **Cada tirada tiene impacto** — los dados golpean la mesa con física, rebotan, se asientan. La pantalla reacciona. Los números aparecen. Nunca hay momento "muerto".
+2. **Los combos escalan visualmente** — Par = brillo sutil, Trío = destello, Póker = sacude la pantalla, Generala = explosión visual completa.
+3. **La victoria y la derrota se sienten, no se leen** — combo devastador llena la pantalla de efectos; daño pesado oscurece la pantalla, sacude la cámara.
+4. **La tensión del juego de azar nunca para** — cada decisión de reservar o volver a tirar debe sentirse como empujar fichas sobre la mesa. La UI, animaciones y ritmo lo refuerzan.
+5. **Los números deben sentirse satisfactorios** — números de daño escalan visualmente con su valor. Golpe de 3 = pequeño. Golpe de 50 = grande y contundente. Multiplicadores y efectos encadenados deben cascadear visualmente.
+
+*Fuente: GDD PDF p7*
 
 ---
 
-# Game Core Loop
+# Glosario
 
-## 3 Layers
+| Término | Significado | NO usar |
+|---|---|---|
+| **Bolsa de Dados** (Dice Bag) | El inventario/loadout del jugador. 5 espacios con costo variable. | Mochila, inventario |
+| **Espacio** | Unidad de costo en la bolsa de dados. Dados más grandes cuestan más espacios. | Slot, capacidad |
+| **Run** (Corrida) | Una partida completa desde el inicio hasta victoria o derrota. | Partida, sesión |
+| **Piso** (Floor) | Un nivel procedural de la mazmorra. Termina al derrotar al boss. | Nivel, stage |
+| **Sala** (Room) | Un espacio individual en la grilla del piso. | Cámara, área |
+| **Loseta** (Tile) | Una celda individual de la grilla isométrica dentro de una sala. | Casilla, cuadrado |
+| **Combo** | Combinación de dados estilo Generala (Par, Trío, Full House, Póker, Escalera, Generala). | Jugada, tirada |
+| **Generala** | Todos los dados iguales. Combo máximo del sistema (base 100). | Yahtzee (en contexto de diseño interno) |
+| **Craps Mode** | Mecánica de apuesta activada al llenar la barra de energía. Resultado ×2 o ×0. | Ataque especial, ultimate |
+| **Barra de Energía** | Recurso que se recarga por turno. Al llenarse activa Craps Mode. | Maná, rage |
+| **Face Enchanting** (Encantamiento de Dados) | Modificar una cara específica de un dado en salas especiales. | Mejorar, subir de nivel |
+| **Tachar Combo** | Sacrificar un combo permanentemente a cambio de un beneficio inmediato. Mecánica de crisis. | Descartar, eliminar |
+| **Meta-Progresión** | Desbloqueos permanentes entre runs (clases, dados, pasivas). | Progresión |
+| **Build** | La combinación específica de dados en la bolsa. Define daño, combos posibles y estilo. | Configuración, setup |
+| **Multiplicador de Dado** | EV del dado ÷ 3.5 (EV del d6). Escala el daño base del combo. | Bonus, modifier |
+| **Gold** (Oro) | Moneda única del juego. Se obtiene de enemigos derrotados. | Monedas, dinero |
 
-```
-+==============================================================+
-|  MICRO LOOP — Turn                                            |
-|  Roll all dice -> Pick movement -> Move -> Generala -> Damage |
-+==============================================================+
-|  MACRO LOOP — The Floor                                       |
-|  Explore rooms -> Fight -> Loot -> Shop -> Boss               |
-+==============================================================+
-|  META LOOP (between runs) — Progression                       |
-|  Unlock characters -> New dice -> New items -> New passives   |
-+==============================================================+
-```
-
-## Micro Loop — Turn (Pick & Roll)
-Roll all your dice. Pick which ones move you (face = tiles). Use the rest for Generala (lock, reroll, combos = damage). Every die has dual purpose. The tension: sacrifice dice for movement or keep them for a better combo?
-
-## Macro Loop — Floor
-Explore procedural dungeon on isometric grid. Room types: combat (gold/loot), shop (upgrade build), sacrifice (risk/reward), boss (unique mechanics). Floor ends with a boss.
-
-## Meta Loop — Progression
-Isaac model. Each run unlocks new content via milestones: defeating bosses, completing constraints, reaching achievements. Every run has value — win or lose.
+*Fuente: terminología extraída del propio GDD V2 y CLAUDE.md del proyecto*
 
 ---
 
-# Core Combat System — Pick & Roll
+# Core Loop del Juego
 
-> This section defines the base combat mechanics.
-> Everything here is the foundation on which items, builds, and modifiers are added (Isaac-style).
-> The system must be fun and functional with zero items equipped.
+## 3 Capas
 
-## 1. The Grid
-* The entire world is built on a permanent tile grid
-* No free movement — all displacement happens tile by tile
-* The grid is active both inside and outside combat
-* **No scene transition when combat begins** — combat happens on the same grid
-* **The grid is always visible during the Generala phase** — no separate combat screen
-* Rooms contain **fixed obstacles** (blocked tiles) that affect movement and positioning
-* Adjacency is **4-tile cardinal** (up/down/left/right) — no diagonals in prototype
-* [FUTURE] Migrate to hexagonal grid for better tactical depth
+| | **EQUIPAR BUILD** | **→** | **EXPLORAR** | **→** | **COMBATIR** | **→** | **RECOMPENSAR** | |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| | **↑** | | | | | | **↓** | |
+| | *← Actualizar build con nuevos dados y volver a empezar →* | | | | | | | |
 
-## 2. Turn Structure
+*Fuente: sistemasDaños.md §3.1*
 
-```
-Player Turn → Enemy Turn → Player Turn → Enemy Turn → ...
-```
+## Posibilidades de Diseño
 
-Each player turn follows the **Pick & Roll** flow:
+| Eje | Descripción | Ejemplo |
+|---|---|---|
+| Builds | 227 combinaciones posibles de dados base (con d3 incluido). | 5×d4 (generala fácil) vs d20+2×d6 (apostador) |
+| Enemigos | Diferentes resistencias a combos. Ej: un enemigo inmune a Full House. | Obliga a repensar la build antes de cada sala. |
+| Salas especiales | Sala de encantamiento, sala de intercambio, sala de apuesta. | Variedad de contenido sin salir del sistema de dados. |
+| Dados encontrados | Dados raros con propiedades especiales (d3, d%, dados encantados). | Narrativa de progresión orgánica. |
+| Craps como tensión | La barra de energía crea momentos de decisión de alto riesgo. | ¿Uso el Craps ahora o espero un combo mejor? |
+
+*Fuente: sistemasDaños.md §3.2*
+
+---
+
+# Sistema de Combate — Generala Isométrica
+
+## 1. Estructura del Round
+
+El combate se desarrolla íntegramente en el mapa isométrico. Los enfrentamientos son por turnos estrictos: el jugador actúa primero, luego los monstruos en orden descendente de poder.
+
+| Fase | Actor | Descripción |
+|---|---|---|
+| **1** | **Jugador** | Ejecuta su acción de turno (ver Sistema de Acciones) |
+| **2** | Monstruo más poderoso | Se mueve y ataca según su comportamiento de IA |
+| **3** | Resto de monstruos | Actúan en orden descendente de poder hasta el más débil |
+| **4** | **Nuevo round** | Vuelve al paso 1. Se repite hasta que el combate termine |
+
+> *El jugador siempre actúa primero. No hay tirada de iniciativa.*
+
+*Fuente: sistema_combate_v5.md §1*
+
+## 2. Sistema de Acciones del Jugador
+
+⚠ *Pendiente de decisión — Se presentan ambas opciones para evaluación del equipo.*
+
+### Opción A — 2 Acciones por turno (Acción + Acción)
+
+El jugador tiene 2 acciones que puede combinar libremente. La restricción central: el ataque solo puede ocurrir **una vez por turno**. Inspirado en D&D 5e y Wrath of Ashardalon.
+
+| Slot | Opciones | Restricción |
+|---|---|---|
+| **Acción 1** | Moverse, usar ítem, habilidad especial, interactuar, pasar | Una sola opción por slot |
+| **Acción 2** | **Atacar O moverse** una segunda vez | Si no atacás, el slot se convierte en movimiento extra. Nunca un segundo ataque. |
+
+**Combinaciones posibles:**
+
+| Combinación | Qué hace el jugador |
+|---|---|
+| **Mover → Atacar** | Se acerca y golpea. Flujo estándar de CaC. |
+| **Atacar → Mover** | Ataca primero y se reposiciona. Ideal para el Arquero. |
+| **Mover → Mover** | No ataca. Usa ambas acciones para moverse el doble de losetas. |
+| **Ítem → Atacar** | Cura o usa consumible, luego ataca si hay enemigo en rango. |
+| **Habilidad → Atacar** | Activa un buff o trampa, luego ataca. |
+| **Mover → Ítem** | Se mueve y usa un consumible. No ataca ese turno. |
+
+**Ventajas y riesgos (Opción A):**
+
+| Ventajas | Riesgos |
+|---|---|
+| Mayor flexibilidad táctica por turno. | En cuartos chicos, el doble movimiento puede cubrir todo el espacio en un turno. |
+| El Arquero puede atacar y reposicionarse sin perder nada. | Si el jugador y los enemigos pueden moverse el doble, el combate puede volverse caótico. |
+| Permite más variedad de estrategias por clase. | Más complejo de entender para jugadores nuevos. |
+| Consistente con referencias del género (D&D, Wrath of Ashardalon). | Puede requerir mapas más grandes para que el doble movimiento no sea dominante. |
+
+### Opción B — 1 Acción por turno
+
+El jugador elige exactamente una acción por turno. El movimiento usa un **dado de velocidad** propio de cada clase. Más simple, más predecible, pensado para salas pequeñas.
+
+| Acción | Descripción |
+|---|---|
+| **Moverse** | Tira el dado de velocidad de su clase. Resultado = losetas. |
+| **Atacar** | Solo si hay enemigo en rango. Se ejecuta el sistema de 3 tiradas con Generala. |
+| **Usar ítem** | Usa un consumible del inventario. Consume el turno completo. |
+| **Usar activo** | Activa habilidad especial de clase. Consume el turno completo. |
+| **Pasar** | No hace nada. Los monstruos actúan normalmente. |
+
+> *El dado de velocidad introduce varianza táctica: un Warrior que saca 1 cuando necesitaba llegar al enemigo es presión de diseño. A calibrar con playtest.*
+>
+> *Alternativa: usar el dado de velocidad solo como límite máximo (el jugador elige cuántas losetas moverse hasta el resultado del dado). Reduce la frustración de sacar 1.*
+
+**Ventajas y riesgos (Opción B):**
+
+| Ventajas | Riesgos |
+|---|---|
+| Muy simple de entender: una cosa por turno. | Menos flexibilidad táctica. El jugador no puede moverse y atacar en el mismo turno. |
+| El doble movimiento no existe: el mapa chico no se rompe. | El Rogue/Mage ya en rango pierde un turno si quiere moverse — puede sentirse ineficiente. |
+| El dado de velocidad diferencia más las clases. | La varianza del dado puede frustrar si el jugador saca 1 en un momento crítico. |
+| Ritmo de combate más lento y más predecible. Más fácil de implementar. | El combate puede sentirse más lento, especialmente clases lentas como Mage. |
+
+### Dado de Velocidad por Clase (Opción B)
+
+Clases según GDD PDF (Warrior, Mage, Rogue). Valores de dado de velocidad y rango TBD.
+
+| Clase | Dado de velocidad | Rango ataque | Pasiva (PDF) |
+|---|---|---|---|
+| **Warrior** | TBD | TBD | +1 defensa base |
+| **Mage** | TBD | TBD | Relanzar 1 dado extra por tirada |
+| **Rogue** | TBD | TBD | Mayor % de huida exitosa |
+
+### Comparativa Directa entre Opciones
+
+| Criterio | Opción A — 2 Acciones | Opción B — 1 Acción |
+|---|---|---|
+| **Simplicidad para el jugador** | Media — hay que entender las combinaciones | Alta — una acción, sin combinar |
+| **Riesgo en mapas chicos** | Alto — el doble movimiento puede ser excesivo | Bajo — el mapa nunca se "rompe" |
+| **Flexibilidad táctica** | Alta — muchas combinaciones posibles | Baja — una decisión por turno |
+| **Diferenciación de clases** | Por losetas fijas + rango | Por dado de velocidad + rango |
+| **Ritmo del combate** | Más dinámico | Más pausado y estratégico |
+| **Complejidad de implementación** | Mayor | Menor |
+| **Problema del doble ataque** | Resuelto — Acción 2 no puede ser 2.° ataque | Resuelto — solo 1 acción por turno |
+| **Arquero en rango** | Ataca y se mueve en el mismo turno | Ataca o se mueve, no ambas |
+
+### Preguntas para el Equipo
+
+| # | Pregunta | Impacta en |
+|---|---|---|
+| 1 | ¿Qué tamaño promedio tienen las salas? ¿5×5, 7×7, más? | Define si el doble movimiento de Opción A rompe el espacio |
+| 2 | ¿El dado de velocidad (Opción B) suma varianza buena o frustrante? | Si el juego ya tiene mucha varianza de dados, más puede saturar |
+| 3 | ¿Queremos que el Arquero pueda atacar y reposicionarse en el mismo turno? | Opción A lo permite, Opción B no |
+| 4 | ¿El dado de velocidad es el resultado exacto o el límite máximo de movimiento? | Límite máximo reduce frustración pero pierde varianza |
+| 5 | ¿Los monstruos también usan dado de velocidad o tienen losetas fijas? | Si también tiran dado, el combate puede ser muy impredecible |
+
+*Fuente: sistema_combate_v5.md §2*
+
+## 3. Rango de Ataque por Clase
+
+El rango de ataque es igual en ambos sistemas de acciones. Define cuándo el botón de ataque se habilita.
+
+| Clase | Rango ataque | Notas de diseño |
+|---|---|---|
+| **Warrior** | TBD | TBD |
+| **Mage** | TBD | TBD |
+| **Rogue** | TBD | TBD |
+
+> *En la Opción B, el botón de ataque se habilita visualmente en la UI cuando el jugador está dentro del rango necesario.*
+
+*Fuente: sistema_combate_v5.md §3*
+
+## 4. Flujo de un Turno de Ataque
+
+Cada turno de ataque sigue el flujo de Generala:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ 0. CRAPS BET?   If energy=100, option to bet    │
-│                 on combo (optional, opt-in)      │
-│ 1. ROLL         Roll all dice from Dice Bag     │
-│ 2. PICK MOVE    Select 0+ dice for movement     │
-│                 (face value = tiles, summed)     │
-│ 3. MOVE         Execute movement on grid        │
-│ 4. GENERALA     Lock/reroll remaining dice      │
-│                 (up to 3 rolls total)            │
-│ 5. COMMIT       Best combo → damage to target   │
-│                 (Craps bonus/penalty if active)  │
-│ 6. ENEMY TURNS  Each enemy moves and attacks    │
+│ 1. TIRAR       Tirar todos los dados de la build│
+│ 2. ELEGIR      Guardar / retirar cada dado      │
+│                (hasta 3 tiradas totales)         │
+│ 3. CONFIRMAR   Aceptar el combo o tacharlo       │
+│ 4. RESOLVER    Aplicar daño / efecto al enemigo  │
 └─────────────────────────────────────────────────┘
 ```
 
-**The AP system is replaced by Pick & Roll.** There are no separate action points. The player's entire turn is: pick movement, move, then Generala with the rest.
+### Reglas
+* El jugador puede guardar/desbloquear cualquier dado entre tiradas
+* El jugador puede confirmar temprano (después de tirada 1 o 2) si está satisfecho
+* Menos dados = más difícil armar combos, pero sigue siendo posible (un Par necesita solo 2 dados)
 
-## 3. Step 0 — Craps Mode (Optional)
+*Fuente: sistemasDaños.md §2.1*
 
-### Energy Bar
-* Starts at 0 at the beginning of each combat encounter
-* Builds based on combat actions:
+## 5. Tabla de Combos — Fórmulas de Daño
 
-| Action | Energy Gained |
-|--------|---------------|
-| Deal damage (any combo) | +10 |
-| Three of a Kind or better | +15 |
-| Full House | +20 |
-| Four of a Kind | +25 |
-| Generala / Double Generala | +50 |
-| Take damage | +5 |
-| Kill an enemy | +10 |
+Los combos disponibles dependen de cuántos dados tiene la build:
 
-* Max energy = 100
-* When energy reaches 100 → **Craps Mode becomes available**
+| Combo | Descripción | 3d | 4d | 5d | Daño base |
+|---|---|---|---|---|---|
+| **Generala** | Todos los dados iguales | ✓ | ✓ | ✓ | 100 |
+| **Póker** | 4 dados iguales | ✗ | ✓ (=gen) | ✓ | 60 |
+| **Full House** | 3+2 iguales | ✗ | ✗ | ✓ | 40 |
+| **Escalera** | Todos consecutivos | ✓ | ✓ | ✓ | 35 |
+| **Trío** | 3 dados iguales | ✗ | ✓ | ✓ | 28 |
+| **Doble par** | 2 pares distintos | ✗ | ✓ | ✓ | 18 |
+| **Par** | 2 dados iguales | ✓ | ✓ | ✓ | 10 |
+| **Sin combo** | — | ✓ | ✓ | ✓ | 0 |
 
-### Craps Bet
-When energy is full, **before rolling dice**, the player can choose:
-* **Skip** — ignore Craps Mode, play normally. Energy stays at 100.
-* **Bet** — select a combo type they think they'll roll this turn
+### Fórmula de Daño
 
-### Bet Outcomes
-
-| Bet | If you hit it | If you miss |
-|-----|--------------|-------------|
-| Pair | +25% daño | -10% daño |
-| Three of a Kind | +50% daño | -15% daño |
-| Straight | +50% daño + heal 10 HP | -15% daño |
-| Full House | +75% daño | -20% daño |
-| Four of a Kind | +100% daño (×2) | -25% daño + 5 HP perdidos |
-| Generala | +200% daño (×3) + heal 20 HP | -50% daño + 10 HP perdidos |
-
-* "Or better" counts — bet Pair but roll Four of a Kind → success
-* After resolving (hit or miss), energy resets to 0
-* **Key tension:** dice used for movement are removed from Generala pool → betting high combos while needing to move is a big gamble
-
-> **Design note:** Craps Mode is a core mechanic, available to all players in all runs. It's opt-in — you never have to use it. This reinforces the casino identity: every combat has a potential "double or nothing" moment.
-
-## 4. Step 1 — Roll All Dice
-
-* All dice in the Dice Bag are rolled simultaneously at the start of each turn
-* The player sees ALL results before making any decisions
-* This is the only roll for movement — there is no separate movement die
-* **"Dice are everything"** — combat dice ARE movement dice
-
-**Example (6 dice: 4×d6 + 2×d8):**
-Roll result: `[4] [2] [5] [3] [6] [3]`
-The player now decides how to split these 6 dice.
-
-## 5. Step 2 — Pick Movement Dice
-
-* The player selects **0 or more dice** from the roll to use for movement
-* **Face value = tiles.** A die showing 5 = 5 tiles of movement.
-* **Multiple movement dice are SUMMED.** Picking [3] and [2] = 5 tiles total.
-* Selected dice are **removed from the Generala pool** — they cannot be used for attack
-* **The player can choose to pick 0 dice** — skip movement entirely, keep all dice for Generala. This is optimal when already adjacent to an enemy.
-* Movement is always a **single continuous path** (no splitting). Split movement = item territory.
-* Unused movement tiles are lost — they do not carry over.
-
-**Strategic decision:** Identify which dice don't contribute to a good combo and sacrifice them for movement. A [2] that breaks your Straight is better used as 2 tiles of movement.
-
-## 6. Step 3 — Move
-
-* The player moves on the grid using BFS pathfinding
-* Total tiles = sum of all movement dice face values
-* Movement is always a single continuous path around obstacles
-* The player must end movement on a valid (non-occupied, non-obstacle) tile
-* **Move FIRST, attack SECOND — always.** The player cannot attack and then move. Hit & run = item territory.
-
-## 7. Step 4 — Generala Phase
-
-After movement, the remaining dice enter the **Generala phase**. This is full Yahtzee/Generala rules:
-
-### Roll Sequence
-* **Roll 1:** The initial values from Step 1 (already rolled)
-* **Lock:** The player selects which dice to keep
-* **Reroll:** Unlocked dice are rerolled
-* **Repeat** for up to **3 total rolls** (initial + 2 rerolls)
-* **Commit:** The player confirms their final hand
-
-### Rules
-* The player can lock/unlock any die between rolls
-* The player can commit early (after roll 1 or 2) if satisfied
-* Fewer dice = harder to form combos, but still possible (a Pair needs only 2 dice)
-* **If the player is NOT adjacent to any enemy after moving, the Generala phase is skipped** — dice are wasted. This punishes bad positioning.
-
-## 8. Combo Table — Damage Formulas
-
-| Combo | Requirement | Damage Formula | Example (d6s) |
-|-------|-------------|----------------|----------------|
-| **High Die** | No combo | Highest face × 1 | [6] = 6 dmg |
-| **Pair** | 2 equal | Sum of pair × 1.5 | [4,4] = 12 dmg |
-| **Two Pair** | 2 + 2 equal | Sum of both pairs × 1.2 | [3,3,5,5] = 19 dmg |
-| **Three of a Kind** | 3 equal | Sum of trio × 2 | [5,5,5] = 30 dmg |
-| **Straight** | 4+ consecutive | 30 + highest die | [3,4,5,6] = 36 dmg |
-| **Full House** | 3 + 2 equal | 35 + sum of all | [4,4,4,6,6] = 59 dmg |
-| **Four of a Kind** | 4 equal | Sum of four × 3 | [5,5,5,5] = 60 dmg |
-| **Generala** | 5 equal | Sum × 5 | [5,5,5,5,5] = 125 dmg |
-| **Double Generala** | 6 equal | Sum × 8 | [5,5,5,5,5,5] = 240 dmg |
-
-> **Design note (Balatro philosophy):** Base combo damage is moderate. Items, face enchanting, and passives make combos devastating. A base Pair does 12 damage; an enchanted Pair with the right passive might do 40+.
-
-## 9. Step 5 — Damage Resolution
-
-* The best combo from the committed dice is automatically detected
-* Damage is applied to the **chosen adjacent enemy**
-* If multiple enemies are adjacent, the player chooses the target
-* Overkill damage is **wasted** — it does not splash to other enemies (cleave = item territory)
-* Character affinity bonus applies if the combo matches the character's affinity type
-
-## 10. Step 6 — Enemy Turns
-
-After the player's turn, each living enemy acts:
-
-* **Movement:** Each enemy rolls its own movement dice and moves toward the player (BFS pathfinding)
-* **Attack:** If adjacent to the player, the enemy rolls its attack dice. The result IS the damage (enemies always hit)
-* **AI Behavior:** Each enemy type has a behavior pattern (Aggressive, Ranged, Stationary, etc.)
-
-## 11. Combat Lock & Opportunity Attack
-
-* If the player is **adjacent to an enemy**, they are **in combat**
-* They can still move away by picking movement dice — **but they cannot skip the Generala phase** (must commit or waste dice)
-* Enemies that are adjacent attack on their turn regardless
-
-### Opportunity Attack (Ataque de Oportunidad)
-When either the player or an enemy **leaves the adjacency range** of the other:
-* **Both roll 1d6** — the result is direct damage to the one escaping
-* This is a **base mechanic**, not an item — escaping always has a cost
-* Creates a real decision: stay and combo, or escape and eat mutual 1d6 damage
-* **Smoke Bomb item** negates the enemy's opportunity attack (player still deals theirs)
-
-## 12. What is NOT in the Core (Added via Items)
-
-The following mechanics are NOT part of the base system.
-They exist as items, passives, and build modifiers:
-
-| Mechanic | How it enters the game |
-|----------|----------------------|
-| **Defense / Damage reduction** | Items: Shield, Armor, etc. |
-| **Lifesteal / Healing** | Items: Vampiric Dice, Potion, etc. |
-| **Evasion** | Items: Dodge Cloak, etc. |
-| **Ranged attack** | Items: Bow, Wand, etc. |
-| **Hit & Run** (move after attack) | Items: Escape Boots, etc. |
-| **Negate Opportunity Attack** | Items: Smoke Bomb (enemy doesn't roll 1d6 on escape) |
-| **Cleave** (damage all adjacent) | Items: Whirlwind Blade, etc. |
-| **Split Movement** (move in 2 paths) | Items: Shadow Step, etc. |
-| **Extra dice** | Items: add dice to bag beyond starting set |
-| **Combo modifiers** | Items: change combo multipliers, add effects to combos |
-| **Face Enchanting** | Shop service / item |
-| ~~**Craps Mode**~~ | **MOVED TO CORE** — base mechanic, available when energy bar is full |
-| **Safe flee from combat** | Items: Smoke Bomb (negate enemy opportunity attack) |
-
-> **Design philosophy:** The base game is "roll all dice, split between move and attack, Generala for damage." Items BREAK these rules in interesting ways.
-
----
-
-# Game Flow
-
-## Run Structure
 ```
-Run (3-4 floors)
- └─ Floor 1 (8-14 rooms, 1-2 enemies per room, no archers)
- └─ Floor 2 (8-14 rooms, 1-3 enemies per room, archers introduced)
- └─ Floor 3 (8-14 rooms, 1-3 enemies per room, harder tiers)
- └─ Floor 4 [optional] (8-14 rooms, 2-3 enemies, elites)
- Each floor ends with Boss → Reward screen → Next floor
+daño_final = base_combo × multiplicador_dado
+multiplicador_dado = EV_promedio_build ÷ 3.5 (EV del d6)
 ```
 
-## 1. Pre-Run Setup
+**Ejemplos:**
 
-### Character Selection [TBD]
-* D&D-inspired classes: Warrior, Mage, Rogue
-* Each defines: base HP, starting Dice Bag, power budget, class passive, affinity combo
-* Prototype: single base character with fixed stats
+| Build | Combo | Base | Multiplicador | Daño final |
+|---|---|---|---|---|
+| 5×d3 | Full House | 40 | ×0.57 | 23 |
+| 5×d6 | Full House | 40 | ×1.00 | 40 |
+| 5×d8 | Full House | 40 | ×1.29 | 51 |
+| d20 + 2×d6 | Generala | 100 | ×1.58 | 158 |
+| 5×d4 | Generala | 100 | ×0.71 | 71 |
 
-## 2. Floor Generation
-* Procedural room matrix (Isaac-style)
-* 8-14 rooms connected in a grid
-* Room types: Combat (majority), Shop (1), Boss (1), Sacrifice (rare)
-* Minimap visible in HUD showing discovered rooms and adjacent outlines
-* Only Shop (T) and Boss (B) show icons on minimap
+### ❓ Duda abierta: ¿Generala con 3 dados?
 
-## 3. Exploration Phase
-Outside combat, the same Pick & Roll turn system applies:
-* Roll all dice at turn start → pick movement dice → move on grid
-* If no enemy is adjacent after moving, Generala phase is skipped (nothing to attack)
-* Enemies in the room move toward the player each turn (each has its own movement dice)
-* **Enemies only activate when the player is in the same room** — enemies in other rooms are frozen
-* Combat triggers naturally when player ends adjacent to an enemy (or enemy moves adjacent)
-* Player can move toward doors freely as long as no enemy is adjacent
+| | Argumento | Impacto |
+|---|---|---|
+| ✓ SÍ permitirla | Es matemáticamente coherente: si todos los dados son iguales, es Generala. | Con 3×d3 la probabilidad de Generala es ~18% por tirada — muy alta. Puede sentirse 'barata'. |
+| ✗ NO permitirla | La Generala debería requerir los 5 dados para mantener su peso como combo máximo. | Builds pequeñas (3d) quedan sin techo de daño alto. Puede frustrar al jugador. |
+| ⚡ ALTERNATIVA | Renombrarla: con 3 dados se llama 'Trío perfecto' y vale menos (ej: base 60 en vez de 100). | Mantiene la coherencia mecánica y diferencia el peso entre builds grandes y chicas. |
 
-## 4. Combat State
-* Player enters combat when an enemy is adjacent
-* **While in combat**, the player can still move away using movement dice, but **Opportunity Attack triggers** (both roll 1d6 — mutual damage)
-* Enemies that are adjacent attack on their turn regardless
-* Smoke Bomb item negates the enemy's opportunity attack on exit
+> *Recomendación: usar la alternativa 'Trío perfecto' (base 60). Así las builds de 3 dados tienen su propio techo de daño sin devaluar la Generala de 5 dados.*
 
-## 5. Multi-Enemy Combat
-When the player is adjacent to multiple enemies:
-* Player chooses which enemy to target with their Generala combo
-* ALL adjacent enemies attack the player on their respective turns
-* Combat ends when all enemies in the room are defeated
-* Priority decision: kill the highest-DPS enemy first, or the lowest-HP one?
+*Fuente: sistemasDaños.md §1.3, §1.4, §1.5*
 
-## 6. Enemy Persistence
-* Leaving a room without clearing it: enemies retain their HP on return
-* Enemy positions randomize on re-entry
-* Dead enemies don't respawn
+## 6. Inicio del Combate
 
-## 7. Floor Transition (Post-Boss)
-After defeating a floor's boss:
-1. **Boss drop** — 1 random item from the boss loot pool
-2. **Floor stats screen** — rooms cleared, enemies killed, gold earned, items acquired
-3. **Automatic transition** to next floor
-4. Run ends after defeating the final boss (floor 3 or 4)
+El combate se activa automáticamente cuando se cumple cualquiera de las dos condiciones. No hay transición ni pantalla separada.
 
----
+| Condición | Descripción |
+|---|---|
+| **El jugador ataca a un monstruo** | Si el monstruo está dentro del rango de ataque y el jugador ejecuta la acción de ataque |
+| **Un monstruo alcanza su rango de ataque** | Cuando un monstruo se desplaza hasta quedar a la distancia necesaria para golpear al jugador |
 
-# Dice Bag — The Inventory
+### Comportamiento de Enemigos al Entrar a una Sala
 
-## Overview
-The Dice Bag is the player's loadout — their build, their identity, their toolkit. All dice in the bag are rolled every turn and split between movement and Generala.
+| Tipo de enemigo | Comportamiento |
+|---|---|
+| **Enemigo activo (estándar)** | Se desplaza hacia el jugador cada turno hasta entrar en su rango de ataque. Combate inevitable si el jugador permanece. |
+| **Enemigo estático (guardián)** | No se mueve. Defiende un punto fijo: un cofre, una salida o una recompensa. Solo ataca si el jugador entra en su rango. Puede ignorarse. |
 
-## Power Budget System
-Each die has a **power cost**. The player's total dice cannot exceed their **Power Budget** (Hollow Knight charm notch system).
+> *Los enemigos estáticos son la única forma de evitar el combate en una sala. Funcionan como decisión de riesgo/recompensa: ¿vale la pena pelear para acceder al cofre?*
 
-| Die Type | Power Cost | Face Range |
-|----------|-----------|------------|
-| d6 | 1 | 1-6 |
-| d8 | 2 | 1-8 |
-| d10 | 3 | 1-10 |
-| d12 | 4 | 1-12 |
+*Fuente: sistema_combate_v5.md §5*
 
-**Starting budget: 8** (Warrior default: 4×d6 + 2×d8 = 4×1 + 2×2 = 8)
+## 7. Escenarios Comparativos
 
-## Dice Bag Rules
-* All dice in the bag are rolled every turn — no "equipping" individual dice
-* More dice = more options for movement AND Generala
-* Higher dice (d10, d12) = higher face values for movement AND higher combo numbers
-* Items can add dice beyond the starting set (increasing the pool)
-* Items can increase the Power Budget (allowing bigger dice or more dice)
-* The bag is built during the run through shops, loot, and rewards
+Los mismos escenarios resueltos con cada sistema de acciones, para visualizar las diferencias.
 
-## Build Examples
-| Build | Dice | Budget | Strategy |
-|-------|------|--------|----------|
-| Starter | 4×d6 + 2×d8 | 8 | Balanced, good for Pairs and Three of a Kind |
-| Speed | 6×d6 | 6 | Many low dice = easy to find movement + still form combos |
-| Power | 2×d6 + 2×d10 | 8 | Fewer dice but higher values = massive combos, harder to move |
-| Full | 4×d6 + 2×d8 + 1×d10 | 11 | Needs budget increase item, 7 dice = very flexible |
+### Escenario A — Bárbaro a 4 losetas de un Goblin
+
+| Paso | Opción A (2 acciones) | Opción B (1 acción) |
+|---|---|---|
+| **Turno 1** | Acción 1: mueve 3 losetas. Acción 2: ataca (rango 1 alcanzado). | Tira d4 → saca 3. Se mueve 3 losetas. No puede atacar (a 1 loseta). |
+| **Turno 2** | *(ya atacó en turno 1)* | Ahora está en rango 1 → ataca con Generala. |
+| **Resultado** | **1 turno** para llegar y atacar. | **2 turnos:** 1 para moverse, 1 para atacar. |
+
+### Escenario B — Arquero en rango, quiere reposicionarse
+
+| Paso | Opción A (2 acciones) | Opción B (1 acción) |
+|---|---|---|
+| **Turno 1** | Acción 2: ataca. Acción 1: se mueve 3 losetas alejándose. | Elige: atacar O moverse. Si ataca, no se mueve. |
+| **Turno 2** | *(ya atacó y se movió en turno 1)* | Si eligió atacar en T1, ahora puede moverse. |
+| **Resultado** | Ataca y reposiciona en **1 turno**. Ventaja clara del Arquero. | Debe elegir: eficiencia o posición. Decisión más difícil. |
+
+### Escenario C — Mago en peligro, enemigo encima
+
+| Paso | Opción A (2 acciones) | Opción B (1 acción) |
+|---|---|---|
+| **Situación** | Orco al rango del Mago. Poca vida. | Ídem. |
+| **Turno 1** | Acción 1: mueve 2 losetas. Acción 2: mueve 2 más. Se aleja 4 en total. | Tira d3 → saca 2. Se mueve 2 losetas. Solo 2, no 4. |
+| **Resultado** | Se escapa más fácil gracias al doble movimiento. | Escape más limitado. El Orco probablemente lo alcanza. |
+
+> *Este escenario muestra la diferencia más clara entre ambos sistemas. En Opción A el Mago puede escapar cómodamente; en Opción B queda más expuesto y el combate es más tenso.*
+
+*Fuente: sistema_combate_v5.md §4*
 
 ---
 
-# Special Dice
-Beyond standard numbered dice, some dice found during a run have built-in special effects that trigger on specific results. Examples:
-* A die that deals fire damage on its highest face
-* A die that heals the player when it rolls a 1
-* A die that boosts adjacent dice values when used in a combo
+# Flujo del Juego
 
-Special dice follow the same Power Budget rules and are rolled with all other dice. They can be used for movement OR Generala. Specific special dice types [TBD].
+[TBD — Falta definir el diagrama de flujo completo: Menú Principal → Selección de Clase → Armado de Bolsa de Dados → Exploración del Piso → Salas (combate/tienda/craps/etc.) → Boss → Siguiente Piso → Victoria/Game Over → Pantalla de Resultados → Menú de Desbloqueos.]
 
 ---
 
-# Face Enchanting (Item/Shop Territory)
+# Bolsa de Dados — El Inventario
 
-Face enchanting has been moved from a core mechanic to an **item/shop service**. Available when the player finds/buys the appropriate item or visits a shop that offers the service.
+## Sistema de Espacios
 
-| Enchantment Type | Effect |
-|-----------------|--------|
-| Value increase | +1 to +3 to a specific face |
-| Value set | Set a face to a specific value |
-| Face removal | Remove a face (fewer faces = higher avg values) |
-| Damage multiplier | That face deals increased damage in combos |
-| Special effect | Unique effect on that face (poison, lifesteal, shield, etc.) |
+El inventario tiene 5 espacios. Los dados más grandes ocupan más espacio, forzando al jugador a elegir entre cantidad de dados (más combos posibles) y potencia de cada dado (más daño por cara).
 
-> **Balatro parallel:** Face enchanting is how base combos become devastating. An enchanted trio of 7s does far more than a base trio of 5s.
+| Tipo de Dado | Espacios | Rango de Caras | EV | Mult. daño | Rol de diseño |
+|---|---|---|---|---|---|
+| d3 | 1 | 1–3 | 2.0 | ×0.57 | Generala muy fácil (P=1/9 por tirada). Daño muy bajo. Especialista. |
+| d4 | 1 | 1–4 | 2.5 | ×0.71 | Combos fáciles, daño bajo. Cazador de repeticiones. |
+| d6 | 1 | 1–6 | 3.5 | ×1.00 | Referencia base. Equilibrado. |
+| d8 | 1 | 1–8 | 4.5 | ×1.29 | Mayor EV por espacio. Debe ser poco común o caro en la progresión. |
+| d10 | 2 | 1–10 | 5.5 | ×1.57 | Daño alto, menos dados disponibles. |
+| d12 | 2 | 1–12 | 6.5 | ×1.86 | Alta varianza, daño bruto. |
+| d20 | 3 | 1–20 | 10.5 | ×3.00 | Extremo. Solo cabe con 2 dados chicos. Desbloqueo final del meta. |
 
-Specific enchanting costs, availability, and balance [TBD].
+> *El multiplicador de daño se calcula como EV_dado / EV_d6 (3.5). El d3 es el dado con más probabilidad de Generala (P=1/9 por tirada) pero el menor daño (×0.57). El d8 tiene el mejor ratio EV/espacio — debe ser poco común o caro en la progresión.*
 
----
+## Reglas de la Bolsa
+* Todos los dados en la bolsa se tiran cada turno de ataque
+* Más dados = más opciones para combos
+* Dados más grandes (d10, d12) = valores más altos en combos
+* La build se arma durante la run a través de tiendas, loot y recompensas
+* La combinación elegida define el rango de daño, los combos posibles y la probabilidad de conseguirlos
 
-# Items System (Isaac Model)
+## Espacio de Builds
 
-## Overview
-Items are the complexity layer. The base game is intentionally simple — items BREAK the rules in interesting ways. Every item should make the player feel like they're "cheating" the system.
+Con 6 tipos de dados y 5 espacios con costos variables, el sistema genera **227 builds posibles** (1-5 espacios). Las builds que usan los 5 espacios completos son 120.
 
-**Critical design note:** Since Pick & Roll has **no base defense**, items that provide defense, healing, and damage reduction are ESSENTIAL to survive multi-room floors. This creates strong demand for the shop and makes every item drop meaningful.
+| Build | Espacios | Dados | EV/tirada | Mult. | Arquetipo |
+|---|---|---|---|---|---|
+| **5×d3** | 5 | 5 | 10.0 | ×0.57 | Generala casi segura — daño muy bajo. Consistencia pura. |
+| **5×d4** | 5 | 5 | 12.5 | ×0.71 | Cazador de combos fáciles |
+| **d3×3 + d6×2** | 5 | 5 | 13.0 | ×0.74 | Generala fácil en los d3 + daño decente de los d6 |
+| **5×d6** | 5 | 5 | 17.5 | ×1.00 | Baseline — referencia |
+| **5×d8** | 5 | 5 | 22.5 | ×1.29 | ⚠ Muy fuerte — revisar rareza |
+| **d12 + 3×d4** | 5 | 4 | 15.0 | ×1.07 | Caótico — 1 dado potente + combos fáciles |
+| **d10 + d12 + d6** | 5 | 3 | 18.5 | ×1.59 | Potencia mixta |
+| **2×d10 + d6** | 5 | 3 | 15.0 | ×1.05 | Equilibrado medio |
+| **d20 + 2×d6** | 5 | 3 | 17.5 | ×1.58 | Apostador — alta varianza |
+| **d20 + d4 + d6** | 5 | 3 | 15.5 | ×1.35 | Sniper + soporte |
 
-## Item Sources
-* Shop rooms (purchased with Gold)
-* Combat rewards (random drop on enemy defeat — not guaranteed)
-* Sacrifice rooms (trade HP for random item — **blind**, player doesn't see what they'll get)
-* Boss drops (1 random item from boss loot pool — guaranteed)
-
-## Item Categories
-
-### Dice Items
-Modify the dice themselves or add new ones.
-* Example: Extra d6 — add a d6 to your bag (+1 power cost)
-* Example: Loaded Die — one die always shows its max face (but costs 2× power)
-* Example: Chameleon Die — this die copies the value of any adjacent die in your combo
-
-### Defense Items
-Add damage reduction or blocking that doesn't exist in base.
-* Example: Wooden Shield — reduce incoming damage by 2
-* Example: Iron Armor — first hit each room deals 0 damage
-* Example: Dodge Cloak — 25% chance to evade any attack entirely
-* Example: Pair Shield — when you roll a Pair, gain shield equal to pair value
-
-### Healing Items
-Restore HP — the only way to heal.
-* Example: Potion — heal 15 HP (consumable, limited uses per floor)
-* Example: Vampiric Dice — Generala combos heal 10% of damage dealt
-* Example: Lucky Clover — heal 5 HP when you roll a Straight or better
-
-### Movement Items
-Break movement restrictions.
-* Example: Escape Boots — after attacking, move 2 tiles free
-* Example: Shadow Step — split movement into 2 separate paths
-* Example: Magnetic Boots — +1 tile to movement total each turn
-
-### Combat Items
-Modify attack rules.
-* Example: Bow — attack enemies up to 3 tiles away (ranged)
-* Example: Whirlwind Blade — Generala damage hits ALL adjacent enemies (cleave)
-* Example: Shadow Dagger — on kill, teleport to an adjacent tile of the killed enemy
-* Example: Berserker Axe — +50% combo damage when below 30% HP
-
-### Combo Modifier Items
-Change how Generala combos work.
-* Example: Full House Ring — Full House multiplier increased from 35+sum to 50+sum
-* Example: Pair Specialist — Pairs deal ×2 instead of ×1.5
-* Example: Straight Flush — if your Straight uses all same-type dice, double damage
-* Example: Lucky Seven — any die showing 7 counts as wild (matches any value)
-
-### Passive Items
-Always-on modifiers.
-* Example: Gold Magnet — enemies drop 50% more gold
-* Example: Scout — see enemy HP and intended action before your turn
-* Example: Thick Skin — +10 max HP
-
-### Special / Rule-Breaking Items
-Items that fundamentally alter the game's rules.
-* Example: Time Loop — if your Generala phase results in High Die only, reroll all free
-* Example: Battle Frenzy — roll your dice twice this turn, pick the better set
-* Example: Combo Chain — if you get Three of a Kind or better, gain a bonus attack
-
-### Prototype Items (5 — Confirmed)
-
-These 5 items are the minimum for the prototype. All live in the dice/combo space (Balatro joker philosophy):
-
-| Item | Category | Effect | Price | Why it exists |
-|------|----------|--------|-------|---------------|
-| **Pair Specialist** | Combo Modifier | Pair multiplier ×2.5 instead of ×1.5 | 30g | Makes the most common combo viable. Build-around: many same-type dice |
-| **Loaded Die** | Dice Modifier | One die always shows its max face. Costs 2× power budget | 35g | Guarantees a high die for movement OR combo. Trade-off: expensive in power budget |
-| **Reroll Token** | Dice Modifier | +1 extra reroll in Generala phase (4 rerolls instead of 3) | 25g | Pure control. More chances to build combos. Simple, always useful, never broken |
-| **Combo Chain** | Combo Modifier | If you roll Three of a Kind or better → roll 1 bonus die as extra damage (face value = bonus damage) | 40g | Rewards strong combos with bonus damage. Moderate snowball — it's 1 die, not a full Generala |
-| **Smoke Bomb** | Escape Modifier | When leaving adjacency, negate the enemy's Opportunity Attack 1d6 (you still deal yours) | 20g | Makes escape a viable tactic. Without it, fleeing always costs HP |
-
-**Synergy example:** Pair Specialist + Loaded Die in a 6×d6 bag → Loaded Die always shows 6, remaining 5 dice have high Pair chance → consistent ×2.5 Pair damage.
-
-Full item list [TBD — need at least 20 items for vertical slice].
+*Fuente: sistemasDaños.md §1.1, §1.2*
 
 ---
 
-# Passives System
-
-## Overview
-Throughout the run, the player acquires passive abilities from shops, combat rewards, or special rooms. Passives are always active and modify how dice, combos, movement, or defense behaves.
-
-## Examples
-* Increase combo damage multipliers
-* Grant extra gold per fight
-* Add effects when certain conditions are met (on Pair, on Generala, on kill)
-* Modify dice pool or Power Budget
-
-Passives stack and interact with each other and with special dice, creating potential for powerful synergy chains. Specific passives [TBD].
+# Dados Especiales
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Characters — Classes and Builds
+# Face Enchanting (Encantamiento de Dados)
 
-## Overview
-D&D-inspired classes, each pushing toward a different playstyle without forcing a single build.
+En salas especiales, el jugador puede gastar oro para encantar un dado. El encantamiento es aleatorio (estilo gacha controlado). El dado encantado reemplaza al original en el inventario. Conserva el mismo costo de espacios que el dado base.
 
-## Classes
+## Ejemplos de Encantamientos
 
-| Class | Starting Dice | Power Budget | HP | Affinity Combo | Class Passive |
-|-------|--------------|-------------|-----|----------------|--------------|
-| Warrior | 4×d6 + 2×d8 | 8 | 100 | Full House (+20% dmg) | [TBD] |
-| Mage | 2×d6 + 3×d8 | 8 | 80 | Straight (+20% dmg) | [TBD — e.g. reroll one extra time per Generala] |
-| Rogue | 6×d6 | 6 | 90 | Pair (+30% dmg) | [TBD — e.g. +2 tiles when moving] |
+| Dado | Encantamiento | Efecto |
+|---|---|---|
+| d6 | de hielo | Si sale 6 → el enemigo pierde velocidad por 1 turno (recarga la barra de energía más lento) |
+| d12 | par | Cuando sale cara par (2,4,6,8,10,12) → +20% daño en ese combo |
+| d8 | de fuego | Si sale 8 → aplica quemadura (daño continuo por 2 turnos) |
+| d4 | doble | Una vez por combate, el valor del d4 cuenta doble |
+| d6 | maldito | Siempre hace +15% daño PERO si sale 1 → te quita HP a vos |
+| d10 | de veneno | Si contribuye a un combo, el enemigo queda envenenado |
 
-Characters unlock via meta-progression milestones.
+> *Los dados encantados deberían distinguirse visualmente (color diferente, ícono de elemento).*
+>
+> *❓ ¿Cuántos encantamientos puede tener un dado? ¿Se puede re-encantar o el primer encantamiento es definitivo?*
 
-**Prototype:** Warrior with fixed stats to test all mechanics.
-
----
-
-# Enemies and Bosses
-
-## Enemy Design
-Every enemy blends classic fantasy + casino theming.
-
-### Known Enemy Archetypes
-
-| Enemy | Tier | Attack Dice | Movement | HP | Behavior | First Appears |
-|-------|------|------------|----------|-----|----------|--------------|
-| **Croupier Goblin** | Weak | 2×d6 (2-12 dmg) | 1-3 tiles | 40 | Aggressive: moves toward player | Floor 1 |
-| **Chip Golem (Orc)** | Strong | 2×d8 (2-16 dmg) | 1-2 tiles | 60 | Aggressive: moves toward player, slow | Floor 1 |
-| **Card Archer** | Normal | 1×d6 ranged | 1-2 tiles | 30 | Flee: runs if player is adjacent, attacks from range | Floor 2+ |
-| **Living Die** | Normal | [TBD] | [TBD] | [TBD] | [TBD] | Floor 1 |
-
-### Enemy Attack
-* Enemies **always hit** — no threshold, no miss chance
-* They roll their attack dice and the result is direct damage to the player
-* **No damage reduction in base** — the full roll is the full damage (items add defense)
-
-### Enemy Movement
-* Each enemy rolls for movement on their turn (1-N tiles based on enemy type)
-* Enemies always move toward the player using BFS pathfinding around obstacles
-* **Enemies only activate when the player is in the same room** — other rooms are frozen
-
-### Enemy Energy & Enrage
-* Each enemy has a separate energy bar (Goblin: max 50, +15/round. Orc: max 40, +12/round)
-* When energy reaches max → **Enraged** state
-* Enraged attack: **60% chance to deal ×2 damage**, then energy resets to 0
-* Creates urgency to kill enemies quickly — leaving them alive is punished
-* Already implemented in code (`EnemyState.IsEnraged`, `EnemyEntity.RollAttack`)
-
-### Enemy Count Per Room
-* **Floor 1:** 1-2 enemies per combat room
-* **Floor 2:** 1-3 enemies per combat room
-* **Floor 3+:** 1-3 enemies per combat room (harder tiers, potential elites)
-
-## Boss Design
-Bosses are NOT enemies with more health. They have unique mechanics that change combat rules:
-* Modifying the player's dice (cursing faces, reducing values)
-* Starting with adds (extra enemies already in the room)
-* Changing their own stats between phases
-* Applying debuffs (reduced Power Budget, cursed dice faces)
-
-Each boss forces the player to adapt their strategy.
-
-### The Dealer (Floor 1 Boss)
-
-**Stats:** 100 HP, 2×d8 attack, speed 1-2
-**Room setup:** The Dealer + 2 Croupier Goblins (40 HP each, 2×d6, speed 1-3) already in the room
-
-| Phase | HP Threshold | Mechanic |
-|-------|-------------|----------|
-| **1** | 100→40 | Normal behavior. The Goblins do the dirty work while The Dealer hits hard. |
-| **2** | 40→0 | **Curses 2 player dice:** -2 value for Generala (but full value for movement). Curse lasts 2 turns. Speed increases to 2-3. |
-
-**Tactical decision:** Kill Goblins first (safer but more turns = more Dealer enrage accumulation) or rush The Dealer (risky but ends the fight faster, eating damage from 3 sources).
-
-**Phase 2 curse interaction with Pick & Roll:** Cursed dice are worth -2 in Generala but full value for movement → player is incentivized to use cursed dice for movement and keep clean dice for combos. This is a dice-space mechanic, consistent with the game identity.
-
-Additional boss designs [TBD — need at least 1 more for Floor 2].
+*Fuente: sistemasDaños.md §4.1*
 
 ---
 
-# Dungeon Structure
+# Barra de Energía y Craps Mode
 
-## Overview
-Procedural dungeons organized in a room matrix (Isaac-style). Each floor has a different casino aesthetic.
+## Barra de Energía
 
-## Room Types
+El jugador tiene una barra de energía que se recarga cada turno. La **velocidad** del jugador determina cuánta energía se recarga por turno. Velocidad baja → energía lenta → Craps poco frecuente. Al llenarse → **Craps Mode se activa**.
 
-| Icon | Type | Description | Frequency |
-|------|------|-------------|-----------|
-| SWD | Combat | Enemies on grid, turn-based combat | Common |
-| BOS | Boss | Unique mechanics, guaranteed item drop | 1 per floor |
-| SHP | Shop | Buy items, dice, passives, enchanting | 1-2 per floor |
-| SKL | Sacrifice | Lose max HP in exchange for random item (**blind**) | Rare |
+## Craps Mode — La Apuesta
 
-## Floor Generation
-* 8-14 rooms connected in a grid
-* Required rooms: Combat (majority), Shop (1), Boss (1)
-* Each room = 8×8 grid with 4-6 fixed obstacles
-* Player moves freely between rooms using doors
-* Floor ends when boss is defeated
+Cuando la barra está llena, el jugador puede apostar el resultado de su próxima tirada de combate:
+
+* **Ganás la apuesta → daño ×2**
+* **Perdés la apuesta → daño ×0**
+
+> *❓ Por definir: ¿La barra de energía se resetea al usarla o queda en 0 y vuelve a cargarse? ¿Se puede elegir NO usar el Craps si ya está llena?*
+
+*Fuente: sistemasDaños.md §2.2*
+
+---
+
+# Tachar Combos — Mecánica de Crisis
+
+El jugador puede "tachar" uno de los combos de su lista. Al tacharlo, ese combo deja de otorgar daño para el resto de la partida, pero a cambio recibe un beneficio inmediato:
+
+```
+TACHAR UN COMBO                →    BENEFICIO INMEDIATO         →    CONSECUENCIA PERMANENTE
+(ej: sacrificar Full House)         Opción A: recuperar X% de HP     El combo tachado no vuelve
+Ese combo ya NO otorga daño         Opción B: +ataque por N turnos   más en esa corrida.
+el resto de la partida.
+```
+
+> *El tachar un combo es una mecánica de presión extrema — se usa cuando estás en crisis. Diseñar con cuidado cuántas veces se puede usar por corrida (sugerido: 1 vez por sala, máx. 3 por corrida).*
+>
+> *❓ Por definir: ¿cuántos combos se pueden tachar por corrida? ¿Los combos tachados se pueden 'restaurar' pagando algo?*
+
+*Fuente: sistemasDaños.md §2.3*
+
+---
+
+# Sistema de Defensa
+
+⚠ *Pendiente de diseño.*
+
+| Opción | Descripción | Ventaja | Riesgo |
+|---|---|---|---|
+| **Defensa fija** | Valor de armadura que reduce el daño recibido | Simple de entender | Puede hacer el combate muy pasivo |
+| **Defensa por combo** | Si el jugador saca cierto combo (ej: escalera), bloquea el próximo ataque | Integra la mecánica de dados a la defensa | Añade complejidad al turno |
+| **Defensa como recurso** | El jugador puede gastar dados de su inventario para absorber daño | Crea tensión entre atacar y sobrevivir | Más complejo de implementar |
+
+*Fuente: sistemasDaños.md §2.4*
+
+---
+
+# Sistema de Huida
+
+⚠ *Pendiente de decisión — Se presentan las opciones para discusión del equipo.*
+
+## Costo de Huida (por rango de enemigos)
+
+| Situación al huir | Consecuencia |
+|---|---|
+| Ningún enemigo tiene al jugador en su rango | Huida sin costo |
+| 1 enemigo tiene al jugador en rango | 1 ataque de oportunidad antes de salir. Sin defensa posible. Daño reducido (pendiente: ¿50%?, ¿fijo?) |
+| 2+ enemigos tienen al jugador en rango | Cada enemigo ejecuta 1 ataque de oportunidad. Huir rodeado es muy costoso. |
+
+## El Problema Central — El Caso del Arquero
+
+El Arquero bien posicionado huye sin costo porque ningún enemigo lo tiene en rango. Esto es intencional — el Arquero paga por su posición con la falta de movilidad ofensiva.
+
+## Mecánica de Huida — Opciones
+
+| Opción | Cómo funciona | Implicación de diseño |
+|---|---|---|
+| **A — Tirada de escape** | Tirar dados para escapar. Puede fallar y perder turno. | Tensión alta, pero fallar puede ser muy frustrante. |
+| **B — Escape garantizado con costo** | Siempre podés huir, pero enemigos en rango te atacan de oportunidad. | Huida como herramienta táctica predecible. |
+| **C — Consumir turno completo** | Huir gasta toda la acción. Los enemigos actúan normalmente antes de que salgas. | Simple de implementar. Siempre recibís al menos 1 round de daño extra. |
+
+> *Recomendación: Opción B (escape garantizado con costo por rango) + reseteo en sala es la más coherente con el diseño roguelike.*
+
+## Enemigos tras la Huida
+
+| Opción | Comportamiento | Implicación |
+|---|---|---|
+| **Reseteo en sala** | Vuelven a estado inicial. El jugador puede reintentar. | Favorece exploración roguelike. Huir no es irreversible. |
+| **Persecución** | Los enemigos te siguen a la sala anterior. | Alta presión, pero puede frustrar si el jugador quedó debilitado. |
+| **Sala bloqueada** | Tras huir, la sala se cierra permanentemente. | Penaliza mucho. Riesgo de contenido inaccesible. |
+
+*Fuente: sistema_combate_v5.md §6*
+
+---
+
+# Personajes — Clases y Builds
+
+Las clases son el motor del sistema de progresión. No dicen qué dados usar — dan pasivas que hacen que ciertos dados o combos sean más atractivos. El jugador sigue eligiendo su build libremente, pero la clase sesga naturalmente hacia un estilo.
+
+Las clases se eligen antes de iniciar la run. Nuevas clases se desbloquean permanentemente cumpliendo condiciones en runs anteriores.
+
+## Clase Inicial
+
+| Clase | Pasiva | Dados disponibles |
+|---|---|---|
+| **Guerrero** (siempre disponible) | Sin pasivas especiales. Daño calculado por fórmula base. El punto de partida limpio para aprender el sistema. | d4 y d6 |
+
+## Clases Desbloqueables
+
+| Clase | Condición de desbloqueo | Pasiva | Builds que potencia |
+|---|---|---|---|
+| **Berserker** | Win con 5×d6 (Guerrero) | **Primer golpe ×3.** La primera tirada de cada combate vale ×3 daño. No podés guardar dados en la primera tirada. | d8 y d12 — dados de alto EV que maximizan el golpe inicial |
+| **Gambler** | Win con 5×d4 (Guerrero) | **Escalera ×2 + Craps anticipado.** La escalera vale el doble. Barra de energía se activa 1 turno antes. | d4 + d12 — rangos amplios para escaleras más fáciles |
+| **Necromancer** | Berserker win sin tachar combos | **Triple repetición ×2.** Doble daño cuando 3+ dados muestran el mismo número (trío, póker, generala). | 3×d6 + 2×d12 — buscás tres 6 o tres 12 |
+| **Alchemist** | Win con d10 + d12 en la misma build | **Dados encantados ×1.5.** Los dados encantados cuentan ×1.5 en el multiplicador de daño. Sala de encantamiento es parada obligatoria. | Cualquier build — maximizar dados encantados |
+| **Trickster** | Gambler win sin usar el Craps | **Tacha doble.** Podés tachar 2 combos por run (en lugar de 1). HP recuperado al tachar es ×2. La clase de gestión de crisis. | Builds extremas — 5×d3 (seguro) o d20+resto (máximo daño) |
+
+*Fuente: rollgeon_progresion.md §2*
+
+---
+
+# Progresión y Meta-Progresión
+
+Rollgeon es un roguelike donde el jugador mejora permanentemente entre runs completando objetivos específicos con builds determinadas. Cada run tiene un inicio claro (elegir clase + bolsa de dados) y un objetivo secundario visible (las condiciones de desbloqueo).
+
+La inspiración principal es The Binding of Isaac: el juego te guía sutilmente hacia estilos de juego distintos sin obligarte, y cada desbloqueo amplía el pool de posibilidades sin invalidar lo anterior.
+
+## Flujo de Meta-Progresión
+
+```
+Elegir clase     →    Jugar la run    →    ¿Condición     →    Desbloqueo        →    Nueva run
++ bolsa de dados      (3 jefes)            cumplida?           permanente              con más opciones
+                                           (al ganar)          (dado/clase/pasiva)
+```
+
+> *Los desbloqueos son permanentes entre runs. Una vez desbloqueado un dado o clase, está disponible para todas las runs futuras.*
+
+## Árbol de Progresión — Condiciones de Desbloqueo
+
+### Tier 0 → Tier 2: Primera Run
+
+| Condición | Resultado | Tipo | Dificultad |
+|---|---|---|---|
+| Win con 5×d6 (Guerrero) | Desbloquea d8 + clase Berserker | dado + clase | Fácil — build consistente |
+| Win con d4×3 + d6×2 (Guerrero) | Desbloquea d10 | dado | Fácil — build mixta |
+| Win con 5×d4 (Guerrero) | Desbloquea d12 + clase Gambler | dado + clase | Media — build de baja varianza |
+
+> *Las condiciones requieren mantener la build exacta durante toda la run. El jugador no puede cambiar los dados entre combates si quiere cumplir la condición.*
+
+### Tier 2 → Tier 4: Runs Avanzadas
+
+| Condición | Resultado | Tipo | Diseño de la condición |
+|---|---|---|---|
+| Win con Berserker sin tachar ningún combo | Desbloquea Necromancer | clase | Sin tachar = no usás el sistema de emergencia. Alta habilidad. |
+| Win usando d10 + d12 en la misma build | Desbloquea Alchemist | clase | Explora builds de potencia con pocos dados (3 dados en 5 espacios). |
+| Win con Gambler sin activar el Craps | Desbloquea Trickster | clase | Ironía deliberada: el apostador que no apuesta. Requiere control. |
+
+### El d20 — Desbloqueo Final
+
+El d20 es el dado más extremo del sistema (EV 10.5, multiplicador ×3.00, ocupa 3 espacios). Su desbloqueo requiere demostrar conocimiento del sistema completo:
+
+| Condición para desbloquear el d20 |
+|---|
+| Completar una run con 3 clases distintas (en cualquier orden, en runs separadas) |
+
+> *El d20 no aparece en el menú hasta que se desbloquea. Antes de eso, el slot está vacío o tiene un candado sin ninguna pista — el jugador tiene que descubrir la condición por sí solo o mediante la pantalla de objetos bloqueados.*
+
+## Principios de Diseño para las Condiciones
+
+### Dos Tipos de Condiciones
+
+| Tipo | Descripción | Ejemplo | Cuándo usar |
+|---|---|---|---|
+| **Simple** | Legible antes de la run. El jugador puede planificar toda la run. | "Ganá con 5×d6" | Tier 1-2. Jugador aprendiendo. |
+| **Compleja** | Requiere trackeo de métricas durante la run. Se verifica en resultados. | "Que escalera sea tu combo más usado" | Tier 3-4+. Jugadores avanzados. |
+
+> *Las condiciones complejas son ideas para futuras iteraciones. En el prototipo priorizar condiciones simples.*
+
+### Checklist de Diseño para cada Condición
+- ¿El jugador puede leerla antes de la run y entender exactamente qué tiene que hacer?
+- ¿Es verificable por el juego sin ambigüedad? (sí/no, no "más o menos")
+- ¿Empuja al jugador hacia una build o estilo que no usaría normalmente?
+- ¿Es alcanzable en una run razonablemente bien jugada (no requiere suerte extrema)?
+- ¿La recompensa tiene sentido temáticamente con la condición?
+
+*Fuente: rollgeon_progresion.md §3, §5*
+
+---
+
+# Menú de Objetos Desbloqueados
+
+La pantalla de "objetos desbloqueados" es el hub central de meta-progresión. El jugador la accede desde el menú principal. Muestra todos los dados y clases del juego, incluyendo los bloqueados.
+
+## Estados de Items
+
+| Estado | Visual | Hover / tooltip | Lógica |
+|---|---|---|---|
+| Desbloqueado | Item en color con nombre visible | Descripción completa + pasiva | Disponible para seleccionar |
+| Bloqueado (condición simple) | Icono con candado, nombre oculto | Condición exacta de desbloqueo | Ej: "Ganá una run con 5×d6" |
+| Bloqueado (condición especial) | Icono con candado, nombre oculto | Pista vaga o "???" | Ej: el d20 solo dice "Se desbloquea demostrando dominio del sistema" |
+| Bloqueado (no descubierto) | Silueta genérica sin nombre | Sin tooltip — solo "???" | Para items cuya existencia es un secreto |
+
+> *El misterio del candado es parte del loop. Ver un objeto bloqueado sin saber exactamente qué hay detrás genera curiosidad y motiva runs adicionales.*
+
+## Pantalla de Resultados Post-Run
+
+Al terminar una run (win o game over), se muestra una pantalla de resultados:
+
+| Estadística mostrada | Para qué sirve |
+|---|---|
+| Combos más usados (ranking) | Permite ver si cumpliste condiciones tipo "escalera fue tu combo más usado" |
+| Dados usados en la build final | Confirma si cumpliste condiciones de build específica |
+| ¿Usaste el Craps? (sí/no) | Para la condición del Gambler |
+| ¿Tachaste algún combo? (sí/no) | Para la condición del Berserker |
+| Clase usada en esta run | Para trackear el progreso del desbloqueo del d20 |
+| Nuevos items desbloqueados | Resalta visualmente qué se desbloqueó |
+
+*Fuente: rollgeon_progresion.md §4*
+
+---
+
+# Sistemas de Mejora Intra-Run
+
+Se plantean 3 sistemas de mejora dentro de la run. El riesgo de diseño es la sobrecarga de sistemas — se recomienda priorizar 1 o 2 para el prototipo.
+
+## 1. Encantamiento de Dados (Prioridad 1)
+Ver sección Face Enchanting arriba.
+
+## 2. Contador de Combos (Inspirado en Balatro) (Prioridad 3 — Futuro)
+
+Cada vez que el jugador ejecuta exitosamente un combo específico, suma 1 al contador. Los contadores desbloquean efectos pasivos o aumentan el daño.
+
+```
+CONTADOR POR COMBO                    →    AL ALCANZAR EL UMBRAL
+Full House: ████░ (4/5)                    → Full House +5% daño permanente
+Generala:   ██░░░ (2/5)                    → O desbloquear pasiva especial
+Escalera:   █░░░░ (1/5)                    → O buff temporal por N turnos
+```
+
+**Variante posible:** Pasiva para el combo MENOS usado: *"La escalera te da escudo si no la usaste en 3 turnos"*
+
+> *Puede generar mucho texto de estado en pantalla. Considerar mostrarlo solo en la pantalla de build, no durante el combate.*
+
+## 3. Subida de Nivel (Prioridad 2)
+
+El jugador sube de nivel al acumular experiencia. Cada nivel otorga uno de:
+
+| Tipo de bonus | Descripción | ¿Complementa los otros sistemas? |
+|---|---|---|
+| Slot adicional | Desbloquea un 6.° espacio de inventario | ✓ Abre nuevas builds sin romper las existentes |
+| Bonus de HP | Aumenta el HP máximo del jugador | ✓ Simple, no interfiere con el sistema de dados |
+| Velocidad | Barra de energía se carga más rápido | ✓ Conecta directamente con el sistema Craps |
+| Punto de encantamiento | Da 1 encantamiento gratis al subir de nivel | ✓ Si se implementa Face Enchanting |
+
+> *Riesgo: si los 3 sistemas se implementan juntos, el juego puede volverse demasiado complejo para un prototipo. Sugerencia: arrancar solo con Subida de nivel + Encantamiento de dados.*
+
+## Priorización para el Prototipo
+
+| Sistema | Complejidad | Impacto en gameplay | Prioridad |
+|---|---|---|---|
+| Encantamiento de dados | Media | Alta — cambia el rol de cada dado | 1.° — Implementar primero |
+| Subida de nivel | Baja | Media — progresión simple y legible | 2.° — Fácil de agregar |
+| Contador de combos (Balatro) | Alta | Alta — pero necesita muchas cartas/pasivas | 3.° — Para iteración futura |
+
+*Fuente: sistemasDaños.md §4*
+
+---
+
+# Estructura del Dungeon
+
+## Layout del Piso
+
+- Entre 8 y 14 salas conectadas en grilla estilo Isaac.
+- Navegación libre entre salas mediante puertas.
+- El piso termina cuando se derrota al boss.
+
+## Tipos de Sala
+
+| Icono | Tipo | Descripción | Frecuencia |
+|---|---|---|---|
+| SWD | Combate | Enemigos en grilla, combate por turnos | Común |
+| BOS | Boss | Moveset único, pasivas, debuffs | 1 por piso |
+| SHP | Tienda | Comprar dados, encantar caras, adquirir pasivas | 1-2 por piso |
+| CRP | Craps | Apostar en combo, bonus o penalidad | Rara |
+| SKL | Sacrificio | Perder HP máximo a cambio de poder | Rara |
+| POT | Poción | Recarga el ítem de poción activo del jugador | Rara |
 
 ## Minimap
-Always visible in HUD. Shows:
-* Discovered rooms as filled tiles
-* Adjacent undiscovered rooms as outlines
-* Door connections as openings between tiles
-* Only 2 room types show icon labels: **T** (Shop), **B** (Boss)
-* All other rooms appear as blank tiles
+
+- Visible en el HUD en todo momento.
+- Muestra salas descubiertas; salas adyacentes como contornos.
+- Solo tres tipos de sala muestran etiqueta: **T** (Tienda), **B** (Boss), **P** (Poción).
+- El resto de salas aparecen como tiles en blanco. Las puertas se muestran como aperturas entre tiles.
+
+## Persistencia de Enemigos
+
+- Los enemigos vivos reaparecen con el HP que tenían cuando el jugador se fue.
+- La posición se aleatoriza al re-entrar.
+- Los enemigos muertos NO respawnean.
+
+## Progresión entre Pisos
+
+- El jugador avanza al siguiente piso al derrotar al boss.
+- Cada piso tiene una estética de casino distinta. Temas TBD por el equipo de arte.
+
+*Fuente: GDD PDF p27-28*
 
 ---
 
-# Shop System
+# Economía de Oro
 
-## Overview
-Functional shop room with items distributed on the floor.
+- Los enemigos dropean Gold al morir (no mejoras de dados).
+- El Gold se suma automáticamente al inventario cuando termina el combate.
+- El total de Gold es visible en el HUD en todo momento.
 
-## Shop Mechanics
-* Items have visible name and price text
-* Approaching an item shows full description + buy button
-* Purchase with accumulated Gold
-* Items not purchased persist if the player leaves and returns
-* Shop offers: items, extra dice, face enchanting service, passives
+## Tienda
 
-## Price Calibration
-* Standard item ≈ reward from 3-4 normal enemies
-* Premium item ≈ reward from 5 enemies
-* Defense items are slightly more expensive (high demand due to no base defense)
+- Items distribuidos en el suelo con nombre y precio visible.
+- Al acercarse: descripción completa + botón de compra.
+- Precio estándar: aproximadamente la recompensa de 3-4 enemigos. Precio premium: ~5 enemigos.
+- Items no comprados persisten entre visitas.
+
+*Fuente: GDD PDF p28*
 
 ---
 
-# Gold Economy
-
-## Overview
-* Enemies drop Gold on defeat — amount varies by tier
-* Gold auto-collects to inventory after combat
-* Gold total always visible in HUD
-* Spent in Shop rooms for items, dice, enchantments, and passives
-
-## Gold Drops by Enemy Tier
-
-| Enemy Tier | Gold Drop Range |
-|------------|----------------|
-| Weak | 3-7 gold |
-| Normal | 7-13 gold |
-| Strong | 12-18 gold |
-| Boss | 40-60 gold |
+# Sistema de Vida
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Life System
+# Sistema de XP / Subida de Nivel
 
-## Overview
-Life Points (HP) are the core health resource. Reaching 0 HP ends the run immediately.
-
-## Damage Sources (Base)
-* Enemy attacks (die result = direct damage, **no reduction in base**)
-* Sacrifice rooms (trade HP for power)
-
-## Healing Sources
-* Items only (Potion, lifesteal effects, passive abilities)
-* Cannot exceed maximum HP
-* **There is no base healing** — the player must find items to heal
-
-> **Balance note:** Without defense items, the player takes ~50 damage per 3-enemy room. With 100 HP, they can survive ~2 rooms before needing healing or defense items. This creates strong pressure to visit shops and take calculated risks in sacrifice rooms.
-
-## Player Stats
-
-| Stat | Function |
-|------|----------|
-| **HP (Vida)** | Total life points. 0 = death |
-| **Dice Bag** | All dice rolled each turn, split between move/attack |
-| **Power Budget** | Maximum total dice power cost |
-| **Affinity Combo** | Character's bonus combo type (+% damage) |
+Ver sección **Sistemas de Mejora Intra-Run → 3. Subida de Nivel** más arriba (Prioridad 2). Contiene la propuesta de bonus por nivel: slot adicional, bonus de HP, velocidad, punto de encantamiento. Fórmula de XP y curva de nivel TBD.
 
 ---
 
-# XP / Level Up System
-[TBD — Evaluate if intra-run XP/leveling is needed or if items + gold alone provide sufficient progression. To be decided after playtesting the core loop.]
+# Sistema de Menús
+
+### Pantalla de Bolsa de Dados
+- Pantalla de selección al inicio de la run.
+- Muestra dados disponibles, costo de cada uno, y presupuesto restante en tiempo real.
+- El jugador no puede confirmar si excede el presupuesto.
+- Diseño específico TBD.
+
+*Fuente: GDD PDF p37*
 
 ---
 
-# Menu System
+# UI y Visualización
 
-## Main Menu
-[TBD — Define screens and navigation]
+## HUD — Elementos Siempre Visibles
 
-## Pause Menu
-[TBD]
+- **Dados** — elemento central y más prominente
+- **Barra de vida del jugador**
+- **Barra de energía** (Craps mode)
+- **Total de Gold acumulado**
+- **Minimap** (esquina)
+- **Botón de huida** (solo durante combate)
 
-## Victory / Defeat Screens
-[TBD]
+## UI de Combate
 
-## Pre-Run Setup Screen
-[TBD — Character selection + Dice Bag loadout (if unlocked options exist)]
+- Zona de dados (zona de tirada + zona de reserva)
+- Indicador de tiradas restantes (máx. 3)
+- Botón "Atacar" (habilitado solo cuando al menos un dado está colocado)
+- Botón "Huir"
+- Barras de energía del jugador y enemigo
+- Feedback visual de resultados de combate (hit / miss) — pendiente de implementación en prototipo
 
----
+## UI de Tienda
 
-# UI & Visualization
+- Items distribuidos en el suelo con nombre y precio visible.
+- Al acercarse: descripción completa + botón de compra.
+- Balance de Gold visible en todo momento.
 
-## HUD Elements
-* **Gold counter** — always visible
-* **HP bar** — player health
-* **Dice pool** — shows all rolled dice with current values
-* **Movement preview** — tiles highlighted when dice are picked for movement
-* **Generala panel** — lateral panel showing locked/unlocked dice, roll count, combo preview
-* **Enemy HP bars** — visible when in range
-* **Enemy intent** — shows what each enemy will do next turn (Slay the Spire style) [TBD]
-* **Minimap** — room layout with discovery state
-
-## Combat UI — Pick & Roll Layout
-The combat UI stays on the grid (no scene transition):
-
-```
-┌──────────────────────────────────────────┐
-│  ┌─────────────────┐  ┌───────────────┐  │
-│  │                 │  │  GENERALA      │  │
-│  │    GRID         │  │  PANEL        │  │
-│  │    (always      │  │               │  │
-│  │     visible)    │  │  [3][5][6]    │  │
-│  │                 │  │  Lock: ☑ ☐ ☑  │  │
-│  │  P──→G    O     │  │  Roll 2/3     │  │
-│  │         A       │  │  Combo: Pair  │  │
-│  │                 │  │  Dmg: 12      │  │
-│  └─────────────────┘  └───────────────┘  │
-│  ┌─────────────────────────────────────┐  │
-│  │  DICE POOL: [4][2][5][3][6][3]     │  │
-│  │  MOVE: [drag dice here] = 0 tiles  │  │
-│  └─────────────────────────────────────┘  │
-└──────────────────────────────────────────┘
-```
-
-* **Dice Pool** (bottom): shows all rolled dice. Drag dice to Movement zone.
-* **Movement Zone** (bottom): dice placed here are summed for movement.
-* **Grid** (left): always visible, shows movement preview, enemies, obstacles.
-* **Generala Panel** (right): shows remaining dice for combo, lock/reroll buttons, combo preview, damage preview.
-
-## Visual Hierarchy
-Dice > Player > Enemies > Environment
+*Fuente: GDD PDF p36-37*
 
 ---
 
-# Save Progress
-[TBD — Define save system for meta-progression between runs]
+# Enemigos
+
+## Arquetipos de Enemigos
+
+Cada enemigo mezcla fantasía clásica + temática de casino:
+
+| Enemigo | Descripción | HP | Dado Movimiento | Daño | Notas |
+|---|---|---|---|---|---|
+| **Goblin Croupier** | Goblin + estética de dealer de blackjack | TBD | TBD | TBD | — |
+| **Dado Viviente** | Criatura dado con conciencia propia | TBD | TBD | TBD | — |
+| **Golem de Fichas** | Golem de piedra hecho de fichas de casino | TBD | TBD | TBD | — |
+| **Arquero de Rango** | Mantiene distancia mínima; si el jugador llega a 1×1, huye el turno siguiente | TBD | TBD | TBD | Huye si el jugador está en 1×1 |
+
+> *Cada enemigo tiene su propio dado de movimiento y patrón de ataque. Stats específicos TBD.*
+
+## Filosofía de Bosses
+
+Los bosses NO son enemigos con más HP. Tienen **mecánicas únicas** que cambian las reglas del combate: deshabilitar combos, robar dados, aplicar debuffs, o alterar cómo funciona el sistema de Generala en esa pelea. Cada boss fuerza al jugador a adaptar su estrategia. Lista de bosses TBD.
+
+## Combate Doble
+
+Cuando un segundo enemigo está en la sala durante el combate:
+- Avanza 1 tile por turno completo hacia el jugador, independientemente de su tipo.
+- Cuando llega: el jugador elige a qué enemigo atacar. Ambos enemigos atacan al jugador.
+- Termina cuando ambos son derrotados.
+
+*Fuente: GDD PDF p29*
 
 ---
 
-# Achievements & Rewards
-[TBD — Define milestones that unlock new content (Isaac model)]
+# Items y Pasivas
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Dialogue System
-[TBD — Boss introductions, shop keeper interactions if any]
+# Save / Progreso
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Audio & Atmosphere
-
-## Sound Effects (SFX)
-* Dice rolling on table (physics-driven)
-* Dice landing / settling
-* Combo confirmation (satisfying impact, scales with combo tier)
-* Generala celebration (special fanfare)
-* Damage dealt / received
-* Enemy death
-* Gold pickup
-* UI interactions (dice drag, lock click)
-
-## Music & Ambience
-* Casino-themed background music per floor
-* Combat intensity layers
-* Boss encounter themes
-* Shop ambient music
-
-## Visual Effects (VFX)
-* Dice physics with bounce and settle
-* Combo tier effects (Pair = small flash, Generala = screen explosion)
-* Damage numbers scaling with value
-* Screen darkening on heavy damage
-* Camera shake on big combos
-* Enemy death effects (coins burst)
-* Movement trail on grid when moving
-* Dice glow when locked
+# Audio y Atmósfera
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Tutorial & Accessibility
-
-## How the Game is Explained to Beginners
-* First room teaches: roll dice, pick movement, move on grid
-* Second combat teaches: Generala phase, locking, rerolling, combos
-* Combo damage chart is always accessible from pause menu
-* Tooltips on dice, items, and combos
-* Item descriptions explain what rule they break
-
-## Interactive Learning
-[TBD — Tutorial room design, progressive mechanic introduction]
+# Tutorial y Accesibilidad
+[TBD — pendiente de definir con el equipo]
 
 ---
 
-# Monetization
-One-time purchase. No microtransactions. No loot boxes.
+# Monetización
+
+Compra única. Sin microtransacciones. Sin loot boxes.
+
+*Fuente: GDD PDF p8*
 
 ---
 
-# Technical & Development
+# Técnico y Desarrollo
 
-## Core Formulas
+## Art Pipeline: Cel Shade + Pixel Filter
 
-### Pick & Roll Turn
-```
-1. all_dice = DiceBag.RollAll()
-2. movement_dice = PlayerPick(all_dice)  // 0 or more dice
-3. movement_tiles = Sum(movement_dice.face_values)
-4. Player.Move(movement_tiles)  // BFS pathfinding
-5. generala_dice = all_dice - movement_dice
-6. if Player.IsAdjacentToEnemy():
-7.     combo = Generala(generala_dice, max_rolls=3)  // lock/reroll
-8.     damage = ComboFormula(combo) + AffinityBonus
-9.     target_enemy.TakeDamage(damage)
-10. else:
-11.     // Generala skipped — wasted dice
-```
+Pipeline de renderizado estilizado combinando:
+- Cel shading a nivel de material
+- Filtro de pixelación por cámara
+- Bordes exteriores negros
+- Bordes interiores resaltados
+- Configurable desde el menú de Settings en runtime
 
-### Combo Formulas
-```
-HighDie:        highest_face × 1
-Pair:           sum_of_pair × 1.5
-TwoPair:        sum_of_both_pairs × 1.2
-ThreeOfAKind:   sum_of_trio × 2
-Straight:       30 + highest_die
-FullHouse:      35 + sum_of_all
-FourOfAKind:    sum_of_four × 3
-Generala:       sum_of_five × 5
-DoubleGenerala: sum_of_six × 8
-```
+### Post-processing en Cámara
+- Main Camera > UniversalAdditionalCameraData > m_RenderPostProcessing: true
+- Global Volume > profile: SampleSceneProfile.asset (Tonemapping, Bloom, Vignette, Motion Blur)
 
-### Enemy Attack
-```
-roll = sum(random(1, die_max) for each attack_die)
-damage = roll (always hits, no reduction in base)
-```
+### URP Pipeline
+- RP Asset activo: `Assets/Settings/PC_RPAsset.asset` > renderer: `PC_Renderer.asset`
+- Renderer features activos:
+  - **ScreenSpaceAmbientOcclusion**
+  - **PixelationFeature** (`Assets/Scripts/Rendering/PixelationFeature.cs` + `Assets/Shaders/Pixelation.shader`)
 
-### Movement
-```
-movement_tiles = sum(selected_dice_face_values)
-// No separate movement die. Dice are everything.
-```
+### Valores Configurados Actualmente
 
-## Item Formula Templates
-These formulas activate only when the corresponding item is equipped:
+| Parámetro | Valor |
+|---|---|
+| pixelSize | 4 |
+| normalEdgeStrength | 0.567 |
+| depthEdgeStrength | 0.492 |
 
-### Bow (Ranged Attack Item)
-```
-// Allows attacking enemies up to N tiles away
-// Still uses Generala combo for damage
-range = item.range  // e.g., 3 tiles
-if distance(player, target) <= range:
-    can_attack = true
-```
+### Gap Identificado
+No existe shader **CelShadeLit** en el proyecto. El filtro actual provee pixelación y detección de bordes pero NO toon banding a nivel de material.
 
-### Potion (Healing Item)
-```
-heal_amount = 15  // fixed per potion tier
-player.HP = min(player.HP + heal_amount, player.MaxHP)
-```
+### Arquitectura Objetivo
 
-### Pair Shield (Defense Item)
-```
-// When player rolls a Pair during Generala:
-if combo_type == Pair:
-    shield = pair_value  // e.g., pair of 5s = 5 shield
-    // Shield absorbs that much damage from next hit
-```
+**Etapa Material — Custom/CelShadeLit:**
+Shader URP-compatible con:
+- Diffuse cuantizado (NdotL banding, 3-5 bandas configurables)
+- Specular escalonado (opcional)
+- Rim light (opcional)
 
----
+| Parámetro | Descripción |
+|---|---|
+| `_BaseColor` | Color base |
+| `_ShadowColor` | Color de sombra |
+| `_BandCount` | Número de bandas de luz (int, 3-5) |
+| `_ShadowThreshold` | Umbral de corte de sombra |
+| `_SpecStep` | Paso especular (opcional) |
+| `_RimIntensity` | Intensidad de rim light (opcional) |
 
-# Reference Games
+**Etapa Cámara — ScriptableRendererFeature extendida:**
 
-| Game | What We Take | What We DON'T Take |
-|------|-------------|-------------------|
-| **The Binding of Isaac** | Procedural dungeons, meta-progression, item-breaks-rules philosophy, extreme variety | Reflex dependency, bullet hell |
-| **Balatro** | Build depth, addictive loop, casino aesthetic, base hands weak + builds make them strong | Lack of exploration, static gameplay |
-| **Slay the Spire** | Visible enemy intent, deck/hand as resource, strategic decision depth | Card system (we use dice) |
-| **Dicey Dungeons** | Dice as combat resource, dice assignment to slots, accessibility | Consumable dice (ours are permanent) |
-| **XCOM 2 / Fire Emblem** | Grid tactics, positioning matters, probability-based decisions | Real-time, complex unit management |
-| **For the King** | Focus points as scarce control resource, party dice mechanics | Party system |
-| **Crypt of the Necrodancer** | Grid movement, tile-based combat, pacing | Music synchronization |
+| Control | Notas |
+|---|---|
+| PixelSize | — |
+| OuterEdgeStrength | — |
+| OuterEdgeThreshold | — |
+| InnerEdgeStrength | — |
+| InnerEdgeThreshold | — |
+| EdgeColor | default: black |
 
----
+### Orden de Render Pass
+1. Renderizar escena opaque/transparent con CelShadeLit
+2. Extracción de bordes (depth/normal driven)
+3. Composición de bordes sobre color de escena
+4. Pixelación del frame final compuesto
+5. Stack de post-process built-in (si está habilitado)
 
-# Unique Selling Points
+### Presets de Configuración
 
-| # | USP | Why It Matters |
-|---|-----|---------------|
-| 1 | Dice are EVERYTHING | They're not just RNG — they're your movement, your attack, your build, your identity. Every die has dual purpose. |
-| 2 | Pick & Roll tension | Every turn starts with THE decision: which dice move you, which dice fight for you? |
-| 3 | Generala on a grid | Classic Yahtzee combo-chasing meets tactical positioning. No other game combines these. |
-| 4 | Simple core, items transform | Roll, pick, move, combo. Items add defense, range, cleave, healing — Isaac philosophy. |
-| 5 | Pure strategy, no reflexes | Anyone can play. Difficulty is thinking, not aiming. |
-| 6 | Deep build-crafting | Special dice, items, enchanting, passives that chain. Every run builds differently. |
-| 7 | Real casino tension | Every Generala phase is a gamble. Lock or reroll? Chase the Full House or settle for Three of a Kind? |
+| Preset | BandCount | PixelSize | OuterEdge | InnerEdge |
+|---|---|---|---|---|
+| Toon Soft | 5 | 2 | 0.25 | 0.20 |
+| Toon Strong | 3 | 1 | 0.45 | 0.30 |
+| Pixel Toon | 4 | 4 | 0.55 | 0.40 |
+
+### Riesgos y Mitigaciones
+
+| Riesgo | Mitigación |
+|---|---|
+| Flicker de bordes durante movimiento | Ajustar thresholds y clamp response |
+| Bordes interiores con ruido excesivo | Bajar inner strength + agregar threshold mínimo de contraste |
+| Costo en Mobile | Deshabilitar feature en Mobile_Renderer o usar preset de menor costo |
+| Inconsistencia de arte | Forzar uso de CelShadeLit en todos los meshes de gameplay |
+
+*Fuente: GDD PDF p38-41*
 
 ---
 
-# Design Philosophy — One Line
+# Juegos de Referencia
 
-> Roll all your dice. Pick which ones move you. Use the rest for Generala. Items break the rules. Every die is a decision.
+| Juego | Qué tomamos | Qué NO tomamos |
+|---|---|---|
+| **Balatro** | Profundidad de build, loop adictivo, estética casino, sistema de combos | Falta de exploración, gameplay estático/lineal |
+| **The Binding of Isaac** | Mazmorras procedurales, meta-progresión, variedad extrema | Dependencia de reflejos, bullet hell |
+| **Crypt of the Necrodancer** | Movimiento en grilla, combate por tiles, ritmo | Sincronización musical |
+| **Dicey Dungeons** | Dados como recurso de combate, accesibilidad | Sus dados son consumibles por turno, los nuestros son builds permanentes |
+| **Luck be a Landlord** | Sinergias de combos dados/slots, loop de apuesta | Gameplay pasivo, sin agencia del jugador por turno |
+| **Dice A Million** | Game feel de dados, feedback visual/sonoro satisfactorio, dados con efectos únicos, dopamina de "los números suben", profundidad de build-crafting | Sin exploración, sin gameplay espacial, pantalla estática |
 
----
-
-# Game Identity Pillars
-
-1. **Dice are EVERYTHING** — They're not RNG, they're the build, the inventory, the identity. Every die serves movement OR attack.
-2. **Simple core, items break rules** — Base = roll, pick, move, combo. Items add defense, range, healing, cleave. Isaac philosophy.
-3. **Pick & Roll tension** — Every turn starts with THE split decision. Sacrifice dice for position or keep them for damage?
-4. **Generala chasing** — Lock, reroll, chase the combo. Balatro feeling: base combos are okay, builds make them devastating.
-5. **Strategy over reflexes** — Pure turn-based. The difficulty is thinking.
-6. **Roguelite progression** — Each run is unique: dice, items, passives, rooms.
+*Fuente: GDD PDF p8*
 
 ---
 
-# Open Questions (Pending Team Discussion)
+# Puntos de Venta Únicos
 
-## Critical
-1. ~~**Combat system** — threshold vs Generala~~ **RESOLVED: Pick & Roll** (Generala with movement dice split)
-2. ~~**Dice Bag role**~~ **RESOLVED: Power Budget system**, all dice rolled every turn
-3. **Kiting** — Can the player infinitely outrun enemies? Do enemies need anti-kiting acceleration? [TBD — playtest first]
-4. **Item pool** — Need at least 20 items for prototype, especially defense items (no base defense = critical)
+Extraídos del Elevator Pitch y Oportunidad de Mercado (ya documentados en este GDD):
 
-## Important
-5. **Character stats** — Warrior/Mage/Rogue starting dice, HP, affinity, passive (Warrior defined, others TBD)
-6. **Boss mechanics** — At least 1 boss with unique rules for prototype
-7. **Grid migration** — When to switch from 4-cardinal to hexagonal?
-8. ~~**Enemy energy/enrage**~~ **RESOLVED: keep** (already coded, adds urgency)
-9. ~~**Craps Mode**~~ **RESOLVED: core mechanic** — available to all players when energy bar reaches 100. Opt-in bet before rolling. Gambler's Token eliminated.
+1. **Dados como build permanente** — Los dados no son recursos consumibles por turno (como Dicey Dungeons). Son el inventario, el arma y la identidad del jugador. Se coleccionan, se encantan cara por cara, y persisten durante toda la run.
+2. **Generala como sistema de combate** — Un sistema de combos universalmente conocido (especialmente en Argentina/Latinoamérica) aplicado al combate de un roguelite. Barrera de entrada extremadamente baja.
+3. **La brecha entre Isaac y Balatro** — Exploración procedural de mazmorras (Isaac) + profundidad de build-crafting estratégico (Balatro) en un solo juego. Sin reflejos, sin gameplay pasivo.
+4. **Tensión de apuesta constante** — Cada tirada es una decisión: ¿reservo o retiro? ¿Uso la Generala para atacar o tacho un combo para sobrevivir? El Craps Mode añade una capa más de riesgo/recompensa.
 
-## Nice to Have
-10. **Floor themes** — Casino aesthetic variants per floor (art team)
-11. **Sacrifice room** — Exact HP cost and item pool
-12. **Meta-progression** — What unlocks between runs?
-13. **Save system** — Technical approach for meta-progression persistence
+*Fuente: secciones Concepto y Oportunidad de Mercado de este mismo documento*
 
 ---
 
-# Prototype Scope (v0.1)
+# Filosofía de Diseño y Pilares de Identidad
 
-## What Must Work
-* Single character (Warrior) with: 100 HP, 4×d6 + 2×d8, Power Budget 8
-* **Pick & Roll turn system**: roll all → pick movement → move → Generala → damage
-* Grid-based movement with dice-as-movement (4-cardinal adjacency)
-* Rooms with fixed obstacles (8×8 grid, 4-6 obstacles)
-* Full Generala phase: lock dice, reroll up to 3 times, 9 combo types with damage formulas
-* Combo detection: HighDie, Pair, TwoPair, ThreeOfAKind, Straight, FullHouse, FourOfAKind, Generala, DoubleGenerala
-* Grid always visible during combat (lateral panel for Generala)
-* Enemy AI: Aggressive (BFS toward player), Flee (maintains distance)
-* Enemy types: Goblin (2×d6, 40HP), Orc (2×d8, 60HP), Archer (1×d6 ranged, 30HP)
-* Multi-enemy combat: choose target, all adjacent attack
-* Combat lock (adjacent enemies attack regardless)
-* Opportunity Attack: both roll 1d6 when leaving adjacency (base mechanic)
-* Enemy persistence across room visits
-* Enemies only active in player's current room
-* Procedural floor generation (8-14 rooms: combat, shop, boss)
-* 1-3 enemies per combat room (scaling with floor)
-* Shop with items, prices, and gold economy
-* Gold drops by tier (Weak: 3-7, Normal: 7-13, Strong: 12-18, Boss: 40-60)
-* Minimap with discovery and room type icons (T=Shop, B=Boss)
-* Floor transition: boss drop + stats screen + next floor
-* 5 prototype items: Pair Specialist, Loaded Die, Reroll Token, Combo Chain, Smoke Bomb
-* Boss fight: The Dealer (100 HP, 2 phases, 2 Goblin adds, dice curse mechanic)
-* Player energy bar (0-100) + Craps Mode (bet on combo before rolling, core mechanic)
+*Fuente: CLAUDE.md del proyecto + GDD PDF p7. Algunas reglas tienen contradicciones con el estado actual del GDD — marcadas con ⚠.*
 
-## What Can Wait
-* Multiple character classes
-* Special dice with unique effects
-* Full face enchanting system
-* Full passive system (20+ passives)
-* Sacrifice rooms
-* Hexagonal grid migration
-* Meta-progression / unlock system
-* Additional boss designs (Floor 2+)
-* Audio and VFX polish
-* Save system
-* Enemy energy/enrage system
-* Full 20+ item pool
+| # | Pilar | Descripción | Estado |
+|---|---|---|---|
+| 1 | **Los dados son TODO** | No son RNG — son el build, el inventario, la identidad del jugador. | ✓ Consistente con todo el GDD |
+| 2 | **Core simple, los items rompen reglas** | Base = tirar dados, armar combos, mover. Los items agregan defensa, curación, alcance, huida. Filosofía Isaac. | ✓ Consistente — Items y Pasivas pendiente de diseño |
+| 3 | **2 AP por turno** | Mover + Atacar. El orden importa. AP no usados se pierden. | ⚠ Sin decidir: el GDD presenta Opción A (2 acciones: mover+atacar combinables) y Opción B (1 sola acción por turno: mover O atacar). El prototipo actual usa 2 AP (Opción A). |
+| 4 | **Tensión de Generala** | Cada ataque es una apuesta: 3 tiradas para armar el mejor combo posible. Reservar o retirar dados, confirmar temprano o arriesgar otra tirada. Sin combo = 0 daño. Cuanto mejor el combo, más daño. | ✓ Consistente con el sistema de combate del GDD |
+| 5 | **Estrategia sobre reflejos** | Puramente por turnos. La dificultad está en pensar. | ✓ Consistente con todo el GDD |
+| 6 | **Progresión roguelite** | Cada run es única: dados, items, pasivas, salas. | ✓ Consistente con la sección de Meta-Progresión |
+
+---
+
+# Preguntas Abiertas (Pendientes de Discusión del Equipo)
+
+## Del Sistema de Combate (sistema_combate_v5.md)
+1. ¿Opción A (2 acciones) u Opción B (1 acción)?
+2. ¿Qué tamaño promedio tienen las salas? ¿5×5, 7×7, más?
+3. ¿El dado de velocidad (Opción B) suma varianza buena o frustrante?
+4. ¿Queremos que el Arquero pueda atacar y reposicionarse en el mismo turno?
+5. ¿El dado de velocidad es el resultado exacto o el límite máximo de movimiento?
+6. ¿Los monstruos también usan dado de velocidad o tienen losetas fijas?
+
+## Del Sistema de Daños (sistemasDaños.md)
+7. ¿Generala con 3 dados = Trío perfecto (base 60) o no existe?
+8. ¿Cuántos combos se pueden tachar por corrida? ¿Son restaurables?
+9. ¿La barra de energía se resetea al usar el Craps o queda en 0?
+10. ¿Los enemigos también tiran dados o tienen un patrón fijo de ataque?
+11. ¿Cuántos encantamientos puede acumular un dado?
+12. ¿El contador de combos es por corrida o persiste entre partidas?
+13. ¿El 6.° espacio de inventario (subida de nivel) queda permanente?
+
+## De Progresión (rollgeon_progresion.md)
+14. ¿Cuántas clases totales al lanzamiento? El árbol actual tiene 6.
+15. ¿El d3 tiene condición de desbloqueo o está disponible desde el inicio?
+16. ¿Se puede cambiar la build entre combates dentro de una run o es fija desde el inicio?
+17. ¿Las condiciones bloqueadas Tier 3+ muestran pista o "???" en el menú?
+18. ¿El d20 queda disponible para todas las clases o solo avanzadas?
+19. ¿Hay límite de clases desbloqueables por run?
+20. ¿El sistema de defensa es fijo, por combo, o como recurso?
+
+## Ideas de Condiciones Futuras
+
+| Condición | Dificultad | Posible recompensa |
+|---|---|---|
+| Win con Necromancer usando solo dados de 1 espacio | Alta | Clase o dado especial nuevo |
+| Win sin usar la sala de encantamiento en toda la run | Media | Dado con encantamiento preinstalado |
+| Win con el combo "par" como único combo en el último jefe | Muy alta | Pasiva global de meta |
+| Win con escalera como combo más usado en toda la run | Alta | Item relacionado con escaleras |
+| Win con el d20 incluido en la build | Media (una vez desbloqueado) | Skin o variante visual |
+| Game over en el tercer jefe con HP máximo (bug intencional) | Secreto | Easter egg / clase oculta |
+
+*Fuente: rollgeon_progresion.md §5.3, §6*
+
+---
+
+*— Rollgeon · Game Design Document V2 · v0.1 —*
