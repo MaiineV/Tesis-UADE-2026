@@ -86,11 +86,40 @@ public class InventoryBuilderUI : MonoBehaviour
         }
 
         var result = new List<DiceInstance>(poolSize);
-        for (int i = 0; i < poolSize; i++)
+
+        // Find d6 in available types
+        DiceData d6Type = null;
+        for (int i = 0; i < availableTypes.Length; i++)
+        {
+            if (availableTypes[i].NumberOfFaces == 6)
+            {
+                d6Type = availableTypes[i];
+                break;
+            }
+        }
+
+        // Guarantee minimum 5 d6
+        int guaranteed = 5;
+        if (d6Type != null)
+        {
+            for (int i = 0; i < guaranteed && i < poolSize; i++)
+                result.Add(DiceInstance.Create(d6Type));
+        }
+
+        // Fill remaining slots randomly
+        for (int i = result.Count; i < poolSize; i++)
         {
             int idx = UnityEngine.Random.Range(0, availableTypes.Length);
             result.Add(DiceInstance.Create(availableTypes[idx]));
         }
+
+        // Shuffle so d6 aren't always first
+        for (int i = result.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            (result[i], result[j]) = (result[j], result[i]);
+        }
+
         return result;
     }
 
