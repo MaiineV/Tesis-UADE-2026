@@ -5,23 +5,6 @@ public class ShopItemEntity : MonoBehaviour
     public ShopItemData ItemData { get; private set; }
     public Vector2Int GridPosition { get; private set; }
 
-    private static readonly Color ColorGold;
-    private static readonly Color ColorGreen;
-    private static readonly Color ColorCyan;
-    private static readonly Color ColorPurple;
-
-    static ShopItemEntity()
-    {
-        ColorUtility.TryParseHtmlString("#ffd54f", out Color gold);
-        ColorGold = gold;
-        ColorUtility.TryParseHtmlString("#66bb6a", out Color green);
-        ColorGreen = green;
-        ColorUtility.TryParseHtmlString("#4fc3f7", out Color cyan);
-        ColorCyan = cyan;
-        ColorUtility.TryParseHtmlString("#ab47bc", out Color purple);
-        ColorPurple = purple;
-    }
-
     public void Initialize(ShopItemData data, Vector2Int gridPos)
     {
         ItemData = data;
@@ -31,27 +14,18 @@ public class ShopItemEntity : MonoBehaviour
         transform.position = GridManager.Instance.GridToWorld(gridPos) + new Vector3(0, 0.3f, 0);
         transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
 
-        // Set color based on item type
-        Color itemColor;
+        Material mat;
         switch (data.ItemType)
         {
-            case ShopItemType.DiceAdd:
-                itemColor = ColorGold;
-                break;
-            case ShopItemType.PotionRefill:
-                itemColor = ColorGreen;
-                break;
-            case ShopItemType.Buff:
-                itemColor = ColorPurple;
-                break;
-            default: // StatBoostDex, StatBoostSpeed
-                itemColor = ColorCyan;
-                break;
+            case ShopItemType.DiceAdd:      mat = MaterialCache.ShopGold;   break;
+            case ShopItemType.PotionRefill:  mat = MaterialCache.ShopGreen;  break;
+            case ShopItemType.Buff:          mat = MaterialCache.ShopPurple; break;
+            default:                         mat = MaterialCache.ShopCyan;   break;
         }
 
         var meshRenderer = GetComponent<MeshRenderer>();
         if (meshRenderer != null)
-            meshRenderer.material.color = itemColor;
+            meshRenderer.sharedMaterial = mat;
 
         // Remove collider to avoid physics interference
         var col = GetComponent<Collider>();

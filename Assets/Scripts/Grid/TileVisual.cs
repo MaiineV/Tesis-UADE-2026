@@ -20,6 +20,7 @@ public class TileVisual : MonoBehaviour
         cube.transform.localScale = new Vector3(0.92f, 0.08f, 0.92f);
 
         meshRenderer = cube.GetComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = MaterialCache.GridTile;
         propBlock = new MaterialPropertyBlock();
 
         // Remove collider from visual cube (we handle clicks via raycast on ground plane)

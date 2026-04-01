@@ -11,10 +11,6 @@ public class PlayerEntity : MonoBehaviour
 
     public bool IsMoving { get; private set; }
 
-    private MaterialPropertyBlock propBlock;
-    private static readonly int ColorID = Shader.PropertyToID("_Color");
-    private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
-
     public void Initialize(CharacterData data, Vector2Int startPosition)
     {
         State = PlayerState.Create(data);
@@ -32,25 +28,8 @@ public class PlayerEntity : MonoBehaviour
             if (col != null) DestroyImmediate(col);
             Visual = cube.GetComponent<MeshRenderer>();
         }
-        propBlock = new MaterialPropertyBlock();
-        SetColor(data.CharacterColor);
+        Visual.sharedMaterial = MaterialCache.Player;
         transform.position = GridManager.Instance.GridToWorld(startPosition) + new Vector3(0, 0.4f, 0);
-    }
-
-    private void SetColor(Color color)
-    {
-        if (Visual == null) return;
-        // Set on material directly (reliable in URP)
-        Visual.material.color = color;
-        Visual.material.SetColor(BaseColorID, color);
-        // Also set via property block for override support
-        if (propBlock != null)
-        {
-            Visual.GetPropertyBlock(propBlock);
-            propBlock.SetColor(ColorID, color);
-            propBlock.SetColor(BaseColorID, color);
-            Visual.SetPropertyBlock(propBlock);
-        }
     }
 
     public void MoveTo(Vector2Int newPosition)

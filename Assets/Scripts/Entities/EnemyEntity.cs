@@ -49,26 +49,10 @@ public class EnemyEntity : MonoBehaviour
                 Visual = cube.GetComponent<MeshRenderer>();
             }
             propBlock = new MaterialPropertyBlock();
-            SetColor(data.EnemyColor);
+            Visual.sharedMaterial = MaterialCache.Get("Mat_" + data.EnemyName);
         }
 
         transform.position = GridManager.Instance.GridToWorld(position) + new Vector3(0, 0.4f, 0);
-    }
-
-    private void SetColor(Color color)
-    {
-        if (Visual == null) return;
-        // Set on material directly (reliable in URP)
-        Visual.material.color = color;
-        Visual.material.SetColor(BaseColorID, color);
-        // Also set via property block for override support
-        if (propBlock != null)
-        {
-            Visual.GetPropertyBlock(propBlock);
-            propBlock.SetColor(ColorID, color);
-            propBlock.SetColor(BaseColorID, color);
-            Visual.SetPropertyBlock(propBlock);
-        }
     }
 
     private Coroutine _bossPulseCoroutine;
@@ -84,6 +68,7 @@ public class EnemyEntity : MonoBehaviour
         Color baseColor = State.BaseData.EnemyColor;
         Color bright = Color.white;
         float speed = 2f;
+        if (propBlock == null) propBlock = new MaterialPropertyBlock();
 
         while (true)
         {
@@ -91,8 +76,10 @@ public class EnemyEntity : MonoBehaviour
             Color c = Color.Lerp(baseColor, bright, t * 0.4f);
             if (Visual != null)
             {
-                Visual.material.color = c;
-                Visual.material.SetColor(BaseColorID, c);
+                Visual.GetPropertyBlock(propBlock);
+                propBlock.SetColor(ColorID, c);
+                propBlock.SetColor(BaseColorID, c);
+                Visual.SetPropertyBlock(propBlock);
             }
             yield return null;
         }
@@ -179,14 +166,7 @@ public class EnemyEntity : MonoBehaviour
             float t = elapsed / duration;
             transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
 
-            // Fade via material
-            if (Visual != null)
-            {
-                Color c = State.BaseData.EnemyColor;
-                c.a = 1f - t;
-                Visual.material.color = c;
-                Visual.material.SetColor(BaseColorID, c);
-            }
+            // Scale-to-zero handles visual death (alpha on opaque URP material is a no-op)
 
             yield return null;
         }

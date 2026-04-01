@@ -473,8 +473,7 @@ public class GameManager : MonoBehaviour
                 _potionPickupObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
                 _potionPickupObj.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
                 var potionRenderer = _potionPickupObj.GetComponent<MeshRenderer>();
-                ColorUtility.TryParseHtmlString("#66bb6a", out Color potionColor);
-                potionRenderer.material.color = potionColor;
+                potionRenderer.sharedMaterial = MaterialCache.Potion;
                 var potionCol = _potionPickupObj.GetComponent<Collider>();
                 if (potionCol != null) Destroy(potionCol);
                 Log("A potion awaits! Walk to it to collect.");
@@ -1677,8 +1676,7 @@ public class GameManager : MonoBehaviour
         arrowObj.transform.localScale = new Vector3(0.1f, 0.1f, 0.4f);
         var arrowCol = arrowObj.GetComponent<Collider>();
         if (arrowCol != null) Destroy(arrowCol);
-        ColorUtility.TryParseHtmlString("#ffa726", out Color arrowColor);
-        arrowObj.GetComponent<MeshRenderer>().material.color = arrowColor;
+        arrowObj.GetComponent<MeshRenderer>().sharedMaterial = MaterialCache.Arrow;
 
         Vector3 start = currentCombatEnemy.transform.position + Vector3.up * 0.5f;
         Vector3 end = player.transform.position + Vector3.up * 0.5f;
@@ -2302,8 +2300,7 @@ public class GameManager : MonoBehaviour
             _portalObj.transform.position = GridManager.Instance.GridToWorld(center) + new Vector3(0, 0.3f, 0);
             _portalObj.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
             var portalRenderer = _portalObj.GetComponent<MeshRenderer>();
-            ColorUtility.TryParseHtmlString("#ffd54f", out Color portalColor);
-            portalRenderer.material.color = portalColor;
+            portalRenderer.sharedMaterial = MaterialCache.Portal;
             var col = _portalObj.GetComponent<Collider>();
             if (col != null) Destroy(col);
 

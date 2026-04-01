@@ -131,8 +131,8 @@ public class SceneSetup : MonoBehaviour
         orc.HasComboResistance = true;
         var archer = LoadOrCreateArcherData();
 
-        var playerPrefab = CreateEntityPrefab("PlayerPrefab", "#4fc3f7", typeof(PlayerEntity), PrimitiveType.Cube);
-        var enemyPrefab = CreateEntityPrefab("EnemyPrefab", "#66bb6a", typeof(EnemyEntity), PrimitiveType.Cube);
+        var playerPrefab = CreateEntityPrefab("PlayerPrefab", "Mat_Player", typeof(PlayerEntity), PrimitiveType.Cube);
+        var enemyPrefab = CreateEntityPrefab("EnemyPrefab", "Mat_Goblin", typeof(EnemyEntity), PrimitiveType.Cube);
 
         gm.InitializeData(warrior, goblin, orc, playerPrefab, enemyPrefab);
         gm.SetArcherData(archer);
@@ -254,7 +254,7 @@ public class SceneSetup : MonoBehaviour
         return data;
     }
 
-    private GameObject CreateEntityPrefab(string name, string colorHex, System.Type componentType, PrimitiveType shape)
+    private GameObject CreateEntityPrefab(string name, string materialName, System.Type componentType, PrimitiveType shape)
     {
         // Create root active so children are properly initialized
         var prefab = new GameObject(name);
@@ -269,11 +269,9 @@ public class SceneSetup : MonoBehaviour
         var col = meshGO.GetComponent<Collider>();
         if (col != null) DestroyImmediate(col);
 
-        // Set color on the material directly (works in URP + Built-in)
+        // Assign pre-created material from Resources
         var mr = meshGO.GetComponent<MeshRenderer>();
-        ColorUtility.TryParseHtmlString(colorHex, out Color c);
-        mr.material.color = c;
-        mr.material.SetColor("_BaseColor", c);
+        mr.sharedMaterial = MaterialCache.Get(materialName);
 
         // Add entity component and wire Visual field
         var comp = prefab.AddComponent(componentType);
