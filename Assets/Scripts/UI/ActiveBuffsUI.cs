@@ -238,7 +238,7 @@ public class ActiveBuffsUI : MonoBehaviour
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         nameTMP.text = debuff.Title;
         nameTMP.fontSize = 14;
-        nameTMP.color = _textColor;
+        nameTMP.color = _red;
         nameTMP.alignment = TextAlignmentOptions.Left;
         nameTMP.raycastTarget = false;
 

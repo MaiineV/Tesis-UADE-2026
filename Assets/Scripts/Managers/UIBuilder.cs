@@ -339,6 +339,8 @@ public class UIBuilder : MonoBehaviour
         minimapPanelRT.anchoredPosition = new Vector2(-10, -160);
         minimapPanelRT.sizeDelta = new Vector2(180, 140);
         minimapPanel.GetComponent<Image>().color = new Color(0, 0, 0, 0.6f);
+        var minimapMask = minimapPanel.AddComponent<Mask>();
+        minimapMask.showMaskGraphic = true;
 
         var minimapLabel = CreateTMPText("MinimapLabel", minimapPanel.transform, "MAP", 12,
             TextAlignmentOptions.Center, AccentGold);
@@ -355,6 +357,7 @@ public class UIBuilder : MonoBehaviour
         minimapCellContainerRT.anchorMax = new Vector2(0.9f, 0.85f);
         minimapCellContainerRT.offsetMin = Vector2.zero;
         minimapCellContainerRT.offsetMax = Vector2.zero;
+        minimapCellContainerRT.pivot = new Vector2(0.5f, 0.5f);
 
         var minimapUI = minimapPanel.AddComponent<MinimapUI>();
         minimapUI.Initialize(minimapCellContainer.transform);
