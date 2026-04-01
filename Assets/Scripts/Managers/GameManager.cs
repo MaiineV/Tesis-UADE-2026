@@ -464,6 +464,9 @@ public class GameManager : MonoBehaviour
             if (!room.PotionCollected)
             {
                 var center = new Vector2Int(GridManager.Instance.Width / 2, GridManager.Instance.Height / 2);
+                var cTile = GridManager.Instance.GetTile(center);
+                if (cTile == null || !cTile.IsWalkable || cTile.Occupant != null)
+                    center = findNearbyWalkableTile(center);
                 _potionPickupTile = center;
                 _potionPickupObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 _potionPickupObj.name = "PotionPickup";
@@ -1163,13 +1166,14 @@ public class GameManager : MonoBehaviour
 
     private Vector2Int findNearbyWalkableTile(Vector2Int center)
     {
-        // Search outward in a small radius
-        for (int r = 1; r <= 3; r++)
+        int maxRadius = Mathf.Max(GridManager.Instance.Width, GridManager.Instance.Height);
+        for (int r = 1; r <= maxRadius; r++)
         {
             for (int dx = -r; dx <= r; dx++)
             {
                 for (int dy = -r; dy <= r; dy++)
                 {
+                    if (Mathf.Abs(dx) != r && Mathf.Abs(dy) != r) continue;
                     var candidate = new Vector2Int(center.x + dx, center.y + dy);
                     var tile = GridManager.Instance.GetTile(candidate);
                     if (tile != null && tile.IsWalkable && tile.Occupant == null)
