@@ -162,13 +162,18 @@ public class CombatUI : MonoBehaviour
     public void UpdateDieLock(string diceId, bool isLocked)
         => UpdateSlotLock(diceId, isLocked, currentResults, dieSlots);
 
-    public void UpdateComboPreview(CombinationResult combo)
+    public void UpdateComboPreview(CombinationResult combo, float multiplier = 1f)
     {
         if (comboPreviewText == null) return;
-        if (combo.Type == CombinationType.HighDie)
-            comboPreviewText.text = "Combo: None";
+        if (multiplier > 1f)
+        {
+            int finalDmg = Mathf.RoundToInt(combo.BaseDamage * multiplier);
+            comboPreviewText.text = $"Combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} x {multiplier:F2} = {finalDmg} dmg";
+        }
         else
+        {
             comboPreviewText.text = $"Combo: {FormatComboName(combo.Type)} \u2192 {combo.BaseDamage} dmg";
+        }
     }
 
     public void ClearComboPreview()
@@ -214,10 +219,7 @@ public class CombatUI : MonoBehaviour
     public void UpdateDefenseComboPreview(CombinationResult combo)
     {
         if (defenseComboPreviewText == null) return;
-        if (combo.Type == CombinationType.HighDie)
-            defenseComboPreviewText.text = "Escudo: None";
-        else
-            defenseComboPreviewText.text = $"Escudo: {FormatComboName(combo.Type)}";
+        defenseComboPreviewText.text = $"Escudo: {FormatComboName(combo.Type)}";
     }
 
     public void ClearDefenseComboPreview()
@@ -356,7 +358,7 @@ public class CombatUI : MonoBehaviour
     {
         switch (type)
         {
-            case CombinationType.HighDie:        return "High Die";
+            case CombinationType.HighDie:        return "Dado Mas Alto";
             case CombinationType.Pair:           return "Pair";
             case CombinationType.TwoPair:        return "Two Pair";
             case CombinationType.ThreeOfAKind:   return "Three of a Kind";

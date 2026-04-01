@@ -198,6 +198,8 @@ public class ActiveBuffsUI : MonoBehaviour
                 return $"+{buff.Value * 100f:F0}%";
             case RunBuffType.EnergyGainBoost:
                 return $"+{buff.Value * 100f:F0}%";
+            case RunBuffType.ComboDamageBoost:
+                return $"+{buff.Value * 100f:F0}%";
             default:
                 return $"+{buff.Value:F1}";
         }

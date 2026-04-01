@@ -1098,11 +1098,13 @@ public class GameManager : MonoBehaviour
             new ShopItemData { ItemName = "d6 Bonus", Description = "Un dado d6 extra", GoldCost = 10, ItemType = ShopItemType.DiceAdd, DiceType = "d6" },
             new ShopItemData { ItemName = "d10", Description = "Dado de 10 caras (costo 2)", GoldCost = 25, ItemType = ShopItemType.DiceAdd, DiceType = "d10" },
             new ShopItemData { ItemName = "d12", Description = "Dado de 12 caras (costo 2.5)", GoldCost = 40, ItemType = ShopItemType.DiceAdd, DiceType = "d12" },
-            new ShopItemData { ItemName = "Destreza+5", Description = "Aumenta Destreza en 5", GoldCost = 20, ItemType = ShopItemType.StatBoostDex },
-            new ShopItemData { ItemName = "Velocidad+1", Description = "Aumenta Velocidad en 1", GoldCost = 30, ItemType = ShopItemType.StatBoostSpeed },
-            new ShopItemData { ItemName = "Daño +10%", Description = "Aumenta daño en 10%", GoldCost = 35, ItemType = ShopItemType.Buff, BuffType = RunBuffType.DamageBoost, BuffValue = 0.1f },
-            new ShopItemData { ItemName = "Tirada Extra", Description = "Una tirada extra en combate", GoldCost = 45, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ExtraRoll, BuffValue = 1f },
-            new ShopItemData { ItemName = "Escudo Inicial +5", Description = "Escudo al iniciar combate", GoldCost = 25, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ShieldOnCombatStart, BuffValue = 5f },
+            new ShopItemData { ItemName = "+20% Par", Description = "+20% daño a Par", GoldCost = 20, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.2f, TargetCombo = CombinationType.Pair },
+            new ShopItemData { ItemName = "+20% Doble Par", Description = "+20% daño a Doble Par", GoldCost = 25, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.2f, TargetCombo = CombinationType.TwoPair },
+            new ShopItemData { ItemName = "+15% Trio", Description = "+15% daño a Trio", GoldCost = 30, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.15f, TargetCombo = CombinationType.ThreeOfAKind },
+            new ShopItemData { ItemName = "+20% Escalera", Description = "+20% daño a Escalera", GoldCost = 35, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.2f, TargetCombo = CombinationType.Straight },
+            new ShopItemData { ItemName = "+15% Full House", Description = "+15% daño a Full House", GoldCost = 30, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.15f, TargetCombo = CombinationType.FullHouse },
+            new ShopItemData { ItemName = "+15% Poker", Description = "+15% daño a Poker", GoldCost = 40, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.15f, TargetCombo = CombinationType.FourOfAKind },
+            new ShopItemData { ItemName = "+10% Generala", Description = "+10% daño a Generala", GoldCost = 50, ItemType = ShopItemType.Buff, BuffType = RunBuffType.ComboDamageBoost, BuffValue = 0.1f, TargetCombo = CombinationType.Generala },
         };
 
         // Floor 1: halve all shop prices
@@ -1320,7 +1322,8 @@ public class GameManager : MonoBehaviour
                     Title = item.ItemName,
                     Description = item.Description,
                     Value = item.BuffValue,
-                    IsFromShop = true
+                    IsFromShop = true,
+                    TargetCombo = item.TargetCombo
                 };
                 player.State.ActiveBuffs.Add(buff);
                 Debug.Log($"[Buff] Comprado buff: {buff.Title} ({buff.Type}) valor={buff.Value} por {item.GoldCost}G");
@@ -1755,7 +1758,22 @@ public class GameManager : MonoBehaviour
         var results = currentAttack.PerformRoll(player.State.Bag);
 
         CombatUI.Instance.ShowAttackUI(results, currentAttack.LockedDiceIds, player.State.Bag);
-        CombatUI.Instance.ClearComboPreview();
+
+        // Re-evaluate combo preview for locked dice instead of always clearing
+        if (currentAttack.LockedDiceIds.Count > 0)
+        {
+            int[] lockedValues = currentAttack.CurrentResults
+                .Where(r => currentAttack.LockedDiceIds.Contains(r.DiceId))
+                .Select(r => r.Value)
+                .ToArray();
+            var preview = CombinationDetector.Evaluate(lockedValues, generalaScoredThisRun);
+            float mult = DamageResolver.GetComboMultiplier(preview.Type, player.State);
+            CombatUI.Instance.UpdateComboPreview(preview, mult);
+        }
+        else
+        {
+            CombatUI.Instance.ClearComboPreview();
+        }
         CombatUI.Instance.UpdateRollCounter(currentAttack.CurrentRoll, currentAttack.MaxRolls);
         CombatUI.Instance.SetRerollEnabled(currentAttack.CanRollAgain);
         CombatUI.Instance.SetCommitEnabled(true);
@@ -1781,7 +1799,8 @@ public class GameManager : MonoBehaviour
                 .Select(r => r.Value)
                 .ToArray();
             var preview = CombinationDetector.Evaluate(lockedValues, generalaScoredThisRun);
-            CombatUI.Instance.UpdateComboPreview(preview);
+            float mult = DamageResolver.GetComboMultiplier(preview.Type, player.State);
+            CombatUI.Instance.UpdateComboPreview(preview, mult);
         }
     }
 
@@ -1793,7 +1812,16 @@ public class GameManager : MonoBehaviour
         var combo = currentAttack.Commit(generalaScoredThisRun);
         int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
 
-        // Apply DamageBoost buff
+        // Apply combo-specific damage multiplier from shop buffs
+        float comboMult = DamageResolver.GetComboMultiplier(combo.Type, player.State);
+        if (comboMult > 1f)
+        {
+            int boosted = Mathf.RoundToInt(damage * comboMult);
+            Debug.Log($"[Buff] ComboDamageBoost applied: {damage} x {comboMult:F2} = {boosted} ({combo.Type})");
+            damage = boosted;
+        }
+
+        // Apply generic DamageBoost buff (non-shop sources)
         float dmgBoost = player.State.GetBuffTotal(RunBuffType.DamageBoost);
         if (dmgBoost > 0f)
         {
@@ -1933,7 +1961,21 @@ public class GameManager : MonoBehaviour
         var results = currentDefense.PerformRoll(player.State.Bag);
 
         CombatUI.Instance.ShowDefenseDiceUI(results, currentDefense.LockedDiceIds, player.State.Bag);
-        CombatUI.Instance.ClearDefenseComboPreview();
+
+        // Re-evaluate combo preview for locked dice instead of always clearing
+        if (currentDefense.LockedDiceIds.Count > 0)
+        {
+            int[] lockedValues = currentDefense.CurrentResults
+                .Where(r => currentDefense.LockedDiceIds.Contains(r.DiceId))
+                .Select(r => r.Value)
+                .ToArray();
+            var preview = CombinationDetector.Evaluate(lockedValues, generalaScoredThisRun);
+            CombatUI.Instance.UpdateDefenseComboPreview(preview);
+        }
+        else
+        {
+            CombatUI.Instance.ClearDefenseComboPreview();
+        }
         CombatUI.Instance.UpdateDefenseRollCounter(currentDefense.CurrentRoll, currentDefense.MaxRolls);
         CombatUI.Instance.SetDefenseRerollEnabled(currentDefense.CanRollAgain);
         CombatUI.Instance.SetDefenseCommitEnabled(true);
@@ -1974,7 +2016,7 @@ public class GameManager : MonoBehaviour
         CombatUI.Instance.UpdateDefenseShield(shield);
 
         string comboName = currentDefense.FinalCombination.Type == CombinationType.HighDie
-            ? "None" : currentDefense.FinalCombination.Type.ToString();
+            ? "Dado Mas Alto" : currentDefense.FinalCombination.Type.ToString();
         Log($"Escudo: {shield} ({comboName})");
 
         EnergyManager.Instance.ProcessCombatAction(CombatActionType.Defended);

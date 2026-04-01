@@ -115,6 +115,18 @@ public class PlayerState
         return total;
     }
 
+    public float GetComboBuffTotal(CombinationType combo)
+    {
+        float total = 0f;
+        if (ActiveBuffs == null) return total;
+        for (int i = 0; i < ActiveBuffs.Count; i++)
+        {
+            if (ActiveBuffs[i].Type == RunBuffType.ComboDamageBoost && ActiveBuffs[i].TargetCombo == combo)
+                total += ActiveBuffs[i].Value;
+        }
+        return total;
+    }
+
     public bool HasDebuff(BossDebuffType type)
     {
         if (ActiveDebuffs == null) return false;

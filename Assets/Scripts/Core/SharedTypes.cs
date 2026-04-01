@@ -34,7 +34,7 @@ public struct BagSummary { public int TotalDice; public float UsedPower; public 
 public struct DiceSummary { public string Id; public string TypeName; public int[] Faces; public float PowerCost; public Color Color; }
 
 [System.Serializable]
-public class RunBuffData { public RunBuffType Type; public string Title; public string Description; public float Value; public bool IsFromShop; }
+public class RunBuffData { public RunBuffType Type; public string Title; public string Description; public float Value; public bool IsFromShop; public CombinationType TargetCombo; }
 
 [System.Serializable]
 public class BossDebuffData { public BossDebuffType Type; public string Title; public string Description; public float Value; public CombinationType TargetCombo; }

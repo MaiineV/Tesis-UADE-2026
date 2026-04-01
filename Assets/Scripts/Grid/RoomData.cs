@@ -46,4 +46,5 @@ public class ShopItemData
     public ShopItemType ItemType;
     public RunBuffType BuffType;
     public float BuffValue;
+    public CombinationType TargetCombo;
 }

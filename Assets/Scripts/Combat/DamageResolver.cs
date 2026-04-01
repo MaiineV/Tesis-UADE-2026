@@ -16,6 +16,12 @@ public class DamageResolver
         return damage;
     }
 
+    /// Get the total combo-specific damage multiplier from player buffs
+    public static float GetComboMultiplier(CombinationType comboType, PlayerState state)
+    {
+        return 1f + state.GetComboBuffTotal(comboType);
+    }
+
     /// Apply enemy attack to player, considering shield
     public static int ResolveEnemyAttack(int enemyRawDamage, int playerShield)
     {
