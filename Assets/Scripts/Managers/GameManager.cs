@@ -99,6 +99,97 @@ public class GameManager : MonoBehaviour
     private CombinationType _bossResistedCombo;
     private bool _bossHasResistance;
 
+    // Boss debuffs
+    private List<BossDebuffData> _floorDebuffs = new List<BossDebuffData>();
+    private bool _debuffsActive;
+    private int _preDebuffMaxHP;
+
+    private void ClearBossDebuffs()
+    {
+        if (_debuffsActive && _preDebuffMaxHP > 0)
+        {
+            player.State.MaxHP = _preDebuffMaxHP;
+            if (player.State.CurrentHP > player.State.MaxHP)
+                player.State.CurrentHP = player.State.MaxHP;
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+        }
+        _debuffsActive = false;
+        _bossHasResistance = false;
+        _preDebuffMaxHP = 0;
+        if (player != null)
+            player.State.ActiveDebuffs.Clear();
+        BossPassivesUI.Instance?.Hide();
+        if (ActiveBuffsUI.Instance != null)
+            ActiveBuffsUI.Instance.Refresh();
+    }
+
+    private void GenerateFloorDebuffs(int floor)
+    {
+        _floorDebuffs.Clear();
+        int count;
+        if (floor <= 1) count = 1;
+        else if (floor == 2) count = Random.Range(1, 3);
+        else count = Random.Range(2, 4);
+
+        var allTypes = new BossDebuffType[] {
+            BossDebuffType.ComboDamageReduction,
+            BossDebuffType.ReducedRolls,
+            BossDebuffType.ReducedShield,
+            BossDebuffType.DamageReduction,
+            BossDebuffType.MaxHPReduction
+        };
+
+        // Fisher-Yates shuffle
+        for (int i = allTypes.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            var tmp = allTypes[i];
+            allTypes[i] = allTypes[j];
+            allTypes[j] = tmp;
+        }
+
+        for (int i = 0; i < count && i < allTypes.Length; i++)
+        {
+            var type = allTypes[i];
+            var debuff = new BossDebuffData { Type = type };
+
+            switch (type)
+            {
+                case BossDebuffType.ComboDamageReduction:
+                    var combos = System.Enum.GetValues(typeof(CombinationType));
+                    debuff.TargetCombo = (CombinationType)combos.GetValue(Random.Range(0, combos.Length));
+                    debuff.Value = 0.5f;
+                    debuff.Title = $"Resist. a {debuff.TargetCombo}";
+                    debuff.Description = $"50% menos de da\u00f1o con {debuff.TargetCombo}";
+                    break;
+                case BossDebuffType.ReducedRolls:
+                    debuff.Value = 1f;
+                    debuff.Title = "Tiradas Reducidas";
+                    debuff.Description = "-1 tirada m\u00e1xima en combate";
+                    break;
+                case BossDebuffType.ReducedShield:
+                    debuff.Value = 0.5f;
+                    debuff.Title = "Escudo Debilitado";
+                    debuff.Description = "Escudos dan 50% menos";
+                    break;
+                case BossDebuffType.DamageReduction:
+                    debuff.Value = 0.2f;
+                    debuff.Title = "Da\u00f1o Reducido";
+                    debuff.Description = "-20% a todo el da\u00f1o";
+                    break;
+                case BossDebuffType.MaxHPReduction:
+                    debuff.Value = 0.15f;
+                    debuff.Title = "HP Reducido";
+                    debuff.Description = "-15% HP m\u00e1ximo en pelea de jefe";
+                    break;
+            }
+
+            _floorDebuffs.Add(debuff);
+        }
+
+        Debug.Log($"[BossDebuff] Generated {_floorDebuffs.Count} debuffs for floor {floor}");
+    }
+
     // Dice discard pending purchase
     private ShopItemData _pendingDicePurchase;
     private DiceInstance _pendingNewDie;
@@ -224,6 +315,8 @@ public class GameManager : MonoBehaviour
         totalEnemiesDefeated = 0;
         generalaScoredThisRun = false;
         ResetStats();
+
+        GenerateFloorDebuffs(_currentFloor);
 
         // Generate dungeon floor
         DungeonManager.Instance.GenerateFloor(Random.Range(8, 15));
@@ -848,8 +941,7 @@ public class GameManager : MonoBehaviour
 
         if (result.success)
         {
-            _bossHasResistance = false;
-            BossPassivesUI.Instance?.Hide();
+            ClearBossDebuffs();
             // Pay 10% max HP
             int hpCost = Mathf.RoundToInt(player.State.MaxHP * 0.1f);
             player.State.CurrentHP = Mathf.Max(1, player.State.CurrentHP - hpCost);
@@ -977,8 +1069,7 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         Log($"Puerta forzada! -{hpCost} HP");
         UIManager.Instance.ShowPhaseLabel("DOOR FORCED!");
-        _bossHasResistance = false;
-        BossPassivesUI.Instance?.Hide();
+        ClearBossDebuffs();
 
         // Show dice animation (guaranteed success)
         var fakeResult = ExplorationActions.AttemptForceDoor(player.State.Dexterity, 100);
@@ -1399,8 +1490,14 @@ public class GameManager : MonoBehaviour
 
         _targetEnemyIndex = 0;
 
-        // Apply ShieldOnCombatStart buff
+        // Apply ShieldOnCombatStart buff (reduced by boss debuff if active)
         int shieldBuff = (int)player.State.GetBuffTotal(RunBuffType.ShieldOnCombatStart);
+        if (_debuffsActive)
+        {
+            var sd = player.State.GetDebuff(BossDebuffType.ReducedShield);
+            if (sd != null)
+                shieldBuff = Mathf.RoundToInt(shieldBuff * (1f - sd.Value));
+        }
         if (shieldBuff > 0)
         {
             player.State.ShieldValue += shieldBuff;
@@ -1439,15 +1536,43 @@ public class GameManager : MonoBehaviour
             ExplorationActionsUI.Instance.Show();
         }
 
-        // Boss passive: combo resistance
+        // Boss passive: activate floor debuffs
         var combatRoom = DungeonManager.Instance.CurrentRoom;
-        if (combatRoom != null && combatRoom.Type == RoomType.Boss
-            && enemy.State.BaseData.HasComboResistance)
+        if (combatRoom != null && combatRoom.Type == RoomType.Boss && _floorDebuffs.Count > 0)
         {
-            var combos = System.Enum.GetValues(typeof(CombinationType));
-            _bossResistedCombo = (CombinationType)combos.GetValue(Random.Range(0, combos.Length));
-            _bossHasResistance = true;
-            BossPassivesUI.Instance?.Show(_bossResistedCombo);
+            _debuffsActive = true;
+            player.State.ActiveDebuffs.Clear();
+            for (int i = 0; i < _floorDebuffs.Count; i++)
+                player.State.ActiveDebuffs.Add(_floorDebuffs[i]);
+
+            // Apply MaxHPReduction immediately
+            var hpDebuff = player.State.GetDebuff(BossDebuffType.MaxHPReduction);
+            if (hpDebuff != null)
+            {
+                _preDebuffMaxHP = player.State.MaxHP;
+                player.State.MaxHP = Mathf.RoundToInt(player.State.MaxHP * (1f - hpDebuff.Value));
+                if (player.State.CurrentHP > player.State.MaxHP)
+                    player.State.CurrentHP = player.State.MaxHP;
+                UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+            }
+            else
+            {
+                _preDebuffMaxHP = player.State.MaxHP;
+            }
+
+            // Populate legacy combo resistance from ComboDamageReduction debuff
+            var comboDebuff = player.State.GetDebuff(BossDebuffType.ComboDamageReduction);
+            if (comboDebuff != null)
+            {
+                _bossResistedCombo = comboDebuff.TargetCombo;
+                _bossHasResistance = true;
+            }
+
+            BossPassivesUI.Instance?.Show(_floorDebuffs);
+            if (ActiveBuffsUI.Instance != null)
+                ActiveBuffsUI.Instance.Refresh();
+
+            Debug.Log($"[BossDebuff] Activated {_floorDebuffs.Count} debuffs for boss fight");
         }
 
         if (player.State.CrapsModeAvailable)
@@ -1598,6 +1723,10 @@ public class GameManager : MonoBehaviour
         currentAttack = new AttackPhase();
         currentAttack.MaxRolls = 3 + (int)player.State.GetBuffTotal(RunBuffType.ExtraRoll);
 
+        // Boss debuff: ReducedRolls
+        if (_debuffsActive && player.State.HasDebuff(BossDebuffType.ReducedRolls))
+            currentAttack.MaxRolls = Mathf.Max(1, currentAttack.MaxRolls - 1);
+
         showTargetSelectionIfNeeded();
 
         if (crapsMode.IsActive)
@@ -1671,6 +1800,18 @@ public class GameManager : MonoBehaviour
             int boosted = Mathf.RoundToInt(damage * (1f + dmgBoost));
             Debug.Log($"[Buff] DamageBoost applied: {damage} -> {boosted} (x{1f + dmgBoost:F2})");
             damage = boosted;
+        }
+
+        // Boss debuff: flat damage reduction
+        if (_debuffsActive)
+        {
+            var dr = player.State.GetDebuff(BossDebuffType.DamageReduction);
+            if (dr != null)
+            {
+                int reduced = Mathf.RoundToInt(damage * (1f - dr.Value));
+                Debug.Log($"[BossDebuff] DamageReduction applied: {damage} -> {reduced}");
+                damage = reduced;
+            }
         }
 
         // Boss passive: halve damage for resisted combo
@@ -2068,8 +2209,7 @@ public class GameManager : MonoBehaviour
         else
         {
             // All active enemies dead — play death anim then check room clear
-            _bossHasResistance = false;
-            BossPassivesUI.Instance?.Hide();
+            ClearBossDebuffs();
             UIManager.Instance.HideSecondEnemyInfo();
             UIManager.Instance.ShowTargetSelection(false);
             currentCombatEnemy.PlayDeathAnimation(OnEnemyDeathAnimationComplete);
@@ -2085,8 +2225,7 @@ public class GameManager : MonoBehaviour
 
     private void OnEnemyDeathAnimationComplete()
     {
-        _bossHasResistance = false;
-        BossPassivesUI.Instance?.Hide();
+        ClearBossDebuffs();
         UIManager.Instance.HideCombatPanel();
         UIManager.Instance.HideEnemyInfo();
         UIManager.Instance.HideExplorationActions();
@@ -2156,6 +2295,7 @@ public class GameManager : MonoBehaviour
     private void AdvanceToNextFloor()
     {
         _currentFloor++;
+        GenerateFloorDebuffs(_currentFloor);
         Log("Advancing to next floor...");
         UIManager.Instance.ShowPhaseLabel("NEXT FLOOR!");
         if (_portalObj != null) { Destroy(_portalObj); _portalObj = null; }

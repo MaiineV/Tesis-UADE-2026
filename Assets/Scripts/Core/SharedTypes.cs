@@ -35,3 +35,6 @@ public struct DiceSummary { public string Id; public string TypeName; public int
 
 [System.Serializable]
 public class RunBuffData { public RunBuffType Type; public string Title; public string Description; public float Value; public bool IsFromShop; }
+
+[System.Serializable]
+public class BossDebuffData { public BossDebuffType Type; public string Title; public string Description; public float Value; public CombinationType TargetCombo; }

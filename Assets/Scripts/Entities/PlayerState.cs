@@ -42,6 +42,9 @@ public class PlayerState
     // Buffs
     public List<RunBuffData> ActiveBuffs;
 
+    // Boss debuffs (temporary, active only during boss fight)
+    public List<BossDebuffData> ActiveDebuffs;
+
     public static PlayerState Create(CharacterData data)
     {
         var state = new PlayerState();
@@ -58,6 +61,7 @@ public class PlayerState
         state.HasPotion = true;
         state.PotionCount = 1;
         state.ActiveBuffs = new List<RunBuffData>();
+        state.ActiveDebuffs = new List<BossDebuffData>();
 
         // Build full inventory from starting dice
         state.FullInventory = new List<DiceInstance>();
@@ -109,5 +113,25 @@ public class PlayerState
                 total += ActiveBuffs[i].Value;
         }
         return total;
+    }
+
+    public bool HasDebuff(BossDebuffType type)
+    {
+        if (ActiveDebuffs == null) return false;
+        for (int i = 0; i < ActiveDebuffs.Count; i++)
+        {
+            if (ActiveDebuffs[i].Type == type) return true;
+        }
+        return false;
+    }
+
+    public BossDebuffData GetDebuff(BossDebuffType type)
+    {
+        if (ActiveDebuffs == null) return null;
+        for (int i = 0; i < ActiveDebuffs.Count; i++)
+        {
+            if (ActiveDebuffs[i].Type == type) return ActiveDebuffs[i];
+        }
+        return null;
     }
 }

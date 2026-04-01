@@ -23,6 +23,7 @@ public class ActiveBuffsUI : MonoBehaviour
     private static readonly Color _textColor = new Color(0.878f, 0.878f, 0.878f, 1f);    // #e0e0e0
     private static readonly Color _purple = new Color(0.671f, 0.278f, 0.737f, 1f);       // #ab47bc
     private static readonly Color _gold = new Color(1f, 0.835f, 0.310f, 1f);             // #ffd54f
+    private static readonly Color _red = new Color(0.898f, 0.224f, 0.208f, 1f);          // #e53935
 
     void Awake()
     {
@@ -72,15 +73,25 @@ public class ActiveBuffsUI : MonoBehaviour
     {
         clearCards();
 
-        if (_playerState == null || _playerState.ActiveBuffs == null || _playerState.ActiveBuffs.Count == 0)
+        bool hasBuffs = _playerState != null && _playerState.ActiveBuffs != null && _playerState.ActiveBuffs.Count > 0;
+        bool hasDebuffs = _playerState != null && _playerState.ActiveDebuffs != null && _playerState.ActiveDebuffs.Count > 0;
+
+        if (!hasBuffs && !hasDebuffs)
         {
             createEmptyCard();
             return;
         }
 
-        for (int i = 0; i < _playerState.ActiveBuffs.Count; i++)
+        if (hasBuffs)
         {
-            createBuffCard(_playerState.ActiveBuffs[i]);
+            for (int i = 0; i < _playerState.ActiveBuffs.Count; i++)
+                createBuffCard(_playerState.ActiveBuffs[i]);
+        }
+
+        if (hasDebuffs)
+        {
+            for (int i = 0; i < _playerState.ActiveDebuffs.Count; i++)
+                createDebuffCard(_playerState.ActiveDebuffs[i]);
         }
     }
 
@@ -189,6 +200,94 @@ public class ActiveBuffsUI : MonoBehaviour
                 return $"+{buff.Value * 100f:F0}%";
             default:
                 return $"+{buff.Value:F1}";
+        }
+    }
+
+    private void createDebuffCard(BossDebuffData debuff)
+    {
+        var card = new GameObject($"DebuffCard_{debuff.Type}");
+        card.transform.SetParent(_listParent, false);
+        var cardRT = card.AddComponent<RectTransform>();
+        cardRT.sizeDelta = new Vector2(260, 45);
+        var cardImg = card.AddComponent<Image>();
+        cardImg.color = _panelBg;
+
+        var hlg = card.AddComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 8;
+        hlg.padding = new RectOffset(10, 10, 5, 5);
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = true;
+
+        // Debuff icon indicator (red)
+        var iconGO = new GameObject("Icon");
+        iconGO.transform.SetParent(card.transform, false);
+        var iconRT = iconGO.AddComponent<RectTransform>();
+        var iconLE = iconGO.AddComponent<LayoutElement>();
+        iconLE.preferredWidth = 8;
+        iconLE.preferredHeight = 30;
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color = _red;
+
+        // Name
+        var nameGO = new GameObject("Name");
+        nameGO.transform.SetParent(card.transform, false);
+        var nameRT = nameGO.AddComponent<RectTransform>();
+        var nameLE = nameGO.AddComponent<LayoutElement>();
+        nameLE.flexibleWidth = 1;
+        var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
+        nameTMP.text = debuff.Title;
+        nameTMP.fontSize = 14;
+        nameTMP.color = _textColor;
+        nameTMP.alignment = TextAlignmentOptions.Left;
+        nameTMP.raycastTarget = false;
+
+        // Value (red)
+        var valGO = new GameObject("Value");
+        valGO.transform.SetParent(card.transform, false);
+        var valRT = valGO.AddComponent<RectTransform>();
+        var valLE = valGO.AddComponent<LayoutElement>();
+        valLE.preferredWidth = 60;
+        var valTMP = valGO.AddComponent<TextMeshProUGUI>();
+        valTMP.text = formatDebuffValue(debuff);
+        valTMP.fontSize = 14;
+        valTMP.color = _red;
+        valTMP.alignment = TextAlignmentOptions.Right;
+        valTMP.fontStyle = FontStyles.Bold;
+        valTMP.raycastTarget = false;
+
+        // Tooltip trigger
+        var trigger = card.AddComponent<EventTrigger>();
+        string title = debuff.Title;
+        string desc = debuff.Description;
+
+        var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enterEntry.callback.AddListener((data) => showTooltip(title, desc));
+        trigger.triggers.Add(enterEntry);
+
+        var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exitEntry.callback.AddListener((data) => hideTooltip());
+        trigger.triggers.Add(exitEntry);
+
+        _cardInstances.Add(card);
+    }
+
+    private string formatDebuffValue(BossDebuffData debuff)
+    {
+        switch (debuff.Type)
+        {
+            case BossDebuffType.ComboDamageReduction:
+                return $"-{debuff.Value * 100f:F0}%";
+            case BossDebuffType.ReducedRolls:
+                return $"-{debuff.Value:F0}";
+            case BossDebuffType.ReducedShield:
+                return $"-{debuff.Value * 100f:F0}%";
+            case BossDebuffType.DamageReduction:
+                return $"-{debuff.Value * 100f:F0}%";
+            case BossDebuffType.MaxHPReduction:
+                return $"-{debuff.Value * 100f:F0}% HP";
+            default:
+                return $"-{debuff.Value:F1}";
         }
     }
 
