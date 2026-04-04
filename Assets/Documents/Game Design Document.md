@@ -212,7 +212,7 @@ El jugador elige exactamente una acción por turno. El movimiento usa un **dado 
 | **Usar activo** | Activa habilidad especial de clase. Consume el turno completo. |
 | **Pasar** | No hace nada. Los monstruos actúan normalmente. |
 
-> *El dado de velocidad introduce varianza táctica: un Warrior que saca 1 cuando necesitaba llegar al enemigo es presión de diseño. A calibrar con playtest.*
+> *El dado de velocidad introduce varianza táctica: un Guerrero que saca 1 cuando necesitaba llegar al enemigo es presión de diseño. A calibrar con playtest.*
 >
 > *Alternativa: usar el dado de velocidad solo como límite máximo (el jugador elige cuántas losetas moverse hasta el resultado del dado). Reduce la frustración de sacar 1.*
 
@@ -223,17 +223,20 @@ El jugador elige exactamente una acción por turno. El movimiento usa un **dado 
 | Muy simple de entender: una cosa por turno. | Menos flexibilidad táctica. El jugador no puede moverse y atacar en el mismo turno. |
 | El doble movimiento no existe: el mapa chico no se rompe. | El Rogue/Mage ya en rango pierde un turno si quiere moverse — puede sentirse ineficiente. |
 | El dado de velocidad diferencia más las clases. | La varianza del dado puede frustrar si el jugador saca 1 en un momento crítico. |
-| Ritmo de combate más lento y más predecible. Más fácil de implementar. | El combate puede sentirse más lento, especialmente clases lentas como Mage. |
+| Ritmo de combate más lento y más predecible. Más fácil de implementar. | El combate puede sentirse más lento, especialmente clases con dado de velocidad bajo. |
 
 ### Dado de Velocidad por Clase (Opción B)
 
-Clases según GDD PDF (Warrior, Mage, Rogue). Valores de dado de velocidad y rango TBD.
+Clases según rollgeon_progresion.md. Valores de dado de velocidad y rango TBD.
 
-| Clase | Dado de velocidad | Rango ataque | Pasiva (PDF) |
+| Clase | Dado de velocidad | Rango ataque | Pasiva |
 |---|---|---|---|
-| **Warrior** | TBD | TBD | +1 defensa base |
-| **Mage** | TBD | TBD | Relanzar 1 dado extra por tirada |
-| **Rogue** | TBD | TBD | Mayor % de huida exitosa |
+| **Guerrero** (base) | TBD | TBD | Sin pasiva. Punto de partida limpio. |
+| **Berserker** | TBD | TBD | Primer golpe ×3. No se guardan dados en la primera tirada. |
+| **Gambler** | TBD | TBD | Escalera ×2 + Craps se activa 1 turno antes. |
+| **Necromancer** | TBD | TBD | Doble daño cuando 3+ dados muestran el mismo número. |
+| **Alchemist** | TBD | TBD | Dados encantados cuentan ×1.5 en multiplicador de daño. |
+| **Trickster** | TBD | TBD | Puede tachar 2 combos por run. HP recuperado al tachar ×2. |
 
 ### Comparativa Directa entre Opciones
 
@@ -266,9 +269,12 @@ El rango de ataque es igual en ambos sistemas de acciones. Define cuándo el bot
 
 | Clase | Rango ataque | Notas de diseño |
 |---|---|---|
-| **Warrior** | TBD | TBD |
-| **Mage** | TBD | TBD |
-| **Rogue** | TBD | TBD |
+| **Guerrero** | TBD | TBD |
+| **Berserker** | TBD | TBD |
+| **Gambler** | TBD | TBD |
+| **Necromancer** | TBD | TBD |
+| **Alchemist** | TBD | TBD |
+| **Trickster** | TBD | TBD |
 
 > *En la Opción B, el botón de ataque se habilita visualmente en la UI cuando el jugador está dentro del rango necesario.*
 
