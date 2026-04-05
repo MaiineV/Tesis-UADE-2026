@@ -210,17 +210,6 @@ El jugador tira un dado de defensa. El resultado se convierte en **escudo** que 
 | 5 | **¿El escudo protege contra opportunity attacks?** | a) Sí — se consume si recibís OA | Moverse es menos castigador si tenés escudo alto. |
 | | | b) No — OA bypasea escudo | OA se siente más peligroso. Posicionamiento importa más. |
 
-### Propuesta simple para prototipo
-
-| Parámetro | Valor |
-|-----------|-------|
-| Dado de escudo | d6 fijo para todas las clases |
-| Duración | 1 solo ataque (el primero que reciba) |
-| Acumulación | No — se resetea cada Player Phase |
-| Protege contra OA | No — el OA bypasea escudo |
-
-Esto es lo más simple de implementar y testear. Se puede complicar después.
-
 ---
 
 ## 4. Rango de Ataque y Opportunity Attack
@@ -246,10 +235,7 @@ Antes del detalle del OA, dejamos los rangos explícitos. Estos valores son **bl
 | **Jugador (Guerrero)** | 1 tile (melee) | Clase base, arma cuerpo a cuerpo |
 | **Goblin** | 1 tile (melee) | Enemigo básico |
 | **Orco** | 1 tile (melee) | Enemigo básico |
-| **[Futuro] Arquero** | 3 tiles (largo) | Primer enemigo con rango |
-| **[Futuro] Clases ranged (Alchemist?)** | 2-3 tiles (corto/largo) | Identidad de clase |
-
-**En el prototipo inicial, todos los actores son melee (rango 1).** Esto simplifica la lógica y deja el sistema de rangos listo para extender cuando se agreguen enemigos/clases con proyectiles.
+| **Arquero** | 3 tiles (largo) | Primer enemigo con rango |
 
 ### 4.3 — Rango de OA = rango de ataque (regla simple)
 
@@ -268,8 +254,6 @@ Si el jugador está rodeado por 3 enemigos adyacentes y se mueve alejándose de 
 | **A: 1 OA global por movimiento** | Solo el enemigo más cercano/peligroso dispara | Menos castigador. Posicionarse mal no es suicidio. | "Rodeo efectivo" pierde peso — da igual cuántos enemigos te rodeen |
 | **B: 1 OA por enemigo en rango** | Los 3 enemigos atacan | Coherente con D&D y SRPGs clásicos. Rodear importa. | Rodeo = muerte casi segura. El jugador se queda quieto siempre. |
 | **C: Máximo 2 OAs por movimiento** | Los 2 enemigos más cercanos | Punto medio | Regla arbitraria |
-
-**Recomendación prototipo:** **Regla A (1 OA global)** — es la más simple de implementar y la menos castigadora. Si en playtest se siente que "el rodeo no importa", se sube a B o C.
 
 > Esto responde explícitamente la pregunta #5 del §8 actual (prioridad Alta): resuelta con Regla A para prototipo.
 
@@ -501,7 +485,7 @@ Si en playtest se siente restrictivo, se abre a Opción B completa. Si se siente
 ### Para presentar al equipo
 
 1. Compartir este documento
-2. **Decisión crítica**: ATK-A vs ATK-B (§2) — idealmente probar ambas en paper prototype
+2. **Decisión crítica**: ATK-A vs ATK-B  — idealmente probar ambas en paper prototype
 3. Definir: movimiento fijo o dado, escudo d6 o dado de build
 4. Aprobar o modificar el flujo AP1→AP2→AP3
 
