@@ -1,34 +1,36 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class ShieldDisplay : MonoBehaviour
 {
     [SerializeField] private TMP_Text shieldText;
+    [SerializeField] private Image shieldFill;
 
-    private static readonly Color ShieldColor;
+    private int _maxShield = 1;
 
-    static ShieldDisplay()
+    public void Initialize(TMP_Text textRef, Image fillRef)
     {
-        ColorUtility.TryParseHtmlString("#78909c", out Color c);
-        ShieldColor = c;
-    }
-
-    void Awake()
-    {
-        if (shieldText != null)
-            shieldText.color = ShieldColor;
-    }
-
-    public void Initialize(TMP_Text shieldTextRef)
-    {
-        shieldText = shieldTextRef;
-        if (shieldText != null)
-            shieldText.color = ShieldColor;
+        shieldText = textRef;
+        shieldFill = fillRef;
+        UpdateShield(0);
     }
 
     public void UpdateShield(int value)
     {
+        if (value > _maxShield) _maxShield = value;
+
+        if (shieldFill != null)
+            shieldFill.fillAmount = _maxShield > 0 ? (float)value / _maxShield : 0f;
+
         if (shieldText != null)
             shieldText.text = value > 0 ? $"Shield: {value}" : "";
+
+        gameObject.SetActive(value > 0);
+    }
+
+    public void ResetMaxShield()
+    {
+        _maxShield = 1;
     }
 }

@@ -36,11 +36,11 @@ public static class DataCreator
         EnsureFolder("Assets/Data/Dice");
 
         CreateDie("d6", 6, new[] { 1, 2, 3, 4, 5, 6 }, 1, HexColor("#42a5f5"));
-        CreateDie("d8", 8, new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, 2, HexColor("#66bb6a"));
-        CreateDie("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 3, HexColor("#ab47bc"));
+        CreateDie("d10", 10, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 2, HexColor("#ff7043"), 4);
+        CreateDie("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 3, HexColor("#ab47bc"), 8);
     }
 
-    static void CreateDie(string name, int faces, int[] defaultFaces, float powerCost, Color color)
+    static void CreateDie(string name, int faces, int[] defaultFaces, float powerCost, Color color, int bonusDamage = 0)
     {
         string path = $"Assets/Data/Dice/{name}.asset";
         if (AssetDatabase.LoadAssetAtPath<DiceData>(path) != null)
@@ -52,6 +52,7 @@ public static class DataCreator
         die.DefaultFaces = defaultFaces;
         die.PowerCost = powerCost;
         die.DiceColor = color;
+        die.BonusDamage = bonusDamage;
         AssetDatabase.CreateAsset(die, path);
     }
 
@@ -70,11 +71,11 @@ public static class DataCreator
         warrior.SpeedMax = 5;
 
         var d6 = AssetDatabase.LoadAssetAtPath<DiceData>("Assets/Data/Dice/d6.asset");
-        var d8 = AssetDatabase.LoadAssetAtPath<DiceData>("Assets/Data/Dice/d8.asset");
+        var d10 = AssetDatabase.LoadAssetAtPath<DiceData>("Assets/Data/Dice/d10.asset");
         warrior.StartingDice = new[]
         {
             new DiceLoadout { DiceType = d6, Quantity = 4 },
-            new DiceLoadout { DiceType = d8, Quantity = 2 }
+            new DiceLoadout { DiceType = d10, Quantity = 1 }
         };
         warrior.CombatDiceSlots = 5;
 

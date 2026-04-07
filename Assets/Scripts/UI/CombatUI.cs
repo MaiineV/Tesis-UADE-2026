@@ -198,6 +198,13 @@ public class CombatUI : MonoBehaviour
         if (commitButton != null) commitButton.interactable = enabled;
     }
 
+    public void SetCommitText(string text)
+    {
+        if (commitButton == null) return;
+        var tmp = commitButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null) tmp.text = text;
+    }
+
     // ── Defense UI ─────────────────────────────────────────────
 
     public void ShowDefenseDiceUI(RollResult[] results, HashSet<string> locked, DiceBag bag = null)
@@ -362,12 +369,235 @@ public class CombatUI : MonoBehaviour
             case CombinationType.Pair:           return "Pair";
             case CombinationType.TwoPair:        return "Two Pair";
             case CombinationType.ThreeOfAKind:   return "Three of a Kind";
+            case CombinationType.SmallStraight:  return "Small Straight";
+            case CombinationType.MediumStraight: return "Medium Straight";
             case CombinationType.Straight:       return "Straight";
             case CombinationType.FullHouse:      return "Full House";
             case CombinationType.FourOfAKind:    return "Four of a Kind";
             case CombinationType.Generala:       return "GENERALA!";
             case CombinationType.DoubleGenerala: return "DOUBLE GENERALA!!";
             default:                             return type.ToString();
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // === 3AP UI Methods ===
+    // ══════════════════════════════════════════════
+
+    private static readonly Color APPanelBg = new Color(0.118f, 0.118f, 0.227f, 0.92f);
+    private static readonly Color APBtnColor = new Color(0.31f, 0.76f, 0.97f, 1f);
+    private static readonly Color APBtnHover = new Color(0.22f, 0.55f, 0.78f, 1f);
+    private static readonly Color APTextColor = new Color(0.93f, 0.93f, 0.93f, 1f);
+
+    private GameObject _apSelectorPanel;
+    private Canvas _cachedScreenCanvas;
+
+    private Transform GetCanvasTransform()
+    {
+        if (_cachedScreenCanvas != null) return _cachedScreenCanvas.transform;
+        var allCanvases = FindObjectsOfType<Canvas>();
+        for (int i = 0; i < allCanvases.Length; i++)
+        {
+            if (allCanvases[i].renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                _cachedScreenCanvas = allCanvases[i];
+                return _cachedScreenCanvas.transform;
+            }
+        }
+        // Fallback: any canvas
+        if (allCanvases.Length > 0)
+        {
+            _cachedScreenCanvas = allCanvases[0];
+            return _cachedScreenCanvas.transform;
+        }
+        return null;
+    }
+
+    /// Creates a button at an absolute position inside a parent panel
+    private GameObject MakeButton(Transform parent, string label, Vector2 pos, Vector2 size, Action onClick)
+    {
+        var go = new GameObject(label + "Btn");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0.5f);
+        rt.anchorMax = new Vector2(0, 0.5f);
+        rt.pivot = new Vector2(0, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        var img = go.AddComponent<Image>();
+        img.color = APBtnColor;
+        img.raycastTarget = true;
+
+        var btn = go.AddComponent<Button>();
+        var colors = btn.colors;
+        colors.normalColor = APBtnColor;
+        colors.highlightedColor = APBtnHover;
+        colors.pressedColor = new Color(0.18f, 0.45f, 0.65f, 1f);
+        colors.selectedColor = APBtnColor;
+        btn.colors = colors;
+        btn.targetGraphic = img;
+
+        var textGo = new GameObject("Text");
+        textGo.transform.SetParent(go.transform, false);
+        var textRt = textGo.AddComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero; textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = Vector2.zero; textRt.offsetMax = Vector2.zero;
+        var tmp = textGo.AddComponent<TextMeshProUGUI>();
+        tmp.text = label;
+        tmp.fontSize = 15;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+        tmp.raycastTarget = false;
+
+        btn.onClick.AddListener(() => onClick?.Invoke());
+        return go;
+    }
+
+    /// Creates a text label at an absolute position inside a parent panel
+    private TMP_Text MakeLabel(Transform parent, string text, Vector2 pos, Vector2 size, float fontSize = 13)
+    {
+        var go = new GameObject("Label");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0.5f);
+        rt.anchorMax = new Vector2(0, 0.5f);
+        rt.pivot = new Vector2(0, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = fontSize;
+        tmp.alignment = TextAlignmentOptions.Left;
+        tmp.color = APTextColor;
+        tmp.enableWordWrapping = false;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.raycastTarget = false;
+        return tmp;
+    }
+
+    /// Helper: create a panel anchored to left-center of screen
+    private GameObject MakeAPPanel(string name, float width, float height)
+    {
+        var parent = GetCanvasTransform();
+        if (parent == null) return null;
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0.5f);
+        rt.anchorMax = new Vector2(0, 0.5f);
+        rt.pivot = new Vector2(0, 0.5f);
+        rt.anchoredPosition = new Vector2(10, -40);
+        rt.sizeDelta = new Vector2(width, height);
+        var img = go.AddComponent<Image>();
+        img.color = APPanelBg;
+        img.raycastTarget = false; // don't block clicks outside buttons
+        return go;
+    }
+
+    public void ShowAP1Movement(int steps)
+    {
+        HideCombatUI();
+        HideAPSelector();
+
+        // Panel: [AP1: X pasos]  [Quedarse]
+        _apSelectorPanel = MakeAPPanel("AP1Panel", 300, 40);
+        if (_apSelectorPanel == null) return;
+
+        MakeLabel(_apSelectorPanel.transform, $"AP1: {steps} pasos",
+            new Vector2(10, 0), new Vector2(140, 30), 13);
+        MakeButton(_apSelectorPanel.transform, "Quedarse",
+            new Vector2(160, 0), new Vector2(120, 32), () =>
+        {
+            GameManager.Instance.OnAP1Stay();
+        });
+    }
+
+    public void ShowAPSelector(bool canAttack, bool canBag, bool canShield, bool canSkip)
+    {
+        HideAPSelector();
+
+        // Panel: [AP2:]  [Atacar]  [Pasar]
+        float totalWidth = 60; // label
+        if (canAttack) totalWidth += 130; // atacar btn + gap
+        totalWidth += 130; // pasar btn + gap
+        totalWidth += 20; // padding
+
+        _apSelectorPanel = MakeAPPanel("APSelectorPanel", totalWidth, 44);
+        if (_apSelectorPanel == null) return;
+
+        float x = 10;
+        MakeLabel(_apSelectorPanel.transform, "AP2:",
+            new Vector2(x, 0), new Vector2(50, 30), 13);
+        x += 55;
+
+        if (canAttack)
+        {
+            MakeButton(_apSelectorPanel.transform, "Atacar",
+                new Vector2(x, 0), new Vector2(120, 34), () => { HideAPSelector(); GameManager.Instance.OnAPSelectorAttack(); });
+            x += 130;
+        }
+        MakeButton(_apSelectorPanel.transform, "Pasar",
+            new Vector2(x, 0), new Vector2(120, 34), () => { HideAPSelector(); GameManager.Instance.OnAPSelectorSkipAP2(); });
+    }
+
+    public void HideAPSelector()
+    {
+        if (_apSelectorPanel != null)
+        {
+            Destroy(_apSelectorPanel);
+            _apSelectorPanel = null;
+        }
+    }
+
+    // --- Shield Roll UI ---
+    private GameObject _shieldRollPanel;
+    public event Action OnShieldRollClicked;
+
+    public void ShowShieldRollUI()
+    {
+        HideCombatUI();
+        HideAPSelector();
+        HideShieldRollUI();
+
+        // Panel: [AP3 — Escudo]  [Tirar Escudo]
+        _shieldRollPanel = MakeAPPanel("ShieldRollPanel", 320, 44);
+        if (_shieldRollPanel == null) return;
+
+        MakeLabel(_shieldRollPanel.transform, "AP3 — Escudo",
+            new Vector2(10, 0), new Vector2(130, 30), 13);
+        MakeButton(_shieldRollPanel.transform, "Tirar Escudo",
+            new Vector2(150, 0), new Vector2(150, 34), () => OnShieldRollClicked?.Invoke());
+    }
+
+    public void ShowShieldResult(int value)
+    {
+        if (_shieldRollPanel == null) return;
+        for (int i = _shieldRollPanel.transform.childCount - 1; i >= 0; i--)
+            Destroy(_shieldRollPanel.transform.GetChild(i).gameObject);
+        MakeLabel(_shieldRollPanel.transform, $"Escudo: {value}",
+            new Vector2(10, 0), new Vector2(200, 30), 14);
+    }
+
+    public void HideShieldRollUI()
+    {
+        if (_shieldRollPanel != null)
+        {
+            Destroy(_shieldRollPanel);
+            _shieldRollPanel = null;
+        }
+    }
+
+    // --- Damage Breakdown ---
+    public void ShowDamageBreakdown(int comboBase, float mult, int bonus, int total)
+    {
+        if (comboPreviewText != null)
+        {
+            string breakdownText = bonus > 0
+                ? $"Combo: {comboBase} x{mult:F2} + Bonus: +{bonus} = {total}"
+                : $"Combo: {comboBase} x{mult:F2} = {total}";
+            comboPreviewText.text = breakdownText;
         }
     }
 }

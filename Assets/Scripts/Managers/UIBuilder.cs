@@ -37,8 +37,8 @@ public class UIBuilder : MonoBehaviour
         // ── HUD Panel (always visible, top) ──
         var hudPanel = CreatePanel("HUDPanel", canvasTransform,
             new Vector2(0, 1), new Vector2(1, 1),
-            new Vector2(0, -10), new Vector2(0, -10),
-            150f, anchorTopStretch: true);
+            new Vector2(0, 0), new Vector2(0, 0),
+            80f, anchorTopStretch: true);
 
         // Health Bar
         var healthBarGO = CreatePanel("HealthBar", hudPanel.transform,
@@ -47,8 +47,8 @@ public class UIBuilder : MonoBehaviour
         healthRT.anchorMin = new Vector2(0, 0.5f);
         healthRT.anchorMax = new Vector2(0, 0.5f);
         healthRT.pivot = new Vector2(0, 0.5f);
-        healthRT.anchoredPosition = new Vector2(20, 20);
-        healthRT.sizeDelta = new Vector2(300, 35);
+        healthRT.anchoredPosition = new Vector2(10, 15);
+        healthRT.sizeDelta = new Vector2(250, 26);
 
         var hpBgImage = healthBarGO.GetComponent<Image>();
         hpBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
@@ -77,8 +77,8 @@ public class UIBuilder : MonoBehaviour
         energyRT.anchorMin = new Vector2(0, 0.5f);
         energyRT.anchorMax = new Vector2(0, 0.5f);
         energyRT.pivot = new Vector2(0, 0.5f);
-        energyRT.anchoredPosition = new Vector2(20, -20);
-        energyRT.sizeDelta = new Vector2(300, 25);
+        energyRT.anchoredPosition = new Vector2(10, -12);
+        energyRT.sizeDelta = new Vector2(250, 20);
 
         var energyBgImage = energyBarGO.GetComponent<Image>();
         energyBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
@@ -111,22 +111,34 @@ public class UIBuilder : MonoBehaviour
         var energyBarUI = energyBarGO.AddComponent<EnergyBarUI>();
         energyBarUI.Initialize(energyFillImage, energyText, crapsReadyText);
 
-        // Shield Display
-        var shieldGO = new GameObject("ShieldDisplay");
-        shieldGO.transform.SetParent(hudPanel.transform, false);
-        var shieldRT = shieldGO.AddComponent<RectTransform>();
-        shieldRT.anchorMin = new Vector2(0, 0.5f);
-        shieldRT.anchorMax = new Vector2(0, 0.5f);
-        shieldRT.pivot = new Vector2(0, 0.5f);
-        shieldRT.anchoredPosition = new Vector2(340, 20);
-        shieldRT.sizeDelta = new Vector2(150, 35);
+        // Shield Bar (below HP bar)
+        var shieldBarGO = CreatePanel("ShieldBar", hudPanel.transform,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 0);
+        var shieldBarRT = shieldBarGO.GetComponent<RectTransform>();
+        shieldBarRT.anchorMin = new Vector2(0, 0.5f);
+        shieldBarRT.anchorMax = new Vector2(0, 0.5f);
+        shieldBarRT.pivot = new Vector2(0, 0.5f);
+        shieldBarRT.anchoredPosition = new Vector2(10, -35);
+        shieldBarRT.sizeDelta = new Vector2(250, 16);
+        shieldBarGO.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
 
-        var shieldText = CreateTMPText("ShieldText", shieldGO.transform, "", 18,
-            TextAlignmentOptions.Left, ShieldColor);
+        var shieldFillGO = CreateChildImage("ShieldFill", shieldBarGO.transform, ShieldColor);
+        var shieldFillRT = shieldFillGO.GetComponent<RectTransform>();
+        shieldFillRT.anchorMin = Vector2.zero;
+        shieldFillRT.anchorMax = Vector2.one;
+        shieldFillRT.offsetMin = new Vector2(2, 2);
+        shieldFillRT.offsetMax = new Vector2(-2, -2);
+        var shieldFillImage = shieldFillGO.GetComponent<Image>();
+        shieldFillImage.type = Image.Type.Filled;
+        shieldFillImage.fillMethod = Image.FillMethod.Horizontal;
+        shieldFillImage.fillAmount = 0f;
+
+        var shieldText = CreateTMPText("ShieldText", shieldBarGO.transform, "", 11,
+            TextAlignmentOptions.Center, Color.white);
         StretchFull(shieldText.GetComponent<RectTransform>());
 
-        var shieldDisplay = shieldGO.AddComponent<ShieldDisplay>();
-        shieldDisplay.Initialize(shieldText);
+        var shieldDisplay = shieldBarGO.AddComponent<ShieldDisplay>();
+        shieldDisplay.Initialize(shieldText, shieldFillImage);
 
         // Level Indicator
         var levelTextGO = new GameObject("LevelText");
@@ -135,11 +147,11 @@ public class UIBuilder : MonoBehaviour
         levelTextRT.anchorMin = new Vector2(0.5f, 0.5f);
         levelTextRT.anchorMax = new Vector2(0.5f, 0.5f);
         levelTextRT.pivot = new Vector2(0.5f, 0.5f);
-        levelTextRT.anchoredPosition = new Vector2(0, 40);
-        levelTextRT.sizeDelta = new Vector2(200, 40);
+        levelTextRT.anchoredPosition = new Vector2(0, 0);
+        levelTextRT.sizeDelta = new Vector2(200, 30);
         var levelTMP = levelTextGO.AddComponent<TextMeshProUGUI>();
         levelTMP.text = "Level 1";
-        levelTMP.fontSize = 22;
+        levelTMP.fontSize = 18;
         levelTMP.alignment = TextAlignmentOptions.Center;
         levelTMP.color = AccentGold;
         levelTMP.fontStyle = FontStyles.Bold;
@@ -152,8 +164,8 @@ public class UIBuilder : MonoBehaviour
         volumePanelRT.anchorMin = new Vector2(1, 0.5f);
         volumePanelRT.anchorMax = new Vector2(1, 0.5f);
         volumePanelRT.pivot = new Vector2(1, 0.5f);
-        volumePanelRT.anchoredPosition = new Vector2(-20, 20);
-        volumePanelRT.sizeDelta = new Vector2(180, 30);
+        volumePanelRT.anchoredPosition = new Vector2(-170, 15);
+        volumePanelRT.sizeDelta = new Vector2(140, 24);
 
         // Volume icon
         var volumeIcon = CreateTMPText("VolumeIcon", volumePanel.transform, "\u266a", 18,
@@ -222,14 +234,18 @@ public class UIBuilder : MonoBehaviour
         var volumeSliderUI = volumePanel.AddComponent<VolumeSliderUI>();
         volumeSliderUI.Initialize(slider);
 
-        // Phase Label (centered, large)
-        var phaseLabel = CreateTMPText("PhaseLabel", hudPanel.transform, "", 36,
-            TextAlignmentOptions.Center, AccentGold);
+        // Phase Label (top-left, below HUD, small horizontal text)
+        var phaseLabel = CreateTMPText("PhaseLabel", canvasTransform, "", 11,
+            TextAlignmentOptions.Left, AccentGold);
         var phaseLabelRT = phaseLabel.GetComponent<RectTransform>();
-        phaseLabelRT.anchorMin = new Vector2(0.5f, 0.5f);
-        phaseLabelRT.anchorMax = new Vector2(0.5f, 0.5f);
-        phaseLabelRT.sizeDelta = new Vector2(600, 60);
+        phaseLabelRT.anchorMin = new Vector2(0, 1);
+        phaseLabelRT.anchorMax = new Vector2(0, 1);
+        phaseLabelRT.pivot = new Vector2(0, 1);
+        phaseLabelRT.anchoredPosition = new Vector2(10, -85);
+        phaseLabelRT.sizeDelta = new Vector2(400, 18);
         phaseLabel.fontStyle = FontStyles.Bold;
+        phaseLabel.enableWordWrapping = false;
+        phaseLabel.overflowMode = TextOverflowModes.Ellipsis;
         phaseLabel.gameObject.SetActive(false);
 
         // ── Gold Display (HUD) ──
@@ -239,11 +255,11 @@ public class UIBuilder : MonoBehaviour
         goldTextRT.anchorMin = new Vector2(1, 0.5f);
         goldTextRT.anchorMax = new Vector2(1, 0.5f);
         goldTextRT.pivot = new Vector2(1, 0.5f);
-        goldTextRT.anchoredPosition = new Vector2(-20, -20);
-        goldTextRT.sizeDelta = new Vector2(150, 30);
+        goldTextRT.anchoredPosition = new Vector2(-10, -12);
+        goldTextRT.sizeDelta = new Vector2(130, 24);
         var goldTMP = goldTextGO.AddComponent<TextMeshProUGUI>();
         goldTMP.text = "0 G";
-        goldTMP.fontSize = 20;
+        goldTMP.fontSize = 16;
         goldTMP.alignment = TextAlignmentOptions.Right;
         goldTMP.color = AccentGold;
         goldTMP.fontStyle = FontStyles.Bold;
@@ -259,11 +275,11 @@ public class UIBuilder : MonoBehaviour
         dexTextRT.anchorMin = new Vector2(1, 0.5f);
         dexTextRT.anchorMax = new Vector2(1, 0.5f);
         dexTextRT.pivot = new Vector2(1, 0.5f);
-        dexTextRT.anchoredPosition = new Vector2(-20, -50);
-        dexTextRT.sizeDelta = new Vector2(150, 30);
+        dexTextRT.anchoredPosition = new Vector2(-150, -12);
+        dexTextRT.sizeDelta = new Vector2(130, 24);
         var dexTMP = dexTextGO.AddComponent<TextMeshProUGUI>();
         dexTMP.text = "DEX: 0";
-        dexTMP.fontSize = 18;
+        dexTMP.fontSize = 14;
         dexTMP.alignment = TextAlignmentOptions.Right;
         dexTMP.color = TextColor;
         dexTMP.fontStyle = FontStyles.Bold;
@@ -275,9 +291,11 @@ public class UIBuilder : MonoBehaviour
         // ── Exploration Action Buttons (left side) ──
         var explorationPanel = CreatePanel("ExplorationPanel", canvasTransform,
             new Vector2(0, 0.3f), new Vector2(0, 0.7f),
-            new Vector2(100, 0), new Vector2(100, 0), 0);
+            new Vector2(0, 0), new Vector2(0, 0), 0);
         var explorationPanelRT = explorationPanel.GetComponent<RectTransform>();
-        explorationPanelRT.sizeDelta = new Vector2(150, 0);
+        explorationPanelRT.pivot = new Vector2(0, 0.5f);
+        explorationPanelRT.anchoredPosition = new Vector2(80, 0);
+        explorationPanelRT.sizeDelta = new Vector2(160, 0);
         explorationPanel.GetComponent<Image>().color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.85f);
 
         var vlg = explorationPanel.AddComponent<VerticalLayoutGroup>();
@@ -336,8 +354,8 @@ public class UIBuilder : MonoBehaviour
             Vector2.zero, Vector2.zero, 0);
         var minimapPanelRT = minimapPanel.GetComponent<RectTransform>();
         minimapPanelRT.pivot = new Vector2(1, 1);
-        minimapPanelRT.anchoredPosition = new Vector2(-10, -160);
-        minimapPanelRT.sizeDelta = new Vector2(180, 140);
+        minimapPanelRT.anchoredPosition = new Vector2(-10, -90);
+        minimapPanelRT.sizeDelta = new Vector2(160, 130);
         minimapPanel.GetComponent<Image>().color = new Color(0, 0, 0, 0.6f);
         var minimapMask = minimapPanel.AddComponent<Mask>();
         minimapMask.showMaskGraphic = true;
@@ -611,8 +629,8 @@ public class UIBuilder : MonoBehaviour
         toastRT.anchorMin = new Vector2(0, 1);
         toastRT.anchorMax = new Vector2(0, 1);
         toastRT.pivot = new Vector2(0, 1);
-        toastRT.anchoredPosition = new Vector2(10, -165);
-        toastRT.sizeDelta = new Vector2(320, 100);
+        toastRT.anchoredPosition = new Vector2(10, -90);
+        toastRT.sizeDelta = new Vector2(280, 80);
 
         var toastBg = crapsToastGO.AddComponent<Image>();
         toastBg.color = new Color(0.18f, 0.49f, 0.2f, 0.95f);
@@ -821,7 +839,7 @@ public class UIBuilder : MonoBehaviour
         combatLogRT.anchorMax = new Vector2(1, 0);
         combatLogRT.pivot = new Vector2(1, 0);
         combatLogRT.anchoredPosition = new Vector2(-10, 300);
-        combatLogRT.sizeDelta = new Vector2(350, 200);
+        combatLogRT.sizeDelta = new Vector2(300, 180);
         var combatLogBg = combatLogGO.GetComponent<Image>();
         combatLogBg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.7f);
 
@@ -1023,8 +1041,8 @@ public class UIBuilder : MonoBehaviour
         bpRT.anchorMin = new Vector2(1, 1);
         bpRT.anchorMax = new Vector2(1, 1);
         bpRT.pivot = new Vector2(1, 1);
-        bpRT.anchoredPosition = new Vector2(-10, -310);
-        bpRT.sizeDelta = new Vector2(250, 80);
+        bpRT.anchoredPosition = new Vector2(-10, -230);
+        bpRT.sizeDelta = new Vector2(200, 70);
 
         var bpBg = bossPassivesGO.AddComponent<Image>();
         bpBg.color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.85f);
@@ -1135,8 +1153,8 @@ public class UIBuilder : MonoBehaviour
         buffsToggleBtnRT.anchorMin = new Vector2(0, 0);
         buffsToggleBtnRT.anchorMax = new Vector2(0, 0);
         buffsToggleBtnRT.pivot = new Vector2(0, 0);
-        buffsToggleBtnRT.anchoredPosition = new Vector2(20, 8);
-        buffsToggleBtnRT.sizeDelta = new Vector2(100, 30);
+        buffsToggleBtnRT.anchoredPosition = new Vector2(10, 5);
+        buffsToggleBtnRT.sizeDelta = new Vector2(80, 24);
 
         // Buffs panel (right side, below minimap)
         var buffsPanel = CreatePanel("ActiveBuffsPanel", canvasTransform,
@@ -1145,7 +1163,7 @@ public class UIBuilder : MonoBehaviour
         var buffsPanelRT = buffsPanel.GetComponent<RectTransform>();
         buffsPanelRT.pivot = new Vector2(1, 1);
         buffsPanelRT.anchoredPosition = new Vector2(-10, -310);
-        buffsPanelRT.sizeDelta = new Vector2(280, 250);
+        buffsPanelRT.sizeDelta = new Vector2(200, 200);
         buffsPanel.GetComponent<Image>().color = new Color(PanelBgColor.r, PanelBgColor.g, PanelBgColor.b, 0.92f);
 
         // Buffs panel title

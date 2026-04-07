@@ -26,13 +26,13 @@ MonoBehaviour:
   StartingDice:
   - DiceType: {fileID: 11400000, guid: 009661765a857994c93ebfafc97390d6, type: 2}
     Quantity: 4
-  - DiceType: {fileID: 11400000, guid: c9c08a8b76d7dc844936313a67c8c567, type: 2}
-    Quantity: 2
+  - DiceType: {fileID: 11400000, guid: a1b2c3d4e5f6789012345678abcdef10, type: 2}
+    Quantity: 1
   CombatDiceSlots: 5
   MinCombatDiceSlots: 0
   AvailablePoolDice:
   - {fileID: 11400000, guid: 009661765a857994c93ebfafc97390d6, type: 2}
-  - {fileID: 11400000, guid: c9c08a8b76d7dc844936313a67c8c567, type: 2}
+  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678abcdef10, type: 2}
   - {fileID: 11400000, guid: 6c0292f288106034abdad76369f275cd, type: 2}
   AffinityCombo: 6
   AffinityDamageBonus: 1.25

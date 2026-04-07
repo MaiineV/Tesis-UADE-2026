@@ -26,7 +26,16 @@
       "Bash(pip install:*)",
       "Bash(python -c \":*)",
       "Bash(python:*)",
-      "Bash(PYTHONUTF8=1 python -c \"\nimport fitz\ndoc = fitz.open\\(r'C:\\\\Users\\\\Educabot\\\\Desktop\\\\Dice & Dungeons — GDD.pdf'\\)\nfor i in range\\(25, min\\(35, doc.page_count\\)\\):\n    page = doc[i]\n    text = page.get_text\\(\\)\n    print\\(f'\\\\n===== PAGE {i+1} ====='\\)\n    print\\(text\\)\n\")"
+      "Bash(PYTHONUTF8=1 python -c \"\nimport fitz\ndoc = fitz.open\\(r'C:\\\\Users\\\\Educabot\\\\Desktop\\\\Dice & Dungeons — GDD.pdf'\\)\nfor i in range\\(25, min\\(35, doc.page_count\\)\\):\n    page = doc[i]\n    text = page.get_text\\(\\)\n    print\\(f'\\\\n===== PAGE {i+1} ====='\\)\n    print\\(text\\)\n\")",
+      "Bash(git pull:*)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(grep -n \"void Update\\\\|void FixedUpdate\\\\|void LateUpdate\" /c/Users/Educabot/Unity/Projects/Tesis-UADE-2026/Assets/Scripts/**/*.cs)",
+      "Bash(grep -l \"009661765a857994c93ebfafc97390d6\" Assets/Data/Dice/*.meta)",
+      "Bash(grep -l \"c9c08a8b76d7dc844936313a67c8c567\" Assets/Data/Dice/*.meta)",
+      "Bash(grep -l \"6c0292f288106034abdad76369f275cd\" Assets/Data/Dice/*.meta)"
     ]
   },
   "enableAllProjectMcpServers": true,

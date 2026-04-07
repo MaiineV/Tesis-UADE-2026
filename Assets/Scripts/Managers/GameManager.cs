@@ -27,7 +27,15 @@ public class GameManager : MonoBehaviour
         LevelTransition,
         RoomTransition,
         GameOver,
-        Victory
+        Victory,
+        // 3AP system states
+        AP1_Movement = 100,
+        AP2_TargetSelect = 110,
+        AP2_Attack = 120,
+        AP2_Bag = 130,
+        AP3_Shield = 140,
+        EnemyPhase = 150,
+        OpportunityAttack = 160
     }
 
     public GameState CurrentState { get; private set; }
@@ -95,9 +103,23 @@ public class GameManager : MonoBehaviour
     // Shop items on grid
     private List<ShopItemEntity> _shopItemEntities = new List<ShopItemEntity>();
 
+    // Cached UI references (avoid FindObjectOfType at runtime)
+    private InventoryBuilderUI _cachedInventoryBuilderUI;
+    private MovementRollUI _cachedMovementRollUI;
+    private CrapsUI _cachedCrapsUI;
+    private RewardUI _cachedRewardUI;
+    private GameOverUI _cachedGameOverUI;
+    private VictoryUI _cachedVictoryUI;
+
     // Boss passive
     private CombinationType _bossResistedCombo;
     private bool _bossHasResistance;
+
+    // === 3AP Combat System ===
+    private bool _inCombatTurns;
+    private bool _ap2Done;
+    private bool _ap3Done;
+    private int _ap1Steps; // speed die result for current turn
 
     // Boss debuffs
     private List<BossDebuffData> _floorDebuffs = new List<BossDebuffData>();
@@ -106,12 +128,13 @@ public class GameManager : MonoBehaviour
 
     private void ClearBossDebuffs()
     {
-        if (_debuffsActive && _preDebuffMaxHP > 0)
+        if (_debuffsActive && _preDebuffMaxHP > 0 && player != null)
         {
             player.State.MaxHP = _preDebuffMaxHP;
             if (player.State.CurrentHP > player.State.MaxHP)
                 player.State.CurrentHP = player.State.MaxHP;
-            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+            if (UIManager.Instance != null)
+                UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
         }
         _debuffsActive = false;
         _bossHasResistance = false;
@@ -255,29 +278,29 @@ public class GameManager : MonoBehaviour
         UnsubscribeFromEvents();
         SubscribeToEvents();
 
-        var inventoryBuilderUI = FindObjectOfType<InventoryBuilderUI>(true);
-        if (inventoryBuilderUI != null)
-            inventoryBuilderUI.OnInventoryConfirmed += OnInventoryConfirmed;
+        _cachedInventoryBuilderUI = FindObjectOfType<InventoryBuilderUI>(true);
+        if (_cachedInventoryBuilderUI != null)
+            _cachedInventoryBuilderUI.OnInventoryConfirmed += OnInventoryConfirmed;
 
-        var movementRollUI = FindObjectOfType<MovementRollUI>(true);
-        if (movementRollUI != null)
-            movementRollUI.OnRollClicked += OnMovementRollClicked;
+        _cachedMovementRollUI = FindObjectOfType<MovementRollUI>(true);
+        if (_cachedMovementRollUI != null)
+            _cachedMovementRollUI.OnRollClicked += OnMovementRollClicked;
 
-        var crapsUI = FindObjectOfType<CrapsUI>(true);
-        if (crapsUI != null)
-            crapsUI.OnBetSelected += OnCrapsBetPlaced;
+        _cachedCrapsUI = FindObjectOfType<CrapsUI>(true);
+        if (_cachedCrapsUI != null)
+            _cachedCrapsUI.OnBetSelected += OnCrapsBetPlaced;
 
-        var rewardUI = FindObjectOfType<RewardUI>(true);
-        if (rewardUI != null)
-            rewardUI.OnRewardChosen += OnRewardSelected;
+        _cachedRewardUI = FindObjectOfType<RewardUI>(true);
+        if (_cachedRewardUI != null)
+            _cachedRewardUI.OnRewardChosen += OnRewardSelected;
 
-        var gameOverUI = FindObjectOfType<GameOverUI>(true);
-        if (gameOverUI != null)
-            gameOverUI.OnRestartClicked += RestartRun;
+        _cachedGameOverUI = FindObjectOfType<GameOverUI>(true);
+        if (_cachedGameOverUI != null)
+            _cachedGameOverUI.OnRestartClicked += RestartRun;
 
-        var victoryUI = FindObjectOfType<VictoryUI>(true);
-        if (victoryUI != null)
-            victoryUI.OnRestartClicked += RestartRun;
+        _cachedVictoryUI = FindObjectOfType<VictoryUI>(true);
+        if (_cachedVictoryUI != null)
+            _cachedVictoryUI.OnRestartClicked += RestartRun;
 
         // Bind exploration actions
         if (ExplorationActionsUI.Instance != null)
@@ -495,8 +518,8 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.UpdateDexterity(player.State.Dexterity);
         UIManager.Instance.UpdateLevel(currentLevel);
 
-        var combatLog = FindObjectOfType<CombatLogUI>();
-        if (combatLog != null) combatLog.Clear();
+        if (cachedCombatLog == null) cachedCombatLog = FindObjectOfType<CombatLogUI>();
+        if (cachedCombatLog != null) cachedCombatLog.Clear();
 
         string roomLabel = room.Type.ToString().ToUpper();
         Log($"--- {roomLabel} ROOM ---");
@@ -512,7 +535,12 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            BeginPlayerMovement();
+            // 3AP system: use turn cycle if enemies, free movement otherwise
+            bool hasEnemies = enemies.Count > 0 && enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+            if (hasEnemies)
+                BeginTurnCycle();
+            else
+                BeginPlayerMovement();
         }
     }
 
@@ -654,7 +682,12 @@ public class GameManager : MonoBehaviour
             player.State.Bag.Dice.Add(die);
 
         Log($"Inventario listo: {selectedDice.Count} dados seleccionados");
-        BeginPlayerMovement();
+        // 3AP: first room always has enemies → start turn cycle
+        bool hasEnemies = enemies.Count > 0 && enemies.Any(e => e != null && e.State != null && e.State.IsAlive);
+        if (hasEnemies)
+            BeginTurnCycle();
+        else
+            BeginPlayerMovement();
     }
 
     // ── MOVEMENT ──
@@ -681,11 +714,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        TransitionTo(GameState.MovementRoll);
-        UIManager.Instance.ShowMovementRollPanel(
-            player.State.BaseData.SpeedMin,
-            player.State.BaseData.SpeedMax);
-        ShowExplorationUI();
+        // Enemies alive — use 3AP combat system
+        Log("[BeginPlayerMovement] Enemies alive, starting 3AP combat.");
+        BeginTurnCycle();
     }
 
     private void ShowExplorationUI()
@@ -766,6 +797,12 @@ public class GameManager : MonoBehaviour
 
     public void OnPlayerMoveSelected(Vector2Int target)
     {
+        // 3AP: route AP1 movement to the new handler
+        if (CurrentState == GameState.AP1_Movement)
+        {
+            OnAP1MoveSelected(target);
+            return;
+        }
         if (CurrentState != GameState.MovementPhase) return;
 
         GridManager.Instance.ClearHighlights();
@@ -1484,6 +1521,8 @@ public class GameManager : MonoBehaviour
 
     private void EnterCombat(EnemyEntity enemy)
     {
+        // Redirect to 3AP system — old combat flow is deprecated
+        Log($"[EnterCombat] Redirecting to 3AP system for {enemy.State.BaseData.EnemyName}");
         currentCombatEnemy = enemy;
         crapsMode = new CrapsMode();
 
@@ -1522,47 +1561,23 @@ public class GameManager : MonoBehaviour
             Log($"Shield buff: +{shieldBuff} shield at combat start!");
         }
 
-        TransitionTo(GameState.PreCombat);
-
-        var combatRoomRef = DungeonManager.Instance.CurrentRoom;
-        bool isBossRoom = combatRoomRef != null && combatRoomRef.Type == RoomType.Boss;
-
-        UIManager.Instance.ShowPhaseLabel(_activeCombatEnemies.Count > 1 ? "DOUBLE COMBAT!" : "COMBAT!");
-        UIManager.Instance.ShowCombatPanel();
+        // Boss setup
+        var combatRoom = DungeonManager.Instance.CurrentRoom;
+        bool isBossRoom = combatRoom != null && combatRoom.Type == RoomType.Boss;
         UIManager.Instance.ShowEnemyInfo(enemy, isBossRoom);
-
-        // Boss pulsing effect on sprite
-        if (isBossRoom)
-            enemy.StartBossPulse();
-
-        // Show second enemy info if double combat
+        if (isBossRoom) enemy.StartBossPulse();
         if (_activeCombatEnemies.Count > 1)
             UIManager.Instance.ShowSecondEnemyInfo(_activeCombatEnemies[1]);
 
         UIManager.Instance.HideExplorationActions();
-        Log($"Combat started with {enemy.State.BaseData.EnemyName}!");
-        if (_activeCombatEnemies.Count > 1)
-            Log($"{_activeCombatEnemies[1].State.BaseData.EnemyName} also engages!");
 
-        UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
-
-        // Show flee/force door buttons during combat
-        if (ExplorationActionsUI.Instance != null)
-        {
-            ExplorationActionsUI.Instance.SetCombatMode(isPlayerNearDoor(), player.State.CurrentHP, isBossRoom);
-            ExplorationActionsUI.Instance.Show();
-        }
-
-        // Boss passive: activate floor debuffs
-        var combatRoom = DungeonManager.Instance.CurrentRoom;
-        if (combatRoom != null && combatRoom.Type == RoomType.Boss && _floorDebuffs.Count > 0)
+        // Boss debuffs
+        if (isBossRoom && _floorDebuffs.Count > 0)
         {
             _debuffsActive = true;
             player.State.ActiveDebuffs.Clear();
             for (int i = 0; i < _floorDebuffs.Count; i++)
                 player.State.ActiveDebuffs.Add(_floorDebuffs[i]);
-
-            // Apply MaxHPReduction immediately
             var hpDebuff = player.State.GetDebuff(BossDebuffType.MaxHPReduction);
             if (hpDebuff != null)
             {
@@ -1576,31 +1591,18 @@ public class GameManager : MonoBehaviour
             {
                 _preDebuffMaxHP = player.State.MaxHP;
             }
-
-            // Populate legacy combo resistance from ComboDamageReduction debuff
             var comboDebuff = player.State.GetDebuff(BossDebuffType.ComboDamageReduction);
             if (comboDebuff != null)
             {
                 _bossResistedCombo = comboDebuff.TargetCombo;
                 _bossHasResistance = true;
             }
-
             BossPassivesUI.Instance?.Show(_floorDebuffs);
-            if (ActiveBuffsUI.Instance != null)
-                ActiveBuffsUI.Instance.Refresh();
-
-            Debug.Log($"[BossDebuff] Activated {_floorDebuffs.Count} debuffs for boss fight");
+            if (ActiveBuffsUI.Instance != null) ActiveBuffsUI.Instance.Refresh();
         }
 
-        if (player.State.CrapsModeAvailable)
-        {
-            TransitionTo(GameState.CrapsBet);
-            UIManager.Instance.ShowCrapsOverlay();
-        }
-        else
-        {
-            ProcessArcherPreAttack();
-        }
+        // Start the 3AP turn cycle
+        BeginTurnCycle();
     }
 
     public void OnCrapsBetPlaced(CombinationType bet)
@@ -1722,8 +1724,7 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.HideCombatPanel();
             UIManager.Instance.HideEnemyInfo();
             UIManager.Instance.HideExplorationActions();
-            var gameOverUI = FindObjectOfType<GameOverUI>(true);
-            if (gameOverUI != null) gameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
+            if (_cachedGameOverUI != null) _cachedGameOverUI.Show(GetRunStats(), currentCombatEnemy.State.BaseData.EnemyName);
             UIManager.Instance.ShowGameOverOverlay();
             yield break;
         }
@@ -1764,7 +1765,7 @@ public class GameManager : MonoBehaviour
 
     public void OnPlayerRoll()
     {
-        if (CurrentState != GameState.AttackPhase) return;
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.AP2_Attack && CurrentState != GameState.AP3_Shield) return;
         if (_awaitingTargetSelection) return;
         if (currentAttack.CurrentRoll > 0 && !currentAttack.CanRollAgain) return;
 
@@ -1794,7 +1795,7 @@ public class GameManager : MonoBehaviour
 
     public void OnDiceToggleLock(string diceId)
     {
-        if (CurrentState != GameState.AttackPhase) return;
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.AP2_Attack && CurrentState != GameState.AP3_Shield) return;
         if (currentAttack.CurrentRoll == 0) return;
 
         currentAttack.ToggleLock(diceId);
@@ -1819,11 +1820,34 @@ public class GameManager : MonoBehaviour
 
     public void OnPlayerCommitAttack()
     {
-        if (CurrentState != GameState.AttackPhase) return;
+        // AP3 Shield: use Generala combo as shield value
+        if (_isAP3Shield && CurrentState == GameState.AP3_Shield)
+        {
+            if (currentAttack.CurrentRoll == 0) return;
+            var shieldCombo = currentAttack.Commit(generalaScoredThisRun);
+            OnAP3ShieldCommit(shieldCombo);
+            return;
+        }
+
+        if (CurrentState != GameState.AttackPhase && CurrentState != GameState.AP2_Attack) return;
         if (currentAttack.CurrentRoll == 0) return;
 
+        bool is3AP = CurrentState == GameState.AP2_Attack;
+
         var combo = currentAttack.Commit(generalaScoredThisRun);
-        int damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
+        int damage;
+        if (is3AP)
+        {
+            damage = DamageResolver.ResolvePlayerAttack3AP(combo, player.State.BaseData, player.State.Bag);
+            // Show damage breakdown in UI
+            DamageResolver.GetDamageBreakdown(combo, player.State.Bag,
+                out int comboBase, out float mult, out int bonus, out int total);
+            CombatUI.Instance.ShowDamageBreakdown(comboBase, mult, bonus, total);
+        }
+        else
+        {
+            damage = DamageResolver.ResolvePlayerAttack(combo, player.State.BaseData);
+        }
 
         // Apply combo-specific damage multiplier from shop buffs
         float comboMult = DamageResolver.GetComboMultiplier(combo.Type, player.State);
@@ -1897,6 +1921,13 @@ public class GameManager : MonoBehaviour
 
         if (combo.Type == CombinationType.Generala)
             generalaScoredThisRun = true;
+
+        // 3AP: route to AP2 handler which manages its own damage application
+        if (is3AP)
+        {
+            OnAP2AttackCommitDamage(combo, damage);
+            return;
+        }
 
         if (currentCombatEnemy == null) return;
         currentCombatEnemy.State.TakeDamage(damage);
@@ -2104,8 +2135,7 @@ public class GameManager : MonoBehaviour
                 UIManager.Instance.HideCombatPanel();
                 UIManager.Instance.HideEnemyInfo();
                 UIManager.Instance.HideExplorationActions();
-                var gameOverUI = FindObjectOfType<GameOverUI>(true);
-                if (gameOverUI != null) gameOverUI.Show(GetRunStats(), enemy.State.BaseData.EnemyName);
+                if (_cachedGameOverUI != null) _cachedGameOverUI.Show(GetRunStats(), enemy.State.BaseData.EnemyName);
                 UIManager.Instance.ShowGameOverOverlay();
                 yield break;
             }
@@ -2273,7 +2303,15 @@ public class GameManager : MonoBehaviour
 
     private void onEnemyDeathCombatContinue()
     {
-        // Continue combat — player gets to attack remaining enemies before enemy turn
+        // Continue combat in 3AP flow — go back to AP2/AP3 prompt
+        if (_inCombatTurns)
+        {
+            CombatUI.Instance.HideCombatUI();
+            _ap2Done = true;
+            PromptAP2orAP3();
+            return;
+        }
+        // Fallback for old flow (shouldn't happen)
         UIManager.Instance.ShowCombatPanel();
         StartAttackPhase();
     }
@@ -2309,8 +2347,7 @@ public class GameManager : MonoBehaviour
             // Show reward first, then player can move to portal
             TransitionTo(GameState.RewardSelection);
             var bossOffers = RewardGenerator.GenerateOffers(player.State.Bag, 2);
-            var bossRewardUI = FindObjectOfType<RewardUI>(true);
-            if (bossRewardUI != null) bossRewardUI.ShowOffers(bossOffers);
+            if (_cachedRewardUI != null) _cachedRewardUI.ShowOffers(bossOffers);
             UIManager.Instance.ShowRewardOverlay();
             return;
         }
@@ -2377,7 +2414,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            if (CurrentState == GameState.MovementPhase)
+            if (CurrentState == GameState.MovementPhase || CurrentState == GameState.AP1_Movement)
             {
                 HandleMovementClick();
             }
@@ -2507,6 +2544,612 @@ public class GameManager : MonoBehaviour
     }
 
     // ── HELPERS ──
+
+    // =============================================
+    // === 3AP COMBAT SYSTEM — Turn Flow Methods ===
+    // =============================================
+
+    /// Start turn-based combat cycle when room has enemies
+    private void BeginTurnCycle()
+    {
+        _inCombatTurns = true;
+        _ap2Done = false;
+        _ap3Done = false;
+        _isAP3Shield = false;
+
+        // Reset shield at start of player turn (lasts 1 round)
+        player.State.ShieldValue = 0;
+        UIManager.Instance.UpdateShield(0);
+
+        GridManager.Instance.SetDoorsBlocked(true);
+
+        // Roll speed die for AP1
+        _ap1Steps = player.State.SpeedDie.Roll();
+        TransitionTo(GameState.AP1_Movement);
+        UIManager.Instance.ShowPhaseLabel($"TU TURNO — AP1: Movimiento ({_ap1Steps} pasos)");
+        Log($"[3AP] Player Phase — Speed roll: {_ap1Steps}");
+
+        // Show reachable tiles (exclude enemy-occupied tiles)
+        currentReachableTiles = MovementManager.Instance.GetReachableTiles(
+            player.State.GridPosition, _ap1Steps);
+
+        // Remove tiles occupied by alive enemies
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] != null && enemies[i].State != null && enemies[i].State.IsAlive)
+                currentReachableTiles.Remove(enemies[i].State.GridPosition);
+        }
+
+        GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
+
+        // Show AP1 UI (CombatUI will show "Move" + "Stay" buttons)
+        if (CombatUI.Instance != null)
+            CombatUI.Instance.ShowAP1Movement(_ap1Steps);
+    }
+
+    /// Player selects a tile to move to during AP1
+    public void OnAP1MoveSelected(Vector2Int target)
+    {
+        if (CurrentState != GameState.AP1_Movement) return;
+
+        GridManager.Instance.ClearHighlights();
+        CombatUI.Instance.HideAPSelector();
+
+        // OA check: find the closest enemy whose range covers the player,
+        // and whose range will NOT cover the destination (player is moving away).
+        // Rule A: max 1 OA per movement.
+        EnemyEntity oaAttacker = null;
+        int closestDist = int.MaxValue;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] == null || !enemies[i].State.IsAlive) continue;
+            int range = enemies[i].State.BaseData.AttackRange;
+            if (OpportunityAttack.ShouldTrigger(player.State.GridPosition, target,
+                enemies[i].State.GridPosition, range))
+            {
+                int d = ChebyshevDistance(player.State.GridPosition, enemies[i].State.GridPosition);
+                if (d < closestDist)
+                {
+                    closestDist = d;
+                    oaAttacker = enemies[i];
+                }
+            }
+        }
+
+        if (oaAttacker != null)
+        {
+            int oaDamage = OpportunityAttack.EnemyOADamage(oaAttacker.State.BaseData);
+            // OA bypasses shield
+            player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - oaDamage);
+            totalDamageTaken += oaDamage;
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+
+            string eName = oaAttacker.State.BaseData.EnemyName;
+            Log($"[3AP] OA! {eName} strikes as you move away — {oaDamage} damage (no shield)");
+
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowText($"OA! -{oaDamage}", player.transform.position, new Color(1f, 0.5f, 0f));
+            if (SoundLibrary.Instance != null)
+                AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
+            if (ScreenFlashUI.Instance != null)
+                ScreenFlashUI.Instance.FlashDamage();
+
+            if (player.State.CurrentHP <= 0)
+            {
+                TransitionTo(GameState.GameOver);
+                if (_cachedGameOverUI != null) _cachedGameOverUI.Show(GetRunStats(), oaAttacker.State.BaseData.EnemyName);
+                UIManager.Instance.ShowGameOverOverlay();
+                return;
+            }
+        }
+
+        isAnimating = true;
+        var path = MovementManager.Instance.FindPath(player.State.GridPosition, target);
+        MovementManager.Instance.MovePlayerAlongPathAnimated(player, path, (enemy) =>
+        {
+            isAnimating = false;
+            // In 3AP, movement doesn't trigger combat via collision.
+            PromptAP2orAP3();
+        });
+    }
+
+    /// Player stays in place during AP1
+    public void OnAP1Stay()
+    {
+        if (CurrentState != GameState.AP1_Movement) return;
+        GridManager.Instance.ClearHighlights();
+        Log("[3AP] Player stays in place.");
+        PromptAP2orAP3();
+    }
+
+    /// After AP1, show AP2 selector. After AP2, go to AP3. After AP3, enemy phase.
+    private void PromptAP2orAP3()
+    {
+        if (_ap2Done && _ap3Done)
+        {
+            StartEnemyPhase();
+            return;
+        }
+
+        // AP2 not done yet — show selector
+        if (!_ap2Done)
+        {
+            bool canAttack = HasEnemiesInMeleeRange();
+            if (CombatUI.Instance != null)
+                CombatUI.Instance.ShowAPSelector(canAttack, false, false, true);
+            UIManager.Instance.ShowPhaseLabel("AP2 — Atacar / Pasar");
+            return;
+        }
+
+        // AP2 done, AP3 not done — go to shield Generala
+        if (!_ap3Done)
+        {
+            StartAP3Shield();
+            return;
+        }
+    }
+
+    /// Called from UI when player picks AP2 (Attack)
+    public void OnAPSelectorAttack()
+    {
+        StartAP2Attack();
+    }
+
+    /// Called from UI when player picks AP2 (Bag/Potion)
+    public void OnAPSelectorBag()
+    {
+        StartAP2Bag();
+    }
+
+    /// Called from UI when player picks AP3 (Shield)
+    public void OnAPSelectorShield()
+    {
+        StartAP3Shield();
+    }
+
+    /// Called from UI when player skips AP2
+    public void OnAPSelectorSkipAP2()
+    {
+        _ap2Done = true;
+        Log("[3AP] AP2 skipped.");
+        PromptAP2orAP3();
+    }
+
+    /// Check if any alive enemy is within melee range (Chebyshev distance ≤ 1)
+    private bool HasEnemiesInMeleeRange()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] == null || !enemies[i].State.IsAlive) continue;
+            if (ChebyshevDistance(player.State.GridPosition, enemies[i].State.GridPosition) <= 1)
+                return true;
+        }
+        return false;
+    }
+
+    /// Get list of alive enemies in melee range
+    private List<EnemyEntity> GetEnemiesInMeleeRange()
+    {
+        var result = new List<EnemyEntity>();
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] == null || !enemies[i].State.IsAlive) continue;
+            if (ChebyshevDistance(player.State.GridPosition, enemies[i].State.GridPosition) <= 1)
+                result.Add(enemies[i]);
+        }
+        return result;
+    }
+
+    /// Chebyshev distance (8-directional adjacency)
+    private static int ChebyshevDistance(Vector2Int a, Vector2Int b)
+    {
+        return Mathf.Max(Mathf.Abs(a.x - b.x), Mathf.Abs(a.y - b.y));
+    }
+
+    // --- AP2 Attack ---
+
+    private EnemyEntity _ap2TargetEnemy;
+
+    private void StartAP2Attack()
+    {
+        var inRange = GetEnemiesInMeleeRange();
+        if (inRange.Count == 0)
+        {
+            Log("[3AP] AP2 Attack — no enemies in range, skipping.");
+            _ap2Done = true;
+            PromptAP2orAP3();
+            return;
+        }
+
+        // Check Craps availability before attack
+        if (player.State.CrapsModeAvailable)
+        {
+            crapsAttempts++;
+            TransitionTo(GameState.CrapsBet);
+            if (CrapsUI.Instance != null)
+                CrapsUI.Instance.Show();
+            // After craps bet is placed, it will call back and we continue to attack
+            // We store that we need to do target select after craps
+            return;
+        }
+
+        BeginAP2TargetSelect(inRange);
+    }
+
+    private void BeginAP2TargetSelect(List<EnemyEntity> inRange)
+    {
+        if (inRange.Count == 1)
+        {
+            // Auto-select single target
+            _ap2TargetEnemy = inRange[0];
+            currentCombatEnemy = _ap2TargetEnemy;
+            BeginAP2Generala();
+            return;
+        }
+
+        // Multiple targets: let player pick
+        TransitionTo(GameState.AP2_TargetSelect);
+        UIManager.Instance.ShowPhaseLabel("AP2: Elegí enemigo para atacar");
+        // Highlight enemies in range
+        for (int i = 0; i < inRange.Count; i++)
+        {
+            // TODO: visual highlight on enemies — for now, auto-select first
+        }
+        // For prototype, auto-select first enemy in range
+        _ap2TargetEnemy = inRange[0];
+        currentCombatEnemy = _ap2TargetEnemy;
+        BeginAP2Generala();
+    }
+
+    private void BeginAP2Generala()
+    {
+        TransitionTo(GameState.AP2_Attack);
+        currentAttack = new AttackPhase();
+        currentAttack.MaxRolls = 3 + (int)player.State.GetBuffTotal(RunBuffType.ExtraRoll);
+
+        if (_debuffsActive && player.State.HasDebuff(BossDebuffType.ReducedRolls))
+            currentAttack.MaxRolls = Mathf.Max(1, currentAttack.MaxRolls - 1);
+
+        if (crapsMode.IsActive)
+            CombatUI.Instance.ShowCrapsBetIndicator(crapsMode.BetCombo);
+        else
+            CombatUI.Instance.HideCrapsBetIndicator();
+
+        UIManager.Instance.ShowPhaseLabel(crapsMode.IsActive ? "AP2: CRAPS ROUND" : "AP2: ATAQUE (Generala)");
+        Log($"[3AP] AP2 Attack vs {_ap2TargetEnemy.State.BaseData.EnemyName}");
+
+        // Show enemy info
+        UIManager.Instance.ShowEnemyInfo(_ap2TargetEnemy);
+        CombatUI.Instance.SetCommitText("COMMIT ATTACK");
+
+        // First roll
+        OnPlayerRoll();
+    }
+
+    /// Called when player commits attack in 3AP — routes to AP flow instead of defense
+    private void OnAP2AttackCommitDamage(CombinationResult combo, int damage)
+    {
+        if (_ap2TargetEnemy == null) return;
+        _ap2TargetEnemy.State.TakeDamage(damage);
+        totalDamageDealt += damage;
+
+        UIManager.Instance.UpdateEnemyHP(_ap2TargetEnemy.State.CurrentHP, _ap2TargetEnemy.State.MaxHP);
+
+        if (SoundLibrary.Instance != null)
+            AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
+        if (FloatingDamageUI.Instance != null)
+            FloatingDamageUI.Instance.ShowDamage(damage, _ap2TargetEnemy.transform.position);
+
+        Log($"[3AP] Dealt {damage} damage ({combo.Type})");
+
+        if (damage > bestComboDamage)
+        {
+            bestComboDamage = damage;
+            bestCombo = combo.Type;
+        }
+
+        EnergyManager.Instance.ProcessCombatAction(CombatActionType.DealtDamage, combo.Type);
+        UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+        UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+
+        if (!_ap2TargetEnemy.State.IsAlive)
+        {
+            EnergyManager.Instance.ProcessCombatAction(CombatActionType.KilledEnemy);
+            UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+            Log($"[3AP] {_ap2TargetEnemy.State.BaseData.EnemyName} defeated!");
+
+            // Boss: use HandleEnemyDeath for rewards/portal (it counts kills)
+            if (_ap2TargetEnemy.State.BaseData.IsBoss)
+            {
+                currentCombatEnemy = _ap2TargetEnemy;
+                HandleEnemyDeath();
+                return;
+            }
+
+            // Non-boss: count kill, drop gold, clear tile, continue
+            enemiesDefeated++;
+            totalEnemiesDefeated++;
+
+            // Gold drop
+            int goldMin = _ap2TargetEnemy.State.BaseData.GoldDropMin;
+            int goldMax = _ap2TargetEnemy.State.BaseData.GoldDropMax;
+            if (goldMin <= 0 && goldMax <= 0) { goldMin = 5; goldMax = 15; }
+            int goldDrop = UnityEngine.Random.Range(goldMin, goldMax + 1);
+            player.State.Gold += goldDrop;
+            UIManager.Instance.UpdateGold(player.State.Gold);
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowGold(goldDrop, _ap2TargetEnemy.transform.position);
+
+            GridManager.Instance.ClearOccupant(_ap2TargetEnemy.State.GridPosition);
+            _ap2TargetEnemy.PlayDeathAnimation(null);
+        }
+
+        CombatUI.Instance.HideCombatUI();
+        _ap2Done = true;
+        _ap2TargetEnemy = null;
+
+        // Check if all enemies dead
+        bool anyAlive = false;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] != null && enemies[i].State != null && enemies[i].State.IsAlive)
+            { anyAlive = true; break; }
+        }
+        if (!anyAlive)
+        {
+            EndCombatTurns();
+            return;
+        }
+
+        PromptAP2orAP3();
+    }
+
+    private void StartAP2Bag()
+    {
+        TransitionTo(GameState.AP2_Bag);
+        UIManager.Instance.ShowPhaseLabel("AP2: Bolsa");
+
+        if (player.State.HasPotion && player.State.PotionCount > 0)
+        {
+            player.State.PotionCount--;
+            if (player.State.PotionCount <= 0) player.State.HasPotion = false;
+
+            int healAmount = 15;
+            player.State.Heal(healAmount);
+            UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+            Log($"[3AP] Used potion — healed {healAmount} HP");
+            if (FloatingDamageUI.Instance != null)
+                FloatingDamageUI.Instance.ShowText($"+{healAmount}", player.transform.position, Color.green);
+        }
+        else
+        {
+            Log("[3AP] No items to use.");
+        }
+
+        _ap2Done = true;
+        StartCoroutine(DelayedAction(0.8f, () => PromptAP2orAP3()));
+    }
+
+    // --- AP3 Shield (Generala-based) ---
+    private bool _isAP3Shield;
+
+    private void StartAP3Shield()
+    {
+        TransitionTo(GameState.AP3_Shield);
+        _isAP3Shield = true;
+
+        currentAttack = new AttackPhase();
+        currentAttack.MaxRolls = 3;
+
+        UIManager.Instance.ShowPhaseLabel("AP3: ESCUDO (Generala)");
+        Log("[3AP] AP3 Shield — roll Generala for shield value");
+
+        // Show combat panel — OnPlayerRoll will populate dice UI
+        UIManager.Instance.ShowCombatPanel();
+        CombatUI.Instance.SetCommitText("COMMIT DEFENSE");
+
+        // First roll
+        OnPlayerRoll();
+    }
+
+    private void OnAP3ShieldCommit(CombinationResult combo)
+    {
+        int shield = combo.BaseDamage;
+        player.State.ShieldValue = shield;
+        UIManager.Instance.UpdateShield(shield);
+
+        Log($"[3AP] Shield from {combo.Type}: {shield}");
+
+        if (SoundLibrary.Instance != null)
+            AudioManager.PlayWithPitch(SoundLibrary.Instance.DiceRoll);
+
+        CombatUI.Instance.HideCombatUI();
+        _isAP3Shield = false;
+        _ap3Done = true;
+
+        // Both AP2 and AP3 done → enemy phase
+        if (_ap2Done)
+        {
+            StartEnemyPhase();
+        }
+        else
+        {
+            PromptAP2orAP3();
+        }
+    }
+
+    // --- Enemy Phase (3AP: each enemy moves then attacks) ---
+    private void StartEnemyPhase()
+    {
+        TransitionTo(GameState.EnemyPhase);
+        UIManager.Instance.ShowPhaseLabel("ENEMY PHASE");
+        Log("[3AP] Enemy Phase");
+
+        CombatUI.Instance.HideCombatUI();
+        CombatUI.Instance.HideAPSelector();
+        CombatUI.Instance.HideShieldRollUI();
+
+        StartCoroutine(EnemyPhaseRoutine());
+    }
+
+    private IEnumerator EnemyPhaseRoutine()
+    {
+        // Sort enemies by MaxHP descending (more powerful first)
+        var sorted = new List<EnemyEntity>();
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] != null && enemies[i].State != null && enemies[i].State.IsAlive)
+                sorted.Add(enemies[i]);
+        }
+        sorted.Sort((a, b) => b.State.MaxHP.CompareTo(a.State.MaxHP));
+
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            var enemy = sorted[i];
+            if (!enemy.State.IsAlive) continue;
+
+            string eName = enemy.State.BaseData.EnemyName;
+            UIManager.Instance.ShowPhaseLabel($"{eName} actúa...");
+
+            // 1. Roll speed die
+            int steps = Random.Range(enemy.State.BaseData.SpeedMin, enemy.State.BaseData.SpeedMax + 1);
+
+            // 2. Decide movement (build blocked tiles first)
+            var blocked = new HashSet<Vector2Int>();
+            for (int j = 0; j < enemies.Count; j++)
+            {
+                if (enemies[j] != null && enemies[j] != enemy && enemies[j].State.IsAlive)
+                    blocked.Add(enemies[j].State.GridPosition);
+            }
+            Vector2Int destination = EnemyAI.DecideMovement(enemy, player, steps, blocked);
+
+            // 3. OA check: is enemy moving AWAY from player while in player's melee range?
+            if (OpportunityAttack.ShouldTrigger(enemy.State.GridPosition, destination,
+                player.State.GridPosition, 1)) // player melee range = 1
+            {
+                int oaDamage = OpportunityAttack.PlayerOADamage(player.State.Bag);
+                enemy.State.TakeDamage(oaDamage);
+                Log($"[3AP] OA! Player strikes {eName} as it moves away — {oaDamage} damage");
+
+                if (FloatingDamageUI.Instance != null)
+                    FloatingDamageUI.Instance.ShowText($"OA! -{oaDamage}", enemy.transform.position, new Color(1f, 0.5f, 0f));
+                if (SoundLibrary.Instance != null)
+                    AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToEnemy);
+
+                if (!enemy.State.IsAlive)
+                {
+                    enemiesDefeated++;
+                    totalEnemiesDefeated++;
+                    GridManager.Instance.ClearOccupant(enemy.State.GridPosition);
+                    Log($"[3AP] {eName} killed by OA!");
+                    yield return new WaitForSeconds(0.5f);
+                    continue; // Skip this enemy's turn
+                }
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            // 4. Animate movement if destination differs
+            if (destination != enemy.State.GridPosition)
+            {
+                bool moveDone = false;
+                MovementManager.Instance.MoveEnemyAnimated(enemy, player, steps, blocked, (collision) =>
+                {
+                    moveDone = true;
+                });
+                while (!moveDone) yield return null;
+            }
+
+            yield return new WaitForSeconds(0.3f);
+
+            // 5. After movement: check if enemy is in attack range
+            int dist = ChebyshevDistance(enemy.State.GridPosition, player.State.GridPosition);
+            int range = enemy.State.BaseData.AttackRange;
+
+            if (dist <= range && enemy.State.IsAlive)
+            {
+                // Enemy attacks
+                int rawDamage = enemy.RollAttack();
+                int shield = player.State.ShieldValue;
+                int netDamage = DamageResolver.ResolveEnemyAttack(rawDamage, shield);
+
+                // Shield consumed after first attack
+                player.State.ShieldValue = 0;
+                UIManager.Instance.UpdateShield(0);
+
+                player.State.CurrentHP = Mathf.Max(0, player.State.CurrentHP - netDamage);
+                totalDamageTaken += netDamage;
+
+                UIManager.Instance.UpdateHP(player.State.CurrentHP, player.State.MaxHP);
+                EnergyManager.Instance.ProcessCombatAction(CombatActionType.TookDamage);
+                UIManager.Instance.UpdateEnergy(player.State.CurrentEnergy / player.State.MaxEnergy);
+
+                if (FloatingDamageUI.Instance != null)
+                    FloatingDamageUI.Instance.ShowDamage(netDamage, player.transform.position);
+                if (SoundLibrary.Instance != null)
+                    AudioManager.PlayWithPitch(SoundLibrary.Instance.AttackToPlayer);
+                if (ScreenFlashUI.Instance != null && netDamage > 0)
+                    ScreenFlashUI.Instance.FlashDamage();
+
+                Log($"[3AP] {eName} attacks! Raw:{rawDamage} Shield:{shield} Net:{netDamage}");
+
+                if (player.State.CurrentHP <= 0)
+                {
+                    TransitionTo(GameState.GameOver);
+                    if (_cachedGameOverUI != null) _cachedGameOverUI.Show(GetRunStats(), eName);
+                    UIManager.Instance.ShowGameOverOverlay();
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.8f);
+            }
+            else
+            {
+                Log($"[3AP] {eName} moves but can't reach player (dist={dist}, range={range}).");
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+
+        // After all enemies acted, check game state
+        bool anyAlive = false;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] != null && enemies[i].State != null && enemies[i].State.IsAlive)
+            { anyAlive = true; break; }
+        }
+
+        if (anyAlive)
+        {
+            totalRoundsFought++;
+            BeginTurnCycle();
+        }
+        else
+        {
+            EndCombatTurns();
+        }
+    }
+
+    /// Room cleared — unlock doors, switch to free movement
+    private void EndCombatTurns()
+    {
+        _inCombatTurns = false;
+        GridManager.Instance.SetDoorsBlocked(false);
+
+        if (DungeonManager.Instance.CurrentRoom != null)
+            DungeonManager.Instance.MarkCurrentRoomCleared();
+        GridManager.Instance.UpdateDoorColors();
+
+        UIManager.Instance.ShowPhaseLabel("ROOM CLEARED! Go to a door.");
+        Log("[3AP] All enemies defeated — room cleared.");
+
+        // Switch to free movement (unlimited range)
+        TransitionTo(GameState.MovementPhase);
+        currentReachableTiles = MovementManager.Instance.GetReachableTiles(
+            player.State.GridPosition, 100);
+        GridManager.Instance.HighlightTiles(currentReachableTiles, Color.green);
+        ShowExplorationUI();
+    }
+
+    // =============================================
 
     private void TransitionTo(GameState newState)
     {

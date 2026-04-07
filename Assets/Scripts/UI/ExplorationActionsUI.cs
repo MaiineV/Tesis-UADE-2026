@@ -53,10 +53,10 @@ public class ExplorationActionsUI : MonoBehaviour
     public void SetExplorationMode(bool hasPotion, int potionCount, bool onDoorTile)
     {
         moveButton.gameObject.SetActive(true);
-        bowButton.gameObject.SetActive(true);
+        bowButton.gameObject.SetActive(false);     // 3AP: bow disabled for prototype
         potionButton.gameObject.SetActive(true);
         potionButton.interactable = hasPotion && potionCount > 0;
-        fleeButton.gameObject.SetActive(false);
+        fleeButton.gameObject.SetActive(false);    // 3AP: no flee
         forceDoorButton.gameObject.SetActive(onDoorTile);
         forceDoorButton.interactable = onDoorTile;
         if (potionCountText != null)
@@ -65,14 +65,12 @@ public class ExplorationActionsUI : MonoBehaviour
 
     public void SetCombatMode(bool onDoorTile, int playerHP = 999, bool isBossRoom = false)
     {
+        // 3AP: in combat, exploration UI is hidden. No flee, no bow.
         moveButton.gameObject.SetActive(false);
         bowButton.gameObject.SetActive(false);
         potionButton.gameObject.SetActive(false);
-        fleeButton.gameObject.SetActive(true);
-
-        bool canForce = onDoorTile && !isBossRoom && playerHP >= 3;
-        forceDoorButton.gameObject.SetActive(onDoorTile);
-        forceDoorButton.interactable = canForce;
+        fleeButton.gameObject.SetActive(false); // 3AP: no flee
+        forceDoorButton.gameObject.SetActive(false);
     }
 
     public void HideAll()

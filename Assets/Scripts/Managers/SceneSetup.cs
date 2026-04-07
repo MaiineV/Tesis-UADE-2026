@@ -121,14 +121,16 @@ public class SceneSetup : MonoBehaviour
         if (warrior.AvailablePoolDice == null || warrior.AvailablePoolDice.Length == 0)
         {
             var d6 = CreateDiceData("d6", 6, new[] { 1, 2, 3, 4, 5, 6 }, 1f, "#42a5f5");
-            var d8 = CreateDiceData("d8", 8, new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, 1.5f, "#66bb6a");
-            var d12 = CreateDiceData("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 2.5f, "#ab47bc");
-            warrior.AvailablePoolDice = new[] { d6, d8, d12 };
+            var d10 = CreateDiceData("d10", 10, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 2f, "#ff7043", 4);
+            var d12 = CreateDiceData("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 2.5f, "#ab47bc", 8);
+            warrior.AvailablePoolDice = new[] { d6, d10, d12 };
         }
 
         var goblin = LoadOrCreateEnemyData("Goblin", 40, 2, 6, 1, 3, 50f, 15f, "#66bb6a", 5, 10);
+        goblin.OADamage = 5;
         var orc = LoadOrCreateEnemyData("Orc", 60, 2, 8, 1, 2, 40f, 12f, "#ef5350", 10, 20);
         orc.HasComboResistance = true;
+        orc.OADamage = 10;
         var archer = LoadOrCreateArcherData();
 
         var playerPrefab = CreateEntityPrefab("PlayerPrefab", "Mat_Player", typeof(PlayerEntity), PrimitiveType.Cube);
@@ -156,22 +158,19 @@ public class SceneSetup : MonoBehaviour
         data.SpeedMin = 2;
         data.SpeedMax = 5;
 
-        // Dice: d6=1pt, d8=1.5pt, d10=2pt, d12=2.5pt — budget 5
+        // Dice: d6=1pt, d10=2pt, d12=2.5pt — budget 5
         var d6 = CreateDiceData("d6", 6, new[] { 1, 2, 3, 4, 5, 6 }, 1f, "#42a5f5");
-        var d8 = CreateDiceData("d8", 8, new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, 1.5f, "#66bb6a");
-        var d10 = CreateDiceData("d10", 10, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 2f, "#ff7043");
-        var d12 = CreateDiceData("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 2.5f, "#ab47bc");
+        var d10 = CreateDiceData("d10", 10, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 2f, "#ff7043", 4);
+        var d12 = CreateDiceData("d12", 12, new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, 2.5f, "#ab47bc", 8);
 
         data.StartingDice = new[]
         {
-            new DiceLoadout { DiceType = d6, Quantity = 3 },
-            new DiceLoadout { DiceType = d8, Quantity = 2 },
+            new DiceLoadout { DiceType = d6, Quantity = 4 },
             new DiceLoadout { DiceType = d10, Quantity = 1 },
-            new DiceLoadout { DiceType = d12, Quantity = 1 }
         };
         data.CombatDiceSlots = 5;
         data.MinCombatDiceSlots = 3;
-        data.AvailablePoolDice = new[] { d6, d8, d12 };
+        data.AvailablePoolDice = new[] { d6, d10, d12 };
 
         data.AffinityCombo = CombinationType.FourOfAKind;
         data.AffinityDamageBonus = 1.25f;
@@ -180,13 +179,14 @@ public class SceneSetup : MonoBehaviour
         return data;
     }
 
-    private DiceData CreateDiceData(string diceName, int faces, int[] defaultFaces, float powerCost, string hex)
+    private DiceData CreateDiceData(string diceName, int faces, int[] defaultFaces, float powerCost, string hex, int bonusDamage = 0)
     {
         var data = ScriptableObject.CreateInstance<DiceData>();
         data.DiceName = diceName;
         data.NumberOfFaces = faces;
         data.DefaultFaces = defaultFaces;
         data.PowerCost = powerCost;
+        data.BonusDamage = bonusDamage;
         ColorUtility.TryParseHtmlString(hex, out Color c);
         data.DiceColor = c;
         return data;

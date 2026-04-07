@@ -42,7 +42,22 @@ public class TileVisual : MonoBehaviour
 
     public void ResetColor()
     {
+        StopPulse();
         SetColor(defaultColor);
+    }
+
+    public void StopPulse()
+    {
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+    }
+
+    private void OnDisable()
+    {
+        pulseCoroutine = null;
     }
 
     public void SetAsLadder(Color ladderColor)

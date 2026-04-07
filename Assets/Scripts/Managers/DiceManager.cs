@@ -20,7 +20,7 @@ public class DiceManager : MonoBehaviour
         return results;
     }
 
-    public RollResult[] RerollDice(List<DiceInstance> dice, HashSet<string> diceIdsToReroll)
+    public RollResult[] RerollDice(List<DiceInstance> dice, HashSet<string> diceIdsToReroll, RollResult[] previousResults = null)
     {
         RollResult[] results = new RollResult[dice.Count];
         for (int i = 0; i < dice.Count; i++)
@@ -28,6 +28,13 @@ public class DiceManager : MonoBehaviour
             if (diceIdsToReroll.Contains(dice[i].Id))
             {
                 results[i] = dice[i].Roll();
+            }
+            else
+            {
+                // Preserve previous roll for locked dice
+                results[i] = (previousResults != null && i < previousResults.Length)
+                    ? previousResults[i]
+                    : dice[i].Roll();
             }
         }
         return results;

@@ -8,6 +8,9 @@ public static class RewardGenerator
     public static List<FaceUpgradeOffer> GenerateOffers(DiceBag bag, int count)
     {
         var offers = new List<FaceUpgradeOffer>();
+        if (bag == null || bag.Dice == null || bag.Dice.Count == 0)
+            return offers;
+
         var usedDieFacePairs = new HashSet<string>(); // prevent duplicate targets
 
         int attempts = 0;

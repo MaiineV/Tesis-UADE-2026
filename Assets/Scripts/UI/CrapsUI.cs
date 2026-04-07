@@ -5,6 +5,8 @@ using TMPro;
 
 public class CrapsUI : MonoBehaviour
 {
+    public static CrapsUI Instance;
+
     [Header("Bet Overlay")]
     [SerializeField] private GameObject betPanel;
     [SerializeField] private TMP_Text betTitle;
@@ -19,6 +21,7 @@ public class CrapsUI : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
         WireBetButtons();
     }
 
@@ -65,6 +68,8 @@ public class CrapsUI : MonoBehaviour
             });
         }
     }
+
+    public void Show() => ShowBetOverlay();
 
     public void ShowBetOverlay()
     {

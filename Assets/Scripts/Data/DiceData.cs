@@ -9,4 +9,5 @@ public class DiceData : ScriptableObject
     public float PowerCost;
     public Sprite Icon;
     public Color DiceColor;
+    public int BonusDamage;
 }

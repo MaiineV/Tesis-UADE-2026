@@ -149,8 +149,18 @@ public class EnemyEntity : MonoBehaviour
         onComplete?.Invoke();
     }
 
+    public void StopBossPulse()
+    {
+        if (_bossPulseCoroutine != null)
+        {
+            StopCoroutine(_bossPulseCoroutine);
+            _bossPulseCoroutine = null;
+        }
+    }
+
     public void PlayDeathAnimation(Action onComplete = null)
     {
+        StopBossPulse();
         StartCoroutine(DeathRoutine(onComplete));
     }
 

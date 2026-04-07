@@ -38,4 +38,9 @@ public class EnemyData : ScriptableObject
 
     [Header("Passives")]
     public bool HasComboResistance;
+    public bool IsBoss;
+
+    [Header("3AP Combat")]
+    public int AttackRange = 1; // Chebyshev distance: 1 = melee, 2 = short, 3-4 = long
+    public int OADamage = 5;   // Fixed opportunity attack damage
 }

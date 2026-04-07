@@ -158,10 +158,10 @@ public static class CombinationDetector
             }
         }
 
-        // Need at least 5 consecutive for a straight
+        // Full Straight: 5+ consecutive
         if (bestLength >= 5)
         {
-            int[] straightDice = Enumerable.Range(bestStart, bestLength).ToArray();
+            int[] straightDice = Enumerable.Range(bestStart, 5).ToArray();
             int highestInStraight = straightDice.Max();
             results.Add(new CombinationResult
             {
@@ -169,6 +169,38 @@ public static class CombinationDetector
                 MatchingDice = straightDice,
                 RemainingDice = GetRemaining(diceValues, straightDice),
                 BaseDamage = 30 + highestInStraight
+            });
+        }
+
+        // Medium Straight: 4 consecutive
+        if (bestLength >= 4)
+        {
+            // Use last 4 of the run for highest values
+            int medStart = bestStart + bestLength - 4;
+            int[] medDice = Enumerable.Range(medStart, 4).ToArray();
+            int highestInMed = medDice.Max();
+            results.Add(new CombinationResult
+            {
+                Type = CombinationType.MediumStraight,
+                MatchingDice = medDice,
+                RemainingDice = GetRemaining(diceValues, medDice),
+                BaseDamage = 20 + highestInMed
+            });
+        }
+
+        // Small Straight: 3 consecutive
+        if (bestLength >= 3)
+        {
+            // Use last 3 of the run for highest values
+            int smallStart = bestStart + bestLength - 3;
+            int[] smallDice = Enumerable.Range(smallStart, 3).ToArray();
+            int highestInSmall = smallDice.Max();
+            results.Add(new CombinationResult
+            {
+                Type = CombinationType.SmallStraight,
+                MatchingDice = smallDice,
+                RemainingDice = GetRemaining(diceValues, smallDice),
+                BaseDamage = 12 + highestInSmall
             });
         }
 

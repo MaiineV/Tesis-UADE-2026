@@ -291,6 +291,27 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    // Block/unblock door tiles during combat (3AP system)
+    public void SetDoorsBlocked(bool blocked)
+    {
+        if (tiles == null) return;
+        Color blockedColor;
+        ColorUtility.TryParseHtmlString("#8B0000", out blockedColor); // dark red
+
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                if (tiles[x, y].Type != TileType.Door) continue;
+                tiles[x, y].IsWalkable = !blocked;
+                if (blocked && tileVisuals[x, y] != null)
+                    tileVisuals[x, y].SetAsDoor(blockedColor);
+            }
+        }
+        // When unblocking, restore proper door colors
+        if (!blocked) UpdateDoorColors();
+    }
+
     // Get tiles within range for bow targeting
     public List<Vector2Int> GetTilesInRange(Vector2Int center, int range)
     {

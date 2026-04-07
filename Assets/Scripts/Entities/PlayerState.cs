@@ -67,6 +67,11 @@ public class PlayerState
         state.FullInventory = new List<DiceInstance>();
         foreach (var loadout in data.StartingDice)
         {
+            if (loadout.DiceType == null)
+            {
+                Debug.LogWarning($"[PlayerState] StartingDice has a null DiceType entry — skipping. Check CharacterData asset.");
+                continue;
+            }
             for (int i = 0; i < loadout.Quantity; i++)
                 state.FullInventory.Add(DiceInstance.Create(loadout.DiceType));
         }
