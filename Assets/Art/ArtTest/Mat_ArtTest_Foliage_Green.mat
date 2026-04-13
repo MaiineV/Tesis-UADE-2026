@@ -37,11 +37,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaScissor: 1
+    - _AlphaScissor: 0.5
     - _Framerate: 5
     - _LightWrap: 0.3
     - _QuadScale: 1
-    - _ShadowStrength: 0.18
+    - _ShadowStrength: 1
     - _Steepness: 1
     - _Var1Probability: 0
     - _Var2Probability: 1

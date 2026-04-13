@@ -224,6 +224,22 @@ public static class ArtTestSceneBuilder
         urpData.renderPostProcessing = true;
         urpData.renderShadows        = true; // explicit – ensure shadow maps are requested for this camera
 
+        // ── CameraDummy – renders nothing, exists only to silence the
+        //    "Display 1 No Cameras Rendering" editor message.
+        //    The Main Camera writes to a RenderTexture, not the display,
+        //    so Unity considers Display 1 unoccupied without this camera.
+        var dummyGO = new GameObject("CameraDummy");
+        var dummyCam = dummyGO.AddComponent<Camera>();
+        dummyCam.clearFlags    = CameraClearFlags.SolidColor;
+        dummyCam.backgroundColor = Color.black;
+        dummyCam.cullingMask   = 0;             // render nothing
+        dummyCam.depth         = -10;           // below Main Camera
+        dummyCam.targetTexture = null;          // renders to Display 1 → silences the message
+        // Disable URP post-processing and shadows — it's a dummy
+        var dummyUrp = dummyGO.AddComponent<UniversalAdditionalCameraData>();
+        dummyUrp.renderPostProcessing = false;
+        dummyUrp.renderShadows        = false;
+
         // ── DisplayCanvas – mirrors Godot's SubViewportContainer ────────────
         BuildDisplayCanvas(rt);
 
