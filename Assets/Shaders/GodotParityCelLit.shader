@@ -270,6 +270,72 @@ Shader "Custom/GodotParity/CelLit"
             ENDHLSL
         }
 
+        // ── ShadowCaster pass ────────────────────────────────────────────────────
+        // Without this pass, objects using this shader write NOTHING to the shadow map.
+        // URP skips them entirely during shadow rendering → no cast shadows at all.
+        // (GetMainLight(shadowCoord) only handles RECEIVING shadows; this handles CASTING.)
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex ShadowCasterVert
+            #pragma fragment ShadowCasterFrag
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _BaseColor;
+                float _LightWrap;
+                float _Steepness;
+                float _ShadowStrength;
+                float _PointLightAttenuationCurve;
+                float _SpecularShininess;
+                float _SpecularStrength;
+                float _UseDither;
+                float _DitherStrength;
+                float _DitherDirectional;
+            CBUFFER_END
+
+            float3 _LightDirection;
+            float3 _LightPosition;
+
+            struct SCAttribs  { float4 posOS : POSITION; float3 normalOS : NORMAL; };
+            struct SCVaryings { float4 posCS : SV_POSITION; };
+
+            float4 GetShadowClipPos(SCAttribs input)
+            {
+                float3 posWS    = TransformObjectToWorld(input.posOS.xyz);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                #if _CASTING_PUNCTUAL_LIGHT_SHADOW
+                    float3 lightDir = normalize(_LightPosition - posWS);
+                #else
+                    float3 lightDir = _LightDirection;
+                #endif
+                float4 posCS = TransformWorldToHClip(ApplyShadowBias(posWS, normalWS, lightDir));
+                #if UNITY_REVERSED_Z
+                    posCS.z = min(posCS.z, UNITY_NEAR_CLIP_VALUE);
+                #else
+                    posCS.z = max(posCS.z, UNITY_NEAR_CLIP_VALUE);
+                #endif
+                return posCS;
+            }
+
+            SCVaryings ShadowCasterVert(SCAttribs IN) { SCVaryings O; O.posCS = GetShadowClipPos(IN); return O; }
+            half4      ShadowCasterFrag(SCVaryings IN) : SV_Target { return 0; }
+            ENDHLSL
+        }
+
         // ── DepthOnly pass ───────────────────────────────────────────────────────
         // Required so URP's depth prepass (ForwardPlus / ForcePrepass) can render
         // these objects correctly and populate _CameraDepthTexture.

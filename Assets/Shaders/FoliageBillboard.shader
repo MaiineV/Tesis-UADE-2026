@@ -121,7 +121,10 @@ Shader "Custom/GodotParity/FoliageBillboard"
             {
                 float4 positionOS : POSITION;
                 float2 uv         : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID  // expands to SV_InstanceID; required for DrawMeshInstanced
+                // Declare SV_InstanceID directly — always valid in vertex shaders regardless of
+                // INSTANCING_ON keyword state. UNITY_VERTEX_INPUT_INSTANCE_ID expands to empty
+                // when the non-instanced variant is compiled, breaking IN.instanceID references.
+                uint   instanceID : SV_InstanceID;
             };
 
             struct Varyings
@@ -149,7 +152,8 @@ Shader "Custom/GodotParity/FoliageBillboard"
 
                 float3 pivotWS = origin + float3(0, _VerticalOffset, 0);
 
-                // Variation selection
+                // Variation selection — use IN.instanceID (the SV_InstanceID semantic declared directly
+                // in Attributes), which is always valid regardless of INSTANCING_ON keyword state.
                 float varHash = frac(sin(float(IN.instanceID) * 17.382) * 43758.5453);
                 float varType = 0.0;
                 if (varHash < _Var1Probability) varType = 1.0;
