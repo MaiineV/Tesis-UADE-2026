@@ -5,6 +5,12 @@ using UnityEngine.Rendering.Universal;
 
 public static class PixelationFeatureSetup
 {
+    [MenuItem("Tools/Setup/Apply Godot Shader Parity")]
+    public static void ApplyGodotShaderParity()
+    {
+        GodotParitySetup.ApplyGodotShaderParity();
+    }
+
     [MenuItem("Tools/Setup Pixelation Feature")]
     public static void TryAddPixelationFeature()
     {

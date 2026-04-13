@@ -94,6 +94,7 @@ public class SceneSetup : MonoBehaviour
         EnsureManager<DiceManager>("DiceManager");
         EnsureManager<AudioManager>("AudioManager");
         EnsureManager<SoundLibrary>("SoundLibrary");
+        EnsureManager<StylizedPresetManager>("StylizedPresetManager");
         EnsureManager<UIManager>("UIManager");
         EnsureManager<FloatingDamageUI>("FloatingDamageUI");
         EnsureManager<ScreenFlashUI>("ScreenFlashUI");

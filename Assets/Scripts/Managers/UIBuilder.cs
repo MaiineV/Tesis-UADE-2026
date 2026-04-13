@@ -234,6 +234,25 @@ public class UIBuilder : MonoBehaviour
         var volumeSliderUI = volumePanel.AddComponent<VolumeSliderUI>();
         volumeSliderUI.Initialize(slider);
 
+        // Stylized preset selector (cycles shader/post-process presets)
+        var styleBtn = CreateButton("StylePresetButton", hudPanel.transform, "STYLE", D12Color);
+        var styleBtnRT = styleBtn.GetComponent<RectTransform>();
+        styleBtnRT.anchorMin = new Vector2(1, 0.5f);
+        styleBtnRT.anchorMax = new Vector2(1, 0.5f);
+        styleBtnRT.pivot = new Vector2(1, 0.5f);
+        styleBtnRT.anchoredPosition = new Vector2(-170, -18);
+        styleBtnRT.sizeDelta = new Vector2(140, 22);
+
+        var styleBtnText = styleBtn.transform.Find("StylePresetButtonLabel")?.GetComponent<TMP_Text>();
+        if (styleBtnText != null)
+        {
+            styleBtnText.fontSize = 11;
+            styleBtnText.alignment = TextAlignmentOptions.Center;
+        }
+
+        var stylePresetUI = styleBtn.AddComponent<StylizedPresetUI>();
+        stylePresetUI.Initialize(styleBtn.GetComponent<Button>(), styleBtnText);
+
         // Phase Label (top-left, below HUD, small horizontal text)
         var phaseLabel = CreateTMPText("PhaseLabel", canvasTransform, "", 11,
             TextAlignmentOptions.Left, AccentGold);
