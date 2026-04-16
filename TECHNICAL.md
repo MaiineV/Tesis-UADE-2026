@@ -13,7 +13,7 @@
 4.  [Clases y Hero Sheets](#4-clases-y-hero-sheets) — `ClassHeroSO`, stats tipadas, pasiva
 5.  [Contrato de Generala + Combos](#5-contrato-de-generala--combos) — combos, counters, strike
 6.  [Dados y Bolsa](#6-dados-y-bolsa) — dados, encantamientos, reroll budget
-7.  [Entidades y Behaviors](#7-entidades-y-behaviors) — `BaseEntitySO` parent común, `EntityDataSO`, `NpcDataSO`, `BaseBehavior` con `AllowedPhases`, AI decision trees, interacción con prompts y per‑phase rules
+7.  [Entidades y Behaviors](#7-entidades-y-behaviors) — `BaseEntitySO` parent común, `EnemyDataSO`, `PropEntitySO`, `NpcDataSO`, `BaseBehavior` con `AllowedPhases` + `BehaviorSlot` + `BehaviorLibrarySO`, `BehaviorContext` polimórfico por trigger, AI decision trees, `DialogueGraphSO`, interacción con prompts y per‑phase rules
 8.  [Effects + PreConditions](#8-effects--preconditions)
 9.  [Behavior Values (runtime bag)](#9-behavior-values-runtime-value-bag)
 10. [Sistema de Feedback](#10-sistema-de-feedback)
@@ -46,7 +46,7 @@
   - `Rollgeon.Heroes` → `ClassHeroSO`, `ContractSheet`, pasivas.
   - `Rollgeon.Combos` → `BaseComboSO` + concretos.
   - `Rollgeon.Dice` → tipos de dado, bolsa, encantamientos.
-  - `Rollgeon.Entities` → `EntityDataSO`, `BaseBehavior`, enemigos.
+  - `Rollgeon.Entities` → `BaseEntitySO`, `EnemyDataSO`, `PropEntitySO`, `NpcDataSO`, `BaseBehavior`, `BehaviorLibrarySO`, `DialogueGraphSO`.
   - `Rollgeon.Effects`, `Rollgeon.PreConditions` → pipeline de efectos.
   - `Rollgeon.Feedback` → FX/anim pipeline local.
   - `Rollgeon.Dungeon` → salas, layout, generación procedural.
@@ -57,7 +57,7 @@
     Heroes/           — ClassHeroSO assets
     Combos/           — BaseComboSO assets
     Dice/             — DiceType, DiceBagSO, DiceEnchantmentSO
-    Entities/         — EntityDataSO + enemy behaviors
+    Entities/         — EnemyDataSO, PropEntitySO, NpcDataSO, BehaviorLibrarySO, DialogueGraphSO
     Effects/          — BaseEffect concretes + PreConditions
     Feedback/         — FeedbackDBSO + runtime
     Dungeon/          — RoomSO, RoomPrefab, FloorLayoutSO, pools
@@ -102,7 +102,8 @@ SO único que lista todos los servicios y assets críticos que hay que registrar
 public class ServiceBootstrapSO : SerializedScriptableObject
 {
     [Title("Catalog SOs (dropdown populators)")]
-    [OdinSerialize] public EntityCatalogSO     EntityCatalog;      // §7.0 — héroes + enemigos + objetos
+    [OdinSerialize] public EntityCatalogSO     EntityCatalog;      // §7.0 — héroes + enemigos + props + npcs
+    [OdinSerialize] public BehaviorLibrarySO   BehaviorLibrary;    // §7.2b — templates de behaviors compartibles
     [OdinSerialize] public ComboCatalogSO      ComboCatalog;
     [OdinSerialize] public DiceCatalogSO       DiceCatalog;
     [OdinSerialize] public FeedbackDBSO        FeedbackDB;
@@ -125,6 +126,7 @@ public class ServiceBootstrapSO : SerializedScriptableObject
     public void RegisterAll()
     {
         ServiceLocator.AddService<EntityCatalogSO>(EntityCatalog);
+        ServiceLocator.AddService<BehaviorLibrarySO>(BehaviorLibrary);
         ServiceLocator.AddService<ComboCatalogSO>(ComboCatalog);
         ServiceLocator.AddService<DiceCatalogSO>(DiceCatalog);
         ServiceLocator.AddService<FeedbackDBSO>(FeedbackDB);
@@ -156,12 +158,14 @@ public class EntityCatalogSO : SerializedScriptableObject
     public IEnumerable<string> AllIds => _entries.Select(e => e.EntityId);
 
     // Filtros por subtipo — la UI de selección de clase usa GetHeroes();
-    // los spawners de sala (§13) usan GetEntities(); los NPCs (§7.6) se
+    // los spawners de enemigos (§13.4) usan GetEnemies(); los spawners de
+    // props (cofres, puertas, pociones) usan GetProps(); los NPCs (§7.6) se
     // enumeran con GetNpcs() cuando un sistema necesita sólo vendors/
     // dialogue/quest givers.
-    public IEnumerable<ClassHeroSO>  GetHeroes()   => _entries.OfType<ClassHeroSO>();
-    public IEnumerable<EntityDataSO> GetEntities() => _entries.OfType<EntityDataSO>();
-    public IEnumerable<NpcDataSO>    GetNpcs()     => _entries.OfType<NpcDataSO>();
+    public IEnumerable<ClassHeroSO>  GetHeroes()  => _entries.OfType<ClassHeroSO>();
+    public IEnumerable<EnemyDataSO>  GetEnemies() => _entries.OfType<EnemyDataSO>();
+    public IEnumerable<PropEntitySO> GetProps()   => _entries.OfType<PropEntitySO>();
+    public IEnumerable<NpcDataSO>    GetNpcs()    => _entries.OfType<NpcDataSO>();
 
     public BaseEntitySO GetById(string id) =>
         _entries.FirstOrDefault(e => e.EntityId == id);
@@ -172,6 +176,13 @@ public class EntityCatalogSO : SerializedScriptableObject
     // --- Passives (usado por ClassPassiveSO §4.4) ---------------------------
     public IEnumerable<string> AllPassiveIds =>
         GetHeroes().Where(h => h.Passive != null).Select(h => h.Passive.PassiveId);
+
+    // --- Dialogue graphs (§7.6b) --------------------------------------------
+    [OdinSerialize] private List<DialogueGraphSO> _dialogues = new();
+    public IEnumerable<string> AllDialogueIds =>
+        _dialogues.Select(d => d.DialogueId);
+    public DialogueGraphSO GetDialogueById(string id) =>
+        _dialogues.FirstOrDefault(d => d.DialogueId == id);
 }
 ```
 
@@ -330,15 +341,97 @@ public abstract class State<T>
 }
 ```
 
-**FSM concreta — `CombatTurnFSM`**:
+**FSM concreta — `CombatTurnFSM`**. Macro del combate. No confundir con `GamePhase` (§12.0), el enum global para gates per‑fase: el `CombatTurnFSM` **vive dentro** de `GamePhase.Combat` y todos sus estados son sub‑steps invisibles para listeners externos.
+
+**Convención de naming.** Ningún estado lleva el sufijo `Phase` — esa palabra queda reservada al enum macro. Se usa `Step` cuando hace falta desambiguar (p.ej. `Roll`, `Reroll` en vez de `RollPhase`).
 
 ```
-StartTurn → PlayerInput → RollPhase → RerollPhase → ResolveCombo → ApplyDamage
-         ↘︎ DefendPhase ↗︎                ↘︎ SecondaryAction (heal, door, chest) ↗︎
-EnemyTurn → EnemyAction* → CleanupModifiers → StartTurn
+─── PlayerBranch ───────────────────────────────────────────────
+StartPlayerTurn
+   └→ CheckTurnSkip
+        ├→ (skipped, CC activo)  ─────────────────┐
+        └→ (ok) PlayerInput  ◄─ loop ──┐          │
+                    ├─ Attack/Special → Roll → Reroll → ResolveCombo → ApplyDamage
+                    ├─ Defend                                      → Defend
+                    ├─ Interact (heal, prop, NPC, skill check)     → Interact
+                    ├─ Move                                        → (no damage)
+                    └─ EndTurn  ─── exit loop ──┐                  │
+                                                │                  ▼
+                                                │       every ApplyDamage ⇒
+                                                │       ResolveReactions → CheckCombatEnd
+                                                │                  │ (ongoing: back to loop)
+                                                ▼                  │
+                                        CleanupPlayerModifiers ◄───┘
+                                                │
+─── EnemyBranch ────────────────────────────────┼──────────────
+                                                ▼
+                                        EnterEnemyBranch
+                                                │
+                                        EnemyPickNext  ◄─ loop ─┐
+                                         ├→ (queue empty) ──────┼──┐
+                                         └→ EnemyAction         │  │
+                                              └→ ApplyDamage    │  │
+                                                  └→ ResolveReactions
+                                                       └→ CheckCombatEnd
+                                                             (ongoing ┘)
+                                                                      ▼
+                                                       CleanupEnemyModifiers
+                                                                      │
+                                                                      ▼
+                                                            StartPlayerTurn
+                                                              (next round)
+
+─── Terminal ──────────────────────────────────────────────────
+CheckCombatEnd  ─┬→ Victory  → OnCombatEnd → salir a GamePhase previa
+                 └→ Defeat   → OnCombatEnd → game over flow
 ```
 
-Inputs: `TurnInput { EndTurn, Attack, Special, Move, Heal, ForceDoor, Reroll, UseEnergyReroll, … }`.
+**Estados.**
+
+| Estado | Responsabilidad | Notas |
+|---|---|---|
+| `StartPlayerTurn` | Limpia `_actionsUsedThisTurn`, dispara `OnTurnStarted(player)`. | Entry point del round. |
+| `CheckTurnSkip` | Chequea CC (stun, freeze, sleep) sobre el player. Si aplica, transiciona directo a `CleanupPlayerModifiers` sin pasar por `PlayerInput`. | Reemplaza guardas ad‑hoc dentro de `PlayerInput`. |
+| `PlayerInput` | Espera input del jugador. Cada acción válida corre su sub‑flujo y vuelve acá si queda action economy. | Loop hasta `EndTurn` o hasta quedar sin recursos para ninguna acción. |
+| `Roll` → `Reroll` → `ResolveCombo` | Sub‑flujo de ataque: `DiceRoller.RollAll`, hasta 2 rerolls + 1 con energía (§6.5), `AttackResolver.ResolveAttack` (§12.1). | Sólo para acciones de ataque (basic / special / weapon). |
+| `Defend` | `IDefenseResolver.ResolveDefense` sobre los rerolls sobrantes → `Shield` (§12.4). | Alternativa a `ResolveCombo`. |
+| `Interact` | **Delega al `IInteractionService`** (§7.7). Resuelve heal, cofre, puerta forzada, NPC vendor, shop — todo por la misma ruta unificada vía `PhaseInteractionRule(Combat, …)`. | Reemplaza el viejo `SecondaryAction (heal, door, chest)` y borra sus branches dedicados. |
+| `ApplyDamage` | Único punto que llama a `DamagePipeline.Resolve` (§12.2). Dispara `OnDamageResolved`. | No hay accesos directos a `Health.SetValue` desde otro state. |
+| `ResolveReactions` | Dispara los behaviors reactivos del target (`OnDamaged`, thorns, contragolpes) filtrados por `AllowedPhases`. Si un reactivo vuelve a hacer daño, re‑entra en `ApplyDamage` — recursión con stack depth cap para atajar loops patológicos (reactivo → reactivo → reactivo …). | Evita que los contragolpes se pierdan mid‑turno. |
+| `CheckCombatEnd` | **Corre post cada `ApplyDamage`.** Chequea victoria (todos los enemigos muertos) y derrota (`player.Health ≤ 0`). Si se cumple, sale a `Victory` / `Defeat`. Si no, vuelve al caller state. | Cubre player attacks, enemy attacks, reactivos, traps, DOTs — cualquier fuente de daño. |
+| `CleanupPlayerModifiers` | Decrementa duration de todos los `Modifier<T>` con `OwnerId = player` y `TickEvent = OnTurnFinished`. Los que llegan a 0 se remueven. Dispara `OnTurnFinished(player)`. | Los buffs/debuffs del jugador gastan 1 tick al **terminar su turno**. |
+| `EnterEnemyBranch` | Arma la cola con los enemigos vivos consultando `TurnOrderService` (§12.7). | — |
+| `EnemyPickNext` | Saca el próximo enemigo de la cola. Si está vacía → `CleanupEnemyModifiers`. Si el próximo murió mid‑turno por un reactivo, lo descarta y sigue. | Iteración first‑class — reemplaza el `EnemyAction*` con asterisco del draft anterior. |
+| `EnemyAction` | El enemigo activo evalúa su `AIRoot` (§7.5) y ejecuta la decisión. Dispara `OnTurnStarted(enemy)` / `OnTurnFinished(enemy)`. | Un tick por enemigo. Los reactivos del player caen en `ResolveReactions` como cualquier otro. |
+| `CleanupEnemyModifiers` | Decrementa duration de todos los `Modifier<T>` con `OwnerId ∈ bando enemy` (enemigos, bosses, props hostiles) y `TickEvent = OnTurnFinished`. Los que llegan a 0 se remueven. Dispara `OnEnemyPhaseFinished`. | Los buffs/debuffs del bando enemigo gastan 1 tick al terminar la fase de **todos** los enemigos — no por cada enemigo individual. Ver regla abajo. |
+| `Victory` / `Defeat` | Terminal. Disparan `OnCombatEnd` con el resultado. El `TurnManager` devuelve el control al `GamePhase` macro (vuelve a `Exploration`, `Shop`, etc.). | Sale de la FSM de combate. |
+
+**Inputs del FSM**:
+
+```csharp
+public enum TurnInput
+{
+    // Player
+    EndTurn, Attack, Special, Defend, Move, Interact,
+    Reroll, UseEnergyReroll,
+    // System
+    CombatEnded,          // emitido por CheckCombatEnd al detectar win/lose
+    ReactionResolved,     // emitido por ResolveReactions al estabilizar
+    EnemyQueueEmpty,      // emitido por EnemyPickNext cuando la cola se vacía
+    TurnSkipped,          // emitido por CheckTurnSkip al detectar CC activo
+}
+```
+
+Los viejos inputs `Heal` / `ForceDoor` del draft anterior desaparecen — ambos son ahora `Interact` y los resuelve el `IInteractionService` contra el `PhaseInteractionRule(Combat)` de la poción / puerta / cofre / NPC, sin rama dedicada en el FSM.
+
+**Regla de la split de cleanup — por qué hay dos.**
+
+- **`CleanupPlayerModifiers`** corre una sola vez por round, entre el fin del turno del player y `EnterEnemyBranch`. Los modificadores con `TickEvent = OnTurnFinished` y `OwnerId = player` decrementan acá.
+- **`CleanupEnemyModifiers`** corre una sola vez por round, después de que **todos** los enemigos hayan actuado. Los modificadores con `TickEvent = OnTurnFinished` y `OwnerId` perteneciente al bando enemigo decrementan acá.
+- **Consecuencia buscada.** Un debuff de `Duration = 1` aplicado al `Enemy 2` **no** se gasta cuando actúa el `Enemy 1`. El tick ocurre al cerrar la fase completa, así que el debuff alcanza a afectar al Enemy 2 cuando le toca su turno. Análogamente, un buff `Duration = 1` que el player se aplica a sí mismo dura exactamente "su turno", no sobrevive a la fase enemy ni se gasta mid‑turno.
+- **Modificadores globales simétricos** (p.ej. "durante 2 rounds el daño es doble para todos") se modelan como **dos** modificadores espejados — uno con `OwnerId = player` y otro con `OwnerId = enemyBand` — para que cada tick respete su propia fase. Evita el edge case "¿quién decrementa este mod?" ambigüo.
+
+**Cross‑ref §1.3.** §1.2 (`OnTurnStarted` / `OnTurnFinished` / `OnPhaseChange`), §3 (lifecycle de modificadores, `TickEvent`, `ModifierLifetime`), §7.2 (`AllowedPhases` — filtro de behaviors en cada dispatcher), §7.5 (`AIRoot` ejecutado en `EnemyAction`), §7.7 (`IInteractionService` — a quién delega `Interact`), §12 (`DamagePipeline`, action economy, turn order, action definitions), §12.0 (`GamePhase` enum y el wrapper macro).
 
 ---
 
@@ -599,7 +692,7 @@ public class ClassHeroSO : BaseEntitySO
 
 **Cross‑ref al parent §7.0.** El `EntityId` del héroe vive en el dropdown común alimentado por `EntityCatalogSO` (§1.1.1) — no hay `ClassId` separado. El visual del héroe (prefab 3D + portrait UI) también viene del parent: `PrefabRef` es `AssetReferenceGameObject` cargado por Addressables (§16.2) y `Portrait` es un `Sprite` para la UI de selección de clase.
 
-**Filtrado por subtipo.** La UI de selección de clase pide `EntityCatalogSO.GetHeroes()` (§1.1.1) — un filtro sobre el catálogo unificado que devuelve sólo los `ClassHeroSO`. Los sistemas que quieren enumerar enemigos piden `GetEntities()`. Nadie construye dos catálogos paralelos.
+**Filtrado por subtipo.** La UI de selección de clase pide `EntityCatalogSO.GetHeroes()` (§1.1.1) — un filtro sobre el catálogo unificado que devuelve sólo los `ClassHeroSO`. Los sistemas que quieren enumerar enemigos piden `GetEnemies()`, los spawners de props usan `GetProps()`, los de NPCs usan `GetNpcs()`. Nadie construye catálogos paralelos.
 
 ### 4.2 Stats estándar del héroe
 
@@ -672,12 +765,13 @@ ArmarBolsa(DiceBagSO editable en UI)                              // §6
   ↓
 RunStart
   ↓
-Player.InstanceId   = Guid.NewGuid()
-Player.RuntimeStats = hero.CreateRuntimeStats()
-Player.Sheet        = hero.Sheet.Instantiate()                     // clone para tachar combos
-Player.DiceBag      = hero.StartingDiceBag.Clone()
-Player.Passive      = hero.Passive
-Player.Passive.Subscribe(Player.InstanceId)                        // engancha hooks al EventManager
+Player.InstanceId       = Guid.NewGuid()
+Player.RuntimeStats     = hero.CreateRuntimeStats()
+Player.RuntimeBehaviors = hero.CreateRuntimeBehaviors(behaviorLibrary)  // §7.2b — deep‑clone de slots
+Player.Sheet            = hero.Sheet.Instantiate()                     // clone para tachar combos
+Player.DiceBag          = hero.StartingDiceBag.Clone()
+Player.Passive          = hero.Passive
+Player.Passive.Subscribe(Player.InstanceId)                            // engancha hooks al EventManager
   ↓
 SaveSystem.Register(Player)                                        // §15
 SaveSystem.CaptureAll(); SaveSystem.Flush(SaveTrigger.RunStart)
@@ -1118,9 +1212,13 @@ public abstract class BaseEntitySO : SerializedScriptableObject
     protected Dictionary<Type, IAttribute> _baseStats = new();
 
     [Title("Behaviors")]
+    [InfoBox("Cada slot es Inline (behavior autoreado acá mismo) o FromLibrary " +
+             "(referencia por id a un template del BehaviorLibrarySO §7.2b). " +
+             "En ambos casos al spawn se hace deep‑clone para que el runtime " +
+             "no contamine el template.")]
     [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
     [OdinSerialize]
-    public List<BaseBehavior> Behaviors = new();
+    public List<BehaviorSlot> Behaviors = new();
 
     // --- Accessors -----------------------------------------------------------
 
@@ -1146,6 +1244,23 @@ public abstract class BaseEntitySO : SerializedScriptableObject
         return runtime;
     }
 
+    /// <summary>
+    /// Resuelve todos los BehaviorSlots a instancias concretas listas para runtime.
+    /// Para slots Inline: deep‑clone con SerializationUtility.CreateCopy.
+    /// Para slots FromLibrary: pide al library un clon del template por id.
+    /// El caller recibe una List<BaseBehavior> independiente del SO y del library.
+    /// </summary>
+    public List<BaseBehavior> CreateRuntimeBehaviors(BehaviorLibrarySO lib)
+    {
+        var result = new List<BaseBehavior>(Behaviors.Count);
+        foreach (var slot in Behaviors)
+        {
+            var bh = slot.Resolve(lib);
+            if (bh != null) result.Add(bh);
+        }
+        return result;
+    }
+
 #if UNITY_EDITOR
     protected virtual IEnumerable<string> GetEntityIds() =>
         ServiceLocator.TryGetService<EntityCatalogSO>(out var cat)
@@ -1163,34 +1278,71 @@ public abstract class BaseEntitySO : SerializedScriptableObject
 
 **Regla de ids.** `EntityId` es string pero **siempre** se edita vía `[ValueDropdown(GetEntityIds)]` alimentado desde `EntityCatalogSO.AllIds`. Si un id se referencia desde otro SO (unlocks, rewards, quests), ese SO usa el mismo dropdown apuntando al mismo catálogo — nunca hay strings libres de entidades en el proyecto.
 
-**Subtipos.** `BaseEntitySO` es `abstract` — no se instancia. Las dos concreciones oficiales son `ClassHeroSO` (§4.1) para el héroe jugable y `EntityDataSO` (§7.1) para todo el resto. Agregar nuevos subtipos (p.ej. `NpcDataSO` para vendors) es válido mientras hereden el contrato base.
+**Subtipos.** `BaseEntitySO` es `abstract` — no se instancia. Las cuatro concreciones oficiales son:
 
-### 7.1 `EntityDataSO`
+- `ClassHeroSO` (§4.1) — héroe jugable (pasiva, sheet, starting dice bag).
+- `EnemyDataSO` (§7.1) — enemigos y bosses (archetype de combate + árbol de IA polimórfico §7.5).
+- `PropEntitySO` (§7.1b) — objetos interactivos inertes de sala (chests, doors, potions, trampas, decoración). Sin IA, sin archetype de combate.
+- `NpcDataSO` (§7.6) — vendors, dialogue NPCs, quest givers, trainers, flavor chars. Sin IA, sin archetype.
 
-Subtipo concreto de `BaseEntitySO` para enemigos, bosses y objetos interactivos de sala (cofres, puertas, pociones). **El jugador no usa esta plantilla** — usa `ClassHeroSO` (§4.1), que también hereda de `BaseEntitySO`.
+Agregar nuevos subtipos es válido mientras hereden el contrato base. La separación `EnemyDataSO` / `PropEntitySO` evita que un cofre arrastre un `AIRoot` que nunca evalúa, o que un enemigo cargue un `PropCategory` irrelevante.
+
+### 7.1 `EnemyDataSO`
+
+Subtipo concreto de `BaseEntitySO` para **enemigos y bosses** — criaturas hostiles que toman turnos y resuelven combate. Los objetos interactivos inertes (cofres, puertas, pociones) viven en `PropEntitySO` (§7.1b); los NPCs amigables en `NpcDataSO` (§7.6). **El jugador no usa esta plantilla** — usa `ClassHeroSO` (§4.1), que también hereda de `BaseEntitySO`.
+
+> Renombrado desde `EntityDataSO` en v10. El enum `EntityArchetype` pierde el valor `Interactable` y queda como `EnemyArchetype` (sólo combate táctico).
 
 ```csharp
-[CreateAssetMenu(menuName = "Rollgeon/Entity Data")]
-public class EntityDataSO : BaseEntitySO
+[CreateAssetMenu(menuName = "Rollgeon/Enemy Data")]
+public class EnemyDataSO : BaseEntitySO
 {
-    [Title("Entity‑specific")]
-    public EntityArchetype Archetype;              // Melee, Ranged, Support, Boss, Interactable
+    [Title("Combat")]
+    public EnemyArchetype Archetype;               // Melee | Ranged | Support | Boss
 
     [Title("AI Decision Tree")]
-    [InfoBox("Árbol polimórfico inline — cada EntityDataSO tiene su propia copia. Ver §7.5.")]
+    [InfoBox("Árbol polimórfico inline — cada EnemyDataSO tiene su propia copia. Ver §7.5.")]
     [OdinSerialize]
     [SerializeReference]
-    public AIDecisionNode Root;                    // §7.5
+    public AIDecisionNode AIRoot;                  // §7.5
 }
 
-public enum EntityArchetype { Melee, Ranged, Support, Boss, Interactable }
+public enum EnemyArchetype { Melee, Ranged, Support, Boss }
 ```
 
-Todo lo genérico (`EntityId`, `DisplayName`, `PrefabRef`, `Portrait`, `_baseStats`, `Behaviors`, `CreateRuntimeStats`) viene del parent §7.0. Aquí sólo viven los campos que **el héroe no comparte**: el `Archetype` (que el héroe no tiene — es una clase, no un arquetipo táctico) y el árbol de IA (el héroe lo controla el jugador, no hay decisión automática).
+Todo lo genérico (`EntityId`, `DisplayName`, `PrefabRef`, `Portrait`, `_baseStats`, `Behaviors`, `CreateRuntimeStats`, `CreateRuntimeBehaviors`) viene del parent §7.0. Aquí sólo viven los campos que **el héroe no comparte**: el `Archetype` (que el héroe no tiene — es una clase, no un arquetipo táctico) y el árbol de IA (el héroe lo controla el jugador, no hay decisión automática).
+
+### 7.1b `PropEntitySO`
+
+Subtipo concreto de `BaseEntitySO` para **objetos interactivos inertes de sala**: cofres, puertas, pociones del suelo, trampas, torches, decoración interactuable. No tienen IA ni archetype de combate — reaccionan a triggers (`OnInteract`, `OnEntered`, `OnPlayerInRange`) a través de sus `Behaviors` (§7.2).
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Prop Entity")]
+public class PropEntitySO : BaseEntitySO
+{
+    [Title("Prop‑specific")]
+    public PropCategory Category;                  // Chest | Door | Potion | Trap | Torch | Decoration | Generic
+
+    [InfoBox("Si el prop debe desaparecer al consumirse (cofre abierto, " +
+             "poción levantada), el behavior que lo consume debe disparar " +
+             "EffRemoveRoomEntity — que setea RoomObjectState.Consumed " +
+             "(§13.6), y el DungeonManager/InteractionService lo ignoran " +
+             "en los siguientes pases por la sala.")]
+    public bool SingleUse;
+}
+
+public enum PropCategory { Chest, Door, Potion, Trap, Torch, Decoration, Generic }
+```
+
+**Interactabilidad.** Igual que los NPCs (§7.6), la interactabilidad de un prop es decisión del prefab: si el `PrefabRef` lleva un `InteractableComponent` (§7.7) en su jerarquía, el `IInteractionService` lo toma; si no, es puramente decorativo (p.ej. una antorcha ambient). No hay flag en el SO.
+
+**Persistencia entre salas.** `PropEntitySO` instanciado + `RoomObjectState` (§13.6) cubre el caso "entro a la sala con el cofre ya abierto": `Consumed = true` gana sobre cualquier `PhaseInteractionRule` y el service lo ignora.
+
+**Cross‑ref §7.1b:** §7.0 (BaseEntitySO parent), §7.2 (triggers + behaviors), §7.7 (interacción via `InteractableComponent`), §8 (`EffRemoveRoomEntity`), §13.4 (pools de props en salas), §13.6 (`RoomObjectState.Consumed`).
 
 ### 7.2 `BaseBehavior`
 
-Clase abstracta serializable (no SO; vive embebida en `EntityDataSO` vía Odin).
+Clase abstracta serializable (no SO; vive embebida en cualquier subtipo de `BaseEntitySO` vía Odin, o en un `BehaviorLibrarySO` §7.2b cuando se comparte entre entities).
 
 ```csharp
 [Serializable]
@@ -1253,44 +1405,189 @@ public enum GamePhaseMask
 }
 ```
 
-**Semántica de cada trigger.** Distintos managers disparan distintos triggers; la tabla fija quién es el responsable:
+**Semántica de cada trigger.** Distintos managers disparan distintos triggers; cada dispatcher construye el **subtipo de `BehaviorContext`** (§7.3) que corresponde, garantizando que los datos trigger‑específicos (damage info, tile del movimiento, payload del evento…) lleguen hasta los effects sin casteos manuales ni lookups.
 
-| Trigger | Quién lo dispara | Cuándo | Uso típico |
-|---|---|---|---|
-| `OnEntered` | `IMovementService` (§B) | El jugador pisa el tile del owner | Pad de presión, puerta en exploration (auto‑pass), item que se levanta al caminar encima |
-| `OnInteract` | `IInteractionService` (§7.7) | El jugador confirma un prompt con input (o click en UI) estando en rango | Cofre, puerta forzada en combate, NPC vendor, shop |
-| `OnPlayerInRange` | `IInteractionService` (§7.7) | El jugador entra al rango del owner, **sin** requerir input | Trampa armable, sensor, buff area que se aplica al acercarse |
-| `OnDamaged` | `DamagePipeline` (§12.2) | El owner recibe daño resuelto | Contragolpe, reactivo |
-| `OnTurnStart / OnTurnEnd` | `TurnManager` (§12) | El owner empieza / termina turno | Regen, tick de buff |
-| `OnEvent` | `EventManager` (§1.2) | El `TriggerEvent` configurado se dispara | Hook genérico cross‑sistema |
+| Trigger | Quién lo dispara | Cuándo | Context subtype (§7.3) | Uso típico |
+|---|---|---|---|---|
+| `OnEntered` | `IMovementService` (§B) | El jugador pisa el tile del owner | `MovementBehaviorContext` | Pad de presión, puerta en exploration (auto‑pass), item que se levanta al caminar encima |
+| `OnInteract` | `IInteractionService` (§7.7) | El jugador confirma un prompt con input (o click en UI) estando en rango | `InteractionBehaviorContext` | Cofre, puerta forzada en combate, NPC vendor, shop |
+| `OnPlayerInRange` | `IInteractionService` (§7.7) | El jugador entra al rango del owner, **sin** requerir input | `MovementBehaviorContext` | Trampa armable, sensor, buff area que se aplica al acercarse |
+| `OnDamaged` | `DamagePipeline` (§12.2) | El owner recibe daño resuelto | `DamageBehaviorContext` | Contragolpe, reactivo |
+| `OnTurnStart / OnTurnEnd` | `TurnManager` (§12) | El owner empieza / termina turno | `TurnBehaviorContext` | Regen, tick de buff |
+| `OnEvent` | `EventManager` (§1.2) | El `TriggerEvent` configurado se dispara | `EventBehaviorContext` | Hook genérico cross‑sistema |
 
 **Regla de `AllowedPhases`.** Todos los dispatchers (el `IInteractionService`, el `IMovementService`, el `TurnManager`, el `DamagePipeline`, etc.) filtran los behaviors del owner por `AllowedPhases.HasFlag(currentPhase)` antes de ejecutar. Un behavior que no pasa el filtro se ignora silenciosamente en esa fase — sin errores, sin warning. Esto permite que una misma entidad exponga **comportamientos distintos según la fase** (ver el ejemplo canónico de la puerta en §7.7.3): un behavior `OnEntered` con `AllowedPhases = Exploration` auto‑cambia de sala al pisar el tile, y en paralelo un behavior `OnInteract` con `AllowedPhases = Combat` expone un prompt "Forzar puerta" que resuelve un skill check.
 
-**Nota de doc debt.** El enum `GamePhase` (del cual `GamePhaseMask` deriva los bits) se referencia desde §1.2, §7.7, §16.1 y §17.E pero **no está formalmente definido** en ninguna sección del doc. Queda anotado en §18 v9 para formalización en §12 `TurnManager` en la próxima pasada.
+**Dónde vive `GamePhase`.** El enum `GamePhase` (del cual `GamePhaseMask` deriva los bits: `Exploration = 1 << 0`, `Combat = 1 << 1`, …) está formalizado en **§12.0** junto con las transiciones macro. El `BehaviorContext` base (§7.3) expone `CurrentPhase : GamePhase` para que los behaviors no tengan que hacer lookup contra `TurnManager` en cada `Execute`. El deuda que v9 y v10 flagueaban queda cerrado en v11.
 
-### 7.3 `BehaviorContext`
+### 7.2b `BehaviorSlot` y `BehaviorLibrarySO`
+
+**Problema.** Si `BaseEntitySO.Behaviors` es una `List<BaseBehavior>` inline, dos enemigos con "ataque melee básico" duplican el mismo bloque palabra por palabra. Mantener el balance entre N enemigos pasa a ser editar N SOs cada vez que cambia un número. Pero un fix naive — compartir una referencia directa a un behavior reusable — rompe el mismo principio del §7.5: editar el template centralmente afecta a todos los enemigos que lo usan, incluso los que deberían tener variantes.
+
+**Diseño.** Un behavior reusable vive como **template** en un `BehaviorLibrarySO`; las entities lo referencian vía un `BehaviorSlot` que puede ser **inline** (autoreado en el SO) o **from library** (referencia por id). En ambos casos, al spawn se hace **deep‑clone** — el runtime nunca mantiene una referencia viva al template. Si el diseñador necesita desviarse de un template en un enemy puntual, clickea un botón del inspector ("Break out to inline") que copia el template en el slot y lo deja editable, rompiendo el vínculo con el library.
+
+La regla replica exactamente el patrón de `SerializationUtility.CreateCopy` que §7.5 usa para los AI trees.
 
 ```csharp
-public class BehaviorContext
+[CreateAssetMenu(menuName = "Rollgeon/Behavior Library")]
+public class BehaviorLibrarySO : SerializedScriptableObject
 {
-    public Guid OwnerGuid;              // entidad que ejecuta el behavior
-    public Entity SourceEntity;
-    public Entity TargetEntity;          // si aplica
-    public string CurrentRoomId;
+    [Title("Templates")]
+    [InfoBox("Los templates se DEEP‑CLONEAN al spawn. Editar un template " +
+             "acá afecta a todas las entities que lo referencien la PRÓXIMA " +
+             "vez que se spawneen — pero NO al runtime actual.")]
+    [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
+    [OdinSerialize]
+    private Dictionary<string, BaseBehavior> _templates = new();
+
+    public IEnumerable<string> AllTemplateIds => _templates.Keys;
+
+    public BaseBehavior GetClone(string templateId)
+    {
+        if (string.IsNullOrEmpty(templateId)) return null;
+        if (!_templates.TryGetValue(templateId, out var template)) return null;
+        return SerializationUtility.CreateCopy(template);
+    }
+}
+
+[Serializable]
+[HideReferenceObjectPicker]
+public class BehaviorSlot
+{
+    public enum SlotMode { Inline, FromLibrary }
+
+    [EnumToggleButtons, HideLabel]
+    public SlotMode Mode = SlotMode.Inline;
+
+    [ShowIf(nameof(IsInline))]
+    [OdinSerialize, SerializeReference]
+    [HideReferenceObjectPicker]
+    public BaseBehavior Inline;
+
+    [ShowIf(nameof(IsFromLibrary))]
+    [ValueDropdown(nameof(GetTemplateIds))]
+    public string TemplateId;
+
+    [ShowIf(nameof(IsFromLibrary))]
+    [Button("Break out to inline"), GUIColor(1f, 0.8f, 0.4f)]
+    private void BreakOut()
+    {
+        if (!ServiceLocator.TryGetService<BehaviorLibrarySO>(out var lib)) return;
+        var clone = lib.GetClone(TemplateId);
+        if (clone == null) return;
+        Inline = clone;
+        Mode = SlotMode.Inline;
+        TemplateId = null;
+    }
+
+    public BaseBehavior Resolve(BehaviorLibrarySO lib)
+    {
+        return Mode == SlotMode.Inline
+            ? SerializationUtility.CreateCopy(Inline)
+            : lib?.GetClone(TemplateId);
+    }
+
+    private bool IsInline()      => Mode == SlotMode.Inline;
+    private bool IsFromLibrary() => Mode == SlotMode.FromLibrary;
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetTemplateIds() =>
+        ServiceLocator.TryGetService<BehaviorLibrarySO>(out var lib)
+            ? lib.AllTemplateIds
+            : Array.Empty<string>();
+#endif
 }
 ```
 
+**Sin overrides campo‑a‑campo.** A diferencia de Unity prefab variants, un `BehaviorSlot` `FromLibrary` **no** expone overrides granulares sobre el template. Si el diseñador quiere un behavior distinto en 1 enemy de 20, usa "Break out to inline" — el slot se rellena con una copia fresca del template y queda totalmente editable, sin afectar al resto. Esto mantiene el modelo simple y evita una capa de reflection‑based overrides que complicaría el inspector sin beneficio real (los ajustes per‑enemy son rarísimos vs. el patrón de "100 enemies reusan el mismo melee basic").
+
+**Registro y lifecycle.**
+
+- `BehaviorLibrarySO` se agrega al `ServiceBootstrapSO` (§1.1) y se registra en `ServiceLocator` en `RegisterAll`.
+- `BaseEntitySO.CreateRuntimeBehaviors(BehaviorLibrarySO)` (§7.0) resuelve todos los slots, deep‑clonea cada uno, y devuelve la lista lista para attacharse al runtime `Entity`.
+- El spawn de héroe (§4.5), enemigos y props (§13.4) llama `CreateRuntimeBehaviors` además de `CreateRuntimeStats`.
+
+**Regla importante.** Los `StoredValues` (§9) viven en la instancia runtime del behavior, no en el template. Deep‑clonear al spawn garantiza que dos enemies con el mismo template melee no compartan su bag de valores almacenados — cada uno lleva el suyo.
+
+**Cross‑ref §7.2b:** §1.1 (`ServiceBootstrapSO`), §4.5 (run init llama `CreateRuntimeBehaviors`), §7.0 (`BaseEntitySO.Behaviors : List<BehaviorSlot>` + resolver), §7.5 (mismo patrón `SerializationUtility.CreateCopy`), §9 (StoredValues por instancia, no por template), §13.4 (spawn de enemies/props).
+
+### 7.3 `BehaviorContext` (polimórfico por trigger)
+
+`BehaviorContext` es una **jerarquía polimórfica**, no un struct plano. La base concentra los campos comunes a todo trigger (owner, dueño, fase actual, behavior source); los subtipos sellados cargan los datos específicos que cada dispatcher puede producir — `DamageInfo` en `OnDamaged`, tile previo/actual en `OnEntered`, `InteractableComponent` en `OnInteract`, etc.
+
+Esto cierra dos gaps del diseño anterior: los behaviors `OnDamaged` no tenían cómo leer el daño resuelto, y los behaviors `OnEvent` no tenían payload. También elimina la inconsistencia con `EffectContext.TriggeringEntity` (§8.4), que ya existía pero no tenía un camino formal de ida.
+
+```csharp
+public abstract class BehaviorContext
+{
+    public Guid         OwnerGuid;           // entity dueña del behavior
+    public Entity       SourceEntity;        // resuelta vía AttributesManager
+    public Entity       TriggeringEntity;    // quien disparó el trigger — player, atacante, evento
+    public string       CurrentRoomId;
+    public GamePhase    CurrentPhase;        // snapshot del TurnManager al momento del dispatch
+    public BaseBehavior SourceBehavior;      // para StoredValues §9
+}
+
+/// <summary>Dispatchers: TurnManager.OnTurnStart / OnTurnEnd.</summary>
+public sealed class TurnBehaviorContext : BehaviorContext
+{
+    public int RoundIndex;
+    public int TurnIndex;                    // posición del owner dentro del round
+    public bool IsTurnStart;                 // false → TurnEnd
+}
+
+/// <summary>Dispatcher: DamagePipeline.OnDamaged (§12.2).</summary>
+public sealed class DamageBehaviorContext : BehaviorContext
+{
+    public DamageInfo Damage;                // valor final post‑pipeline
+    public Entity     Attacker;              // puede coincidir con TriggeringEntity
+    public bool       BlockedByShield;
+    public bool       WasLethal;             // true si el owner murió por este hit
+}
+
+/// <summary>Dispatcher: IInteractionService.ExecuteCurrent (§7.7.4).</summary>
+public sealed class InteractionBehaviorContext : BehaviorContext
+{
+    public InteractableComponent Interactable;
+    public PhaseInteractionRule  Rule;       // la rule activa en la fase actual
+    public int                    DistanceToTriggerer;
+}
+
+/// <summary>Dispatcher: IMovementService (§B) — OnEntered / OnPlayerInRange.</summary>
+public sealed class MovementBehaviorContext : BehaviorContext
+{
+    public Vector2Int PreviousTile;          // puede ser (−1,−1) si es el primer tile del round
+    public Vector2Int CurrentTile;
+    public int        DistanceToOwner;       // en tiles, relevante para OnPlayerInRange
+    public bool       EnteredThisStep;       // false → sólo cambio de distancia dentro del rango
+}
+
+/// <summary>Dispatcher: EventManager (§1.2) — trigger = OnEvent.</summary>
+public sealed class EventBehaviorContext : BehaviorContext
+{
+    public EventName EventName;
+    public object    Payload;                // lo define el publisher en §1.2
+}
+```
+
+**Contrato dispatcher → subtipo.** Cada dispatcher es responsable de construir el subtipo correcto y llamar `behavior.Execute(ctx)` pasando la referencia base. Los effects que necesitan datos específicos hacen `ctx.TryGetTriggerContext<T>(out var typed)` sobre el `EffectContext` (§8.4), que expone el `BehaviorContext` tipado.
+
+**Regla de serialización.** Los subtipos son `sealed` — si aparece un trigger nuevo se agrega un subtipo más, no se muta uno existente. Esto preserva la estabilidad de los effects que hacen casts tipados.
+
+**Cross‑ref §7.3:** §1.2 (`EventName` + payloads), §7.2 (tabla trigger → dispatcher → subtype), §7.7.4 (construcción del `InteractionBehaviorContext`), §8.4 (`EffectContext.TriggerContext`), §8.5 (capability `IRequiresTriggerContext<TCtx>`), §12.2 (`DamagePipeline` construye `DamageBehaviorContext`), §B (`IMovementService` construye `MovementBehaviorContext`).
+
 ### 7.4 Usos
 
-- **Enemigos**: cada `EntityDataSO` tiene un `BaseBehavior` por acción (atacar, moverse hacia el jugador, kitear, curar aliados). **Qué** behavior ejecutar en cada turno lo decide el árbol de IA (§7.5), no un switch sobre `Archetype`.
-- **Bosses**: mismos `BaseBehavior` + pasivas/debuffs adicionales (hooks en `EventName`).
-- **Objetos interactuables** (cofres, puertas, pociones, NPCs vendors): uno o más `BaseBehavior` con `Trigger = OnInteract` y/o `OnEntered`, usualmente filtrados con `AllowedPhases` para tener comportamientos distintos por fase. Ver §7.7 para el flujo completo (proximidad → prompt → dispatch). `NpcDataSO` (§7.6) es el subtipo dedicado cuando la entidad es específicamente un NPC en vez de un objeto inerte.
+- **Enemigos** (`EnemyDataSO` §7.1): cada enemy tiene un `BaseBehavior` por acción (atacar, moverse hacia el jugador, kitear, curar aliados). **Qué** behavior ejecutar en cada turno lo decide el árbol de IA (§7.5), no un switch sobre `Archetype`.
+- **Bosses** (`EnemyDataSO` con `Archetype = Boss`): mismos `BaseBehavior` + pasivas/debuffs adicionales (hooks en `EventName`).
+- **Objetos inertes interactuables** (`PropEntitySO` §7.1b — cofres, puertas, pociones, trampas): uno o más `BaseBehavior` con `Trigger = OnInteract` y/o `OnEntered`, usualmente filtrados con `AllowedPhases` para tener comportamientos distintos por fase. Ver §7.7 para el flujo completo (proximidad → prompt → dispatch).
+- **NPCs** (`NpcDataSO` §7.6 — vendors, dialogue, quest givers): mismo patrón que props pero con semántica social; los effects típicos son `EffOpenScreen(ScreenId.Shop)` o `EffOpenScreen(ScreenId.Dialogue, payload: dialogueGraph)`.
 
 ### 7.5 AI Decision Trees
 
-Los enemigos toman decisiones con un **árbol de decisión polimórfico** autorable desde el editor. **No** se usa un enum `EnemyBehavior { Aggressive, Ranged, … }` ni una FSM fija — cada enemigo tiene su propio árbol que el diseñador construye arrastrando nodos.
+Los enemigos toman decisiones con un **árbol de decisión polimórfico** autorable desde el editor. **No** se usa un enum `EnemyBehavior { Aggressive, Ranged, … }` ni una FSM fija — cada `EnemyDataSO` tiene su propio árbol que el diseñador construye arrastrando nodos. Los otros subtipos (`PropEntitySO`, `NpcDataSO`, `ClassHeroSO`) **no** tienen árbol — los props y NPCs reaccionan a triggers via `Behaviors` (§7.2) y el héroe lo controla el jugador.
 
-**Requisito crítico**: el diseñador tiene que poder agarrar un árbol base (ej: "patrón de ataque cuerpo a cuerpo") y overridear un valor puntual (ej: `BaseDamageOverride = 15` en este enemigo, `25` en aquel). Si los nodos fueran `ScriptableObject` compartidos, editar el nodo en un enemigo afectaría a todos los que compartan el asset. Por eso los nodos son **clases serializables polimórficas inline** con `[SerializeReference]` (nativo de Unity) o `[OdinSerialize]` — cada `EntityDataSO` tiene **su propia copia** del árbol completo, independiente del resto.
+**Requisito crítico**: el diseñador tiene que poder agarrar un árbol base (ej: "patrón de ataque cuerpo a cuerpo") y overridear un valor puntual (ej: `BaseDamageOverride = 15` en este enemigo, `25` en aquel). Si los nodos fueran `ScriptableObject` compartidos, editar el nodo en un enemigo afectaría a todos los que compartan el asset. Por eso los nodos son **clases serializables polimórficas inline** con `[SerializeReference]` (nativo de Unity) o `[OdinSerialize]` — cada `EnemyDataSO` tiene **su propia copia** del árbol completo, independiente del resto.
 
 **Forma del árbol**:
 
@@ -1403,16 +1700,7 @@ public class AIContext
 public enum AIResult { Succeeded, Failed, Running }
 ```
 
-**Raíz del árbol** — dentro del `EntityDataSO`:
-
-```csharp
-// En §7.1, sumar al EntityDataSO:
-[Title("AI")]
-[ShowIf(nameof(IsAIDriven))]
-[InfoBox("Árbol de decisión embebido inline. Cada EntityDataSO tiene su propia copia — editar un nodo acá NO afecta a otros enemigos.")]
-[SerializeReference]
-public AIDecisionNode AIRoot;
-```
+**Raíz del árbol** — ya declarada en §7.1 como `AIRoot : AIDecisionNode` sobre `EnemyDataSO` (vía `[SerializeReference]`). No existe en los otros subtipos.
 
 **Runtime**:
 
@@ -1420,7 +1708,7 @@ public AIDecisionNode AIRoot;
 2. En cada turno del enemigo, el `TurnManager` llama `entity.AIRoot.Evaluate(new AIContext { … })`.
 3. El árbol decide qué acciones ejecutar. Las acciones disparan `EffectData` normales — no hay lógica de combate duplicada, se reusa §8 y §12.
 
-**Editor** — el diseñador ve el árbol en el inspector del `EntityDataSO`. El patrón de dropdown de tipos sale del `[TypeFilter]` de Odin sobre `AIDecisionNode` / `AICondition`. Para proyectos más grandes se puede wrappear con un graph editor custom (xNode / NodeCanvas / GraphView) pero **el modelo de datos no cambia** — los nodos siguen siendo clases serializables.
+**Editor** — el diseñador ve el árbol en el inspector del `EnemyDataSO`. El patrón de dropdown de tipos sale del `[TypeFilter]` de Odin sobre `AIDecisionNode` / `AICondition`. Para proyectos más grandes se puede wrappear con un graph editor custom (xNode / NodeCanvas / GraphView) pero **el modelo de datos no cambia** — los nodos siguen siendo clases serializables.
 
 **Cómo agregar un nodo nuevo**:
 1. Crear `class AINode_MiPatron : AIActionNode` (o `AIQuestionNode`).
@@ -1429,7 +1717,7 @@ public AIDecisionNode AIRoot;
 4. El inspector lo recoge automáticamente via `[TypeFilter]` sin cambios adicionales.
 
 **Qué NO hace este sistema**:
-- **No reemplaza la FSM de §1.3.** La FSM sigue viva para el flow macro de combate (RollPhase → RerollPhase → ResolveCombo → …). El árbol de IA solo decide **qué hace un enemigo en su turno**.
+- **No reemplaza la FSM de §1.3.** La FSM sigue viva para el flow macro de combate (`Roll → Reroll → ResolveCombo → ApplyDamage → ResolveReactions → CheckCombatEnd → …`). El árbol de IA solo decide **qué hace un enemigo en su turno** — se ejecuta dentro del state `EnemyAction`.
 - **No tiene SOs.** Está dicho pero conviene repetirlo: compartir un nodo entre dos enemigos es un anti‑feature — el objetivo es que cada uno tenga su propia versión editable.
 - **No implementa behavior trees "de verdad"** (tick‑by‑tick con estado running largo). Los turnos de enemigo son discretos; cada evaluación empieza de cero desde la raíz.
 
@@ -1437,7 +1725,7 @@ public AIDecisionNode AIRoot;
 
 ### 7.6 `NpcDataSO`
 
-Subtipo concreto de `BaseEntitySO` (§7.0) para NPCs: vendors, dialogue NPCs, quest givers, trainers, flavor chars. **No** es la plantilla de enemigos — esos siguen en `EntityDataSO`.
+Subtipo concreto de `BaseEntitySO` (§7.0) para NPCs: vendors, dialogue NPCs, quest givers, trainers, flavor chars. **No** es la plantilla de enemigos (`EnemyDataSO` §7.1) ni de objetos inertes (`PropEntitySO` §7.1b).
 
 ```csharp
 [CreateAssetMenu(menuName = "Rollgeon/Npc Data")]
@@ -1454,8 +1742,12 @@ public class NpcDataSO : BaseEntitySO
     public LocalizedString InteractionLabel;
 
     [Title("Dialogue (opcional)")]
+    [InfoBox("Grafo de diálogo branchable con preconditions y effects. " +
+             "Ver §7.6b para la forma del grafo. Si Role es Vendor/Trainer " +
+             "sin líneas propias, dejar null — el behavior OnInteract abre " +
+             "directamente la shop/training screen.")]
     [ShowIf("@Role == NpcRole.Dialogue || Role == NpcRole.QuestGiver")]
-    public List<LocalizedString> DialogueLines = new();
+    public DialogueGraphSO Dialogue;
 }
 
 public enum NpcRole { Vendor, Dialogue, QuestGiver, Trainer, Generic }
@@ -1464,12 +1756,176 @@ public enum NpcRole { Vendor, Dialogue, QuestGiver, Trainer, Generic }
 **Reglas.**
 
 - Hereda de `BaseEntitySO` — `EntityId`, `PrefabRef`, `Portrait`, `_baseStats`, `Behaviors` vienen del parent.
-- **No tiene AI tree ni `Archetype`.** Esos son de `EntityDataSO`.
+- **No tiene AI tree ni `Archetype`.** Esos son exclusivos de `EnemyDataSO` (§7.1).
 - **La interactabilidad de un NPC es decisión del prefab, no del SO.** Un NPC es interactuable sí y sólo sí su `PrefabRef` tiene un `InteractableComponent` (§7.7) en algún nivel de la jerarquía. NPCs decorativos (ambient crowd, estatuas de fondo, NPCs de cutscene) simplemente no llevan el component — el service los ignora por completo. No existe ningún flag `IsInteractable` en el SO.
-- Los NPCs interactuables se autoran con uno o más `BaseBehavior`s cuyos effects abren la screen relevante (`EffOpenScreen(ScreenId.Shop, payload: npcId)` para un vendor, `EffOpenScreen(ScreenId.Dialogue, payload)` para un dialogue NPC). Los behaviors pueden usar `AllowedPhases` (§7.2) para decidir en qué fases son accionables — p.ej. un vendor podría estar disponible sólo en `Exploration`, o un quest giver podría aceptar la entrega de un item también durante `Combat`.
-- Los `NpcDataSO` se catalogan en `EntityCatalogSO` (§1.1.1) junto con los héroes y enemigos, con un filtro nuevo `GetNpcs() => _entries.OfType<NpcDataSO>()`.
+- Los NPCs interactuables se autoran con uno o más `BaseBehavior`s cuyos effects abren la screen relevante: `EffOpenScreen(ScreenId.Shop, payload: npcId)` para un vendor, `EffOpenScreen(ScreenId.Dialogue, payload: dialogueGraph)` para un dialogue NPC o quest giver. El `DialogueGraphSO` (§7.6b) lleva el branching, los skill checks y los rewards — la screen es pura UI, no tiene lógica propia. Los behaviors pueden usar `AllowedPhases` (§7.2) para decidir en qué fases son accionables — p.ej. un vendor podría estar disponible sólo en `Exploration`, o un quest giver podría aceptar la entrega de un item también durante `Combat`.
+- Los `NpcDataSO` se catalogan en `EntityCatalogSO` (§1.1.1) junto con héroes, enemigos y props, accedidos vía `GetNpcs()`.
 
-**Cross‑ref §7.6:** §4.1 (ClassHeroSO), §7.0 (BaseEntitySO parent), §7.2 (triggers + `AllowedPhases`), §7.7 (sistema de interacción y prompts), §1.1.1 (registro en `EntityCatalogSO`), §17.D (`InteractionPromptView`), §C (Craps — si el vendor abre Craps en vez de Shop).
+**Cross‑ref §7.6:** §4.1 (ClassHeroSO), §7.0 (BaseEntitySO parent), §7.2 (triggers + `AllowedPhases`), §7.6b (`DialogueGraphSO`), §7.7 (sistema de interacción y prompts), §1.1.1 (registro en `EntityCatalogSO`), §17.D (`InteractionPromptView`), §C (Craps — si el vendor abre Craps en vez de Shop).
+
+### 7.6b `DialogueGraphSO`
+
+Grafo de diálogo para NPCs con branching, preconditions y effects. Reemplaza al primer draft de "`List<LocalizedString> DialogueLines`" — una lista plana no soportaba choice menus, checks de quest state, skill checks, ni effects al final de una rama (darte un item, abrir una shop, marcar un flag).
+
+**Por qué no es un SO con lista de líneas:** el diseñador necesita que un NPC sea rico — un vendor tiene "Comprar / Vender / Charlar / Salir", un quest giver tiene ramas condicionadas a si ya completaste la quest, un trainer pide un skill check antes de enseñarte. La forma natural es un grafo polimórfico. **Por qué no son SOs por nodo:** como los AI trees (§7.5), queremos que cada `DialogueGraphSO` tenga su propia copia de los nodos — editar un choice en un NPC no puede afectar a otros. Por eso los nodos son `[SerializeReference]` inline.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Dialogue Graph")]
+public class DialogueGraphSO : SerializedScriptableObject
+{
+    [ValueDropdown(nameof(GetDialogueIds))]
+    public string DialogueId;
+    public string DisplayName;
+
+    [Title("Graph")]
+    [InfoBox("Grafo polimórfico inline. Cada DialogueGraphSO tiene su propia " +
+             "copia de los nodos — editar acá NO afecta a otros graphs.")]
+    [OdinSerialize, SerializeReference]
+    public DialogueNode Root;
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetDialogueIds() =>
+        ServiceLocator.TryGetService<EntityCatalogSO>(out var cat)
+            ? cat.AllDialogueIds : Array.Empty<string>();
+#endif
+}
+
+[Serializable]
+[HideReferenceObjectPicker]
+public abstract class DialogueNode
+{
+    [HorizontalGroup("id"), LabelWidth(60)]
+    public string NodeId;                    // para saltos con DialogueJumpNode
+
+    public abstract DialogueNodeKind Kind { get; }
+}
+
+public enum DialogueNodeKind { Line, Choice, Effect, Jump, End }
+
+public class DialogueLineNode : DialogueNode
+{
+    public DialogueSpeaker Speaker;          // Npc | Player | Narrator
+    public LocalizedString Text;
+
+    [OdinSerialize, SerializeReference]
+    public DialogueNode Next;
+
+    public override DialogueNodeKind Kind => DialogueNodeKind.Line;
+}
+
+public class DialogueChoiceNode : DialogueNode
+{
+    [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
+    [OdinSerialize]
+    public List<DialogueChoice> Choices = new();
+
+    public override DialogueNodeKind Kind => DialogueNodeKind.Choice;
+}
+
+[Serializable]
+public class DialogueChoice
+{
+    public LocalizedString Text;
+
+    [Title("Visible if (all must pass)")]
+    [InfoBox("Si alguna falla, la choice NO aparece en el menu. Útil para " +
+             "ocultar opciones de quest que aún no empezaron.")]
+    [OdinSerialize]
+    public List<BasePreCondition> VisibleIf = new();                         // §8.2
+
+    [Title("Enabled if (all must pass)")]
+    [InfoBox("Si alguna falla, la choice aparece grayed out. Útil para " +
+             "'Pagar 100 oro' cuando el player no tiene suficiente.")]
+    [OdinSerialize]
+    public List<BasePreCondition> EnabledIf = new();
+
+    [OdinSerialize, SerializeReference]
+    public DialogueNode Next;
+}
+
+public class DialogueEffectNode : DialogueNode
+{
+    [InfoBox("Dispara un EffectData y continúa por Next. Uso típico: " +
+             "abrir una shop, entregar un quest reward, tomar/dar un item, " +
+             "marcar un flag, restar oro, hacer un skill check.")]
+    [OdinSerialize]
+    public EffectData Effect = new();                                        // §8
+
+    [OdinSerialize, SerializeReference]
+    public DialogueNode Next;
+
+    public override DialogueNodeKind Kind => DialogueNodeKind.Effect;
+}
+
+public class DialogueJumpNode : DialogueNode
+{
+    [InfoBox("Salta a otro nodo por NodeId. Permite hubs de diálogo con " +
+             "'Volver atrás' sin duplicar subgrafos.")]
+    public string TargetNodeId;
+
+    public override DialogueNodeKind Kind => DialogueNodeKind.Jump;
+}
+
+public class DialogueEndNode : DialogueNode
+{
+    public override DialogueNodeKind Kind => DialogueNodeKind.End;
+}
+
+public enum DialogueSpeaker { Npc, Player, Narrator }
+```
+
+**Ejemplo canónico — vendor con 4 ramas:**
+
+```
+Root → LineNode(Npc, "¿Qué se te ofrece, viajero?")
+       ↓ Next
+       ChoiceNode
+       ├── Choice "Comprar"
+       │   → EffectNode { Effect: EffOpenScreen(Shop, payload: npcId) }
+       │     → JumpNode(Root)        // vuelve al hub al cerrar la shop
+       ├── Choice "Vender"
+       │   → EffectNode { Effect: EffOpenScreen(Sell, payload: npcId) }
+       │     → JumpNode(Root)
+       ├── Choice "Charlar"  VisibleIf: PCQuestState("intro", Completed)
+       │   → LineNode(Npc, "Dicen que hay un dragón en el piso 5...")
+       │     → JumpNode(Root)
+       └── Choice "Salir"
+           → EndNode
+```
+
+**Ejemplo — quest giver con skill check:**
+
+```
+Root → LineNode(Npc, "¿Podrías traerme la llave del calabozo?")
+       ↓
+       ChoiceNode
+       ├── Choice "Claro"  VisibleIf: PCQuestState("dungeon_key", NotStarted)
+       │   → EffectNode { Effect: EffStartQuest("dungeon_key") }
+       │     → EndNode
+       ├── Choice "Ya la tengo"  VisibleIf: PCHasItem("dungeon_key")
+       │   → EffectNode { Effect: EffRollSkillCheck(Charisma, DC: 12) }
+       │     → ChoiceNode (sin texto — ramifica por lastResult)
+       │        ├── Choice "(éxito)"  EnabledIf: PCLastRollSucceeded
+       │        │   → EffectNode { Effect: EffTakeItem("dungeon_key") + EffGiveReward(100g) }
+       │        │     → EndNode
+       │        └── Choice "(fallo)"  EnabledIf: PCLastRollFailed
+       │            → LineNode(Npc, "Mmm... no me parece genuina.")
+       │              → EndNode
+       └── Choice "Quizás luego"
+           → EndNode
+```
+
+**Runtime.** El `DialogueScreen` (§17.D) recibe el `DialogueGraphSO` en el payload del `EffOpenScreen(ScreenId.Dialogue, graph)`, monta un iterador que camina el grafo:
+
+1. **Line** → renderiza la línea, espera input de continuar, salta a `Next`.
+2. **Choice** → por cada choice, evalúa `VisibleIf` (filtro) y `EnabledIf` (gray out), pinta el menu. Input del player → salta al `Next` del choice elegido.
+3. **Effect** → arma un `EffectContext` con `TriggerContext = null` (dialogue no es un trigger de behavior — es una ejecución driven por UI) y corre el `EffectData`. Sigue por `Next`.
+4. **Jump** → resuelve `TargetNodeId` contra el grafo (lookup por `NodeId`, implementación del screen). Continua desde ahí.
+5. **End** → cierra la screen, pop del stack del `IScreenManager`.
+
+**Precondiciones y effects reutilizados de §8.** `DialogueChoice.VisibleIf/EnabledIf` usan el mismo `BasePreCondition` que el resto del juego, con `PreConditionContext { Entity = player, OpponentGuid = npc.Guid }`. Los `DialogueEffectNode.Effect` son `EffectData` estándar — no hay lógica de diálogo duplicada.
+
+**Cross‑ref §7.6b:** §1.1.1 (`EntityCatalogSO.AllDialogueIds`), §7.6 (`NpcDataSO.Dialogue`), §7.7 (el behavior `OnInteract` del NPC dispara `EffOpenScreen(Dialogue, graph)`), §8.1 (`EffectData`), §8.2 (`BasePreCondition`), §17.D (`DialogueScreen` implementa el walker).
 
 ### 7.7 Interacción, prompts y per‑phase rules
 
@@ -1477,7 +1933,7 @@ Sistema que unifica todos los "objetos accionables" del juego — chests, doors,
 
 #### 7.7.1 Principio — `InteractableComponent` decide la interactabilidad
 
-Cualquier prefab de `EntityDataSO` (chest, door, potion) o `NpcDataSO` (vendor) que quiera ser accionable lleva un `InteractableComponent` en su jerarquía. Si el prefab no lo tiene, la entity es puramente decorativa y el service la ignora. Esto permite tener NPCs no interactuables sin agregar flags al SO.
+Cualquier prefab de `PropEntitySO` (§7.1b — chest, door, potion) o `NpcDataSO` (§7.6 — vendor) que quiera ser accionable lleva un `InteractableComponent` en su jerarquía. Si el prefab no lo tiene, la entity es puramente decorativa y el service la ignora. Esto permite tener NPCs o props no interactuables sin agregar flags al SO. **`EnemyDataSO` nunca lleva `InteractableComponent`** — los enemigos no son "accionables" por prompt; su loop es el combate (§12), no la interacción.
 
 Una entity puede tener exactamente un `InteractableComponent` (por convención — el service no maneja múltiples components en el mismo prefab).
 
@@ -1540,13 +1996,13 @@ public class InteractableComponent : MonoBehaviour
 **Ejemplo canónico — la puerta** (requisito del GD):
 
 ```
-DoorPrefab
+DoorPrefab  (spawned desde PropEntitySO "Door")
 ├── InteractableComponent
 │   └── PhaseRules:
 │       ├── { Phase: Exploration, Mode: Direct,  Priority: 0 }
 │       └── { Phase: Combat,      Mode: Prompt,  Range: 1,
 │                                  LabelOverride: "Forzar puerta" }
-└── EntityDataSO.Behaviors (heredado via PrefabRef):
+└── PropEntitySO.Behaviors (heredado via PrefabRef):
     ├── BaseBehavior(OnEntered, AllowedPhases: Exploration)
     │   └── EffectData: EffLeaveRoom
     └── BaseBehavior(OnInteract, AllowedPhases: Combat)
@@ -1594,7 +2050,7 @@ public interface IInteractionService
 5. **Precondition check al mostrar** — evalúa las preconditions del `BaseBehavior(OnInteract)` del owner (filtrado por `AllowedPhases.HasFlag(currentPhase)`), construyendo un `PreConditionContext` con el player como `OpponentGuid`. El resultado boolean es `IsAvailable`. Si falla, el prompt se muestra **grayed out** con el label — el jugador ve qué podría hacer y por qué no puede todavía.
 6. **Label resolution** — toma `rule.LabelOverride` si no está vacío; si no, toma el label default del SO del owner (`NpcDataSO.InteractionLabel`, o el que el subtipo dicte). Resuelve el `LocalizedString` vía `LocalizationManager`.
 7. **Emite `TargetChanged`** con `(target, labelResolved, isAvailable)`. Publica además en `EventManager` como `OnInteractionTargetChanged` (§1.2) para que el HUD consuma por bus global.
-8. **Dispatch del input** — `ExecuteCurrent()` busca el primer `BaseBehavior(OnInteract)` del owner cuyo `AllowedPhases` contiene la fase actual, construye el `BehaviorContext` (`SourceEntity = owner`, `TriggeringEntity = player`, `CurrentRoomId = dungeon.CurrentRoom.Id`) y llama `behavior.Execute(ctx)`. Emite `Executed` + `OnInteractionExecuted`.
+8. **Dispatch del input** — `ExecuteCurrent()` busca el primer `BaseBehavior(OnInteract)` del owner cuyo `AllowedPhases` contiene la fase actual, construye un `InteractionBehaviorContext` (§7.3) con `OwnerGuid = owner.Guid`, `SourceEntity = owner`, `TriggeringEntity = player`, `CurrentRoomId = dungeon.CurrentRoom.Id`, `CurrentPhase = turnManager.CurrentPhase`, `Interactable = currentTarget`, `Rule = activeRule`, `DistanceToTriggerer = …` y llama `behavior.Execute(ctx)`. Emite `Executed` + `OnInteractionExecuted`.
 
 **Modo `Direct` — responsabilidad del movement service.** Los interactables con `Mode = Direct` en la fase actual **no llegan al interaction service**. El `IMovementService` (§B), al resolver el paso del player, detecta si el tile destino tiene un `InteractableComponent` con `rule.Mode ∈ { Direct, Both }` en la fase actual y dispara los `BaseBehavior(OnEntered)` del owner filtrados por `AllowedPhases.HasFlag(currentPhase)`.
 
@@ -1704,9 +2160,43 @@ public class EffectContext
     public int EffectIndex;
     public bool lastResult = true;                    // cortocircuito entre efectos encadenados
 
-    public BaseBehavior SourceBehavior;                // para StoredValues (§9)
+    public BaseBehavior    SourceBehavior;             // para StoredValues (§9)
+    public BehaviorContext TriggerContext;             // §7.3 — subtipo según trigger
+
+    /// <summary>
+    /// Acceso tipado al contexto del trigger. Devuelve false si el TriggerContext
+    /// no es del subtipo pedido — los effects con IRequiresTriggerContext (§8.5)
+    /// deberían dar warning en el inspector cuando se atan a un behavior cuyo
+    /// trigger construye otro subtipo.
+    /// </summary>
+    public bool TryGetTriggerContext<T>(out T ctx) where T : BehaviorContext
+    {
+        ctx = TriggerContext as T;
+        return ctx != null;
+    }
 }
 ```
+
+**Regla de construcción.** El `EffectData.Execute(ctx)` (§8.1) es quien copia la referencia al `TriggerContext` dentro del `EffectContext` que pasa a cada `IEffect.Apply`. El `BaseBehavior.Execute(BehaviorContext)` recibe el contexto polimórfico del dispatcher, y arma el `EffectContext` inicial con `TriggerContext = ctx`, `SourceBehavior = this`, `SourceEntity = ctx.SourceEntity`, `TriggeringEntity = ctx.TriggeringEntity`.
+
+**Ejemplo — efecto de contragolpe (`EffReflectDamage`):**
+
+```csharp
+public class EffReflectDamage : BaseEffect, IRequiresTriggerContext<DamageBehaviorContext>
+{
+    [Range(0f, 1f)] public float ReflectPercent = 0.5f;
+
+    public override bool ApplyEffect(EffectContext ctx)
+    {
+        if (!ctx.TryGetTriggerContext<DamageBehaviorContext>(out var dmg)) return false;
+        if (dmg.Attacker == null) return false;
+        var reflected = Mathf.RoundToInt(dmg.Damage.FinalAmount * ReflectPercent);
+        DamagePipeline.Apply(ctx.SourceEntity, dmg.Attacker, reflected);
+        return true;
+    }
+}
+```
+
 
 ### 8.5 Capability interfaces (marker)
 
@@ -1726,6 +2216,7 @@ La base renderiza secciones del inspector **sólo si** el efecto concreto implem
 | `IHasOperation` | Dropdown de operación (via `OperationsConstants`) |
 | `IHasModifierDirection` | Dropdown de `ModifierDirection` para efectos que crean mods |
 | `IShouldStoreValuesOnBehavior` | Declara que el efecto escribe en `StoredValues` (§9) |
+| `IRequiresTriggerContext<TCtx>` | Declara que el efecto necesita un `BehaviorContext` de subtipo `TCtx` (§7.3). El inspector valida en tiempo de edición que el behavior que contiene este effect tenga un `Trigger` cuyo dispatcher construye ese subtipo (ver tabla §7.2). Si el match falla, se muestra warning naranja — soft check, no error, porque `OnEvent` puede transportar cualquier payload. |
 
 ### 8.6 Readers
 
@@ -2426,6 +2917,42 @@ public virtual bool ValidateSelection(TargetSelectionResult result, Guid ownerGu
 
 > Esta sección une §3 (modificadores direccionales), §4 (clase + sheet), §5 (combos), §6 (dados) y §8 (efectos). Es el flujo completo de resolución de un ataque.
 
+### 12.0 `GamePhase` y el gate macro
+
+Enum canónico — formalizado acá después de flotar como doc‑debt en v9 y v10. Se referencia desde §1.2 (payload de `OnPhaseChange`), §1.3 (el `CombatTurnFSM` vive dentro de `Combat`), §7.2 (`AllowedPhases` filter), §7.7 (`PhaseInteractionRule`), §16.1 (input action maps por fase) y §17.E (camera behavior).
+
+```csharp
+public enum GamePhase
+{
+    Exploration = 0,  // free movement en sala limpia; NPCs, props, shops abiertos
+    Combat      = 1,  // hay enemigos vivos en la sala; CombatTurnFSM (§1.3) corriendo
+    Craps       = 2,  // el mini‑juego de dados de §17.C tomó el control
+    Shop        = 3,  // UI de shop abierta (vendor NPC o shop room dedicada)
+    Cutscene    = 4,  // cutscene scripteada; input del jugador bloqueado salvo skip
+}
+```
+
+**Relación con `GamePhaseMask` (§7.2).** El flags mask deriva sus bits del enum plano: `Exploration = 1 << 0`, `Combat = 1 << 1`, etc. El enum plano es **el valor** (en qué fase estamos ahora mismo); el mask es **el filtro** (en qué fases un behavior es elegible). Convención: los behaviors se autorean con flags; el runtime consulta el enum plano al `TurnManager`.
+
+**Owner del estado.** El `TurnManager` (registrado en `ServiceLocator`) mantiene `GamePhase CurrentPhase { get; private set; }` y expone `SetPhase(GamePhase next)`. Cada cambio dispara `OnPhaseChange(previous, next)` vía `EventManager` — los listeners (input maps, camera, HUD, `IInteractionService`) reaccionan al evento. **Nadie** lee `CurrentPhase` dentro de `Update()`; los sub‑sistemas toman snapshot del valor en `OnPhaseChange` y actúan sobre event.
+
+**Transiciones típicas.**
+
+| De → A | Disparador | Quién setea |
+|---|---|---|
+| `Exploration → Combat` | El player entra a una sala con enemigos vivos (auto‑detectado en `DungeonManager.EnterRoom`). | `DungeonManager` |
+| `Combat → Exploration` | Terminal `Victory` del `CombatTurnFSM` (todos los enemigos muertos). | `CombatTurnFSM` |
+| `Combat → (game over)` | Terminal `Defeat` del `CombatTurnFSM` (`player.Health ≤ 0`). Dispara `OnCombatEnd` + `OnRunEnd`. | `CombatTurnFSM` |
+| `Exploration → Shop` | El player interactúa con un NPC vendor / entra a una shop room. | `IInteractionService` |
+| `Shop → Exploration` | El player cierra la UI de shop. | `ShopScreen` |
+| `Exploration → Craps` | El player entra a una craps room / acepta una apuesta de un NPC. | `IInteractionService` |
+| `Craps → Exploration` | Fin de la sesión de craps (`CrapsSessionService.End`). | `CrapsSessionService` |
+| `* → Cutscene` / `Cutscene → *` | Triggers narrativos (no modelados todavía — ver §D pendientes). | `CutsceneService` (TBD) |
+
+**Dónde vive el `CombatTurnFSM`.** Cuando el `TurnManager` transiciona a `GamePhase.Combat`, inicializa un `CombatTurnFSM` (§1.3) y lo tickea hasta que llegue a uno de sus terminal states (`Victory` / `Defeat`). Los estados internos del FSM (`Roll`, `Reroll`, `PlayerInput`, `EnemyPickNext`, …) son **sub‑steps invisibles** para los listeners del `OnPhaseChange` — desde afuera la fase sigue siendo `Combat`. Esto es lo que desambigua el naming: ningún micro‑state del FSM lleva `Phase` en el nombre, la palabra queda reservada al enum macro.
+
+**Cross‑ref §12.0.** §1.2 (`OnPhaseChange`), §1.3 (`CombatTurnFSM` dentro de `Combat` + convención de naming), §7.2 (`AllowedPhases` / `GamePhaseMask`), §7.7 (`PhaseInteractionRule`), §16.1 (input maps por fase), §17.E (camera reacciona al evento).
+
 ### 12.1 `AttackResolver`
 
 Servicio registrado en `ServiceLocator` que resuelve ataques básicos, especiales y de arma.
@@ -2546,7 +3073,7 @@ public class DamagePipeline : IDamagePipeline
 ### 12.3 Flujo completo de un ataque de jugador
 
 ```
-1. TurnManager está en RollPhase para el jugador.
+1. El `CombatTurnFSM` está en el state `Roll` para el jugador (§1.3).
 2. DiceRoller.RollAll(player.DiceBag) → int[] raw
 3. (opcional) hasta 2 Reroll(...) + energía extra para 1 reroll bonus
 4. Aplicar DiceEnchantment.TransformRoll por dado                          (§6.4)
@@ -2849,16 +3376,16 @@ public class RoomLayout : MonoBehaviour
 [CreateAssetMenu(menuName = "Rollgeon/Dungeon/Enemy Pool")]
 public class EnemyPoolSO : ScriptableObject
 {
-    public List<WeightedEntity> Entries = new();
+    public List<WeightedEnemy> Entries = new();
 
     /// <summary>Selecciona N enemigos pesados por weight para los spawn points.</summary>
-    public List<EntityDataSO> RollForSpawns(int count, Random rng);
+    public List<EnemyDataSO> RollForSpawns(int count, Random rng);
 }
 
 [Serializable]
-public struct WeightedEntity
+public struct WeightedEnemy
 {
-    public EntityDataSO Entity;
+    public EnemyDataSO Enemy;
     [MinValue(0)] public float Weight;
 }
 
@@ -2874,7 +3401,23 @@ public class EnemySetupSO : ScriptableObject
 public struct SetupSlot
 {
     public int SpawnPointIndex;
-    public EntityDataSO Entity;
+    public EnemyDataSO Enemy;
+}
+
+[CreateAssetMenu(menuName = "Rollgeon/Dungeon/Prop Pool")]
+public class PropPoolSO : ScriptableObject
+{
+    public List<WeightedProp> Entries = new();
+
+    /// <summary>Resuelve un prop por spawn point (cofre/puerta/poción/trap).</summary>
+    public PropEntitySO RollForSpawn(Random rng);
+}
+
+[Serializable]
+public struct WeightedProp
+{
+    public PropEntitySO Prop;
+    [MinValue(0)] public float Weight;
 }
 ```
 
@@ -3118,7 +3661,7 @@ Del GD: enemigos vivos reaparecen con la HP que tenían al salir, posición alea
 
 Implementación: cada `Enemy` implementa `ISaveable` (§15). Al `ExitCurrentRoom`, `SaveSystem.CaptureAll()` captura el estado (HP, guid, template). Al `EnterRoom` otra vez, los enemigos vivos se re‑instancian desde el estado cacheado, con posición aleatoria sobre los spawn points libres.
 
-**Cross‑ref.** §7 (EntityDataSO), §12 (combate en sala), §14 (rewards desbloquean items), §15 (save system).
+**Cross‑ref.** §7.1 (`EnemyDataSO`), §7.1b (`PropEntitySO`), §7.6 (`NpcDataSO`), §12 (combate en sala), §14 (rewards desbloquean items), §15 (save system).
 
 ---
 
@@ -4733,3 +5276,33 @@ Si aparece un caso puntual que pide una transición dramática (ej: cutscene de 
   - §13.6: bullet explícito sobre auto‑registro de `InteractableComponent`s al instanciar la sala (vía `OnEnable`) y desregistro al salir. Nota sobre `Consumed` bloqueando prompts como regla ortogonal a las `PhaseRules`.
   - §17.D: **nueva §D.6a `InteractionPromptView`** — un único botón compartido en el `HUDScreen.prefab` que cambia texto y estado según el `CurrentTarget` del service. Se suscribe a `OnInteractionTargetChanged`, modula `CanvasGroup.alpha` con PrimeTween, llama a `IInteractionService.ExecuteCurrent` al click. La acción `Interact` (default `F`) se agrega al map `Gameplay` del Input System — misma lógica que el resto (gate por `GamePhase`, re‑asignable, persistida por el save system).
   - **Deuda de doc:** el enum `GamePhase` se referencia desde §1.2, §7.2, §7.7, §16.1 y §17.E pero **no está formalmente definido** en ninguna sección. Queda anotado para formalización en §12 `TurnManager` en la próxima pasada — fuera de scope de v9 para no explotar la pasada.
+- `2026-04-15` — **v10**: refactor del §7 y alignment del §8. Cuatro mejoras que responden al doc debt acumulado de v7/v9.
+  - §7.1: **`EntityDataSO` renombrado a `EnemyDataSO`**, y el enum `EntityArchetype` pierde `Interactable` y pasa a `EnemyArchetype { Melee, Ranged, Support, Boss }`. El campo `Root : AIDecisionNode` se renombra a `AIRoot` para ser explícito. Motivo: los cofres, puertas y pociones arrastraban un `AIRoot` inútil y un `Archetype` inventado. Una entity es **ahora** o bien enemy (IA + combat archetype) o bien prop (decorativa/accionable estática) — el split disuelve la ambigüedad.
+  - §7.1b: **nuevo — `PropEntitySO : BaseEntitySO`** para objetos inertes de sala (chests, doors, potions, traps, torches, decoration). Campo `Category : PropCategory` + flag `SingleUse`. Sin IA, sin archetype. Persistencia reusa `RoomObjectState.Consumed` (§13.6) sin cambios.
+  - §7.2: tabla de triggers se extiende con una columna **Context subtype** que linkea cada `BehaviorTrigger` al subtipo de `BehaviorContext` que su dispatcher construye (§7.3). El doc debt de "§7.7.4 menciona `TriggeringEntity` pero la struct plana de §7.3 no lo tenía" queda cerrado.
+  - §7.2b: **nuevo — `BehaviorSlot` + `BehaviorLibrarySO`**. `BaseEntitySO.Behaviors` pasa de `List<BaseBehavior>` a `List<BehaviorSlot>`. Cada slot es `Inline` (autoreado inline) o `FromLibrary` (referencia por id a un template del `BehaviorLibrarySO`). Al spawn, `BaseEntitySO.CreateRuntimeBehaviors(lib)` deep‑clonea vía `SerializationUtility.CreateCopy` — mismo patrón de §7.5 para AI trees. Overrides per‑entity: el slot `FromLibrary` expone un botón **"Break out to inline"** que copia el template al slot y rompe el vínculo. Sin overrides campo‑a‑campo (decisión explícita — evita reflection complexity sin pagar beneficio real). `BehaviorLibrarySO` se registra en `ServiceBootstrapSO` (§1.1).
+  - §7.3: **`BehaviorContext` polimórfico por trigger**. La struct plana se reemplaza por una jerarquía `abstract` con subtipos `sealed`: `TurnBehaviorContext`, `DamageBehaviorContext` (con `DamageInfo` + `Attacker` + `BlockedByShield` + `WasLethal`), `InteractionBehaviorContext` (con `InteractableComponent` + `PhaseInteractionRule`), `MovementBehaviorContext` (con `PreviousTile`/`CurrentTile`/`DistanceToOwner`), `EventBehaviorContext` (con `EventName` + `Payload`). La base expone `OwnerGuid`, `SourceEntity`, `TriggeringEntity`, `CurrentRoomId`, `CurrentPhase : GamePhase`, `SourceBehavior`. Cada dispatcher es responsable de construir el subtipo correcto — el contrato queda documentado en la tabla de §7.2.
+  - §7.6: **`NpcDataSO.DialogueLines : List<LocalizedString>` reemplazado por `Dialogue : DialogueGraphSO`**. Motivo: una lista plana no soportaba branching, preconditions de visibility/enabled por choice, ni effects al final de una rama. El cambio es breaking vs. v9 pero no hay contenido autoreado todavía (proyecto en fase de diseño técnico).
+  - §7.6b: **nuevo — `DialogueGraphSO`**. Grafo polimórfico inline con nodos `[SerializeReference]`: `DialogueLineNode`, `DialogueChoiceNode` (con `List<DialogueChoice>`), `DialogueEffectNode` (dispara `EffectData`), `DialogueJumpNode` (saltos por `NodeId` para hubs con "Volver atrás"), `DialogueEndNode`. Cada `DialogueChoice` lleva `VisibleIf` (filtro) y `EnabledIf` (gray out) como `List<BasePreCondition>` — reusa §8.2 sin duplicar. Ejemplos canónicos en el doc: vendor con 4 ramas + quest giver con skill check. El `DialogueScreen` (§17.D) implementa el walker del grafo.
+  - §7.7.4: `IInteractionService.ExecuteCurrent()` ahora construye explícitamente un `InteractionBehaviorContext` (§7.3) con `Interactable`, `Rule`, `DistanceToTriggerer` — cerrando el gap que v9 dejaba ambiguo ("construye el BehaviorContext").
+  - §8.4: **`EffectContext` gana `TriggerContext : BehaviorContext`** (referencia polimórfica al contexto del trigger) + helper genérico `TryGetTriggerContext<T>(out T ctx) where T : BehaviorContext`. Un efecto `EffReflectDamage` ahora puede hacer `ctx.TryGetTriggerContext<DamageBehaviorContext>(out var dmg)` y leer `dmg.Attacker` + `dmg.Damage.FinalAmount` sin casteos manuales ni lookups. Ejemplo full en el doc.
+  - §8.5: **nueva capability interface `IRequiresTriggerContext<TCtx>`** en la tabla. El inspector valida (soft, warning naranja) que los effects con este marcador sólo se enganchen a behaviors cuyos triggers construyen el subtipo pedido. Se documenta como soft check porque `OnEvent` puede transportar cualquier `Payload`.
+  - §1.1.1: `EntityCatalogSO` gana `GetEnemies()` + `GetProps()` (reemplazan `GetEntities()`), `AllDialogueIds` para alimentar el dropdown del `DialogueGraphSO`, y `GetDialogueById(id)`. El bootstrap de §1.1 suma `BehaviorLibrarySO` a los catálogos pre‑cargados.
+  - §13.4: **`WeightedEntity` renombrado a `WeightedEnemy`** y el pool tipado sobre `EnemyDataSO`. **Nuevo `PropPoolSO`** para resolver cofres/puertas/pociones por spawn point, tipado sobre `PropEntitySO`.
+  - §4.5: el flujo de inicio de run suma `Player.RuntimeBehaviors = hero.CreateRuntimeBehaviors(behaviorLibrary)` junto al `CreateRuntimeStats()` existente.
+  - §4.1, §13.8, §0 (namespaces + directorios): cross‑refs actualizadas a los nuevos subtipos.
+  - **Razón del orden de ejecución** (split → context → library → dialogue): el split renombra un tipo central; hacerlo primero evita churn en las mejoras siguientes.
+  - **No tocado en v10:** §9 `StoredValues` (su API pública en `BaseBehavior` quedó flagueada para una futura pasada, pero v10 no lo encapsula — el alcance ya es grande); el split de `GamePhase` sigue siendo deuda de §12.
+- `2026-04-15` — **v11**: rediseño del `CombatTurnFSM` (§1.3) + formalización de `GamePhase` (§12.0). Cierra la deuda doc de v9/v10 y ataca ocho debilidades del draft previo del FSM.
+  - **§1.3 — rediseño del `CombatTurnFSM`.**
+    - **Convención de naming.** Ningún micro‑state lleva `Phase` en el nombre (palabra reservada al enum macro). Los viejos `RollPhase` / `RerollPhase` / `DefendPhase` se renombran a `Roll` / `Reroll` / `Defend`. Elimina la colisión con `GamePhase`.
+    - **`CheckCombatEnd` explícito.** Corre **post cada `ApplyDamage`** (player attack, enemy attack, reactivos, traps, DOTs). Centraliza la evaluación de victoria/derrota y evita que cada state replique el check. Terminal states `Victory` / `Defeat`.
+    - **Iteración de enemigos first‑class.** El `EnemyAction*` con asterisco del draft anterior se reemplaza por `EnterEnemyBranch → EnemyPickNext → EnemyAction → ApplyDamage → ResolveReactions → CheckCombatEnd → EnemyPickNext (loop)`. `EnemyPickNext` descarta enemigos que murieron mid‑turno por un reactivo. Sale del loop con `EnemyQueueEmpty`.
+    - **`Interact` unificado.** El viejo `SecondaryAction (heal, door, chest)` desaparece. El nuevo state `Interact` delega al `IInteractionService` (§7.7), que resuelve heal, cofre, puerta forzada, NPC vendor, shop vía `PhaseInteractionRule(Combat, …)`. Los inputs legacy `Heal` / `ForceDoor` salen del `TurnInput` enum — ambos son ahora `Interact`. Una sola ruta unificada para cualquier acción estática en combate.
+    - **Split de `CleanupModifiers`.** El viejo `CleanupModifiers` único se parte en **`CleanupPlayerModifiers`** (entre fin del turno del player y `EnterEnemyBranch`) y **`CleanupEnemyModifiers`** (después de que **todos** los enemigos hayan actuado). Motivo: un debuff `Duration = 1` aplicado al `Enemy 2` no debe gastarse cuando actúa el `Enemy 1` — el tick ocurre al cerrar la fase completa. Regla explícita: modificadores globales simétricos se modelan como dos modificadores espejados (uno `OwnerId = player`, otro `OwnerId = enemyBand`).
+    - **`CheckTurnSkip` para CC.** Nuevo state entre `StartPlayerTurn` y `PlayerInput`. Chequea stun / freeze / sleep y, si aplica, transiciona directo a `CleanupPlayerModifiers` sin pasar por input. Reemplaza el pattern ad‑hoc de guardas dentro de `PlayerInput`.
+    - **`ResolveReactions` explícito.** Nuevo state entre `ApplyDamage` y `CheckCombatEnd`. Dispara los behaviors `OnDamaged` del target (filtrados por `AllowedPhases`) y, si un reactivo vuelve a hacer daño, re‑entra en `ApplyDamage` recursivamente con stack depth cap. Evita que contragolpes y thorns se pierdan mid‑turno.
+    - **`TurnInput` actualizado.** Gana `CombatEnded`, `ReactionResolved`, `EnemyQueueEmpty`, `TurnSkipped` (inputs system‑driven). Pierde `Heal` y `ForceDoor` (ahora `Interact`).
+  - **§12.0 — nuevo: `GamePhase` formalizado.** Enum canónico `{ Exploration, Combat, Craps, Shop, Cutscene }` con `= 0..4` explícitos. Explica la relación enum plano (valor) vs. `GamePhaseMask` (filtro de behaviors), quién es el owner del estado (`TurnManager` con `SetPhase` + `OnPhaseChange`), regla "nadie lee `CurrentPhase` en `Update()`", tabla de transiciones típicas (quién dispara cada `Exploration ↔ Combat ↔ Shop ↔ Craps`), y la aclaración de que el `CombatTurnFSM` **vive dentro** de `GamePhase.Combat` — sus micro‑states son invisibles para listeners externos del `OnPhaseChange`. Cierra la deuda de doc que v9 y v10 habían flagueado.
+  - **Cross‑refs actualizadas.** §7.5 (el bullet sobre "FSM sigue viva para el flow macro de combate" cita los nuevos state names). §12.3 (flujo completo de ataque — el paso 1 ahora referencia `el CombatTurnFSM está en el state Roll` en vez de `TurnManager está en RollPhase`). §7.2 (la nota de doc debt se reemplaza por un puntero a §12.0 — deuda cerrada).
+  - **No tocado en v11.** §9 `StoredValues` sigue pendiente (arrastrado desde v10); la formalización del `CutsceneService` queda apuntada en la tabla de transiciones de §12.0 como TBD, sin implementación.
