@@ -38,6 +38,7 @@
     - L. [Enums comunes](#l-enums-comunes-no-declarados-en-otras-secciones) — `RunOutcome`, `CombatOutcome`, `FloatingNumberType`, `ComparisonOp`
     - M. [Heal Pipeline](#m-heal-pipeline) — pipeline centralizada de curación simétrica al DamagePipeline
     - N. [Cutscene overlay](#n-cutscene-overlay--flujo-básico) — `ICutsceneService`, `CutsceneDataSO`, flujo de cutscenes
+    - O. [`IRngService`](#o-irngservice--aleatoriedad-determinista-por-sub-stream) — aleatoriedad determinista por sub-stream
 18. [Sistema de Items e Inventario](#18-sistema-de-items-e-inventario)
 19. [Sistema de Rewards / Loot](#19-sistema-de-rewards--loot)
 20. [Sistema de Status Effects](#20-sistema-de-status-effects)
@@ -317,10 +318,97 @@ public class GameBootstrap : MonoBehaviour
 
 #### 1.1.3 Managers runtime vs catalogs
 
-- **Catalogs** (HeroCatalog, ComboCatalog, …): SOs con listas y lookup por id. Pre‑cargados en el bootstrap. **Read‑only en runtime.**
-- **Managers** (`TurnManager`, `AttributesManager`, `GridManager`, `DungeonManager`, `DiceRoller`, `FeedbackBus`, `AttackResolver`): instancias runtime, registradas cuando se inicia la partida. **Stateful.**
+- **Catalogs** (`HeroCatalog`, `ComboCatalog`, `ActionCatalog`, …): SOs con listas y lookup por id. Pre‑cargados en el bootstrap (§1.1.1). Registrados en `ServiceScope.Global`. **Read‑only en runtime.**
+- **Managers** (`TurnManager`, `AttributesManager`, `GridManager`, `DungeonManager`, `DiceRoller`, `FeedbackBus`, `AttackResolver`, `IInteractionService`, `IPhaseService`, `IStatusEffectService`, `IRewardService`, `IQuestService`, `ICrapsSessionService`, `IShopManagerService`, `IMovementService`, `ICameraService`, `IAudioService`, `IInputService`, `ISceneService`, `IPlayerService`, `PawnRegistryService`, `ITutorialService`, `ISettingsService`, `IAnalyticsService`, `IPoolService`, `IRngService`, `SaveSystem`): instancias runtime, **stateful**. Registrados en `ServiceScope.Global` los de infraestructura, y `ServiceScope.Run` los que nacen/mueren con la run.
 
-Ambos viven en el `ServiceLocator` pero su ciclo de vida es distinto.
+Ambos viven en el `ServiceLocator` pero su ciclo de vida es distinto. **§1.1.1 cubre `Global`**; los managers `Run` se registran en el flujo `RunStart` descrito abajo.
+
+##### 1.1.3.a — Flujo `RunStart`
+
+Se dispara después de la selección de clase (§4.5) y antes de instanciar la primera sala del dungeon. Su responsabilidad: instanciar y registrar todos los managers `ServiceScope.Run` **en orden de dependencia**. Vive en `RunBootstrapper`, un componente que el `ClassSelectScreen` invoca cuando el jugador confirma:
+
+```csharp
+public static class RunBootstrapper
+{
+    /// <summary>
+    /// Llamado una vez post-selección de clase. Instancia managers Run en el
+    /// orden correcto para que cada uno pueda resolver sus dependencias vía
+    /// ServiceLocator en su constructor.
+    /// </summary>
+    public static void StartRun(ClassHeroSO selected, RulesetSO ruleset, Guid runId)
+    {
+        // 1. Infraestructura de la run — no dependen de gameplay.
+        ServiceLocator.AddService<IRngService>(new RngService(seed: runId), ServiceScope.Run);
+        ServiceLocator.AddService<IPhaseService>(new PhaseService(), ServiceScope.Run);
+        ServiceLocator.AddService<IPlayerService>(new PlayerService(selected), ServiceScope.Run);
+
+        // 2. Grilla + movimiento — GridManager antes que Movement (§B.10).
+        ServiceLocator.AddService<GridManager>(new GridManager(), ServiceScope.Run);
+        ServiceLocator.AddService<IMovementService>(new MovementService(), ServiceScope.Run);
+        ServiceLocator.AddService<PawnRegistryService>(new PawnRegistryService(), ServiceScope.Run);
+
+        // 3. Turn order + turn manager — turn order antes (§12.7).
+        ServiceLocator.AddService<ITurnOrderService>(new TurnOrderService(), ServiceScope.Run);
+        ServiceLocator.AddService<TurnManager>(new TurnManager(), ServiceScope.Run);
+
+        // 4. Pipelines de combate — dependen de turn manager y phase service.
+        ServiceLocator.AddService<AttackResolver>(new AttackResolver(), ServiceScope.Run);
+        ServiceLocator.AddService<DamagePipeline>(new DamagePipeline(), ServiceScope.Run);
+        ServiceLocator.AddService<HealPipeline>(new HealPipeline(), ServiceScope.Run);
+
+        // 5. Dados + combos — DiceRoller depende de IRngService.
+        ServiceLocator.AddService<DiceRoller>(new DiceRoller(), ServiceScope.Run);
+        ServiceLocator.AddService<RunComboCounterState>(new RunComboCounterState(), ServiceScope.Run);
+        ServiceLocator.AddService<RunStrikeState>(new RunStrikeState(), ServiceScope.Run);
+        ServiceLocator.AddService<RunUpgradeState>(new RunUpgradeState(), ServiceScope.Run);   // §19.6
+
+        // 6. Sistemas gameplay layer — interactúan con los anteriores.
+        ServiceLocator.AddService<IInteractionService>(new InteractionService(), ServiceScope.Run);
+        ServiceLocator.AddService<IStatusEffectService>(new StatusEffectService(), ServiceScope.Run);
+        ServiceLocator.AddService<IRewardService>(new RewardService(), ServiceScope.Run);
+        ServiceLocator.AddService<IQuestService>(new QuestService(ruleset), ServiceScope.Run);
+        ServiceLocator.AddService<IShopManagerService>(new ShopManagerService(), ServiceScope.Run);
+        ServiceLocator.AddService<ICrapsSessionService>(new CrapsSessionService(), ServiceScope.Run);
+
+        // 7. Dungeon — último. Necesita que GridManager, Movement y Pools estén listos.
+        ServiceLocator.AddService<IDungeonManager>(new DungeonManager(ruleset), ServiceScope.Run);
+
+        // 8. Hookups cross-service — ahora que todos existen.
+        var player = ServiceLocator.GetService<IPlayerService>().Active;
+        player.BindPassive(selected.Passive);          // §4.4 — passive hookup
+        ServiceLocator.GetService<IQuestService>().SubscribeEventTriggers(); // §21.2
+
+        EventManager.Trigger(EventName.OnRunStart, runId, ruleset.RulesetId);
+    }
+
+    /// <summary>
+    /// Flujo simétrico al final de una run (Victory, Defeat, o abandonar).
+    /// Dispara OnRunEnd → flush de save → limpieza del scope.
+    /// </summary>
+    public static void EndRun(Guid runId, RunOutcome outcome)
+    {
+        EventManager.Trigger(EventName.OnRunEnd, runId, outcome);
+        SaveSystem.Flush();                             // §15 — garantiza persistencia de unlocks ganados
+        ServiceLocator.ClearScope(ServiceScope.Run);    // tira todos los managers Run
+    }
+}
+```
+
+**Orden de registro — regla de oro.** Si manager `A` resuelve manager `B` en su constructor vía `ServiceLocator.GetService<B>()`, entonces `B` se registra **antes** que `A`. El orden de arriba está armado así:
+1. RNG, Phase, Player (sin dependencias gameplay).
+2. Grid → Movement (Movement consulta Grid — §B.10).
+3. TurnOrder → TurnManager.
+4. AttackResolver, DamagePipeline, HealPipeline (dependen de TurnManager + Phase).
+5. DiceRoller (depende de IRngService, sub-stream dice).
+6. Servicios de gameplay layer (Interaction, Status, Reward, Quest, Shop, Craps).
+7. DungeonManager al final — consume GridManager, Movement, Pools, RewardService.
+8. Hookups cross-service — pasiva del player, listeners de quest, etc. Estos no se pueden hacer en constructor porque `IPlayerService` se instancia antes que `IQuestService`.
+
+**Simetría `RunEnd`.** El cleanup no invierte el orden: `ClearScope(Run)` borra todo en un paso. Si algún manager necesita unhook explícito (ej: `IQuestService` unsubscribing del `EventManager`), implementa `IDisposable` y `ServiceLocator.ClearScope` lo invoca antes de remover la entry. Regla: los managers `Run` con event subscriptions en su ctor **deben** implementar `IDisposable` o el bus acumula handlers zombies entre runs.
+
+**Tests / prototipado.** Para tests unitarios de un manager específico, instanciar a mano y hacer `AddService` con `ServiceScope.Run` directamente. `TearDown` llama `ClearScope(Run)`. No mockear el ServiceLocator — el scope `Run` ya provee aislamiento.
+
+**Cross‑ref §1.1.3.** §1.1 (`ServiceScope`), §1.1.1 (bootstrap `Global`), §4.5 (flujo completo de inicio de run — selección de clase + llamada a `RunBootstrapper`), §14.6 (end‑of‑run — unlocks antes de `EndRun`), §15 (`SaveSystem.Flush` en `EndRun`), §21.2 (`QuestService.SubscribeEventTriggers`).
 
 ### 1.2 `EventManager`
 
@@ -339,7 +427,7 @@ public static class EventManager
 
 #### 1.2.1 `TypedEvent<T>` — bus tipado complementario
 
-El `EventManager` legacy transporta `object[]` — funcional pero frágil: los casts manuales fallan silenciosamente si un publisher agrega o reordena parámetros. Para eventos de alto tráfico y payload complejo, se usa un bus tipado complementario que **coexiste** con el `EventManager` sin reemplazarlo.
+El `EventManager` legacy transporta `object[]` — funcional pero frágil: los casts manuales fallan silenciosamente si un publisher agrega o reordena parámetros. Para eventos de alto tráfico y payload complejo, se usa un bus tipado que **reemplaza** al `EventManager` para los eventos que listan un `TypedPayload` a continuación.
 
 ```csharp
 /// <summary>
@@ -403,7 +491,11 @@ private void OnHealthChanged(HealthChangedPayload p) {
 }
 ```
 
-**Regla de migración.** Los eventos existentes del `EventManager` (§1.2 tabla de familias) siguen funcionando. Los eventos **nuevos** deben usar `TypedEvent<T>`. Los eventos existentes se migran oportunistamente cuando se tocan por otra razón — no hay un refactor big-bang.
+**Regla de canal único — no coexistencia.** Cada evento del juego publica por **exactamente una** vía: `EventManager` (legacy, `object[]`) **o** `TypedEvent<T>` (tipado). Nunca ambos. La tabla de familias abajo marca con `🟦 Typed` los eventos que viven en `TypedEvent<T>` y con `🟪 Legacy` los que siguen en `EventManager`. Un evento migrado a `TypedEvent<T>` **desaparece** del enum `EventName` y no se puede volver a publicar por la vía legacy — el compilador se encarga. Migrar un evento es dos cambios: eliminar su entry del `EventName` + reemplazar publishers/subscribers por la versión tipada.
+
+**Criterio de qué vive en cada bus.**
+- `🟦 Typed` — eventos con payload ≥ 2 campos de tipos heterogéneos, o de alto tráfico (resolución de daño, tick de HUD). Cuando un cast silencioso costaría un bug difícil de rastrear, se tipa.
+- `🟪 Legacy` — eventos simples (1 campo o marker sin payload) donde un struct sería overkill. Broadcast genérico (OnRunStart, OnFloorCleared) donde todos los listeners son de bajo volumen.
 
 **Familia mínima de `EventName`** para Rollgeon:
 
@@ -419,7 +511,7 @@ private void OnHealthChanged(HealthChangedPayload p) {
 | Modifier | `OnModifierAdded`, `OnModifierRemoved` |
 | Dungeon  | `OnRoomEntered`, `OnRoomCleared`, `OnFloorCleared` |
 | HUD      | `OnPlayerHealthChanged`, `OnPlayerEnergyChanged`, `OnGoldChanged`, `OnFloatingNumberRequested` |
-| Screens  | `OnScreenPushed`, `OnScreenPopped` |
+| Screens  | *(movidos)* — `IScreenManager.OnScreenPushed` / `OnScreenPopped` / `OnPauseChanged` (§17.D) |
 | Craps    | `OnCrapsSessionStarted`, `OnCrapsBetPlaced`, `OnCrapsResolved` |
 | Save     | `OnCaptureRequested`, `OnRestoreCompleted` (§15) |
 | Feedback | `OnFeedbackStarted`, `OnFeedbackCompleted` |
@@ -429,6 +521,8 @@ private void OnHealthChanged(HealthChangedPayload p) {
 | Items (§18) | `OnItemObtained`, `OnItemRemoved`, `OnActiveItemUsed` |
 | Quest (§21) | `OnQuestStateChanged` |
 | Scene (§K) | `OnSceneLoaded`, `OnSceneUnloaded` |
+
+**Regla transversal de `args[0]`.** Para todo evento legacy cuyo payload referencie a una entidad concreta (run, combat, turn, damage, modifier, interaction, status, etc.), `args[0]` es **siempre** `Guid` — el `InstanceId` de la entidad primaria a la que se refiere el evento. Nunca se pasa `Entity` ni `MonoBehaviour`. Esta regla existe porque `Modifier<T>.OnTickTriggered` (§3.1) filtra por `OwnerId == (Guid)args[0]`; un publisher que pase otra cosa hace que el tick no dispare y el mod quede suscripto para siempre.
 
 **Payloads.** Los parámetros viajan como `object[]`. Para evitar errores de cast, cada `EventName` tiene su schema documentado al lado del enum:
 
@@ -456,8 +550,20 @@ public enum EventName
     OnDamageResolved,
 
     // --- Turn / initiative --------------------------------------------------
+    /// <summary>args: [Guid entityGuid]. Quien arranca su turno.</summary>
+    OnTurnStarted,
+    /// <summary>args: [Guid entityGuid]. Quien cierra su turno — lo consume Modifier&lt;T&gt; para decrementar Duration.</summary>
+    OnTurnFinished,
+    /// <summary>args: [Guid entityGuid, int current, int max]</summary>
+    OnEnergyChanged,
     /// <summary>args: [IReadOnlyList&lt;Guid&gt; orderForRound, int roundIndex]</summary>
     OnTurnQueueBuilt,
+
+    // --- Modifier lifecycle ------------------------------------------------
+    /// <summary>args: [Guid ownerGuid, Guid modifierId]</summary>
+    OnModifierAdded,
+    /// <summary>args: [Guid ownerGuid, Guid modifierId]</summary>
+    OnModifierRemoved,
 
     // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
     /// <summary>args: [Guid entityGuid, int current, int max]</summary>
@@ -469,11 +575,10 @@ public enum EventName
     /// <summary>args: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]</summary>
     OnFloatingNumberRequested,
 
-    // --- Screen stack -------------------------------------------------------
-    /// <summary>args: [ScreenId from, ScreenId to, object payload]</summary>
-    OnScreenPushed,
-    /// <summary>args: [ScreenId from, ScreenId to]</summary>
-    OnScreenPopped,
+    // --- Screen stack: NO viven acá — el IScreenManager (§17.D) expone
+    //     sus events C# directamente. Suscribirse vía ServiceLocator.
+    //     OnScreenPushed / OnScreenPopped fueron removidos del bus legacy
+    //     para no tener dos canales publicando lo mismo.
 
     // --- Craps --------------------------------------------------------------
     /// <summary>args: [Guid sessionId, Guid playerGuid]</summary>
@@ -784,18 +889,26 @@ public class Modifier<T>
     /// <summary>
     /// Subscribe al event que corresponda según el Lifetime. Permanent no se
     /// subscribe a nada — solo se remueve por EffRemoveModifier explícito.
+    /// Idempotente: si ya estaba suscripto, UnSubscribe + Subscribe garantiza
+    /// una sola subscripción — necesario para el camino de Restore (§15) que
+    /// vuelve a invocar OnLoad sobre instancias deserializadas que pueden
+    /// tener _resolvedOp nulo y estado de subscripción indeterminado.
     /// </summary>
     public void OnLoad()
     {
+        _resolvedOp = OperationResolver.Resolve<T>(Operation);
         switch (Lifetime)
         {
             case ModifierLifetime.Turns:
+                EventManager.UnSubscribe(TickEvent, OnTickTriggered);
                 EventManager.Subscribe(TickEvent, OnTickTriggered);
                 break;
             case ModifierLifetime.Run:
+                EventManager.UnSubscribe(EventName.OnRunEnd, OnScopeEnded);
                 EventManager.Subscribe(EventName.OnRunEnd, OnScopeEnded);
                 break;
             case ModifierLifetime.Encounter:
+                EventManager.UnSubscribe(EventName.OnCombatEnd, OnScopeEnded);
                 EventManager.Subscribe(EventName.OnCombatEnd, OnScopeEnded);
                 break;
             case ModifierLifetime.Permanent:
@@ -906,7 +1019,13 @@ La base de efectos resuelve el dropdown vía `OperationsConstants.GetAll*Operati
    - `Permanent` → **no** se suscribe a nada. La única forma de sacarlo es `EffRemoveModifier` (§8.7) buscando por `ModifierId` o por tipo.
 4. Cuando el modifier se remueve (por cualquiera de los caminos anteriores) dispara `OnModifierRemoved(OwnerId, ModifierId)` para que listeners externos reaccionen.
 
-**Cross‑ref.** §1.2 (events `OnRunEnd` / `OnCombatEnd`), §2.3 (Guid ownership), §8 (factories via efectos), §12 (pipeline de daño).
+### 3.5 Rehidratación desde save (§15)
+
+El `Modifier<T>` se serializa como data puro — sus suscripciones al `EventManager` no se persisten (son handlers runtime) y su `_resolvedOp` está marcado `[NonSerialized]`. Al cargar un save que contiene modificadores, el constructor **no se ejecuta**; Unity/Odin instancia el objeto y puebla los campos sin invocar `OnLoad()`. Esto deja al mod huérfano: `Duration` nunca decrementa porque el `TickEvent` no tiene suscriptor, y `_resolvedOp` es null → primer `ApplyModifier` lo re‑resuelve on‑demand pero la suscripción sigue rota.
+
+**Regla.** Todo `ISaveable` que contenga `Modifier<T>` (típicamente `ModifiableAttributes` dentro de `Entity`) **debe** invocar `mod.OnLoad()` sobre cada modifier restaurado dentro de su `RestoreState(...)`. Por eso `OnLoad()` es idempotente (§3.1): llamarlo varias veces no duplica suscripciones. La responsabilidad vive en el saveable que contiene el mod, no en `SaveSystem` — éste no conoce el tipo concreto.
+
+**Cross‑ref.** §1.2 (events `OnRunEnd` / `OnCombatEnd`), §2.3 (Guid ownership), §8 (factories via efectos), §12 (pipeline de daño), §15.2 (`ISaveable.RestoreState` — punto de re‑hook).
 
 ---
 
@@ -1002,6 +1121,69 @@ public class PassiveHook
 
 **Regla de diseño (GD).** La pasiva **no** modifica el `ContractSheet`. Los combos de la clase son fijos; la pasiva modifica el combate (multiplicadores, efectos extra, triggers en eventos).
 
+#### 4.4.1 Lifecycle — `ClassPassiveSO` es ref compartida, el bind vive en `Entity`
+
+`ClassPassiveSO` es un asset **inmutable y compartido** entre todas las instancias de la misma clase. Dos `Entity` del mismo héroe (p. ej. una run en curso + una preview en el menú) comparten la misma ref al SO. Esto significa que **los hooks al `EventManager` no pueden vivir en el SO** — si lo hicieran, habría handlers duplicados o fantasmas según qué instancia los suscribió.
+
+**Regla.** El hookup al bus vive en `Entity.BindPassive(passive)`, que crea handlers **cerrados sobre `InstanceId`** y los guarda localmente para poder des‑suscribirlos en `Entity.Dispose` / `RunEnd`. El SO solo describe **qué** hacer; `Entity` decide **cuándo** (mientras está vivo) y **para quién** (su `InstanceId`).
+
+```csharp
+public partial class Entity
+{
+    private readonly List<(EventName evt, EventManager.EventReceiver handler)> _passiveHandlers = new();
+
+    /// <summary>
+    /// Bindea la pasiva al EventManager. Llamado una vez al crear la Entity
+    /// (RunBootstrapper §1.1.3.a para el player; no se llama para enemigos
+    /// porque ClassPassiveSO es exclusivo de clases). Los handlers se cierran
+    /// sobre this.InstanceId y filtran por OwnerId == (Guid)args[0].
+    /// </summary>
+    public void BindPassive(ClassPassiveSO passive)
+    {
+        if (passive == null) return;
+        if (Passive != null) UnbindPassive();            // idempotente
+        Passive = passive;
+
+        foreach (var hook in passive.Hooks)
+        {
+            var evt = hook.TriggerEvent;
+            EventManager.EventReceiver handler = args =>
+            {
+                // Regla transversal de args[0] (§1.2): el InstanceId primario
+                // del evento viene en args[0]. Solo reaccionamos si somos el owner.
+                if (args.Length == 0 || !(args[0] is Guid ownerId)) return;
+                if (ownerId != InstanceId) return;
+
+                var ctx = new EffectContext(source: this, target: this, eventArgs: args);
+                hook.Effect.Execute(ctx);                // §8
+            };
+            EventManager.Subscribe(evt, handler);
+            _passiveHandlers.Add((evt, handler));
+        }
+    }
+
+    /// <summary>
+    /// Des-suscribe todos los hooks. Llamado desde Entity.Dispose()
+    /// (implementa IDisposable para ClearScope(Run) en §1.1.3).
+    /// </summary>
+    public void UnbindPassive()
+    {
+        foreach (var (evt, handler) in _passiveHandlers)
+            EventManager.UnSubscribe(evt, handler);
+        _passiveHandlers.Clear();
+        Passive = null;
+    }
+}
+```
+
+**Consecuencias.**
+- El SO nunca se modifica. No lleva estado de "quién me suscribió".
+- Dos entidades distintas apuntando al mismo `ClassPassiveSO` suscriben handlers **independientes**, cada uno filtrando por su propio `InstanceId`. No hay cross‑talk.
+- Load de save reinstancia el `Entity` (§15 / §2.4) y vuelve a llamar `BindPassive` — los handlers del snapshot previo se perdieron con la `Entity` anterior, no hay leak.
+- Tests: crear `Entity` + `BindPassive` + disparar event + assert + `UnbindPassive` + assert no‑op.
+
+**Anti‑patrón.** `passive.Subscribe(entity)` en el SO — queda desactualizado acá y se debe reemplazar por `entity.BindPassive(passive)`.
+
 ### 4.5 Flujo de inicio de run
 
 ```
@@ -1013,11 +1195,10 @@ RunStart
   ↓
 Player.InstanceId       = Guid.NewGuid()
 Player.RuntimeStats     = hero.CreateRuntimeStats()
-Player.RuntimeBehaviors = hero.CreateRuntimeBehaviors(behaviorLibrary)  // §7.2b — deep‑clone de slots
+Player.RuntimeBehaviors = hero.CreateRuntimeBehaviors()                 // §7.2b — deep‑clone de slots; library via ServiceLocator
 Player.Sheet            = hero.Sheet.Instantiate()                     // clone para tachar combos
 Player.DiceBag          = hero.StartingDiceBag.Clone()
-Player.Passive          = hero.Passive
-Player.Passive.Subscribe(Player.InstanceId)                            // engancha hooks al EventManager
+Player.BindPassive(hero.Passive)                                       // §4.4.1 — crea handlers cerrados sobre InstanceId
   ↓
 SaveSystem.Register(Player)                                        // §15
 SaveSystem.CaptureAll(); SaveSystem.Flush(SaveTrigger.RunStart)
@@ -1030,7 +1211,7 @@ SaveSystem.CaptureAll(); SaveSystem.Flush(SaveTrigger.RunStart)
 La clase runtime que representa cualquier entidad viva en el juego. Se crea al spawnear al héroe (§4.5), un enemigo (§13.4), un prop (§7.1b) o un NPC (§7.6). **No es un SO** — es una instancia en memoria que vive durante la run (o durante el combate, según la entidad).
 
 ```csharp
-public class Entity : ISaveable
+public partial class Entity : ISaveable, IDisposable
 {
     // --- Identity -----------------------------------------------------------
     public Guid              InstanceId       { get; } = Guid.NewGuid();
@@ -1045,7 +1226,7 @@ public class Entity : ISaveable
     // --- Hero‑specific (null si no es héroe) --------------------------------
     public ContractSheet     Sheet            { get; set; }  // clone de ClassHeroSO.Sheet (§5.3)
     public DiceBagSO         DiceBag          { get; set; }  // clone de StartingDiceBag (§6.2)
-    public ClassPassiveSO    Passive          { get; set; }  // ref a ClassHeroSO.Passive (§4.4)
+    public ClassPassiveSO    Passive          { get; private set; }  // ref a ClassHeroSO.Passive (§4.4) — set via BindPassive
 
     // --- Enemy‑specific (null si no es enemigo) -----------------------------
     public AIDecisionNode    AIRoot           { get; set; }  // deep‑clone del árbol (§7.5)
@@ -1055,11 +1236,11 @@ public class Entity : ISaveable
     public GridCoord         GridPosition     { get; set; }  // posición en la grilla (§B.1)
 
     // --- Constructor --------------------------------------------------------
-    public Entity(BaseEntitySO template, BehaviorLibrarySO lib)
+    public Entity(BaseEntitySO template)
     {
         Template         = template;
         Attributes       = template.CreateRuntimeStats();
-        RuntimeBehaviors = template.CreateRuntimeBehaviors(lib);
+        RuntimeBehaviors = template.CreateRuntimeBehaviors();   // library via ServiceLocator
 
         if (template is EnemyDataSO enemy && enemy.AIRoot != null)
             AIRoot = SerializationUtility.CreateCopy(enemy.AIRoot);
@@ -1075,6 +1256,15 @@ public class Entity : ISaveable
         GridPosition  = GridPosition,
     };
     public void RestoreState(object state) { /* idem inverso */ }
+
+    // --- IDisposable --------------------------------------------------------
+    // Llamado por ClearScope(Run) vía SaveSystem al terminar la run, o
+    // manualmente cuando un enemigo muere y su Entity se retira. Des-suscribe
+    // los handlers de la pasiva (§4.4.1) y cualquier otro lifecycle binding.
+    public void Dispose()
+    {
+        UnbindPassive();                                     // §4.4.1
+    }
 }
 ```
 
@@ -1106,7 +1296,19 @@ public abstract class BaseComboSO : SerializedScriptableObject
     public Sprite Icon;
 
     [Title("Damage")]
+    [Tooltip("Daño plano sumado encima de la cuenta del combo. Usado para combos que ignoran el valor de los dados.")]
     [MinValue(0)] public int BaseDamage;
+
+    [Title("Cuenta del combo — fórmula")]
+    [Tooltip("Multiplicadores por cara (index 0 = pip 1, … index 5 = pip 6). Default = todos 0 → el combo es flat (sólo BaseDamage).")]
+    public float[] ValueMultipliers = new float[6];           // index = pip - 1
+
+    [Tooltip("Multiplicador general aplicado al resultado de la suma ponderada.")]
+    [MinValue(0)] public float GeneralMultiplier = 1f;
+
+    [Title("Extra effects (opcional)")]
+    [Tooltip("BaseEffects extra que se disparan junto al daño del combo. Upgrades (§19) pueden agregar acá.")]
+    [OdinSerialize] public List<EffectData> ExtraEffects = new();    // §8
 
     [Title("Matching")]
     /// <summary>
@@ -1121,6 +1323,22 @@ public abstract class BaseComboSO : SerializedScriptableObject
     /// </summary>
     public virtual int Priority => BaseDamage;
 
+    /// <summary>
+    /// Cuenta del combo (§5.1.1). Fórmula:
+    ///   cuenta = (Σ dado × ValueMultipliers[dado-1]) × GeneralMultiplier
+    /// No incluye BaseDamage — ese se suma aparte en AttackResolver (§12.1).
+    /// </summary>
+    public float ComputeCount(int[] finalDice)
+    {
+        float sum = 0f;
+        for (int i = 0; i < finalDice.Length; i++)
+        {
+            int pip = finalDice[i];
+            if (pip >= 1 && pip <= 6) sum += pip * ValueMultipliers[pip - 1];
+        }
+        return sum * GeneralMultiplier;
+    }
+
 #if UNITY_EDITOR
     private static IEnumerable<string> GetComboIds() =>
         ServiceLocator.TryGetService<ComboCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
@@ -1131,8 +1349,32 @@ public abstract class BaseComboSO : SerializedScriptableObject
 **Invariantes:**
 
 - Los `BaseComboSO` son assets compartidos — **no** se instancian por clase.
-- `BaseDamage` es balanceo: el Game Designer lo edita desde el inspector.
+- `BaseDamage` es balanceo plano: el Game Designer lo edita desde el inspector.
 - Un combo "existe una vez" y puede aparecer en N `ContractSheet`. Tachar un combo en runtime (§5.3) tacha *la entrada en el sheet*, no el asset.
+
+#### 5.1.1 Cuenta del combo — fórmula y ejemplos
+
+Daño final producido por un combo en un ataque:
+
+```
+damage = BaseDamage + ComputeCount(finalDice)
+       = BaseDamage + (Σ dado × ValueMultipliers[dado-1]) × GeneralMultiplier
+```
+
+La multiplicación general **se aplica sobre la suma**, no dado por dado — como en la fórmula del GD. `BaseDamage` queda afuera porque es un piso plano de balanceo; sumarlo dentro del paréntesis haría que `GeneralMultiplier` lo escale con los upgrades, rompiendo la intención.
+
+**Casos canónicos:**
+
+| Combo | `BaseDamage` | `ValueMultipliers` (index 0..5) | `GeneralMultiplier` | Resultado |
+|---|---|---|---|---|
+| `ComboPair` | 10 | `[0,0,0,0,0,0]` | 1 | Flat 10. |
+| `ComboThreeSixes` | 0 | `[0,0,0,0,0,2]` | 1 | Sólo 6s cuentan doble. Si la tirada tiene 3 seis → damage = 3×6×2×1 = 36. |
+| `ComboOdds` | 5 | `[1,0,1,0,1,0]` | 1 | Suma los impares tal cual, +5 plano. |
+| `ComboGenerala` | 100 | `[1,1,1,1,1,1]` | 1 | Suma de los 5 dados + 100. |
+
+**Upgrades (§19).** Un `ComboUpgradeSO` puede modificar cualquiera de los tres campos (`BaseDamage`, `ValueMultipliers`, `GeneralMultiplier`) y/o agregar a `ExtraEffects`. No persiste entre runs — se aplica sobre el estado run‑scoped del combo (§19).
+
+**Feedback.** `FeedbackRequest` de un combo pone la cuenta en el `BehaviorValues` bag (§9) para que la UI de floating numbers muestre el desglose: `BaseDamage + Count × GeneralMultiplier` aparece como tres segmentos encadenados.
 
 ### 5.2 Concretos
 
@@ -1304,17 +1546,17 @@ public class RunStrikeState : ISaveable
 }
 ```
 
-**Integración con el resolver.** `ContractSheet.EvaluateRoll` filtra combos strikados antes de matchear:
+**Integración con el resolver.** `ContractSheet.EvaluateRoll` filtra combos strikados antes de matchear. `RunStrikeState` es `ServiceScope.Run` (§1.1) — fuera de una run activa (p.e. UI de preview de clase en el main menu) no está registrado, así que el lookup usa `TryGetService` y el filtro degrada a "ningún combo está strikado":
 
 ```csharp
 public BaseComboSO EvaluateRoll(int[] finalDice)
 {
-    var strike = ServiceLocator.GetService<RunStrikeState>();
+    ServiceLocator.TryGetService<RunStrikeState>(out var strike);   // puede ser null fuera de run
     BaseComboSO best = null;
     foreach (var combo in Combos)
     {
         if (combo == null) continue;
-        if (strike.IsStricken(combo.ComboId)) continue;          // ← gate
+        if (strike != null && strike.IsStricken(combo.ComboId)) continue;   // ← gate solo si hay run
         if (!combo.Matches(finalDice)) continue;
         if (best == null || combo.Priority > best.Priority) best = combo;
     }
@@ -1343,7 +1585,9 @@ public class EffStrikeCombo : BaseEffect, IUsesSelection
 
 El **reward** del strike (vida / daño / oro / lo que sea) se autorea en el mismo `EffectData` que contiene el `EffStrikeCombo`: un efecto siguiente aplica un `Modifier<T>` con `Lifetime = Run` al stat correspondiente. No hay código específico — el encadenamiento vive en el `EffectData` del SO que ofrece el strike (p.e. `SkullRoomRewardSO`).
 
-**Cross‑ref.** §4 (ClassHeroSO), §8 (effects + EffectData + EffRemoveModifier), §12 (AttackResolver usa `EvaluateRoll`), §13.4 (debilidad enemiga referencia `BaseComboSO`), §14 (UnlockConditionSO reutilizado para thresholds), §15 (save de `RunComboCounterState` y `RunStrikeState`).
+**Gate de acción — `!CanAct`.** Strike es una acción del jugador que cuesta 1 Energy y consume un slot de action economy (§12.6). No es invocable si el FSM ya rechazó el turno: concretamente, si `CheckTurnSkip` (§1.3) detecta stun/freeze/sleep, el FSM transiciona directo a `CleanupPlayerModifiers` sin pasar por `PlayerInput`, y el botón de Strike no se expone. Regla para la UI: el `StrikeButton` de la sheet observa `IPlayerService.Active.CanAct` (derivado de los tags de CC activos sobre el player) y queda grayed out cuando es `false`. Misma regla aplica a `Attack`, `Defend` e `Interact` — no hay camino para gastar energía durante un turno skipped.
+
+**Cross‑ref.** §1.3 (FSM `CheckTurnSkip`), §4 (ClassHeroSO), §8 (effects + EffectData + EffRemoveModifier), §12 (AttackResolver usa `EvaluateRoll`), §12.6 (action economy — Strike consume slot), §13.4 (debilidad enemiga referencia `BaseComboSO`), §14 (UnlockConditionSO reutilizado para thresholds), §15 (save de `RunComboCounterState` y `RunStrikeState`), §19 (ComboUpgradeSO).
 
 ---
 
@@ -1557,9 +1801,13 @@ public abstract class BaseEntitySO : SerializedScriptableObject
     /// Para slots Inline: deep‑clone con SerializationUtility.CreateCopy.
     /// Para slots FromLibrary: pide al library un clon del template por id.
     /// El caller recibe una List<BaseBehavior> independiente del SO y del library.
+    /// La library se resuelve internamente vía ServiceLocator (registrada en el
+    /// bootstrap §1.1.1); ningún caller necesita pasarla — un único punto de
+    /// verdad evita que distintos callsites resuelvan distintas libraries.
     /// </summary>
-    public List<BaseBehavior> CreateRuntimeBehaviors(BehaviorLibrarySO lib)
+    public List<BaseBehavior> CreateRuntimeBehaviors()
     {
+        var lib = ServiceLocator.GetService<BehaviorLibrarySO>();
         var result = new List<BaseBehavior>(Behaviors.Count);
         foreach (var slot in Behaviors)
         {
@@ -1861,7 +2109,7 @@ public class BehaviorSlot
 **Registro y lifecycle.**
 
 - `BehaviorLibrarySO` se agrega al `ServiceBootstrapSO` (§1.1) y se registra en `ServiceLocator` en `RegisterAll`.
-- `BaseEntitySO.CreateRuntimeBehaviors(BehaviorLibrarySO)` (§7.0) resuelve todos los slots, deep‑clonea cada uno, y devuelve la lista lista para attacharse al runtime `Entity`.
+- `BaseEntitySO.CreateRuntimeBehaviors()` (§7.0) resuelve la library desde el `ServiceLocator`, deep‑clonea cada slot y devuelve la lista lista para attacharse al runtime `Entity`. La library no se pasa por parámetro — un único punto de verdad evita drift entre callsites.
 - El spawn de héroe (§4.5), enemigos y props (§13.4) llama `CreateRuntimeBehaviors` además de `CreateRuntimeStats`.
 
 **Regla importante.** Los `StoredValues` (§9) viven en la instancia runtime del behavior, no en el template. Deep‑clonear al spawn garantiza que dos enemies con el mismo template melee no compartan su bag de valores almacenados — cada uno lleva el suyo.
@@ -1968,11 +2216,21 @@ public abstract class AIQuestionNode : AIDecisionNode { }
 
 public class AINode_Attack : AIActionNode
 {
-    [ValueDropdown(nameof(GetAttackIds))]
-    public string AttackId;
+    // ActionId referencia ActionCatalogSO (§12.6) — catálogo maestro unificado
+    // de acciones (ataques, abilities, combos, items activos). Un AINode_Attack
+    // típico apunta a una ActionDefinitionSO con ActionType = Attack.
+    [ValueDropdown(nameof(GetActionIds))]
+    public string ActionId;
     public int BaseDamageOverride;                      // override per‑enemigo
     [OdinSerialize] public List<EffectData> ExtraEffects = new();
     public override AIResult Evaluate(AIContext ctx) { /* resuelve attack vía DamagePipeline §12 */ }
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetActionIds() =>
+        ServiceLocator.TryGetService<ActionCatalogSO>(out var cat)
+            ? cat.GetIdsByType(ActionType.Attack)
+            : Array.Empty<string>();
+#endif
 }
 
 public class AINode_Move : AIActionNode
@@ -1984,10 +2242,18 @@ public class AINode_Move : AIActionNode
 
 public class AINode_UseAbility : AIActionNode
 {
-    [ValueDropdown(nameof(GetAbilityIds))]
-    public string AbilityId;
+    // Mismo catálogo unificado que AINode_Attack — filtrado por ActionType.Ability.
+    [ValueDropdown(nameof(GetActionIds))]
+    public string ActionId;
     [OdinSerialize] public EffectData Effect = new();
     public override AIResult Evaluate(AIContext ctx) { /* ejecuta Effect del §8 */ }
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetActionIds() =>
+        ServiceLocator.TryGetService<ActionCatalogSO>(out var cat)
+            ? cat.GetIdsByType(ActionType.Ability)
+            : Array.Empty<string>();
+#endif
 }
 
 /// <summary>
@@ -2290,6 +2556,15 @@ Root → LineNode(Npc, "¿Podrías traerme la llave del calabozo?")
 3. **Effect** → arma un `EffectContext` con `TriggerContext = null` (dialogue no es un trigger de behavior — es una ejecución driven por UI) y corre el `EffectData`. Sigue por `Next`.
 4. **Jump** → resuelve `TargetNodeId` contra el grafo (lookup por `NodeId`, implementación del screen). Continua desde ahí.
 5. **End** → cierra la screen, pop del stack del `IScreenManager`.
+
+**Cancelación.** En cualquier nodo que esté esperando input (Line, Choice), el botón **Cancel** del `IInputService` (§17.J — mismo binding que cierra screens modales) aborta el walker. El comportamiento es:
+
+- Si el nodo actual es `Line` o `Choice` → el walker se descarta sin evaluar `Next`. Ningún `DialogueEffectNode` pendiente se ejecuta.
+- Si estamos dentro de un `DialogueEffectNode` (el effect ya corriendo) → el cancel se **ignora**; el effect debe terminar para mantener atomicidad (sino, un `EffTakeItem("dungeon_key") + EffGiveReward(100g)` podría quedar a mitad y dejar inconsistencia).
+- Al abortar, `DialogueScreen` hace pop del stack y dispara `OnDialogueEnded(graphId, cancelled: true)` vía `TypedEvent<DialogueEndedPayload>` (§1.2.1). Listeners como quests que esperaban un effect de cierre deben chequear el flag `cancelled` antes de avanzar estado.
+- `DialogueEffectNode` con effects reversibles (mayoría de quest starts, shop opens) son seguros porque los inicia sólo al llegar al nodo; si el player cancela antes, simplemente no se disparan.
+
+El walker **no** expone "volver atrás" automático — eso es responsabilidad del autor del grafo vía `DialogueJumpNode` a un nodo previo (patrón "hub" del vendor del ejemplo anterior).
 
 **Precondiciones y effects reutilizados de §8.** `DialogueChoice.VisibleIf/EnabledIf` usan el mismo `BasePreCondition` que el resto del juego, con `PreConditionContext { Entity = player, OpponentGuid = npc.Guid }`. Los `DialogueEffectNode.Effect` son `EffectData` estándar — no hay lógica de diálogo duplicada.
 
@@ -2697,7 +2972,24 @@ behavior.ClearBehaviorValues();
 
 **Nota.** Single‑player → el diccionario vive en memoria y se lee directamente. Sin RPC split.
 
-**Cross‑ref.** §7 (vive en `BaseBehavior`), §8 (efectos que escriben con `IShouldStoreValuesOnBehavior`), §10 (lectura).
+### 9.5 Lifecycle — quién escribe, quién lee, cuándo se limpia
+
+El bag vive **por instancia de `BaseBehavior`** (§7.2b garantiza que el deep‑clone al spawn da a cada entity su propio bag). El ciclo por ejecución de behavior es:
+
+1. **Escritura (resolve).** Durante `behavior.Execute(ctx)`, cada `BaseEffect` que implementa `IShouldStoreValuesOnBehavior` (§8.5) escribe su valor al bag via `behavior.SetBehaviorValue(key, value)`. Typical writers: `EffDealDamage` guarda el daño final resuelto bajo `FloatingDamage`, `EffHeal` bajo `FloatingHeal`, `EffApplyImpulse` bajo `HitImpulse`.
+2. **Captura (snapshot).** Al final del resolve, antes de que el control vuelva al dispatcher, el caller que armó el `FeedbackRequest` (§10.4) invoca `FeedbackRequest.CaptureState(behavior)` — esto copia **una instantánea** del bag al request. Desde este punto, el request es autosuficiente y puede viajar async sin depender de que el bag siga vivo.
+3. **Lectura (feedback).** `FeedbackBus` consume el snapshot del request (§10.7) y despacha por subtipo como describe §9.4. Nunca lee directo del behavior.
+4. **Limpieza.** El bag se limpia en **dos momentos**:
+   - Al **terminar la ejecución del behavior** — `BaseBehavior.Execute` hace `ClearBehaviorValues()` en su `finally` después de que todos los feedbacks hayan capturado. Idempotente.
+   - Como red de seguridad, al **fin del turno del owner** — el dispatcher de `OnTurnFinished` pasa por los behaviors del entity y llama `ClearBehaviorValues()` por si algún path no llegó al `finally` (excepción, corte async). Evita que un valor fantasma del turno anterior contamine el resolve del siguiente.
+
+**Por qué dos limpiezas.** El primario es el `finally` post‑resolve. El secundario al fin del turno es solo defensivo — si el bag ya está vacío, el clear es no‑op. Un valor escrito en el resolve del turno N **no** debe ser legible en el turno N+1.
+
+**Regla de composición.** Un effect que corre después de otro en el mismo `EffectData` puede leer valores que escribió un effect anterior vía `behavior.TryGetBehaviorValues<T>(key, out)`. Esto es útil para, p. ej., un `EffPlayFeedback` que lee el `FloatingDamage` escrito por un `EffDealDamage` previo sin re‑calcularlo. Pero la dependencia queda **dentro de la misma ejecución** — no sobrevive al clear.
+
+**Anti‑patrón.** Usar `StoredValues` como storage persistente entre turnos. Para eso están los modifiers (§3) o el save system (§15). El bag es scratch space de un solo resolve.
+
+**Cross‑ref.** §7 (vive en `BaseBehavior`), §8 (efectos que escriben con `IShouldStoreValuesOnBehavior`), §10.4 (`FeedbackRequest.CaptureState` copia el snapshot), §10.7 (despacho lee del snapshot).
 
 ---
 
@@ -3410,6 +3702,45 @@ public readonly struct PhaseStackEntry
 
 **Regla: nadie lee `CurrentBase`/`CurrentOverlay` en `Update()`.** Los sub‑sistemas toman snapshot vía los events y actúan sobre event. Para enforcement, un architecture test en editor grepea por `CurrentBase`/`CurrentOverlay` dentro de métodos `Update`/`LateUpdate`/`FixedUpdate`.
 
+**Regla: `ReplacePhase` prohibido desde overlay context.** Cuando `CurrentOverlay != PhaseOverlay.None`, la única transición legal es `PopOverlay()`. Si un listener de overlay (p. ej. un `BaseBehavior` dentro de `PhaseOverlay.Cutscene`) llama `ReplacePhase(next)`, el servicio tira `InvalidPhaseTransitionException` en builds Debug, y es **no‑op** en builds Release (fail‑soft).
+
+```csharp
+public void ReplacePhase(GamePhase next)
+{
+    if (CurrentOverlay != PhaseOverlay.None)
+    {
+#if UNITY_EDITOR || DEBUG
+        throw new InvalidPhaseTransitionException(
+            $"ReplacePhase({next}) is illegal while overlay {CurrentOverlay} is active. " +
+            $"Call PopOverlay() first, then ReplacePhase.");
+#else
+        return;   // no-op en release — no queremos tirar el juego del jugador
+#endif
+    }
+
+    if (_isDispatching)
+    {
+        _pendingTransitions.Enqueue(() => ReplacePhase(next));
+        return;
+    }
+    ExecuteReplace(next);
+    DrainQueue();
+}
+```
+
+**Razón.** Un overlay tiene semántica de "suspensión": la fase base queda congelada y el overlay debe devolverle el control vía pop. Dejar que un overlay haga `ReplacePhase` rompe el contrato — la fase base nunca reanuda, el stack queda sucio, y un listener que esperaba el `OnOverlayPopped` nunca lo recibe. Casos de uso que parecen necesitarlo (p. ej. "una cutscene que al terminar lleva al Game Over"): se resuelven con el patrón **pop → replace** dentro del handler de `OnOverlayPopped`, no dentro del overlay:
+
+```csharp
+// En el BaseBehavior de la cutscene de muerte del boss:
+EventManager.Subscribe(EventName.OnOverlayPopped, args => {
+    if ((PhaseOverlay)args[0] == PhaseOverlay.Cutscene)
+        ServiceLocator.GetService<IPhaseService>().ReplacePhase(GamePhase.Exploration);
+});
+ServiceLocator.GetService<IPhaseService>().PopOverlay();
+```
+
+El `DeathWatchService` (§12.0 más abajo) cumple este patrón: al detectar muerte fuera de combate, espera a que cualquier overlay se popee antes de hacer `ReplacePhase(GameOver)`.
+
 #### 12.0.4 Queue + drain (reentrancy)
 
 Si un listener llama a `ReplacePhase` o `PushOverlay` dentro de un handler de `OnPhaseEnter`, la transición se encola y se despacha al terminar el dispatch actual. Determinístico.
@@ -3420,16 +3751,9 @@ public class PhaseService : IPhaseService
     private readonly Queue<Action> _pendingTransitions = new();
     private bool _isDispatching;
 
-    public void ReplacePhase(GamePhase next)
-    {
-        if (_isDispatching)
-        {
-            _pendingTransitions.Enqueue(() => ReplacePhase(next));
-            return;
-        }
-        ExecuteReplace(next);
-        DrainQueue();
-    }
+    // ReplacePhase (con guard de overlay) se muestra completo en §12.0.3 arriba.
+    // Acá solo reproducimos la variante de PushOverlay para ilustrar el patrón
+    // de reentrancy — la forma de ReplacePhase con Queue+drain es idéntica.
 
     public void PushOverlay(PhaseOverlay overlay)
     {
@@ -3777,6 +4101,58 @@ public class DamagePipeline : IDamagePipeline
 4. Paso 3 (Incoming): `incomingMult = 1.0 × 1.5 = 1.5`, `afterIncoming = rawDamage × 1.5`.
 5. El modificador se auto‑decrementa en `OnTurnFinished` gracias al lifecycle de §3.
 
+#### 12.2.1 Fuentes de daño no‑combo (DOTs, pasivas, trampas, ambientales)
+
+Toda fuente de daño pasa por `DamagePipeline.Resolve` — incluyendo las que no vienen de un combo del jugador. La regla de negocio del diseño: **weakness solo se dispara cuando hay un combo explícito** que la entidad declara como debilidad (§13.4). DOTs de status effects, hooks de pasivas, trampas y efectos ambientales **nunca** disparan `ctx.IsWeaknessHit = true` por default — si un efecto quiere debilidad, lo declara via combo.
+
+**DOTs (§20 Status Effects).** `IStatusEffectService.Tick` dispara, al fin del turno del owner del status, un `EffDealDamage` que llama `DamagePipeline.Resolve` con `DamageContext { Combo = null, IsWeaknessHit = false, Kind = AttackKind.DamageOverTime }`. El pipeline corre outgoing/incoming/shield/health igual que siempre — la diferencia es solo el `Kind` (para feedback/logging) y la ausencia de weakness/combo. La pasiva del Berserker "Primer golpe ×3" (§4.4) es idéntica: si sus hooks ejecutan `EffDealDamage`, va por el pipeline con `Combo = null`.
+
+**Trampas y daño ambiental (§7.1b PropEntitySO hostil).** Mismo patrón: cuando un `PropEntitySO` con behavior `OnEntered` dispara un `EffDealDamage` contra el jugador, la entity de la trampa pasa como `source` y se llama `DamagePipeline.Resolve` con `Combo = null`, `IsWeaknessHit = false`, `Kind = AttackKind.Environmental`. Los modificadores de incoming del player se respetan (un resist a `Environmental` filtra solo ese Kind).
+
+**Excepción — efecto con combo explícito.** Si un diseñador quiere que una trampa o DOT gatille weakness (p. ej. una trampa de fuego que cuenta como `ComboThreeSixes` contra un enemigo débil al fuego), el `EffectData` lo autorea de forma explícita: el `EffDealDamage` lleva `Combo = comboReference` en su config y el pipeline detecta la weakness normal. El default es nunca — "gratis" no hay.
+
+```csharp
+public enum AttackKind
+{
+    ComboAttack,        // jugador o enemigo con combo resuelto
+    BasicAttack,        // ataque sin combo (dado más alto — GD §5)
+    DamageOverTime,     // status tick — no weakness por default
+    Environmental,      // trampa, lava, lluvia de flechas
+    Reaction,           // thorns, contragolpe — ver 12.2.2
+    ScriptedAbility     // habilidad de pasiva que hace daño sin combo
+}
+```
+
+#### 12.2.2 Reactions y post‑mortem — orden vs `CheckCombatEnd`
+
+El state `ResolveReactions` del FSM (§1.3) corre **antes** de `CheckCombatEnd`. Consecuencia buscada: si un ataque es letal contra el target, sus behaviors reactivos (`OnDamaged` con `WasLethal = true`) disparan **antes** de que el FSM evalúe victoria/derrota. Esto permite que un thorns on‑death alcance a golpear al attacker aunque el target muera en ese mismo hit.
+
+**Secuencia exacta para un ataque letal con thorns:**
+
+```
+ApplyDamage(player → enemy)
+  └→ DamagePipeline.Resolve → enemy.HP llega a 0
+     EventManager.Trigger(OnDamageResolved, player, enemy, dmg, weakness)
+ResolveReactions
+  └→ Dispatch OnDamaged sobre enemy → thorns behavior dispara
+     └→ EffDealDamage(enemy, player, thornsDmg) con Kind = Reaction
+        └→ DamagePipeline.Resolve(enemy, player, thornsDmg, ctx)
+           ├→ Si player muere acá: push a stack de reacciones
+           ├→ Si no: commit daño
+           └→ EventManager.Trigger(OnDamageResolved, enemy, player, thornsDmg)
+     └→ (recursivo) ResolveReactions sobre el player si corresponde
+CheckCombatEnd
+  └→ Detecta enemy con HP = 0 → sigue
+  └→ Si queda algún enemigo vivo: ongoing, vuelve al caller state
+  └→ Si no: Victory
+```
+
+**Cap de recursión.** `ResolveReactions` tiene un `StackDepthLimit` (default: 8) para evitar loops patológicos de thorns → contra‑thorns → contra‑contra‑thorns. Cuando se alcanza el cap, los reactivos restantes se descartan con un `Debug.LogWarning` en editor y el FSM continúa. Ningún combate real debería acercarse a 8 niveles, el cap es solo defensivo.
+
+**Un enemigo muerto no actúa más.** `EnemyPickNext` (§1.3) verifica `enemy.Attributes.Get<Health>() > 0` antes de darle el turno. Un enemigo que murió mid‑turno por un reactivo se descarta y el FSM avanza al siguiente. Similar para reactivos: un thorns sobre un entity ya muerto no re‑entra (el dispatcher de `OnDamaged` chequea vivo).
+
+**Daño post‑mortem explícito.** Si un diseñador quiere que una habilidad siga ejecutándose aunque su caster muera en el mismo frame (p. ej. "explota al morir"), el behavior debe tener `Trigger = OnDamaged` con condición `WasLethal = true` — el thorns pattern es el molde. No hay camino "ignorar muerte" fuera de este patrón.
+
 ### 12.3 Flujo completo de un ataque de jugador
 
 ```
@@ -3830,39 +4206,92 @@ Los umbrales se definen en el `RoomSO` (cofre/puerta) o en el SO del ítem (poci
 
 Regla del GDD: "**no se puede repetir la misma acción en el mismo turno**". Es un constraint del action economy, independiente de qué acciones existan o cuánto cuesten.
 
-**Modelo de acción** — cada input del jugador pasa por un `ActionDefinitionSO`:
+#### 12.6.0 `ActionCatalogSO` — catálogo maestro unificado
+
+**Regla transversal.** El juego tiene **una única fuente de verdad** para "cosa que un actor puede ejecutar en combate" — el `ActionCatalogSO`. Todo lo que antes vivía como catálogo independiente (combos, ataques, abilities, items activos, movement, etc.) referencia un `ActionId` en este catálogo. Elimina la proliferación de IDs (`ComboId`, `AttackId`, `AbilityId`) que apuntaban cada uno a su catálogo — cuatro catálogos paralelos era un ID hell.
+
+```csharp
+public enum ActionType
+{
+    Combo,         // combo del Contrato de Generala (§5) — wrapped por ActionDefinitionSO
+    Attack,        // ataque directo sin combo (dado más alto del GD, AI nodes)
+    Ability,       // habilidad única de clase/enemigo con efecto autoreo (§8)
+    Defend,        // §12.4
+    Move,          // §B
+    Interact,      // §7.7
+    UseItem,       // item activo (§18)
+    SkillCheck     // §12.5
+}
+```
+
+**`ActionDefinitionSO` ahora lleva `ActionType`:**
 
 ```csharp
 [CreateAssetMenu(menuName = "Rollgeon/Actions/Action Definition")]
 public class ActionDefinitionSO : SerializedScriptableObject
 {
     [Title("Identity")]
-    [ValueDropdown(nameof(GetActionTagIds))]
-    public string ActionTag;                     // "attack.basic", "attack.special", "move", "heal", …
+    [ValueDropdown(nameof(GetActionIds))]
+    public string ActionId;                      // "combo.full_house", "attack.basic", "ability.berserker.frenzy", "item.potion.heal_small", …
+    public ActionType Type;
     public string DisplayName;
+
+    [Title("Compat — referencia del SO específico (opcional)")]
+    [InfoBox("Para Type = Combo → referenciar el BaseComboSO. Para Type = UseItem → el ItemSO. " +
+             "Para Attack/Ability puro, vive el effect abajo y este campo queda null.")]
+    [OdinSerialize] public ScriptableObject BackingAsset;   // BaseComboSO | ItemSO | null
 
     [Title("Cost")]
     [MinValue(0)] public int EnergyCost;
 
     [Title("Repetition")]
     [ToggleLeft]
-    [InfoBox("Si true, este action tag no puede ejecutarse dos veces en el mismo turno. Default del GDD.")]
+    [InfoBox("Si true, esta ActionId no puede ejecutarse dos veces en el mismo turno. Default del GDD.")]
     public bool BlockOnRepeat = true;
 
     [Title("Reroll")]
     [ToggleLeft] public bool AllowsEnergyReroll = true;
 
-    [Title("Effect")]
+    [Title("Effect (si no hay BackingAsset)")]
     [OdinSerialize] public EffectData Effect = new();   // §8
 
 #if UNITY_EDITOR
-    private static IEnumerable<string> GetActionTagIds() =>
-        ServiceLocator.TryGetService<ActionCatalogSO>(out var cat) ? cat.AllTags : Array.Empty<string>();
+    private static IEnumerable<string> GetActionIds() =>
+        ServiceLocator.TryGetService<ActionCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
 #endif
 }
 ```
 
-**Enforcement** — el `TurnManager` mantiene el set de acciones usadas en el turno actual:
+**Convención de naming de `ActionId`.** `<tipo>.<subtipo>.<nombre>`. Ejemplos:
+- `combo.full_house`, `combo.generala`
+- `attack.basic`, `attack.ranged`
+- `ability.berserker.frenzy`, `ability.necromancer.raise`
+- `item.potion.heal_small`, `item.bomb.poison`
+- `move`, `defend`, `interact`, `skill.heal`, `skill.force_door`
+
+Los catálogos específicos (`ComboCatalogSO`, `ItemCatalogSO`) siguen existiendo para el lookup tipado en su dominio — un `ContractSheet` sigue teniendo `List<BaseComboSO>`, no `List<string>`. Pero en el punto del combate donde se decide "¿ejecuto esto?", todo es `ActionId` vs `ActionCatalogSO`.
+
+**Catálogo:**
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Actions/Action Catalog")]
+public class ActionCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<ActionDefinitionSO> _entries = new();
+
+    public IEnumerable<string> AllIds => _entries.Select(e => e.ActionId);
+    public IEnumerable<string> GetIdsByType(ActionType type) =>
+        _entries.Where(e => e.Type == type).Select(e => e.ActionId);
+
+    public ActionDefinitionSO GetById(string id) =>
+        _entries.FirstOrDefault(e => e.ActionId == id);
+
+    public T GetBackingAsset<T>(string id) where T : ScriptableObject =>
+        GetById(id)?.BackingAsset as T;        // ej: catalog.GetBackingAsset<BaseComboSO>("combo.full_house")
+}
+```
+
+**Enforcement** — el `TurnManager` mantiene el set de acciones usadas en el turno actual, tagueadas por `ActionId`:
 
 ```csharp
 public class TurnManager
@@ -3873,9 +4302,9 @@ public class TurnManager
     {
         reason = null;
 
-        if (action.BlockOnRepeat && _actionsUsedThisTurn.Contains(action.ActionTag))
+        if (action.BlockOnRepeat && _actionsUsedThisTurn.Contains(action.ActionId))
         {
-            reason = $"Action '{action.ActionTag}' already used this turn.";
+            reason = $"Action '{action.ActionId}' already used this turn.";
             return false;
         }
 
@@ -3898,7 +4327,7 @@ public class TurnManager
 
         if (!action.Effect.TryExecute(ctx, ctx.BuildPreConditionContext())) return false;
 
-        _actionsUsedThisTurn.Add(action.ActionTag);
+        _actionsUsedThisTurn.Add(action.ActionId);
         return true;
     }
 
@@ -3910,22 +4339,8 @@ public class TurnManager
 
 - **Movement** y **defense** son acciones normales con su propio `ActionDefinitionSO`. Movement suele setear `BlockOnRepeat = false` para que el jugador pueda moverse varias veces si tiene energía (única manera de escapar según el GDD).
 - **Skill checks** (§12.5) también son `ActionDefinitionSO` — la diferencia con un ataque es el efecto que resuelven, no la forma.
-- El constraint es **opt‑in por acción** via el flag, no una regla global. Si algún modo de juego quiere permitir repeticiones, un `RulesetSO` (§14.7) puede overridear el flag por tag.
+- El constraint es **opt‑in por acción** via el flag, no una regla global. Si algún modo de juego quiere permitir repeticiones, un `RulesetSO` (§14.7) puede overridear el flag por `ActionId` via `ForbiddenActionIds`.
 - El `EnergyCost` y el `AllowsEnergyReroll` viven en el SO, no en el código — cualquier ajuste de balance es data, no rebuild.
-
-**`ActionCatalogSO`** — catálogo de todas las acciones del juego. Pre‑cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de `ActionTag` en efectos y en el `ForbiddenActionTags` del `RulesetSO`.
-
-```csharp
-[CreateAssetMenu(menuName = "Rollgeon/Actions/Action Catalog")]
-public class ActionCatalogSO : SerializedScriptableObject
-{
-    [OdinSerialize] private List<ActionDefinitionSO> _entries = new();
-
-    public IEnumerable<string> AllTags => _entries.Select(e => e.ActionTag);
-    public ActionDefinitionSO GetByTag(string tag) =>
-        _entries.FirstOrDefault(e => e.ActionTag == tag);
-}
-```
 
 ### 12.7 Turn order con velocidad oculta
 
@@ -4247,6 +4662,13 @@ public class RoomInstance : ISaveable
     // Runtime state granular indexado por spawn point. Cada spawn point del
     // RoomPrefab declara un SpawnPointId (string via ValueDropdown), y el
     // DungeonManager inicializa una entry tipada al entrar por primera vez.
+    //
+    // [SerializeReference] — CRÍTICO: sin este atributo, Odin/Unity serializan
+    // cada value del diccionario al tipo base RoomObjectState y pierden los
+    // campos de los subtipos (ChestState.Opened, ShopItemState.Purchased, …)
+    // al persistir/restaurar. Con [SerializeReference], cada entry mantiene su
+    // tipo concreto por polimorfismo. Ver §13.6.1 abajo.
+    [SerializeReference]
     public Dictionary<string, RoomObjectState> ObjectStates = new();
 
     public string SaveKey => $"room.{InstanceId}";
@@ -4265,37 +4687,71 @@ public abstract class RoomObjectState
     public bool Consumed;     // flag común: una vez true, el objeto no re-materializa al re-entrar
 }
 
-public class ChestState : RoomObjectState
+[Serializable] public class ChestState : RoomObjectState
 {
     public bool Opened;
     public List<string> LootRolled;   // ids de loot ya ruleados — evita re-roll al reentrar
 }
 
-public class PotionState : RoomObjectState
+[Serializable] public class PotionState : RoomObjectState
 {
     public bool Collected;            // la sala Potion recarga la poción; idempotente una vez tomada
 }
 
-public class ShopItemState : RoomObjectState
+[Serializable] public class ShopItemState : RoomObjectState
 {
     public bool Purchased;
     public string ReservedItemId;     // qué ítem específico ocupa este slot (rolled al generar la sala)
     public int ReservedPrice;         // precio ya calculado — no se re-rolea al reentrar
 }
 
-public class DoorState : RoomObjectState
+[Serializable] public class DoorState : RoomObjectState
 {
     public bool Forced;               // resultado de un skill check exitoso
     public bool Unlocked;
 }
 
-public class EnemySpawnState : RoomObjectState
+[Serializable] public class EnemySpawnState : RoomObjectState
 {
     public string EntityId;
     public int CurrentHP;
     public bool IsDead;               // muertos no re-aparecen (GD)
 }
 ```
+
+#### 13.6.1 Regla de serialización polimórfica — `[SerializeReference]` + `[Serializable]`
+
+**Invariante.** `RoomInstance.ObjectStates : Dictionary<string, RoomObjectState>` es polimórfico por diseño — cada value puede ser cualquier subtipo (`ChestState`, `ShopItemState`, …). Para que Unity/Odin preserven el **tipo concreto** al persistir/restaurar, se cumplen **tres** condiciones simultáneas:
+
+1. **Clase base `RoomObjectState` abstract.** Si fuera concreta, Unity degrada a la base y pierde campos en serialización default.
+2. **Cada subtipo marcado `[Serializable]`.** Requerido por el serializer tanto de Unity nativo como de Odin. Las clases sin `[Serializable]` no son instanciables por el deserializer polimórfico.
+3. **El campo contenedor lleva `[SerializeReference]`.** Este atributo activa el serializer polimórfico de Unity, que graba el nombre del tipo concreto junto al payload. Al deserializar, el reverse lookup restaura la instancia correcta. **Sin `[SerializeReference]`**, Unity serializa al tipo declarado del campo (`RoomObjectState`) y descarta los campos de los subtipos — un bug **silencioso** (ni warning, ni exception, solo valores perdidos al reload).
+
+**Por qué importa.** Sin esta regla, el flujo "entrar a sala → abrir cofre → salir → volver a entrar" aparenta funcionar dentro de la misma sesión (la instancia runtime tiene el `ChestState.Opened = true`), pero al **cerrar y reabrir el juego**, el save system (§15) re-instancia `RoomObjectState` y todos los campos específicos del subtipo vuelven a `default`. Cofre "se reabre", ítem "reaparece", enemigo muerto "revive". Es el peor tipo de bug porque el testeo en‑engine pasa y solo se revela en save/load cross‑session.
+
+**Testing recomendado.** En la suite de save (§15 / §24 si aplica):
+```csharp
+[Test]
+public void RoomObjectState_Polymorphism_SurvivesRoundTrip()
+{
+    var instance = new RoomInstance();
+    instance.ObjectStates["sp_chest_1"] = new ChestState {
+        SpawnPointId = "sp_chest_1", Consumed = true, Opened = true,
+        LootRolled = new List<string> { "reward.potion_small" }
+    };
+
+    var snapshot = instance.CaptureState();
+    var restored = new RoomInstance();
+    restored.RestoreState(snapshot);
+
+    Assert.IsInstanceOf<ChestState>(restored.ObjectStates["sp_chest_1"]);
+    Assert.IsTrue(((ChestState)restored.ObjectStates["sp_chest_1"]).Opened);
+}
+```
+
+**Migración de campos agregados.** Si un subtipo agrega un campo en un patch (p. ej. `ChestState.LootTier : int` v1.2), los saves antiguos tendrán `default(int) = 0`. Regla: los campos nuevos deben tolerar `default` como valor legítimo, o la clase implementa una override simple en `RestoreState` que completa el campo a partir de otros (p. ej. derivar `LootTier` del `RoomSO` correspondiente). No usar Unity `ISerializationCallbackReceiver` para esto — es un pattern frágil con Odin. Ver §15 para versioning general de saves.
+
+**Anti‑patrón.** Usar `[SerializeField]` en lugar de `[SerializeReference]`: `[SerializeField]` es value‑type serialization y **no** soporta polimorfismo. El doc lo aclara porque es el error más común cuando alguien "tipea rápido" el atributo.
 
 **Lifecycle**:
 
@@ -4599,7 +5055,18 @@ public class UnlockStateSO : ScriptableObject, ISaveable
     public object CaptureState() => new UnlockStateSnapshot { /* ... */ };
     public void RestoreState(object state) { /* ... */ }
 
-    private void Dirty() => SaveSystem.MarkDirty(this);
+    /// <summary>
+    /// Los unlocks son high-value: no queremos perderlos por un crash entre el
+    /// momento del unlock y el próximo trigger de save configurado (§15.4).
+    /// Por eso hacemos Flush inmediato con SaveTrigger.Manual — el cache se
+    /// captura y se vuelca a disco sincrónicamente. El costo es despreciable
+    /// (un HashSet chico) y evita que el progreso meta dependa de RunEnd.
+    /// </summary>
+    private void Dirty()
+    {
+        SaveSystem.MarkDirty(this);
+        SaveSystem.Flush(SaveTrigger.Manual);
+    }
 }
 ```
 
@@ -4618,6 +5085,8 @@ public class RunRecord
     public int TotalDamageDealt;
     public HashSet<string> ComboTypesMatched;        // ComboId → aparece al menos 1 vez
     public DateTime Finished;
+    public int Seed;                                 // seed del IRngService (§17.O) — reproducible para QA
+    public string RulesetId;                         // ruleset activo durante la run (§14.7)
 }
 ```
 
@@ -4689,8 +5158,15 @@ public class RulesetSO : SerializedScriptableObject
     public int MaxFloors;
 
     [Title("Overrides")]
-    [InfoBox("ActionTags que quedan forbidden en este ruleset (p.e. 'strike' apagado en easy mode).")]
-    public List<string> ForbiddenActionTags = new();
+    [InfoBox("ActionIds que quedan forbidden en este ruleset (p.e. 'combo.strike' apagado en easy mode). " +
+             "Se valida contra ActionCatalogSO (§12.6).")]
+    [ValueDropdown(nameof(GetActionIds))]
+    public List<string> ForbiddenActionIds = new();
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetActionIds() =>
+        ServiceLocator.TryGetService<ActionCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+#endif
 
     [Title("Inventory")]
     [InfoBox("Cantidad máxima de ítems activos que el jugador puede tener equipados.")]
@@ -4700,7 +5176,10 @@ public class RulesetSO : SerializedScriptableObject
     [OdinSerialize] public List<ComboCounterThresholdSO> ComboCounterThresholds = new();   // §5.5
 
     [Title("Shop")]
-    [InfoBox("Config de pricing, slots y restock para salas de shop (§17.F).")]
+    [InfoBox("Globals de shop: pricing multiplier, variance, first-purchase discount, " +
+             "restock rules. La COMPOSICIÓN del pool (qué ítems, con qué pesos) vive en " +
+             "el ShopPoolSO por piso (§17.F). Regla de autoridad: RulesetSO dicta el " +
+             "cómo se calcula el precio; ShopPoolSO dicta qué se vende.")]
     [OdinSerialize] public ShopConfigSO ShopConfig;
 
 #if UNITY_EDITOR
@@ -4912,7 +5391,22 @@ public static class SaveSystem
     // --- Flush / Load --------------------------------------------------------
 
     /// <summary>
+    /// Versión del schema del payload. Se bumpea a mano cuando un ISaveable
+    /// cambia la forma de su CaptureState/RestoreState de manera incompatible
+    /// (campo renombrado, tipo distinto, etc.). Al cargar, un mismatch
+    /// descarta el save viejo con mensaje claro en vez de crashear al
+    /// deserializar. No hay migration paths — en fase de diseño el save es
+    /// desechable y el progreso meta se re-evalúa en el próximo run.
+    /// </summary>
+    public const int CurrentSchemaVersion = 1;
+
+    /// <summary>
     /// Escribe el cache a disco si el trigger está habilitado en SaveSettings.
+    /// El payload va wrappeado en un SavePayload con SchemaVersion para
+    /// detectar incompatibilidades al cargar.
+    ///
+    /// Flush strategy (§15.3.1): bajo threshold → sincrono en el frame.
+    /// Sobre threshold → async vía Task.Run (o UniTask si está adoptado).
     /// </summary>
     public static void Flush(SaveTrigger trigger)
     {
@@ -4920,11 +5414,43 @@ public static class SaveSystem
         if (!settings.ShouldFlushOn(trigger)) return;
 
         var path = settings.GetSavePath();
-        var json = SerializationUtility.SerializeValue(_cache, DataFormat.JSON);
-        File.WriteAllBytes(path, json);
+        var payload = new SavePayload {
+            SchemaVersion = CurrentSchemaVersion,
+            Data = _cache,
+        };
+        var json = SerializationUtility.SerializeValue(payload, DataFormat.JSON);
 
-        if (settings.LogFlushes)
-            Debug.Log($"[SaveSystem] Flushed on {trigger} → {path}");
+        if (json.Length < settings.AsyncFlushThresholdBytes)
+        {
+            // Sincrono: el jugador no va a ver el frame drop.
+            File.WriteAllBytes(path, json);
+            if (settings.LogFlushes) Debug.Log($"[SaveSystem] Sync flush on {trigger} → {path} ({json.Length} B)");
+        }
+        else
+        {
+            // Async: escribe off-thread. Un flush concurrente del mismo path
+            // es idempotente (última escritura gana), pero el lock serializa
+            // writes para no producir archivos corruptos con interleaved bytes.
+            FlushAsync(path, json, trigger);
+        }
+    }
+
+    private static readonly object _flushLock = new();
+
+    private static void FlushAsync(string path, byte[] json, SaveTrigger trigger)
+    {
+        Task.Run(() =>
+        {
+            lock (_flushLock)
+            {
+                // Write-to-temp + atomic rename evita corruption si el proceso
+                // muere mid-write. Funciona en Windows/Mac/Linux igual.
+                var tmp = path + ".tmp";
+                File.WriteAllBytes(tmp, json);
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmp, path);
+            }
+        });
     }
 
     public static void LoadFromDisk()
@@ -4934,10 +5460,27 @@ public static class SaveSystem
         if (!File.Exists(path)) return;
 
         var json = File.ReadAllBytes(path);
-        var loaded = SerializationUtility.DeserializeValue<Dictionary<string, object>>(json, DataFormat.JSON);
+        SavePayload payload;
+        try
+        {
+            payload = SerializationUtility.DeserializeValue<SavePayload>(json, DataFormat.JSON);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[SaveSystem] Save corrupt, starting fresh: {ex.Message}");
+            return;
+        }
+
+        if (payload.SchemaVersion != CurrentSchemaVersion)
+        {
+            Debug.LogWarning(
+                $"[SaveSystem] Save schema v{payload.SchemaVersion} incompatible with " +
+                $"current v{CurrentSchemaVersion} — discarding save.");
+            return;
+        }
 
         _cache.Clear();
-        foreach (var (k, v) in loaded) _cache[k] = v;
+        foreach (var (k, v) in payload.Data) _cache[k] = v;
 
         RestoreAll();
     }
@@ -4949,10 +5492,45 @@ public static class SaveSystem
     }
 }
 
+[Serializable]
+public class SavePayload
+{
+    public int SchemaVersion;
+    public Dictionary<string, object> Data;
+}
+
 public enum SaveTrigger { RunStart, RoomEnd, FloorEnd, Manual, RunEnd, Exit }
 ```
 
 **Serialización.** Se usa `Sirenix.Serialization.SerializationUtility` (Odin) porque maneja polimorfismo, colecciones anidadas e interfaces transparentemente. `JsonUtility` no soporta `Dictionary<,>` ni interfaces.
+
+**Rehidratación de tipos no‑triviales.** Algunos `ISaveable` contienen objetos que necesitan re‑wire de eventos tras restore — canónicamente `Modifier<T>` (§3.5), que al deserializar pierde su suscripción al `EventManager`. Cada `ISaveable` que contenga objetos así debe re‑hookear dentro de su `RestoreState(...)`: para modifiers, invocar `mod.OnLoad()` sobre cada uno tras poblar la lista. `SaveSystem` **no** hace esto automáticamente — desconoce los tipos concretos.
+
+**Cleanup de referencias huérfanas.** `CaptureAll` / `CaptureDirty` / `RestoreAll` iteran la lista de WeakReferences **en reverso** para poder remover in‑place las entries cuyo `TryGetTarget` devuelve `false` (target recolectado por el GC). Esto evita el leak clásico de "`ISaveable` se destruyó sin `Unregister`" — en vez de mantener la entry para siempre, el primer `CaptureAll` después de la destrucción la purga. No se necesita un sweep explícito.
+
+#### 15.3.1 Flush strategy — sync vs async
+
+**Regla.** Bajo el threshold `AsyncFlushThresholdBytes` (§15.4, default 500 KB), `Flush` escribe sincrono en el frame. Sobre el threshold, `Task.Run` despacha el write off‑thread y devuelve control inmediatamente.
+
+**Por qué dos modos.**
+- **Sync bajo threshold.** Un write < 500 KB completa en milisegundos incluso en HDD lento — el frame drop es invisible. Sincrono evita toda la complejidad de async (disposal de tasks, ordering, double-flush races).
+- **Async sobre threshold.** Un save mid-dungeon con historial de rooms, inventario grande y muchos modifiers puede escalar a 1–5 MB. `File.WriteAllBytes` sincrono a ese tamaño produce frame drops visibles (especialmente en HDD / SD cards móviles). Task.Run + write-to-temp + atomic rename es suficiente — no hace falta UniTask para esto.
+
+**Atomicity — write-to-temp + rename.** El async path siempre escribe a `path.tmp` y renombra al final. Si el proceso muere mid-write (crash, power loss), el save anterior queda intacto. Sin este patrón, un crash durante `File.WriteAllBytes` deja el archivo truncado y `LoadFromDisk` falla con un `SerializationException`. El `_flushLock` serializa writes concurrentes al mismo path — dos triggers rápidos (p. ej. `RoomEnd` + `FloorEnd` back-to-back) no producen interleaving.
+
+**Orden vs la próxima `LoadFromDisk`.** Si el usuario cierra el juego mientras un async flush está en vuelo, el flush completa antes del shutdown gracias al lock + `Application.wantsToQuit` que espera al task. `SaveTrigger.Exit` **siempre** corre sincrono (aunque supere el threshold) — es el último write y no hay frame que proteger.
+
+```csharp
+public static void Flush(SaveTrigger trigger)
+{
+    // ...
+    // Excepción: Exit siempre sync — no podemos despedirnos con un Task.Run pending.
+    bool forceSync = (trigger == SaveTrigger.Exit) || (json.Length < settings.AsyncFlushThresholdBytes);
+    if (forceSync) { /* write sync */ } else { FlushAsync(...); }
+}
+```
+
+**UniTask (opcional).** Si se adopta UniTask (§16.3 pendiente), `FlushAsync` se reescribe como `async UniTaskVoid FlushAsync(...)` con `await File.WriteAllBytesAsync(...)`. La interfaz pública de `Flush` no cambia — el caller no ve la diferencia. `Task.Run` funciona bien sin UniTask; el único beneficio real es evitar el thread-pool hop en platforms con thread budget ajustado.
 
 ### 15.4 `SaveSettingsSO`
 
@@ -4980,6 +5558,11 @@ public class SaveSettingsSO : ScriptableObject
     public string SaveFilePrefix = "rollgeon";
     [InfoBox("Cantidad de slots de save. Estilo Isaac: 3 saves independientes.")]
     [MinValue(1)] public int MaxSaveSlots = 3;
+
+    [Title("Flush strategy (§15.3.1)")]
+    [InfoBox("Sobre este tamaño, Flush() corre async (Task.Run) en vez de sincrono. " +
+             "500 KB cubre el caso normal (payload mid-dungeon con 5 rooms + modifiers).")]
+    [MinValue(1)] public int AsyncFlushThresholdBytes = 500_000;
 
     [Title("Debug")]
     public bool PrettyPrint = false;
@@ -5549,6 +6132,7 @@ public interface IScreenManager
 {
     ScreenId Current { get; }
     IReadOnlyList<ScreenId> Stack { get; }
+    bool IsPaused { get; }                                        // true si algún screen del stack pausa gameplay
 
     void Push(ScreenId id, object payload = null);
     void Pop();
@@ -5557,6 +6141,7 @@ public interface IScreenManager
 
     event Action<ScreenId, ScreenId, object> OnScreenPushed;    // from, to, payload
     event Action<ScreenId, ScreenId> OnScreenPopped;
+    event Action<bool> OnPauseChanged;                           // se dispara cuando IsPaused cambia
 }
 
 public enum ScreenId
@@ -5580,9 +6165,22 @@ public enum ScreenId
 El `ScreenManager` concreto mantiene:
 - Un `Dictionary<ScreenId, BaseScreen>` con las screens prefabbeadas instanciadas bajo un root canvas (una sola vez, al arrancar el gameplay).
 - Un `Stack<ScreenId>` para el orden de push/pop.
-- Métodos que llaman `OnPush/OnShow/OnHide/OnPop` según corresponda y disparan los events `OnScreenPushed` / `OnScreenPopped` tanto por la interface como en el `EventManager` global (§1.2) para que otros sistemas (p.e. audio que pause música al abrir pause menu) reaccionen sin tener una referencia al `IScreenManager`.
+- Los events `OnScreenPushed` / `OnScreenPopped` / `OnPauseChanged` expuestos directamente por la interface. **No** hay re‑publicación en `EventManager` — canal único (§1.2.1). Sistemas que reaccionan a cambios de screen (audio duck, input remap, HUD opacity) se suscriben al evento C# del `IScreenManager` que obtienen del `ServiceLocator`.
 
 Se registra en el bootstrap (§1.1.1).
+
+**Política de pausa global.** Cada `BaseScreen` declara un flag `PausesGameplay` (default `false`). El `IScreenManager.IsPaused` es `true` sssi al menos un screen del stack tiene ese flag en `true`. Cuando `IsPaused` transiciona, el manager dispara `OnPauseChanged(bool)` y sistemas interesados reaccionan sin acoplarse al concepto de "screen":
+
+| Sistema | Reacción al entrar pausa | Reacción al salir |
+|---|---|---|
+| Audio (§17.A) | Música y SFX ambient ducken a 50 %. Oneshot SFX siguen (ej: click del botón que abrió el menú). | Restaura volumen. |
+| `IPhaseService` (§12.0) | Congela procesamiento de inputs del FSM de combate — el turno actual queda pegado en su state. Las transiciones de fase encoladas siguen encoladas, no se drenan. | Continúa drenando la queue. |
+| `IStatusEffectService` (§20) | No tickea: `OnTurnStarted`/`OnTurnFinished` no se emiten mientras hay pausa. | — |
+| `ICutsceneService` (§N) | Pausa el playhead si hay cutscene activa. | Reanuda. |
+| Feedback (§10) | Los runners particulares **siguen** corriendo visualmente (VFX no se congelan — Unity timescale no se toca). Sólo se pausa la lógica. | — |
+| Animaciones de entity | **No** se pausan (mismo motivo que feedback: visuales siguen). | — |
+
+Screens canónicos con `PausesGameplay = true`: `Settings`, `Inventory`, `Unlocks`, `Tutorial` overlay bloqueante. Screens con `PausesGameplay = false` (UI sobre gameplay activo): `HUD`, `Combat`, `Craps`, `Reward`, `Dialogue` — el diálogo **no** pausa porque puede ocurrir durante combate (un NPC hablándote mid‑turno es legal por §7.6). `GameOver` y `Victory` no pausan pero terminan la run, así que el punto es moot.
 
 #### D.3 `BaseScreen`
 
@@ -6174,6 +6772,21 @@ public struct ShopRollResult
 
 Config global de la shop para el run actual. Referenciado desde el `RulesetSO` (§14.7).
 
+**Autoridad de pricing — regla explícita.** Hay dos SOs involucrados en la pricing y la confusión es natural:
+
+| Campo | Autoridad | Por qué |
+|---|---|---|
+| `BasePrice` (por ítem) | `ShopPoolSO` | Depende del pool y del piso — un potion "común" vale menos que uno "legendario". El diseñador piensa en rarity por piso. |
+| `PriceMultiplier` / `PriceVariance` | `ShopConfigSO` (via `RulesetSO`) | Globals del ruleset — hardcore x1.5, arcade x1.0. Un mismo pool se reescala entre rulesets sin duplicar assets. |
+| `FirstPurchaseDiscountPercent` | `ShopConfigSO` | Regla de balance global, no del pool. |
+| `RestockCost` / `MaxRestocks` | `ShopConfigSO` | Idem — propiedad del ruleset, no del pool. |
+| Slots (`MaxItemSlots`) | `ShopConfigSO` | Propiedad del modo, no del contenido. |
+
+**Fórmula final** aplicada por `IShopManagerService.Roll(...)`:
+`finalPrice = pool.BasePrice * cfg.PriceMultiplier * rng.Range(1-cfg.PriceVariance, 1+cfg.PriceVariance)`.
+
+El `FirstPurchaseDiscountPercent` se aplica **por instancia de shop room** (no global por sesión). Cada `RoomInstance` de tipo shop lleva un flag `HasHadFirstPurchase : bool` en su `ObjectStates`. Al re‑entrar a la misma shop tras comprar un ítem, el flag queda `true` y el descuento no se aplica más — cerrando el exploit de abrir/cerrar shop para re‑disparar el descuento.
+
 ```csharp
 [CreateAssetMenu(menuName = "Rollgeon/Shop/Shop Config")]
 public class ShopConfigSO : SerializedScriptableObject
@@ -6378,18 +6991,20 @@ public interface IInputService
 }
 ```
 
-**Perfiles de maps por fase:**
+**Perfiles de maps por fase.** Esta tabla es el **contrato fuente**: para cada combinación `(GamePhase, PhaseOverlay)` define qué maps están activos. `ApplyPhaseProfile` la consulta literalmente. **Regla de mantenimiento**: agregar un nuevo `GamePhase` o `PhaseOverlay` (§12.0.2) requiere agregar su fila acá en el mismo PR — un `ApplyPhaseProfile` que no encuentre match para el par actual tira `InvalidPhaseTransitionException` en Debug y activa **solo `UI`** en Release (fail‑soft para que el jugador no quede sin input).
 
-| GamePhase / Overlay | Maps activos | Maps inactivos |
-|---|---|---|
-| `None` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
-| `Exploration` | `Gameplay`, `Camera`, `Dungeon`, `UI` | — |
-| `Combat` | `Gameplay`, `Camera`, `UI` | `Dungeon` |
-| `Loading` | (ninguno) | todos |
-| `GameOver` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
-| Overlay `Pause` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
-| Overlay `Cutscene` | `UI` (sólo skip) | `Gameplay`, `Camera`, `Dungeon` |
-| Overlay `Craps` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| GamePhase base | Overlay activo | Maps activos | Maps inactivos |
+|---|---|---|---|
+| `None` | `None` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| `Exploration` | `None` | `Gameplay`, `Camera`, `Dungeon`, `UI` | — |
+| `Exploration` | `Pause` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| `Exploration` | `Cutscene` | `UI` (sólo `Cancel` = skip) | `Gameplay`, `Camera`, `Dungeon` |
+| `Combat` | `None` | `Gameplay`, `Camera`, `UI` | `Dungeon` |
+| `Combat` | `Pause` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| `Combat` | `Cutscene` | `UI` (sólo `Cancel` = skip) | `Gameplay`, `Camera`, `Dungeon` |
+| `Combat` | `Craps` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| `Loading` | `None` | (ninguno) | todos |
+| `GameOver` | `None` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
 
 **Action maps del `InputActionAsset`:**
 
@@ -6400,7 +7015,11 @@ public interface IInputService
 | `Dungeon` | `MoveN/S/E/W`, `ConfirmDoor` | WASD / Arrows |
 | `UI` | `Navigate`, `Submit`, `Cancel`, `Pause` (Esc) | Keyboard + Gamepad |
 
-**Integración.** `IInputService` se suscribe a `OnPhaseEnter` / `OnOverlayPushed` / `OnOverlayPopped` (§12.0) y llama `ApplyPhaseProfile` automáticamente. Los bindings re-asignables se persisten como `ISaveable` (§15) vía `SaveBindingOverridesAsJson()` del Input System.
+**Por qué no hay un `Craps` / `Cutscene` / `Dialogue` map separado.** Los overlays construyen su propia UI de pantalla completa (`CrapsScreen`, `CutsceneScreen`, `DialogueScreen`) y enrutan el input **a través del map `UI`** — `Submit`/`Cancel`/`Navigate` se resuelven contra los botones de la pantalla activa. No hace falta un map dedicado por overlay: la jerarquía `UI → current screen → button callback` es suficiente y evita proliferación de maps. La única excepción es `Cutscene`, que solo deja `Cancel` habilitado (para skip) — esto lo hace la pantalla misma ignorando el resto de las acciones del map, no el `IInputService`.
+
+**Dialogue y Shop no son overlays.** Ambos corren durante `GamePhase.Exploration` sin overlay — `Dialogue` es un `Screen` que se pushea al `ScreenManager` (§17.D), `Shop` son props del piso que se interactúan vía `IInteractionService` (§17.F). Por eso no aparecen en la tabla de maps: no hay transición de fase cuando abrís un diálogo con un NPC, simplemente el `DialogueScreen` bloquea el input gameplay a nivel de UI. Si en el futuro se quisiera que un diálogo **sí** congele la fase base (p. ej. un jefe que habla mid-combat), se promovería a `PhaseOverlay.Dialogue` y se agregaría fila a la tabla.
+
+**Integración.** `IInputService` se suscribe a `OnPhaseEnter` / `OnOverlayPushed` / `OnOverlayPopped` (§12.0) y llama `ApplyPhaseProfile(current.Phase, current.Overlay)` automáticamente. Si un listener externo llama `SetMapEnabled` directamente mientras hay una fase activa, el cambio **se pisa** al siguiente evento de fase — `SetMapEnabled` solo se usa para ajustes temporales dentro de la misma fase (p. ej. deshabilitar el map `Camera` durante la animación de un boss). Los bindings re-asignables se persisten como `ISaveable` (§15) vía `SaveBindingOverridesAsJson()` del Input System.
 
 **Cross‑ref.** §12.0 (fases y overlays), §15 (save de bindings), §16.1 (Input System package), §E.4 (map Camera).
 
@@ -6630,6 +7249,89 @@ public enum CutsceneStepType { Dialogue, CameraMove, Wait, FadeIn, FadeOut, Play
 
 ---
 
+### §O. `IRngService` — aleatoriedad determinista por sub‑stream
+
+Todo call a `UnityEngine.Random` o `new System.Random()` dentro del código de gameplay está **prohibido**. El juego consume aleatoriedad exclusivamente a través del `IRngService`, que expone streams nombrados. Esto apunta a dos problemas concretos:
+
+1. **Testing y debug de balance.** Para reproducir un bug de "este combo casi nunca matchea" o "el shop siempre me ofrece basura", necesitamos poder correr la misma run con los mismos rolls. Un single `Random` global lo hace imposible porque cualquier cambio en el orden de los calls (p. ej., un listener nuevo que consume un rng call antes) mueve todos los rolls downstream.
+2. **`RunRecord` reproducible.** Guardar el seed en el `RunRecord` (§14.5) permite re‑jugar una run hasta la decisión del jugador. No hay UI de replay; es una herramienta de QA.
+
+```csharp
+public interface IRngService
+{
+    /// <summary>Seed global de la sesión/run. Persiste en RunRecord.</summary>
+    int Seed { get; }
+
+    /// <summary>
+    /// Devuelve un generador independiente para un propósito dado. Cada
+    /// nombre es un sub-stream determinista — dos calls con el mismo nombre
+    /// devuelven el MISMO generador (acumula estado), y dos streams distintos
+    /// no se interfieren. Ej: "dice" y "loot" roliean independiente.
+    /// </summary>
+    System.Random Stream(string name);
+
+    /// <summary>Re-inicializa todos los streams con un seed nuevo.</summary>
+    void Reseed(int seed);
+}
+```
+
+**Implementación canónica:**
+
+```csharp
+public class RngService : IRngService, ISaveable
+{
+    public int Seed { get; private set; }
+    private Dictionary<string, System.Random> _streams = new();
+
+    public RngService(int seed) => Reseed(seed);
+
+    public System.Random Stream(string name)
+    {
+        if (_streams.TryGetValue(name, out var r)) return r;
+        // Sub-seed estable a partir del seed global + nombre → misma seed
+        // global produce los mismos sub-streams, sin depender del orden de
+        // creación.
+        var subSeed = unchecked(Seed * 31 + name.GetHashCode());
+        var stream  = new System.Random(subSeed);
+        _streams[name] = stream;
+        return stream;
+    }
+
+    public void Reseed(int seed)
+    {
+        Seed = seed;
+        _streams.Clear();
+    }
+
+    // ── ISaveable ─────────────────────────────────────────────────────────
+    public string SaveKey => "run.rng";
+    public object CaptureState() => Seed;
+    public void RestoreState(object state) => Reseed((int)state);
+}
+```
+
+**Streams canónicos:**
+
+| Nombre | Consumidor | Qué rolea |
+|---|---|---|
+| `"dice"` | `DiceRoller` (§6.3) | Valores de cada dado en cada tirada y reroll. |
+| `"loot"` | `IRewardService` (§19), pools weighted | Rewards de cofres y fin de combate. |
+| `"shop"` | `IShopManagerService` (§17.F) | Composición y pricing de shops. |
+| `"dungeon"` | `DungeonManager` (§13.6) | Layout de pisos, selección de salas. |
+| `"enemies"` | Spawners de sala (§13.4) | Enemigos elegidos del `EnemyPoolSO`. |
+| `"ai"` | `AIDecisionNode` nodos probabilísticos (§7.5) | Cualquier decisión que no sea determinística. |
+
+**Registro.**
+- `IRngService` es `ServiceScope.Run` (§1.1). Se instancia al `RunStart` con seed = timestamp por default, o un seed fijo vía cheat/debug menu.
+- El seed se guarda en `RunRecord.Seed` al terminar la run.
+- Al restaurar un save mid‑run, `RestoreState` re‑crea los streams con el seed original — pero **los streams pierden el offset acumulado**. En la práctica esto significa que re-cargar una run no garantiza los mismos rolls a partir de ese punto; lo que sí se reproduce es una run corrida end‑to‑end desde el mismo seed. Es el compromiso aceptable en fase de diseño: no hay replay real, sólo rerun.
+
+**Regla.** Cualquier code review flagea `UnityEngine.Random.*` y `new System.Random()` fuera de `RngService`. No hay excepciones — ni siquiera en UI (ej: flavor text random en loading screens usa `Stream("ui")`).
+
+**Cross‑ref §O.** §1.1 (scope `Run`), §6.3 (dice), §7.5 (AI probabilístico), §13.6 (layout procedural), §14.5 (`RunRecord.Seed`), §19 (loot), §17.F (shop).
+
+---
+
 ## 18. Sistema de Items e Inventario
 
 > Inspirado en Slay the Spire e Isaac. Los ítems son **pasivos** (siempre activos al tenerlos) o **activos** (equipados en un slot limitado, se activan manualmente). No hay sistema de equipamiento por partes del cuerpo — un ítem se tiene o no se tiene.
@@ -6668,6 +7370,21 @@ public class ItemSO : SerializedScriptableObject
     [ShowIf("@Type == ItemType.Active")]
     [InfoBox("Cooldown en turnos. 0 = usable cada turno.")]
     [MinValue(0)] public int Cooldown = 0;
+
+    [Title("Action economy (§12.6)")]
+    [ShowIf("@Type == ItemType.Active")]
+    [InfoBox("Si true, usar este ítem activo consume un slot del turno — queda registrado en " +
+             "TurnManager._actionsUsedThisTurn bajo ActionId 'item.<ItemId>'. Si false, es side-effect " +
+             "gratis que no ocupa slot (ej: lectura de lore, teletransporte fuera del turno).")]
+    public bool ConsumesAction = true;
+
+    [ShowIf("@Type == ItemType.Active && ConsumesAction")]
+    [InfoBox("ActionId que se registra en action economy. Default: item.<ItemId>. " +
+             "Permite que múltiples ítems compartan el mismo tag si deben mutuamente excluirse " +
+             "(ej: todos los activos de 'potion' podrían share 'item.potion' para que solo uno por turno).")]
+    public string ActionId;                            // default resuelto a $"item.{ItemId}"
+
+    public string ResolvedActionId => string.IsNullOrEmpty(ActionId) ? $"item.{ItemId}" : ActionId;
 
     [Title("Visual")]
     [InfoBox("Prefab opcional para la representación 3D del ítem en el mundo (pedestal, drop).")]
@@ -6763,6 +7480,41 @@ public class InventorySlot
 - **Pasivos**: sin límite de cantidad. Al obtener un pasivo, el service itera sus `PassiveHooks`, suscribe los effects a los `TriggerEvent`s correspondientes, y aplica los `PersistentModifiers` como `Modifier<T>` con `Lifetime = Permanent`. Al perder el ítem, deshace todo.
 - **Activos**: limitados a `MaxActiveSlots` (configurable en `RulesetSO` §14.7, default 1). Si el jugador obtiene un activo y los slots están llenos, se **rechaza la adquisición** — el caller (shop, reward) debe chequear antes de intentar dar el ítem. No hay reemplazo automático por el momento.
 - **Cooldown**: los ítems activos con `Cooldown > 0` no pueden activarse mientras `CurrentCooldown > 0`. El `TickCooldowns` decrementa todos los cooldowns al final del turno del jugador.
+- **Action economy (§12.6).** `ActivateItem` consulta `ItemSO.ConsumesAction`. Si es `true`, antes de ejecutar el `OnActivate` el service construye un `ActionDefinitionSO` virtual con `ActionId = item.ResolvedActionId` y llama `TurnManager.CanExecute` — si la acción ya fue usada este turno o `ForbiddenActionIds` la bloquea, la activación falla con `reason`. Si es `false` (activo "gratis"), el pipeline salta a la ejecución directa sin tocar `_actionsUsedThisTurn`. Regla: un activo gratis **no** reabre el combate: si ya pasaste a `EnemyBranch` en el FSM, solo activos que no consumen acción son invocables (el botón de activos free queda habilitado; los que consumen slot se bloquean).
+
+```csharp
+public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
+{
+    var slot = _activeItems[activeSlotIndex];
+    if (slot.CurrentCooldown > 0) return false;
+    var item = slot.Item;
+    if (item.Type != ItemType.Active) return false;
+
+    if (item.ConsumesAction)
+    {
+        var action = new ActionDefinitionSO {
+            ActionId = item.ResolvedActionId,
+            Type = ActionType.UseItem,
+            BackingAsset = item,
+            EnergyCost = 0,             // los activos no cobran energy — si hace falta, hooks específicos
+            BlockOnRepeat = true,
+            Effect = item.OnActivate,
+        };
+        var tm = ServiceLocator.GetService<TurnManager>();
+        if (!tm.CanExecute(action, ctx.SourceGuid, out _)) return false;
+        var ok = tm.TryExecute(action, ctx.SourceGuid, ctx);  // registra en _actionsUsedThisTurn
+        if (!ok) return false;
+    }
+    else
+    {
+        if (!item.OnActivate.TryExecute(ctx, ctx.BuildPreConditionContext())) return false;
+    }
+
+    slot.CurrentCooldown = item.Cooldown;
+    EventManager.Trigger(EventName.OnActiveItemUsed, ctx.SourceGuid, item.ItemId);
+    return true;
+}
+```
 
 ### 18.4 `InventoryState : ISaveable`
 
@@ -6810,6 +7562,17 @@ Pre-cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de
 ## 19. Sistema de Rewards / Loot
 
 > Define qué recibe el jugador al abrir cofres, ganar combates, completar quests o interactuar con eventos. Los rewards no son SOs individuales por valor — un `RewardEntrySO` define el **tipo** y los **rangos/posibilidades**, y el valor concreto se resuelve en runtime combinando datos del nivel, configuración del diseñador y aleatoriedad.
+
+**Capas — autoridad de cada SO** (para evitar confusión con §18 y §17.F):
+
+| SO | Autoridad | Ejemplo |
+|---|---|---|
+| `ItemSO` (§18.1) | Definición canónica del ítem: rarity, type, hooks. **Única fuente de verdad del ítem.** | `GuanteDeEspinas` |
+| `ItemCatalogSO` (§18.5) | Lookup `itemId → ItemSO`. Populator de dropdowns. | — |
+| `RewardEntrySO` (acá) | Abstracción "esto se puede dar como reward": gold, ítem (con pool pesado), dado, heal, upgrade, effect custom. **Polimórfico por categoría**, lo consume `IRewardService`. | `CofreComun` (Item weighted pool) |
+| `ShopPoolSO` (§17.F.2) | Composición específica de shops: lista de `RewardEntrySO` con precio base. | `ShopFloor1Pool` |
+
+Ningún SO re‑describe los datos de los otros — las referencias son directas (`ItemSO`, no copias). Un ítem cambia en un único sitio (`ItemSO`) y los drops/shops lo reflejan automáticamente via el catalog.
 
 ### 19.1 `RewardEntrySO`
 
@@ -6860,8 +7623,9 @@ public class RewardEntrySO : SerializedScriptableObject
     [InfoBox("Si true, los valores son porcentaje del HP máximo en vez de valor fijo.")]
     public bool HealIsPercent = false;
 
-    // --- Upgrade (TBD — UpgradeSO pendiente de definición) ------------------
+    // --- Upgrade (§19.6 — mejoras de combos, scope run-only) ---------------
     [ShowIf("@Category == RewardCategory.Upgrade")]
+    [InfoBox("Pool de UpgradeSO posibles. Se rolea uno al resolver. Ver §19.6.")]
     [OdinSerialize]
     public List<WeightedUpgradeDrop> UpgradePool = new();
 
@@ -7001,7 +7765,142 @@ Pre-cargado en `ServiceBootstrapSO` (§1.1.1).
 
 **Regla de diseño.** No se crea un SO por cada valor posible de oro. Un `RewardEntrySO` con `Category = Gold, GoldMin = 5, GoldMax = 15, ScaleGoldWithFloor = true` cubre todo el rango de un piso. El diseñador crea pocos `RewardEntrySO` ("Gold pequeño", "Gold mediano", "Ítem común", "Ítem raro") y los combina en pools con pesos.
 
-**Cross‑ref §19.** §8 (effects de rewards custom), §13.4 (`RewardPoolSO` usa `RewardEntrySO`), §14.7 (`RulesetSO` scaling curves), §15 (save), §17.F (shop usa `RewardEntrySO` en `ShopPoolSO`), §18 (ítems dados como reward).
+### 19.6 `UpgradeSO` — upgrades de combo (scope run-only)
+
+Los `UpgradeSO` son **mejoras de combos que el jugador gana durante una run**. No son un sistema genérico de upgrades para cualquier stat — apuntan específicamente a los `BaseComboSO` del `ContractSheet` activo. Su efecto es modificar los tres parámetros de la fórmula de cuenta del combo (§5.1.1) y/o agregar efectos extra. **Scope run-only**: al terminar la run, los upgrades se descartan con el resto del `ServiceScope.Run`; no persisten como meta-progression.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Rewards/Combo Upgrade")]
+public class UpgradeSO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    [ValueDropdown(nameof(GetUpgradeIds))]
+    public string UpgradeId;
+    public string DisplayName;
+    [TextArea] public string Description;
+    public Sprite Icon;
+
+    [Title("Target")]
+    [InfoBox("Combo al que se aplica. Si null, aplica a TODOS los combos de la sheet activa " +
+             "(upgrades globales — p. ej. 'Todos los combos: +10% GeneralMultiplier').")]
+    [OdinSerialize] public BaseComboSO TargetCombo;
+
+    [Title("Deltas — qué modifica")]
+    [InfoBox("Suma al BaseDamage del combo. 0 = sin cambio.")]
+    public int DeltaBaseDamage = 0;
+
+    [InfoBox("Sumado al GeneralMultiplier. 0 = sin cambio. Ejemplo: 0.2 → +20% al multiplicador general.")]
+    public float DeltaGeneralMultiplier = 0f;
+
+    [InfoBox("Sumado a cada entry de ValueMultipliers (index 0 = pip 1, …). Length debe ser 6 o 0.")]
+    public float[] DeltaValueMultipliers = new float[6];
+
+    [Title("Extra effects (opcional)")]
+    [InfoBox("BaseEffects que se agregan a ComboSO.ExtraEffects cuando este upgrade está activo. " +
+             "Disparan junto al daño del combo.")]
+    [OdinSerialize] public List<EffectData> ExtraEffects = new();
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetUpgradeIds() =>
+        ServiceLocator.TryGetService<UpgradeCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+#endif
+}
+```
+
+**Estado run-scoped** — los upgrades no mutan los `BaseComboSO` (el SO es inmutable, compartido). Viven en un `RunUpgradeState` que el `AttackResolver` (§12.1) consulta al computar daño:
+
+```csharp
+public class RunUpgradeState : ISaveable
+{
+    public string SaveKey => "run.combo_upgrades";
+    public List<string> ActiveUpgradeIds = new();            // ids de upgrades ganados en esta run
+
+    /// <summary>
+    /// Combina todos los upgrades aplicables a un combo dado y devuelve un
+    /// snapshot con la fórmula final. Usado por AttackResolver al computar daño.
+    /// </summary>
+    public ComboResolvedSpec Resolve(BaseComboSO combo, UpgradeCatalogSO catalog)
+    {
+        var spec = new ComboResolvedSpec {
+            BaseDamage = combo.BaseDamage,
+            GeneralMultiplier = combo.GeneralMultiplier,
+            ValueMultipliers = (float[])combo.ValueMultipliers.Clone(),
+            ExtraEffects = new List<EffectData>(combo.ExtraEffects),
+        };
+        foreach (var id in ActiveUpgradeIds)
+        {
+            var upg = catalog.GetById(id);
+            if (upg == null) continue;
+            if (upg.TargetCombo != null && upg.TargetCombo != combo) continue;
+
+            spec.BaseDamage        += upg.DeltaBaseDamage;
+            spec.GeneralMultiplier += upg.DeltaGeneralMultiplier;
+            for (int i = 0; i < 6; i++)
+                if (i < upg.DeltaValueMultipliers.Length)
+                    spec.ValueMultipliers[i] += upg.DeltaValueMultipliers[i];
+            spec.ExtraEffects.AddRange(upg.ExtraEffects);
+        }
+        return spec;
+    }
+
+    public object CaptureState() => new List<string>(ActiveUpgradeIds);
+    public void RestoreState(object state) => ActiveUpgradeIds = new List<string>((List<string>)state);
+}
+
+public struct ComboResolvedSpec
+{
+    public int BaseDamage;
+    public float GeneralMultiplier;
+    public float[] ValueMultipliers;
+    public List<EffectData> ExtraEffects;
+
+    /// <summary>
+    /// Calcula el daño final con la fórmula de §5.1.1 — BaseDamage + Count × General,
+    /// donde Count = Σ(dado × ValueMultipliers[dado-1]).
+    /// </summary>
+    public int ComputeDamage(int[] finalDice)
+    {
+        float sum = 0f;
+        for (int i = 0; i < finalDice.Length; i++)
+        {
+            int pip = finalDice[i];
+            if (pip >= 1 && pip <= 6) sum += pip * ValueMultipliers[pip - 1];
+        }
+        return BaseDamage + Mathf.RoundToInt(sum * GeneralMultiplier);
+    }
+}
+```
+
+**Registro.** `RunUpgradeState` se registra en `ServiceLocator` con `ServiceScope.Run` en `RunBootstrapper.StartRun` (§1.1.3.a, agregado al step 5 junto a `RunComboCounterState` y `RunStrikeState`). `ClearScope(Run)` al terminar la run lo limpia — no hay migración a meta.
+
+**`UpgradeCatalogSO`** — análogo a `RewardCatalogSO`: lista de `UpgradeSO`, registrado en `ServiceBootstrapSO` (§1.1.1) como `ServiceScope.Global`.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Rewards/Upgrade Catalog")]
+public class UpgradeCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<UpgradeSO> _entries = new();
+    public IEnumerable<string> AllIds => _entries.Select(e => e.UpgradeId);
+    public UpgradeSO GetById(string id) => _entries.FirstOrDefault(e => e.UpgradeId == id);
+}
+```
+
+**Cómo se obtienen los upgrades.** Un `RewardEntrySO` con `Category = Upgrade` y pool en `UpgradePool` los ofrece — ya definido en §19.1 (el `WeightedUpgradeDrop` apunta a `UpgradeSO`). El `IRewardService.ApplyReward` para `Category == Upgrade` agrega `upgrade.UpgradeId` a `RunUpgradeState.ActiveUpgradeIds` y dispara `OnItemObtained` con el upgradeId como payload (el HUD refresca icon list).
+
+**Ejemplo de diseño.**
+
+| `UpgradeId` | `TargetCombo` | Deltas | Interpretación |
+|---|---|---|---|
+| `upg.full_house.empowered` | `ComboFullHouse` | `DeltaBaseDamage = +20` | El Full House base pasa de 40 a 60 de daño flat. |
+| `upg.odds.sharpen` | `ComboOdds` | `DeltaValueMultipliers = [0, 0, 1, 0, 0, 0]` | Los impares del 3 valen el doble (pasa de ×1 a ×2). |
+| `upg.all.rage` | null (aplica a todos) | `DeltaGeneralMultiplier = 0.25` | Todos los combos multiplican su Count × 1.25. |
+| `upg.three_sixes.burn` | `ComboThreeSixes` | `ExtraEffects = [EffAddStatusEffect(Burn, 2)]` | Cada `ThreeSixes` aplica Burn(2) al target además del daño. |
+
+**Anti‑patrones.**
+- No usar `UpgradeSO` para stats no-combo (HP max, velocidad, etc.) — para eso, `RewardEntrySO` con `Category = Effect` y un `EffAddIntModifier` con `Lifetime = Run`.
+- No crear un `UpgradeSO` que modifique la lógica de `Matches` del combo — si se quiere cambiar cuándo un combo matchea, eso es un combo distinto, no un upgrade.
+
+**Cross‑ref §19.** §5.1 (fórmula de cuenta), §5.1.1 (ejemplos de combos con formulita), §8 (effects de rewards custom + ExtraEffects de upgrades), §12.1 (`AttackResolver` consume `ComboResolvedSpec`), §13.4 (`RewardPoolSO` usa `RewardEntrySO`), §14.7 (`RulesetSO` scaling curves), §15 (save — `RunUpgradeState`), §17.F (shop usa `RewardEntrySO` en `ShopPoolSO`), §18 (ítems dados como reward).
 
 ---
 
@@ -7026,6 +7925,13 @@ public class StatusEffectSO : SerializedScriptableObject
     [Title("Behavior")]
     public StatusEffectCategory Category;              // Debuff | Buff | Neutral
     public StatusTickBehavior TickBehavior;             // OnTurnStart | OnTurnEnd | None
+
+    [Title("Crowd Control")]
+    [InfoBox("Si está en true, CheckTurnSkip del FSM de combate (§1.3) saltea el turno " +
+             "de la entidad afectada. Uso: stun, freeze, sleep, paralysis. Este flag " +
+             "reemplaza al hardcode viejo 'stun|freeze|sleep' — cualquier status nuevo " +
+             "que impida actuar lo marca acá.")]
+    public bool PreventsTurn;
 
     [Title("Tick Effect")]
     [InfoBox("Efecto que se ejecuta cada tick (si TickBehavior != None). " +
@@ -7123,18 +8029,95 @@ public class ActiveStatusEffect
 }
 ```
 
+#### 20.2.1 Integración con `Modifier<T>` (§3) — qué crea `ApplyStatus` internamente
+
+`IStatusEffectService` **no** es un bus paralelo al sistema de modificadores. Cada status effect se materializa en runtime como una composición de tres artefactos concretos, todos trackeados en la `ActiveStatusEffect.AppliedModifierIds` para limpiarlos en bloque al remover:
+
+1. **Un `Modifier<T>` por cada efecto sobre stat.** Si `OnApply.Effects` contiene `EffAddIntModifier(Health, -5, OnTurnFinished, DurationOverride)`, el service lo ejecuta tal cual y captura el `Guid` del modifier retornado en `AppliedModifierIds`. Si `OnTickEffect` es `EffDealDamage(amount)`, se dispara vía `DamagePipeline.Resolve` (§12.2, con `Kind = DamageOverTime`, `IsWeaknessHit = false`) — **no** crea un modifier propio, el daño pasa por pipeline igual que cualquier otro.
+
+2. **Un `Tag` sobre el entity** (`Status.<StatusId>`). Lo agrega al `Entity.Tags` para queries rápidas — `entity.HasTag("Status.Burn")` funciona sin consultar el service. El tag se remueve junto con el status.
+
+3. **Una entry en `ActiveStatusEffect` del propio service.** Es la fuente de verdad para duración, stacks, immunities, tick behavior. El HUD `StatusIconsView` (§20.5) lee de acá.
+
+**Ejemplo — `ApplyStatus(Burn, duration=3, stacks=1)`:**
+
+```csharp
+public bool ApplyStatus(Guid targetGuid, StatusEffectSO status, int duration, int stacks)
+{
+    // ... resolution de stack rule, immunities, duration default omitted
+
+    var active = new ActiveStatusEffect {
+        Definition = status,
+        RemainingDuration = duration,
+        CurrentStacks = stacks,
+    };
+
+    // (1) OnApply — crea Modifier<T>s que quedan trackeados
+    var applyCtx = new EffectContext(source: null, target: ResolveEntity(targetGuid));
+    foreach (var effect in status.OnApply.Effects)
+    {
+        if (effect is IEmitsModifier me)
+            active.AppliedModifierIds.Add(me.EmittedModifierId);
+        effect.Execute(applyCtx);
+    }
+
+    // (2) Tag
+    ResolveEntity(targetGuid).Tags.Add($"Status.{status.StatusId}");
+
+    // (3) Registro en el servicio
+    _activeByEntity[targetGuid].Add(active);
+
+    EventManager.Trigger(EventName.OnStatusApplied, targetGuid, status, stacks);
+    return true;
+}
+
+public bool RemoveStatus(Guid targetGuid, string statusId)
+{
+    var active = _activeByEntity[targetGuid].FirstOrDefault(a => a.Definition.StatusId == statusId);
+    if (active == null) return false;
+
+    // (1) Remover todos los Modifier<T> que aplicó
+    foreach (var modId in active.AppliedModifierIds)
+        AttributesManager.RemoveModifierById(targetGuid, modId);
+
+    // (2) Remover tag
+    ResolveEntity(targetGuid).Tags.Remove($"Status.{statusId}");
+
+    // (3) OnRemove effects + cleanup
+    foreach (var effect in active.Definition.OnRemove.Effects)
+        effect.Execute(new EffectContext(source: null, target: ResolveEntity(targetGuid)));
+
+    _activeByEntity[targetGuid].Remove(active);
+    EventManager.Trigger(EventName.OnStatusRemoved, targetGuid, active.Definition);
+    return true;
+}
+```
+
+**Tabla de ejemplos.**
+
+| StatusEffectSO | Modifier(s) creados en `OnApply` | Tick | Tag |
+|---|---|---|---|
+| `Burn` | ninguno (sólo tick) | `EffDealDamage(5)` cada `OnTurnStart` via `DamagePipeline` (`Kind = DamageOverTime`) | `Status.Burn` |
+| `Slow` | `IntModifier(Speed, -2, OnStatusRemoved, lifetime=EventTriggered)` | — | `Status.Slow` |
+| `Stun` | ninguno — el `PreventsTurn` se chequea via query contra `GetStatuses` (§20.3) | — | `Status.Stun` |
+| `Shield` | `IntModifier(Shield, +10, OnTurnStarted, duration=DefaultDuration)` | — | `Status.Shield` |
+| `Regen` | ninguno (sólo tick) | `EffHeal(3)` cada `OnTurnEnd` via `HealPipeline` | `Status.Regen` |
+
+**`IEmitsModifier` helper.** Los effects que crean modifiers (`EffAddIntModifier`, `EffAddFloatModifier`) implementan una interface de capability para que el status service pueda capturar el `Guid` del modifier emitido y guardarlo en `AppliedModifierIds`. Esto es necesario porque el statusservice **no** le dicta al effect qué modifier crear — el `EffectData` del `OnApply` es autoría libre del diseñador. La única restricción es que si un effect quiere ser trackable por el status para cleanup, debe implementar `IEmitsModifier`. Effects sin esta capability siguen ejecutándose pero no se limpian al remover el status — útil para efectos "one-shot" (ej: un `EffPlayFeedback` dentro del `OnApply` que solo reproduce un VFX, no necesita cleanup).
+
+**Por qué no duplicar `Modifier<T>.OwnerId`.** Un modifier creado por un status tiene su `OwnerId = targetGuid` como cualquier otro (§3). Eso lo hace compatible con el lifecycle normal (cleanup por turno, OnLoad post-save). El `AppliedModifierIds` del `ActiveStatusEffect` es un back-reference para poder hacer removal **agrupado** al remover el status — sin eso, habría que iterar todos los modifiers del target buscando matches por metadata.
+
 ### 20.3 Integración con el FSM de combate
 
-El `CheckTurnSkip` (§1.3) consulta al `IStatusEffectService` para determinar si el jugador tiene un CC activo:
+El `CheckTurnSkip` (§1.3) consulta al `IStatusEffectService` y salta el turno si **algún** status activo sobre la entidad tiene `PreventsTurn = true`. El chequeo es data‑driven: cada status marca el flag en su SO, el FSM no tiene ids hardcoded → un status nuevo que impida actuar (ej: `paralysis`) funciona desde el momento en que el diseñador marca el flag, sin cambios de código.
 
 ```csharp
 // En CheckTurnSkip
 var statusService = ServiceLocator.GetService<IStatusEffectService>();
-bool isStunned = statusService.HasStatus(playerGuid, "stun")
-              || statusService.HasStatus(playerGuid, "freeze")
-              || statusService.HasStatus(playerGuid, "sleep");
+bool isDisabled = statusService.GetStatuses(playerGuid)
+    .Any(active => active.Definition.PreventsTurn);
 
-if (isStunned) => transicionar a CleanupPlayerModifiers sin pasar por PlayerInput
+if (isDisabled) => transicionar a CleanupPlayerModifiers sin pasar por PlayerInput
 ```
 
 ### 20.4 Efecto de aplicación: `EffAddStatusEffect`
@@ -7222,6 +8205,13 @@ public class QuestSO : SerializedScriptableObject
     [OdinSerialize]
     public List<BasePreCondition> CompletionConditions = new();      // §8.2
 
+    [Title("Auto-tracking")]
+    [InfoBox("EventNames que disparan la re-evaluación de CompletionConditions mientras la quest está Active. " +
+             "Ej: 'defeat 5 enemies' listenea OnEntityDestroyed; 'reach floor 3' listenea OnFloorCleared.\n" +
+             "Si la lista queda vacía, la quest sólo se completa vía EffCompleteQuest manual (útil para " +
+             "quests narrativas tipo 'hablá con X NPC' que el diálogo o interacción dispara explícitamente).")]
+    public List<EventName> ProgressTriggers = new();
+
     [Title("Rewards")]
     [OdinSerialize]
     public List<RewardEntrySO> Rewards = new();                       // §19
@@ -7250,11 +8240,77 @@ public interface IQuestService
     bool IsActive(string questId);
     IReadOnlyList<string> ActiveQuestIds { get; }
 
+    /// <summary>
+    /// Suscribe al EventManager todos los ProgressTriggers de las quests Active.
+    /// Llamado una vez en RunBootstrapper.StartRun (§1.1.3.a) post-StartQuest inicial.
+    /// Idempotente — re-llamarlo no duplica handlers.
+    /// </summary>
+    void SubscribeEventTriggers();
+
     event Action<string, QuestState> OnQuestStateChanged;
 }
 
 public enum QuestState { NotStarted, Active, Completed, Failed }
 ```
+
+**Auto-complete por evento (tracking automático).** Cuando una quest pasa a `Active`, el service suscribe un handler para cada `EventName` de su `ProgressTriggers`. El handler re-evalúa `CompletionConditions` y si todas pasan, marca la quest `Completed` y ejecuta `OnComplete` + `Rewards`. No hay contador explícito: las condiciones mismas (p. ej. `PCEntitiesDefeatedSinceQuestStart(count=5, type="goblin")` §8.2) leen el estado persistente y deciden. Esto mantiene el modelo de quest declarativo — un `QuestSO` no tiene "progress fields" que haya que mutar.
+
+```csharp
+// Pseudocódigo interno del QuestService
+private readonly Dictionary<string, List<(EventName, EventManager.EventReceiver)>> _handlersByQuest = new();
+
+public void StartQuest(string questId)
+{
+    var quest = _catalog.GetById(questId);
+    _state.States[questId] = QuestState.Active;
+    RegisterTriggersFor(quest);
+    EventManager.Trigger(EventName.OnQuestStateChanged, quest, QuestState.Active);
+}
+
+private void RegisterTriggersFor(QuestSO quest)
+{
+    if (_handlersByQuest.ContainsKey(quest.QuestId)) return;  // idempotente
+    var list = new List<(EventName, EventManager.EventReceiver)>();
+    foreach (var evt in quest.ProgressTriggers)
+    {
+        EventManager.EventReceiver handler = args => TryAutoComplete(quest.QuestId);
+        EventManager.Subscribe(evt, handler);
+        list.Add((evt, handler));
+    }
+    _handlersByQuest[quest.QuestId] = list;
+}
+
+private void TryAutoComplete(string questId)
+{
+    if (_state.States[questId] != QuestState.Active) return;
+    var quest = _catalog.GetById(questId);
+    var ctx = new PreConditionContext { /* ... */ };
+    if (quest.CompletionConditions.All(c => c.Evaluate(ctx)))
+        CompleteQuest(questId);
+}
+
+public void CompleteQuest(string questId)
+{
+    // Unsubscribe handlers al completar — no queremos re-evaluar una quest Completed.
+    if (_handlersByQuest.TryGetValue(questId, out var handlers))
+    {
+        foreach (var (evt, h) in handlers) EventManager.UnSubscribe(evt, h);
+        _handlersByQuest.Remove(questId);
+    }
+    // ... resto del flujo (OnComplete, Rewards, event)
+}
+
+public void Dispose()  // llamado por ClearScope(Run) — IDisposable (§1.1.3)
+{
+    foreach (var list in _handlersByQuest.Values)
+        foreach (var (evt, h) in list) EventManager.UnSubscribe(evt, h);
+    _handlersByQuest.Clear();
+}
+```
+
+**Regla de diseño.** Si una quest necesita "tracking de progreso exacto" (p. ej. kill count 3/5 mostrado al jugador), el count vive en un `ISaveable` aparte (p. ej. `QuestKillCounterState` análogo a `RunComboCounterState` §5.5) que escucha el mismo event y mantiene el counter. La `CompletionCondition` de la quest solo lo consulta. **El `QuestService` no conoce números específicos** — solo ejecuta condiciones declarativas.
+
+**`CompleteQuest` manual.** Sigue disponible para las quests cuya condición es "hablá con X NPC, fin" — en ese caso la quest puede no declarar `ProgressTriggers`, y el `EffCompleteQuest` (§8) lo dispara desde el `DialogueGraphSO` del NPC o el `OnInteract` del target. `StartQuest` + `CompleteQuest` manual es el patrón "scripted narrative" sin auto-tracking.
 
 ### 21.3 `QuestProgressState : ISaveable`
 
@@ -7982,3 +9038,48 @@ Menú `Assets > Create > Rollgeon > Templates >` con presets:
     - §27: numeración actualizada a §A–§N.
     - `UpgradeSO` marcado como TBD en §19.
   - `RoomType.Sacrifice` y `FloorLayoutSO.SacrificeRooms` removidos — no definidos en el GDD.
+- `2026-04-17` — **v12**: pass de review sobre inconsistencias internas y gaps. Sin rescribir sistemas — arreglos quirúrgicos y un servicio nuevo.
+  - §1.2: regla transversal `args[0] : Guid` documentada. Schemas faltantes agregados (`OnTurnStarted`, `OnTurnFinished`, `OnEnergyChanged`, `OnModifierAdded`, `OnModifierRemoved`). Eventos de screen removidos del enum legacy — ahora viven sólo en `IScreenManager` (§17.D).
+  - §1.2.1: regla de **canal único** por evento — `EventManager` legacy **o** `TypedEvent<T>`, nunca ambos. Migración no‑oportunista.
+  - §3.1: `Modifier<T>.OnLoad()` idempotente (`UnSubscribe` antes de `Subscribe`) y `_resolvedOp` se re‑resuelve en cada load para soportar el camino de restore.
+  - §3.5: **nueva** — rehidratación de `Modifier<T>` tras save/load. Todo `ISaveable` que contenga modificadores debe invocar `OnLoad()` en su `RestoreState`.
+  - §5.3: `ContractSheet.EvaluateRoll` usa `TryGetService<RunStrikeState>` — no crashea en UI de preview fuera de una run activa.
+  - §7.0, §7.2b, §2.4, §4.5: `CreateRuntimeBehaviors()` **sin parámetro** — la `BehaviorLibrarySO` se resuelve internamente vía `ServiceLocator`. Un único punto de verdad.
+  - §7.6b: política de **cancelación** del walker documentada — ESC aborta nodos Line/Choice; `DialogueEffectNode` en curso no se interrumpe (atomicidad); `OnDialogueEnded(cancelled: true)` por `TypedEvent<>`.
+  - §14.4: `UnlockStateSO.Dirty()` hace `Flush(SaveTrigger.Manual)` inmediato — los unlocks no pueden perderse por crash entre el momento del unlock y el próximo trigger de save configurado.
+  - §14.7: `ShopConfig` en `RulesetSO` explicita que son **globals** (pricing, variance, discount, restock), la composición local vive en `ShopPoolSO`.
+  - §15.3: payload wrappeado en `SavePayload { SchemaVersion, Data }`. Mismatch de versión → descarta save con warning en vez de crashear al deserializar. No hay migration paths en fase de diseño.
+  - §15.3: regla explícita de **rehidratación** — `ISaveable` con objetos que requieren re‑hook de eventos (canónicamente `Modifier<T>`) lo hace dentro de `RestoreState`.
+  - §17.D: `IScreenManager` expone events C# directamente; se removió la duplicación con el bus legacy. **Nueva política de pausa global**: `PausesGameplay` por screen + `OnPauseChanged`; tabla de qué sistema congela qué al entrar pausa (audio ducking, tick de status, FSM de combate).
+  - §17.F: tabla de **autoridad de pricing** — `BasePrice` en pool, `PriceMultiplier/Variance/Discount/Restock` en `ShopConfigSO`. `FirstPurchaseDiscountPercent` es per‑shop instance (flag en `RoomInstance`), cerrando el exploit de re-entrada.
+  - §17.O: **nuevo — `IRngService`**. Sub-streams nombrados con seed determinista por nombre. Prohibición de `UnityEngine.Random` y `new System.Random()` directo en gameplay. `RunRecord.Seed` + `RunRecord.RulesetId` agregados para reproducibilidad de QA.
+  - §19: capas de catálogos clarificadas — `ItemSO` autoridad única del ítem, `RewardEntrySO` abstracción polimórfica del reward, `ShopPoolSO` composición específica. Referencias directas (no copias) → cambiar un ítem se refleja en todos los pools automáticamente. No se hizo consolidación — las capas tienen roles legítimos.
+  - §20: `StatusEffectSO.PreventsTurn` flag reemplaza el hardcode `"stun"|"freeze"|"sleep"` en `CheckTurnSkip`. Nuevo CC se marca en el SO, sin cambios de código.
+- `2026-04-17` — **v15**: cierre de ambigüedades y lifecycles post-review. Doc-only, sin cambios de arquitectura fundamental.
+  - **§1.1.3 + §1.1.3.a — spec completa de registro de managers `ServiceScope.Run`.** Nuevo `RunBootstrapper.StartRun(classSO, ruleset, runId)` que instancia y registra **en orden de dependencia** los ~22 managers Run (RNG → Phase → Player → Grid → Movement → TurnOrder → TurnManager → AttackResolver → DamagePipeline → HealPipeline → DiceRoller → Interaction → Status → Reward → Quest → Shop → Craps → DungeonManager) + hookups cross‑service (`Player.BindPassive`, `QuestService.SubscribeEventTriggers`). Simetría: `EndRun` dispara `OnRunEnd` → `SaveSystem.Flush` → `ClearScope(Run)`. Managers con subscriptions en ctor deben implementar `IDisposable`.
+  - **§2.4 — `Entity : ISaveable, IDisposable` (partial).** `Passive` pasa a `{ get; private set; }` — sólo mutable via `BindPassive`. `Dispose()` llama `UnbindPassive()` para cleanup en `ClearScope(Run)`.
+  - **§4.4.1 — `ClassPassiveSO` es ref compartida e inmutable; el hookup vive en `Entity.BindPassive`.** Los handlers se cierran sobre `InstanceId` y filtran por `OwnerId == args[0]`. Dos `Entity` del mismo SO suscriben independientemente (sin cross-talk). Load de save reinstancia `Entity` y vuelve a llamar `BindPassive`. Anti-patrón: `passive.Subscribe(entity)` en el SO.
+  - **§4.5 — flujo de run usa `Player.BindPassive(hero.Passive)`** en vez del viejo `Player.Passive.Subscribe(InstanceId)` que no existía como API.
+  - **§5.1 — `BaseComboSO` formaliza la fórmula de cuenta.** Nuevos campos: `ValueMultipliers : float[6]` (index 0 = pip 1, …), `GeneralMultiplier : float`, `ExtraEffects : List<EffectData>`. Método `ComputeCount(finalDice) : float` = `(Σ dado × multi_valor[dado-1]) × multi_general`. Daño final: `BaseDamage + ComputeCount`.
+  - **§5.1.1 — nueva sub-sección "Cuenta del combo — fórmula y ejemplos".** Tabla canónica de combos con `BaseDamage`, `ValueMultipliers`, `GeneralMultiplier`. La multiplicación general se aplica sobre la suma, no dado por dado.
+  - **§5.6 — guard de `!CanAct` en Strike.** No accesible si `CheckTurnSkip` rechazó el turno; la UI graya el botón. Misma regla aplica a Attack/Defend/Interact — no hay camino para gastar energía en un turno skipped.
+  - **§7.5 — `AINode_Attack` + `AINode_UseAbility` usan `ActionId` (cross-ref §12.6).** Los `GetActionIds()` filtran por `ActionType` (`Attack` / `Ability`). Elimina la referencia a un catálogo inexistente.
+  - **§9.5 — nueva sub-sección "Lifecycle" de `StoredValues`.** Cierra el pending arrastrado desde v10. Escritura: effects con `IShouldStoreValuesOnBehavior` durante resolve. Captura: `FeedbackRequest.CaptureState` copia snapshot. Lectura: `FeedbackBus` consume del snapshot. Limpieza: (1) `BaseBehavior.Execute.finally` post-resolve, (2) red de seguridad en `OnTurnFinished`. Valores no sobreviven entre turnos.
+  - **§12.0.3 — regla `ReplacePhase` prohibido desde overlay.** Si `CurrentOverlay != None`, `ReplacePhase` tira `InvalidPhaseTransitionException` en Debug y es no-op en Release. Patrón legal para "cutscene que lleva a GameOver": `PopOverlay()` primero, luego listener de `OnOverlayPopped` hace `ReplacePhase`.
+  - **§12.2.1 — nueva sub-sección "Fuentes de daño no-combo".** DOTs, pasivas, trampas y efectos ambientales pasan por `DamagePipeline.Resolve` igual que combos, pero **no disparan `IsWeaknessHit = true` por default**. Weakness solo se activa cuando hay un combo explícito declarado. Nuevo enum `AttackKind { ComboAttack, BasicAttack, DamageOverTime, Environmental, Reaction, ScriptedAbility }`.
+  - **§12.2.2 — nueva sub-sección "Reactions y post-mortem".** `ResolveReactions` corre **antes** de `CheckCombatEnd`: un thorns on-death alcanza a golpear al attacker aunque el target muera. Cap de recursión (default 8). Enemigos muertos mid-turno se descartan de la cola. Daño post-mortem del caster se modela con `OnDamaged` + `WasLethal = true`.
+  - **§12.6.0 — `ActionCatalogSO` catálogo maestro unificado.** `ActionType { Combo, Attack, Ability, Defend, Move, Interact, UseItem, SkillCheck }`. `ActionDefinitionSO` gana `Type` + `BackingAsset : ScriptableObject` (puede apuntar a `BaseComboSO` o `ItemSO`). Convención de naming `<tipo>.<subtipo>.<nombre>`. `TurnManager._actionsUsedThisTurn` ahora indexa por `ActionId`, no `ActionTag`. `RulesetSO.ForbiddenActionTags` renombrado a `ForbiddenActionIds`.
+  - **§13.6.1 — nueva sub-sección "Regla de serialización polimórfica".** `RoomInstance.ObjectStates : Dictionary<string, RoomObjectState>` lleva `[SerializeReference]`; cada subtipo (`ChestState`, `ShopItemState`, …) marcado `[Serializable]`. Sin `[SerializeReference]` el serializer degrada a la base y pierde campos al round-trip — bug silencioso de save corruption solo visible cross-session. Test canónico `RoomObjectState_Polymorphism_SurvivesRoundTrip` documentado.
+  - **§15.3 — `WeakReference<ISaveable>` cleanup formalizado.** `CaptureAll` / `CaptureDirty` / `RestoreAll` iteran en reverso y purgan entries cuyo `TryGetTarget` devuelve `false`. No hace falta sweep explícito.
+  - **§15.3.1 — nueva sub-sección "Flush strategy".** Bajo `AsyncFlushThresholdBytes` (default 500 KB): sincrono. Sobre threshold: `Task.Run` con write-to-temp + atomic rename. `SaveTrigger.Exit` **siempre** sincrono. Lock serializa writes concurrentes al mismo path. UniTask (§16.3) es opcional — `Task.Run` funciona sin él.
+  - **§15.4 — `SaveSettingsSO` gana `AsyncFlushThresholdBytes`.**
+  - **§17.J — tabla de perfiles de action maps expandida** con fila por combinación `(GamePhase, PhaseOverlay)`. Regla de mantenimiento: agregar phase/overlay nuevos requiere agregar fila. Fail-soft en Release (solo `UI` activo si no hay match). Clarificación: Shop y Dialogue **no** son overlays — corren durante `Exploration` sin congelar fase base. Sin `Craps/Cutscene/Dialogue` map dedicado — todos usan `UI` + screen buttons.
+  - **§18.1 — `ItemSO` gana `ConsumesAction : bool` + `ActionId : string`** (default `item.<ItemId>`). `IInventoryService.ActivateItem` consulta `TurnManager.CanExecute` antes de ejecutar si `ConsumesAction == true`. Activos "gratis" (lectura de lore, side-effects) no ocupan slot.
+  - **§19.6 — nueva sub-sección "`UpgradeSO` — upgrades de combo".** Cierra el TBD de v14. Scope **run-only**, apuntan a `BaseComboSO` del `ContractSheet` activo. Deltas: `DeltaBaseDamage`, `DeltaGeneralMultiplier`, `DeltaValueMultipliers[6]`, `ExtraEffects`. `TargetCombo = null` → upgrade global a todos los combos. `RunUpgradeState.Resolve(combo, catalog) : ComboResolvedSpec` compone todos los upgrades aplicables. `UpgradeCatalogSO` registrado en bootstrap. Ejemplos: `upg.full_house.empowered` (+20 BaseDamage), `upg.odds.sharpen` (pip 3 ×2), `upg.all.rage` (+25% GeneralMultiplier a todos).
+  - **§20.2.1 — nueva sub-sección "Integración con `Modifier<T>`".** `ApplyStatus` crea concretamente: (1) uno o más `Modifier<T>` via effects del `OnApply`, trackeados en `ActiveStatusEffect.AppliedModifierIds`; (2) un `Tag` sobre el entity (`Status.<StatusId>`); (3) entry en `_activeByEntity` del servicio. `RemoveStatus` limpia los tres en bloque. Nueva capability `IEmitsModifier` para que effects expongan el modifier `Guid` emitido al service. Tabla de ejemplos (Burn, Slow, Stun, Shield, Regen) con desglose.
+  - **§21.1 — `QuestSO` gana `ProgressTriggers : List<EventName>`.** §21.2 — `IQuestService.SubscribeEventTriggers()` se auto-suscribe a cada `EventName` de las quests `Active` y re-evalúa `CompletionConditions` en cada fire. `CompleteQuest` manual sigue disponible para quests narrativas sin tracking. `QuestService : IDisposable` para cleanup en `ClearScope(Run)`.
+  - **Tabla de migración de IDs (#11 del review).** `ComboId` sigue existiendo como `BaseComboSO.ComboId` para el lookup tipado dentro del dominio de combos; pero cuando se despacha contra el action economy, va como `ActionId = "combo.<ComboId>"` en `ActionCatalogSO`. `AttackId` **removido** — los `AINode_Attack` ahora usan `ActionId`. `AbilityId` **removido** — ídem via `AINode_UseAbility`. `ItemId` sigue existiendo como identidad del `ItemSO`, pero el activo se ejecuta bajo `ActionId = item.<ItemId>` en action economy. Unificación transparente — los catálogos específicos preservan su tipado, `ActionCatalogSO` es el punto único de verdad para "cosa ejecutable en combate".
+  - **No tocado en v15 (explícito).**
+    - `Packages/manifest.json` — decisión del usuario: se ignora la discrepancia de packages (Addressables, Localization, Odin, PrimeTween) hasta decisión de diseño posterior. El doc sigue describiendo el stack objetivo.
+    - UniTask / Newtonsoft JSON siguen TBD en §16.3. `Task.Run` en §15.3.1 cubre el caso del flush async sin dependencia adicional.
+    - Polish items (Movement/Grid ownership, IPlayerService/PawnRegistry roles, Tutorial × overlays, accessibility module, analytics opt-in, dropdowns scale): listados como baja prioridad en el plan de review, no abordados en este pass.
