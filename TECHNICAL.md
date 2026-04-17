@@ -26,10 +26,28 @@
 17. [Sistemas transversales](#17-sistemas-transversales)
     - A. [Audio](#a-audio) — `IAudioService`, pool, mixer, integración con feedback
     - B. [Movimiento y Pathfinding](#b-movimiento-y-pathfinding) — `IMovementService`, BFS, movement como acción
-    - C. [Craps — Mini‑juego de apuesta](#c-craps--mini-juego-de-apuesta) — sala Craps como sistema reutilizable
-    - D. [UI architecture + ScreenManager](#d-ui-architecture--screenmanager) — stack de screens, eventos, sin builders
+    - C. [Craps — Mini‑juego de apuesta (overlay de combate)](#c-craps--mini-juego-de-apuesta-overlay-de-combate) — `PhaseOverlay.Craps`, exclusivo de combate, reusa combo system
+    - D. [UI architecture + ScreenManager](#d-ui-architecture--screenmanager) — stack de screens, eventos, sin builders, `ItemInspectView`
     - E. [Cámara](#e-cámara) — `ICameraService`, rotación snapped, pan, zoom, wall occlusion, floor view
-18. [Convenciones de cross‑ref y changelog](#18-convenciones-de-cross-ref-y-changelog)
+    - F. [Shop — ítems en el piso](#f-shop--ítems-en-el-piso-estilo-isaac) — `IShopManagerService`, `ShopPoolSO`, `ShopConfigSO`, sin modal
+    - G. [`IPlayerService`](#g-iplayerservice--acceso-centralizado-al-jugador) — acceso centralizado al jugador activo
+    - H. [`PawnRegistryService`](#h-pawnregistryservice--lookup-de-transforms-por-guid) — lookup de transforms por GUID
+    - I. [`GridManager`](#i-gridmanager--grilla-de-la-sala-activa) — grilla lógica de la sala
+    - J. [`IInputService`](#j-iinputservice--gestión-de-action-maps) — gestión de action maps por fase + tabla de bindings
+    - K. [Scene Management](#k-scene-management--carga-aditiva-async) — carga aditiva async de pisos, UI persistente
+    - L. [Enums comunes](#l-enums-comunes-no-declarados-en-otras-secciones) — `RunOutcome`, `CombatOutcome`, `FloatingNumberType`, `ComparisonOp`
+    - M. [Heal Pipeline](#m-heal-pipeline) — pipeline centralizada de curación simétrica al DamagePipeline
+    - N. [Cutscene overlay](#n-cutscene-overlay--flujo-básico) — `ICutsceneService`, `CutsceneDataSO`, flujo de cutscenes
+18. [Sistema de Items e Inventario](#18-sistema-de-items-e-inventario)
+19. [Sistema de Rewards / Loot](#19-sistema-de-rewards--loot)
+20. [Sistema de Status Effects](#20-sistema-de-status-effects)
+21. [Sistema de Quests](#21-sistema-de-quests)
+22. [Tutorial / Onboarding](#22-tutorial--onboarding)
+23. [Settings y Accessibility](#23-settings-y-accessibility)
+24. [Object Pooling](#24-object-pooling)
+25. [Analytics y Telemetría](#25-analytics-y-telemetría)
+26. [Content Tooling](#26-content-tooling--pipeline-de-autoría-para-diseñadores)
+27. [Convenciones de cross‑ref y changelog](#27-convenciones-de-cross-ref-y-changelog)
 
 ---
 
@@ -51,6 +69,22 @@
   - `Rollgeon.Feedback` → FX/anim pipeline local.
   - `Rollgeon.Dungeon` → salas, layout, generación procedural.
   - `Rollgeon.Meta` → unlocks, save, run records.
+  - `Rollgeon.Items` → `ItemSO`, `IInventoryService`, catálogo.
+  - `Rollgeon.Rewards` → `RewardEntrySO`, `IRewardService`, pools.
+  - `Rollgeon.StatusEffects` → `StatusEffectSO`, `IStatusEffectService`.
+  - `Rollgeon.Quests` → `QuestSO`, `IQuestService`.
+  - `Rollgeon.Tutorial` → `TutorialStepSO`, `ITutorialService`.
+  - `Rollgeon.Analytics` → `IAnalyticsService`, telemetría.
+  - `Rollgeon.Audio` → `IAudioService`, `AudioManager`, pool de sources, mixer.
+  - `Rollgeon.Camera` → `ICameraService`, `CameraConfigSO`, wall occlusion, floor view.
+  - `Rollgeon.Movement` → `IMovementService`, BFS pathfinding, `GridManager`.
+  - `Rollgeon.Shop` → `IShopManagerService`, `ShopPoolSO`, `ShopConfigSO`.
+  - `Rollgeon.Craps` → `ICrapsSessionService`, `CrapsConfigSO`.
+  - `Rollgeon.Pool` → `IPoolService`, `ComponentPool<T>`.
+  - `Rollgeon.Settings` → `ISettingsService`, `GameSettingsSO`.
+  - `Rollgeon.Input` → `IInputService`, action maps, bindings.
+  - `Rollgeon.Scene` → `ISceneService`, carga aditiva async de pisos y UI.
+  - `Rollgeon.Player` → `IPlayerService`, acceso centralizado al jugador activo.
 - **Directorios**:
   ```
   Assets/Rollgeon/
@@ -59,9 +93,22 @@
     Dice/             — DiceType, DiceBagSO, DiceEnchantmentSO
     Entities/         — EnemyDataSO, PropEntitySO, NpcDataSO, BehaviorLibrarySO, DialogueGraphSO
     Effects/          — BaseEffect concretes + PreConditions
+      Queries/        — BaseTargetQuery + TQ_* concretes (§11.2b)
     Feedback/         — FeedbackDBSO + runtime
     Dungeon/          — RoomSO, RoomPrefab, FloorLayoutSO, pools
     Meta/             — BaseUnlockSO + ClassUnlock/DiceUnlock/ItemUnlock/PassiveUnlock
+    Items/            — ItemSO, ItemCatalogSO
+    Rewards/          — RewardEntrySO, RewardCatalogSO
+    StatusEffects/    — StatusEffectSO, StatusCatalogSO
+    Quests/           — QuestSO, QuestCatalogSO
+    Tutorial/         — TutorialStepSO assets
+    Audio/            — AudioSettingsSO, BiomeMusicEntry assets
+    Camera/           — CameraConfigSO
+    Shop/             — ShopPoolSO, ShopConfigSO
+    Craps/            — CrapsConfigSO
+    Settings/         — GameSettingsSO
+    Actions/          — ActionDefinitionSO, ActionCatalogSO
+    Rulesets/         — RulesetSO, RulesetCatalogSO
     Save/             — SaveSettingsSO, runtime
     Catalogs/         — CatalogSOs centrales para dropdowns (IDs)
   Assets/Scripts/     — código runtime (managers, FSM, pipelines)
@@ -76,22 +123,54 @@
 Registro estático `Type → instance`. Para Rollgeon se extiende con un **bootstrap** que permite pre‑cargar todos los SOs necesarios antes de que empiece la partida, sin depender de `Awake`/`OnEnable` de MonoBehaviours.
 
 ```csharp
+public enum ServiceScope
+{
+    /// <summary>Persiste toda la sesión del juego (catalogs, settings, managers globales).</summary>
+    Global,
+    /// <summary>Persiste solo durante una run. Se limpia al terminar la run sin afectar los Global.</summary>
+    Run,
+}
+
 public static class ServiceLocator
 {
-    private static readonly Dictionary<Type, object> Services = new();
+    private static readonly Dictionary<Type, (object instance, ServiceScope scope)> Services = new();
 
-    public static void AddService<T>(object instance) => Services[typeof(T)] = instance;
-    public static T    GetService<T>() => (T)Services[typeof(T)];
+    public static void AddService<T>(object instance, ServiceScope scope = ServiceScope.Global)
+        => Services[typeof(T)] = (instance, scope);
+
+    public static T    GetService<T>() => (T)Services[typeof(T)].instance;
     public static bool TryGetService<T>(out T service)
     {
-        if (Services.TryGetValue(typeof(T), out var raw)) { service = (T)raw; return true; }
+        if (Services.TryGetValue(typeof(T), out var entry)) { service = (T)entry.instance; return true; }
         service = default; return false;
     }
     public static void RemoveService<T>() => Services.Remove(typeof(T));
     public static bool HasService<T>() => Services.ContainsKey(typeof(T));
+
+    /// <summary>
+    /// Limpia solo los servicios registrados con el scope dado.
+    /// Llamar ClearScope(Run) al terminar una run limpia TurnManager,
+    /// DiceRoller, etc. sin tocar los catalogs y settings (Global).
+    /// </summary>
+    public static void ClearScope(ServiceScope scope)
+    {
+        var toRemove = Services
+            .Where(kvp => kvp.Value.scope == scope)
+            .Select(kvp => kvp.Key)
+            .ToList();
+        foreach (var key in toRemove) Services.Remove(key);
+    }
+
+    /// <summary>Limpia todo — solo usar en shutdown o tests.</summary>
     public static void Clear() => Services.Clear();
 }
 ```
+
+**Regla de scope.**
+- **`Global`** (default) — catalogs (`EntityCatalogSO`, `ComboCatalogSO`, …), settings (`SaveSettingsSO`, `CameraConfigSO`), managers de infraestructura (`IAudioService`, `IScreenManager`).
+- **`Run`** — managers de gameplay que nacen al iniciar una run y mueren al terminarla (`TurnManager`, `DiceRoller`, `IInteractionService`, `IDungeonManager`, `IPhaseService`, `ICrapsSessionService`, `RunComboCounterState`, `RunStrikeState`).
+
+Al terminar la run: `ServiceLocator.ClearScope(ServiceScope.Run)` limpia todo lo de la run sin afectar la infraestructura global.
 
 #### 1.1.1 `ServiceBootstrapSO`
 
@@ -110,10 +189,27 @@ public class ServiceBootstrapSO : SerializedScriptableObject
     [OdinSerialize] public RoomCatalogSO       RoomCatalog;
     [OdinSerialize] public UnlockCatalogSO     UnlockCatalog;
 
+    [Title("Extended Catalogs")]
+    [OdinSerialize] public ItemCatalogSO       ItemCatalog;        // §18
+    [OdinSerialize] public RewardCatalogSO     RewardCatalog;      // §19
+    [OdinSerialize] public StatusCatalogSO     StatusCatalog;      // §20
+    [OdinSerialize] public QuestCatalogSO      QuestCatalog;       // §21
+
     [Title("Settings")]
     [OdinSerialize] public SaveSettingsSO      SaveSettings;       // §15
     [OdinSerialize] public MinimapIconsSO      MinimapIcons;       // §13.7
     [OdinSerialize] public CameraConfigSO      CameraConfig;       // §17.E
+
+    [Title("Runtime services (pre‑instantiated)")]
+    [Title("Extended Catalogs — Actions & Rulesets")]
+    [OdinSerialize] public ActionCatalogSO    ActionCatalog;      // §12.6
+    [OdinSerialize] public RulesetCatalogSO   RulesetCatalog;     // §14.7
+
+    [Title("Extended Settings")]
+    [OdinSerialize] public AudioSettingsSO     AudioSettings;      // §17.A
+    [OdinSerialize] public ShopConfigSO        ShopConfig;         // §17.F
+    [OdinSerialize] public PhaseTransitionMatrixSO PhaseMatrix;    // §12.0.5
+    [OdinSerialize] public GameSettingsSO      GameSettings;       // §23
 
     [Title("Runtime services (pre‑instantiated)")]
     [OdinSerialize] public List<IPreloadableService> ExtraServices = new();
@@ -135,6 +231,16 @@ public class ServiceBootstrapSO : SerializedScriptableObject
         ServiceLocator.AddService<SaveSettingsSO>(SaveSettings);
         ServiceLocator.AddService<MinimapIconsSO>(MinimapIcons);
         ServiceLocator.AddService<CameraConfigSO>(CameraConfig);
+        ServiceLocator.AddService<ItemCatalogSO>(ItemCatalog);
+        ServiceLocator.AddService<RewardCatalogSO>(RewardCatalog);
+        ServiceLocator.AddService<StatusCatalogSO>(StatusCatalog);
+        ServiceLocator.AddService<QuestCatalogSO>(QuestCatalog);
+        ServiceLocator.AddService<ActionCatalogSO>(ActionCatalog);
+        ServiceLocator.AddService<RulesetCatalogSO>(RulesetCatalog);
+        ServiceLocator.AddService<AudioSettingsSO>(AudioSettings);
+        ServiceLocator.AddService<ShopConfigSO>(ShopConfig);
+        ServiceLocator.AddService<PhaseTransitionMatrixSO>(PhaseMatrix);
+        ServiceLocator.AddService<GameSettingsSO>(GameSettings);
 
         foreach (var svc in ExtraServices) svc.Register();
     }
@@ -231,13 +337,82 @@ public static class EventManager
 }
 ```
 
+#### 1.2.1 `TypedEvent<T>` — bus tipado complementario
+
+El `EventManager` legacy transporta `object[]` — funcional pero frágil: los casts manuales fallan silenciosamente si un publisher agrega o reordena parámetros. Para eventos de alto tráfico y payload complejo, se usa un bus tipado complementario que **coexiste** con el `EventManager` sin reemplazarlo.
+
+```csharp
+/// <summary>
+/// Bus tipado por struct de payload. Elimina casts manuales y documenta
+/// el schema del evento en el tipo mismo. Coexiste con el EventManager
+/// legacy — se usa para eventos nuevos o de alto tráfico donde los
+/// errores de cast serían costosos.
+/// </summary>
+public static class TypedEvent<T> where T : struct
+{
+    private static event Action<T> _listeners;
+
+    public static void Subscribe(Action<T> listener)   => _listeners += listener;
+    public static void Unsubscribe(Action<T> listener) => _listeners -= listener;
+    public static void Raise(T payload)                => _listeners?.Invoke(payload);
+    public static void Clear()                         => _listeners = null;
+}
+```
+
+**Structs de payload canónicos:**
+
+```csharp
+public struct DamageResolvedPayload
+{
+    public Guid SourceGuid;
+    public Guid TargetGuid;
+    public int FinalDamage;
+    public bool WeaknessHit;
+}
+
+public struct HealthChangedPayload
+{
+    public Guid EntityGuid;
+    public int Current;
+    public int Max;
+}
+
+public struct ComboMatchedPayload
+{
+    public Guid SourceGuid;
+    public string ComboId;
+    public int BaseDamage;
+}
+```
+
+**Uso:**
+
+```csharp
+// Publisher (DamagePipeline)
+TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload {
+    SourceGuid = source.InstanceId,
+    TargetGuid = target.InstanceId,
+    FinalDamage = finalDmg,
+    WeaknessHit = wasWeak
+});
+
+// Subscriber (HUDScreen)
+TypedEvent<HealthChangedPayload>.Subscribe(OnHealthChanged);
+private void OnHealthChanged(HealthChangedPayload p) {
+    _healthBar.value = (float)p.Current / p.Max;
+}
+```
+
+**Regla de migración.** Los eventos existentes del `EventManager` (§1.2 tabla de familias) siguen funcionando. Los eventos **nuevos** deben usar `TypedEvent<T>`. Los eventos existentes se migran oportunistamente cuando se tocan por otra razón — no hay un refactor big-bang.
+
 **Familia mínima de `EventName`** para Rollgeon:
 
 | Región | Eventos |
 |---|---|
 | Run      | `OnRunStart`, `OnRunEnd` |
 | Combat (lifecycle) | `OnCombatStart`, `OnCombatEnd` |
-| Turn     | `OnTurnStarted`, `OnTurnFinished`, `OnPhaseChange`, `OnEnergyChanged`, `OnTurnQueueBuilt` |
+| Turn     | `OnTurnStarted`, `OnTurnFinished`, `OnEnergyChanged`, `OnTurnQueueBuilt` |
+| Phase (§12.0) | `OnPhaseExit`, `OnPhaseEnter`, `OnOverlayPushed`, `OnOverlayPopped` |
 | Roll     | `OnRollStarted`, `OnDiceRolled`, `OnRerollStarted`, `OnRollResolved` |
 | Combat (resolve) | `OnDamageOutgoing`, `OnDamageIncoming`, `OnDamageResolved`, `OnHealthChanged`, `OnShieldChanged`, `OnEntityDestroyed` |
 | Contract | `OnComboMatched`, `OnComboCrossed`, `OnWeaknessHit` |
@@ -249,6 +424,11 @@ public static class EventManager
 | Save     | `OnCaptureRequested`, `OnRestoreCompleted` (§15) |
 | Feedback | `OnFeedbackStarted`, `OnFeedbackCompleted` |
 | Interaction | `OnInteractionTargetChanged`, `OnInteractionExecuted` (§7.7) |
+| Shop (§17.F) | `OnShopItemTargetChanged`, `OnShopItemPurchased`, `OnShopRestocked` |
+| Status (§20) | `OnStatusApplied`, `OnStatusRemoved`, `OnStatusTicked` |
+| Items (§18) | `OnItemObtained`, `OnItemRemoved`, `OnActiveItemUsed` |
+| Quest (§21) | `OnQuestStateChanged` |
+| Scene (§K) | `OnSceneLoaded`, `OnSceneUnloaded` |
 
 **Payloads.** Los parámetros viajan como `object[]`. Para evitar errores de cast, cada `EventName` tiene su schema documentado al lado del enum:
 
@@ -303,6 +483,16 @@ public enum EventName
     /// <summary>args: [Guid sessionId, CrapsOutcome outcome, int payout]</summary>
     OnCrapsResolved,
 
+    // --- Phase lifecycle (§12.0) --------------------------------------------
+    /// <summary>args: [GamePhase exiting]</summary>
+    OnPhaseExit,
+    /// <summary>args: [GamePhase entering]</summary>
+    OnPhaseEnter,
+    /// <summary>args: [PhaseOverlay overlay]</summary>
+    OnOverlayPushed,
+    /// <summary>args: [PhaseOverlay overlay]</summary>
+    OnOverlayPopped,
+
     // --- Interaction (§7.7) ------------------------------------------------
     /// <summary>args: [Guid targetGuid, string resolvedLabel, bool isAvailable].
     /// targetGuid == Guid.Empty significa "no hay target, esconder el prompt".
@@ -311,6 +501,15 @@ public enum EventName
     OnInteractionTargetChanged,
     /// <summary>args: [Guid targetGuid]</summary>
     OnInteractionExecuted,
+
+    // --- Shop (§17.F) ----------------------------------------------------
+    /// <summary>args: [bool hasTarget, string itemName, string description, int price, Sprite icon].
+    /// hasTarget == false → esconder el ItemInspectView.</summary>
+    OnShopItemTargetChanged,
+    /// <summary>args: [string spawnPointId, string rewardId, int pricePaid]</summary>
+    OnShopItemPurchased,
+    /// <summary>args: [Guid roomInstanceId, int slotsRestocked]</summary>
+    OnShopRestocked,
 
     // ...
 }
@@ -431,7 +630,7 @@ Los viejos inputs `Heal` / `ForceDoor` del draft anterior desaparecen — ambos 
 - **Consecuencia buscada.** Un debuff de `Duration = 1` aplicado al `Enemy 2` **no** se gasta cuando actúa el `Enemy 1`. El tick ocurre al cerrar la fase completa, así que el debuff alcanza a afectar al Enemy 2 cuando le toca su turno. Análogamente, un buff `Duration = 1` que el player se aplica a sí mismo dura exactamente "su turno", no sobrevive a la fase enemy ni se gasta mid‑turno.
 - **Modificadores globales simétricos** (p.ej. "durante 2 rounds el daño es doble para todos") se modelan como **dos** modificadores espejados — uno con `OwnerId = player` y otro con `OwnerId = enemyBand` — para que cada tick respete su propia fase. Evita el edge case "¿quién decrementa este mod?" ambigüo.
 
-**Cross‑ref §1.3.** §1.2 (`OnTurnStarted` / `OnTurnFinished` / `OnPhaseChange`), §3 (lifecycle de modificadores, `TickEvent`, `ModifierLifetime`), §7.2 (`AllowedPhases` — filtro de behaviors en cada dispatcher), §7.5 (`AIRoot` ejecutado en `EnemyAction`), §7.7 (`IInteractionService` — a quién delega `Interact`), §12 (`DamagePipeline`, action economy, turn order, action definitions), §12.0 (`GamePhase` enum y el wrapper macro).
+**Cross‑ref §1.3.** §1.2 (`OnTurnStarted` / `OnTurnFinished` / `OnPhaseExit` / `OnPhaseEnter`), §3 (lifecycle de modificadores, `TickEvent`, `ModifierLifetime`), §7.2 (`AllowedPhases` — filtro de behaviors en cada dispatcher), §7.5 (`AIRoot` ejecutado en `EnemyAction`), §7.7 (`IInteractionService` — a quién delega `Interact`), §12 (`DamagePipeline`, action economy, turn order, action definitions), §12.0 (`GamePhase` + `PhaseOverlay` + `IPhaseService`).
 
 ---
 
@@ -492,6 +691,21 @@ public class ModifiableAttributes
 - Indexado por `Type` literal del stat concreto → **una entidad no puede tener dos instancias del mismo stat**. Intencional.
 - `DuplicateAttributes()` clona por atributo (llama `Duplicate()`) → se usa al iniciar run para no mutar el `ClassHeroSO` origen.
 
+**Validación de tipo en accessors.** Los métodos genéricos `GetValue<T>()` / `GetModifiedValue<T>()` de `IAttribute` / `IModifiable` pueden fallar silenciosamente si el caller pide un tipo incorrecto (ej: `GetValue<float>()` sobre un `Health : IModifiable<int>`). Para prevenir este error:
+
+```csharp
+public T GetValue<T>()
+{
+    if (typeof(T) != GetValueType())
+        throw new InvalidCastException(
+            $"[{GetAttributeName()}] Expected {GetValueType().Name}, got {typeof(T).Name}. " +
+            "Check the generic type argument.");
+    return (T)_rawValue;
+}
+```
+
+En debug/editor, el error es una excepción con mensaje claro. En release, el `#if` puede degradar a un log + default para no crashear la run.
+
 ### 2.3 Ownership por GUID
 
 Cada entidad del juego (jugador, enemigos, bosses, objetos de sala) tiene un `Guid InstanceId` único generado al spawneo. Los modificadores, eventos y lookups **siempre** referencian entidades por `Guid`, nunca por `int OwnerId`:
@@ -516,11 +730,32 @@ public class Entity
 ### 3.1 `Modifier<T>`
 
 ```csharp
+/// <summary>
+/// Enum serializable que reemplaza al delegate Func&lt;T, T, T&gt;.
+/// Un Func no se serializa con Unity ni con Odin — al persistir un
+/// Modifier con el save system (§15) la operación se perdería.
+/// Con un enum, el save captura el valor entero y al restaurar se
+/// resuelve la operación desde el catálogo estático (§3.3).
+/// </summary>
+public enum ModifierOperation
+{
+    Add,
+    Subtract,
+    Multiply,
+    Override,
+    Min,
+    Max,
+    Percent,
+    Set,        // para bool
+    And,        // para bool
+    Or,         // para bool
+}
+
 [Serializable]
 public class Modifier<T>
 {
     public T Amount;
-    public Func<T, T, T> Operation;        // (currentValue, amount) => newValue
+    public ModifierOperation Operation;     // serializable — resuelta a Func via OperationResolver
     public int Duration;                    // solo relevante cuando Lifetime == Turns
     public Guid ModifierId;                 // único por instancia
     public Guid OwnerId;                    // entidad a la que pertenece el modificador
@@ -528,7 +763,10 @@ public class Modifier<T>
     public ModifierLifetime Lifetime;       // Turns | Permanent | Run | Encounter
     public EventName TickEvent;             // evento que decrementa Duration (solo Turns)
 
-    public Modifier(T amount, Func<T, T, T> op, int duration, Guid ownerId,
+    [NonSerialized]
+    private Func<T, T, T> _resolvedOp;     // cache runtime — resuelta desde Operation
+
+    public Modifier(T amount, ModifierOperation op, int duration, Guid ownerId,
                     ModifierDirection dir, ModifierLifetime lifetime, EventName tickEvent)
     {
         Amount = amount;
@@ -539,6 +777,7 @@ public class Modifier<T>
         Direction = dir;
         Lifetime = lifetime;
         TickEvent = tickEvent;
+        _resolvedOp = OperationResolver.Resolve<T>(op);
         OnLoad();
     }
 
@@ -565,7 +804,11 @@ public class Modifier<T>
         }
     }
 
-    public T ApplyModifier(T value) => Operation(value, Amount);
+    public T ApplyModifier(T value)
+    {
+        _resolvedOp ??= OperationResolver.Resolve<T>(Operation);
+        return _resolvedOp(value, Amount);
+    }
 
     public void OnRemove()
     {
@@ -701,9 +944,12 @@ public class ClassHeroSO : BaseEntitySO
 | `Health` (`IModifiable<int>`) | int | Puntos de vida totales. Muere al llegar a 0. | Varía por clase. |
 | `Energy` (`IModifiable<int>`) | int | Recurso de acciones por turno. | Máx 4. No acumulable. |
 | `Speed` (`IModifiable<int>`) | int | Orden de turno dentro del round. | **Oculta** en UI. |
-| `Shield` (`IModifiable<int>`) | int | Escudo temporal del sistema de defensa. | Se limpia al empezar el siguiente turno. |
+| `Shield` (`IModifiable<int>`) | int | Escudo temporal del sistema de defensa. | Se resetea a 0 en `OnTurnStarted` (§12.4). |
+| `Gold` (`IModifiable<int>`) | int | Moneda de la run. Se gasta en shops (§17.F), craps (§17.C) y se gana vía rewards (§19). | Persistido en `RunProgress` (§15). |
+| `MovementRange` (`IModifiable<int>`) | int | Casillas que puede moverse por acción de movimiento. | Afectado por Slow/Haste/Root (§B.3). |
 | `OutgoingDamageMultiplier` (`IModifiable<float>`) | float | Multiplicador al daño saliente. | Base 1.0. |
 | `IncomingDamageMultiplier` (`IModifiable<float>`) | float | Multiplicador al daño entrante. | Base 1.0. |
+| `ShopPriceMultiplier` (`IModifiable<float>`) | float | Multiplicador aplicado a precios de shop. | Base 1.0. Pasivas tipo "Comerciante" lo reducen (§17.F.8). |
 
 **Nota importante.** `Passive` **NO es un stat**. No vive en el diccionario `_baseStats` (heredado de §7.0). Es un campo aparte porque:
 
@@ -777,7 +1023,69 @@ SaveSystem.Register(Player)                                        // §15
 SaveSystem.CaptureAll(); SaveSystem.Flush(SaveTrigger.RunStart)
 ```
 
-**Cross‑ref.** §2 (ModifiableAttributes + Guid), §5 (ContractSheet), §6 (DiceBag), §8 (EffectData en pasivas), §14 (unlocks), §15 (save).
+**Cross‑ref.** §2 (ModifiableAttributes + Guid), §2.4 (runtime `Entity`), §5 (ContractSheet), §6 (DiceBag), §8 (EffectData en pasivas), §14 (unlocks), §15 (save).
+
+### 2.4 Runtime `Entity` — instancia de gameplay
+
+La clase runtime que representa cualquier entidad viva en el juego. Se crea al spawnear al héroe (§4.5), un enemigo (§13.4), un prop (§7.1b) o un NPC (§7.6). **No es un SO** — es una instancia en memoria que vive durante la run (o durante el combate, según la entidad).
+
+```csharp
+public class Entity : ISaveable
+{
+    // --- Identity -----------------------------------------------------------
+    public Guid              InstanceId       { get; } = Guid.NewGuid();
+    public BaseEntitySO      Template         { get; }       // SO origen (readonly en runtime)
+
+    // --- Stats --------------------------------------------------------------
+    public ModifiableAttributes Attributes    { get; }       // deep‑clone de Template._baseStats (§2.2)
+
+    // --- Behaviors ----------------------------------------------------------
+    public List<BaseBehavior> RuntimeBehaviors { get; }      // deep‑clone de Template.Behaviors (§7.2b)
+
+    // --- Hero‑specific (null si no es héroe) --------------------------------
+    public ContractSheet     Sheet            { get; set; }  // clone de ClassHeroSO.Sheet (§5.3)
+    public DiceBagSO         DiceBag          { get; set; }  // clone de StartingDiceBag (§6.2)
+    public ClassPassiveSO    Passive          { get; set; }  // ref a ClassHeroSO.Passive (§4.4)
+
+    // --- Enemy‑specific (null si no es enemigo) -----------------------------
+    public AIDecisionNode    AIRoot           { get; set; }  // deep‑clone del árbol (§7.5)
+
+    // --- Scene --------------------------------------------------------------
+    public Transform         Transform        { get; set; }  // transform del GameObject instanciado
+    public GridCoord         GridPosition     { get; set; }  // posición en la grilla (§B.1)
+
+    // --- Constructor --------------------------------------------------------
+    public Entity(BaseEntitySO template, BehaviorLibrarySO lib)
+    {
+        Template         = template;
+        Attributes       = template.CreateRuntimeStats();
+        RuntimeBehaviors = template.CreateRuntimeBehaviors(lib);
+
+        if (template is EnemyDataSO enemy && enemy.AIRoot != null)
+            AIRoot = SerializationUtility.CreateCopy(enemy.AIRoot);
+    }
+
+    // --- ISaveable (§15) ----------------------------------------------------
+    public string SaveKey => $"Entity:{InstanceId}";
+    public object CaptureState() => new EntitySnapshot
+    {
+        InstanceId    = InstanceId,
+        EntityId      = Template.EntityId,
+        Stats         = Attributes.CaptureStats(),
+        GridPosition  = GridPosition,
+    };
+    public void RestoreState(object state) { /* idem inverso */ }
+}
+```
+
+**Reglas.**
+
+- `Entity` es **la** unidad de identidad en runtime. Todo lookup (modificadores, pipelines, events) va por `InstanceId` (§2.3).
+- Los campos hero‑specific y enemy‑specific son `null` para entities que no los usan. No se crean subclases de `Entity` por subtipo de SO — el polimorfismo vive en los SOs y en los behaviors, no en la instancia runtime.
+- `Template` es read‑only — nunca se muta el SO en runtime. Los stats mutables viven en `Attributes`, los behaviors en `RuntimeBehaviors`, el sheet en `Sheet`.
+- Los props (`PropEntitySO`) y NPCs (`NpcDataSO`) también son `Entity` — tienen `InstanceId`, `Attributes` (pueden tener Health si son destructibles), `RuntimeBehaviors`. No tienen `AIRoot`, `Sheet` ni `DiceBag`.
+
+**Cross‑ref.** §1.1 (ServiceLocator para lookups), §2.3 (GUID ownership), §4.5 (flujo de inicio de run crea Entity del héroe), §7 (behaviors runtime), §12 (DamagePipeline opera sobre Entity), §13.4 (spawn de enemies crea Entity), §15 (save via ISaveable).
 
 ---
 
@@ -1020,8 +1328,8 @@ public BaseComboSO EvaluateRoll(int[] finalDice)
 public class EffStrikeCombo : BaseEffect, IUsesSelection
 {
     // El target es un BaseComboSO elegido por el jugador. La Selection usa
-    // un GenericTargetQuerySO que lista los combos disponibles no strikados
-    // de la sheet actual.
+    // un TQ_AvailableCombos (§11.2b) que lista los combos disponibles
+    // no strikados de la sheet actual.
     public override bool ApplyEffect(EffectContext ctx)
     {
         var combo = ctx.SelectionResult.FirstSelectedCombo;
@@ -1044,16 +1352,16 @@ El **reward** del strike (vida / daño / oro / lo que sea) se autorea en el mism
 ### 6.1 Tipos de dado
 
 ```csharp
-public enum DiceType { D3, D4, D6, D8, D10, D12, D20 }
+public enum DiceType { D4, D6, D8, D10, D12, D20 }
 
 public static class DiceTypeExt
 {
     public static int MaxFace(this DiceType t) => t switch {
-        DiceType.D3 => 3, DiceType.D4 => 4, DiceType.D6 => 6, DiceType.D8 => 8,
+        DiceType.D4 => 4, DiceType.D6 => 6, DiceType.D8 => 8,
         DiceType.D10 => 10, DiceType.D12 => 12, DiceType.D20 => 20, _ => 6 };
 
     public static int MaxPerBag(this DiceType t) => t switch {
-        DiceType.D3 => 5, DiceType.D4 => 5, DiceType.D6 => 5, DiceType.D8 => 4,
+        DiceType.D4 => 5, DiceType.D6 => 5, DiceType.D8 => 4,
         DiceType.D10 => 3, DiceType.D12 => 2, DiceType.D20 => 1, _ => 5 };
 }
 ```
@@ -1300,6 +1608,15 @@ public class EnemyDataSO : BaseEntitySO
     [Title("Combat")]
     public EnemyArchetype Archetype;               // Melee | Ranged | Support | Boss
 
+    [Title("Weakness")]
+    [InfoBox("Combo al que este enemigo es débil. Si el jugador matchea este combo, " +
+             "el DamagePipeline aplica WeaknessMultiplier al daño (§12.2).")]
+    [OdinSerialize]
+    public BaseComboSO WeakAgainst;                // null = sin debilidad
+
+    [InfoBox("Multiplicador aplicado cuando se golpea la debilidad. Default 1.5 = 50% más daño.")]
+    [MinValue(1f)] public float WeaknessMultiplier = 1.5f;
+
     [Title("AI Decision Tree")]
     [InfoBox("Árbol polimórfico inline — cada EnemyDataSO tiene su propia copia. Ver §7.5.")]
     [OdinSerialize]
@@ -1337,6 +1654,49 @@ public enum PropCategory { Chest, Door, Potion, Trap, Torch, Decoration, Generic
 **Interactabilidad.** Igual que los NPCs (§7.6), la interactabilidad de un prop es decisión del prefab: si el `PrefabRef` lleva un `InteractableComponent` (§7.7) en su jerarquía, el `IInteractionService` lo toma; si no, es puramente decorativo (p.ej. una antorcha ambient). No hay flag en el SO.
 
 **Persistencia entre salas.** `PropEntitySO` instanciado + `RoomObjectState` (§13.6) cubre el caso "entro a la sala con el cofre ya abierto": `Consumed = true` gana sobre cualquier `PhaseInteractionRule` y el service lo ignora.
+
+#### Patrón documentado — trampas activas
+
+Las trampas (spikes, lava tiles, poison vents) son `PropEntitySO` con `Category = Trap`. Se modelan exclusivamente con `BaseBehavior` y triggers automáticos — no requieren código nuevo ni sistema dedicado.
+
+**Trampa de daño al pisar (spike trap):**
+
+```
+SpikeTrapPrefab (spawned desde PropEntitySO "SpikeTrap")
+├── NO InteractableComponent (no tiene prompt, no es accionable)
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnEntered, AllowedPhases: All)
+        └── EffectData:
+            ├── Effect: EffDealDamage(amount: 5, target: TriggeringEntity)
+            └── Effect: EffPlayFeedback("spike_activate")
+```
+
+**Trampa de proximidad (poison vent):**
+
+```
+PoisonVentPrefab (spawned desde PropEntitySO "PoisonVent")
+├── NO InteractableComponent
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnPlayerInRange, AllowedPhases: All)
+        └── EffectData:
+            ├── Effect: EffAddStatusEffect(Poison, Duration: 3)
+            └── Effect: EffPlayFeedback("poison_cloud")
+```
+
+**Trampa single-use (bear trap):**
+
+```
+BearTrapPrefab (spawned desde PropEntitySO "BearTrap", SingleUse = true)
+├── NO InteractableComponent
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnEntered, AllowedPhases: All)
+        └── EffectData:
+            ├── Effect: EffDealDamage(amount: 10, target: TriggeringEntity)
+            ├── Effect: EffAddStatusEffect(Root, Duration: 1)
+            └── Effect: EffConsumeProp    // desaparece después de activarse
+```
+
+**Regla.** Las trampas no necesitan `InteractableComponent` porque no son "accionables" — actúan automáticamente vía `OnEntered` o `OnPlayerInRange`. El `IMovementService` (§B) dispara estos triggers al mover al jugador. Pueden afectar también a enemigos si el diseñador configura el `EffDealDamage` con un `TargetQuery` que incluya al trigger entity sin filtrar por bando.
 
 **Cross‑ref §7.1b:** §7.0 (BaseEntitySO parent), §7.2 (triggers + behaviors), §7.7 (interacción via `InteractableComponent`), §8 (`EffRemoveRoomEntity`), §13.4 (pools de props en salas), §13.6 (`RoomObjectState.Consumed`).
 
@@ -1396,11 +1756,8 @@ public enum BehaviorTrigger
 public enum GamePhaseMask
 {
     None        = 0,
-    Exploration = 1 << 0,
-    Combat      = 1 << 1,
-    Craps       = 1 << 2,
-    Shop        = 1 << 3,
-    Cutscene    = 1 << 4,
+    Exploration = 1 << 1,  // bit = GamePhase.Exploration (§12.0)
+    Combat      = 1 << 2,  // bit = GamePhase.Combat
     All         = ~0,
 }
 ```
@@ -1418,7 +1775,7 @@ public enum GamePhaseMask
 
 **Regla de `AllowedPhases`.** Todos los dispatchers (el `IInteractionService`, el `IMovementService`, el `TurnManager`, el `DamagePipeline`, etc.) filtran los behaviors del owner por `AllowedPhases.HasFlag(currentPhase)` antes de ejecutar. Un behavior que no pasa el filtro se ignora silenciosamente en esa fase — sin errores, sin warning. Esto permite que una misma entidad exponga **comportamientos distintos según la fase** (ver el ejemplo canónico de la puerta en §7.7.3): un behavior `OnEntered` con `AllowedPhases = Exploration` auto‑cambia de sala al pisar el tile, y en paralelo un behavior `OnInteract` con `AllowedPhases = Combat` expone un prompt "Forzar puerta" que resuelve un skill check.
 
-**Dónde vive `GamePhase`.** El enum `GamePhase` (del cual `GamePhaseMask` deriva los bits: `Exploration = 1 << 0`, `Combat = 1 << 1`, …) está formalizado en **§12.0** junto con las transiciones macro. El `BehaviorContext` base (§7.3) expone `CurrentPhase : GamePhase` para que los behaviors no tengan que hacer lookup contra `TurnManager` en cada `Execute`. El deuda que v9 y v10 flagueaban queda cerrado en v11.
+**Dónde vive `GamePhase`.** El enum `GamePhase` (`None`, `Exploration`, `Combat`, `Loading`, `GameOver`) y el enum `PhaseOverlay` (`Pause`, `Cutscene`, `Craps`) están formalizados en **§12.0** junto con el `IPhaseService` (stack con Push/Pop/Replace), la `PhaseTransitionMatrixSO` editable desde engine, y el `DeathWatchService`. `GamePhaseMask` sólo tiene bits para las fases base (`Exploration`, `Combat`) — los overlays no participan en el filtro de behaviors (§12.0.7). `Shop` y `Craps` ya no son fases: la shop son props en el piso (§17.F) y Craps es overlay exclusivo de combate (§17.C). El `BehaviorContext` base (§7.3) expone `CurrentPhase : GamePhase` para que los behaviors no tengan que hacer lookup contra `IPhaseService` en cada `Execute`.
 
 ### 7.2b `BehaviorSlot` y `BehaviorLibrarySO`
 
@@ -1581,7 +1938,7 @@ public sealed class EventBehaviorContext : BehaviorContext
 - **Enemigos** (`EnemyDataSO` §7.1): cada enemy tiene un `BaseBehavior` por acción (atacar, moverse hacia el jugador, kitear, curar aliados). **Qué** behavior ejecutar en cada turno lo decide el árbol de IA (§7.5), no un switch sobre `Archetype`.
 - **Bosses** (`EnemyDataSO` con `Archetype = Boss`): mismos `BaseBehavior` + pasivas/debuffs adicionales (hooks en `EventName`).
 - **Objetos inertes interactuables** (`PropEntitySO` §7.1b — cofres, puertas, pociones, trampas): uno o más `BaseBehavior` con `Trigger = OnInteract` y/o `OnEntered`, usualmente filtrados con `AllowedPhases` para tener comportamientos distintos por fase. Ver §7.7 para el flujo completo (proximidad → prompt → dispatch).
-- **NPCs** (`NpcDataSO` §7.6 — vendors, dialogue, quest givers): mismo patrón que props pero con semántica social; los effects típicos son `EffOpenScreen(ScreenId.Shop)` o `EffOpenScreen(ScreenId.Dialogue, payload: dialogueGraph)`.
+- **NPCs** (`NpcDataSO` §7.6 — vendors, dialogue, quest givers): mismo patrón que props pero con semántica social; los effects típicos son `EffOpenScreen(ScreenId.Dialogue, payload: dialogueGraph)`. Los NPC vendors **no abren una pantalla de shop** — los ítems ya están en el piso como props del `IShopManagerService` (§17.F); el vendor puede dar diálogo, descuentos o lore vía `DialogueGraphSO`.
 
 ### 7.5 AI Decision Trees
 
@@ -1631,6 +1988,19 @@ public class AINode_UseAbility : AIActionNode
     public string AbilityId;
     [OdinSerialize] public EffectData Effect = new();
     public override AIResult Evaluate(AIContext ctx) { /* ejecuta Effect del §8 */ }
+}
+
+/// <summary>
+/// Nodo de acción "no hacer nada". El enemigo pasa su turno deliberadamente.
+/// Útil para enemigos que esperan a que el jugador se acerque, o para
+/// modelar patrones rítmicos (atacar-esperar-atacar).
+/// </summary>
+public class AINode_Wait : AIActionNode
+{
+    [InfoBox("El enemigo no realiza ninguna acción este turno. " +
+             "Puede usarse como rama de un AINode_If para esperar " +
+             "hasta que se cumpla una condición (ej: jugador en rango).")]
+    public override AIResult Evaluate(AIContext ctx) => AIResult.Succeeded;
 }
 
 public class AINode_Sequence : AIDecisionNode
@@ -1761,7 +2131,7 @@ public enum NpcRole { Vendor, Dialogue, QuestGiver, Trainer, Generic }
 - Los NPCs interactuables se autoran con uno o más `BaseBehavior`s cuyos effects abren la screen relevante: `EffOpenScreen(ScreenId.Shop, payload: npcId)` para un vendor, `EffOpenScreen(ScreenId.Dialogue, payload: dialogueGraph)` para un dialogue NPC o quest giver. El `DialogueGraphSO` (§7.6b) lleva el branching, los skill checks y los rewards — la screen es pura UI, no tiene lógica propia. Los behaviors pueden usar `AllowedPhases` (§7.2) para decidir en qué fases son accionables — p.ej. un vendor podría estar disponible sólo en `Exploration`, o un quest giver podría aceptar la entrega de un item también durante `Combat`.
 - Los `NpcDataSO` se catalogan en `EntityCatalogSO` (§1.1.1) junto con héroes, enemigos y props, accedidos vía `GetNpcs()`.
 
-**Cross‑ref §7.6:** §4.1 (ClassHeroSO), §7.0 (BaseEntitySO parent), §7.2 (triggers + `AllowedPhases`), §7.6b (`DialogueGraphSO`), §7.7 (sistema de interacción y prompts), §1.1.1 (registro en `EntityCatalogSO`), §17.D (`InteractionPromptView`), §C (Craps — si el vendor abre Craps en vez de Shop).
+**Cross‑ref §7.6:** §4.1 (ClassHeroSO), §7.0 (BaseEntitySO parent), §7.2 (triggers + `AllowedPhases`), §7.6b (`DialogueGraphSO`), §7.7 (sistema de interacción y prompts), §1.1.1 (registro en `EntityCatalogSO`), §17.D (`InteractionPromptView`), §17.F (shop ítems en el piso — el vendor da diálogo/descuentos, no abre modal).
 
 ### 7.6b `DialogueGraphSO`
 
@@ -1880,12 +2250,10 @@ public enum DialogueSpeaker { Npc, Player, Narrator }
 Root → LineNode(Npc, "¿Qué se te ofrece, viajero?")
        ↓ Next
        ChoiceNode
-       ├── Choice "Comprar"
-       │   → EffectNode { Effect: EffOpenScreen(Shop, payload: npcId) }
-       │     → JumpNode(Root)        // vuelve al hub al cerrar la shop
-       ├── Choice "Vender"
-       │   → EffectNode { Effect: EffOpenScreen(Sell, payload: npcId) }
-       │     → JumpNode(Root)
+       ├── Choice "Descuento"  EnabledIf: PCGold >= 50
+       │   → EffectNode { Effect: EffApplyShopDiscount(npcId, 0.2f) }
+       │     → LineNode(Npc, "Tenés 20% de descuento. Mirá los pedestales.")
+       │       → JumpNode(Root)
        ├── Choice "Charlar"  VisibleIf: PCQuestState("intro", Completed)
        │   → LineNode(Npc, "Dicen que hay un dragón en el piso 5...")
        │     → JumpNode(Root)
@@ -1929,7 +2297,7 @@ Root → LineNode(Npc, "¿Podrías traerme la llave del calabozo?")
 
 ### 7.7 Interacción, prompts y per‑phase rules
 
-Sistema que unifica todos los "objetos accionables" del juego — chests, doors, potions, shops, NPCs vendors, quest givers, sensores, trampas — detrás de un único contrato. Soporta dos modos de disparo (pisar el tile o confirmar un prompt con input), y permite que un mismo interactable tenga **comportamientos distintos según la `GamePhase` actual**.
+Sistema que unifica todos los "objetos accionables" del juego — chests, doors, potions, **shop items en el piso** (§17.F), NPCs vendors, quest givers, sensores, trampas — detrás de un único contrato. Soporta dos modos de disparo (pisar el tile o confirmar un prompt con input), y permite que un mismo interactable tenga **comportamientos distintos según la `GamePhase` actual** (§12.0). Los ítems de shop son props normales del `IInteractionService` — no hay modal de shop, no hay `GamePhase.Shop`.
 
 #### 7.7.1 Principio — `InteractableComponent` decide la interactabilidad
 
@@ -2061,14 +2429,15 @@ public interface IInteractionService
 **No hay regla global "prompts sólo fuera de combate".** El service sigue activo en toda fase listada en las `PhaseRules` de algún interactable. El diseñador decide, por fase y por entidad, qué está accionable y cómo. Casos que el modelo cubre naturalmente:
 
 - **Cofre abrible en combate** — `PhaseRules: { Exploration: Prompt, Combat: Prompt }`, y el behavior `OnInteract` con `AllowedPhases = All` (o `Exploration | Combat` explícito). Se puede abrir en ambas fases.
-- **NPC vendor sólo fuera de combate** — `PhaseRules: { Exploration: Prompt }`. En combate no hay rule → inerte, el service lo ignora.
+- **Shop item en el piso** (§17.F) — `PhaseRules: { Exploration: Prompt }`. El behavior `OnInteract` tiene precondition `PCGold >= price`; si pasa, ejecuta `EffDeductGold` + `EffAddItem` + `EffConsumeProp`. Si no, prompt grayed out "No tenés suficiente oro". No hay modal de shop: el jugador se acerca al pedestal, lee la info en el `ItemInspectView` (§D.6b), y compra con `F`.
+- **NPC vendor sólo fuera de combate** — `PhaseRules: { Exploration: Prompt }`. En combate no hay rule → inerte. Puede dar diálogo vía `DialogueGraphSO` (§7.6b) pero **no abre** una pantalla de shop — los ítems ya están en el piso de la sala.
 - **Puerta con comportamientos distintos por fase** — el ejemplo canónico de §7.7.3.
 - **Sensor que arma trampa al acercarse** — usa `OnPlayerInRange` (§7.2) con `AllowedPhases = All`. Ningún prompt, ningún mode — el trigger es automático por proximidad.
 - **NPC decorativo** — el prefab no tiene `InteractableComponent`. Punto. El service no sabe que existe.
 
-#### 7.7.6 Registro en bootstrap
+#### 7.7.6 Registro y scope
 
-`IInteractionService` se registra como manager runtime en §1.1.1 vía `ServiceBootstrapSO.ExtraServices`. No hay SO de config propio — los tunables (fade times del prompt, smoothing, refresh rate) viven en los `InteractableComponent` y en el prefab del `InteractionPromptView` (§17.D).
+`IInteractionService` se registra con **`ServiceScope.Run`** (§1.1) al iniciar una run — no en el bootstrap global. Se limpia con `ClearScope(Run)` al terminar la run. No hay SO de config propio — los tunables (fade times del prompt, smoothing, refresh rate) viven en los `InteractableComponent` y en el prefab del `InteractionPromptView` (§17.D).
 
 **Cross‑ref §7.7:** §1.1.1 (bootstrap), §1.2 (eventos `OnInteractionTargetChanged/Executed`), §7.2 (triggers + `AllowedPhases`), §7.6 (`NpcDataSO`), §8 (`EffectData` del `OnInteract`), §11.3 (grid distance), §12 (`TurnManager.CurrentPhase` + `GamePhase`), §13.6 (`RoomObjectState.Consumed` check), §B (`IMovementService` dispara `OnEntered` filtrado por `AllowedPhases`), §17.D (`InteractionPromptView` + acción `Interact` del Input System).
 
@@ -2241,6 +2610,17 @@ Los readers (`IEntityReader<T>`, `IPlayerReader<T>`, …) son SOs que saben cóm
 | | `EffOpenChest` | Idem para cofres |
 | | `EffRemoveRoomEntity` | Desaparece cofre/enemigo |
 | **Control de flujo** | `EffConditional` | Ejecuta otro `EffectData` si se cumple condición |
+| **Room / World** | `EffLeaveRoom` | Dispara transición de sala vía `IDungeonManager` (§13.6). Usado por puertas en exploration y skill checks exitosos en combat. |
+| | `EffConsumeProp` | Marca `RoomObjectState.Consumed = true` (§13.6) para el spawn point del prop actual y destruye el visual. Usado por trampas single-use (§7.1b), cofres abiertos y shop items comprados (§17.F). |
+| **Status** | `EffAddStatusEffect` | Aplica un status effect al target (§20.4) |
+| | `EffRemoveStatusEffect` | Remueve un status effect del target por id |
+| **Shop** | `EffDeductGold` | Resta gold del jugador. Precondición implícita: `PCGold >= amount`. |
+| | `EffAddItemToInventory` | Agrega un ítem al `IInventoryService` (§18.3) |
+| | `EffRestockShop` | Llama `IShopManagerService.Restock(rng)` (§17.F) |
+| | `EffNotifyShopPurchase` | Notifica al `IShopManagerService` que un ítem fue comprado |
+| **Quests** | `EffStartQuest` | Inicia una quest vía `IQuestService` (§21) |
+| | `EffCompleteQuest` | Completa una quest activa |
+| **Craps** | `EffStartCraps` | Registra `ICrapsSessionService`, pushea `PhaseOverlay.Craps` (§17.C) |
 | **Feedback** | `EffPlayFeedback` | Dispara entrada del DB (§10) |
 | | `EffPlaySequence` | Secuencia encadenada (anim → VFX → SFX) |
 
@@ -2536,9 +2916,10 @@ if (entry.CompletionMode == FeedbackCompletionMode.ParticleEnd)
 
 **SFX.**
 ```csharp
-AudioSource.PlayClipAtPoint(entry.AudioClip, position, entry.Volume);
+ServiceLocator.GetService<IAudioService>()
+    .PlaySfx(entry.AudioClip, position, entry.Volume);
 ```
-Sin listener — SFX siempre termina por timer.
+Rutea por el `IAudioService` (§A) para respetar el mixer y el master volume. Sin listener — SFX siempre termina por timer.
 
 **Animation.**
 ```csharp
@@ -2869,14 +3250,56 @@ public class SelectionSettings
     public bool RequireEmptySlot;
     public bool RequireOccupiedSlot;        // excluyentes — validado
 
-    public GenericTargetQuerySO GenericTargetQuery;
+    [OdinSerialize, SerializeReference]
+    [HideReferenceObjectPicker]
+    public BaseTargetQuery TargetQuery;     // inline polimórfico — ver §11.2b
 
     public int GetSelectionCount(ReadInfo info);
     public bool NeedsSelectionAt(SelectionTiming t);
 }
 ```
 
-`GenericTargetQuerySO` define la query lógica (qué casillas/entidades son válidas: "enemigos adyacentes", "cualquier slot vacío en línea de visión", …).
+`BaseTargetQuery` define la query lógica inline (qué casillas/entidades son válidas). Cada efecto configura su propia instancia — no es un SO compartido. Ver §11.2b.
+
+### 11.2b `BaseTargetQuery`
+
+Clase abstracta polimórfica serializada inline dentro de `SelectionSettings`. Sigue el mismo patrón que `BasePreCondition` (§8.2) y `AIDecisionNode` (§7.5): `[Serializable, HideReferenceObjectPicker]` + `[OdinSerialize, SerializeReference]` en el campo contenedor.
+
+```csharp
+[Serializable, HideReferenceObjectPicker]
+public abstract class BaseTargetQuery
+{
+    public abstract string QueryName { get; }
+    public abstract List<TargetRef> Evaluate(TargetQueryContext context);
+}
+
+public class TargetQueryContext
+{
+    public Guid OwnerGuid;
+    public Entity OwnerEntity;
+    public GridCoord OwnerPosition;
+    public RoomInstance CurrentRoom;
+    public GamePhase CurrentPhase;
+}
+```
+
+**Catálogo inicial de queries concretas:**
+
+| Query | Parámetros | Uso |
+|---|---|---|
+| `TQ_AdjacentEnemies` | `int Range = 1` | Ataques melee |
+| `TQ_EnemiesInLineOfSight` | `int MaxRange` | Ataques ranged |
+| `TQ_AllEnemies` | — | AoE |
+| `TQ_EmptySlots` | `bool LineOfSightRequired` | Movimiento, teleport |
+| `TQ_ReachableTiles` | — (delega a `IMovementService` via `ServiceLocator`) | `EffMove` |
+| `TQ_OccupiedSlots` | `EntityFilterMask Filter` | Targeting tiles ocupados |
+| `TQ_AvailableCombos` | `bool ExcludeStricken = true` | `EffStrikeCombo` |
+| `TQ_Self` | — | Efectos self-targeting |
+| `TQ_Composite` | `List<BaseTargetQuery> Queries`, `CompositeMode {Union, Intersect}` | Queries multi-criterio |
+
+Prefijo `TQ_` alineado con las convenciones del proyecto (`PC` preconditions, `Eff` effects, `AI` nodos de IA).
+
+**Acceso a servicios.** Las queries que necesitan servicios runtime (e.g. `TQ_ReachableTiles` → `IMovementService`) los obtienen via `ServiceLocator` dentro de `Evaluate`, igual que los efectos acceden a servicios desde `ApplyEffect`.
 
 ### 11.3 Grid selection
 
@@ -2885,7 +3308,7 @@ public class SelectionSettings
 ### 11.4 Runtime
 
 - `ActiveSelectionSession` — estado de una selección en curso (highlight, click capture, cancel).
-- `SelectionController` — orquestador con callbacks.
+- `SelectionController` — orquestador con callbacks. Resuelve targets válidos llamando `settings.TargetQuery.Evaluate(ctx)` sobre la instancia inline de `BaseTargetQuery` (§11.2b).
 - `MultiActionSelectionData` — selecciones encadenadas en un mismo behavior.
 
 ### 11.5 Validación
@@ -2917,41 +3340,325 @@ public virtual bool ValidateSelection(TargetSelectionResult result, Guid ownerGu
 
 > Esta sección une §3 (modificadores direccionales), §4 (clase + sheet), §5 (combos), §6 (dados) y §8 (efectos). Es el flujo completo de resolución de un ataque.
 
-### 12.0 `GamePhase` y el gate macro
+### 12.0 `GamePhase`, overlays y `IPhaseService`
 
-Enum canónico — formalizado acá después de flotar como doc‑debt en v9 y v10. Se referencia desde §1.2 (payload de `OnPhaseChange`), §1.3 (el `CombatTurnFSM` vive dentro de `Combat`), §7.2 (`AllowedPhases` filter), §7.7 (`PhaseInteractionRule`), §16.1 (input action maps por fase) y §17.E (camera behavior).
+Formalización del gate macro — cierra la deuda de v9/v10. Se referencia desde §1.2 (events de fase), §1.3 (`CombatTurnFSM` vive dentro de `Combat`), §7.2 (`AllowedPhases` filter), §7.7 (`PhaseInteractionRule`), §16.1 (input maps), §17.C (Craps como overlay de combate), §17.E (camera) y §17.F (shop service).
+
+#### 12.0.1 Enum `GamePhase`
 
 ```csharp
 public enum GamePhase
 {
-    Exploration = 0,  // free movement en sala limpia; NPCs, props, shops abiertos
-    Combat      = 1,  // hay enemigos vivos en la sala; CombatTurnFSM (§1.3) corriendo
-    Craps       = 2,  // el mini‑juego de dados de §17.C tomó el control
-    Shop        = 3,  // UI de shop abierta (vendor NPC o shop room dedicada)
-    Cutscene    = 4,  // cutscene scripteada; input del jugador bloqueado salvo skip
+    None        = 0,  // pre‑bootstrap o entre runs (MainMenu screen activo, sin gameplay)
+    Exploration = 1,  // free movement en sala limpia; NPCs, props, shop items en el piso
+    Combat      = 2,  // hay enemigos vivos; CombatTurnFSM (§1.3) corriendo
+    Loading     = 3,  // transición entre floors/salas pesadas; input 100% bloqueado
+    GameOver    = 4,  // player muerto, mostrando resultados; espera input para volver al meta
 }
 ```
 
-**Relación con `GamePhaseMask` (§7.2).** El flags mask deriva sus bits del enum plano: `Exploration = 1 << 0`, `Combat = 1 << 1`, etc. El enum plano es **el valor** (en qué fase estamos ahora mismo); el mask es **el filtro** (en qué fases un behavior es elegible). Convención: los behaviors se autorean con flags; el runtime consulta el enum plano al `TurnManager`.
+**Cambios vs. draft anterior.** `Shop` se elimina — los ítems de shop son props en el piso que el jugador compra vía `IInteractionService` estando en `Exploration` (§17.F). `Craps` se mueve a `PhaseOverlay` — es una mecánica exclusiva de combate (§17.C). `Cutscene` se mueve a `PhaseOverlay` — suspende la fase actual y vuelve al hacer pop. Se agrega `None` (pre‑gameplay), `Loading` (bloqueo total de input entre transiciones) y `GameOver` (terminal de muerte fuera de combate — dentro de combate, `Defeat` dispara el `ReplacePhase(GameOver)` internamente).
 
-**Owner del estado.** El `TurnManager` (registrado en `ServiceLocator`) mantiene `GamePhase CurrentPhase { get; private set; }` y expone `SetPhase(GamePhase next)`. Cada cambio dispara `OnPhaseChange(previous, next)` vía `EventManager` — los listeners (input maps, camera, HUD, `IInteractionService`) reaccionan al evento. **Nadie** lee `CurrentPhase` dentro de `Update()`; los sub‑sistemas toman snapshot del valor en `OnPhaseChange` y actúan sobre event.
+**Regla de estabilidad.** Los valores enteros del enum son persistidos en saves. **Nunca renumerar. Nuevos valores se appendean con el próximo entero libre. Valores deprecados se marcan `[Obsolete]` y se reservan — no se reutiliza el entero.** Lo mismo aplica a `PhaseOverlay`.
 
-**Transiciones típicas.**
+#### 12.0.2 Enum `PhaseOverlay`
 
-| De → A | Disparador | Quién setea |
+Overlays suspenden la fase base sin destruirla. Se apilan con Push/Pop.
+
+```csharp
+public enum PhaseOverlay
+{
+    None     = 0,
+    Pause    = 1,  // menú de pausa; congela CombatTurnFSM si base == Combat
+    Cutscene = 2,  // secuencia narrativa; input bloqueado salvo skip
+    Craps    = 3,  // mini‑juego de dados §17.C; exclusivo de Combat
+}
+```
+
+#### 12.0.3 `IPhaseService`
+
+Reemplaza al viejo `TurnManager.SetPhase`. Registrado en `ServiceLocator`.
+
+```csharp
+public interface IPhaseService
+{
+    GamePhase    CurrentBase    { get; }
+    PhaseOverlay CurrentOverlay { get; }
+    IReadOnlyList<PhaseStackEntry> Stack { get; }
+
+    void ReplacePhase(GamePhase next);
+    void PushOverlay(PhaseOverlay overlay);
+    void PopOverlay();
+
+#if UNITY_EDITOR || DEBUG
+    void DebugForcePhase(GamePhase phase, PhaseOverlay overlay = PhaseOverlay.None);
+#endif
+}
+
+public readonly struct PhaseStackEntry
+{
+    public GamePhase    Base    { get; init; }
+    public PhaseOverlay Overlay { get; init; }
+}
+```
+
+**`ReplacePhase(next)`** — transición destructiva. Limpia overlays activos (si hay un Pause pusheado, se popea primero). Dispara `OnPhaseExit(old)` + `OnPhaseEnter(next)`.
+
+**`PushOverlay(overlay)`** — apila un overlay sobre la fase base actual. La fase base queda intacta pero **congelada**: el `CombatTurnFSM` no tickea mientras hay un overlay activo, el input de gameplay se desactiva, la cámara se congela. Dispara `OnOverlayPushed(overlay)`.
+
+**`PopOverlay()`** — restaura el estado previo. Dispara `OnOverlayPopped(overlay)`.
+
+**Regla: nadie lee `CurrentBase`/`CurrentOverlay` en `Update()`.** Los sub‑sistemas toman snapshot vía los events y actúan sobre event. Para enforcement, un architecture test en editor grepea por `CurrentBase`/`CurrentOverlay` dentro de métodos `Update`/`LateUpdate`/`FixedUpdate`.
+
+#### 12.0.4 Queue + drain (reentrancy)
+
+Si un listener llama a `ReplacePhase` o `PushOverlay` dentro de un handler de `OnPhaseEnter`, la transición se encola y se despacha al terminar el dispatch actual. Determinístico.
+
+```csharp
+public class PhaseService : IPhaseService
+{
+    private readonly Queue<Action> _pendingTransitions = new();
+    private bool _isDispatching;
+
+    public void ReplacePhase(GamePhase next)
+    {
+        if (_isDispatching)
+        {
+            _pendingTransitions.Enqueue(() => ReplacePhase(next));
+            return;
+        }
+        ExecuteReplace(next);
+        DrainQueue();
+    }
+
+    public void PushOverlay(PhaseOverlay overlay)
+    {
+        if (_isDispatching)
+        {
+            _pendingTransitions.Enqueue(() => PushOverlay(overlay));
+            return;
+        }
+        ExecutePush(overlay);
+        DrainQueue();
+    }
+
+    private void ExecuteReplace(GamePhase next)
+    {
+        if (next == CurrentBase && CurrentOverlay == PhaseOverlay.None) return;
+
+        _isDispatching = true;
+
+        // Popear overlays primero si hay alguno activo
+        while (CurrentOverlay != PhaseOverlay.None)
+            ExecutePop();
+
+        var prev = CurrentBase;
+        EventManager.Trigger(EventName.OnPhaseExit, prev);
+        CurrentBase = next;
+        EventManager.Trigger(EventName.OnPhaseEnter, next);
+
+        _isDispatching = false;
+    }
+
+    private void ExecutePush(PhaseOverlay overlay)
+    {
+        ValidateOverlay(CurrentBase, overlay);
+        _isDispatching = true;
+
+        _stack.Push(new PhaseStackEntry { Base = CurrentBase, Overlay = CurrentOverlay });
+        CurrentOverlay = overlay;
+        EventManager.Trigger(EventName.OnOverlayPushed, overlay);
+
+        _isDispatching = false;
+    }
+
+    private void ExecutePop()
+    {
+        var exiting = CurrentOverlay;
+        _isDispatching = true;
+
+        if (_stack.Count > 0)
+        {
+            var restored = _stack.Pop();
+            CurrentOverlay = restored.Overlay;
+        }
+        else
+        {
+            CurrentOverlay = PhaseOverlay.None;
+        }
+
+        EventManager.Trigger(EventName.OnOverlayPopped, exiting);
+        _isDispatching = false;
+    }
+
+    private bool _isDraining;
+
+    private void DrainQueue()
+    {
+        if (_isDraining) return;       // evita re-entrar en el drain
+        _isDraining = true;
+        try
+        {
+            while (_pendingTransitions.Count > 0)
+                _pendingTransitions.Dequeue().Invoke();
+        }
+        finally
+        {
+            _isDraining = false;
+        }
+    }
+}
+```
+
+#### 12.0.5 `PhaseTransitionMatrixSO` — validación editable desde engine
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Phase/Transition Matrix")]
+public class PhaseTransitionMatrixSO : SerializedScriptableObject
+{
+    [Title("Transiciones de fase base")]
+    [InfoBox("Marcar las transiciones permitidas. En debug, ReplacePhase " +
+             "hace assert contra esta matriz. En release, se ignora (perf).")]
+    [TableMatrix(HorizontalTitle = "To", VerticalTitle = "From")]
+    [OdinSerialize]
+    public bool[,] AllowedTransitions = new bool[5, 5];
+
+    [Title("Overlays válidos por fase base")]
+    [InfoBox("Qué overlays se pueden pushear sobre cada fase base.")]
+    [OdinSerialize]
+    public Dictionary<GamePhase, List<PhaseOverlay>> AllowedOverlays = new();
+
+    public bool CanTransition(GamePhase from, GamePhase to) =>
+        AllowedTransitions[(int)from, (int)to];
+
+    public bool CanPushOverlay(GamePhase currentBase, PhaseOverlay overlay) =>
+        AllowedOverlays.TryGetValue(currentBase, out var list) && list.Contains(overlay);
+}
+```
+
+**Matriz de transiciones default.**
+
+| From \ To | None | Exploration | Combat | Loading | GameOver |
+|---|---|---|---|---|---|
+| **None** | - | ok | - | ok | - |
+| **Exploration** | - | - | ok | ok | ok |
+| **Combat** | - | ok | - | - | ok |
+| **Loading** | - | ok | - | - | - |
+| **GameOver** | ok | - | - | - | - |
+
+**Overlays válidos por fase base.**
+
+| Fase base | Overlays permitidos |
+|---|---|
+| None | (ninguno) |
+| Exploration | Pause, Cutscene |
+| Combat | Pause, Cutscene, Craps |
+| Loading | (ninguno) |
+| GameOver | (ninguno) |
+
+Craps es **exclusivamente** overlay de `Combat` — no se puede pushear en `Exploration` ni en ninguna otra fase. El `CombatTurnFSM` se congela mientras el overlay está activo y se reanuda al pop.
+
+**Validación runtime.**
+
+```csharp
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
+private void ValidateTransition(GamePhase from, GamePhase to)
+{
+    if (!_matrix.CanTransition(from, to))
+        Debug.LogError($"[PhaseService] Invalid transition: {from} → {to}");
+}
+
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
+private void ValidateOverlay(GamePhase currentBase, PhaseOverlay overlay)
+{
+    if (!_matrix.CanPushOverlay(currentBase, overlay))
+        Debug.LogError($"[PhaseService] Invalid overlay: {overlay} over {currentBase}");
+}
+```
+
+#### 12.0.6 Eventos de fase (schema §1.2)
+
+Reemplazan al viejo `OnPhaseChange` (single event) con cuatro eventos especializados:
+
+| Evento | Args | Cuándo |
 |---|---|---|
-| `Exploration → Combat` | El player entra a una sala con enemigos vivos (auto‑detectado en `DungeonManager.EnterRoom`). | `DungeonManager` |
-| `Combat → Exploration` | Terminal `Victory` del `CombatTurnFSM` (todos los enemigos muertos). | `CombatTurnFSM` |
-| `Combat → (game over)` | Terminal `Defeat` del `CombatTurnFSM` (`player.Health ≤ 0`). Dispara `OnCombatEnd` + `OnRunEnd`. | `CombatTurnFSM` |
-| `Exploration → Shop` | El player interactúa con un NPC vendor / entra a una shop room. | `IInteractionService` |
-| `Shop → Exploration` | El player cierra la UI de shop. | `ShopScreen` |
-| `Exploration → Craps` | El player entra a una craps room / acepta una apuesta de un NPC. | `IInteractionService` |
-| `Craps → Exploration` | Fin de la sesión de craps (`CrapsSessionService.End`). | `CrapsSessionService` |
-| `* → Cutscene` / `Cutscene → *` | Triggers narrativos (no modelados todavía — ver §D pendientes). | `CutsceneService` (TBD) |
+| `OnPhaseExit` | `[GamePhase exiting]` | Justo antes de cambiar `CurrentBase`. |
+| `OnPhaseEnter` | `[GamePhase entering]` | Justo después de cambiar `CurrentBase`. |
+| `OnOverlayPushed` | `[PhaseOverlay overlay]` | Después de pushear un overlay. |
+| `OnOverlayPopped` | `[PhaseOverlay overlay]` | Después de popear un overlay. |
 
-**Dónde vive el `CombatTurnFSM`.** Cuando el `TurnManager` transiciona a `GamePhase.Combat`, inicializa un `CombatTurnFSM` (§1.3) y lo tickea hasta que llegue a uno de sus terminal states (`Victory` / `Defeat`). Los estados internos del FSM (`Roll`, `Reroll`, `PlayerInput`, `EnemyPickNext`, …) son **sub‑steps invisibles** para los listeners del `OnPhaseChange` — desde afuera la fase sigue siendo `Combat`. Esto es lo que desambigua el naming: ningún micro‑state del FSM lleva `Phase` en el nombre, la palabra queda reservada al enum macro.
+Un listener que sólo le importa "entramos a combate" se suscribe a `OnPhaseEnter` y filtra `entering == Combat`. No ve exits ni overlays. Elimina el boilerplate del viejo `if (next == X)` / `if (prev == X)`.
 
-**Cross‑ref §12.0.** §1.2 (`OnPhaseChange`), §1.3 (`CombatTurnFSM` dentro de `Combat` + convención de naming), §7.2 (`AllowedPhases` / `GamePhaseMask`), §7.7 (`PhaseInteractionRule`), §16.1 (input maps por fase), §17.E (camera reacciona al evento).
+#### 12.0.7 Relación con `GamePhaseMask` (§7.2)
+
+El flags mask **sólo tiene bits para las fases base**:
+
+```csharp
+[Flags]
+public enum GamePhaseMask
+{
+    None        = 0,
+    Exploration = 1 << 1,  // bit = GamePhase.Exploration
+    Combat      = 1 << 2,  // bit = GamePhase.Combat
+    All         = ~0,
+}
+```
+
+Los behaviors se autorean con `AllowedPhases` que filtra por la fase base activa. **Los overlays no participan en el filtro de behaviors** — un behavior activo en `Combat` sigue siendo activo si hay un overlay de `Pause` o `Craps` encima (aunque no se va a ejecutar porque el FSM está congelado). Esto mantiene el filtro simple y no fuerza al diseñador a pensar en overlays cuando autorea behaviors.
+
+`Loading`, `GameOver` y `None` no tienen bit en el mask — ningún behavior debería ser elegible en esos estados.
+
+#### 12.0.8 `DeathWatchService` — muerte fuera de combate
+
+```csharp
+public class DeathWatchService
+{
+    public DeathWatchService()
+    {
+        EventManager.Subscribe(EventName.OnHealthChanged, OnHealthChanged);
+    }
+
+    private void OnHealthChanged(params object[] args)
+    {
+        var entityGuid = (Guid)args[0];
+        var currentHp = (int)args[1];
+
+        if (entityGuid != ServiceLocator.GetService<IPlayerService>().PlayerGuid) return;
+        if (currentHp > 0) return;
+
+        var phaseService = ServiceLocator.GetService<IPhaseService>();
+
+        if (phaseService.CurrentBase == GamePhase.Combat)
+            return; // CheckCombatEnd del CombatTurnFSM se encarga (§1.3)
+
+        var playerService = ServiceLocator.GetService<IPlayerService>();
+        phaseService.ReplacePhase(GamePhase.GameOver);
+        EventManager.Trigger(EventName.OnRunEnd, playerService.RunId, RunOutcome.Death);
+    }
+}
+```
+
+Registrado en el bootstrap (§1.1.1). Se suscribe a `OnHealthChanged` y detecta si el player llega a 0 HP **fuera** de combate — trampas en `Exploration`, penalidades de Craps (overlay sobre `Combat` pero si el damage ocurre post‑pop), ítems malditos. Si estamos en `Combat`, no hace nada: el `CheckCombatEnd` del `CombatTurnFSM` ya cubre ese caso. Cierra el bug latente de "morir fuera de combate no tiene handler".
+
+#### 12.0.9 Save policy
+
+**El save point siempre ocurre al terminar un combate o finalizar una sala/piso — nunca mid‑combat.** Implicaciones:
+
+- **`CurrentBase` snapshoteado siempre es `Exploration`** (o `GameOver` para registrar el run). Nunca `Combat`, `Loading`, ni con un overlay activo.
+- **El `CombatTurnFSM` no necesita ser `ISaveable`** — no hay estado de FSM que capturar si el save nunca ocurre mid‑combat.
+- **`CrapsSession` tampoco** — Craps es overlay de combate; si el save es post‑combate, la sesión ya terminó.
+- **La `RoomInstance` (§13.6) ya refleja el resultado** — enemigos `IsDead`, cofres `Opened`, ítems `Purchased`. El save no captura estado transitorio.
+- **Regla doc:** "El `SaveSystem` (§15) nunca ejecuta `Flush` durante `GamePhase.Combat`, `GamePhase.Loading`, ni durante un `PhaseOverlay` activo. Los triggers válidos son `SaveTrigger.RoomEnd` y `SaveTrigger.FloorEnd`, ambos implícitamente dentro de `Exploration`."
+
+#### 12.0.10 Dónde vive el `CombatTurnFSM`
+
+Cuando el `PhaseService` transiciona a `GamePhase.Combat`, el `TurnManager` inicializa un `CombatTurnFSM` (§1.3) y lo tickea **sólo cuando `CurrentOverlay == None`**. Si el player pushea `Pause`, `Cutscene` o `Craps`, el FSM se congela automáticamente. Los estados internos del FSM (`Roll`, `Reroll`, `PlayerInput`, `EnemyPickNext`, …) siguen siendo **sub‑steps invisibles** para los listeners de `OnPhaseEnter`/`OnPhaseExit`. Naming: ningún micro‑state lleva `Phase` — la palabra queda reservada al enum macro (convención §1.3).
+
+Los terminales del `CombatTurnFSM` llaman a `IPhaseService.ReplacePhase`:
+- `Victory` → `ReplacePhase(Exploration)`.
+- `Defeat` → `ReplacePhase(GameOver)`.
+
+**Cross‑ref §12.0.** §1.2 (`OnPhaseExit/Enter/OverlayPushed/Popped`), §1.3 (`CombatTurnFSM` + convención naming), §7.2 (`AllowedPhases` / `GamePhaseMask`), §7.7 (`PhaseInteractionRule`), §16.1 (input maps por fase), §17.C (Craps como overlay de combate), §17.E (camera), §17.F (shop service — ítems en el piso, no modal).
 
 ### 12.1 `AttackResolver`
 
@@ -3206,6 +3913,20 @@ public class TurnManager
 - El constraint es **opt‑in por acción** via el flag, no una regla global. Si algún modo de juego quiere permitir repeticiones, un `RulesetSO` (§14.7) puede overridear el flag por tag.
 - El `EnergyCost` y el `AllowsEnergyReroll` viven en el SO, no en el código — cualquier ajuste de balance es data, no rebuild.
 
+**`ActionCatalogSO`** — catálogo de todas las acciones del juego. Pre‑cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de `ActionTag` en efectos y en el `ForbiddenActionTags` del `RulesetSO`.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Actions/Action Catalog")]
+public class ActionCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<ActionDefinitionSO> _entries = new();
+
+    public IEnumerable<string> AllTags => _entries.Select(e => e.ActionTag);
+    public ActionDefinitionSO GetByTag(string tag) =>
+        _entries.FirstOrDefault(e => e.ActionTag == tag);
+}
+```
+
 ### 12.7 Turn order con velocidad oculta
 
 Regla del GDD: el orden del turno dentro de un round se decide por una **velocidad oculta** de cada entidad — el jugador no la ve como número, solo ve **el orden** (via HUD de turn queue). El jugador arranca con su propia `Speed`, los enemigos tienen la suya, y en cada combate se compone un orden.
@@ -3277,7 +3998,7 @@ public class TurnOrderService
 ### 13.1 Principios
 
 1. **Diseñador arma salas como prefabs** — layout de obstáculos, spawn points, puertas, puntos de recompensa.
-2. **Pools por tipo de sala** — Combat, Boss, Shop, Potion, Craps, Sacrifice. Cada pool es una lista en `FloorLayoutSO`.
+2. **Pools por tipo de sala** — Combat, Boss, Shop, Potion. Cada pool es una lista en `FloorLayoutSO`.
 3. **Generación procedural del piso** — elige N salas aleatorias del pool (`N` ∈ `[min, max]`), las conecta tipo grilla Isaac, asegura 1 boss + salas especiales obligatorias.
 4. **Spawns por pool** — enemigos, objetos, cofres, puertas se resuelven en runtime tomando entidades aleatorias de pools asociados a la sala.
 5. **Setups predefinidos o aleatorios** — una sala puede tener setups fijos ("2 orcs arriba, 2 arqueros abajo") o dejar que el manager asigne enemigos aleatorios del pool a los spawn points del prefab.
@@ -3319,7 +4040,7 @@ public class RoomSO : SerializedScriptableObject
 #endif
 }
 
-public enum RoomType { Start, Combat, Boss, Shop, Potion, Craps, Sacrifice }
+public enum RoomType { Start, Combat, Boss, Shop, Potion }
 ```
 
 ### 13.3 Prefab de sala — componentes esperados
@@ -3429,7 +4150,7 @@ public class RewardPoolSO : ScriptableObject
 {
     public List<WeightedReward> Entries = new();
     public RewardEntrySO RollForChest(Random rng);
-    public List<RewardEntrySO> RollForShop(int count, Random rng);
+    // RollForShop eliminado — los ítems de shop se rollan desde ShopPoolSO (§17.F)
 }
 
 [CreateAssetMenu(menuName = "Rollgeon/Dungeon/Obstacle Pool")]
@@ -3472,11 +4193,9 @@ public class FloorLayoutSO : SerializedScriptableObject
     [InfoBox("Lista de bosses posibles. Se elige uno aleatorio por piso.")]
     public List<RoomSO> BossRooms = new();
 
-    [Title("Optional Rooms")]
-    public List<RoomSO> CrapsRooms     = new();
-    public List<RoomSO> SacrificeRooms = new();
-    [Range(0, 100)] public int CrapsChance     = 0;
-    [Range(0, 100)] public int SacrificeChance = 0;
+    [Title("Notes")]
+    [InfoBox("Craps ya no tiene sala dedicada — las mesas de craps se spawnean como props en " +
+             "salas de combate vía PropPoolSO (§17.C). Sacrifice removido — no definido en GDD.")]
 }
 ```
 
@@ -3809,7 +4528,7 @@ public class UC_WinWithNClasses : UnlockConditionSO
     [MinValue(1)] public int Count = 3;
 
     public override bool Evaluate(RunRecord record) =>
-        UnlockStateSO.Instance.CompletedClasses.Count >= Count;
+        ServiceLocator.GetService<UnlockStateSO>().CompletedClasses.Count >= Count;
 }
 
 /// <summary>Disyunción: al menos una de las sub‑condiciones debe cumplirse.</summary>
@@ -3947,6 +4666,12 @@ public class RulesetSO : SerializedScriptableObject
     public bool DefenseFromUnusedRolls;               // §12.4 activado
     public int SingleRollThresholdBase;               // umbral default para skill checks §12.5
 
+    [Title("Combat — Reactions")]
+    [InfoBox("Profundidad máxima de la cadena de reacciones (reactivo → reactivo → …). " +
+             "Previene loops patológicos. Default 3 = un contragolpe puede generar " +
+             "otro contragolpe que puede generar uno más, pero ahí se corta.")]
+    [MinValue(1)] public int MaxReactionDepth = 3;
+
     [Title("Initiative")]
     public int SpeedDieMin;                           // speed die del §12.7
     public int SpeedDieMax;
@@ -3967,13 +4692,33 @@ public class RulesetSO : SerializedScriptableObject
     [InfoBox("ActionTags que quedan forbidden en este ruleset (p.e. 'strike' apagado en easy mode).")]
     public List<string> ForbiddenActionTags = new();
 
+    [Title("Inventory")]
+    [InfoBox("Cantidad máxima de ítems activos que el jugador puede tener equipados.")]
+    [MinValue(1)] public int MaxActiveItemSlots = 1;
+
     [Title("Combo counters")]
     [OdinSerialize] public List<ComboCounterThresholdSO> ComboCounterThresholds = new();   // §5.5
+
+    [Title("Shop")]
+    [InfoBox("Config de pricing, slots y restock para salas de shop (§17.F).")]
+    [OdinSerialize] public ShopConfigSO ShopConfig;
 
 #if UNITY_EDITOR
     private static IEnumerable<string> GetRulesetIds() =>
         ServiceLocator.TryGetService<RulesetCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
 #endif
+}
+```
+
+**`RulesetCatalogSO`** — catálogo de rulesets disponibles. Pre-cargado en `ServiceBootstrapSO` (§1.1.1).
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Meta/Ruleset Catalog")]
+public class RulesetCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<RulesetSO> _entries = new();
+    public IEnumerable<string> AllIds => _entries.Select(e => e.RulesetId);
+    public RulesetSO GetById(string id) => _entries.FirstOrDefault(e => e.RulesetId == id);
 }
 ```
 
@@ -4071,19 +4816,25 @@ public class RunProgress : ISaveable
 
 ### 15.3 `SaveSystem`
 
+**`WeakReference<T>` para registrations.** El sistema usa `WeakReference<ISaveable>` en vez de referencias fuertes para prevenir memory leaks. Un `WeakReference` es un wrapper del runtime de .NET que mantiene una referencia a un objeto **sin impedir que el garbage collector lo recolecte**. Si el objeto referenciado se destruye (por ejemplo, un `MonoBehaviour` cuyo `GameObject` fue destruido sin llamar `Unregister`), el `WeakReference` devuelve `null` en vez de mantener el objeto zombie en memoria. Esto previene el caso donde un `ISaveable` que no llamó `Unregister` (porque `OnDestroy` no se ejecutó, o un null ref lo impidió) queda en la lista para siempre, causando memory leaks y errores silenciosos en `CaptureAll`.
+
 ```csharp
 public static class SaveSystem
 {
     private static readonly Dictionary<string, object> _cache = new();
-    private static readonly List<ISaveable> _registered = new();
+    private static readonly List<WeakReference<ISaveable>> _registered = new();
     private static readonly HashSet<string> _dirty = new();
 
     // --- Registration --------------------------------------------------------
 
     public static void Register(ISaveable s)
     {
-        if (_registered.Contains(s)) return;
-        _registered.Add(s);
+        // Chequea si ya está registrado (comparando el target del WeakReference)
+        foreach (var wr in _registered)
+            if (wr.TryGetTarget(out var existing) && ReferenceEquals(existing, s))
+                return;
+
+        _registered.Add(new WeakReference<ISaveable>(s));
 
         // Si tenemos estado previo en cache, restaurarlo automáticamente.
         if (_cache.TryGetValue(s.SaveKey, out var state))
@@ -4093,19 +4844,35 @@ public static class SaveSystem
     public static void Unregister(ISaveable s)
     {
         // Capturamos antes de soltar para que el cache mantenga el estado final.
-        if (_registered.Remove(s))
-            _cache[s.SaveKey] = s.CaptureState();
+        for (int i = _registered.Count - 1; i >= 0; i--)
+        {
+            if (_registered[i].TryGetTarget(out var existing) && ReferenceEquals(existing, s))
+            {
+                _cache[s.SaveKey] = s.CaptureState();
+                _registered.RemoveAt(i);
+                break;
+            }
+        }
     }
 
     public static void MarkDirty(ISaveable s) => _dirty.Add(s.SaveKey);
 
     // --- Capture / Restore ---------------------------------------------------
 
-    /// <summary>Recorre todos los ISaveable y actualiza el cache en memoria.</summary>
+    /// <summary>
+    /// Recorre todos los ISaveable y actualiza el cache en memoria.
+    /// Purga automáticamente las WeakReferences cuyo target fue recolectado
+    /// por el GC (ISaveables que no llamaron Unregister antes de destruirse).
+    /// </summary>
     public static void CaptureAll()
     {
-        foreach (var s in _registered)
-            _cache[s.SaveKey] = s.CaptureState();
+        for (int i = _registered.Count - 1; i >= 0; i--)
+        {
+            if (_registered[i].TryGetTarget(out var s))
+                _cache[s.SaveKey] = s.CaptureState();
+            else
+                _registered.RemoveAt(i);   // purga referencia huérfana
+        }
         _dirty.Clear();
         EventManager.Trigger(EventName.OnCaptureRequested);
     }
@@ -4113,18 +4880,32 @@ public static class SaveSystem
     /// <summary>Sólo captura los marcados como dirty. Más eficiente si el grafo es grande.</summary>
     public static void CaptureDirty()
     {
-        foreach (var s in _registered)
-            if (_dirty.Contains(s.SaveKey))
-                _cache[s.SaveKey] = s.CaptureState();
+        for (int i = _registered.Count - 1; i >= 0; i--)
+        {
+            if (_registered[i].TryGetTarget(out var s))
+            {
+                if (_dirty.Contains(s.SaveKey))
+                    _cache[s.SaveKey] = s.CaptureState();
+            }
+            else
+                _registered.RemoveAt(i);   // purga referencia huérfana
+        }
         _dirty.Clear();
     }
 
     /// <summary>Restaura todos los ISaveable registrados desde el cache.</summary>
     public static void RestoreAll()
     {
-        foreach (var s in _registered)
-            if (_cache.TryGetValue(s.SaveKey, out var state))
-                s.RestoreState(state);
+        for (int i = _registered.Count - 1; i >= 0; i--)
+        {
+            if (_registered[i].TryGetTarget(out var s))
+            {
+                if (_cache.TryGetValue(s.SaveKey, out var state))
+                    s.RestoreState(state);
+            }
+            else
+                _registered.RemoveAt(i);   // purga referencia huérfana
+        }
         EventManager.Trigger(EventName.OnRestoreCompleted);
     }
 
@@ -4196,7 +4977,9 @@ public class SaveSettingsSO : ScriptableObject
 
     [Title("File")]
     [InfoBox("Relativo a Application.persistentDataPath.")]
-    public string SaveFileName = "rollgeon.save";
+    public string SaveFilePrefix = "rollgeon";
+    [InfoBox("Cantidad de slots de save. Estilo Isaac: 3 saves independientes.")]
+    [MinValue(1)] public int MaxSaveSlots = 3;
 
     [Title("Debug")]
     public bool PrettyPrint = false;
@@ -4205,8 +4988,27 @@ public class SaveSettingsSO : ScriptableObject
     public bool ShouldFlushOn(SaveTrigger trigger) =>
         FlushOn.Contains(trigger);
 
-    public string GetSavePath() =>
-        Path.Combine(Application.persistentDataPath, SaveFileName);
+    /// <summary>
+    /// Devuelve el path del save para el slot activo.
+    /// Slot 0 → "rollgeon_0.save", Slot 1 → "rollgeon_1.save", etc.
+    /// </summary>
+    public string GetSavePath(int slotIndex = -1)
+    {
+        var slot = slotIndex >= 0 ? slotIndex : ActiveSlot;
+        return Path.Combine(Application.persistentDataPath, $"{SaveFilePrefix}_{slot}.save");
+    }
+
+    /// <summary>Slot activo — seteado al elegir save en el menú principal.</summary>
+    [NonSerialized] public int ActiveSlot = 0;
+
+    public bool SlotExists(int slotIndex) =>
+        File.Exists(GetSavePath(slotIndex));
+
+    public void DeleteSlot(int slotIndex)
+    {
+        var path = GetSavePath(slotIndex);
+        if (File.Exists(path)) File.Delete(path);
+    }
 }
 ```
 
@@ -4311,6 +5113,7 @@ Back to MainMenu
 | **Input System** (`com.unity.inputsystem`) | package manager | Input unificado con `InputActionAsset` por mapa (UI / Gameplay / Dungeon). Habilita re‑bind en runtime y soporte de gamepad/teclado/touch sin código duplicado. **Reemplaza al legacy `Input`** — no mezclar. |
 | **Addressables** (`com.unity.addressables`) | package manager | Carga async de prefabs de sala, enemigos, VFX y audio. Todo lo que antes sería `Resources.Load` en el bootstrap (§1.1) va por `AssetReference` / `Addressables.LoadAssetAsync<T>`. Permite build por label (p.e. cargar pool de sala solo al entrar). |
 | **Localization** (`com.unity.localization`) | package manager | Tablas de strings (UI, nombres de combos, descripciones de unlocks, tooltips de efectos) y de assets (iconos/audio por locale si hace falta). Las tablas son los `LocalizedString` / `LocalizedAsset<T>` que se bindean a `TMP_Text` y a los SOs de descripción. |
+| **Unity Analytics** (`com.unity.services.analytics`) | package manager | Telemetría de eventos de gameplay para análisis de balance e informe de tesis (§25). Registra eventos clave (combos usados, muertes, compras en shop, duración de combate). La implementación concreta (`FileAnalyticsService` §25.2) puede usar el backend local (JSON lines a disco) para desarrollo y el SDK de Unity Analytics para producción. |
 
 ### 16.2 Notas de uso
 
@@ -4503,7 +5306,7 @@ Para `FindPath`, también BFS con `parent[]` reconstruido al encontrar el target
 
 #### B.3 Budget de movimiento
 
-El `budget` sale de un stat del actor — `MovementRangeAttribute` (`IModifiable<int>`) declarado en §2. Modificadores de §3 lo afectan normalmente:
+El `budget` sale de un stat del actor — `MovementRange` (`IModifiable<int>`) declarado en §4.2. Modificadores de §3 lo afectan normalmente:
 
 - "Slow" (encantamiento hielo del GDD) → `Modifier<int>` con `Direction = Intrinsic`, `Lifetime = Turns`, `Duration = 1`, operación `Add(-1)`.
 - "Haste" → operación inversa.
@@ -4514,7 +5317,7 @@ El `budget` sale de un stat del actor — `MovementRangeAttribute` (`IModifiable
 El jugador mueve invocando un `EffMove : BaseEffect, IUsesSelection`. El efecto:
 
 1. Resuelve el budget actual leyendo el stat.
-2. Pide una selección al `SelectionController` (§11) con un `GenericTargetQuerySO = ReachableTilesQuery` que internamente llama `IMovementService.GetReachableTiles`. El highlight visual es un `IUsesGridSelection` normal.
+2. Pide una selección al `SelectionController` (§11) con un `TargetQuery = TQ_ReachableTiles` (§11.2b) que internamente llama `IMovementService.GetReachableTiles` via `ServiceLocator`. El highlight visual es un `IUsesGridSelection` normal.
 3. Con el tile elegido, llama `IMovementService.FindPath` y luego `MoveAlongPath`.
 4. El movimiento es una acción registrada en §12.6 con `BlockOnRepeat = false` — el jugador puede mover varias veces en el mismo turno (única manera de escapar según el GDD).
 
@@ -4544,17 +5347,17 @@ El caller decide si reintentar o abortar la acción completa (en cuyo caso el `E
 
 Un `TargetRef.Slot(slotId)` se convierte a `GridCoord` via el `GridManager` cuando hace falta. Los dos coexisten — el sistema de selección (§11) trabaja con `TargetRef` porque los efectos pueden targetear entidades por guid; el movimiento trabaja con `GridCoord` porque siempre es tile‑to‑tile.
 
-**Cross‑ref.** §2 (`MovementRangeAttribute`), §3 (modifiers sobre movimiento), §8 (`EffMove`), §10 (feedback sequences driven by movement), §11 (selection pipeline), §12.6 (movimiento como `ActionDefinitionSO` no‑repetible), §13 (grid del `RoomInstance`).
+**Cross‑ref.** §4.2 (`MovementRange` stat), §3 (modifiers sobre movimiento), §8 (`EffMove`), §10 (feedback sequences driven by movement), §11 (selection pipeline), §12.6 (movimiento como `ActionDefinitionSO` no‑repetible), §13 (grid del `RoomInstance`), §I (`IGridManager`).
 
 ---
 
-### §C. Craps — Mini‑juego de apuesta
+### §C. Craps — Mini‑juego de apuesta (overlay de combate)
 
-> El GDD describe una **sala Craps** donde el jugador apuesta oro a un combo y lo intenta ejecutar en una tirada. Se modela como un servicio transitorio que reusa el `CombinationDetector` del §5 y el sistema de efectos del §8 para resolver rewards y penalties — Craps **no** es un sistema nuevo de combate, es "otra manera de disparar la evaluación de combos".
+> El GDD describe una mecánica de apuesta de dados **exclusiva de combate** donde el jugador apuesta oro a un combo y lo intenta ejecutar en una tirada. Se modela como un **`PhaseOverlay.Craps`** (§12.0) que suspende el `CombatTurnFSM` mientras el mini‑juego está activo, y como un servicio transitorio que reusa el `CombinationDetector` del §5 y el sistema de efectos del §8. Craps **no** es un sistema nuevo de combate, es "otra manera de disparar la evaluación de combos" — pero sólo disponible dentro de un combate.
 
 #### C.1 `CrapsSessionService`
 
-Servicio que vive solo durante la sesión — se registra al entrar a la sala Craps y se des‑registra al salir:
+Servicio que vive solo durante la sesión — se registra al pushear el overlay Craps y se des‑registra al popearlo:
 
 ```csharp
 public interface ICrapsSessionService
@@ -4585,10 +5388,10 @@ public enum CrapsOutcome { Pending, Won, Lost, Pushed }
 
 #### C.2 `CrapsConfigSO`
 
-Referenciado desde el `RoomSO` (§13.2) de la sala Craps. Todo lo numérico sale del config — el servicio no hardcodea nada.
+Referenciado desde el `PropEntitySO` de la mesa de craps (un prop interactuable en la sala de combate). Todo lo numérico sale del config — el servicio no hardcodea nada.
 
 ```csharp
-[CreateAssetMenu(menuName = "Rollgeon/Dungeon/Craps Config")]
+[CreateAssetMenu(menuName = "Rollgeon/Craps/Craps Config")]
 public class CrapsConfigSO : SerializedScriptableObject
 {
     [Title("Identity")]
@@ -4612,50 +5415,83 @@ public class CrapsConfigSO : SerializedScriptableObject
 
 #if UNITY_EDITOR
     private static IEnumerable<string> GetCrapsConfigIds() =>
-        ServiceLocator.TryGetService<RoomCatalogSO>(out var cat) ? cat.AllCrapsConfigIds : Array.Empty<string>();
+        ServiceLocator.TryGetService<CrapsCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
 #endif
 }
 ```
 
-#### C.3 Flujo
+#### C.3 Trigger — prop interactuable en combate
+
+Craps se dispara interactuando con un **prop de mesa de craps** durante `GamePhase.Combat`. La mesa es un `PropEntitySO` con `Category = CrapsTable`, spawneada en ciertas salas de combate desde el `PropPoolSO` (§13.4) o como parte de un setup fijo del `RoomSO`.
 
 ```
-1. DungeonManager.EnterRoom(crapsRoomId)
-   └─ registra ICrapsSessionService, llama StartSession(playerGuid, config)
-   └─ EventManager.Trigger(OnCrapsSessionStarted, sessionId, playerGuid)
+CrapsTablePrefab (spawned desde PropEntitySO "CrapsTable")
+├── InteractableComponent
+│   └── PhaseRules:
+│       └── { Phase: Combat, Mode: Prompt, Range: 1,
+│              LabelOverride: "Apostar en la mesa" }
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnInteract, AllowedPhases: Combat)
+        └── EffectData:
+            ├── PreCondition: PCGold >= config.AllowedStakes.Min()
+            └── Effect: EffStartCraps(CrapsConfigRef)
+```
 
-2. UI (§D) se suscribe a OnCrapsSessionStarted → push(ScreenId.Craps, payload = sessionId)
+**`EffStartCraps`** — effect concreto (§8) que:
+1. Registra un `ICrapsSessionService` en `ServiceLocator`.
+2. Llama `StartSession(playerGuid, config)`.
+3. Llama `phaseService.PushOverlay(PhaseOverlay.Craps)` — esto congela el `CombatTurnFSM`.
+4. Dispara `EventManager.Trigger(OnCrapsSessionStarted, sessionId, playerGuid)`.
+
+#### C.4 Flujo
+
+```
+1. El player está en GamePhase.Combat, state PlayerInput del CombatTurnFSM.
+   Se acerca a la mesa de craps → IInteractionService muestra prompt "Apostar".
+   Presiona F → behavior OnInteract dispara EffStartCraps.
+
+2. EffStartCraps:
+   └─ registra ICrapsSessionService
+   └─ phaseService.PushOverlay(PhaseOverlay.Craps)
+   └─ EventManager.Trigger(OnCrapsSessionStarted, sessionId, playerGuid)
+   └─ CombatTurnFSM queda congelado (no tickea mientras overlay activo)
+
+3. UI (§D) se suscribe a OnCrapsSessionStarted → push(ScreenId.Craps, payload = sessionId)
    - La screen muestra los AllowedStakes y OfferedCombos
    - El jugador elige stake y combo
 
-3. UI llama ICrapsSessionService.PlaceBet(stake, combo)
+4. UI llama ICrapsSessionService.PlaceBet(stake, combo)
    └─ EventManager.Trigger(OnCrapsBetPlaced, sessionId, combo.ComboId, stake)
 
-4. UI muestra botón "Tirar" → ICrapsSessionService.Roll()
+5. UI muestra botón "Tirar" → ICrapsSessionService.Roll()
    └─ DiceRoller.RollAll(player.DiceBag)                         (§6)
-   └─ CombinationDetector reusado del §5 evalúa qué combos matchean
+   └─ ContractSheet.EvaluateRoll (§5.3) evalúa qué combo matchea
    └─ Outcome = PredictedCombo matcheó? Won : Lost
 
-5. ICrapsSessionService.Resolve()
+6. ICrapsSessionService.Resolve()
    └─ EffectData correspondiente (OnWin / OnLose / OnPush) se ejecuta
       como un Effect normal (§8). El reward/penalty termina siendo
       EffModifyIntAttribute sobre Gold, o lo que el diseñador quiera.
    └─ EventManager.Trigger(OnCrapsResolved, sessionId, outcome, payout)
 
-6. DungeonManager.ExitCurrentRoom()
-   └─ ICrapsSessionService.EndSession()
+7. ICrapsSessionService.EndSession()
    └─ ServiceLocator.RemoveService<ICrapsSessionService>()
+   └─ phaseService.PopOverlay()   → CombatTurnFSM se descongela
+   └─ UI popea ScreenId.Craps
+   └─ El combate continúa donde quedó (PlayerInput, con la acción
+      de Interact consumida para este turno)
 ```
 
-#### C.4 Reuso del combo system
+#### C.5 Reuso del combo system
 
-El core de Craps es **una llamada** al `CombinationDetector` que ya usa el combate. No hay lógica especial — si el combo apostado está en el resultado detectado, el jugador gana:
+Idéntico al draft anterior. El core de Craps reusa la evaluación de combos del `ContractSheet` (§5.3) — el mismo matching que ya usa el combate:
 
 ```csharp
 public void Resolve()
 {
-    var detected = _combinationDetector.DetectAll(Current.FinalRoll);
-    Current.Outcome = detected.Any(c => c.ComboId == Current.PredictedCombo.ComboId)
+    var player = ServiceLocator.GetService<IPlayerService>().CurrentEntity;
+    var matched = player.Sheet.EvaluateRoll(Current.FinalRoll.ToArray());
+    Current.Outcome = (matched != null && matched.ComboId == Current.PredictedCombo.ComboId)
         ? CrapsOutcome.Won
         : CrapsOutcome.Lost;
 
@@ -4671,13 +5507,27 @@ public void Resolve()
 }
 ```
 
-#### C.5 Interacción con pasivas
+#### C.6 Interacción con pasivas
 
-La pasiva "**Craps anticipado**" del GDD (Gambler) adelanta el momento en que Craps se habilita. Se implementa sin tocar el servicio: la pasiva aplica un `Modifier<bool>` (`Lifetime = Run`) sobre un flag `CrapsAvailableEarly` del jugador. El `DungeonManager` al generar el piso consulta el flag y, si está activo, hace que la sala Craps aparezca un piso antes de lo habitual.
+La pasiva "**Craps anticipado**" del GDD (Gambler) amplía la disponibilidad de mesas de craps: más salas de combate incluyen el prop `CrapsTable` en su `PropPoolSO`. Se implementa sin tocar el servicio: la pasiva aplica un `Modifier<float>` (`Lifetime = Run`) sobre un weight `CrapsTableSpawnWeight` del pool. El `DungeonManager` al generar la sala lee el weight modificado y decide si spawneear la mesa.
 
 La pasiva no hace una llamada directa al servicio — sigue el patrón estándar de §3 / §4 (pasivas = hooks + efectos).
 
-**Cross‑ref.** §1.2 (events de craps), §3 (modifiers para pasivas que alteran craps), §5 (combos + `CombinationDetector` reusado), §6 (DiceRoller), §8 (effects de reward/penalty), §13 (room type), §D (UI se suscribe a los eventos).
+#### C.7 CrapsConfigSO esperado
+
+Tabla de configuración editable desde engine para cada mesa de craps:
+
+| Campo | Tipo | Propósito | Ejemplo |
+|---|---|---|---|
+| `CrapsConfigId` | `string` | Identidad única para catálogo/save | `"craps.floor1"` |
+| `AllowedStakes` | `List<int>` | Apuestas disponibles en esta mesa | `{ 10, 25, 50 }` |
+| `OfferedCombos` | `List<BaseComboSO>` | Combos ofrecidos como apuesta | `{ Pair, ThreeOfKind }` |
+| `WinMultiplier` | `float` | Multiplicador del stake al ganar | `2.0` |
+| `OnWin` | `EffectData` | Effects al ganar (gold, item, buff) | `EffModifyGold(+stake*mult)` |
+| `OnLose` | `EffectData` | Effects al perder (gold, debuff) | `EffModifyGold(-stake)` |
+| `OnPush` | `EffectData` | Effects en empate (stake devuelto) | `EffModifyGold(0)` |
+
+**Cross‑ref.** §1.2 (events de craps), §3 (modifiers para pasivas que alteran craps), §5 (`ContractSheet.EvaluateRoll` reusado), §6 (DiceRoller), §8 (effects de reward/penalty), §12.0 (`PhaseOverlay.Craps` + `IPhaseService.PushOverlay`), §13 (props en salas de combate), §D (UI se suscribe a los eventos).
 
 ---
 
@@ -4687,7 +5537,7 @@ La pasiva no hace una llamada directa al servicio — sigue el patrón estándar
 
 #### D.1 Principios
 
-1. **Prefabs autorados en engine.** Cada screen (MainMenu, HUD, Combat, Shop, Craps, Inventory, Unlocks, Settings, Reward, GameOver, Victory) es un prefab armado por el diseñador. El código no hace `Instantiate` de textos, layouts, imágenes.
+1. **Prefabs autorados en engine.** Cada screen (MainMenu, HUD, Combat, Craps, Inventory, Unlocks, Settings, Reward, GameOver, Victory) es un prefab armado por el diseñador. El código no hace `Instantiate` de textos, layouts, imágenes. No hay `ShopScreen` — los ítems de shop se compran interactuando con props en el piso (§17.F) vía el `ItemInspectView` del HUD (§D.6b).
 2. **Stack de screens.** Un `IScreenManager` expone `Push`/`Pop`/`Replace`. La screen top del stack recibe input; las que están debajo siguen vivas pero hidden (o parcialmente visibles si el diseño lo permite — p.e. HUD siempre arriba).
 3. **Datos por eventos.** Las screens **nunca** leen managers directamente. Solo se suscriben a `EventManager` y reaccionan. Esto corta el acoplamiento en una sola dirección: los managers publican, la UI consume.
 4. **Sin builders programáticos.** No existe un `UIBuilder` que cree elementos en `Awake`. Si una screen necesita sub‑vistas dinámicas (ej: lista de rewards), el diseñador prefabbea las N variantes y el código elige cuál instanciar como child del slot correspondiente.
@@ -4715,13 +5565,15 @@ public enum ScreenId
     HUD,          // overlay permanente durante gameplay
     Combat,
     Reward,
-    Shop,
-    Craps,
+    Craps,        // overlay UI durante PhaseOverlay.Craps (§17.C)
     Inventory,
     Unlocks,
     Settings,
     GameOver,
     Victory,
+    Dialogue,     // walker del DialogueGraphSO (§7.6b)
+    Tutorial,     // overlay de tutorial (§22)
+    // Shop eliminada — ítems de shop se compran via props en el piso (§17.F)
 }
 ```
 
@@ -4875,11 +5727,56 @@ public class InteractionPromptView : MonoBehaviour
 
 **Reglas.**
 
-- El prefab del HUD contiene **una sola** `InteractionPromptView`. No hay prompts por tipo — un único botón compartido para chests, doors, NPCs, shops, sensors.
+- El prefab del HUD contiene **una sola** `InteractionPromptView`. No hay prompts por tipo — un único botón compartido para chests, doors, NPCs, shop items, sensors.
 - El botón y la tecla `Interact` del Input System (nueva acción en el map `Gameplay`, default `F`) invocan **el mismo path**: `IInteractionService.ExecuteCurrent()`. La lógica de decidir qué ejecutar y si aplica la tiene el service, no el HUD ni el input bind.
 - El HUD sigue siempre arriba (§D.1 — las screens top del stack reciben input pero el HUD es permanente). `InteractionPromptView` simplemente modula su `CanvasGroup.alpha` según el último `OnInteractionTargetChanged`. No push/pop de screens.
 - **Localización.** El `label` que llega por el evento ya viene **resuelto** por el `IInteractionService` contra el `LocalizationManager`, así el view no conoce de `LocalizedString` ni de tablas — consume un `string` puro.
 - **Input binding.** El map `Gameplay` del `InputActionAsset` (§16.1) gana una acción `Interact` → `Keyboard/F`. Se activa y desactiva por `GamePhase` siguiendo la regla general de §16.1. Bindings re‑asignables persisten por el save system (§15) como el resto.
+
+#### D.6b `ItemInspectView`
+
+Widget del HUD (hermano de `InteractionPromptView`) que muestra información detallada de un shop item al acercarse. Estilo Isaac: tooltip flotante sobre el ítem en el mundo, sin modal ni screen separada.
+
+```csharp
+public class ItemInspectView : MonoBehaviour
+{
+    [SerializeField] private CanvasGroup _group;
+    [SerializeField] private TMP_Text   _itemName;
+    [SerializeField] private TMP_Text   _description;
+    [SerializeField] private TMP_Text   _price;
+    [SerializeField] private Image      _icon;
+    [SerializeField] private float      _fadeSeconds = 0.15f;
+
+    private void Start()
+    {
+        EventManager.Subscribe(EventName.OnShopItemTargetChanged, OnTargetChanged);
+        _group.alpha = 0;
+    }
+
+    private void OnTargetChanged(params object[] args)
+    {
+        var hasTarget = (bool)args[0];
+        if (!hasTarget)
+        {
+            Tween.CanvasGroupAlpha(_group, 0f, _fadeSeconds);
+            return;
+        }
+
+        _itemName.text    = (string)args[1];
+        _description.text = (string)args[2];
+        _price.text       = $"{(int)args[3]}G";
+        _icon.sprite      = (Sprite)args[4];
+        Tween.CanvasGroupAlpha(_group, 1f, _fadeSeconds);
+    }
+}
+```
+
+**Reglas.**
+
+- Aparece **sólo** cuando el `CurrentTarget` del `IInteractionService` es un prop con `Category = ShopItem` (§17.F). Para otros tipos de interactables, sólo se muestra el `InteractionPromptView` normal.
+- El `IShopManagerService` (§17.F) dispara `OnShopItemTargetChanged` cuando detecta que el target actual del interaction service es un shop item, pasando la metadata del ítem como payload.
+- No reemplaza al `InteractionPromptView` — ambos coexisten. El prompt dice `[F] Comprar (25G)`, el inspect view muestra nombre, descripción, ícono y precio. Si el jugador no tiene oro suficiente, el prompt se grayed out pero el inspect view sigue visible (el jugador ve qué es y por qué no puede comprarlo).
+- El inspect view es un componente del `HUDScreen.prefab`, no un screen del stack.
 
 #### D.7 Feedback vs Screens
 
@@ -5034,7 +5931,7 @@ public class CameraConfigSO : SerializedScriptableObject
 
 #### E.4 Input bindings
 
-Nuevo action map `Camera` en el `InputActionAsset` de §16.1 (`Rollgeon/Input/Rollgeon.inputactions`). Activo siempre durante `GamePhase.Gameplay`, ignorado durante `GamePhase.UI`/`GamePhase.Paused`.
+Nuevo action map `Camera` en el `InputActionAsset` de §16.1 (`Rollgeon/Input/Rollgeon.inputactions`). Activo durante `GamePhase.Exploration` y `GamePhase.Combat` (§12.0), desactivado durante `GamePhase.Loading`/`GamePhase.GameOver`/`GamePhase.None` y cuando hay un `PhaseOverlay` activo (`Pause`, `Cutscene`, `Craps`).
 
 | Action | Binding | Semántica |
 |---|---|---|
@@ -5195,9 +6092,1688 @@ Si aparece un caso puntual que pide una transición dramática (ej: cutscene de 
 
 ---
 
-## 18. Convenciones de cross‑ref y changelog
+### §F. Shop — ítems en el piso (estilo Isaac)
 
-- **Numeración estable (0–16 para sistemas de dominio; §17 agrupa §A–§D como sistemas transversales; §18 es convenciones + changelog)**. Para insertar secciones nuevas: agregar al final del bloque correspondiente o usar sufijos `Na`, `Nb` para no reshufflear referencias existentes.
+> Los ítems de shop son **objetos físicos en el piso de la sala** — no hay modal de shop ni `GamePhase.Shop`. El jugador camina entre pedestales, se acerca a uno, lee la descripción y precio en el `ItemInspectView` del HUD (§D.6b), y compra con `F` vía el `IInteractionService` (§7.7). Misma ruta que abrir un cofre o forzar una puerta.
+
+#### F.1 `IShopManagerService`
+
+Servicio que coordina la lógica de shop a nivel de sala. Se registra en `ServiceLocator` al entrar a una sala de tipo `Shop` y se desregistra al salir. **No es global** — la shop es estado de sala, no de run (aunque los ítems comprados persisten vía `ShopItemState` de §13.6).
+
+```csharp
+public interface IShopManagerService
+{
+    IReadOnlyList<ShopSlot> Slots { get; }
+
+    void Initialize(RoomInstance room, ShopConfigSO config, ShopPoolSO pool, Random rng);
+    void NotifyItemPurchased(string spawnPointId);
+    bool CanRestock { get; }
+    void Restock(Random rng);
+}
+
+public class ShopSlot
+{
+    public string SpawnPointId;
+    public PropEntitySO ItemProp;
+    public RewardEntrySO RewardData;
+    public int Price;
+    public bool Purchased;
+}
+```
+
+**Responsabilidades:**
+
+- **Inicialización.** Al entrar a una shop room por primera vez, el `DungeonManager` llama `Initialize`. El service toma N spawn points del prefab de la sala (`RoomLayout.RewardSpawnPoints`) y por cada uno rolea un ítem del `ShopPoolSO`. Crea el `ShopItemState` en la `RoomInstance` (§13.6) con `ReservedItemId` y `ReservedPrice`. Si la sala ya fue visitada, los `ShopItemState` ya existen y el service los lee en vez de rolear de nuevo.
+- **Spawning.** Por cada slot no purchased, instancia un `PropEntitySO` con `Category = ShopItem` en el spawn point correspondiente. El prefab del prop lleva un `InteractableComponent` con `PhaseRules: { Exploration: Prompt }` y un `BaseBehavior(OnInteract)` que ejecuta la compra.
+- **Metadata para UI.** Se suscribe a `OnInteractionTargetChanged` del `IInteractionService`. Si el target actual es un shop item, dispara `OnShopItemTargetChanged` con la metadata del ítem (nombre, descripción, precio, ícono) para que el `ItemInspectView` (§D.6b) lo muestre.
+- **Purchase callback.** El behavior `OnInteract` del shop item ejecuta `EffPurchaseShopItem(spawnPointId)`, que cobra gold, agrega el ítem al inventario, marca `ShopItemState.Purchased = true`, destruye el prop visual, y notifica al service vía `NotifyItemPurchased`.
+- **Restock.** Si la sala tiene un prop `RestockMachine` (§F.5), el jugador puede pagar un costo para re‑rolear los ítems no comprados. `Restock` limpia los slots no purchased, rolea nuevos ítems del pool, actualiza los `ShopItemState`, y re‑instancia los props.
+
+#### F.2 `ShopPoolSO`
+
+Pool editable desde engine con ítems pesados por weight. El diseñador lo configura arrastrando rewards y seteando pesos.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Shop/Shop Pool")]
+public class ShopPoolSO : SerializedScriptableObject
+{
+    [Title("Items disponibles")]
+    [InfoBox("Pool de ítems de shop. Se rolea uno por spawn point al entrar " +
+             "a la sala por primera vez. Los pesos son relativos.")]
+    [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
+    [OdinSerialize]
+    public List<WeightedShopItem> Items = new();
+
+    public ShopRollResult Roll(Random rng)
+    {
+        var item = WeightedRandom.Pick(Items, rng);
+        return new ShopRollResult { Reward = item.Reward, BasePrice = item.BasePrice };
+    }
+}
+
+[Serializable]
+public struct WeightedShopItem
+{
+    public RewardEntrySO Reward;
+    [MinValue(0)] public float Weight;
+    [MinValue(1)] public int BasePrice;
+
+    [Title("Rarity filter")]
+    [InfoBox("Si no vacío, este item sólo aparece en pisos con rarity >= este valor.")]
+    [MinValue(0)] public int MinFloorDepth;
+}
+
+public struct ShopRollResult
+{
+    public RewardEntrySO Reward;
+    public int BasePrice;
+}
+```
+
+#### F.3 `ShopConfigSO`
+
+Config global de la shop para el run actual. Referenciado desde el `RulesetSO` (§14.7).
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Shop/Shop Config")]
+public class ShopConfigSO : SerializedScriptableObject
+{
+    [Title("Pricing")]
+    [InfoBox("Multiplicador global de precios. Se aplica sobre el BasePrice del pool.")]
+    [MinValue(0.1f)] public float PriceMultiplier = 1.0f;
+
+    [InfoBox("Varianza aleatoria de precio: precio final = basePrice * mult * rng(1-var, 1+var).")]
+    [Range(0, 0.5f)] public float PriceVariance = 0.1f;
+
+    [Title("Slots")]
+    [InfoBox("Cantidad de spawn points de shop items en las salas de tipo Shop. " +
+             "Si el prefab tiene más spawn points que este número, se usan los primeros N.")]
+    [MinValue(1)] public int MaxItemSlots = 4;
+
+    [Title("Restock")]
+    [ToggleLeft] public bool AllowRestock = true;
+    [ShowIf(nameof(AllowRestock))]
+    [MinValue(0)] public int RestockCost = 5;
+    [ShowIf(nameof(AllowRestock))]
+    [MinValue(0)] public int MaxRestocks = 1;
+
+    [Title("Discount")]
+    [InfoBox("Si > 0, el primer ítem comprado en cada shop tiene este % de descuento.")]
+    [Range(0, 100)] public int FirstPurchaseDiscountPercent = 0;
+}
+```
+
+#### F.4 Ejemplo canónico — shop item en el piso
+
+```
+ShopItemPedestal (spawned por IShopManagerService desde PropEntitySO "ShopPedestal")
+├── Visual: mesh del ítem sobre un pedestal + particle glow
+├── InteractableComponent
+│   └── PhaseRules:
+│       └── { Phase: Exploration, Mode: Prompt, Range: 1,
+│              LabelOverride: "[F] Comprar (25G)" }
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnInteract, AllowedPhases: Exploration)
+        └── EffectData:
+            ├── PreCondition: PCGold >= resolvedPrice
+            ├── Effect: EffDeductGold(resolvedPrice)
+            ├── Effect: EffAddItemToInventory(rewardId)
+            ├── Effect: EffConsumeProp   // marca ShopItemState.Purchased = true
+            └── Effect: EffNotifyShopPurchase(spawnPointId)
+```
+
+El jugador se acerca al pedestal → `IInteractionService` muestra el prompt `[F] Comprar (25G)` + el `ItemInspectView` muestra nombre, descripción, ícono y precio. Si no tiene gold suficiente, el prompt aparece grayed out. Al presionar `F`, el behavior corre los effects en orden, cobra el gold, agrega el ítem, consume el prop (desaparece del piso), notifica al `IShopManagerService`.
+
+#### F.5 Restock machine
+
+Prop opcional en salas de shop que permite re‑rolear los ítems no comprados.
+
+```
+RestockMachine (PropEntitySO "RestockMachine")
+├── InteractableComponent
+│   └── PhaseRules:
+│       └── { Phase: Exploration, Mode: Prompt, Range: 1,
+│              LabelOverride: "[F] Restock (5G)" }
+└── PropEntitySO.Behaviors:
+    └── BaseBehavior(OnInteract, AllowedPhases: Exploration)
+        └── EffectData:
+            ├── PreCondition: PCGold >= restockCost
+            ├── PreCondition: PCShopRestocksRemaining > 0
+            ├── Effect: EffDeductGold(restockCost)
+            └── Effect: EffRestockShop
+```
+
+`EffRestockShop` llama `IShopManagerService.Restock(rng)` que limpia los slots no purchased, rolea nuevos ítems, actualiza los `ShopItemState`, y re‑instancia los props visuales.
+
+#### F.6 Tablas de configuración esperadas
+
+| SO | Quién lo edita | Propósito | Campos clave |
+|---|---|---|---|
+| `ShopPoolSO` | Diseñador (por piso o por tema) | Pool pesado de ítems disponibles en shops de un piso | `List<WeightedShopItem>` con `Reward`, `Weight`, `BasePrice`, `MinFloorDepth` |
+| `ShopConfigSO` | Diseñador (global, referenciado desde `RulesetSO` §14.7) | Tuning global de pricing, slots, restock | `PriceMultiplier`, `PriceVariance`, `MaxItemSlots`, `AllowRestock`, `RestockCost`, `MaxRestocks`, `FirstPurchaseDiscountPercent` |
+| `PropEntitySO` "ShopPedestal" | Diseñador (template de prop) | Prefab visual + behavior de compra | `Category = ShopItem`, `SingleUse = true`, behavior `OnInteract` con effects de purchase |
+| `PropEntitySO` "RestockMachine" | Diseñador (template de prop) | Prefab visual + behavior de restock | behavior `OnInteract` con `EffRestockShop` |
+
+#### F.7 Integración con save (§15) y §13.6
+
+- Los `ShopItemState` (`ReservedItemId`, `ReservedPrice`, `Purchased`) ya se persisten en `RoomInstance.ObjectStates` — el save system los captura gratis.
+- Al re‑entrar a una shop room, el `IShopManagerService` lee los `ShopItemState` existentes, no re‑rolea. Los ítems purchased no se instancian.
+- El restock counter se guarda como campo del `RoomInstance` (o como un `RoomObjectState` extra).
+
+#### F.8 Integración con pasivas y modificadores
+
+- **Descuento de pasiva** (ej: "Comerciante" del GDD) — `Modifier<float>` con `Lifetime = Run` sobre un atributo `ShopPriceMultiplier` del player. El `IShopManagerService.Initialize` aplica el multiplicador al calcular el `resolvedPrice` de cada slot.
+- **Restock gratis** (ej: "Suerte del apostador") — `Modifier<int>` que incrementa `MaxRestocks` o reduce `RestockCost` a 0.
+- Las pasivas no hacen llamadas directas al service — siguen el patrón estándar de §3 / §4.
+
+**Cross‑ref §F.** §7.7 (`IInteractionService` maneja la interacción con shop items), §8 (effects de compra/restock), §12.0 (no hay `GamePhase.Shop` — ítems en el piso estando en `Exploration`), §13.4 (`ShopPoolSO` análogo a `PropPoolSO`), §13.6 (`ShopItemState` persiste el estado de cada slot), §14.7 (`RulesetSO` referencia `ShopConfigSO`), §15 (save system captura `RoomInstance` con los `ShopItemState`), §D.6b (`ItemInspectView` muestra metadata del ítem).
+
+---
+
+### §G. `IPlayerService` — acceso centralizado al jugador
+
+Servicio global que expone la `Entity` del jugador activo sin que cada sistema tenga que mantener su propia referencia. Registrado como `Global` en el bootstrap (§1.1.1).
+
+```csharp
+public interface IPlayerService
+{
+    Guid    PlayerGuid    { get; }
+    Guid    RunId         { get; }
+    Entity  CurrentEntity { get; }
+
+    void SetPlayer(Entity player, Guid runId);
+    void ClearPlayer();
+
+    event Action<Entity> OnPlayerSet;
+    event Action         OnPlayerCleared;
+}
+```
+
+**Responsabilidades:**
+
+- Expone `PlayerGuid` y `RunId` para que cualquier sistema los lea sin lookup.
+- `SetPlayer` se llama en el flujo de inicio de run (§4.5) después de construir la `Entity` del héroe.
+- `ClearPlayer` se llama al terminar la run (`OnRunEnd`).
+- Los consumidores principales: `DeathWatchService` (§12.0.8), `StatusIconsView` (§20.5), `HUDScreen` (§D.4), `IInteractionService` (§7.7), `DamagePipeline` (§12.2), `CrapsSessionService` (§17.C).
+
+**Cross‑ref.** §2.4 (runtime `Entity`), §4.5 (flujo de inicio de run), §12.0.8 (`DeathWatchService` usa `PlayerGuid`).
+
+---
+
+### §H. `PawnRegistryService` — lookup de transforms por GUID
+
+Servicio que mantiene un mapping `Guid → Transform` para las entidades instanciadas en la scene. Registrado con `ServiceScope.Run`.
+
+```csharp
+public interface IPawnRegistryService
+{
+    void Register(Guid entityGuid, Transform pawnTransform);
+    void Unregister(Guid entityGuid);
+    Transform Get(Guid entityGuid);
+    bool TryGet(Guid entityGuid, out Transform pawn);
+}
+```
+
+**Responsabilidades:**
+
+- Los spawners (§13.4, §13.6) registran cada `Entity` cuando instancian su prefab.
+- `FeedbackPositionResolver` (§10.6) usa `TryGet` para resolver `SpawnPosition.AtSource`/`AtTarget`.
+- `CameraService` (§E) puede consultar la posición del `FollowTarget` por guid.
+- Al destruir una entidad (`EffRemoveRoomEntity`, muerte confirmada), el spawner llama `Unregister`.
+
+**Cross‑ref.** §10.6 (position resolver), §13.4 (spawn de entities), §2.4 (runtime `Entity`).
+
+---
+
+### §I. `GridManager` — grilla de la sala activa
+
+Servicio que expone la grilla lógica de la sala actualmente instanciada. Registrado con `ServiceScope.Run`.
+
+```csharp
+public interface IGridManager
+{
+    Vector2Int GridSize { get; }
+    bool IsWalkable(GridCoord coord);
+    bool IsOccupied(GridCoord coord);
+    Guid GetOccupant(GridCoord coord);
+
+    void SetOccupied(GridCoord coord, Guid entityGuid);
+    void ClearOccupant(GridCoord coord);
+
+    Vector3 GridToWorld(GridCoord coord);
+    GridCoord WorldToGrid(Vector3 worldPos);
+
+    void LoadFromRoom(RoomInstance room);    // llamado por DungeonManager al EnterRoom
+}
+```
+
+**Responsabilidades:**
+
+- `LoadFromRoom` parsea el `GridSnapshot` del `RoomLayout` (§13.3) y construye la grilla interna con celdas walkable/blocked.
+- `IMovementService` (§B) delega a `IGridManager` para BFS y pathfinding.
+- `SelectionController` (§11.4) consulta `IsWalkable`/`IsOccupied` para validar targets.
+- `FeedbackPositionResolver` (§10.6) usa `GridToWorld` para `SpawnPosition.AtSlot`.
+- El `DungeonManager` actualiza occupants al spawnear/mover/destruir entities.
+
+**Cross‑ref.** §B (movement usa la grilla), §10.6 (position resolver), §11 (selection), §13.3 (`RoomLayout.GridSnapshot`).
+
+---
+
+### §J. `IInputService` — gestión de action maps
+
+Servicio que wrappea el `PlayerInput` del Input System para activar/desactivar maps por fase. Registrado como `Global`.
+
+```csharp
+public interface IInputService
+{
+    void SetMapEnabled(string mapName, bool enabled);
+    bool IsMapEnabled(string mapName);
+
+    /// <summary>Activa los maps que corresponden a la fase dada y desactiva el resto.</summary>
+    void ApplyPhaseProfile(GamePhase phase, PhaseOverlay overlay);
+
+    /// <summary>Persiste los binding overrides como ISaveable (§15).</summary>
+    string SaveBindingOverrides();
+    void LoadBindingOverrides(string json);
+}
+```
+
+**Perfiles de maps por fase:**
+
+| GamePhase / Overlay | Maps activos | Maps inactivos |
+|---|---|---|
+| `None` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| `Exploration` | `Gameplay`, `Camera`, `Dungeon`, `UI` | — |
+| `Combat` | `Gameplay`, `Camera`, `UI` | `Dungeon` |
+| `Loading` | (ninguno) | todos |
+| `GameOver` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| Overlay `Pause` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+| Overlay `Cutscene` | `UI` (sólo skip) | `Gameplay`, `Camera`, `Dungeon` |
+| Overlay `Craps` | `UI` | `Gameplay`, `Camera`, `Dungeon` |
+
+**Action maps del `InputActionAsset`:**
+
+| Map | Acciones | Bindings default |
+|---|---|---|
+| `Gameplay` | `Attack`, `Defend`, `Move`, `Interact` (F), `EndTurn`, `UseActiveItem`, `OpenInventory` | Keyboard + Mouse |
+| `Camera` | `RotateModifier` (RMB), `RotateDrag` (Mouse Delta X), `PanModifier` (MMB), `PanDrag` (Mouse Delta), `Zoom` (Scroll Y), `Recenter` (F) | Mouse |
+| `Dungeon` | `MoveN/S/E/W`, `ConfirmDoor` | WASD / Arrows |
+| `UI` | `Navigate`, `Submit`, `Cancel`, `Pause` (Esc) | Keyboard + Gamepad |
+
+**Integración.** `IInputService` se suscribe a `OnPhaseEnter` / `OnOverlayPushed` / `OnOverlayPopped` (§12.0) y llama `ApplyPhaseProfile` automáticamente. Los bindings re-asignables se persisten como `ISaveable` (§15) vía `SaveBindingOverridesAsJson()` del Input System.
+
+**Cross‑ref.** §12.0 (fases y overlays), §15 (save de bindings), §16.1 (Input System package), §E.4 (map Camera).
+
+---
+
+### §K. Scene Management — carga aditiva async
+
+> Arquitectura de scenes del proyecto. Cada "capa" del juego es una scene aditiva independiente. No hay una scene monolítica — los managers globales viven en una scene persistente, la UI en otra, y cada piso del dungeon en una scene descargable.
+
+#### K.1 Layout de scenes
+
+| Scene | Tipo | Contiene | Lifecycle |
+|---|---|---|---|
+| `00_Bootstrap` | Startup | `GameBootstrap` (§1.1.2). Se auto-destruye después de `RegisterAll`. | Se carga una vez y se descarga. |
+| `01_Persistent` | Aditiva, nunca se descarga | Managers globales (`AudioManager`, `IScreenManager`, `IInputService`, `IPlayerService`, `IPhaseService`, cámaras). | Vive toda la sesión. |
+| `02_UI` | Aditiva, nunca se descarga | Canvas root con todas las `BaseScreen` prefabbeadas (§D). Exclusive: no comparte canvas con scenes de gameplay. | Vive toda la sesión. |
+| `03_MainMenu` | Aditiva, descargable | Escenografía del menú principal. | Se carga al arrancar, se descarga al iniciar una run. Se re‑carga al volver del gameplay. |
+| `Floor_XX` | Aditiva, descargable | Prefabs de salas del piso actual (`RoomPrefab` instanciados por `DungeonManager`). | Se carga async al generar un piso, se descarga al avanzar al siguiente o al terminar la run. |
+
+#### K.2 `ISceneService`
+
+Servicio registrado como `Global`. Wrappea `SceneManager.LoadSceneAsync` / `UnloadSceneAsync` con API tipada.
+
+```csharp
+public interface ISceneService
+{
+    /// <summary>Carga una scene aditiva async. Dispara OnSceneLoaded al completar.</summary>
+    IEnumerator LoadSceneAsync(string sceneName, Action onComplete = null);
+
+    /// <summary>Descarga una scene aditiva async.</summary>
+    IEnumerator UnloadSceneAsync(string sceneName, Action onComplete = null);
+
+    /// <summary>Transición de piso: descarga Floor actual, carga el nuevo, con loading screen.</summary>
+    IEnumerator TransitionFloor(string currentFloorScene, string nextFloorScene);
+
+    bool IsSceneLoaded(string sceneName);
+
+    event Action<string> OnSceneLoaded;
+    event Action<string> OnSceneUnloaded;
+}
+```
+
+#### K.3 Flujo de transición de piso
+
+```
+1. IPhaseService.ReplacePhase(GamePhase.Loading)         // bloquea input
+2. IScreenManager.Push(ScreenId.Loading, progress: 0f)   // pantalla de carga
+3. ISceneService.UnloadSceneAsync("Floor_03")             // descarga piso actual
+4. DungeonManager.GenerateFloor(layout, seed)             // genera topología + shells
+5. ISceneService.LoadSceneAsync("Floor_04")               // carga piso nuevo
+6. DungeonManager.EnterRoom(startRoom)                    // instancia primera sala
+7. ICameraService.SetFollowTarget(player.Transform)
+8. IScreenManager.Pop()                                   // quita loading screen
+9. IPhaseService.ReplacePhase(GamePhase.Exploration)      // desbloquea input
+```
+
+#### K.4 Reglas
+
+- **`01_Persistent` y `02_UI` nunca se descargan.** Los managers globales y la UI viven toda la sesión. Esto evita re-inicializar servicios, re-instanciar screens, y perder estado de audio/settings.
+- **Cada piso es una scene aditiva.** Al avanzar de piso, se descarga la scene del piso anterior y se carga la nueva. El `DungeonManager` instancia los `RoomPrefab` dentro de la scene del piso.
+- **La UI no vive en la scene del piso.** Es una scene exclusiva (`02_UI`) para que no se destruya/recree con cada transición de piso. Las screens se registran una vez en el bootstrap.
+- **`GamePhase.Loading`** dura exactamente lo que dure la carga async. Input 100% bloqueado. No hay gameplay durante `Loading`.
+- **El menú principal es descargable.** Al iniciar una run, `03_MainMenu` se descarga para liberar recursos. Al terminar la run (`GameOver` / `Victory`), se re-carga.
+
+**Cross‑ref.** §1.1.2 (bootstrap scene), §12.0 (`GamePhase.Loading`), §13.6 (`DungeonManager` opera sobre el piso cargado), §D (screens viven en `02_UI`).
+
+---
+
+### §L. Enums comunes no declarados en otras secciones
+
+Enums referenciados por múltiples sistemas pero que no tienen sección propia.
+
+```csharp
+/// <summary>Resultado de una run completa.</summary>
+public enum RunOutcome { Victory, Death, Abandon }
+
+/// <summary>Resultado de un combate individual.</summary>
+public enum CombatOutcome { Victory, Defeat }
+
+/// <summary>Tipo de floating number para el feedback visual (§9.2, §10.7).</summary>
+public enum FloatingNumberType { Damage, Heal, Shield, Crit, Miss, Gold, StatusApplied }
+
+/// <summary>Operador de comparación genérico para preconditions y AI conditions.</summary>
+public enum ComparisonOp { Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual }
+```
+
+**Cross‑ref.** §1.2 (payloads de `OnRunEnd`, `OnCombatEnd`), §9.2 (`FloatingNumberType` en `FloatingNumberBehaviorValue`), §7.5 (`ComparisonOp` en `AICond_RoundNumber`), §14.5 (`RunOutcome` en `RunRecord`).
+
+---
+
+### §M. Heal Pipeline
+
+> Pipeline centralizada para resolver curación entre entidades. Simétrica al `DamagePipeline` (§12.2) — aplica modificadores `Outgoing` del source y `Incoming` del target para que pasivas como "tus curaciones curan +20%" funcionen sin código especial.
+
+```csharp
+public interface IHealPipeline
+{
+    int Resolve(Entity source, Entity target, int rawHeal, HealContext ctx);
+}
+
+public class HealContext
+{
+    public string SourceId;          // id del ítem / skill / poción que curó
+    public bool   IsPercentOfMax;    // true si rawHeal es % del HP max
+}
+
+public class HealPipeline : IHealPipeline
+{
+    public int Resolve(Entity source, Entity target, int rawHeal, HealContext ctx)
+    {
+        // 1. Resolver % si aplica
+        if (ctx.IsPercentOfMax)
+        {
+            var maxHp = target.Attributes.GetStat<Health>().GetValue<int>();
+            rawHeal = Mathf.RoundToInt(maxHp * rawHeal / 100f);
+        }
+
+        // 2. Outgoing: modificadores "mis curaciones curan X%" del source
+        float outMult = source.Attributes
+            .GetAttributeModifiedValue<OutgoingHealMultiplier, float>();
+        int afterOut = Mathf.RoundToInt(rawHeal * outMult);
+
+        // 3. Incoming: modificadores "las curaciones que recibo valen X%" del target
+        float inMult = target.Attributes
+            .GetAttributeModifiedValue<IncomingHealMultiplier, float>();
+        int finalHeal = Mathf.RoundToInt(afterOut * inMult);
+
+        // 4. Clamp: no curar más del HP max
+        var currentHp = target.Attributes.GetAttributeModifiedValue<Health, int>();
+        var maxHpVal  = target.Attributes.GetStat<Health>().GetValue<int>();
+        finalHeal = Mathf.Min(finalHeal, maxHpVal - currentHp);
+
+        if (finalHeal > 0)
+        {
+            target.Attributes.SetAttributeValue<Health, int>(currentHp + finalHeal);
+            EventManager.Trigger(EventName.OnHealthChanged,
+                target.InstanceId, currentHp + finalHeal, maxHpVal);
+        }
+
+        return finalHeal;
+    }
+}
+```
+
+**Stats nuevos** (agregar a la tabla de §4.2 si se quiere granularidad de heal):
+- `OutgoingHealMultiplier` (`IModifiable<float>`) — base 1.0. Modificable por pasivas/ítems.
+- `IncomingHealMultiplier` (`IModifiable<float>`) — base 1.0. Modificable por debuffs ("heal reduction").
+
+El `EffHeal` (§8.7) delega al `HealPipeline` en vez de setear `Health` directamente:
+
+```csharp
+public class EffHeal : BaseEffect, IUsesSelection
+{
+    public int HealAmount;
+    public bool IsPercent;
+
+    public override bool ApplyEffect(EffectContext ctx)
+    {
+        var pipeline = ServiceLocator.GetService<IHealPipeline>();
+        var source = ctx.SourceEntity;
+        var target = /* resolved from selection */;
+        pipeline.Resolve(source, target, HealAmount, new HealContext
+        {
+            SourceId = "EffHeal",
+            IsPercentOfMax = IsPercent
+        });
+        return true;
+    }
+}
+```
+
+Registrado con `ServiceScope.Run`. Si el juego no necesita modificadores de heal (decisión de balance), se puede usar una implementación noop que ignore los multiplicadores y solo aplique el raw heal — el contrato de interfaz sigue siendo el mismo.
+
+**Cross‑ref.** §3.2 (tabla de `ModifierDirection` — el ejemplo "tus curaciones curan +20%" ahora tiene pipeline), §8.7 (`EffHeal` delega acá), §12.2 (`DamagePipeline` — simétrico).
+
+---
+
+### §N. Cutscene overlay — flujo básico
+
+`PhaseOverlay.Cutscene` (§12.0.2) suspende la fase base y bloquea input salvo skip. La implementación es un servicio transitorio que se registra al pushear el overlay.
+
+```csharp
+public interface ICutsceneService
+{
+    void PlayCutscene(CutsceneDataSO data);
+    void Skip();
+    bool IsPlaying { get; }
+
+    event Action OnCutsceneStarted;
+    event Action OnCutsceneCompleted;
+}
+
+[CreateAssetMenu(menuName = "Rollgeon/Cutscene Data")]
+public class CutsceneDataSO : SerializedScriptableObject
+{
+    public string CutsceneId;
+    [OdinSerialize] public List<CutsceneStep> Steps = new();
+}
+
+[Serializable]
+public class CutsceneStep
+{
+    public CutsceneStepType Type;    // Dialogue | CameraMove | Wait | FadeIn | FadeOut | PlayFeedback
+    [ShowIf("@Type == CutsceneStepType.Dialogue")]
+    public DialogueSpeaker Speaker;
+    [ShowIf("@Type == CutsceneStepType.Dialogue")]
+    public LocalizedString Text;
+    [ShowIf("@Type == CutsceneStepType.Wait")]
+    public float Duration;
+    [ShowIf("@Type == CutsceneStepType.PlayFeedback")]
+    [ValueDropdown(nameof(GetFeedbackIds))]
+    public string FeedbackId;
+}
+
+public enum CutsceneStepType { Dialogue, CameraMove, Wait, FadeIn, FadeOut, PlayFeedback }
+```
+
+**Flujo:**
+
+1. Un trigger (comportamiento de boss, quest, evento de sala) llama `EffPlayCutscene(cutsceneData)`.
+2. El effect registra `ICutsceneService` y pushea `PhaseOverlay.Cutscene`.
+3. La UI pushea `ScreenId.Cutscene` (overlay) con botón "Skip".
+4. El service itera los steps. `Dialogue` steps usan el mismo rendering que `DialogueScreen` (§7.6b) pero sin choices.
+5. Al terminar (o al skip), el service popea el overlay, la UI popea la screen, y la fase base se reanuda.
+
+**Cross‑ref.** §12.0.2 (`PhaseOverlay.Cutscene`), §7.6b (`DialogueGraphSO` para diálogos complejos — cutscenes usan steps lineales), §10 (feedback steps), §J (`IInputService` — solo UI active durante cutscene).
+
+---
+
+## 18. Sistema de Items e Inventario
+
+> Inspirado en Slay the Spire e Isaac. Los ítems son **pasivos** (siempre activos al tenerlos) o **activos** (equipados en un slot limitado, se activan manualmente). No hay sistema de equipamiento por partes del cuerpo — un ítem se tiene o no se tiene.
+
+### 18.1 `ItemSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Items/Item")]
+public class ItemSO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    [ValueDropdown(nameof(GetItemIds))]
+    public string ItemId;
+    public string DisplayName;
+    [TextArea] public string Description;
+    public Sprite Icon;
+    public ItemRarity Rarity;
+
+    [Title("Type")]
+    [EnumToggleButtons]
+    public ItemType Type;                              // Passive | Active
+
+    [Title("Passive Effects")]
+    [InfoBox("Se aplican automáticamente al obtener el ítem. Se remueven si el ítem se pierde.")]
+    [ShowIf("@Type == ItemType.Passive")]
+    [ListDrawerSettings(ShowFoldout = false)]
+    [OdinSerialize]
+    public List<PassiveItemHook> PassiveHooks = new();
+
+    [Title("Active Effects")]
+    [InfoBox("Se ejecutan cuando el jugador activa el ítem. Pueden tener cooldown.")]
+    [ShowIf("@Type == ItemType.Active")]
+    [OdinSerialize]
+    public EffectData OnActivate = new();              // §8
+
+    [ShowIf("@Type == ItemType.Active")]
+    [InfoBox("Cooldown en turnos. 0 = usable cada turno.")]
+    [MinValue(0)] public int Cooldown = 0;
+
+    [Title("Visual")]
+    [InfoBox("Prefab opcional para la representación 3D del ítem en el mundo (pedestal, drop).")]
+    public AssetReferenceGameObject WorldPrefabRef;    // Addressables §16.2
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetItemIds() =>
+        ServiceLocator.TryGetService<ItemCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+#endif
+}
+
+public enum ItemType { Passive, Active }
+public enum ItemRarity { Common, Uncommon, Rare, Legendary }
+```
+
+### 18.2 `PassiveItemHook`
+
+```csharp
+[Serializable]
+public class PassiveItemHook
+{
+    [InfoBox("Evento que dispara el efecto pasivo. Ej: OnTurnStarted, OnComboMatched, OnDamageResolved.")]
+    public EventName TriggerEvent;
+
+    [OdinSerialize]
+    public EffectData Effect = new();                  // §8
+
+    [InfoBox("Modificadores que se aplican mientras el ítem esté en el inventario. " +
+             "Se remueven automáticamente si el ítem se pierde.")]
+    [OdinSerialize]
+    public List<PersistentModifierDef> PersistentModifiers = new();
+}
+
+/// <summary>
+/// Definición de un modificador que se aplica mientras se tenga el ítem.
+/// No es un Modifier<T> directo porque necesita saber a qué stat aplicar.
+/// </summary>
+[Serializable]
+public class PersistentModifierDef
+{
+    [TypeFilter(nameof(GetStatTypes))]
+    public Type TargetStat;                            // qué IModifiable afectar
+    public ModifierOperation Operation;
+    public float Amount;
+    public ModifierDirection Direction = ModifierDirection.Intrinsic;
+}
+```
+
+**Ejemplos estilo Isaac/Slay the Spire:**
+
+| Ítem | Type | Efecto |
+|---|---|---|
+| "Guante de espinas" | Passive | Hook en `OnDamageResolved` → si el player recibió daño, `EffDealDamage(3)` al atacante |
+| "Amuleto de regeneración" | Passive | PersistentModifier: `Health regen +2` via hook en `OnTurnFinished` |
+| "Dado de la suerte" | Passive | Hook en `OnRollStarted` → `EffAddIntModifier` en `RerollBudget` (+1 reroll gratuito) |
+| "Bomba de humo" | Active | `OnActivate`: `EffAddStatusEffect(Invisible, 2 turnos)`, Cooldown = 5 |
+| "Poción de furia" | Active | `OnActivate`: `EffAddFloatModifier(OutgoingDamageMultiplier, ×1.5, 3 turnos)`, Cooldown = 8 |
+
+### 18.3 `IInventoryService`
+
+```csharp
+public interface IInventoryService
+{
+    IReadOnlyList<InventorySlot> PassiveItems { get; }
+    IReadOnlyList<InventorySlot> ActiveItems  { get; }
+
+    bool AddItem(ItemSO item);                         // false si activos llenos y es Active
+    bool RemoveItem(string itemId);
+    bool HasItem(string itemId);
+    ItemSO GetItem(string itemId);
+
+    /// <summary>Activa un ítem activo por slot index. false si en cooldown.</summary>
+    bool ActivateItem(int activeSlotIndex, EffectContext ctx);
+
+    /// <summary>Tick de cooldowns — llamado por TurnManager.OnTurnFinished.</summary>
+    void TickCooldowns();
+
+    int MaxActiveSlots { get; }                        // configurable desde RulesetSO
+
+    event Action<ItemSO, bool> OnItemChanged;          // item, wasAdded
+}
+
+[Serializable]
+public class InventorySlot
+{
+    public ItemSO Item;
+    public int CurrentCooldown;                        // 0 = listo para usar
+}
+```
+
+**Reglas.**
+
+- **Pasivos**: sin límite de cantidad. Al obtener un pasivo, el service itera sus `PassiveHooks`, suscribe los effects a los `TriggerEvent`s correspondientes, y aplica los `PersistentModifiers` como `Modifier<T>` con `Lifetime = Permanent`. Al perder el ítem, deshace todo.
+- **Activos**: limitados a `MaxActiveSlots` (configurable en `RulesetSO` §14.7, default 1). Si el jugador obtiene un activo y los slots están llenos, se **rechaza la adquisición** — el caller (shop, reward) debe chequear antes de intentar dar el ítem. No hay reemplazo automático por el momento.
+- **Cooldown**: los ítems activos con `Cooldown > 0` no pueden activarse mientras `CurrentCooldown > 0`. El `TickCooldowns` decrementa todos los cooldowns al final del turno del jugador.
+
+### 18.4 `InventoryState : ISaveable`
+
+```csharp
+public class InventoryState : ISaveable
+{
+    public string SaveKey => "run.inventory";
+
+    public List<string> PassiveItemIds = new();
+    public List<InventorySlotSnapshot> ActiveSlots = new();
+
+    public object CaptureState() => new InventorySnapshot { /* ... */ };
+    public void RestoreState(object state) { /* ... */ }
+}
+
+[Serializable]
+public class InventorySlotSnapshot
+{
+    public string ItemId;
+    public int CurrentCooldown;
+}
+```
+
+### 18.5 `ItemCatalogSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Items/Item Catalog")]
+public class ItemCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<ItemSO> _entries = new();
+
+    public IEnumerable<string> AllIds => _entries.Select(e => e.ItemId);
+    public ItemSO GetById(string id) => _entries.FirstOrDefault(e => e.ItemId == id);
+    public IEnumerable<ItemSO> GetByType(ItemType type) => _entries.Where(e => e.Type == type);
+    public IEnumerable<ItemSO> GetByRarity(ItemRarity rarity) => _entries.Where(e => e.Rarity == rarity);
+}
+```
+
+Pre-cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de todo SO que referencie un ítem.
+
+**Cross‑ref §18.** §1.1.1 (bootstrap registra `ItemCatalogSO`), §3 (modificadores persistentes de pasivos), §8 (effects de activación y hooks), §14 (unlocks de ítems `ItemUnlockSO`), §15 (save via `InventoryState`), §17.F (shop vende ítems via `EffAddItemToInventory`).
+
+---
+
+## 19. Sistema de Rewards / Loot
+
+> Define qué recibe el jugador al abrir cofres, ganar combates, completar quests o interactuar con eventos. Los rewards no son SOs individuales por valor — un `RewardEntrySO` define el **tipo** y los **rangos/posibilidades**, y el valor concreto se resuelve en runtime combinando datos del nivel, configuración del diseñador y aleatoriedad.
+
+### 19.1 `RewardEntrySO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Rewards/Reward Entry")]
+public class RewardEntrySO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    [ValueDropdown(nameof(GetRewardIds))]
+    public string RewardId;
+    public string DisplayName;
+    public Sprite Icon;
+    public RewardCategory Category;
+
+    [Title("Resolution")]
+    [InfoBox("El valor concreto se resuelve en runtime. Cada categoría tiene " +
+             "sus propios campos de configuración — los no relevantes se ocultan.")]
+
+    // --- Gold ---------------------------------------------------------------
+    [ShowIf("@Category == RewardCategory.Gold")]
+    [MinValue(0)] public int GoldMin;
+    [ShowIf("@Category == RewardCategory.Gold")]
+    [MinValue(0)] public int GoldMax;
+    [ShowIf("@Category == RewardCategory.Gold")]
+    [InfoBox("Si true, el rango se multiplica por GoldRewardMultiplier del RulesetSO (§14.7) " +
+             "evaluado al piso actual. Permite que el diseñador defina un rango base y el " +
+             "scaling lo ajuste automáticamente.")]
+    public bool ScaleGoldWithFloor = true;
+
+    // --- Item ---------------------------------------------------------------
+    [ShowIf("@Category == RewardCategory.Item")]
+    [InfoBox("Pool de ítems posibles con pesos. Se rolea uno al resolver.")]
+    [OdinSerialize]
+    public List<WeightedItemDrop> ItemPool = new();
+
+    // --- Dice ---------------------------------------------------------------
+    [ShowIf("@Category == RewardCategory.Dice")]
+    [InfoBox("Pool de dados posibles. Se elige uno al resolver.")]
+    [OdinSerialize]
+    public List<WeightedDiceDrop> DicePool = new();
+
+    // --- Heal ---------------------------------------------------------------
+    [ShowIf("@Category == RewardCategory.Heal")]
+    [MinValue(0)] public int HealMin;
+    [ShowIf("@Category == RewardCategory.Heal")]
+    [MinValue(0)] public int HealMax;
+    [ShowIf("@Category == RewardCategory.Heal")]
+    [InfoBox("Si true, los valores son porcentaje del HP máximo en vez de valor fijo.")]
+    public bool HealIsPercent = false;
+
+    // --- Upgrade (TBD — UpgradeSO pendiente de definición) ------------------
+    [ShowIf("@Category == RewardCategory.Upgrade")]
+    [OdinSerialize]
+    public List<WeightedUpgradeDrop> UpgradePool = new();
+
+    // --- Effect (genérico) --------------------------------------------------
+    [ShowIf("@Category == RewardCategory.Effect")]
+    [InfoBox("Un EffectData libre — el diseñador define lo que pase. " +
+             "Útil para rewards custom (buff temporal, unlock de pasiva, etc.).")]
+    [OdinSerialize]
+    public EffectData CustomEffect = new();
+
+    /// <summary>
+    /// Resuelve el reward concreto dado el contexto de la run.
+    /// </summary>
+    public ResolvedReward Resolve(RewardContext ctx)
+    {
+        return Category switch
+        {
+            RewardCategory.Gold => new ResolvedReward
+            {
+                Category = Category,
+                GoldAmount = Mathf.RoundToInt(
+                    ctx.Rng.Range(GoldMin, GoldMax + 1) *
+                    (ScaleGoldWithFloor ? ctx.Ruleset.GoldRewardMultiplier.Evaluate(ctx.FloorIndex) : 1f))
+            },
+            RewardCategory.Item => new ResolvedReward
+            {
+                Category = Category,
+                Item = WeightedRandom.Pick(ItemPool, ctx.Rng).Item
+            },
+            // ... análogo para cada categoría
+            _ => default,
+        };
+    }
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetRewardIds() =>
+        ServiceLocator.TryGetService<RewardCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+#endif
+}
+
+public enum RewardCategory { Gold, Item, Dice, Heal, Upgrade, Effect }
+```
+
+### 19.2 Weighted drops
+
+```csharp
+[Serializable]
+public struct WeightedItemDrop
+{
+    public ItemSO Item;
+    [MinValue(0)] public float Weight;
+    [MinValue(0)] public int MinFloorDepth;            // no aparece antes de este piso
+}
+
+[Serializable]
+public struct WeightedDiceDrop
+{
+    public DiceType Dice;
+    [MinValue(0)] public float Weight;
+}
+
+[Serializable]
+public struct WeightedUpgradeDrop
+{
+    public UpgradeSO Upgrade;
+    [MinValue(0)] public float Weight;
+}
+```
+
+### 19.3 `RewardContext`
+
+```csharp
+public class RewardContext
+{
+    public Random Rng;
+    public int FloorIndex;
+    public RulesetSO Ruleset;
+    public Guid PlayerGuid;
+}
+```
+
+### 19.4 `IRewardService`
+
+```csharp
+public interface IRewardService
+{
+    /// <summary>
+    /// Resuelve una lista de RewardEntrySO en rewards concretos.
+    /// Usado por cofres, fin de combate, quests.
+    /// </summary>
+    List<ResolvedReward> ResolveRewards(List<RewardEntrySO> entries, RewardContext ctx);
+
+    /// <summary>
+    /// Presenta los rewards al jugador (push RewardScreen) y espera la elección
+    /// si hay opciones (ej: elegir 1 de 3 ítems).
+    /// </summary>
+    void PresentRewards(List<ResolvedReward> rewards, RewardPresentMode mode);
+
+    /// <summary>Aplica un reward ya elegido al estado del jugador.</summary>
+    void ApplyReward(ResolvedReward reward, Guid playerGuid);
+}
+
+public enum RewardPresentMode
+{
+    ShowAll,            // muestra todos, el jugador los recibe todos
+    PickOne,            // elige 1 de N (estilo Slay the Spire)
+    PickN,              // elige N de M
+}
+
+public struct ResolvedReward
+{
+    public RewardCategory Category;
+    public int GoldAmount;
+    public ItemSO Item;
+    public DiceType? Dice;
+    public int HealAmount;
+    public UpgradeSO Upgrade;
+    public EffectData CustomEffect;
+    public Sprite Icon;
+    public string DisplayText;
+}
+```
+
+### 19.5 `RewardCatalogSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Rewards/Reward Catalog")]
+public class RewardCatalogSO : SerializedScriptableObject
+{
+    [OdinSerialize] private List<RewardEntrySO> _entries = new();
+    public IEnumerable<string> AllIds => _entries.Select(e => e.RewardId);
+    public RewardEntrySO GetById(string id) => _entries.FirstOrDefault(e => e.RewardId == id);
+}
+```
+
+Pre-cargado en `ServiceBootstrapSO` (§1.1.1).
+
+**Regla de diseño.** No se crea un SO por cada valor posible de oro. Un `RewardEntrySO` con `Category = Gold, GoldMin = 5, GoldMax = 15, ScaleGoldWithFloor = true` cubre todo el rango de un piso. El diseñador crea pocos `RewardEntrySO` ("Gold pequeño", "Gold mediano", "Ítem común", "Ítem raro") y los combina en pools con pesos.
+
+**Cross‑ref §19.** §8 (effects de rewards custom), §13.4 (`RewardPoolSO` usa `RewardEntrySO`), §14.7 (`RulesetSO` scaling curves), §15 (save), §17.F (shop usa `RewardEntrySO` en `ShopPoolSO`), §18 (ítems dados como reward).
+
+---
+
+## 20. Sistema de Status Effects
+
+> Formaliza los estados de alteración (veneno, stun, quemadura, etc.) como entidades autorables con reglas de stack, inmunidades y feedback visual. Se apoya en el sistema de modificadores (§3) pero agrega semántica de "efecto de estado" con UI dedicada.
+
+### 20.1 `StatusEffectSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Status Effects/Status Effect")]
+public class StatusEffectSO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    [ValueDropdown(nameof(GetStatusIds))]
+    public string StatusId;
+    public string DisplayName;
+    [TextArea] public string Description;
+    public Sprite Icon;
+    public Color TintColor = Color.white;
+
+    [Title("Behavior")]
+    public StatusEffectCategory Category;              // Debuff | Buff | Neutral
+    public StatusTickBehavior TickBehavior;             // OnTurnStart | OnTurnEnd | None
+
+    [Title("Tick Effect")]
+    [InfoBox("Efecto que se ejecuta cada tick (si TickBehavior != None). " +
+             "Ej: veneno hace EffDealDamage(amount), regen hace EffHeal(amount).")]
+    [ShowIf("@TickBehavior != StatusTickBehavior.None")]
+    [OdinSerialize]
+    public EffectData OnTickEffect = new();
+
+    [Title("Values")]
+    [InfoBox("El valor del efecto puede ser fijo, porcentual del stat max, " +
+             "o leído de un reader (§8.6). Configurable per-instancia.")]
+    public StatusValueMode ValueMode;                  // Fixed | PercentOfMax | FromReader
+    [ShowIf("@ValueMode == StatusValueMode.Fixed")]
+    public float FixedValue;
+    [ShowIf("@ValueMode == StatusValueMode.PercentOfMax")]
+    [Range(0, 1)] public float PercentValue;
+    [ShowIf("@ValueMode == StatusValueMode.FromReader")]
+    [OdinSerialize] public IEntityReader<float> ValueReader;
+
+    [Title("Application")]
+    [InfoBox("Duración default. Puede ser overrideada al aplicar.")]
+    [MinValue(1)] public int DefaultDuration = 3;
+
+    [Title("Stacking")]
+    public StatusStackRule StackRule;                   // Refresh | Stack | Replace | Immune
+
+    [ShowIf("@StackRule == StatusStackRule.Stack")]
+    [MinValue(1)] public int MaxStacks = 5;
+
+    [Title("On Apply / On Remove")]
+    [OdinSerialize] public EffectData OnApply  = new();    // ej: slow → EffAddIntModifier(Movement, -1)
+    [OdinSerialize] public EffectData OnRemove = new();    // ej: limpiar modificadores aplicados
+
+    [Title("Immunities")]
+    [InfoBox("Status effects que hacen inmune a este. Ej: 'Fire Shield' inmuniza contra 'Burn'.")]
+    [OdinSerialize] public List<StatusEffectSO> ImmuneTo = new();
+
+    [Title("Feedback")]
+    [ValueDropdown(nameof(GetFeedbackIds))]
+    public string OnApplyFeedbackId;
+    [ValueDropdown(nameof(GetFeedbackIds))]
+    public string OnTickFeedbackId;
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetStatusIds() =>
+        ServiceLocator.TryGetService<StatusCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+    private static IEnumerable<string> GetFeedbackIds() =>
+        ServiceLocator.TryGetService<FeedbackDBSO>(out var db) ? db.GetAllFeedbackIds() : Array.Empty<string>();
+#endif
+}
+
+public enum StatusEffectCategory { Debuff, Buff, Neutral }
+public enum StatusTickBehavior { None, OnTurnStart, OnTurnEnd }
+public enum StatusValueMode { Fixed, PercentOfMax, FromReader }
+public enum StatusStackRule
+{
+    /// <summary>Re-aplicar refresca la duración sin stackear el efecto.</summary>
+    Refresh,
+    /// <summary>Cada aplicación suma un stack (hasta MaxStacks). Duración independiente por stack.</summary>
+    Stack,
+    /// <summary>Re-aplicar reemplaza la instancia anterior (nueva duración, nuevo valor).</summary>
+    Replace,
+    /// <summary>La entidad es inmune a este status — la aplicación falla silenciosamente.</summary>
+    Immune,
+}
+```
+
+### 20.2 `IStatusEffectService`
+
+```csharp
+public interface IStatusEffectService
+{
+    bool ApplyStatus(Guid targetGuid, StatusEffectSO status, int duration = -1, int stacks = 1);
+    bool RemoveStatus(Guid targetGuid, string statusId);
+    void RemoveAllStatuses(Guid targetGuid);
+    bool HasStatus(Guid targetGuid, string statusId);
+    int  GetStacks(Guid targetGuid, string statusId);
+    IReadOnlyList<ActiveStatusEffect> GetStatuses(Guid targetGuid);
+
+    /// <summary>Tick de todos los status effects — llamado por TurnManager.</summary>
+    void TickStatuses(Guid entityGuid, StatusTickBehavior timing);
+
+    event Action<Guid, StatusEffectSO, int> OnStatusApplied;    // target, status, stacks
+    event Action<Guid, StatusEffectSO>      OnStatusRemoved;
+    event Action<Guid, StatusEffectSO, int> OnStatusTicked;     // target, status, damage/heal
+}
+
+[Serializable]
+public class ActiveStatusEffect
+{
+    public StatusEffectSO Definition;
+    public int RemainingDuration;
+    public int CurrentStacks;
+    public List<Guid> AppliedModifierIds = new();       // para limpiar al remover
+}
+```
+
+### 20.3 Integración con el FSM de combate
+
+El `CheckTurnSkip` (§1.3) consulta al `IStatusEffectService` para determinar si el jugador tiene un CC activo:
+
+```csharp
+// En CheckTurnSkip
+var statusService = ServiceLocator.GetService<IStatusEffectService>();
+bool isStunned = statusService.HasStatus(playerGuid, "stun")
+              || statusService.HasStatus(playerGuid, "freeze")
+              || statusService.HasStatus(playerGuid, "sleep");
+
+if (isStunned) => transicionar a CleanupPlayerModifiers sin pasar por PlayerInput
+```
+
+### 20.4 Efecto de aplicación: `EffAddStatusEffect`
+
+```csharp
+public class EffAddStatusEffect : BaseEffect, IUsesSelection
+{
+    [ValueDropdown(nameof(GetStatusIds))]
+    public string StatusId;
+    [MinValue(0)] public int DurationOverride = 0;     // 0 = usar DefaultDuration del SO
+    public int Stacks = 1;
+
+    public override bool ApplyEffect(EffectContext ctx)
+    {
+        var catalog = ServiceLocator.GetService<StatusCatalogSO>();
+        var status = catalog.GetById(StatusId);
+        if (status == null) return false;
+
+        var duration = DurationOverride > 0 ? DurationOverride : status.DefaultDuration;
+        return ServiceLocator.GetService<IStatusEffectService>()
+            .ApplyStatus(ctx.TargetGuid, status, duration, Stacks);
+    }
+}
+```
+
+### 20.5 UI de status icons
+
+El HUD muestra una fila de íconos de status activos sobre la barra de vida:
+
+```csharp
+public class StatusIconsView : MonoBehaviour
+{
+    [SerializeField] private StatusIconWidget _iconPrefab;
+    [SerializeField] private Transform _container;
+
+    private void OnEnable()
+    {
+        EventManager.Subscribe(EventName.OnStatusApplied, OnStatusChanged);
+        EventManager.Subscribe(EventName.OnStatusRemoved, OnStatusChanged);
+    }
+
+    private void OnDisable()
+    {
+        EventManager.UnSubscribe(EventName.OnStatusApplied, OnStatusChanged);
+        EventManager.UnSubscribe(EventName.OnStatusRemoved, OnStatusChanged);
+    }
+
+    /// <summary>args: [Guid targetGuid, string statusId, int stacks]</summary>
+    private void OnStatusChanged(params object[] args)
+    {
+        var targetGuid = (Guid)args[0];
+        if (targetGuid != ServiceLocator.GetService<IPlayerService>().PlayerGuid) return;
+        RebuildIcons();
+    }
+
+    private void RebuildIcons()
+    {
+        // Limpia y recrea los íconos desde IStatusEffectService.GetStatuses(playerGuid)
+    }
+}
+```
+
+**Cross‑ref §20.** §1.3 (`CheckTurnSkip` usa statuses para CC), §3 (modificadores aplicados via `OnApply`), §8 (`EffAddStatusEffect`), §10 (feedback de aplicación/tick), §14.7 (`RulesetSO.MaxReactionDepth`).
+
+---
+
+## 21. Sistema de Quests
+
+> Sistema liviano de quests para NPCs. No se muestra en UI dedicada por el momento — las quests se usan internamente para condicionar diálogos (§7.6b) y como condiciones de unlock (§14).
+
+### 21.1 `QuestSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Quests/Quest")]
+public class QuestSO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    [ValueDropdown(nameof(GetQuestIds))]
+    public string QuestId;
+    public string DisplayName;
+    [TextArea] public string Description;
+
+    [Title("Completion")]
+    [InfoBox("Condiciones que deben cumplirse para completar la quest. AND por default.")]
+    [OdinSerialize]
+    public List<BasePreCondition> CompletionConditions = new();      // §8.2
+
+    [Title("Rewards")]
+    [OdinSerialize]
+    public List<RewardEntrySO> Rewards = new();                       // §19
+
+    [Title("On Complete")]
+    [OdinSerialize]
+    public EffectData OnComplete = new();                              // §8
+
+#if UNITY_EDITOR
+    private static IEnumerable<string> GetQuestIds() =>
+        ServiceLocator.TryGetService<QuestCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
+#endif
+}
+```
+
+### 21.2 `IQuestService`
+
+```csharp
+public interface IQuestService
+{
+    QuestState GetState(string questId);
+    void StartQuest(string questId);
+    void CompleteQuest(string questId);
+    void FailQuest(string questId);
+    bool IsCompleted(string questId);
+    bool IsActive(string questId);
+    IReadOnlyList<string> ActiveQuestIds { get; }
+
+    event Action<string, QuestState> OnQuestStateChanged;
+}
+
+public enum QuestState { NotStarted, Active, Completed, Failed }
+```
+
+### 21.3 `QuestProgressState : ISaveable`
+
+```csharp
+public class QuestProgressState : ISaveable
+{
+    public string SaveKey => "run.quests";
+    public Dictionary<string, QuestState> States = new();
+
+    public object CaptureState() => new Dictionary<string, QuestState>(States);
+    public void RestoreState(object state) =>
+        States = new Dictionary<string, QuestState>((Dictionary<string, QuestState>)state);
+}
+```
+
+### 21.4 PreConditions de quest
+
+```csharp
+public class PCQuestState : BasePreCondition
+{
+    [ValueDropdown(nameof(GetQuestIds))]
+    public string QuestId;
+    public QuestState RequiredState;
+
+    public override string ConditionName => $"Quest {QuestId} is {RequiredState}";
+    public override bool Evaluate(PreConditionContext ctx) =>
+        ServiceLocator.GetService<IQuestService>().GetState(QuestId) == RequiredState;
+}
+```
+
+### 21.5 Integración con unlocks (§14)
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Meta/Conditions/Quest Completed")]
+public class UC_QuestCompleted : UnlockConditionSO
+{
+    [ValueDropdown(nameof(GetQuestIds))]
+    public string QuestId;
+
+    public override bool Evaluate(RunRecord record) =>
+        ServiceLocator.GetService<UnlockStateSO>().IsQuestEverCompleted(QuestId);
+}
+```
+
+**Cross‑ref §21.** §7.6b (diálogos condicionados por `PCQuestState`), §8 (effects de quest: `EffStartQuest`, `EffCompleteQuest`), §14 (unlock conditions), §15 (save via `QuestProgressState`), §19 (rewards de quest).
+
+---
+
+## 22. Tutorial / Onboarding
+
+> Guía al jugador en las primeras runs. Se apaga automáticamente después de completar los pasos.
+
+### 22.1 `TutorialStepSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Tutorial/Step")]
+public class TutorialStepSO : SerializedScriptableObject
+{
+    [Title("Identity")]
+    public string StepId;
+    public int OrderIndex;                             // orden de ejecución
+
+    [Title("Trigger")]
+    [InfoBox("Cuándo se activa este paso del tutorial.")]
+    public EventName TriggerEvent;
+    [OdinSerialize]
+    public List<BasePreCondition> ActivationConditions = new();
+
+    [Title("Content")]
+    public LocalizedString Title;
+    public LocalizedString Message;
+    public Sprite Illustration;
+
+    [Title("UI Highlight")]
+    [InfoBox("ID del elemento UI a highlight (ej: 'HUD.AttackButton', 'HUD.DiceBag'). " +
+             "Vacío = sin highlight.")]
+    public string HighlightElementId;
+
+    [Title("Forced Action")]
+    [InfoBox("Si no vacío, el tutorial bloquea el input hasta que el jugador " +
+             "realice esta acción específica.")]
+    public TurnInput? ForcedAction;
+
+    [Title("Completion")]
+    public EventName CompletionEvent;
+    [OdinSerialize]
+    public List<BasePreCondition> CompletionConditions = new();
+}
+```
+
+### 22.2 `ITutorialService`
+
+```csharp
+public interface ITutorialService
+{
+    bool IsActive { get; }
+    TutorialStepSO CurrentStep { get; }
+    void CompleteCurrentStep();
+    void SkipAll();
+    bool IsStepCompleted(string stepId);
+
+    event Action<TutorialStepSO> OnStepActivated;
+    event Action<TutorialStepSO> OnStepCompleted;
+}
+```
+
+### 22.3 `TutorialProgressState : ISaveable`
+
+```csharp
+public class TutorialProgressState : ISaveable
+{
+    public string SaveKey => "global.tutorial";
+    public HashSet<string> CompletedSteps = new();
+    public bool AllCompleted = false;
+
+    public object CaptureState() => new TutorialSnapshot { /* ... */ };
+    public void RestoreState(object state) { /* ... */ }
+}
+```
+
+**Cross‑ref §22.** §1.2 (events de trigger/completion), §8.2 (preconditions de activación), §15 (save de progreso), §17.D (UI de tutorial overlay en HUD).
+
+---
+
+## 23. Settings y Accessibility
+
+> Sistema general de settings del jugador, persistido entre sesiones.
+
+### 23.1 `GameSettingsSO`
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Settings/Game Settings")]
+public class GameSettingsSO : SerializedScriptableObject
+{
+    [Title("Gameplay")]
+    [InfoBox("Override de dificultad. Si no None, sobreescribe el RulesetSO activo.")]
+    public DifficultyOverride Difficulty = DifficultyOverride.None;
+
+    [Title("Accessibility")]
+    [ToggleLeft] public bool ReduceScreenShake = false;
+    [ToggleLeft] public bool ColorBlindMode = false;
+    public ColorBlindType ColorBlindType = ColorBlindType.None;
+    [ToggleLeft] public bool LargeText = false;
+    [Range(0.8f, 2f)] public float TextSizeMultiplier = 1f;
+    [ToggleLeft] public bool HighContrastUI = false;
+
+    [Title("Controls")]
+    [ToggleLeft] public bool InvertCameraY = false;
+    [Range(0.1f, 3f)] public float CameraSensitivity = 1f;
+
+    [Title("Display")]
+    [ToggleLeft] public bool ShowDamageNumbers = true;
+    [ToggleLeft] public bool ShowTurnOrder = true;
+    [ToggleLeft] public bool ShowComboPreview = true;
+}
+
+public enum DifficultyOverride { None, Easy, Normal, Hard }
+public enum ColorBlindType { None, Protanopia, Deuteranopia, Tritanopia }
+```
+
+### 23.2 `ISettingsService`
+
+```csharp
+public interface ISettingsService
+{
+    GameSettingsSO Current { get; }
+    void Apply(GameSettingsSO settings);
+    void ResetToDefaults();
+
+    event Action OnSettingsChanged;
+}
+```
+
+### 23.3 `GameSettingsState : ISaveable`
+
+```csharp
+public class GameSettingsState : ISaveable
+{
+    public string SaveKey => "global.settings";
+
+    // Captura todos los campos del GameSettingsSO activo
+    public object CaptureState() => new GameSettingsSnapshot { /* ... */ };
+    public void RestoreState(object state) { /* ... */ }
+}
+```
+
+El `ISettingsService` se registra como `Global` en el `ServiceLocator` (§1.1). Los settings se persisten como `ISaveable` con scope global (no por run).
+
+**Cross‑ref §23.** §15 (save), §17.A (volúmenes de audio), §17.E (camera sensitivity/invert), §17.D (text size multiplier).
+
+---
+
+## 24. Object Pooling
+
+> Pool genérico para reutilizar GameObjects instanciados frecuentemente. Elimina allocations y GC spikes en combate.
+
+### 24.1 `IObjectPool<T>`
+
+```csharp
+public interface IObjectPool<T> where T : Component
+{
+    /// <summary>Obtiene una instancia del pool. Si no hay disponibles, instancia una nueva.</summary>
+    T Get();
+
+    /// <summary>Devuelve la instancia al pool para reutilización.</summary>
+    void Return(T instance);
+
+    /// <summary>Pre-instancia N objetos para evitar spikes en el primer uso.</summary>
+    void Prewarm(int count);
+
+    int CountActive { get; }
+    int CountInactive { get; }
+}
+```
+
+### 24.2 `ComponentPool<T>`
+
+```csharp
+public class ComponentPool<T> : IObjectPool<T> where T : Component
+{
+    private readonly T _prefab;
+    private readonly Transform _parent;
+    private readonly Queue<T> _inactive = new();
+    private readonly HashSet<T> _active = new();
+
+    public ComponentPool(T prefab, Transform parent, int prewarmCount = 0)
+    {
+        _prefab = prefab;
+        _parent = parent;
+        Prewarm(prewarmCount);
+    }
+
+    public T Get()
+    {
+        T instance;
+        if (_inactive.Count > 0)
+        {
+            instance = _inactive.Dequeue();
+        }
+        else
+        {
+            instance = Object.Instantiate(_prefab, _parent);
+        }
+        instance.gameObject.SetActive(true);
+        _active.Add(instance);
+        return instance;
+    }
+
+    public void Return(T instance)
+    {
+        if (!_active.Remove(instance)) return;
+        instance.gameObject.SetActive(false);
+        _inactive.Enqueue(instance);
+    }
+
+    public void Prewarm(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            var instance = Object.Instantiate(_prefab, _parent);
+            instance.gameObject.SetActive(false);
+            _inactive.Enqueue(instance);
+        }
+    }
+
+    public int CountActive => _active.Count;
+    public int CountInactive => _inactive.Count;
+}
+```
+
+### 24.3 `IPoolService`
+
+Servicio central que gestiona todos los pools del juego. Registrado en `ServiceLocator` como `Global`.
+
+```csharp
+public interface IPoolService
+{
+    /// <summary>
+    /// Obtiene o crea un pool para el prefab dado. Si el pool no existe,
+    /// lo crea con el prewarm indicado.
+    /// </summary>
+    IObjectPool<T> GetPool<T>(T prefab, int prewarmCount = 0) where T : Component;
+
+    /// <summary>Limpia todos los pools (al cambiar de escena o al terminar run).</summary>
+    void ClearAll();
+}
+```
+
+### 24.4 Consumidores del pool
+
+| Sistema | Qué poolea | Prewarm sugerido |
+|---|---|---|
+| `FeedbackManager` (§10) | VFX particles, floating numbers | 20 |
+| `IAudioService` (§A) | AudioSource pool (ya existente — migrar a `IPoolService`) | 16 |
+| `IMovementService` (§B) | Trail/step VFX | 10 |
+| `DungeonManager` (§13) | Enemy/Prop GameObjects spawneados al entrar a sala | 10 |
+| `StatusIconsView` (§20) | Status icon widgets | 8 |
+| `RewardScreen` (§D) | Reward card prefabs | 5 |
+
+**Regla.** Todo `Object.Instantiate` / `Object.Destroy` en hot paths (combate, feedback, movimiento) debe reemplazarse por `pool.Get()` / `pool.Return()`. Las instanciaciones one-shot (bootstrap, screen setup) no necesitan pool.
+
+**Cross‑ref §24.** §10 (VFX/floating numbers), §13 (spawn de entidades), §17.A (AudioSource pool), §17.B (movement VFX).
+
+---
+
+## 25. Analytics y Telemetría
+
+> Registro de eventos clave para análisis de balance, informe de tesis y mejora del GD.
+
+### 25.1 `IAnalyticsService`
+
+```csharp
+public interface IAnalyticsService
+{
+    void TrackEvent(string eventName, Dictionary<string, object> properties = null);
+
+    // --- Helpers tipados para eventos frecuentes ---
+    void TrackRunStart(string heroId, List<DiceType> bag, string rulesetId);
+    void TrackRunEnd(RunRecord record);
+    void TrackComboUsed(string comboId, int damage, int floorIndex);
+    void TrackItemObtained(string itemId, string source);           // source: "shop", "chest", "reward"
+    void TrackDeath(string causeOfDeath, int floorIndex, string roomId);
+    void TrackCombatDuration(int rounds, int enemyCount, int floorIndex);
+    void TrackShopPurchase(string itemId, int price, int playerGold);
+    void TrackStatusEffectApplied(string statusId, string sourceId);
+}
+```
+
+### 25.2 Implementación
+
+```csharp
+public class FileAnalyticsService : IAnalyticsService
+{
+    private readonly string _logPath;
+    private readonly List<AnalyticsEvent> _buffer = new();
+    private const int FlushThreshold = 50;
+
+    public void TrackEvent(string eventName, Dictionary<string, object> properties = null)
+    {
+        _buffer.Add(new AnalyticsEvent
+        {
+            Timestamp = DateTime.UtcNow,
+            EventName = eventName,
+            Properties = properties ?? new()
+        });
+
+        if (_buffer.Count >= FlushThreshold) Flush();
+    }
+
+    public void Flush()
+    {
+        // Append al archivo JSON lines — un evento por línea
+        var lines = _buffer.Select(e => JsonUtility.ToJson(e));
+        File.AppendAllLines(_logPath, lines);
+        _buffer.Clear();
+    }
+
+    // ... helpers tipados delegan a TrackEvent con propiedades estructuradas
+}
+
+[Serializable]
+public class AnalyticsEvent
+{
+    public DateTime Timestamp;
+    public string EventName;
+    public Dictionary<string, object> Properties;
+}
+```
+
+### 25.3 Registro
+
+`IAnalyticsService` se registra como `Global` en el bootstrap (§1.1.1). Se flushea automáticamente en `SaveTrigger.RunEnd` y `SaveTrigger.Exit`.
+
+**Cross‑ref §25.** §1.1.1 (bootstrap), §14.5 (`RunRecord` alimenta `TrackRunEnd`), §15 (flush sincronizado con save triggers).
+
+---
+
+## 26. Content Tooling — Pipeline de autoría para diseñadores
+
+> Herramientas de editor que aceleran la creación de contenido sin tocar código. Cada tool es un `EditorWindow` o un custom inspector que opera sobre los SOs del proyecto.
+
+### 26.1 Principios
+
+1. **Zero-code content.** Un diseñador crea un enemigo nuevo, una sala, un combo, un item o un unlock sin escribir una línea de C#.
+2. **Validación en editor.** Cada tool valida el contenido al guardarlo (ids duplicados, stats fuera de rango, combos sin damage, salas sin spawn points, graphs de diálogo sin EndNode).
+3. **Preview in-editor.** Donde sea posible, preview visual del contenido sin entrar a Play Mode.
+
+### 26.2 Entity Wizard
+
+`EditorWindow` que guía la creación de una nueva entidad paso a paso:
+
+1. Elegir subtipo (`Hero` / `Enemy` / `Prop` / `NPC`).
+2. Asignar id (auto-slug desde `DisplayName`, validado contra el catálogo para evitar duplicados).
+3. Configurar stats base con sliders (rango por stat desde un `StatsRangeSO`).
+4. Arrastrar prefab → auto-linkea `PrefabRef` como Addressable.
+5. Asignar behaviors (desde `BehaviorLibrary` o inline).
+6. Para enemigos: wizard de AI tree con templates predefinidos (`Melee Rusher`, `Ranged Kiter`, `Support Healer`, `Boss Pattern`).
+7. Al finalizar: crea el SO, lo agrega al `EntityCatalogSO`, valida.
+
+### 26.3 Room Designer
+
+Custom `EditorWindow` que muestra la grilla de la sala con:
+
+- Drag & drop de spawn points (enemy, reward, obstacle, door).
+- Preview de setups fijos (`EnemySetupSO`) con siluetas de enemigos.
+- Validación: al menos 1 door, al menos 1 enemy spawn (combat rooms), reachability check entre spawn points.
+- Botón "Test Room" que abre Play Mode en esa sala aislada con un héroe de prueba.
+
+### 26.4 Balance Dashboard
+
+`EditorWindow` con:
+
+- **Tabla de enemigos**: HP / Damage / Speed por piso (curva del `RulesetSO`).
+- **Tabla de combos**: damage base, probabilidad de match con 5d6, expected DPS.
+- **Simulador Monte Carlo**: N runs simuladas → distribución de floor reached, gold acumulado, combos más usados, causa de muerte más frecuente.
+- **Warnings automáticos**: "ComboGenerala tiene 0.01% chance con 5d6 — ¿es intencional?"
+
+### 26.5 Combo Probability Calculator
+
+Inline en el inspector de cada `BaseComboSO`:
+
+- Dado un `DiceBagSO`, calcula la probabilidad de match en 1 tirada.
+- Muestra probabilidad acumulada con 1/2/3 rerolls.
+- Compara `damage × probability = Expected Value` por combo.
+- Permite comparar dos bags side-by-side.
+
+### 26.6 Dialogue Graph Viewer
+
+Custom `EditorWindow` basada en GraphView API que:
+
+- Visualiza el `DialogueGraphSO` como nodos conectados.
+- Muestra `VisibleIf`/`EnabledIf` inline en cada choice.
+- Highlight de paths sin `EndNode` (dead ends).
+- Preview de texto con localización activa.
+- Drag & drop para reorganizar nodos.
+
+### 26.7 Feedback Preview Tool
+
+`EditorWindow` que permite:
+
+- Seleccionar un `FeedbackEntry` del DB.
+- Preview del VFX / SFX / Animation sin Play Mode.
+- Timeline visual de `FeedbackSequences` (steps en orden con tiempos).
+- Botón "Play Preview" que instancia el feedback en Scene View.
+
+### 26.8 Unlock Tree Visualizer
+
+`EditorWindow` que muestra el árbol de progresión (§14) como grafo:
+
+- Nodos = `BaseUnlockSO`, aristas = dependencias (`UnlockConditionSO`).
+- Color por estado: locked / unlocked / hidden.
+- Click en nodo → selecciona el SO en el inspector.
+- Validación: nodos inalcanzables, ciclos, condiciones imposibles.
+
+### 26.9 Content Validators (CI-ready)
+
+Scripts de editor que corren como tests o como pre-build step:
+
+| Validación | Qué detecta |
+|---|---|
+| IDs duplicados | Cualquier catálogo con dos entries con el mismo id |
+| SOs huérfanos | SOs no referenciados en ningún catálogo |
+| Stats fuera de rango | `Health = 0`, `Energy < 0`, `BaseDamage = 0` en combos |
+| Behaviors vacíos | `BaseBehavior` sin effects |
+| AI trees con nodos null | `AIDecisionNode` hijos que son null |
+| Dialogue dead ends | `DialogueGraphSO` con paths sin `EndNode` |
+| Addressable refs rotas | `PrefabRef` apuntando a un prefab eliminado |
+| Rooms sin doors | Salas de combate sin al menos 1 `DoorSlot` |
+| Rooms sin spawn points | Salas sin al menos 1 spawn point de enemigos |
+| Items sin ícono | `ItemSO` con `Icon = null` |
+| Rewards sin resolución | `RewardEntrySO` con `Category = Item` pero `ItemPool` vacío |
+
+Los validators exponen una interfaz común:
+
+```csharp
+public interface IContentValidator
+{
+    string ValidatorName { get; }
+    List<ValidationResult> Validate();
+}
+
+public struct ValidationResult
+{
+    public ValidationSeverity Severity;    // Error | Warning | Info
+    public string Message;
+    public Object Asset;                   // el SO con el problema (para seleccionarlo)
+}
+```
+
+### 26.10 Bulk Editor
+
+Para cambios masivos de balance:
+
+- "Subir HP de todos los enemigos Melee del piso 3+ en 20%."
+- "Cambiar `BaseDamage` de todos los combos tipo `ThreeOfKind` a 30."
+- Preview de cambios antes de aplicar.
+- Undo support (Unity Undo system).
+
+### 26.11 Content Templates
+
+Menú `Assets > Create > Rollgeon > Templates >` con presets:
+
+| Template | Qué crea | Pre-poblado con |
+|---|---|---|
+| "Basic Melee Enemy" | `EnemyDataSO` | Stats medios, AI tree melee approach+attack, behavior attack inline |
+| "Basic Ranged Enemy" | `EnemyDataSO` | Stats bajos, AI tree keep distance+ranged attack |
+| "Standard Combat Room" | `RoomSO` + prefab template | 4 enemy spawn points, 1 reward, 1 door N, 1 door S |
+| "Simple NPC Vendor" | `NpcDataSO` + `DialogueGraphSO` | Hub comprar/charlar/salir, `InteractionLabel` |
+| "Starter Hero" | `ClassHeroSO` | Stats medios, sheet estándar de 8 combos, 5xd6 bag |
+| "Passive Item" | `ItemSO` | Type = Passive, 1 hook vacío |
+| "Active Item" | `ItemSO` | Type = Active, 1 effect vacío, cooldown 5 |
+
+**Cross‑ref §26.** Todos los sistemas del proyecto — cada tool opera sobre sus SOs respectivos.
+
+---
+
+## 27. Convenciones de cross‑ref y changelog
+
+- **Numeración estable (0–16 para sistemas de dominio core; §17 agrupa §A–§N como sistemas transversales; §18–§25 para sistemas extendidos (items, rewards, status, quests, tutorial, settings, pooling, analytics); §26 content tooling; §27 convenciones + changelog)**. Para insertar secciones nuevas: agregar al final del bloque correspondiente o usar sufijos `Na`, `Nb` para no reshufflear referencias existentes.
 - **Cross‑refs internas** con `(§N.x)` — no markdown links — para que sigan siendo válidas si el documento se parte en varios archivos (`docs/Technical/02-Attributes.md`, etc.).
 - **Referencias a código** usan path desde root del repo + línea cuando aplica: `Assets/Rollgeon/Heroes/ClassHeroSO.cs:42`.
 - **Al editar**: actualizar el Índice si se agrega/renombra/mueve una sección. Citar sub‑sección del `Game Design.pdf` cuando una decisión se apoya en el GD.
@@ -5206,7 +7782,7 @@ Si aparece un caso puntual que pide una transición dramática (ej: cutscene de 
 - **Scope**: el documento cubre sólo código de dominio de Rollgeon. No documenta third‑party.
 - **Lengua**: español. Nombres de tipos y archivos en inglés.
 
-### 18.1 Changelog
+### 27.1 Changelog
 
 - `2026-04-13` — **v1**: Secciones iniciales — patrones base, atributos, modificadores, clases+sheets, combos, dados, entidades, efectos, behavior values, feedback, selection, resolución de tirada, enemigos+dungeon, meta‑progresión.
 - `2026-04-13` — **v2**: Reenfocado a Rollgeon. Removidas secciones de Cards, DeckBuilder y networking.
@@ -5306,3 +7882,103 @@ Si aparece un caso puntual que pide una transición dramática (ej: cutscene de 
   - **§12.0 — nuevo: `GamePhase` formalizado.** Enum canónico `{ Exploration, Combat, Craps, Shop, Cutscene }` con `= 0..4` explícitos. Explica la relación enum plano (valor) vs. `GamePhaseMask` (filtro de behaviors), quién es el owner del estado (`TurnManager` con `SetPhase` + `OnPhaseChange`), regla "nadie lee `CurrentPhase` en `Update()`", tabla de transiciones típicas (quién dispara cada `Exploration ↔ Combat ↔ Shop ↔ Craps`), y la aclaración de que el `CombatTurnFSM` **vive dentro** de `GamePhase.Combat` — sus micro‑states son invisibles para listeners externos del `OnPhaseChange`. Cierra la deuda de doc que v9 y v10 habían flagueado.
   - **Cross‑refs actualizadas.** §7.5 (el bullet sobre "FSM sigue viva para el flow macro de combate" cita los nuevos state names). §12.3 (flujo completo de ataque — el paso 1 ahora referencia `el CombatTurnFSM está en el state Roll` en vez de `TurnManager está en RollPhase`). §7.2 (la nota de doc debt se reemplaza por un puntero a §12.0 — deuda cerrada).
   - **No tocado en v11.** §9 `StoredValues` sigue pendiente (arrastrado desde v10); la formalización del `CutsceneService` queda apuntada en la tabla de transiciones de §12.0 como TBD, sin implementación.
+- `2026-04-17` — **v12**: rediseño de `GamePhase` como stack + overlays, shop estilo Isaac, craps como overlay de combate.
+  - **§12.0 — reescrito: `GamePhase` + `PhaseOverlay` + `IPhaseService`.**
+    - **Enum reducido.** `GamePhase { None, Exploration, Combat, Loading, GameOver }` — 5 valores, estables para saves. `Shop` eliminada (ítems en el piso, §17.F). `Craps` movido a overlay. `Cutscene` movido a overlay.
+    - **`PhaseOverlay { None, Pause, Cutscene, Craps }`.** Overlays suspenden la fase base sin destruirla. Push/Pop con stack.
+    - **`IPhaseService`** con `ReplacePhase(next)`, `PushOverlay(overlay)`, `PopOverlay()`. Reemplaza el viejo `TurnManager.SetPhase`. El `CombatTurnFSM` se congela automáticamente cuando hay un overlay activo y se reanuda al pop.
+    - **Queue + drain** para reentrancy: si un listener llama `ReplacePhase` dentro de un handler, la transición se encola y se despacha al terminar el dispatch actual.
+    - **`PhaseTransitionMatrixSO`** editable desde engine con `[TableMatrix]` de Odin para transiciones de fase base + `Dictionary<GamePhase, List<PhaseOverlay>>` para overlays válidos. Validación con assert en debug/editor. Tabla default documentada. Craps sólo válido como overlay de `Combat`.
+    - **Dos eventos** en vez de uno: `OnPhaseExit(exiting)` + `OnPhaseEnter(entering)` para fase base, `OnOverlayPushed(overlay)` + `OnOverlayPopped(overlay)` para overlays. Reemplaza el viejo `OnPhaseChange(prev, next)`.
+    - **`DeathWatchService`** — subscriber global de `OnHealthChanged` que detecta muerte fuera de combate (traps, ítems malditos, penalidades) y transiciona a `GamePhase.GameOver`. Dentro de combate, `CheckCombatEnd` del FSM ya cubre el caso.
+    - **Save policy explícita.** Save sólo al terminar combate o finalizar sala/piso. Nunca mid‑combat, nunca durante overlay. `CombatTurnFSM` y `CrapsSession` no necesitan ser `ISaveable`.
+    - **Regla de estabilidad del enum.** Nunca renumerar, siempre append, deprecados reservados.
+  - **§1.2 — events actualizados.**
+    - Tabla de familias: `OnPhaseChange` removido. Nueva familia `Phase (§12.0)` con `OnPhaseExit`, `OnPhaseEnter`, `OnOverlayPushed`, `OnOverlayPopped`. Nueva familia `Shop (§17.F)` con `OnShopItemTargetChanged`, `OnShopItemPurchased`, `OnShopRestocked`.
+    - Enum `EventName`: schemas de payload documentados para los 7 nuevos eventos.
+  - **§7.2 — `GamePhaseMask` reducido.** Sólo bits para `Exploration` y `Combat`. `Shop`, `Craps` y `Cutscene` eliminados del mask — Shop ya no es fase, Craps y Cutscene son overlays que no participan en el filtro de behaviors. Nota de doc debt reescrita con puntero a §12.0.
+  - **§7.7 — shop items en ejemplos.** Intro actualizada: "shop items en el piso (§17.F)" en la lista de interactables. §7.7.5 gana ejemplo canónico de shop item con precondition de gold, `EffDeductGold`, `EffAddItem`, `EffConsumeProp`. NPC vendor actualizado: "no abre pantalla de shop — los ítems ya están en el piso".
+  - **§17.C — Craps reescrito como overlay de combate.**
+    - Trigger: prop `CrapsTable` en sala de combate con `AllowedPhases = Combat`, behavior `OnInteract` ejecuta `EffStartCraps` que registra `ICrapsSessionService` y pushea `PhaseOverlay.Craps`.
+    - Flujo actualizado: empieza en `PlayerInput` del `CombatTurnFSM`, push congela FSM, mini‑juego corre, pop descongela, combate continúa.
+    - `CrapsConfigSO` ahora referenciado desde el `PropEntitySO` de la mesa, no desde el `RoomSO`.
+    - Pasiva "Craps anticipado" actualizada: modifica weight de spawn de mesas de craps en salas de combate.
+    - **Tabla C.7** con campos esperados del `CrapsConfigSO`.
+  - **§17.D — UI actualizada.**
+    - `ScreenId.Shop` eliminado del enum.
+    - **§D.6b `ItemInspectView`** — nuevo widget del HUD que muestra nombre, descripción, precio e ícono de un shop item al acercarse. Se suscribe a `OnShopItemTargetChanged`. Coexiste con `InteractionPromptView` (el prompt dice `[F] Comprar (25G)`, el inspect view muestra el detalle).
+    - §D.1: lista de screens actualizada (sin Shop).
+  - **§17.F — nuevo: Shop como ítems en el piso (estilo Isaac).**
+    - **`IShopManagerService`** — servicio de sala que coordina spawning de ítems desde pools, metadata para UI, purchase callbacks, y restock. Se registra al entrar a sala Shop, se desregistra al salir.
+    - **`ShopPoolSO`** — pool pesado de ítems editable desde engine. `List<WeightedShopItem>` con `Reward`, `Weight`, `BasePrice`, `MinFloorDepth`. Rolea un ítem por spawn point.
+    - **`ShopConfigSO`** — config global de pricing, slots, restock. `PriceMultiplier`, `PriceVariance`, `MaxItemSlots`, `AllowRestock`, `RestockCost`, `MaxRestocks`, `FirstPurchaseDiscountPercent`. Referenciado desde `RulesetSO` (§14.7).
+    - **Ejemplo canónico** — prop `ShopPedestal` con `InteractableComponent(Exploration, Prompt)` + behavior `OnInteract` con `EffDeductGold` + `EffAddItem` + `EffConsumeProp` + `EffNotifyShopPurchase`.
+    - **Restock machine** — prop opcional con `EffRestockShop` que re‑rolea slots no comprados.
+    - **Tabla F.6** con los 4 SOs esperados (`ShopPoolSO`, `ShopConfigSO`, `PropEntitySO` "ShopPedestal", `PropEntitySO` "RestockMachine").
+    - Integración con save (§13.6 `ShopItemState` sin cambios), pasivas (modifiers sobre `ShopPriceMultiplier` y `MaxRestocks`).
+  - **§0 TOC** — §17 index actualizado con §C (overlay de combate) y §F (shop). §18 numeración actualizada (§A–§F).
+  - **No tocado en v12.** §9 `StoredValues` sigue pendiente; `CutsceneService` sigue TBD; `FloorLayoutSO.CrapsRooms` y `CrapsChance` quedan como legacy — las mesas de craps ahora se spawnean como props en salas de combate vía `PropPoolSO`, no como tipo de sala dedicado. La limpieza de `CrapsRooms` del `FloorLayoutSO` queda para una pasada futura.
+- `2026-04-17` — **v13**: queries inline polimórficas — `GenericTargetQuerySO` reemplazado por `BaseTargetQuery`.
+  - §11.2: campo `GenericTargetQuerySO GenericTargetQuery` reemplazado por `[OdinSerialize, SerializeReference] BaseTargetQuery TargetQuery` — query inline polimórfica en vez de referencia a SO compartido.
+  - §11.2b: **nuevo**. `BaseTargetQuery` (abstracta, `[Serializable, HideReferenceObjectPicker]`) + `TargetQueryContext`. Catálogo inicial de 9 queries concretas con prefijo `TQ_`: `TQ_AdjacentEnemies`, `TQ_EnemiesInLineOfSight`, `TQ_AllEnemies`, `TQ_EmptySlots`, `TQ_ReachableTiles`, `TQ_OccupiedSlots`, `TQ_AvailableCombos`, `TQ_Self`, `TQ_Composite`. Sigue el patrón de `BasePreCondition` (§8.2) y `AIDecisionNode` (§7.5).
+  - §11.4: `SelectionController` ahora resuelve targets via `settings.TargetQuery.Evaluate(ctx)`.
+  - §5.6: comentario de `EffStrikeCombo` actualizado — referencia `TQ_AvailableCombos` (§11.2b) en vez de `GenericTargetQuerySO`.
+  - §B.4: `EffMove` actualizado — referencia `TargetQuery = TQ_ReachableTiles` (§11.2b) en vez de `GenericTargetQuerySO = ReachableTilesQuery`.
+  - §0: directorio `Effects/Queries/` agregado para `BaseTargetQuery` + `TQ_*` concretes.
+  - **Rationale.** Misma motivación que §7.5 (AI trees): si las queries fueran SOs, editar la de un efecto afectaría a todos los que comparten el asset. Inline por defecto, cada efecto con su propia instancia configurable.
+- `2026-04-17` — **v13**: mejoras arquitectónicas, 8 sistemas nuevos, tooling para diseño.
+  - **§1.1 — `ServiceLocator` con `ServiceScope`.**  `ServiceScope { Global, Run }` permite limpiar los servicios de gameplay al terminar una run sin afectar catalogs ni settings. `ClearScope(Run)` reemplaza al `Clear()` que destruía todo.
+  - **§1.2 — `TypedEvent<T>` bus tipado.** Bus complementario al `EventManager` legacy. Elimina casts `object[]` para eventos de alto tráfico. Structs de payload canónicos: `DamageResolvedPayload`, `HealthChangedPayload`, `ComboMatchedPayload`. Eventos nuevos deben usar `TypedEvent<T>`; migración de los existentes es oportunista.
+  - **§2.2 — Validación de tipo en `IAttribute`.** `GetValue<T>()` ahora valida que `T` coincida con `GetValueType()` y lanza `InvalidCastException` con mensaje claro en debug.
+  - **§3.1 — `Modifier<T>` con `ModifierOperation` enum.** El delegate `Func<T, T, T>` (no serializable) se reemplaza por `ModifierOperation` enum + `OperationResolver` estático. El save system persiste el enum y al restaurar se resuelve a delegate. Operaciones: `Add`, `Subtract`, `Multiply`, `Override`, `Min`, `Max`, `Percent`, `Set`, `And`, `Or`.
+  - **§6.1 — D3 eliminado.** `DiceType.D3` removido del enum — no existe como dado físico real. `DiceType` ahora empieza en `D4`.
+  - **§7.5 — `AINode_Wait` agregado.** Nodo de acción "pasar turno" para enemigos que esperan estratégicamente.
+  - **§12.0.4 — Fix de reentrancy en `DrainQueue`.** Flag `_isDraining` separado de `_isDispatching` para prevenir re-entrada durante el drain de transiciones pendientes.
+  - **§14.7 — `MaxReactionDepth` y `MaxActiveItemSlots` en `RulesetSO`.** Formaliza el cap de profundidad de cadenas reactivo→reactivo→… (default 3) y el límite de ítems activos (default 1).
+  - **§15.3 — `WeakReference<ISaveable>` en `SaveSystem`.** Previene memory leaks de ISaveables que no llamaron `Unregister`. `CaptureAll`, `CaptureDirty` y `RestoreAll` purgan automáticamente las referencias huérfanas.
+  - **§15.4 — Save slots (3 saves estilo Isaac).** `SaveSettingsSO` gana `MaxSaveSlots = 3`, `SaveFilePrefix`, `ActiveSlot`, `SlotExists(i)`, `DeleteSlot(i)`. Cada slot es un archivo independiente.
+  - **§7.1b — Patrón de trampas documentado.** Spike trap (OnEntered + damage), poison vent (OnPlayerInRange + status), bear trap (OnEntered + single-use + root). Las trampas no necesitan `InteractableComponent`.
+  - **§16.1 — Unity Analytics agregado a packages core** para telemetría de gameplay (§25).
+  - **§18 — nuevo: Sistema de Items e Inventario.** `ItemSO` (Passive/Active), `IInventoryService`, `InventoryState : ISaveable`, `ItemCatalogSO`. Pasivos: sin límite, hooks + persistent modifiers. Activos: slot limitado por `RulesetSO.MaxActiveItemSlots`, cooldown, activación manual. Inspirado en Isaac/Slay the Spire.
+  - **§19 — nuevo: Sistema de Rewards / Loot.** `RewardEntrySO` define tipo + rangos (no un SO por valor). Categorías: Gold (con rango min/max y scaling por piso), Item (pool pesado), Dice, Heal (fijo o %), Upgrade, Effect (genérico). `IRewardService` con `ResolveRewards` + `PresentRewards` (ShowAll/PickOne/PickN). `RewardCatalogSO`.
+  - **§20 — nuevo: Sistema de Status Effects.** `StatusEffectSO` con `StatusValueMode` (Fixed/PercentOfMax/FromReader), `StatusStackRule` (Refresh/Stack/Replace/Immune), `StatusTickBehavior`, inmunidades, feedback. `IStatusEffectService` con apply/remove/tick. `EffAddStatusEffect`. UI de status icons. Integración con `CheckTurnSkip` del FSM para CC.
+  - **§21 — nuevo: Sistema de Quests.** `QuestSO` con `CompletionConditions` (reusa `BasePreCondition` §8.2) y rewards. `IQuestService` con `QuestState { NotStarted, Active, Completed, Failed }`. `PCQuestState` precondition para diálogos. `UC_QuestCompleted` para unlocks.
+  - **§22 — nuevo: Tutorial / Onboarding.** `TutorialStepSO` con trigger events, UI highlight, forced actions. `ITutorialService`. `TutorialProgressState : ISaveable` persistido como global.
+  - **§23 — nuevo: Settings y Accessibility.** `GameSettingsSO` con difficulty override, reduce screen shake, color blind mode, large text, camera sensitivity. `ISettingsService`. Persistido como global.
+  - **§24 — nuevo: Object Pooling.** `IObjectPool<T>` genérico, `ComponentPool<T>` con prewarm, `IPoolService` central. Consumidores: FeedbackManager, AudioService, MovementService, DungeonManager, StatusIconsView, RewardScreen.
+  - **§25 — nuevo: Analytics y Telemetría.** `IAnalyticsService` con helpers tipados (run start/end, combo used, death, shop purchase). `FileAnalyticsService` con JSON lines a disco.
+  - **§26 — nuevo: Content Tooling.** Entity Wizard, Room Designer, Balance Dashboard, Combo Probability Calculator, Dialogue Graph Viewer, Feedback Preview Tool, Unlock Tree Visualizer, Content Validators (CI-ready), Bulk Editor, Content Templates.
+  - **§27 — renumerado desde §18.** Convenciones y changelog actualizados a la nueva numeración.
+- `2026-04-17` — **v14**: auditoría de consistencia, sistemas faltantes, mejoras arquitectónicas.
+  - **Inconsistencias corregidas (10):**
+    - §0: namespaces y directorios actualizados con los 10 sistemas nuevos (Audio, Camera, Movement, Shop, Craps, Pool, Settings, Input, Scene, Player).
+    - §1.1.1: `ServiceBootstrapSO.RegisterAll` ampliado con `ActionCatalogSO`, `RulesetCatalogSO`, `AudioSettingsSO`, `ShopConfigSO`, `PhaseTransitionMatrixSO`, `GameSettingsSO`.
+    - §4.2: stats `Gold`, `MovementRange`, `ShopPriceMultiplier` agregados a la tabla del héroe. `Shield` corregido a "se resetea en `OnTurnStarted`".
+    - §7.1: `EnemyDataSO` gana campos `WeakAgainst : BaseComboSO` y `WeaknessMultiplier : float` — cierra el gap del §12.2.
+    - §8.7: catálogo de efectos ampliado con `EffLeaveRoom`, `EffConsumeProp`, `EffAddStatusEffect`, `EffRemoveStatusEffect`, `EffDeductGold`, `EffAddItemToInventory`, `EffRestockShop`, `EffNotifyShopPurchase`, `EffStartQuest`, `EffCompleteQuest`, `EffStartCraps`.
+    - §10.7: dispatch SFX corregido de `AudioSource.PlayClipAtPoint` a `IAudioService.PlaySfx` (§A.4).
+    - §13.2: `RoomType.Craps` removido (mesas de craps son props en combate, §17.C). §13.5: `CrapsRooms`/`CrapsChance` removidos de `FloorLayoutSO`.
+    - §14.3: `UnlockStateSO.Instance` reemplazado por `ServiceLocator.GetService<UnlockStateSO>()` en `UC_WinWithNClasses` y `UC_QuestCompleted`.
+    - §14.7: `RulesetSO` gana campo `ShopConfigSO ShopConfig`. `RulesetCatalogSO` definido.
+    - §7.7.6: scope de `IInteractionService` corregido a `ServiceScope.Run` (no global).
+    - §17.C.2: `CrapsConfigSO` dropdown corregido de `EntityCatalogSO.AllCrapsConfigIds` a `CrapsCatalogSO.AllIds`.
+    - §17.C.5: `CombinationDetector.DetectAll` reemplazado por `ContractSheet.EvaluateRoll` — reusa la evaluación existente.
+    - §17.D.2: `ScreenId.Dialogue` y `ScreenId.Tutorial` agregados al enum.
+    - §20.5: `StatusIconsView` migrado de suscripción directa a service events a `EventManager` (cumple regla §D.4).
+    - §12.0.8: `PlayerService` reemplazado por `ServiceLocator.GetService<IPlayerService>()`.
+  - **Sistemas nuevos (8):**
+    - §2.4: **nuevo — runtime `Entity`**. Clase que representa cualquier entidad viva. Campos: `InstanceId`, `Template`, `Attributes`, `RuntimeBehaviors`, hero-specific (`Sheet`, `DiceBag`, `Passive`), enemy-specific (`AIRoot`), `Transform`, `GridPosition`. `ISaveable`. No hay subclases por subtipo de SO.
+    - §12.6: **`ActionCatalogSO`** definido con `AllTags` y `GetByTag`.
+    - §17.G: **nuevo — `IPlayerService`**. Servicio global con `PlayerGuid`, `RunId`, `CurrentEntity`.
+    - §17.H: **nuevo — `IPawnRegistryService`**. Mapping `Guid → Transform` para feedback position resolver y cámara.
+    - §17.I: **nuevo — `IGridManager`**. API de la grilla lógica: `IsWalkable`, `IsOccupied`, `GridToWorld`, `WorldToGrid`, `LoadFromRoom`.
+    - §17.J: **nuevo — `IInputService`**. Gestión de action maps por fase. Tabla de perfiles por `GamePhase`/`PhaseOverlay`. Tabla de action maps (`Gameplay`, `Camera`, `Dungeon`, `UI`) con acciones y bindings default.
+    - §17.K: **nuevo — Scene Management**. Arquitectura de scenes aditivas: `00_Bootstrap`, `01_Persistent` (managers), `02_UI` (canvas root), `03_MainMenu`, `Floor_XX`. `ISceneService` con carga async. Flujo de transición de piso documentado.
+    - §17.L: **nuevo — Enums comunes**. `RunOutcome`, `CombatOutcome`, `FloatingNumberType`, `ComparisonOp`.
+    - §17.M: **nuevo — `HealPipeline`**. Pipeline simétrica al `DamagePipeline`: outgoing heal multiplier → incoming heal multiplier → clamp a max HP. Stats `OutgoingHealMultiplier`, `IncomingHealMultiplier`. `EffHeal` delega acá.
+    - §17.N: **nuevo — Cutscene overlay**. `ICutsceneService`, `CutsceneDataSO` con steps lineales, flujo push/pop de overlay, skip.
+  - **Mejoras:**
+    - §1.2: tabla de familias de eventos ampliada con Status, Items, Quest, Scene.
+    - §27: numeración actualizada a §A–§N.
+    - `UpgradeSO` marcado como TBD en §19.
+  - `RoomType.Sacrifice` y `FloorLayoutSO.SacrificeRooms` removidos — no definidos en el GDD.
