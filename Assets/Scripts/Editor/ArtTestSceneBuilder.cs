@@ -106,6 +106,13 @@ public static class ArtTestSceneBuilder
     [MenuItem("Tools/Art Test/Build ArtTestV2 Scene")]
     public static void Build()
     {
+        // Can't open scenes in Play mode — exit first
+        if (UnityEditor.EditorApplication.isPlaying)
+        {
+            UnityEditor.EditorApplication.isPlaying = false;
+            Debug.Log("[ArtTestSceneBuilder] Stopped Play mode to run the builder.");
+        }
+
         // Open (or create) the ArtTestV2 scene
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
@@ -199,7 +206,8 @@ public static class ArtTestSceneBuilder
         var rig = new GameObject("CameraRig");
         rig.transform.position    = Vector3.zero;
         rig.transform.eulerAngles = new Vector3(0f, 45f, 0f);
-        rig.AddComponent<CameraRig>();
+        var rigComp = rig.AddComponent<CameraRig>();
+        rigComp.pixelRenderHeight = RT_H;   // keep in sync with the RT
 
         // ── Main Camera (pitch 30°, 20 units back) ──────────────────────────
         var camGO = new GameObject("Main Camera");
@@ -246,24 +254,52 @@ public static class ArtTestSceneBuilder
         return rig;
     }
 
-    // Fullscreen canvas that displays the low-res RT (ScreenSpaceOverlay = no camera needed)
+    // Fullscreen canvas that displays the low-res RT via the SharpUpscale shader.
+    // The shader uses fwidth derivatives for crisp pixel boundaries at any screen
+    // resolution and reads _PixelPanOffset (pushed by CameraRig) to compensate
+    // the sub-texel snap error so motion stays smooth.
     static void BuildDisplayCanvas(RenderTexture rt)
     {
         var canvasGO = new GameObject("DisplayCanvas");
 
         var canvas = canvasGO.AddComponent<Canvas>();
-        canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 0;
-        canvasGO.AddComponent<CanvasScaler>(); // default: constant pixel size
+        canvasGO.AddComponent<CanvasScaler>();
         canvasGO.AddComponent<GraphicRaycaster>();
 
         var imgGO = new GameObject("PixelDisplay");
         imgGO.transform.SetParent(canvasGO.transform, false);
 
+        // ── Sharp Upscale material ──────────────────────────────────────────
+        const string upscaleMatPath = "Assets/Art/ArtTest/Mat_SharpUpscale.mat";
+        var upscaleShader = Shader.Find("UI/Custom/SharpUpscale");
+        Material upscaleMat;
+        if (upscaleShader != null)
+        {
+            upscaleMat = AssetDatabase.LoadAssetAtPath<Material>(upscaleMatPath);
+            if (upscaleMat == null)
+            {
+                upscaleMat = new Material(upscaleShader) { name = "Mat_SharpUpscale" };
+                AssetDatabase.CreateAsset(upscaleMat, upscaleMatPath);
+            }
+            else
+            {
+                upscaleMat.shader = upscaleShader;
+            }
+        }
+        else
+        {
+            upscaleMat = null;
+            Debug.LogWarning("[ArtTestSceneBuilder] Shader 'UI/Custom/SharpUpscale' not found — " +
+                             "falling back to default RawImage (bilinear upscale).");
+        }
+
         var img = imgGO.AddComponent<RawImage>();
         img.texture = rt;
         img.color   = Color.white;
         img.uvRect  = new Rect(0f, 0f, 1f, 1f);
+        if (upscaleMat != null) img.material = upscaleMat;
 
         var rect = img.rectTransform;
         rect.anchorMin  = Vector2.zero;
