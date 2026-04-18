@@ -97,3 +97,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Orchestration artifacts — per-worktree plan files should NOT be committed
+# (each Foundation/System/Feature worktree writes its own plan.md at the repo root)
+/plan.md
