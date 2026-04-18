@@ -3,7 +3,8 @@
     "rootNamespace": "Rollgeon.UI.Tests",
     "references": [
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Rollgeon.Combos.Tests"
     ],
     "includePlatforms": [
         "Editor"
