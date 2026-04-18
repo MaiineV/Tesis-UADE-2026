@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.ComboBlock; // [T103]
 using Rollgeon.Combos;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -117,6 +118,9 @@ namespace Rollgeon.Heroes
                 for (int i = 0; i < dice.Count; i++) arr[i] = dice[i];
             }
 
+            IComboBlockService blockService = null; // [T103]
+            ServiceLocator.TryGetService<IComboBlockService>(out blockService); // [T103]
+
             BaseComboSO best = null;
             int bestPriority = int.MinValue;
             for (int i = 0; i < Combos.Count; i++)
@@ -124,6 +128,7 @@ namespace Rollgeon.Heroes
                 var combo = Combos[i];
                 if (combo == null) continue;
                 if (IsCrossed(combo)) continue;
+                if (blockService != null && blockService.IsBlocked(combo.ComboId)) continue; // [T103]
                 if (!combo.Matches(arr)) continue;
                 if (combo.Priority > bestPriority)
                 {

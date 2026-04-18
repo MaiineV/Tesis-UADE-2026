@@ -84,6 +84,10 @@ namespace Patterns
         OnComboCrossed,
         /// <summary>args: [Guid sourceGuid, Guid targetGuid]. Se pegó contra una debilidad.</summary>
         OnWeaknessHit,
+        /// <summary>args: [string comboId, int durationTurns]. Boss FloorManager bloquea un combo del ContractSheet. [T103]</summary>
+        OnComboBlocked,
+        /// <summary>args: [string comboId]. Bloqueo expirado (duration llego a 0). [T103]</summary>
+        OnComboUnblocked,
         /// <summary>args: [string comboId, int newCount]. Contador run-scoped de un combo incrementado (§5.5 — T97c).</summary>
         OnComboCounterIncremented,
 
