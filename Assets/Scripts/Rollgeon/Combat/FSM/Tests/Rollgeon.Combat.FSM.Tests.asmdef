@@ -1,10 +1,9 @@
 {
-    "name": "Rollgeon.UI.Tests",
-    "rootNamespace": "Rollgeon.UI.Tests",
+    "name": "Rollgeon.Combat.FSM.Tests",
+    "rootNamespace": "Rollgeon.Combat.FSM.Tests",
     "references": [
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Rollgeon.Combos.Tests"
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"
