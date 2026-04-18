@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combos;
+using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -9,29 +12,35 @@ using UnityEngine;
 namespace Rollgeon.Entities
 {
     /// <summary>
-    /// [STUB] — T99 will extend with stats / behaviors / loot / portrait / etc.
+    /// Datos estaticos de un enemigo. Unifica (a) la identidad + weakness del stub T97b
+    /// con (b) los stats base + AI behaviors del Support (Content#0099). TECHNICAL.md §7.1.
     /// <para>
-    /// Este worktree (Content#0097b) define solo los 4 campos minimos necesarios para
-    /// cablear el sistema de weakness-hit (TECHNICAL.md §5). T99 va a <b>agregar</b>
-    /// campos; no va a renombrar ni quitar los existentes.
-    /// </para>
-    /// <para>
-    /// <b>Hereda <see cref="SerializedScriptableObject"/></b> para que T99 pueda agregar
-    /// campos polimorficos (behaviors, loot tables, etc.) sin re-trabajar la serializacion.
+    /// Los 4 campos originales del stub (EntityId, DisplayName, WeaknessComboId,
+    /// WeaknessMultiplierOverride) se <b>preservan sin renombrar</b> — este worktree
+    /// solo agrega campos nuevos. Ver plan §10 handshake T97b ↔ T99.
     /// </para>
     /// </summary>
-    // [STUB] — T99 will extend with stats/behaviors. No renombrar los 4 campos actuales.
-    [CreateAssetMenu(menuName = "Rollgeon/Entities/Enemy Data (STUB)", fileName = "EnemyData")]
-    public class EnemyDataSO : SerializedScriptableObject
+    /// <remarks>
+    /// <para>
+    /// <b>Identity.</b> <see cref="EntityId"/>, <see cref="DisplayName"/>,
+    /// <see cref="Description"/> vienen de <see cref="BaseEntitySO"/>. <c>EntityId</c>
+    /// es overridable — el stub T97b lo declaraba como campo propio; al subir a
+    /// <c>BaseEntitySO</c> queda el mismo nombre publico, solo cambia su owner.
+    /// </para>
+    /// <para>
+    /// <b>CreateRuntimeStats.</b> Instancia un <see cref="ModifiableAttributes"/> fresh
+    /// con <see cref="Health"/>, <see cref="Attributes.Stats.Speed"/>,
+    /// <see cref="Attributes.Stats.Energy"/> y <see cref="Behaviors.HealStrength"/>
+    /// inicializados con los valores base del SO. No se clonan modifiers (hero/enemy
+    /// "fresco" al spawn — §2.2).
+    /// </para>
+    /// </remarks>
+    [CreateAssetMenu(menuName = "Rollgeon/Entities/Enemy Data", fileName = "EnemyData")]
+    public class EnemyDataSO : BaseEntitySO
     {
-        [Title("Identity")]
-        [Delayed]
-        [Tooltip("Id canonico del enemigo (ej. 'enemy.support.auditor').")]
-        public string EntityId;
-
-        [Delayed]
-        [Tooltip("Nombre legible para UI.")]
-        public string DisplayName;
+        // -----------------------------------------------------------------
+        // Weakness (§5 — T97b). NO renombrar estos 2 campos.
+        // -----------------------------------------------------------------
 
         [Title("Weakness (§5 — T97b)")]
         [ValueDropdown(nameof(GetComboIds))]
@@ -44,6 +53,80 @@ namespace Rollgeon.Entities
         [Tooltip("Override del multiplier global de weakness. 0 = usar RulesetSO.Weakness.DefaultMultiplier. " +
                  ">0 pisa el default global solo para este enemigo.")]
         public float WeaknessMultiplierOverride = 0f;
+
+        // -----------------------------------------------------------------
+        // Base Stats — Content#0099.
+        // -----------------------------------------------------------------
+
+        [Title("Base Stats")]
+        [MinValue(1)]
+        [Range(1, 200)]
+        [Tooltip("HP maximo. Usado como cap para heals y como valor inicial de Health runtime.")]
+        public int BaseHP = 20;
+
+        [MinValue(0)]
+        [Range(0, 100)]
+        [Tooltip("Ataque base. Support puro suele tenerlo en 0 (el Auditor no ataca).")]
+        public int BaseAttack = 0;
+
+        [MinValue(0)]
+        [Range(0, 50)]
+        [Tooltip("Potencia de curacion base. Se suma al BaseHealAmount del SupportHealBehavior.")]
+        public int BaseHealStrength = 5;
+
+        [MinValue(1)]
+        [Range(1, 20)]
+        [Tooltip("Speed base (iniciativa). Consumido por TurnManager/InitiativeProvider. Oculto en UI via Speed[HiddenFromUI].")]
+        public int BaseSpeed = 4;
+
+        [MinValue(0)]
+        [Range(0, 10)]
+        [Tooltip("Energia maxima por turno. El Support gasta energia cuando el action economy esta activo (T100b).")]
+        public int MaxEnergy = 3;
+
+        // -----------------------------------------------------------------
+        // Behaviors — Content#0099.
+        // -----------------------------------------------------------------
+
+        [Title("Behaviors")]
+        [InfoBox("Lista de behaviors polimorficos inline que el enemigo ejecuta (segun su Trigger + Phase). " +
+                 "Para el Auditor: agregar un SupportHealBehavior con Trigger=OnTurnStart y AllowedPhases=Combat.")]
+        [OdinSerialize]
+        public List<BaseBehavior> Behaviors = new List<BaseBehavior>();
+
+        // -----------------------------------------------------------------
+        // Runtime builders.
+        // -----------------------------------------------------------------
+
+        /// <inheritdoc />
+        public override ModifiableAttributes CreateRuntimeStats()
+        {
+            var attrs = new ModifiableAttributes();
+            attrs.EnsureInitialized();
+            attrs.SetAttribute<Health>(new Health(BaseHP));
+            attrs.SetAttribute<Speed>(new Speed(BaseSpeed));
+            attrs.SetAttribute<Energy>(new Energy(MaxEnergy));
+            attrs.SetAttribute<HealStrength>(new HealStrength(BaseHealStrength));
+            return attrs;
+        }
+
+        /// <summary>
+        /// Devuelve copias deep de los <see cref="Behaviors"/> declarados en el SO.
+        /// Usa <see cref="SerializationUtility.CreateCopy"/> para preservar polimorfismo
+        /// y garantizar que cada spawn tiene su propio <c>StoredValues</c> bag.
+        /// </summary>
+        public List<BaseBehavior> CreateRuntimeBehaviors()
+        {
+            var result = new List<BaseBehavior>();
+            if (Behaviors == null) return result;
+            foreach (var template in Behaviors)
+            {
+                if (template == null) continue;
+                var clone = SerializationUtility.CreateCopy(template) as BaseBehavior;
+                if (clone != null) result.Add(clone);
+            }
+            return result;
+        }
 
         // ---- Odin dropdown source (same pattern as BaseComboSO) ---------
 
