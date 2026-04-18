@@ -863,7 +863,8 @@ public class Modifier<T>
     public ModifierOperation Operation;     // serializable — resuelta a Func via OperationResolver
     public int Duration;                    // solo relevante cuando Lifetime == Turns
     public Guid ModifierId;                 // único por instancia
-    public Guid OwnerId;                    // entidad a la que pertenece el modificador
+    public Guid CarrierId;                  // entidad (Entity.InstanceId) que CARGA el modificador — usado para tick-gating y event payload
+    public Guid SourceId;                   // entidad/efecto que ORIGINÓ el modificador — usado para RemoveBySource cuando la fuente muere/expira. Guid.Empty si no aplica.
     public ModifierDirection Direction;     // Outgoing | Incoming | Intrinsic
     public ModifierLifetime Lifetime;       // Turns | Permanent | Run | Encounter
     public EventName TickEvent;             // evento que decrementa Duration (solo Turns)
@@ -871,14 +872,16 @@ public class Modifier<T>
     [NonSerialized]
     private Func<T, T, T> _resolvedOp;     // cache runtime — resuelta desde Operation
 
-    public Modifier(T amount, ModifierOperation op, int duration, Guid ownerId,
+    public Modifier(T amount, ModifierOperation op, int duration,
+                    Guid carrierId, Guid sourceId,
                     ModifierDirection dir, ModifierLifetime lifetime, EventName tickEvent)
     {
         Amount = amount;
         Operation = op;
         Duration = duration;
         ModifierId = Guid.NewGuid();
-        OwnerId = ownerId;
+        CarrierId = carrierId;
+        SourceId = sourceId;
         Direction = dir;
         Lifetime = lifetime;
         TickEvent = tickEvent;
@@ -935,9 +938,10 @@ public class Modifier<T>
 
     private void OnTickTriggered(params object[] args)
     {
-        // args[0] debe ser Guid del owner del evento
+        // args[0] debe ser Guid de la entidad cuyo turno/evento dispara el tick.
+        // Gating: sólo tickeamos si este mod pertenece al CARRIER que está activando.
         if (args.Length == 0 || !(args[0] is Guid triggerGuid)) return;
-        if (OwnerId != triggerGuid) return;
+        if (CarrierId != triggerGuid) return;
 
         Duration--;
         if (Duration == 0)
@@ -949,7 +953,7 @@ public class Modifier<T>
     private void RemoveAndNotify()
     {
         OnRemove();
-        EventManager.Trigger(EventName.OnModifierRemoved, OwnerId, ModifierId);
+        EventManager.Trigger(EventName.OnModifierRemoved, CarrierId, ModifierId);
     }
 }
 
@@ -977,6 +981,15 @@ public enum ModifierLifetime
 ```
 
 **Patrón.** Strategy (via `Operation` delegate) + self‑managed subscription por **scope** + direction‑aware application. El campo `Lifetime` absorbe la semántica que antes quedaba implícita (`Duration == -1` = permanente en el prototipo) y a la vez habilita los scopes "run" y "encounter" del GDD sin tener que inventar eventos de tick ad‑hoc.
+
+**Nota de naming — `CarrierId` vs `SourceId`.** Los dos Guid son ortogonales y ambos importan:
+
+- **`CarrierId`** (antes `OwnerId`) = **entidad que lleva el modificador pegado**. Es el `Entity.InstanceId` del jugador, enemigo, boss o prop sobre el cual el mod está activo. Se usa para: (a) **tick-gating** — `OnTickTriggered` compara `CarrierId == args[0]` para que los buffs del jugador sólo decrementen duration en su turno y no en los turnos de los enemigos; (b) **event payload** — `OnModifierRemoved(CarrierId, ModifierId)` le dice al HUD y al `AttributesManager` qué entidad limpiar.
+- **`SourceId`** = **entidad/efecto que originó este modificador**. Es el `Entity.InstanceId` del enemigo que lanzó el debuff, del item activo que aplicó el buff, o del ability concreto que lo colocó. Se usa para: (a) **remove‑by‑source** — "al morir Boss X, sacar todos los mods que X puso sobre el jugador" = `AttributesManager.RemoveAllModifiersBySource(bossInstanceId)`; (b) **expiración por fuente** — "este buff dura mientras la poción activa esté vigente, al retirarla se limpian sus mods"; (c) **pasivas de reflect/counter** — "si la fuente del daño recibido es un enemigo de tipo X, aplicar...".
+
+Cuando el `SourceId` no aplica (mod auto‑infligido, stat boost permanente de tienda sin origen identificable), se pasa `Guid.Empty`. `RemoveAllModifiersBySource(Guid.Empty)` es **siempre no‑op** por seguridad (evita borrar masivamente mods anónimos por accidente).
+
+**Cambio de naming (changelog interno).** El campo que §3.1 antes llamaba `OwnerId` se renombró a `CarrierId` para evitar la confusión con "host multiplayer" (Rollgeon es single‑player — no existe host). Otros lugares del spec (§7.2 cleanup, §12 pipeline, §20 status) todavía usan `OwnerId` textual; cada tarea downstream los ajusta cuando los toca. La semántica es idéntica.
 
 ### 3.2 `ModifierDirection` y por qué importa
 
@@ -1013,7 +1026,7 @@ La base de efectos resuelve el dropdown vía `OperationsConstants.GetAll*Operati
 1. Un efecto (`EffAddIntModifier`, §8) construye el `Modifier<T>` en el inspector: operación, amount, duration, dirección, **lifetime**, tick event.
 2. `AttributesManager.AddModifier(targetGuid, mod)` lo asocia a un `IModifiable` de la entidad target.
 3. El modifier corre su `OnLoad()` según `Lifetime`:
-   - `Turns` → se suscribe a `TickEvent` y decrementa `Duration` en cada trigger cuyo `args[0]` matche `OwnerId`.
+   - `Turns` → se suscribe a `TickEvent` y decrementa `Duration` en cada trigger cuyo `args[0]` matche `CarrierId`.
    - `Run` → se suscribe a `OnRunEnd`. Al dispararse, se remueve entero.
    - `Encounter` → se suscribe a `OnCombatEnd`. Al dispararse, se remueve entero.
    - `Permanent` → **no** se suscribe a nada. La única forma de sacarlo es `EffRemoveModifier` (§8.7) buscando por `ModifierId` o por tipo.
