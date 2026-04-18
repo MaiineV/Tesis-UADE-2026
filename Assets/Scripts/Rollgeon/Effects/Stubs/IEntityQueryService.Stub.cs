@@ -14,5 +14,12 @@ namespace Rollgeon.Effects.Stubs
     {
         /// <summary>Devuelve todas las entidades enemigas del owner dado.</summary>
         IEnumerable<Entity> GetAllEnemiesOf(Guid ownerGuid);
+
+        /// <summary>
+        /// Devuelve todas las entidades aliadas del owner (mismo bando, excluye al
+        /// propio owner). Consumido por <c>SupportHealBehavior</c> (Content#0099) para
+        /// elegir target de cura. Stub ampliado — concretos downstream completan.
+        /// </summary>
+        IEnumerable<Entity> GetAllAlliesOf(Guid ownerGuid);
     }
 }
