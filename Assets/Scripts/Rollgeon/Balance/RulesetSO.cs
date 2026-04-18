@@ -1,3 +1,4 @@
+using Rollgeon.Combos.Counters;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -48,6 +49,8 @@ namespace Rollgeon.Balance
         // [Merge hook] — otros worktrees agregan sub-structs tipados acá.
         // T100a: EnergyConfig Energy.           ✔ implementado abajo
         // T100c: TurnOrderConfig TurnOrder.     ✔ implementado abajo
+        // T97b:  WeaknessConfig Weakness.       ✔ implementado abajo
+        // T97c:  ComboCountersConfig Counters.  ✔ implementado abajo
         // T100b: RollConfig Rolls.              pendiente
         // T99:   ScalingConfig Scaling.         pendiente
         // Balance#0101 (§14.7 completo) extiende con el resto (CritConfig,
@@ -77,11 +80,22 @@ namespace Rollgeon.Balance
         /// <summary>Knobs de weakness (default multiplier). Lectura runtime.</summary>
         public WeaknessConfig Weakness => _weakness;
 
+        [Title("Combo Counters (§5.5 — T97c)")]
+        [InfoBox("Perillas del sistema de combo counters (Balatro-style). Cada match de un combo " +
+                 "acumula PerUseBonus en el multiplicador; MaxBonus aplica el techo. " +
+                 "Fórmula: mult = 1 + min(MaxBonus, Count * PerUseBonus).")]
+        [OdinSerialize]
+        private ComboCountersConfig _counters = new ComboCountersConfig();
+
+        /// <summary>Knobs de combo counters (PerUseBonus / MaxBonus). Lectura runtime.</summary>
+        public ComboCountersConfig Counters => _counters;
+
         private void OnValidate()
         {
             _energy?.Validate();
             TurnOrder.OnValidate();
             _weakness?.Validate();
+            _counters?.Validate();
         }
     }
 }

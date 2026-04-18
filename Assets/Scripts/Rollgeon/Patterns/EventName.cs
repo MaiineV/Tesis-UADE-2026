@@ -88,6 +88,8 @@ namespace Patterns
         OnComboBlocked,
         /// <summary>args: [string comboId]. Bloqueo expirado (duration llego a 0). [T103]</summary>
         OnComboUnblocked,
+        /// <summary>args: [string comboId, int newCount]. Contador run-scoped de un combo incrementado (§5.5 — T97c).</summary>
+        OnComboCounterIncremented,
 
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
