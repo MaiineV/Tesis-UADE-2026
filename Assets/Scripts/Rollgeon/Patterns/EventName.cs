@@ -84,6 +84,16 @@ namespace Patterns
         OnComboCrossed,
         /// <summary>args: [Guid sourceGuid, Guid targetGuid]. Se pegó contra una debilidad.</summary>
         OnWeaknessHit,
+        // [STUB T103] — combo bloqueado por mecánica del boss. Publisher real en T103.
+        /// <summary>args: [Guid affectedGuid, string comboId, int turnsRemaining]. Stub para T103.</summary>
+        OnComboBlocked,
+        // [STUB T103] — combo desbloqueado por mecánica del boss. Publisher real en T103.
+        /// <summary>args: [Guid affectedGuid, string comboId]. Stub para T103.</summary>
+        OnComboUnblocked,
+        // [STUB T104] — evento opcional que notifica el estado del reroll budget.
+        //   Si T104 ya lo expuso, esta entry es redundante pero compatible.
+        /// <summary>args: [Guid playerGuid, int used, int cap]. Stub para T104.</summary>
+        OnRerollBudgetChanged,
 
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
