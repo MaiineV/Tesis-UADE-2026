@@ -84,15 +84,13 @@ namespace Patterns
         OnComboCrossed,
         /// <summary>args: [Guid sourceGuid, Guid targetGuid]. Se pegó contra una debilidad.</summary>
         OnWeaknessHit,
-        // [STUB T103] — combo bloqueado por mecánica del boss. Publisher real en T103.
-        /// <summary>args: [Guid affectedGuid, string comboId, int turnsRemaining]. Stub para T103.</summary>
+        /// <summary>args: [string comboId, int durationTurns]. Boss FloorManager bloquea un combo del ContractSheet. [T103]</summary>
         OnComboBlocked,
-        // [STUB T103] — combo desbloqueado por mecánica del boss. Publisher real en T103.
-        /// <summary>args: [Guid affectedGuid, string comboId]. Stub para T103.</summary>
+        /// <summary>args: [string comboId]. Bloqueo expirado (duration llego a 0). [T103]</summary>
         OnComboUnblocked,
-        // [STUB T104] — evento opcional que notifica el estado del reroll budget.
-        //   Si T104 ya lo expuso, esta entry es redundante pero compatible.
-        /// <summary>args: [Guid playerGuid, int used, int cap]. Stub para T104.</summary>
+        /// <summary>args: [string comboId, int newCount]. Contador run-scoped de un combo incrementado (§5.5 — T97c).</summary>
+        OnComboCounterIncremented,
+        /// <summary>args: [Guid playerGuid, int used, int cap]. Estado del reroll budget cambió (T104 extensión — opcional, dispara si el servicio lo emite).</summary>
         OnRerollBudgetChanged,
 
         // --- Modifier / attributes ---------------------------------------------

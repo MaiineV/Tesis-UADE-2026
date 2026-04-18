@@ -68,31 +68,35 @@ namespace Rollgeon.UI.Tests
         public void OnComboBlocked_ActivatesOverlayForMatchedComboId()
         {
             _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnComboBlocked, _playerGuid, "combo.par", 2);
+            // T103 schema: [string comboId, int durationTurns]
+            EventManager.Trigger(EventName.OnComboBlocked, "combo.par", 2);
 
             Assert.IsTrue(_parOverlay.activeSelf);
             Assert.IsFalse(_generalaOverlay.activeSelf);
         }
 
         [Test]
-        public void OnComboBlocked_FiltersByPlayerGuid()
+        public void OnComboBlocked_IgnoresMalformedArgs()
         {
             _view.Bind(_playerGuid);
-            var otherGuid = Guid.NewGuid();
-            EventManager.Trigger(EventName.OnComboBlocked, otherGuid, "combo.par", 2);
+            // len < 2 — handler logs warning and returns
+            UnityEngine.TestTools.LogAssert.Expect(
+                UnityEngine.LogType.Warning,
+                new System.Text.RegularExpressions.Regex("OnComboBlocked args malformed"));
+            EventManager.Trigger(EventName.OnComboBlocked, "combo.par");
 
-            Assert.IsFalse(_parOverlay.activeSelf,
-                "Evento de otra entidad no debe mutar el overlay del player.");
+            Assert.IsFalse(_parOverlay.activeSelf);
         }
 
         [Test]
         public void OnComboUnblocked_DeactivatesOverlay()
         {
             _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnComboBlocked, _playerGuid, "combo.par", 2);
+            EventManager.Trigger(EventName.OnComboBlocked, "combo.par", 2);
             Assert.IsTrue(_parOverlay.activeSelf);
 
-            EventManager.Trigger(EventName.OnComboUnblocked, _playerGuid, "combo.par");
+            // T103 schema: [string comboId]
+            EventManager.Trigger(EventName.OnComboUnblocked, "combo.par");
 
             Assert.IsFalse(_parOverlay.activeSelf);
         }

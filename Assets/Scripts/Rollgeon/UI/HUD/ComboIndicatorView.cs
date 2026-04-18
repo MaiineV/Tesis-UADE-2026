@@ -158,46 +158,33 @@ namespace Rollgeon.UI.HUD
 
         private void HandleComboBlocked(params object[] args)
         {
-            // schema: [Guid affectedGuid, string comboId, int turnsRemaining]
-            if (args == null || args.Length < 3)
+            // T103 schema: [string comboId, int durationTurns] — no guid filter since boss blocks
+            // affect the run's player implicitly (single-player, §5.6 semantics).
+            if (args == null || args.Length < 2)
             {
-                Debug.LogWarning(LogPrefix + "OnComboBlocked args malformed (len < 3).", this);
+                Debug.LogWarning(LogPrefix + "OnComboBlocked args malformed (len < 2).", this);
                 return;
             }
-            if (!(args[0] is Guid guid))
+            if (!(args[0] is string comboId))
             {
-                Debug.LogWarning(LogPrefix + "OnComboBlocked args[0] is not Guid.", this);
+                Debug.LogWarning(LogPrefix + "OnComboBlocked args[0] is not string.", this);
                 return;
             }
-            if (guid != _playerGuid) return;
-
-            if (!(args[1] is string comboId))
-            {
-                Debug.LogWarning(LogPrefix + "OnComboBlocked args[1] is not string.", this);
-                return;
-            }
-            int turns = args[2] is int t ? t : 0;
+            int turns = args[1] is int t ? t : 0;
             SetBlocked(comboId, true, turns);
         }
 
         private void HandleComboUnblocked(params object[] args)
         {
-            // schema: [Guid affectedGuid, string comboId]
-            if (args == null || args.Length < 2)
+            // T103 schema: [string comboId]
+            if (args == null || args.Length < 1)
             {
-                Debug.LogWarning(LogPrefix + "OnComboUnblocked args malformed (len < 2).", this);
+                Debug.LogWarning(LogPrefix + "OnComboUnblocked args malformed (len < 1).", this);
                 return;
             }
-            if (!(args[0] is Guid guid))
+            if (!(args[0] is string comboId))
             {
-                Debug.LogWarning(LogPrefix + "OnComboUnblocked args[0] is not Guid.", this);
-                return;
-            }
-            if (guid != _playerGuid) return;
-
-            if (!(args[1] is string comboId))
-            {
-                Debug.LogWarning(LogPrefix + "OnComboUnblocked args[1] is not string.", this);
+                Debug.LogWarning(LogPrefix + "OnComboUnblocked args[0] is not string.", this);
                 return;
             }
             SetBlocked(comboId, false, 0);
