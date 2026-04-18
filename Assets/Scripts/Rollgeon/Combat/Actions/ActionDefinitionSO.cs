@@ -62,6 +62,12 @@ namespace Rollgeon.Combat.Actions
         public bool BlockOnRepeat = true;
 
         [Title("Reroll")]
+        [MinValue(0)]
+        [Tooltip("Tiradas TOTALES incluidas gratis (incluye la inicial). Ej: ataque Generala = 3 " +
+                 "(1 roll + 2 rerolls); skill-check heal/force-door = 1. El RerollBudgetService " +
+                 "(Feature#0104) convierte a rerolls gratis como max(0, FreeRollCount - 1).")]
+        public int FreeRollCount = 1;
+
         [ToggleLeft]
         [Tooltip("Si true, la accion permite gastar re-rolls de energia (§12.2 / T104). " +
                  "En este worktree el flag se declara; T104 lo consume.")]
