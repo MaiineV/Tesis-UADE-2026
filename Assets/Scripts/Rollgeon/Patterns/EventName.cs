@@ -90,6 +90,8 @@ namespace Patterns
         OnComboUnblocked,
         /// <summary>args: [string comboId, int newCount]. Contador run-scoped de un combo incrementado (§5.5 — T97c).</summary>
         OnComboCounterIncremented,
+        /// <summary>args: [Guid playerGuid, int used, int cap]. Estado del reroll budget cambió (T104 extensión — opcional, dispara si el servicio lo emite).</summary>
+        OnRerollBudgetChanged,
 
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
