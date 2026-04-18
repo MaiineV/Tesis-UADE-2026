@@ -68,10 +68,20 @@ namespace Rollgeon.Balance
                  "para entidades sin stat Speed. Consumido por DefaultInitiativeProvider.")]
         public TurnOrderConfig TurnOrder;
 
+        [Title("Weakness (§5 — T97b)")]
+        [InfoBox("Multiplicador global de weakness. Override per-enemy disponible en " +
+                 "EnemyDataSO.WeaknessMultiplierOverride.")]
+        [OdinSerialize]
+        private WeaknessConfig _weakness = new WeaknessConfig();
+
+        /// <summary>Knobs de weakness (default multiplier). Lectura runtime.</summary>
+        public WeaknessConfig Weakness => _weakness;
+
         private void OnValidate()
         {
             _energy?.Validate();
             TurnOrder.OnValidate();
+            _weakness?.Validate();
         }
     }
 }
