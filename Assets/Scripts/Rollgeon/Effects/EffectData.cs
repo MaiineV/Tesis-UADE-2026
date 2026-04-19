@@ -4,6 +4,7 @@ using Rollgeon.Effects.Selection;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Effects
 {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Rollgeon.Effects.Stubs;
 using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace Rollgeon.Entities.Behaviors
 {

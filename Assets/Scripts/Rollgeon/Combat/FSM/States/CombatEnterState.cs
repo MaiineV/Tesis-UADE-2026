@@ -24,7 +24,7 @@ namespace Rollgeon.Combat.FSM.States
     {
         internal PlayerTurnState Player;
         internal EnemyTurnState Enemy;
-        internal CombatExitState Exit;
+        internal CombatExitState ExitRef;
 
         public CombatEnterState(CombatContext context) : base(context) { }
 
@@ -58,7 +58,7 @@ namespace Rollgeon.Combat.FSM.States
                     return true;
 
                 case CombatInput.CombatEnded:
-                    next = Exit;
+                    next = ExitRef;
                     return true;
 
                 default:

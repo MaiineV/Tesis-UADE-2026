@@ -66,14 +66,14 @@ namespace Rollgeon.Combat.FSM
             // Wire siblings (set siblings pattern — evita deps circulares en constructor).
             Enter.Player = Player;
             Enter.Enemy = Enemy;
-            Enter.Exit = ExitState;
+            Enter.ExitRef = ExitState;
 
             Player.Enemy = Enemy;
-            Player.Exit = ExitState;
+            Player.ExitRef = ExitState;
             Player.Self = Player;
 
             Enemy.Player = Player;
-            Enemy.Exit = ExitState;
+            Enemy.ExitRef = ExitState;
             Enemy.Self = Enemy;
 
             _sm = new StateMachine<CombatContext, CombatInput>(context, Enter);

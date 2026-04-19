@@ -23,7 +23,7 @@ namespace Rollgeon.Combat.FSM.States
     public sealed class EnemyTurnState : BaseState<CombatContext, CombatInput>
     {
         internal PlayerTurnState Player;
-        internal CombatExitState Exit;
+        internal CombatExitState ExitRef;
         // Self-ref para cadenas de enemies (enemy A -> enemy B sin player entre medio).
         internal EnemyTurnState Self;
 
@@ -65,7 +65,7 @@ namespace Rollgeon.Combat.FSM.States
                     var order = Context.TurnOrder.OrderForRound;
                     if (order == null || order.Count == 0)
                     {
-                        next = Exit;
+                        next = ExitRef;
                         return true;
                     }
 
@@ -84,7 +84,7 @@ namespace Rollgeon.Combat.FSM.States
                     return true;
 
                 case CombatInput.CombatEnded:
-                    next = Exit;
+                    next = ExitRef;
                     return true;
 
                 default:

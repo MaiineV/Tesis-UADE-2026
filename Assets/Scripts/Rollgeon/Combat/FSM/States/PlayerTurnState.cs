@@ -25,7 +25,7 @@ namespace Rollgeon.Combat.FSM.States
     public sealed class PlayerTurnState : BaseState<CombatContext, CombatInput>
     {
         internal EnemyTurnState Enemy;
-        internal CombatExitState Exit;
+        internal CombatExitState ExitRef;
         // Self-ref: tras Advance puede volver a ser el turno del player (Speed > enemy).
         internal PlayerTurnState Self;
 
@@ -95,7 +95,7 @@ namespace Rollgeon.Combat.FSM.States
                     var order = Context.TurnOrder.OrderForRound;
                     if (order == null || order.Count == 0)
                     {
-                        next = Exit;
+                        next = ExitRef;
                         return true;
                     }
 
@@ -116,7 +116,7 @@ namespace Rollgeon.Combat.FSM.States
                     return true;
 
                 case CombatInput.CombatEnded:
-                    next = Exit;
+                    next = ExitRef;
                     return true;
 
                 default:

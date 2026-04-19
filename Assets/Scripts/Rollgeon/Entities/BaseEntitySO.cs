@@ -1,6 +1,7 @@
 using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Entities
 {

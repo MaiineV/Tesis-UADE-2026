@@ -5,6 +5,7 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Balance;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;
+using EnergyStat = Rollgeon.Attributes.Stats.Energy;
 
 namespace Rollgeon.Combat.Energy
 {
@@ -142,14 +143,14 @@ namespace Rollgeon.Combat.Energy
             var attrs = _attributes.GetAttributes(entityId);
             if (attrs == null) return;
 
-            if (!attrs.HasAttribute<Energy>())
+            if (!attrs.HasAttribute<EnergyStat>())
             {
-                attrs.SetAttribute<Energy>(new Energy(start));
-                EventManager.Trigger(EventName.OnAttributeChanged, entityId, typeof(Energy));
+                attrs.SetAttribute<EnergyStat>(new EnergyStat(start));
+                EventManager.Trigger(EventName.OnAttributeChanged, entityId, typeof(EnergyStat));
             }
             else
             {
-                _attributes.SetAttributeValue<Energy, int>(entityId, start);
+                _attributes.SetAttributeValue<EnergyStat, int>(entityId, start);
             }
 
             _playerId = entityId;
@@ -164,13 +165,13 @@ namespace Rollgeon.Combat.Energy
             if (!_attributes.IsRegistered(entityId)) return false;
 
             var attrs = _attributes.GetAttributes(entityId);
-            if (attrs == null || !attrs.HasAttribute<Energy>()) return false;
+            if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return false;
 
-            int current = _attributes.GetAttributeValue<Energy, int>(entityId);
+            int current = _attributes.GetAttributeValue<EnergyStat, int>(entityId);
             if (cost > current) return false;
 
             int newVal = current - cost;
-            _attributes.SetAttributeValue<Energy, int>(entityId, newVal);
+            _attributes.SetAttributeValue<EnergyStat, int>(entityId, newVal);
             TriggerEnergyChanged(entityId, newVal, _ruleset.Energy.EnergyMax);
             return true;
         }
@@ -182,16 +183,16 @@ namespace Rollgeon.Combat.Energy
             if (!_attributes.IsRegistered(entityId)) return;
 
             var attrs = _attributes.GetAttributes(entityId);
-            if (attrs == null || !attrs.HasAttribute<Energy>()) return;
+            if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
 
-            int current = _attributes.GetAttributeValue<Energy, int>(entityId);
+            int current = _attributes.GetAttributeValue<EnergyStat, int>(entityId);
             int max = _ruleset.Energy.EnergyMax;
             int regenBase = _ruleset.Energy.EnergyRegenBase;
             int newVal = EnergyRegenPolicy.ComputeNewCurrent(current, max, regenBase);
 
             if (newVal == current) return; // no-op: no disparamos evento redundante.
 
-            _attributes.SetAttributeValue<Energy, int>(entityId, newVal);
+            _attributes.SetAttributeValue<EnergyStat, int>(entityId, newVal);
             TriggerEnergyChanged(entityId, newVal, max);
         }
 
@@ -200,8 +201,8 @@ namespace Rollgeon.Combat.Energy
             if (_attributes == null) return 0;
             if (!_attributes.IsRegistered(entityId)) return 0;
             var attrs = _attributes.GetAttributes(entityId);
-            if (attrs == null || !attrs.HasAttribute<Energy>()) return 0;
-            return _attributes.GetAttributeValue<Energy, int>(entityId);
+            if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return 0;
+            return _attributes.GetAttributeValue<EnergyStat, int>(entityId);
         }
 
         // [FOLLOWUP] EnergyMaxBonus stat para items que suban el cap (plan R8).
