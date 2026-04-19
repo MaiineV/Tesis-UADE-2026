@@ -1532,9 +1532,15 @@ public class ComboCounterThresholdSO : SerializedScriptableObject
 
 Todo lo numérico (qué thresholds existen, qué rewards dan) es data de SOs editables desde el inspector. El código no fija ninguna curva.
 
-### 5.6 Strike combos (tachar)
+### 5.6 Strike combos (tachar) — ⚠️ TBD, NO implementar todavía
 
-Regla del GDD: el jugador puede **quemar** un combo de su sheet durante la run a cambio de un stat boost temporal. Ese combo deja de ser ejecutable hasta el fin de la run.
+> **Estado (2026-04-18):** esta mecánica queda **diferida** por decisión de orquestación. El GDD aún no cerró qué stat boost otorga el strike, qué combos son `IStrikableCombo` (cuáles pueden tacharse y cuáles no), ni qué UI usa para que el jugador elija el combo a quemar. Sprint 03 FP **no** implementa `RunStrikeState`, `EffStrikeCombo`, ni el gate de `EvaluateRoll` sobre strike.
+>
+> **Impacto en `ContractSheet.EvaluateRoll`:** la implementación actual (T97b) no debe consultar `RunStrikeState`. Si y cuando Strike se habilite, se agrega el filtro por `TryGetService<RunStrikeState>` sin romper la API.
+>
+> **La sección de abajo queda como referencia de diseño** para cuando se retome post-FP. No crear archivos `RunStrikeState.cs` / `EffStrikeCombo.cs` hasta que esta nota se remueva.
+
+Regla del GDD (diseño futuro): el jugador puede **quemar** un combo de su sheet durante la run a cambio de un stat boost temporal. Ese combo deja de ser ejecutable hasta el fin de la run.
 
 ```csharp
 /// <summary>
