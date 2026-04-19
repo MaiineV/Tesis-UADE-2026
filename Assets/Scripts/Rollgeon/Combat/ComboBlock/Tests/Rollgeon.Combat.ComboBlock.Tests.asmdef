@@ -2,6 +2,7 @@
     "name": "Rollgeon.Combat.ComboBlock.Tests",
     "rootNamespace": "Rollgeon.Combat.ComboBlock.Tests",
     "references": [
+        "Rollgeon",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Rollgeon.Combos.Tests"
@@ -15,13 +16,10 @@
     "precompiledReferences": [
         "nunit.framework.dll"
     ],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],
-    "noEngineReferences": false,
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
+    "noEngineReferences": false
 }

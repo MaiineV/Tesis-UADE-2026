@@ -2,6 +2,7 @@
     "name": "Rollgeon.Combat.Actions.Tests",
     "rootNamespace": "Rollgeon.Combat.Actions.Tests",
     "references": [
+        "Rollgeon",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
@@ -12,15 +13,15 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "Sirenix.OdinInspector.Attributes.dll",
+        "Sirenix.Serialization.dll",
+        "Sirenix.Utilities.dll"
     ],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],
-    "noEngineReferences": false,
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
+    "noEngineReferences": false
 }
