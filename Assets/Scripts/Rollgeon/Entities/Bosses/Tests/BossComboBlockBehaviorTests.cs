@@ -62,10 +62,10 @@ namespace Rollgeon.Entities.Bosses.Tests
         {
             EventManager.UnSubscribe(EventName.OnComboBlocked, _blockedHandler);
             _service.Dispose();
-            Object.DestroyImmediate(_par);
-            Object.DestroyImmediate(_doblePar);
-            Object.DestroyImmediate(_trio);
-            Object.DestroyImmediate(_bossSO);
+            UnityEngine.Object.DestroyImmediate(_par);
+            UnityEngine.Object.DestroyImmediate(_doblePar);
+            UnityEngine.Object.DestroyImmediate(_trio);
+            UnityEngine.Object.DestroyImmediate(_bossSO);
             ServiceLocator.Clear();
         }
 

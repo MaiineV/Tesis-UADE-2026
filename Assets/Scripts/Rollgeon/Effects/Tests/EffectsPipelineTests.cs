@@ -45,7 +45,10 @@ namespace Rollgeon.Effects.Tests
     }
 
     /// <summary>Behavior stub concreto, instanciable (BaseBehavior es abstract).</summary>
-    public class TestBehavior : BaseBehavior { }
+    public class TestBehavior : BaseBehavior
+    {
+        public override void Execute(BehaviorContext ctx) { }
+    }
 
     // Contextos polimórficos para test del TryGetTriggerContext<T>.
     public class FooBehaviorContext : BehaviorContext

@@ -37,7 +37,7 @@ namespace Rollgeon.Entities.Bosses.Tests
         public void TearDown()
         {
             _attrs?.Dispose();
-            Object.DestroyImmediate(_bossSO);
+            UnityEngine.Object.DestroyImmediate(_bossSO);
             ServiceLocator.Clear();
         }
 

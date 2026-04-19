@@ -27,7 +27,7 @@ namespace Rollgeon.Entities.Bosses.Tests
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_bossSO);
+            UnityEngine.Object.DestroyImmediate(_bossSO);
         }
 
         private sealed class TestCtx : BehaviorContext { }
