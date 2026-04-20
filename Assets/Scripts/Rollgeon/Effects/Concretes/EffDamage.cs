@@ -1,4 +1,6 @@
 using System;
+using Patterns;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Stubs;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -59,7 +61,29 @@ namespace Rollgeon.Effects.Concretes
             // La foundation no resuelve Guid → Entity (no hay EntityRegistry todavía) — el
             // stub de DamagePipeline tolera Entity == null y sólo loggea.
 
-            DamagePipelineStub.Apply(context.SourceEntity, target, amount);
+            // Prefer the real DamagePipeline when registered; fall back to stub otherwise.
+            int resolvedDamage = amount;
+            if (ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline))
+            {
+                var sourceGuid = context.SourceEntity != null
+                    ? context.SourceEntity.Guid
+                    : Guid.Empty;
+
+                var ctx = new DamageContext
+                {
+                    SourceId = sourceGuid,
+                    TargetId = targetGuid,
+                    BaseDamage = amount,
+                    Kind = AttackKind.BasicAttack,
+                };
+
+                pipeline.Resolve(ctx);
+                resolvedDamage = ctx.FinalDamage;
+            }
+            else
+            {
+                DamagePipelineStub.Apply(context.SourceEntity, target, amount);
+            }
 
             // IShouldStoreValuesOnBehavior — escribe el número flotante para el feedback downstream.
             if (context.SourceBehavior != null)
@@ -68,7 +92,7 @@ namespace Rollgeon.Effects.Concretes
                     BehaviorValueKey.FloatingDamage,
                     new FloatingNumberBehaviorValue
                     {
-                        Value = amount,
+                        Value = resolvedDamage,
                         TargetEntityGuid = targetGuid,
                     });
             }
