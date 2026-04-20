@@ -12,9 +12,9 @@ namespace Rollgeon.UI.Screens
     /// <summary>
     /// Pantalla de seleccion de clase (Sprint03 #98). Muestra tres botones de clase
     /// (<b>Guerrero</b> disponible, <b>Mago</b>/<b>Picaro</b> bloqueados) y un panel
-    /// derecho con el contrato del heroe + pasiva + portrait. Al confirmar dispara
-    /// <see cref="EventName.OnRunStart"/> (schema <c>[Guid runId, string rulesetId]</c>)
-    /// e intenta navegar a <c>BuildSelectionScreen</c> (stub graceful si no existe).
+    /// derecho con el contrato del heroe + pasiva + portrait. Al confirmar crea un
+    /// <see cref="BuildSelectionPayload"/> y navega a <c>BuildSelectionScreen</c>
+    /// (UI#0013a). OnRunStart se dispara downstream via RunBootstrapper.
     /// Plan §4.1.
     /// </summary>
     /// <remarks>
@@ -215,9 +215,10 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Dispara <see cref="EventName.OnRunStart"/> con <c>[Guid runId, string rulesetId]</c>
-        /// y pushea <c>_nextScreenStringId</c>. Fallback graceful si la screen next no
-        /// existe (plan §10 R1 + setup §8.10).
+        /// Creates a <see cref="BuildSelectionPayload"/> with the selected hero and a new
+        /// run id, then navigates to <c>_nextScreenStringId</c> (BuildSelectionScreen).
+        /// OnRunStart is now fired downstream by <see cref="Rollgeon.Run.RunBootstrapper.StartRun"/>
+        /// inside <see cref="BuildSelectionScreen.OnConfirmClicked"/> (UI#0013a).
         /// </summary>
         // [STUB] IRngService §17.O — cuando mergee, reemplazar Guid.NewGuid() por
         //        ServiceLocator.GetService<IRngService>().NewRunId(). Convencion
@@ -232,12 +233,11 @@ namespace Rollgeon.UI.Screens
 
             var runId = Guid.NewGuid();
             var heroId = _selectedHero.EntityId ?? "<null>";
-            EventManager.Trigger(EventName.OnRunStart, runId, _rulesetId);
+            // OnRunStart is now fired by BuildSelectionScreen via RunBootstrapper.StartRun
+            // (removed from here to avoid double-firing)
 
-            Debug.Log(LogPrefix + $"Run start. heroId={heroId}, runId={runId}, next={_nextScreenStringId}", this);
+            Debug.Log(LogPrefix + $"Navigating to build selection. heroId={heroId}, runId={runId}, next={_nextScreenStringId}", this);
 
-            // [STUB] BuildSelectionScreen — cuando mergee T-build, esta rama encuentra la
-            //        screen registrada. Hasta entonces, ScreenManager loggea warning graceful.
             if (!ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado — no se puede navegar.", this);
@@ -246,7 +246,13 @@ namespace Rollgeon.UI.Screens
 
             if (!string.IsNullOrEmpty(_nextScreenStringId))
             {
-                screens.PushByStringId(_nextScreenStringId);
+                var payload = new BuildSelectionPayload
+                {
+                    SelectedHero = _selectedHero,
+                    RunId = runId,
+                    RulesetId = _rulesetId
+                };
+                screens.PushByStringId(_nextScreenStringId, payload);
             }
         }
     }

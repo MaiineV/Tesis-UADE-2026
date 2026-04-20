@@ -169,34 +169,25 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ConfirmClick_FiresOnRunStart_WithRulesetId()
+        public void ConfirmClick_DoesNotFireOnRunStart_DefersToBuildSelectionScreen()
         {
+            // Since UI#0013a, OnRunStart is fired by BuildSelectionScreen via
+            // RunBootstrapper.StartRun — ClassSelectionScreen only navigates.
             InvokePushed(null);
             _warriorButton.onClick.Invoke();
 
-            Guid receivedRunId = Guid.Empty;
-            string receivedRulesetId = null;
             int receivedCount = 0;
-            EventManager.EventReceiver handler = args =>
-            {
-                receivedCount++;
-                Assert.IsNotNull(args, "args no puede ser null.");
-                Assert.AreEqual(2, args.Length, "Schema OnRunStart: [Guid runId, string rulesetId].");
-                Assert.IsInstanceOf<Guid>(args[0], "args[0] debe ser Guid runId.");
-                Assert.IsInstanceOf<string>(args[1], "args[1] debe ser string rulesetId.");
-                receivedRunId = (Guid)args[0];
-                receivedRulesetId = (string)args[1];
-            };
+            EventManager.EventReceiver handler = args => { receivedCount++; };
             EventManager.Subscribe(EventName.OnRunStart, handler);
 
             try
             {
+                // No IScreenManager registered — confirm logs warning but does not fire event.
                 _confirmButton.onClick.Invoke();
 
-                Assert.AreEqual(1, receivedCount, "OnRunStart debe dispararse exactamente una vez.");
-                Assert.AreNotEqual(Guid.Empty, receivedRunId, "runId debe ser un Guid no-vacio.");
-                Assert.AreEqual("default", receivedRulesetId,
-                    "rulesetId default del screen es 'default' (plan §4.1).");
+                Assert.AreEqual(0, receivedCount,
+                    "OnRunStart must NOT fire from ClassSelectionScreen — it is now " +
+                    "BuildSelectionScreen's responsibility via RunBootstrapper.");
             }
             finally
             {
