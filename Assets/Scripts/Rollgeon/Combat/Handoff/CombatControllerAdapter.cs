@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combat.AI;
 using Rollgeon.Combat.FSM;
 
 namespace Rollgeon.Combat.Handoff
 {
     /// <summary>
-    /// Thin adapter that implements <see cref="ICombatStarter"/> by forwarding
-    /// to a real <see cref="CombatController"/>. Registered in
+    /// Thin adapter that implements <see cref="ICombatStarter"/> and
+    /// <see cref="ICombatSignaller"/> by forwarding to a real
+    /// <see cref="CombatController"/>. Registered in
     /// <see cref="Patterns.ServiceLocator"/> by the bootstrap or by
     /// <see cref="CombatHandoffService.CreateAndRegister"/>.
     /// </summary>
-    public sealed class CombatControllerAdapter : ICombatStarter
+    public sealed class CombatControllerAdapter : ICombatStarter, ICombatSignaller
     {
         private readonly CombatController _controller;
 
@@ -27,5 +29,7 @@ namespace Rollgeon.Combat.Handoff
         {
             _controller.StartCombat(playerId, participants, roomInstanceId, enemyActionHandler);
         }
+
+        public void SignalEnemyDone() => _controller.SendEnemyDone();
     }
 }
