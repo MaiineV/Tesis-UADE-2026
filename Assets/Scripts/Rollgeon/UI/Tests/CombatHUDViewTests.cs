@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
@@ -18,10 +19,18 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class CombatHUDViewTests
     {
+#pragma warning disable 67
         private sealed class FakePlayerService : IPlayerService
         {
             public Guid PlayerGuid { get; set; }
+            public Guid RunId { get; set; }
+            public ClassHeroSO CurrentHero { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
+#pragma warning restore 67
 
         private GameObject _hudGO;
         private CombatHUDView _hud;
