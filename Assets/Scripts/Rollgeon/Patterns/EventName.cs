@@ -33,6 +33,8 @@ namespace Patterns
         OnCombatStart,
         /// <summary>args: [Guid roomInstanceId, CombatOutcome outcome]</summary>
         OnCombatEnd,
+        /// <summary>args: [Guid runId]</summary>
+        OnPlayerDefeated,
 
         // --- Damage pipeline ----------------------------------------------------
         /// <summary>args: [Guid sourceGuid, Guid targetGuid, int baseDamage]</summary>
