@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df2924abfa53f364f845b98b45e4a453, type: 3}
+  m_Name: ServiceBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Patterns.Bootstrap.ServiceBootstrapSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Catalogs
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Patterns.Catalogs.BaseCatalogSO,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: SettingsAssets
+      Entry: 7
+      Data: 1|System.Collections.Generic.List`1[[UnityEngine.ScriptableObject, UnityEngine.CoreModule]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ExtraServices
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Patterns.Bootstrap.IPreloadableService,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  Catalogs: []
+  SettingsAssets: []
+  _nextSceneName: 01_MainMenu

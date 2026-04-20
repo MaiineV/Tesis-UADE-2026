@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4319ec96e0078cc4b99e90f69a9ccc75, type: 3}
+  m_Name: CH_Warrior
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Heroes.ClassHeroSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Sheet
+      Entry: 7
+      Data: 0|Rollgeon.Heroes.ContractSheet, Rollgeon
+    - Name: Combos
+      Entry: 7
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Combos.BaseComboSO, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _displayLabel
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: Warrior
+  DisplayName: Warrior
+  Description: 
+  Sheet:
+    Combos:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    _displayLabel: 
+  BaseMaxHp: 10
+  BaseSpeed: 5
+  Portrait: {fileID: 0}
+  StartingDiceBagRef: {fileID: 0}
+  PassiveRef: {fileID: 0}
