@@ -10,8 +10,9 @@ namespace Rollgeon.UI.Screens
     /// <summary>
     /// Screen overlay persistente durante <c>GamePhase.Exploration</c>. Coordina las
     /// sub-views (<see cref="HealthBarView"/>, <see cref="EnergyBarView"/>,
-    /// <see cref="GoldCounterView"/>, <see cref="ActiveItemsView"/>, <see cref="MinimapView"/>)
-    /// propagando el <c>playerGuid</c> resuelto via <see cref="IPlayerService"/>.
+    /// <see cref="GoldCounterView"/>, <see cref="ActiveItemsView"/>, <see cref="MinimapView"/>,
+    /// <see cref="RoomNavigationView"/>) propagando el <c>playerGuid</c> resuelto via
+    /// <see cref="IPlayerService"/>.
     /// </summary>
     /// <remarks>
     /// Plan §4.1 / TECHNICAL.md §17.D. No tiene logica propia de render — solo
@@ -34,7 +35,7 @@ namespace Rollgeon.UI.Screens
         private const string LogPrefix = "[ExplorationHUDView] ";
 
         [Title("Exploration HUD — Sub-views")]
-        [InfoBox("Cablear los 5 widgets del HUD. Null = sub-view skipped con warning " +
+        [InfoBox("Cablear los 6 widgets del HUD. Null = sub-view skipped con warning " +
                  "(no crashea, pero esa parte del HUD no actualiza).")]
         [Required("Arrastrar el HealthBarView del widget.")]
         [SerializeField]
@@ -55,6 +56,10 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar el MinimapView del widget.")]
         [SerializeField]
         private MinimapView _minimap;
+
+        [Required("Arrastrar el RoomNavigationView del widget.")]
+        [SerializeField]
+        private RoomNavigationView _roomNavigation;
 
         /// <inheritdoc/>
         public override string ScreenStringId => "ExplorationHUD";
@@ -125,6 +130,9 @@ namespace Rollgeon.UI.Screens
             if (_minimap != null) _minimap.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_minimap no esta cableado en el Inspector.", this);
 
+            if (_roomNavigation != null) _roomNavigation.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_roomNavigation no esta cableado en el Inspector.", this);
+
             _subViewsBound = true;
         }
 
@@ -136,6 +144,7 @@ namespace Rollgeon.UI.Screens
             if (_goldCounter != null) _goldCounter.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             if (_minimap != null) _minimap.Unbind();
+            if (_roomNavigation != null) _roomNavigation.Unbind();
             _subViewsBound = false;
         }
     }
