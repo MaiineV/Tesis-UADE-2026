@@ -5,7 +5,8 @@
         "Rollgeon",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Rollgeon.Combos.Tests"
+        "Rollgeon.Combos.Tests",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"
