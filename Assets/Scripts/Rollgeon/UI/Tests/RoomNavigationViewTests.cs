@@ -55,6 +55,8 @@ namespace Rollgeon.UI.Tests
                 AdvanceRoomCallCount++;
                 return true;
             }
+
+            public void ResumeAfterCombat() { }
         }
 
         // -------------------------------------------------------------------
