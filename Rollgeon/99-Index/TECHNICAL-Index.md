@@ -2,54 +2,68 @@
 title: TECHNICAL-Index
 type: index
 domain: 99-Index
-status: pending
+status: done
 tags: [index, technical, crossref]
 ---
 
 # TECHNICAL.md Section Index
 
 > Map from the 27 sections of `TECHNICAL.md` (repo root, ~9.1k lines) to
-> the folders and notes in this vault. Use this when you need to jump
-> from a spec section to the atomic notes that materialize it.
-
-> **Status:** stub. Fully populated in **Wave 9** (Index finalization)
-> once all domain notes exist. The section list below is the target
-> outline.
-
----
+> the folders and atomic notes in this vault. Use this to jump from a
+> spec section to the notes that materialize it.
 
 ## Sections §0 – §27
 
-| § | Topic | Vault domain |
+| § | Topic | Vault entry points |
 |---|---|---|
-| §0 | Conventions and stack | [[Home]] + `CLAUDE.md` |
-| §1 | Base patterns (ServiceLocator, EventManager, FSM) | [[Foundations-MOC\|00-Foundations]] |
-| §2 | Attributes system | [[Attributes-MOC\|01-Attributes]] |
-| §3 | Modifiers | [[Attributes-MOC\|01-Attributes]] |
-| §4 | Classes and hero sheets | [[Heroes-MOC\|06-Heroes]] |
-| §5 | Generala contract + combos | [[Combos-MOC\|03-Combos]] |
-| §6 | Dice and bag | [[Dice-MOC\|08-Dice]] |
-| §7 | Entities and behaviors | [[Entities-MOC\|05-Entities]] |
-| §8 | Effects + PreConditions | [[Effects-MOC\|04-Effects]] |
-| §9 | Behavior values | [[Entities-MOC\|05-Entities]] |
-| §10 | Feedback system | [[Crosscutting-MOC\|16-Crosscutting]] |
-| §11 | Selection / targeting | [[Effects-MOC\|04-Effects]] |
-| §12 | Combat | [[Combat-MOC\|02-Combat]] |
-| §13 | Dungeon / rooms | [[Dungeon-MOC\|07-Dungeon]] |
-| §14 | Meta-progression | [[Meta-MOC\|15-Meta]] |
-| §15 | Save / persistence | [[Meta-MOC\|15-Meta]] |
-| §16 | Unity packages | repo `Packages/` |
-| §17 | Transversal systems | [[Crosscutting-MOC\|16-Crosscutting]] |
-| §18 | Items / inventory | [[Meta-MOC\|15-Meta]] (TBD) |
-| §19 | Rewards / loot | [[Meta-MOC\|15-Meta]] (TBD) |
-| §20 | Status effects | [[Effects-MOC\|04-Effects]] (TBD) |
-| §21 | Quests | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
-| §22 | Tutorial | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
-| §23 | Settings | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
-| §24 | Object pooling | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
-| §25 | Analytics | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
-| §26 | Content tooling | [[Crosscutting-MOC\|16-Crosscutting]] (TBD) |
+| §0  | Conventions & stack | [[Home]], `CLAUDE.md` |
+| §1.1 | ServiceLocator | [[ServiceLocator]], [[ServiceScope]] |
+| §1.1.1 | Bootstrap | [[Bootstrap]], [[ServiceBootstrapSO]], [[IPreloadableService]] |
+| §1.1.2 | BootstrapRunner | [[BootstrapRunner]] |
+| §1.1.3 | Run lifecycle | [[RunBootstrapper]], [[RunController]], [[RunContext]] |
+| §1.2 | EventManager | [[EventManager]], [[EventName]] |
+| §1.2.1 | TypedEvent | [[TypedEvent]] |
+| §1.3 | FSM framework | [[StateMachine]], [[BaseState]], [[IState]] |
+| §2  | Attributes system | [[IAttribute]], [[IModifiable]], [[BaseAttribute]], [[ModifiableAttributes]], [[AttributesManager]] |
+| §3  | Modifiers | [[Modifier]], [[ModifierDirection]], [[ModifierLifetime]], [[ModifierOperation]], [[OperationResolver]] |
+| §4  | Classes & hero sheets | [[ClassHeroSO]], [[ContractSheet]] |
+| §5  | Generala contract + combos | [[Combos-MOC]], [[BaseComboSO]], the 8 concretes |
+| §5.3 | ContractSheet | [[ContractSheet]] |
+| §5.5 | Combo counters / block | [[ComboCountersService]], [[ComboCountersConfig]], [[ComboBlockService]] |
+| §5.6 | Strike combos (TBD) | **deferred** — see [[Sprint03-Status]] TBDs |
+| §6  | Dice & bag | [[Dice-MOC]] — partial ([[RerollBudgetService]]); DiceBagSO / Types are TBD |
+| §7  | Entities & behaviors | [[BaseEntitySO]], [[EnemyDataSO]], [[BaseBehavior]] + concretes |
+| §8  | Effects & preconditions | [[Effects-MOC]] — [[BaseEffect]], [[EffectData]], [[BasePreCondition]] |
+| §9  | Behavior values | [[BaseBehavior]] (StoredValues API) |
+| §10 | Feedback system | [[FloatingDamageSpawner]]; full `FeedbackManager` is TBD |
+| §11 | Selection / targeting | [[SelectionSettings]], [[BaseTargetQuery]], [[TargetQueries]] |
+| §12 | Combat | [[Combat-MOC]] |
+| §12.2 | Damage pipeline | [[DamagePipeline]], [[DamageContext]], [[AttackKind]] |
+| §12.3 | Heal pipeline | [[HealPipeline]] |
+| §12.6 | Action economy | [[TurnManager]], [[ActionDefinitionSO]], [[EnergyService]] |
+| §12.7 | Turn order / initiative | [[TurnOrderService]], [[DefaultInitiativeProvider]], [[TurnOrderConfig]], [[Speed]] |
+| §13 | Dungeon / rooms | [[Dungeon-MOC]] |
+| §14 | Meta-progression | [[Meta-MOC]] — TBD ([[UnlockSystem]], [[RunRecord]]) |
+| §14.7 | Ruleset | [[RulesetSO]], [[EnergyConfig]], [[WeaknessConfig]], [[TurnOrderConfig]] |
+| §15 | Save / persistence | [[ISaveable]] + [[SaveSystem]] (TBD) |
+| §16 | Unity packages | repo `Packages/` — not in vault |
+| §17 | Transversal systems | [[Crosscutting-Overview]] |
+| §17.PHA | Phase service | [[Phase-MOC]], [[PhaseService]], [[PhaseTransitionMatrixSO]] |
+| §17.G | Player service | [[Player-MOC]], [[PlayerService]] |
+| §17.UI | Screen manager | [[ScreenManager]], [[BaseScreen]] |
+| §18 | Items / inventory | TBD — see [[Crosscutting-Overview]] |
+| §19 | Rewards / loot | TBD — see [[Crosscutting-Overview]] |
+| §20 | Status effects | TBD — see [[Crosscutting-Overview]] |
+| §21 | Quests | TBD |
+| §22 | Tutorial | TBD |
+| §23 | Settings | TBD |
+| §24 | Object pooling | TBD |
+| §25 | Analytics | TBD |
+| §26 | Content tooling | TBD |
 | §27 | Cross-ref conventions | [[Home]] |
 
-Each row will be expanded during Wave 9 with direct links to the key
-atomic notes in the referenced domain.
+## Reading flow
+
+For each code area you're about to touch, open the matching section in
+`TECHNICAL.md` first (source of truth), then drop into the vault note
+for implementation context (code path, tests, cross-refs).

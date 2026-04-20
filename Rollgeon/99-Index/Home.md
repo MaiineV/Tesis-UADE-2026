@@ -2,7 +2,7 @@
 title: Home
 type: index
 domain: 99-Index
-status: wip
+status: done
 tags: [index, home]
 ---
 
@@ -93,7 +93,16 @@ dependencies and are read first by the Bootstrap pipeline.
 
 ## Progress
 
-Population of this vault proceeds in waves (see the plan in
-`C:\Users\agust\.claude\plans\tenemos-que-revisar-el-groovy-bee.md`).
-Current wave: **0 — Scaffold**. Most MOCs and domain notes are still
-unresolved — this is expected and will be filled in Waves 1–9.
+Initial population is complete across waves 0–9 (≈ 170 atomic notes +
+17 MOCs + 4 index notes). Subsequent work reconciles this vault with
+the code:
+
+- **New system ships** → add its note in the right domain folder, link
+  it from the domain's MOC, refresh [[Sprint03-Status]] if the sprint
+  balance shifts.
+- **Existing system refactored** → update `Code`, `API / Shape`, and
+  `Uses` / `Used by` edges.
+- **TBD graduates** → flip `status: tbd` → `status: done` and promote
+  from [[Crosscutting-Overview]] into its own note when it deserves one.
+- **MOC drift** → fix the MOC's diagram in the same PR as the code
+  change; don't let diagrams rot.
