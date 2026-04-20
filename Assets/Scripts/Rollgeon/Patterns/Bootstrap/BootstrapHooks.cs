@@ -5,10 +5,9 @@ namespace Rollgeon.Patterns.Bootstrap
 {
     /// <summary>
     /// Centraliza los callbacks de eventos de run lifecycle (<c>OnRunStart</c> / <c>OnRunEnd</c>)
-    /// que el <see cref="BootstrapRunner"/> mantiene vivos durante toda la sesion para
-    /// delegar en <c>RunBootstrapper</c> (stub — implementado en Sprint 04 / T98) y
-    /// hacer <see cref="ServiceLocator.ClearScope(ServiceScope)"/> de <see cref="ServiceScope.Run"/>
-    /// al terminar. Plan §4.6, TECHNICAL.md §1.1.3.a.
+    /// que el <see cref="BootstrapRunner"/> mantiene vivos durante toda la sesion.
+    /// <see cref="RunBootstrapper"/> owns the actual lifecycle — these handlers only log.
+    /// Plan §4.6, TECHNICAL.md §1.1.3.a.
     /// <para>
     /// <b>Idempotente.</b> <see cref="Install"/> y <see cref="Uninstall"/> se pueden invocar
     /// multiples veces sin duplicar suscripciones — protegidos por la flag <see cref="_installed"/>.
@@ -47,6 +46,7 @@ namespace Rollgeon.Patterns.Bootstrap
         // ======================================================================
 
         // Schema EventName.OnRunStart: args = [Guid runId, string rulesetId]
+        // Delegated to RunBootstrapper — this handler only logs.
         private static void OnRunStart(params object[] args)
         {
             Guid runId = Guid.Empty;
@@ -60,11 +60,13 @@ namespace Rollgeon.Patterns.Bootstrap
 
             BootstrapLog.Info($"OnRunStart received — runId={runId}, rulesetId={rulesetId ?? "<null>"}");
 
-            // [STUB] RunBootstrapper.StartRun(runId, rulesetId) — implementado en Sprint 04 / T98.
-            // Cuando el RunBootstrapper real exista, agregarlo como IPreloadableService o invocarlo aqui.
+            // RunBootstrapper.StartRun fires this event *after* registering RunContext
+            // and setting the player, so downstream listeners can safely resolve
+            // IRunContextService / IPlayerService here.
         }
 
         // Schema EventName.OnRunEnd: args = [Guid runId, RunOutcome outcome]
+        // RunBootstrapper.EndRun already calls ClearScope — this handler only logs.
         private static void OnRunEnd(params object[] args)
         {
             Guid runId = Guid.Empty;
@@ -76,11 +78,10 @@ namespace Rollgeon.Patterns.Bootstrap
                 if (args.Length > 1) outcome = args[1];
             }
 
-            BootstrapLog.Info($"OnRunEnd received — runId={runId}, outcome={outcome ?? "<null>"}. Clearing ServiceScope.Run");
+            BootstrapLog.Info($"OnRunEnd received — runId={runId}, outcome={outcome ?? "<null>"}");
 
-            ServiceLocator.ClearScope(ServiceScope.Run);
-
-            // [STUB] RunBootstrapper.EndRun(runId, outcome) + SaveSystem.Flush() — Sprint 04 / T98 / §15.
+            // ClearScope(Run) is now called by RunBootstrapper.EndRun *after* firing
+            // this event — no duplicate clear needed here.
         }
     }
 }

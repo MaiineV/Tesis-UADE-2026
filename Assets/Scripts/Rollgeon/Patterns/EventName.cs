@@ -109,6 +109,8 @@ namespace Patterns
         OnRoomCleared,
         /// <summary>args: [Guid runId, int floorIndex]</summary>
         OnFloorCleared,
+        /// <summary>args: [Guid runId, int newFloorIndex]. Fired by RunContext.AdvanceFloor().</summary>
+        OnFloorChanged,
 
         // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>
