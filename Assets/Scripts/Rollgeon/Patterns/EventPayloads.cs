@@ -22,6 +22,25 @@ namespace Patterns
     }
 
     /// <summary>
+    /// Payload tipado para el evento "heal resuelto". Canalizado únicamente vía
+    /// <c>TypedEvent&lt;HealResolvedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
+    /// </summary>
+    public struct HealResolvedPayload
+    {
+        /// <summary>InstanceId de la entidad que proporcionó la curación.</summary>
+        public Guid SourceGuid;
+
+        /// <summary>InstanceId de la entidad que recibió la curación.</summary>
+        public Guid TargetGuid;
+
+        /// <summary>Curación final aplicada tras clamps y multiplicadores.</summary>
+        public int FinalHeal;
+
+        /// <summary><c>true</c> si el heal fue basado en porcentaje del HP máximo.</summary>
+        public bool WasPercentBased;
+    }
+
+    /// <summary>
     /// Payload tipado para cambios en el <c>Health</c> de una entidad. Canalizado únicamente vía
     /// <c>TypedEvent&lt;HealthChangedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
     /// </summary>
