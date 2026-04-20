@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b41d67c1704972c458961d44e28f247d, type: 3}
+  m_Name: Combo_Generala
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combos.Concretes.Combo_Generala
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _extraEffects
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  _comboId: 
+  _displayName: 
+  _description: 
+  _icon: {fileID: 0}
+  _baseDamage: 0
+  _valueMultipliers:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  _generalMultiplier: 1
