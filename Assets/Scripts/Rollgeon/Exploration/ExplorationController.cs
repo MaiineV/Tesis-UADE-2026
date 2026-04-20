@@ -62,6 +62,13 @@ namespace Rollgeon.Exploration
             return advanced;
         }
 
+        public void ResumeAfterCombat()
+        {
+            _isExploring = true;
+            _phase.ReplacePhase(GamePhase.Exploration);
+            AdvanceRoom();
+        }
+
         public void Dispose()
         {
             EventManager.UnSubscribe(EventName.OnRoomEntered, OnRoomEntered);

@@ -5,5 +5,6 @@ namespace Rollgeon.Exploration
         bool IsExploring { get; }
         void BeginExploration();
         bool AdvanceRoom();
+        void ResumeAfterCombat();
     }
 }
