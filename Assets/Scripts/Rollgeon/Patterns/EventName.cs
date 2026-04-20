@@ -181,6 +181,12 @@ namespace Patterns
         /// <summary>args: [string questId, QuestState state]</summary>
         OnQuestStateChanged,
 
+        // --- Exploration -------------------------------------------------------
+        /// <summary>args: [Guid runId]</summary>
+        OnExplorationStarted,
+        /// <summary>args: [Guid roomInstanceId, string roomId, RoomType roomType]</summary>
+        OnCombatTriggered,
+
         // --- Scene (§K) --------------------------------------------------------
         /// <summary>args: [string sceneName]. Scene aditiva terminó de cargar.</summary>
         OnSceneLoaded,
