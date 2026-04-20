@@ -104,6 +104,7 @@ namespace Rollgeon.Entities
             var attrs = new ModifiableAttributes();
             attrs.EnsureInitialized();
             attrs.SetAttribute<Health>(new Health(BaseHP));
+            attrs.SetAttribute<Attack>(new Attack(BaseAttack));
             attrs.SetAttribute<Speed>(new Speed(BaseSpeed));
             attrs.SetAttribute<Energy>(new Energy(MaxEnergy));
             attrs.SetAttribute<HealStrength>(new HealStrength(BaseHealStrength));
