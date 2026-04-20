@@ -1,24 +1,20 @@
 {
   "main": {
-    "id": "79de48b83e800833",
+    "id": "d9be4ac157f24c3d",
     "type": "split",
     "children": [
       {
-        "id": "9fd26f04c8c643fe",
+        "id": "a7663c7f784b9cdf",
         "type": "tabs",
         "children": [
           {
-            "id": "3c322ad00e0981fb",
+            "id": "b68fe9ff8c481e91",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Implementation-Roadmap"
+              "title": "Nueva pestaña"
             }
           }
         ]
@@ -27,15 +23,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "6d7e605379598b0f",
+    "id": "4fb25b3dedc464dc",
     "type": "split",
     "children": [
       {
-        "id": "6573d672a718f769",
+        "id": "b55f8f812fa7c7bf",
         "type": "tabs",
         "children": [
           {
-            "id": "707acb383a8d5ee0",
+            "id": "cc2869225a0f2ba7",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -48,7 +44,7 @@
             }
           },
           {
-            "id": "96ee34ce776635d4",
+            "id": "ffe5751f348a8c47",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -61,17 +57,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Search"
+              "title": "Buscar"
             }
           },
           {
-            "id": "b1a6f0e66d816544",
+            "id": "f5209f32156c23fb",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Bookmarks"
+              "title": "Marcadores"
             }
           }
         ]
@@ -81,15 +77,15 @@
     "width": 300
   },
   "right": {
-    "id": "7224e9bc4bf3f3ca",
+    "id": "30198894fbba20ba",
     "type": "split",
     "children": [
       {
-        "id": "ffcb19d0d92226ed",
+        "id": "15e6646b825f9a4c",
         "type": "tabs",
         "children": [
           {
-            "id": "1eddd27ff04ad5d8",
+            "id": "36084face3f99713",
             "type": "leaf",
             "state": {
               "type": "backlink",
@@ -103,11 +99,11 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Enlaces entrantes"
             }
           },
           {
-            "id": "28c5b28149a5d2c6",
+            "id": "54b516a403bc11d5",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
@@ -116,11 +112,11 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Enlaces salientes"
             }
           },
           {
-            "id": "fcbe63da65ff0c56",
+            "id": "0bffd8d6a9552875",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -131,11 +127,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Tags"
+              "title": "Etiquetas"
             }
           },
           {
-            "id": "cee6e728e250437f",
+            "id": "59dbb9f105ec4f09",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -145,11 +141,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "All properties"
+              "title": "Todas las propiedades"
             }
           },
           {
-            "id": "d7f1594bdaee258d",
+            "id": "417d5adefd052552",
             "type": "leaf",
             "state": {
               "type": "outline",
@@ -159,7 +155,7 @@
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Esquema"
             }
           }
         ]
@@ -180,43 +176,6 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "3c322ad00e0981fb",
-  "lastOpenFiles": [
-    "99-Index/Implementation-Roadmap.md",
-    "90-MOCs/Entities-MOC.md",
-    "99-Index/Glossary.md.tmp.4956.1776713078713",
-    "90-MOCs/Crosscutting-MOC.md",
-    "90-MOCs/Meta-MOC.md",
-    "90-MOCs/Balance-MOC.md",
-    "90-MOCs/Content-MOC.md",
-    "90-MOCs/UI-MOC.md",
-    "90-MOCs/Player-MOC.md",
-    "90-MOCs/Run-MOC.md",
-    "90-MOCs/Phase-MOC.md",
-    "90-MOCs/Dice-MOC.md",
-    "90-MOCs/Dungeon-MOC.md",
-    "90-MOCs/Heroes-MOC.md",
-    "90-MOCs/Effects-MOC.md",
-    "90-MOCs/Combos-MOC.md",
-    "90-MOCs/Combat-MOC.md",
-    "90-MOCs/Attributes-MOC.md",
-    "90-MOCs/Foundations-MOC.md",
-    "90-MOCs",
-    "16-Crosscutting/Crosscutting-Overview.md",
-    "16-Crosscutting",
-    "15-Meta/RunRecord.md",
-    "15-Meta/UnlockSystem.md",
-    "15-Meta/SaveSystem.md",
-    "15-Meta",
-    "13-Content/Content-Catalogs.md",
-    "13-Content/BaseCatalogSO.md",
-    "13-Content",
-    "14-Balance/WeaknessConfig.md",
-    "14-Balance/TurnOrderConfig.md",
-    "14-Balance",
-    "12-UI/HUD",
-    "12-UI/Screens",
-    "12-UI/Core",
-    "12-UI"
-  ]
+  "active": "b68fe9ff8c481e91",
+  "lastOpenFiles": []
 }

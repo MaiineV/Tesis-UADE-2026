@@ -1,24 +1,20 @@
 {
   "main": {
-    "id": "79de48b83e800833",
+    "id": "19d489a45454c04e",
     "type": "split",
     "children": [
       {
-        "id": "9fd26f04c8c643fe",
+        "id": "6a89a6b95c8ba743",
         "type": "tabs",
         "children": [
           {
-            "id": "3c322ad00e0981fb",
+            "id": "a39e6c528a61459d",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Implementation-Roadmap"
+              "title": "Nueva pestaña"
             }
           }
         ]
@@ -27,15 +23,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "6d7e605379598b0f",
+    "id": "5199ddb023c4d357",
     "type": "split",
     "children": [
       {
-        "id": "6573d672a718f769",
+        "id": "ddb1e1ab830c25d6",
         "type": "tabs",
         "children": [
           {
-            "id": "707acb383a8d5ee0",
+            "id": "cbfe198f46f7b51f",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -48,7 +44,7 @@
             }
           },
           {
-            "id": "96ee34ce776635d4",
+            "id": "6f48cdfb21efe29b",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -61,17 +57,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Search"
+              "title": "Buscar"
             }
           },
           {
-            "id": "b1a6f0e66d816544",
+            "id": "8c8d7b4aa25a78a9",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Bookmarks"
+              "title": "Marcadores"
             }
           }
         ]
@@ -81,15 +77,15 @@
     "width": 300
   },
   "right": {
-    "id": "7224e9bc4bf3f3ca",
+    "id": "2b8934ff68bf6717",
     "type": "split",
     "children": [
       {
-        "id": "ffcb19d0d92226ed",
+        "id": "82f428ba11747d62",
         "type": "tabs",
         "children": [
           {
-            "id": "1eddd27ff04ad5d8",
+            "id": "07b82404511194fd",
             "type": "leaf",
             "state": {
               "type": "backlink",
@@ -103,11 +99,11 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Enlaces entrantes"
             }
           },
           {
-            "id": "28c5b28149a5d2c6",
+            "id": "d932c057a73cf520",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
@@ -116,11 +112,11 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Enlaces salientes"
             }
           },
           {
-            "id": "fcbe63da65ff0c56",
+            "id": "f54f38956c565630",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -131,11 +127,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Tags"
+              "title": "Etiquetas"
             }
           },
           {
-            "id": "cee6e728e250437f",
+            "id": "c93969f3dc7bc742",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -145,11 +141,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "All properties"
+              "title": "Todas las propiedades"
             }
           },
           {
-            "id": "d7f1594bdaee258d",
+            "id": "5f418dacb8340b7e",
             "type": "leaf",
             "state": {
               "type": "outline",
@@ -159,7 +155,7 @@
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Esquema"
             }
           }
         ]
@@ -180,43 +176,18 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "3c322ad00e0981fb",
+  "active": "a39e6c528a61459d",
   "lastOpenFiles": [
-    "99-Index/Implementation-Roadmap.md",
-    "90-MOCs/Entities-MOC.md",
-    "99-Index/Glossary.md.tmp.4956.1776713078713",
-    "90-MOCs/Crosscutting-MOC.md",
-    "90-MOCs/Meta-MOC.md",
-    "90-MOCs/Balance-MOC.md",
-    "90-MOCs/Content-MOC.md",
-    "90-MOCs/UI-MOC.md",
-    "90-MOCs/Player-MOC.md",
-    "90-MOCs/Run-MOC.md",
-    "90-MOCs/Phase-MOC.md",
-    "90-MOCs/Dice-MOC.md",
-    "90-MOCs/Dungeon-MOC.md",
-    "90-MOCs/Heroes-MOC.md",
-    "90-MOCs/Effects-MOC.md",
-    "90-MOCs/Combos-MOC.md",
-    "90-MOCs/Combat-MOC.md",
-    "90-MOCs/Attributes-MOC.md",
-    "90-MOCs/Foundations-MOC.md",
-    "90-MOCs",
-    "16-Crosscutting/Crosscutting-Overview.md",
-    "16-Crosscutting",
-    "15-Meta/RunRecord.md",
-    "15-Meta/UnlockSystem.md",
-    "15-Meta/SaveSystem.md",
-    "15-Meta",
-    "13-Content/Content-Catalogs.md",
-    "13-Content/BaseCatalogSO.md",
-    "13-Content",
-    "14-Balance/WeaknessConfig.md",
-    "14-Balance/TurnOrderConfig.md",
-    "14-Balance",
-    "12-UI/HUD",
-    "12-UI/Screens",
-    "12-UI/Core",
-    "12-UI"
+    "Library/Artifacts/c2/c26be3b53a031fbd64f77c27d7b7af4a",
+    "Library/Artifacts/53/533c42fdb3de486de64ffbd2f60e5dba",
+    "Library/Artifacts/07/0739f472a1013ebd8aaee9b00fc58f55",
+    "Library/Artifacts/8a/8a811eea56ffb14a057a70eaf4c50053",
+    "Library/Artifacts/b0/b0edb8ac52395de60240df9bde264e3b",
+    "Library/Artifacts/2a/2af25f368ad3b960be35727c0c83cd7f",
+    "Library/Artifacts/3a/3a691de798b967597855d5789ee780c5",
+    "Library/Artifacts/48/485d5fc8d93ea83a387697b27675cba0",
+    "Library/Artifacts/22/22623d1190b21e82cef6d928220fc4b4",
+    "Library/Artifacts/39/39c7627432018017fc165bd0e4743755",
+    "Library/Artifacts/32/322f6f8813ea48c058910f6c8aa6e13b"
   ]
 }
