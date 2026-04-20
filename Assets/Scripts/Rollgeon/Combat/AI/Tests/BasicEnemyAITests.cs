@@ -207,8 +207,10 @@ namespace Rollgeon.Combat.AI.Tests
             public void SetPlayer(ClassHeroSO hero, Guid runId) { }
             public void ClearPlayer() { }
 
+#pragma warning disable CS0067
             public event Action<ClassHeroSO> OnPlayerSet;
             public event Action OnPlayerCleared;
+#pragma warning restore CS0067
         }
 
         private class SpyDamagePipeline : IDamagePipeline
