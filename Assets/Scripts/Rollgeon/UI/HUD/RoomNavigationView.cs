@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Exploration;
+using Rollgeon.UI.Screens;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -158,7 +159,13 @@ namespace Rollgeon.UI.HUD
 
         private void OnPauseClicked()
         {
-            Debug.Log(LogPrefix + "Pause pressed (stub — UI#0014c).");
+            if (!ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                Debug.LogWarning(LogPrefix + "IScreenManager not registered — can't open pause.", this);
+                return;
+            }
+
+            screens.PushOverlay<PauseMenuOverlay>();
         }
 
         private void OnRoomEnteredHandler(params object[] args)
