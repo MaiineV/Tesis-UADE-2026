@@ -168,6 +168,27 @@ namespace Rollgeon.UI.HUD
             if (_rerollButton != null) _rerollButton.interactable = reroll;
             if (_confirmAttackButton != null) _confirmAttackButton.interactable = confirm;
             if (_endTurnButton != null) _endTurnButton.interactable = endTurn;
+
+            UpdateRerollLabel();
+        }
+
+        private void UpdateRerollLabel()
+        {
+            if (_rerollLabel == null) return;
+
+            if (!ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) || budget == null)
+            {
+                _rerollLabel.text = "Reroll";
+                return;
+            }
+
+            var query = budget.QueryExtraRoll(_playerGuid);
+            if (query.IsFreeRoll)
+                _rerollLabel.text = "Reroll (Free)";
+            else if (query.CostsEnergy)
+                _rerollLabel.text = "Reroll (1E)";
+            else
+                _rerollLabel.text = query.BlockedReason ?? "Reroll";
         }
 
         // ======================================================================

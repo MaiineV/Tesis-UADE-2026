@@ -40,6 +40,11 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_view, "_rerollButton", _reroll);
             AssignPrivate(_view, "_confirmAttackButton", _confirmAttack);
             AssignPrivate(_view, "_endTurnButton", _endTurn);
+
+            // Awake ran before fields were assigned; re-invoke to wire onClick listeners
+            var awake = typeof(PlayerActionButtonsView).GetMethod("Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            awake?.Invoke(_view, null);
         }
 
         [TearDown]
