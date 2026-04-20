@@ -67,6 +67,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private FloatingDamageSpawner _floatingDamage;
 
+        [SerializeField]
+        [Tooltip("Opcional. Panel dice-first con Roll/Reroll/Confirm/EndTurn. " +
+                 "Null = skipped (coexiste con ActionButtonsView).")]
+        private PlayerActionButtonsView _playerActionButtons;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -104,6 +109,12 @@ namespace Rollgeon.UI.Screens
         /// <summary>Delegate que dispara "end turn". Seteado por <c>CombatController</c>.</summary>
         public Action OnEndTurnRequested;
 
+        /// <summary>Delegate que dispara "roll dice" en la FSM. Seteado por <c>CombatController</c>.</summary>
+        public Action OnRollDiceRequested;
+
+        /// <summary>Delegate que dispara "confirm attack" en la FSM. Seteado por <c>CombatController</c>.</summary>
+        public Action OnConfirmAttackRequested;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "CombatHUD";
 
@@ -135,6 +146,13 @@ namespace Rollgeon.UI.Screens
                 // El boton de "extra roll" del RerollCountView mirroea el de ActionButtons.
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeEnergyRerollRequested);
             }
+            if (_playerActionButtons != null)
+            {
+                _playerActionButtons.OnRollDicePressed.AddListener(InvokeRollDiceRequested);
+                _playerActionButtons.OnRerollPressed.AddListener(InvokeEnergyRerollRequested);
+                _playerActionButtons.OnConfirmAttackPressed.AddListener(InvokeConfirmAttackRequested);
+                _playerActionButtons.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
+            }
         }
 
         private void OnDestroy()
@@ -148,6 +166,13 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
             {
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeEnergyRerollRequested);
+            }
+            if (_playerActionButtons != null)
+            {
+                _playerActionButtons.OnRollDicePressed.RemoveListener(InvokeRollDiceRequested);
+                _playerActionButtons.OnRerollPressed.RemoveListener(InvokeEnergyRerollRequested);
+                _playerActionButtons.OnConfirmAttackPressed.RemoveListener(InvokeConfirmAttackRequested);
+                _playerActionButtons.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
             }
         }
 
@@ -235,6 +260,8 @@ namespace Rollgeon.UI.Screens
             if (_floatingDamage != null) _floatingDamage.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_floatingDamage no cableado.", this);
 
+            if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
+
             // DiceZoneView no tiene Bind — no-op (plan §3.6).
 
             _subViewsBound = true;
@@ -249,6 +276,7 @@ namespace Rollgeon.UI.Screens
             if (_actionButtons != null) _actionButtons.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
+            if (_playerActionButtons != null) _playerActionButtons.Unbind();
             _subViewsBound = false;
         }
 
@@ -308,6 +336,26 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnEndTurnRequested.Invoke();
+        }
+
+        private void InvokeRollDiceRequested()
+        {
+            if (OnRollDiceRequested == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnRollDiceRequested no cableado.", this);
+                return;
+            }
+            OnRollDiceRequested.Invoke();
+        }
+
+        private void InvokeConfirmAttackRequested()
+        {
+            if (OnConfirmAttackRequested == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnConfirmAttackRequested no cableado.", this);
+                return;
+            }
+            OnConfirmAttackRequested.Invoke();
         }
 
         private void HandleDamageResolvedForFlash(DamageResolvedPayload payload)
