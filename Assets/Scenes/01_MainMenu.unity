@@ -1212,7 +1212,7 @@ RectTransform:
   - {fileID: 251827824}
   - {fileID: 1789227899}
   - {fileID: 211161035}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2024317181}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -2196,7 +2196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ace56427b29665489ad3c081c62226d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.FSM.CombatController
-  _bootstrap: {fileID: 0}
+  _bootstrap: {fileID: 11400000, guid: 22a54e863c84d5949872688fcdbfeb6f, type: 2}
   _playerIdDebug: 
   _currentStateDebug: 
 --- !u!4 &529724463
@@ -6113,7 +6113,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1183806582
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11307,7 +11307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56aed7acff32a714f9610a0377bd8336, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.ScreenHost
-  _initialScreenStringId: MainMenu
+  _initialScreenStringId: MainMenuScreen
   _includeInactive: 1
 --- !u!4 &2024317181
 Transform:
@@ -11321,7 +11321,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 260393550}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2058712579
@@ -12040,6 +12041,5 @@ SceneRoots:
   - {fileID: 1690433640}
   - {fileID: 616825228}
   - {fileID: 2024317181}
-  - {fileID: 260393550}
   - {fileID: 1804410312}
   - {fileID: 529724463}
