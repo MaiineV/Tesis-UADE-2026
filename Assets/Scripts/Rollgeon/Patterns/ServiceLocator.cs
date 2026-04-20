@@ -85,6 +85,10 @@ namespace Patterns
 
             foreach (var key in keys)
             {
+                if (Services.TryGetValue(key, out var entry) && entry.instance is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
                 Services.Remove(key);
             }
         }
