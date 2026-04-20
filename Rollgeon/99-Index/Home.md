@@ -55,12 +55,15 @@ dependencies and are read first by the Bootstrap pipeline.
 
 ## Index notes
 
-- [[Sprint03-Status]] — Round 2 (MCP-automated setup) done vs. Round 3
-  (manual wiring) pending; known TBDs carried over from `TECHNICAL.md`.
+- [[Sprint03-Status]] — retrospective: Round 2 (MCP-automated setup)
+  done vs. Round 3 (manual wiring) pending; known TBDs from
+  `TECHNICAL.md`.
+- [[Implementation-Roadmap]] — forward-looking plan: P1/P2/P3
+  priorities, dependency graph, per-domain outlook.
 - [[TECHNICAL-Index]] — map from `TECHNICAL.md` sections §0–§27 to the
   vault folders that materialize them.
 - [[Glossary]] — design vocabulary (Contract, Weakness Hit, Action
-  Economy, Repetition, Hidden Speed, Action Economy, Combo Counter, …).
+  Economy, Repetition, Hidden Speed, Combo Counter, …).
 
 ---
 
@@ -81,13 +84,14 @@ dependencies and are read first by the Bootstrap pipeline.
 
 ## Reading order for newcomers
 
-1. [[Sprint03-Status]] — what is done, what is pending.
-2. [[Glossary]] — vocabulary.
-3. [[Foundations-MOC]] → [[Attributes-MOC]] → [[Phase-MOC]] → [[Run-MOC]]
+1. [[Sprint03-Status]] — what is done right now.
+2. [[Implementation-Roadmap]] — what is next and why.
+3. [[Glossary]] — vocabulary.
+4. [[Foundations-MOC]] → [[Attributes-MOC]] → [[Phase-MOC]] → [[Run-MOC]]
    — the skeleton every other system plugs into.
-4. [[Combat-MOC]] and [[Combos-MOC]] — the heart of the Sprint 03 FP.
-5. [[Dungeon-MOC]] → [[UI-MOC]] — the shell that wraps combat.
-6. [[TECHNICAL-Index]] — cross-reference to the full spec.
+5. [[Combat-MOC]] and [[Combos-MOC]] — the heart of the Sprint 03 FP.
+6. [[Dungeon-MOC]] → [[UI-MOC]] — the shell that wraps combat.
+7. [[TECHNICAL-Index]] — cross-reference to the full spec.
 
 ---
 

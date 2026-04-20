@@ -178,6 +178,8 @@
   },
   "active": "3c322ad00e0981fb",
   "lastOpenFiles": [
+    "99-Index/Implementation-Roadmap.md",
+    "90-MOCs/Entities-MOC.md",
     "99-Index/Glossary.md.tmp.4956.1776713078713",
     "90-MOCs/Crosscutting-MOC.md",
     "90-MOCs/Meta-MOC.md",
@@ -190,7 +192,6 @@
     "90-MOCs/Dice-MOC.md",
     "90-MOCs/Dungeon-MOC.md",
     "90-MOCs/Heroes-MOC.md",
-    "90-MOCs/Entities-MOC.md",
     "90-MOCs/Effects-MOC.md",
     "90-MOCs/Combos-MOC.md",
     "90-MOCs/Combat-MOC.md",
@@ -212,7 +213,6 @@
     "12-UI/HUD",
     "12-UI/Screens",
     "12-UI/Core",
-    "12-UI",
-    "08-Dice"
+    "12-UI"
   ]
 }
