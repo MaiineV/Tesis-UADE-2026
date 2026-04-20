@@ -5,3 +5,4 @@ using System.Runtime.CompilerServices;
 // que realmente requieran acceso a internals.
 [assembly: InternalsVisibleTo("Rollgeon.Dice.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Run.Tests")]
+[assembly: InternalsVisibleTo("Rollgeon.Exploration.Tests")]
