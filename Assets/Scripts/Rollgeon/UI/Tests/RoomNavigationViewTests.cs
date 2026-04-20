@@ -337,6 +337,28 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void OnFloorCleared_UpdatesProgressLabelAndDisablesProceed()
+        {
+            var room = CreateRoom("start_0", "Start", RoomType.Start);
+            _stubDungeon.CurrentRoom = room;
+            _stubDungeon.CurrentRoomIndex = 0;
+            _stubDungeon.RoomCount = 5;
+
+            ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
+            ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
+
+            _view.Bind(Guid.NewGuid());
+            Assert.IsTrue(_proceedButton.interactable, "Should be interactable before floor cleared.");
+
+            EventManager.Trigger(EventName.OnFloorCleared);
+
+            Assert.AreEqual("Floor Cleared!", _roomProgressLabel.text,
+                "Progress label must show 'Floor Cleared!' after OnFloorCleared.");
+            Assert.IsFalse(_proceedButton.interactable,
+                "Proceed must be disabled after floor cleared.");
+        }
+
+        [Test]
         public void PauseButton_DoesNotCrash()
         {
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
