@@ -41,6 +41,7 @@ namespace Rollgeon.UI.Tests
         private GoldCounterView _gold;
         private ActiveItemsView _items;
         private MinimapView _minimap;
+        private RoomNavigationView _roomNavigation;
         private FakePlayerService _playerService;
         private Guid _playerGuid;
 
@@ -71,11 +72,14 @@ namespace Rollgeon.UI.Tests
 
             _minimap = AttachChild<MinimapView>("Minimap", _hudGO);
 
+            _roomNavigation = AttachChild<RoomNavigationView>("RoomNavigation", _hudGO);
+
             AssignPrivate(_hud, "_healthBar", _hp);
             AssignPrivate(_hud, "_energyBar", _energy);
             AssignPrivate(_hud, "_goldCounter", _gold);
             AssignPrivate(_hud, "_activeItems", _items);
             AssignPrivate(_hud, "_minimap", _minimap);
+            AssignPrivate(_hud, "_roomNavigation", _roomNavigation);
         }
 
         [TearDown]
@@ -157,6 +161,25 @@ namespace Rollgeon.UI.Tests
                 "Un solo UnbindAll debe bastar — si BindAll hubiera duplicado subs, uno quedaria vivo.");
         }
 
+        [Test]
+        public void BindAll_BindsRoomNavigation()
+        {
+            _hud.BindAll(_playerGuid);
+
+            var bound = GetPrivateValue<bool>(_roomNavigation, "_bound");
+            Assert.IsTrue(bound, "RoomNavigationView must be bound after BindAll.");
+        }
+
+        [Test]
+        public void UnbindAll_UnbindsRoomNavigation()
+        {
+            _hud.BindAll(_playerGuid);
+            _hud.UnbindAll();
+
+            var bound = GetPrivateValue<bool>(_roomNavigation, "_bound");
+            Assert.IsFalse(bound, "RoomNavigationView must be unbound after UnbindAll.");
+        }
+
         // ---------------- helpers ----------------
 
         private static T AttachChild<T>(string name, GameObject parent) where T : Component
@@ -192,6 +215,15 @@ namespace Rollgeon.UI.Tests
                 System.Reflection.BindingFlags.NonPublic);
             Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
             return field.GetValue(target) as T;
+        }
+
+        private static T GetPrivateValue<T>(object target, string fieldName) where T : struct
+        {
+            var field = target.GetType().GetField(fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
+            return (T)field.GetValue(target);
         }
     }
 }
