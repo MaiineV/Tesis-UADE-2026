@@ -13,28 +13,9 @@ namespace Rollgeon.Combat.Handoff.Tests
     [TestFixture]
     public class DefaultEnemySpawnResolverTests
     {
-        private SpyEntityRegistry _registry;
+        private InMemoryEntityRegistry _registry;
         private DefaultEnemySpawnResolver _resolver;
         private readonly List<UnityEngine.Object> _createdObjects = new();
-
-        // -------------------------------------------------------------------
-        // Stubs
-        // -------------------------------------------------------------------
-
-        private class SpyEntityRegistry : IEntityRegistry
-        {
-            public readonly Dictionary<Guid, ModifiableAttributes> Registered = new();
-
-            public void Register(Guid entityId, ModifiableAttributes attrs)
-            {
-                Registered[entityId] = attrs;
-            }
-
-            public bool TryGetAttributes(Guid entityId, out ModifiableAttributes attrs)
-            {
-                return Registered.TryGetValue(entityId, out attrs);
-            }
-        }
 
         // -------------------------------------------------------------------
         // Setup / Teardown
@@ -43,7 +24,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         [SetUp]
         public void SetUp()
         {
-            _registry = new SpyEntityRegistry();
+            _registry = new InMemoryEntityRegistry();
             _resolver = new DefaultEnemySpawnResolver(_registry);
         }
 
@@ -170,10 +151,9 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             var result = _resolver.Resolve(room, 2, new System.Random(42));
 
-            Assert.AreEqual(2, _registry.Registered.Count);
             foreach (var (id, _) in result)
             {
-                Assert.IsTrue(_registry.Registered.ContainsKey(id),
+                Assert.IsTrue(_registry.TryGetAttributes(id, out _),
                     $"Enemy {id} should be registered in the entity registry");
             }
         }
@@ -204,7 +184,7 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.AreEqual(1, result.Count);
             var (id, _) = result[0];
 
-            Assert.IsTrue(_registry.Registered.TryGetValue(id, out var attrs));
+            Assert.IsTrue(_registry.TryGetAttributes(id, out var attrs));
             Assert.IsNotNull(attrs, "Registered attributes should not be null");
         }
     }

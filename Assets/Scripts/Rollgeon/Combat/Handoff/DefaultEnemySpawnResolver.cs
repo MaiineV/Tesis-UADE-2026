@@ -14,9 +14,9 @@ namespace Rollgeon.Combat.Handoff
     /// </summary>
     public sealed class DefaultEnemySpawnResolver : IEnemySpawnResolver
     {
-        private readonly IEntityRegistry _registry;
+        private readonly InMemoryEntityRegistry _registry;
 
-        public DefaultEnemySpawnResolver(IEntityRegistry registry)
+        public DefaultEnemySpawnResolver(InMemoryEntityRegistry registry)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         }
