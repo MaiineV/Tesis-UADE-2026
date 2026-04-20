@@ -1,5 +1,5 @@
 using System;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Phase;
 
 namespace Rollgeon.Entities.Behaviors
 {
@@ -18,7 +18,7 @@ namespace Rollgeon.Entities.Behaviors
         None = 0,
         Exploration = 1 << 1,
         Combat = 1 << 2,
-        All = Exploration | Combat,
+        All = ~0,
     }
 
     /// <summary>
@@ -34,7 +34,10 @@ namespace Rollgeon.Entities.Behaviors
                 case GamePhase.Exploration: return (mask & GamePhaseMask.Exploration) != 0;
                 case GamePhase.Combat: return (mask & GamePhaseMask.Combat) != 0;
                 case GamePhase.None: return mask == GamePhaseMask.None;
-                default: return false;
+                case GamePhase.Loading:
+                case GamePhase.GameOver:
+                default:
+                    return false;
             }
         }
     }
