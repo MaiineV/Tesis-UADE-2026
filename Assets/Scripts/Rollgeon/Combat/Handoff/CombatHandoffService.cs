@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Dice;
 using Rollgeon.Dungeon;
+using Rollgeon.Effects;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using Rollgeon.UI.Screens;
@@ -137,7 +139,7 @@ namespace Rollgeon.Combat.Handoff
                 // Cablea delegates del HUD contra IPlayerCombatActions + reroll budget
                 // (setup doc UI#0095b §8.7). Sin esto, los clicks del HUD loggean
                 // "no cableado" y combat se stucka.
-                WireCombatHUDDelegates();
+                WireCombatHUDDelegates(firstEnemyId);
 
                 // Start the combat FSM.
                 _combatStarter.StartCombat(
@@ -152,7 +154,7 @@ namespace Rollgeon.Combat.Handoff
             }
         }
 
-        private void WireCombatHUDDelegates()
+        private void WireCombatHUDDelegates(Guid firstEnemyId)
         {
             // Silent skip si el screen manager no esta produciendo la HUD view real
             // (tests con stubs de ScreenManager). En produccion, Current == HUD recien
@@ -163,7 +165,24 @@ namespace Rollgeon.Combat.Handoff
             var playerGuid = _player.PlayerGuid;
             IReadOnlyList<int> stubFaces = new[] { 1, 2, 3, 4, 5 };
 
-            hud.OnAttackRequested = _playerActions.SendPlayerAction;
+            // Attack (ActionButtonsView): ejecuta la accion via TurnManager (gasta
+            // energia, aplica efecto) y luego notifica al FSM. Sin TryExecute el
+            // boton habilitaba pero no producia ningún efecto de juego.
+            hud.OnAttackRequested = () =>
+            {
+                if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
+                    && ServiceLocator.TryGetService<TurnManager>(out var tm)
+                    && catalog != null && tm != null)
+                {
+                    var action = catalog.GetById("attack.basic");
+                    if (action != null)
+                    {
+                        var ctx = new EffectContext { SourceGuid = playerGuid, TargetGuid = firstEnemyId };
+                        tm.TryExecute(action, playerGuid, ctx);
+                    }
+                }
+                _playerActions.SendPlayerAction();
+            };
             hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
 
             // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
