@@ -218,6 +218,7 @@ Verificar los ya creados:
   - **Para el smoke test** podés dejar `_rows` **vacío** — el view no crashea; solo perdés la lista visual del contrato y el feedback de "combo bloqueado" (boss T103). `_currentComboLabel` funciona independiente. Armá las 8 rows cuando hagas el layout visual.
 - [x] (21) `DiceZoneView`: `_rollArea`, `_holdArea`, `_diceSlots` array
 - [x] (22) `ActionButtonsView`: `_attackButton`, `_energyRerollButton`, `_endTurnButton`
+  - [ ] (22b) `ActionButtonsView._attackAction` → `Assets/Rollgeon/Actions/AD_AttackBasic.asset` ← **requerido** para que el botón Atacar se habilite; sin esto `CanExecuteAttack()` retorna `false` y queda siempre deshabilitado
 - [x] (23) `PlayerActionButtonsView`: `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, `_rerollLabel`
 - [x] (24) `RerollCountView`: `_countLabel`, `_extraRollButton`
 - [x] (25) `FloatingDamageSpawner`: `_instancePrefab` → `FloatingDamage.prefab` ; `_overlayContainer`
