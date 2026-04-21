@@ -22,5 +22,10 @@ namespace Rollgeon.Dungeon
 
         [Title("Boss")]
         public List<EnemyDataSO> BossCandidates = new();
+
+        [Title("Start")]
+        [InfoBox("Room de entrada (RoomType.Start). Va en posición 0 del piso. " +
+                 "Si es null, la primera room es la primera Combat (legacy).")]
+        public RoomSO StartRoom;
     }
 }

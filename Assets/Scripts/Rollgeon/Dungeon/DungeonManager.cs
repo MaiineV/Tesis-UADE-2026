@@ -81,6 +81,14 @@ namespace Rollgeon.Dungeon
                 _rooms.Add(bossRoom);
             }
 
+            // Start room en índice 0 (si está configurado). Se inserta al final
+            // del fill para no invalidar los cálculos de combatSlots ni las
+            // middle positions de shop/potion.
+            if (layout.StartRoom != null)
+            {
+                _rooms.Insert(0, layout.StartRoom);
+            }
+
             _currentIndex = 0;
 
             EventManager.Trigger(EventName.OnRoomEntered,

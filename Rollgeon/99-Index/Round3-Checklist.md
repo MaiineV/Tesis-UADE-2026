@@ -74,12 +74,14 @@ Verificar los ya creados:
 
 | Asset | RoomId | DisplayName | Type | EnemyPool |
 |---|---|---|---|---|
+| `Room_Start01`  | `start_01`  | "Entrada"           | Start  | null |
 | `Room_Combat01` | `combat_01` | "Sala de Combate 1" | Combat | `Floor1_CombatPool` |
 | `Room_Combat02` | `combat_02` | "Sala de Combate 2" | Combat | `Floor1_CombatPool` |
 | `Room_Combat03` | `combat_03` | "Sala de Combate 3" | Combat | `Floor1_CombatPool` |
 | `Room_Shop01`   | `shop_01`   | "Tienda"            | Shop   | null |
 | `Room_Potion01` | `potion_01` | "Sala de Pociones"  | Potion | null |
 
+- [x] `Room_Start01` — hub vacío donde arranca el piso (ExplorationHUD visible, sin combate)
 - [x] `Room_Combat01`
 - [x] `Room_Combat02`
 - [x] `Room_Combat03`
@@ -88,7 +90,7 @@ Verificar los ya creados:
 
 ### B.6 Floor + Matrix
 
-- [x] `Floor1_Layout` (FloorLayoutSO) — RoomCountMin: **6** · RoomCountMax: **8** · CombatRooms: [3 rooms] · ShopRooms: [Shop01] · PotionRooms: [Potion01] · BossCandidates: [EnemyData_Boss]
+- [x] `Floor1_Layout` (FloorLayoutSO) — RoomCountMin: **6** · RoomCountMax: **8** · CombatRooms: [3 rooms] · ShopRooms: [Shop01] · PotionRooms: [Potion01] · BossCandidates: [EnemyData_Boss] · **StartRoom: Room_Start01** ← campo nuevo, sin esto la primera room es combat
 - [x] `PhaseTransitionMatrix` (PhaseTransitionMatrixSO) — grilla 5×5:
   - [x] None → Exploration ✓
   - [x] Exploration → Combat ✓
@@ -114,9 +116,9 @@ Verificar los ya creados:
 **En el GameObject `Bootstrap` de la escena:**
 
 - [x] (1) `BootstrapRunner._bootstrap` → `Assets/Rollgeon/ServiceBootstrap.asset`
-- [ ] (1b) `BootstrapRunner._dontDestroyOnLoad` → **`true`** (crítico: este GO sobrevive a los loads de 01_MainMenu y 02_Gameplay)
-- [ ] (1c) `BootstrapRunner._preloadCatalogs` → `true`
-- [ ] (1d) Add Component → `Run Controller Bootstrapper` → `_defaultLayout` = `Floor1_Layout.asset`
+- [x] (1b) `BootstrapRunner._dontDestroyOnLoad` → **`true`** (crítico: este GO sobrevive a los loads de 01_MainMenu y 02_Gameplay)
+- [x] (1c) `BootstrapRunner._preloadCatalogs` → `true`
+- [x] (1d) Add Component → `Run Controller Bootstrapper` → `_defaultLayout` = `Floor1_Layout.asset`
 
 **En `Assets/Rollgeon/ServiceBootstrap.asset`:**
 
@@ -133,7 +135,7 @@ Verificar los ya creados:
   - [x] WeaknessServiceBootstrap
   - [x] ComboCountersServiceBootstrap
 
-- [ ] `File → Build Settings` → index 0 `00_Bootstrap`, index 1 `01_MainMenu`, index 2 `02_Gameplay` (se agrega al crear la escena en D)
+- [x] `File → Build Settings` → index 0 `00_Bootstrap`, index 1 `01_MainMenu`, index 2 `02_Gameplay` (se agrega al crear la escena en D)
 
 > **Checkpoint C.1:** Play desde `00_Bootstrap` loggea `Registered N catalogs…` + `[RunControllerBootstrapper] RunController registrado…` sin errores.
 
@@ -143,7 +145,7 @@ Verificar los ya creados:
 > Build). Los HUDs de exploración/combate y las overlays de
 > pause/victory/defeat se mueven a `02_Gameplay` en la sección D.
 
-- [ ] (0) Bajo el Canvas: **borrar** `ExplorationHUDView`, `CombatHUDView`,
+- [x] (0) Bajo el Canvas: **borrar** `ExplorationHUDView`, `CombatHUDView`,
   `FloorTransitionScreen`, `PauseMenuOverlay`, `VictoryScreen`,
   `DefeatScreen`. Fuera del Canvas: **borrar** `CombatController` si existe.
   Deben quedar: `EventSystem`, `ScreenHost` (`_initialScreenStringId = "MainMenu"`),
@@ -181,49 +183,51 @@ Verificar los ya creados:
 
 ### D.1 Setup inicial
 
-- [ ] Duplicar `01_MainMenu.unity` → `02_Gameplay.unity` en `Assets/Scenes/`
-- [ ] Abrir la escena nueva. Bajo el Canvas: **borrar** `MainMenuScreen`,
+- [x] Duplicar `01_MainMenu.unity` → `02_Gameplay.unity` en `Assets/Scenes/`
+- [x] Abrir la escena nueva. Bajo el Canvas: **borrar** `MainMenuScreen`,
   `ClassSelectionScreen`, `BuildSelectionScreen`. Deben quedar los HUDs +
   overlays (`ExplorationHUDView`, `CombatHUDView`, `FloorTransitionScreen`,
   `PauseMenuOverlay`, `VictoryScreen`, `DefeatScreen`) y fuera del Canvas
   `EventSystem`, `ScreenHost`, `CombatController`, `Main Camera`, `Directional Light`.
-- [ ] Si el `CombatController` fue borrado en C.2 al limpiar `01_MainMenu`,
+- [x] Si el `CombatController` fue borrado en C.2 al limpiar `01_MainMenu`,
   recrearlo: `GameObject → Create Empty` → `CombatController` → Add Component `Combat Controller`.
-- [ ] `GameObject → Create Empty` → renombrar `GameplayBootstrapper` →
+- [x] `GameObject → Create Empty` → renombrar `GameplayBootstrapper` →
   Add Component `Gameplay Bootstrapper` (no tiene fields serializados).
-- [ ] `ScreenHost._initialScreenStringId` → **vacío** (lo setea
+- [x] `ScreenHost._initialScreenStringId` → **vacío** (lo setea
   `GameplayBootstrapper.Start` empujando "ExplorationHUD").
-- [ ] `File → Build Settings` → agregar `02_Gameplay.unity` en index 2.
+- [x] `File → Build Settings` → agregar `02_Gameplay.unity` en index 2.
 
 ### D.2 ExplorationHUD (items 9–16)
 
-- [ ] (9) `ExplorationHUDView` — 6 refs a sub-views: `_healthBar`, `_energyBar`, `_goldCounter`, `_activeItems`, `_minimap`, `_roomNavigation`
-- [ ] (10) `HealthBarView`: `_slider` → `Slider` hijo ; `_text` → `HPText` hijo
-- [ ] (11) `EnergyBarView`: `_slider` → `Slider` hijo ; `_text` → `EnergyText` hijo
-- [ ] (12) `GoldCounterView`: `_text` → `GoldText` hijo
-- [ ] (13) `ActiveItemsView`: `Bindings` array (`item.arco` → ArcoSlot ; `item.pocion` → PocionSlot)
-- [ ] (14) `ActiveItemSlotView` × 2 (ArcoSlot + PocionSlot): `_icon`, `_inactiveOverlay`, `_depletedOverlay`
-- [ ] (15) `MinimapView`: `_mapPivot`, `_placeholder`
-- [ ] (16) `RoomNavigationView`: `_roomNameLabel`, `_roomProgressLabel`, `_roomTypeLabel`, `_proceedButton`, `_pauseButton`
+- [x] (9) `ExplorationHUDView` — 6 refs a sub-views: `_healthBar`, `_energyBar`, `_goldCounter`, `_activeItems`, `_minimap`, `_roomNavigation`
+- [x] (10) `HealthBarView`: `_slider` → `Slider` hijo ; `_text` → `HPText` hijo
+- [x] (11) `EnergyBarView`: `_slider` → `Slider` hijo ; `_text` → `EnergyText` hijo
+- [x] (12) `GoldCounterView`: `_text` → `GoldText` hijo
+- [x] (13) `ActiveItemsView`: `Bindings` array (`item.arco` → ArcoSlot ; `item.pocion` → PocionSlot)
+- [x] (14) `ActiveItemSlotView` × 2 (ArcoSlot + PocionSlot): `_icon`, `_inactiveOverlay`, `_depletedOverlay`
+- [x] (15) `MinimapView`: `_mapPivot`, `_placeholder`
+- [x] (16) `RoomNavigationView`: `_roomNameLabel`, `_roomProgressLabel`, `_roomTypeLabel`, `_proceedButton`, `_pauseButton`
 
 ### D.3 CombatHUD (items 17–25)
 
-- [ ] (17) `CombatHUDView` — 9 refs: `_turnQueue`, `_comboIndicator`, `_enemyPanel`, `_actionButtons`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_damageFlashGroup`, `_playerActionButtons`
-- [ ] (18) `TurnQueueView`: `_slotPrefab` → `TurnSlot.prefab` ; `_container`
-- [ ] (19) `EnemyPanelView`: `_panelRoot`, `_name`, `_hpSlider`, `_hpText`, `_weaknessRoot`, `_weaknessIcon`
-- [ ] (20) `ComboIndicatorView`: `_currentComboLabel`, `_rows` array (8 entries)
-- [ ] (21) `DiceZoneView`: `_rollArea`, `_holdArea`, `_diceSlots` array
-- [ ] (22) `ActionButtonsView`: `_attackButton`, `_energyRerollButton`, `_endTurnButton`
-- [ ] (23) `PlayerActionButtonsView`: `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, `_rerollLabel`
-- [ ] (24) `RerollCountView`: `_countLabel`, `_extraRollButton`
-- [ ] (25) `FloatingDamageSpawner`: `_instancePrefab` → `FloatingDamage.prefab` ; `_overlayContainer`
+- [x] (17) `CombatHUDView` — 9 refs: `_turnQueue`, `_comboIndicator`, `_enemyPanel`, `_actionButtons`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_damageFlashGroup`, `_playerActionButtons`
+- [x] (18) `TurnQueueView`: `_slotPrefab` → `TurnSlot.prefab` ; `_container`
+- [x] (19) `EnemyPanelView`: `_panelRoot`, `_name`, `_hpSlider`, `_hpText`, `_weaknessRoot`, `_weaknessIcon`
+- [ ] (20) `ComboIndicatorView`: `_currentComboLabel` → TMP del combo actual ; `_rows` → array de 8 `ComboRow` (`ComboId`, `Label`, `BlockedOverlay`). Un `ComboRow` por combo del contrato del Guerrero:
+  - `combo.par` (Par), `combo.double_pair` (DoblePar), `combo.triple` (Trio), `combo.straight` (Escalera), `combo.full_house` (FullHouse), `combo.poker` (Poker), `combo.generala` (Generala), `combo.sum_x` (SumaX).
+  - **Para el smoke test** podés dejar `_rows` **vacío** — el view no crashea; solo perdés la lista visual del contrato y el feedback de "combo bloqueado" (boss T103). `_currentComboLabel` funciona independiente. Armá las 8 rows cuando hagas el layout visual.
+- [x] (21) `DiceZoneView`: `_rollArea`, `_holdArea`, `_diceSlots` array
+- [x] (22) `ActionButtonsView`: `_attackButton`, `_energyRerollButton`, `_endTurnButton`
+- [x] (23) `PlayerActionButtonsView`: `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, `_rerollLabel`
+- [x] (24) `RerollCountView`: `_countLabel`, `_extraRollButton`
+- [x] (25) `FloatingDamageSpawner`: `_instancePrefab` → `FloatingDamage.prefab` ; `_overlayContainer`
 
 ### D.4 Screens finales (items 26–29)
 
-- [ ] (26) `FloorTransitionScreen`: `_floorNumberLabel`, `_floorTitleLabel`, `_continueButton`
-- [ ] (27) `PauseMenuOverlay`: `_resumeButton`, `_settingsButton`, `_quitRunButton`
-- [ ] (28) `VictoryScreen`: `_returnToMenuButton`, `_titleLabel`
-- [ ] (29) `DefeatScreen`: `_returnToMenuButton`, `_titleLabel`
+- [x] (26) `FloorTransitionScreen`: `_floorNumberLabel`, `_floorTitleLabel`, `_continueButton`
+- [x] (27) `PauseMenuOverlay`: `_resumeButton`, `_settingsButton`, `_quitRunButton`
+- [x] (28) `VictoryScreen`: `_returnToMenuButton`, `_titleLabel`
+- [x] (29) `DefeatScreen`: `_returnToMenuButton`, `_titleLabel`
 
 > **Checkpoint D:** Play desde `00_Bootstrap` y llegar hasta `02_Gameplay`.
 > Console debería loggear `[GameplayBootstrapper] Run started. hero=hero.warrior…`.
@@ -238,15 +242,15 @@ Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
 
 ### E.1 `01_MainMenu`
 
-- [ ] `MainMenu`: título centrado arriba, botones en pila vertical centrada abajo
-- [ ] `ClassSelection`: split 40/60 entre LeftPanel (botones de clase) y RightPanel (detalles)
-- [ ] `BuildSelection`: portrait + datos arriba · dice grid centro · botones abajo
+- [x] `MainMenu`: título centrado arriba, botones en pila vertical centrada abajo
+- [x] `ClassSelection`: split 40/60 entre LeftPanel (botones de clase) y RightPanel (detalles)
+- [x] `BuildSelection`: portrait + datos arriba · dice grid centro · botones abajo
 
 ### E.2 `02_Gameplay`
 
-- [ ] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
-- [ ] `CombatHUD`: TurnQueue arriba · EnemyPanel derecha · DiceZone centro · botones abajo
-- [ ] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado con backdrop semi-transparente
+- [x] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
+- [x] `CombatHUD`: TurnQueue arriba · EnemyPanel derecha · DiceZone centro · botones abajo
+- [x] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado con backdrop semi-transparente
 
 ---
 
@@ -254,16 +258,16 @@ Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
 
 Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 
-- [ ] Bootstrap loggea registración limpia + `RunController registrado`
-- [ ] Auto-load de `01_MainMenu`
-- [ ] "Jugar" → ClassSelection
-- [ ] Seleccionar Guerrero → panel derecho poblado (8 combos en ContractDisplay) → Confirm habilita
-- [ ] Confirm → BuildSelection
-- [ ] Confirm en BuildSelection → console: `[BuildSelectionScreen] Navigating to gameplay. …` → carga `02_Gameplay`
-- [ ] `02_Gameplay` loggea `[GameplayBootstrapper] Run started. hero=hero.warrior, runId=…`
-- [ ] ExplorationHUD aparece con HP/Energy/Gold populados
+- [x] Bootstrap loggea registración limpia + `RunController registrado`
+- [x] Auto-load de `01_MainMenu`
+- [x] "Jugar" → ClassSelection
+- [x] Seleccionar Guerrero → panel derecho poblado (8 combos en ContractDisplay) → Confirm habilita
+- [x] Confirm → BuildSelection
+- [x] Confirm en BuildSelection → console: `[BuildSelectionScreen] Navigating to gameplay. …` → carga `02_Gameplay`
+- [x] `02_Gameplay` loggea `[GameplayBootstrapper] Run started. hero=hero.warrior, runId=…`
+- [ ] ExplorationHUD aparece con HP/Energy/Gold populados. Primera room muestra **"Entrada"** (Start), sin combate — si ves combate ya, falta cablear `StartRoom` en `Floor1_Layout`.
+- [ ] Click **Proceed** → entra a primera sala de combate → aparece `CombatHUD` encima del ExplorationHUD
 - [ ] Navegar entre rooms con `Proceed`
-- [ ] Entrar a combat room → CombatHUD aparece
 - [ ] Player turn: seleccionar acción, reroll, end turn
 - [ ] Enemy turn se ejecuta → vuelve al player
 - [ ] Floor boss cleared → VictoryScreen ; o muerte → DefeatScreen

@@ -35,9 +35,9 @@ namespace Rollgeon.Run
 
             ServiceLocator.TryGetService<RulesetSO>(out var ruleset);
 
-            RunBootstrapper.StartRun(hero, ruleset, runId);
-            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}", this);
-
+            // 1. Push ExplorationHUD PRIMERO — queda en la base del stack.
+            //    Cualquier overlay que pushee el chain de StartRun (CombatHUD,
+            //    FloorTransition) aterriza correctamente encima.
             if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 screens.PushByStringId("ExplorationHUD");
@@ -46,6 +46,12 @@ namespace Rollgeon.Run
             {
                 Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado — el ScreenHost de 02_Gameplay no corrio todavia?", this);
             }
+
+            // 2. Ahora sí: arrancar la run. El chain
+            //    (RunController.OnRunStart → ExplorationController.BeginExploration →
+            //    ProcessRoom) puede pushear CombatHUD con seguridad.
+            RunBootstrapper.StartRun(hero, ruleset, runId);
+            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}", this);
 
             PendingRunRequest.Clear();
         }

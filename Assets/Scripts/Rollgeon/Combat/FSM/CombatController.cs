@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;  // IReadOnlyList<Guid>
 using Patterns;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.Handoff;
 using Rollgeon.Patterns.Bootstrap;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -108,6 +110,15 @@ namespace Rollgeon.Combat.FSM
             _onOverlayPoppedHandler = OnOverlayPopped;
             EventManager.Subscribe(EventName.OnOverlayPushed, _onOverlayPushedHandler);
             EventManager.Subscribe(EventName.OnOverlayPopped, _onOverlayPoppedHandler);
+
+            // Expone este controller como ICombatStarter / ICombatSignaller para que
+            // CombatHandoffService + RunController (scope Run, registrados en
+            // GameplayBootstrapper.Start) los resuelvan sin stubs. AddService es upsert
+            // — si el user vuelve al menu y arranca otra run, Awake del nuevo
+            // CombatController sobrescribe la entry sin romper.
+            var adapter = new CombatControllerAdapter(this);
+            ServiceLocator.AddService<ICombatStarter>(adapter, ServiceScope.Global);
+            ServiceLocator.AddService<ICombatSignaller>(adapter, ServiceScope.Global);
         }
 
         private void OnDestroy()
@@ -129,6 +140,11 @@ namespace Rollgeon.Combat.FSM
             }
             _fsm = null;
             _context = null;
+
+            // Limpia las entries para no dejar refs apuntando a un MonoBehaviour destruido
+            // (p.ej. al hacer LoadScene("01_MainMenu") desde Victory/Defeat).
+            ServiceLocator.RemoveService<ICombatStarter>();
+            ServiceLocator.RemoveService<ICombatSignaller>();
         }
 
         private void Update()

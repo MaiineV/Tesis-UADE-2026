@@ -90,6 +90,30 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
+        public void GenerateFloor_WithStartRoom_PlacesStartAtIndexZero()
+        {
+            var start = CreateRoom("start_0", RoomType.Start);
+            var layout = CreateLayout();
+            layout.StartRoom = start;
+
+            _manager.GenerateFloor(layout, 42);
+
+            Assert.AreEqual(RoomType.Start, _manager.GetFloorRooms()[0].Type);
+            Assert.AreEqual("start_0", _manager.GetFloorRooms()[0].RoomId);
+            Assert.AreSame(start, _manager.CurrentRoom);
+        }
+
+        [Test]
+        public void GenerateFloor_WithoutStartRoom_FirstRoomIsNotStart()
+        {
+            var layout = CreateLayout();
+
+            _manager.GenerateFloor(layout, 42);
+
+            Assert.AreNotEqual(RoomType.Start, _manager.GetFloorRooms()[0].Type);
+        }
+
+        [Test]
         public void GenerateFloor_ProducesCorrectRoomCount_WithinMinMax()
         {
             var layout = CreateLayout(minRooms: 5, maxRooms: 8);

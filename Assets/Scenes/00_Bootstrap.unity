@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2145963334}
   - component: {fileID: 2145963333}
+  - component: {fileID: 2145963335}
   m_Layer: 0
   m_Name: Bootstrap
   m_TagString: Untagged
@@ -150,7 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Patterns.Bootstrap.BootstrapRunner
   _bootstrap: {fileID: 11400000, guid: 22a54e863c84d5949872688fcdbfeb6f, type: 2}
   _nextScene: 
-  _dontDestroyOnLoad: 0
+  _dontDestroyOnLoad: 1
   _preloadCatalogs: 1
 --- !u!4 &2145963334
 Transform:
@@ -167,6 +168,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2145963335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2145963332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b595c6c767f7ac4284e1130008dcc01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Run.RunControllerBootstrapper
+  _defaultLayout: {fileID: 11400000, guid: 0da9005a48665e64091210ba7299224c, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

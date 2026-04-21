@@ -33,3 +33,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cd4941296f0148442ac86ad8ac19485f, type: 2}
   BossCandidates:
   - {fileID: 11400000, guid: 26b17a40c970e71448add075e202a9b0, type: 2}
+  StartRoom: {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}
