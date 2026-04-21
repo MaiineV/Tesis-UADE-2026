@@ -20,13 +20,13 @@ tags: [index, checklist, round3, setup]
 
 ## A · Asset organization (~15 min)
 
-- [ ] Crear carpeta `Assets/Rollgeon/Prefabs/UI/`
-- [ ] Mover `ComboRow.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
-- [ ] Mover `DiceSlotView.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
-- [ ] Mover `TurnSlot.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
-- [ ] Mover `FloatingDamage.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
-- [ ] Si existe `Combo_Generala 1.asset` duplicado → borrar
-- [ ] (Opcional) Borrar carpeta vacía `Assets/Rollgeon/Scenes/` desde Unity
+- [x] Crear carpeta `Assets/Rollgeon/Prefabs/UI/`
+- [x] Mover `ComboRow.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
+- [x] Mover `DiceSlotView.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
+- [x] Mover `TurnSlot.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
+- [x] Mover `FloatingDamage.prefab` del root → `Assets/Rollgeon/Prefabs/UI/`
+- [x] Si existe `Combo_Generala 1.asset` duplicado → borrar
+- [x] (Opcional) Borrar carpeta vacía `Assets/Rollgeon/Scenes/` desde Unity
 
 ---
 
@@ -36,36 +36,36 @@ tags: [index, checklist, round3, setup]
 
 Renombrar `AD_Move.asset` si aplica o crear 5 nuevos (`Create → Rollgeon/Actions/Action Definition`):
 
-- [ ] `AD_AttackBasic` — ActionId: `attack.basic` · Type: `Attack` · EnergyCost: **1** · BlockOnRepeat: `true`
-- [ ] `AD_AttackSpecial` — ActionId: `attack.special` · Type: `Attack` · EnergyCost: **2** · BlockOnRepeat: `true`
-- [ ] `AD_Heal` — ActionId: `skill.heal` · Type: `SkillCheck` · EnergyCost: **2** · BlockOnRepeat: `true`
-- [ ] `AD_ForceDoor` — ActionId: `skill.force_door` · Type: `SkillCheck` · EnergyCost: **1** · BlockOnRepeat: `true`
-- [ ] `AD_EndTurn` — ActionId: `defend` · Type: `Defend` · EnergyCost: **0** · BlockOnRepeat: `true`
+- [x] `AD_AttackBasic` — ActionId: `attack.basic` · Type: `Attack` · EnergyCost: **1** · BlockOnRepeat: `true`
+- [x] `AD_AttackSpecial` — ActionId: `attack.special` · Type: `Attack` · EnergyCost: **2** · BlockOnRepeat: `true`
+- [x] `AD_Heal` — ActionId: `skill.heal` · Type: `SkillCheck` · EnergyCost: **2** · BlockOnRepeat: `true`
+- [x] `AD_ForceDoor` — ActionId: `skill.force_door` · Type: `SkillCheck` · EnergyCost: **1** · BlockOnRepeat: `true`
+- [x] `AD_EndTurn` — ActionId: `defend` · Type: `Defend` · EnergyCost: **0** · BlockOnRepeat: `true`
 
 ### B.2 Combos faltantes — `Assets/Rollgeon/Combos/`
 
 `Create → Rollgeon/Combos/<Tipo>`:
 
-- [ ] `Combo_DoblePar` — BaseDamage: **18**
-- [ ] `Combo_SumaX` — BaseDamage: **25**
-- [ ] `Combo_FullHouse` — BaseDamage: **40**
-- [ ] `Combo_Generala` — BaseDamage: **100**
+- [x] `Combo_DoblePar` — BaseDamage: **18**
+- [x] `Combo_SumaX` — BaseDamage: **25**
+- [x] `Combo_FullHouse` — BaseDamage: **40**
+- [x] `Combo_Generala` — BaseDamage: **100**
 
 Verificar los ya creados:
 
-- [ ] `Combo_Par` — BaseDamage: 10
-- [ ] `Combo_Trio` — BaseDamage: 28
-- [ ] `Combo_Escalera` — BaseDamage: 35
-- [ ] `Combo_Poker` — BaseDamage: 60
+- [x] `Combo_Par` — BaseDamage: 10
+- [x] `Combo_Trio` — BaseDamage: 28
+- [x] `Combo_Escalera` — BaseDamage: 35
+- [x] `Combo_Poker` — BaseDamage: 60
 
 ### B.3 EnemyData — `Assets/Rollgeon/Enemies/`
 
-- [ ] `EnemyData_Boss` — BaseHP: **100** · BaseAttack: **15** · BaseSpeed: **3** · MaxEnergy: **5**
-- [ ] `EnemyData_Goblin` — BaseHP: **20** · BaseAttack: **8** · BaseSpeed: **4** · MaxEnergy: **3**
+- [x] `EnemyData_Boss` — BaseHP: **100** · BaseAttack: **15** · BaseSpeed: **3** · MaxEnergy: **5**
+- [x] `EnemyData_Goblin` — BaseHP: **20** · BaseAttack: **8** · BaseSpeed: **4** · MaxEnergy: **3**
 
 ### B.4 EnemyPool
 
-- [ ] `Floor1_CombatPool` (EnemyPoolSO) con entries: `EnemyData_Test` (Weight=1) + `EnemyData_Goblin` (Weight=1)
+- [x] `Floor1_CombatPool` (EnemyPoolSO) con entries: `EnemyData_Test` (Weight=1) + `EnemyData_Goblin` (Weight=1)
 
 ### B.5 Rooms — `Assets/Rollgeon/` (crear carpeta `Rooms/` si no existe)
 
@@ -77,30 +77,30 @@ Verificar los ya creados:
 | `Room_Shop01`   | `shop_01`   | "Tienda"            | Shop   | null |
 | `Room_Potion01` | `potion_01` | "Sala de Pociones"  | Potion | null |
 
-- [ ] `Room_Combat01`
-- [ ] `Room_Combat02`
-- [ ] `Room_Combat03`
-- [ ] `Room_Shop01`
-- [ ] `Room_Potion01`
+- [x] `Room_Combat01`
+- [x] `Room_Combat02`
+- [x] `Room_Combat03`
+- [x] `Room_Shop01`
+- [x] `Room_Potion01`
 
 ### B.6 Floor + Matrix
 
-- [ ] `Floor1_Layout` (FloorLayoutSO) — RoomCountMin: **6** · RoomCountMax: **8** · CombatRooms: [3 rooms] · ShopRooms: [Shop01] · PotionRooms: [Potion01] · BossCandidates: [EnemyData_Boss]
-- [ ] `PhaseTransitionMatrix` (PhaseTransitionMatrixSO) — grilla 5×5:
-  - [ ] None → Exploration ✓
-  - [ ] Exploration → Combat ✓
-  - [ ] Exploration → Loading ✓
-  - [ ] Combat → Exploration ✓
-  - [ ] Combat → GameOver ✓
-  - [ ] * → GameOver ✓
-  - [ ] Overlays: Exploration → [Pause] ; Combat → [Pause]
+- [x] `Floor1_Layout` (FloorLayoutSO) — RoomCountMin: **6** · RoomCountMax: **8** · CombatRooms: [3 rooms] · ShopRooms: [Shop01] · PotionRooms: [Potion01] · BossCandidates: [EnemyData_Boss]
+- [x] `PhaseTransitionMatrix` (PhaseTransitionMatrixSO) — grilla 5×5:
+  - [x] None → Exploration ✓
+  - [x] Exploration → Combat ✓
+  - [x] Exploration → Loading ✓
+  - [x] Combat → Exploration ✓
+  - [x] Combat → GameOver ✓
+  - [x] * → GameOver ✓
+  - [x] Overlays: Exploration → [Pause] ; Combat → [Pause]
 
 ### B.7 Ruleset — verificar `Assets/Rollgeon/Rulesets/Ruleset.asset`
 
-- [ ] Energy: Max=**4** · AtRunStart=**2** · RegenBase=**2**
-- [ ] TurnOrder: SpeedDieMin=**1** · SpeedDieMax=**6**
-- [ ] Weakness: DefaultMultiplier=**1.5**
-- [ ] Counters: PerUseBonus=**0.02** · MaxBonus=**0.20**
+- [x] Energy: Max=**4** · AtRunStart=**2** · RegenBase=**2**
+- [x] TurnOrder: SpeedDieMin=**1** · SpeedDieMax=**6**
+- [x] Weakness: DefaultMultiplier=**1.5**
+- [x] Counters: PerUseBonus=**0.02** · MaxBonus=**0.20**
 
 ---
 
@@ -110,21 +110,22 @@ Verificar los ya creados:
 
 **En `Assets/Scenes/00_Bootstrap.unity`:**
 
-- [ ] (1) `BootstrapRunner._bootstrap` → `Assets/Rollgeon/ServiceBootstrap.asset`
+- [x] (1) `BootstrapRunner._bootstrap` → `Assets/Rollgeon/ServiceBootstrap.asset`
 
 **En `Assets/Rollgeon/ServiceBootstrap.asset`:**
 
-- [ ] (2) `Catalogs`: ActionCatalog, ComboCatalog, EnemyCatalog
-- [ ] (3) `SettingsAssets`: Ruleset, PhaseTransitionMatrix
-- [ ] (4) `ExtraServices` en orden de Priority:
-  - [ ] PhaseServiceBootstrap (10)
-  - [ ] PlayerServiceBootstrap (30)
-  - [ ] EnergyService (50)
-  - [ ] TurnManagerBootstrap (60)
-  - [ ] TurnOrderServiceBootstrap (100)
-  - [ ] RerollBudgetServiceBootstrap
-  - [ ] WeaknessServiceBootstrap
-  - [ ] ComboCountersServiceBootstrap
+- [x] (2) `Catalogs`: ActionCatalog, ComboCatalog, EnemyCatalog
+- [x] (3) `SettingsAssets`: Ruleset, PhaseTransitionMatrix
+- [x] (4) `ExtraServices` en orden de Priority:
+  - [ ] **AttributesManagerBootstrap (5)** ← requerido primero; sin esto EnergyService/TurnManager/RerollBudget fallan en cascada
+  - [x] PhaseServiceBootstrap (10)
+  - [x] PlayerServiceBootstrap (30)
+  - [x] EnergyService (50)
+  - [x] TurnManagerBootstrap (60)
+  - [x] TurnOrderServiceBootstrap (100)
+  - [x] RerollBudgetServiceBootstrap
+  - [x] WeaknessServiceBootstrap
+  - [x] ComboCountersServiceBootstrap
 
 > **Checkpoint C.1:** Play desde `00_Bootstrap` loggea `Registered N catalogs…` sin errores.
 

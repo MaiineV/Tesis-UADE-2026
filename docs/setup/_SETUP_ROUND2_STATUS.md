@@ -276,6 +276,9 @@ El MCP no puede setear object references. Todo el drag-and-drop va manual.
 2. **Catalogs**: agregar ActionCatalog, ComboCatalog, EnemyCatalog
 3. **Settings Assets**: agregar Ruleset, PhaseTransitionMatrix
 4. **Extra Runtime Services**: agregar (en orden de Priority):
+   - AttributesManagerBootstrap (5) — **requerido primero**; registra
+     `AttributesManager` global. Sin esto, `EnergyService`, `TurnManager`
+     y `RerollBudgetService` fallan en cascada al hacer Play.
    - PhaseServiceBootstrap (10)
    - PlayerServiceBootstrap (30)
    - EnergyService (50)

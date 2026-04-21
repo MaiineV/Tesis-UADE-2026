@@ -32,7 +32,8 @@ public interface IPreloadableService {
 ## Dependencies
 
 - **Uses:** [[ServiceLocator]].
-- **Used by:** every bootstrap-registered service (e.g. [[TurnManager]],
+- **Used by:** every bootstrap-registered service (e.g.
+  [[AttributesManagerBootstrap]], [[TurnManager]],
   [[ComboCountersService]], [[PhaseService]], [[PlayerService]],
   [[RerollBudgetService]], [[TurnOrderService]], [[WeaknessService]] —
   see Wave 3/4 notes).
