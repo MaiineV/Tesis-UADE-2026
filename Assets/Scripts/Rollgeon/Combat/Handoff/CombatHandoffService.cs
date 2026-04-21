@@ -165,10 +165,21 @@ namespace Rollgeon.Combat.Handoff
             var playerGuid = _player.PlayerGuid;
             IReadOnlyList<int> stubFaces = new[] { 1, 2, 3, 4, 5 };
 
-            // Attack (ActionButtonsView): ejecuta la accion via TurnManager (gasta
-            // energia, aplica efecto) y luego notifica al FSM. Sin TryExecute el
-            // boton habilitaba pero no producia ningún efecto de juego.
-            hud.OnAttackRequested = () =>
+            // OnAttackRequested: solo notifica FSM (ActionButtonsView legacy, sin dados).
+            // El ataque real va por OnConfirmAttackRequested en el flujo dice-first.
+            hud.OnAttackRequested = _playerActions.SendPlayerAction;
+            hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
+
+            // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
+            // de WaitingForRoll → Rolled (habilita Reroll y Confirm Attack).
+            // Valores stub hasta que DiceRollingService este implementado.
+            hud.OnRollDiceRequested = () =>
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
+
+            // Confirm Attack (flujo dice-first): ejecuta el ataque via TurnManager
+            // (gasta energia, aplica efecto), cierra la tirada y termina el turno.
+            // Resolved deshabilita todos los botones, EndPlayerTurn avanza la FSM.
+            hud.OnConfirmAttackRequested = () =>
             {
                 if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
                     && ServiceLocator.TryGetService<TurnManager>(out var tm)
@@ -181,21 +192,6 @@ namespace Rollgeon.Combat.Handoff
                         tm.TryExecute(action, playerGuid, ctx);
                     }
                 }
-                _playerActions.SendPlayerAction();
-            };
-            hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
-
-            // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
-            // de WaitingForRoll → Rolled (habilita Reroll y Confirm Attack).
-            // Valores stub hasta que DiceRollingService este implementado.
-            hud.OnRollDiceRequested = () =>
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
-
-            // Confirm Attack: cierra la tirada (fase → Resolved, todos los botones
-            // off) y termina el turno automaticamente. Sin EndPlayerTurn el player
-            // queda atascado porque Resolved deshabilita incluso End Turn.
-            hud.OnConfirmAttackRequested = () =>
-            {
                 EventManager.Trigger(EventName.OnRollResolved, playerGuid, stubFaces);
                 _playerActions.EndPlayerTurn();
             };

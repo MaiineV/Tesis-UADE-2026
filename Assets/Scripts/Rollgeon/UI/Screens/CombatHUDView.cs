@@ -51,8 +51,9 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private EnemyPanelView _enemyPanel;
 
-        [Required("Arrastrar ActionButtonsView.")]
         [SerializeField]
+        [Tooltip("Opcional. Panel legacy (Attack/Reroll/EndTurn directo). " +
+                 "Null = skipped. Reemplazado por PlayerActionButtonsView en el flujo dice-first.")]
         private ActionButtonsView _actionButtons;
 
         [Required("Arrastrar DiceZoneView.")]
