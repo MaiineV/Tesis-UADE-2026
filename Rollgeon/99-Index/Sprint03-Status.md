@@ -49,6 +49,9 @@ tags: [index, sprint, status]
 
 ## Round 3 — PENDING (manual, user in Unity editor)
 
+> Tickable version: [[Round3-Checklist]].
+
+
 **Organization (~15 min):**
 - Move 4 prefabs to `Assets/Rollgeon/Prefabs/UI/`.
 - Move ~23 SOs into their proper folders (`Actions/`, `Combos/`,

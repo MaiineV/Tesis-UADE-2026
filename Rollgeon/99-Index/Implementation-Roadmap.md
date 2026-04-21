@@ -34,7 +34,8 @@ inside systems already used by gameplay.
 
 1. **Round 3 manual Unity setup** — organise prefabs/SOs into their
    folders, configure SO values, wire Inspector references, lay out
-   RectTransforms. Owner: user (CLAUDE.md forbids Unity MCP). Reference:
+   RectTransforms. Owner: user (CLAUDE.md forbids Unity MCP). Working
+   checklist: [[Round3-Checklist]] (tickable, ~70–90 min). Reference:
    `docs/setup/_SETUP_ROUND2_STATUS.md` + [[Sprint03-Status]].
    Note: scenes live at `Assets/Scenes/` (the empty
    `Assets/Rollgeon/Scenes/` folder from earlier drafts is inert — leave

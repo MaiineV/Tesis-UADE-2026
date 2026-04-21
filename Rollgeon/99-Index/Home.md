@@ -58,6 +58,8 @@ dependencies and are read first by the Bootstrap pipeline.
 - [[Sprint03-Status]] — retrospective: Round 2 (MCP-automated setup)
   done vs. Round 3 (manual wiring) pending; known TBDs from
   `TECHNICAL.md`.
+- [[Round3-Checklist]] — tickable checklist (~70–90 min) for the manual
+  Unity setup that closes out Sprint 03.
 - [[Implementation-Roadmap]] — forward-looking plan: P1/P2/P3
   priorities, dependency graph, per-domain outlook.
 - [[TECHNICAL-Index]] — map from `TECHNICAL.md` sections §0–§27 to the
