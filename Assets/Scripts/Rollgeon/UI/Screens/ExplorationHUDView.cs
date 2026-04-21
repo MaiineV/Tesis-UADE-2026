@@ -1,6 +1,7 @@
 using System;
 using Patterns;
 using Rollgeon.Player;
+using Rollgeon.Run;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -22,11 +23,13 @@ namespace Rollgeon.UI.Screens
     /// <para>
     /// <b>Resolucion del player:</b> intenta <c>IPlayerService.PlayerGuid</c> via
     /// <see cref="ServiceLocator"/> en <c>OnPushed</c>. Si no hay servicio registrado
-    /// o el guid es <see cref="Guid.Empty"/>, degrada con warning (hard rule #6). El
-    /// stub de <see cref="IPlayerService"/> de este worktree solo expone
-    /// <c>PlayerGuid</c> — los hooks <c>OnPlayerSet</c>/<c>OnPlayerCleared</c> vendran
-    /// con F#0008; entretanto, si el HUD se pushea antes del spawn, hay que re-pushear
-    /// despues o llamar <see cref="BindAll"/> manualmente.
+    /// o el guid es <see cref="Guid.Empty"/>, degrada con warning (hard rule #6) y
+    /// espera rebind. El HUD se auto-rebindea suscribiendose a
+    /// <c>EventName.OnRunStart</c>: cuando <c>GameplayBootstrapper</c> pushea el HUD
+    /// antes de <c>RunBootstrapper.StartRun</c>, el evento dispara despues de que
+    /// <c>RunController</c> registra <c>IDungeonService</c>/<c>IExplorationController</c>
+    /// y con <c>IPlayerService.PlayerGuid</c> ya set, y el handler local corre
+    /// <see cref="BindAll"/> con todo listo.
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Screens/Exploration HUD View")]
@@ -70,17 +73,37 @@ namespace Rollgeon.UI.Screens
         [ShowInInspector, ReadOnly]
         private bool _subViewsBound;
 
+        private EventManager.EventReceiver _onRunStartHandler;
+
         /// <inheritdoc/>
         protected override void OnPushed(IScreenPayload payload)
         {
+            SubscribeRebindEvents();
             ResolvePlayer();
         }
 
         /// <inheritdoc/>
         protected override void OnPopped()
         {
+            UnsubscribeRebindEvents();
             UnbindAll();
             _playerGuid = Guid.Empty;
+        }
+
+        private void SubscribeRebindEvents()
+        {
+            if (_onRunStartHandler != null) return;
+
+            _onRunStartHandler = _ => ResolvePlayer();
+            EventManager.Subscribe(EventName.OnRunStart, _onRunStartHandler);
+        }
+
+        private void UnsubscribeRebindEvents()
+        {
+            if (_onRunStartHandler == null) return;
+
+            EventManager.UnSubscribe(EventName.OnRunStart, _onRunStartHandler);
+            _onRunStartHandler = null;
         }
 
         // OnGainFocus / OnLoseFocus: no-op. El HUD sigue consumiendo eventos aunque
@@ -88,11 +111,19 @@ namespace Rollgeon.UI.Screens
 
         private void ResolvePlayer()
         {
+            // Pre-run: el HUD se pushea desde GameplayBootstrapper antes de StartRun.
+            // No hay IRunContextService ni servicios de run todavia — silenciar y esperar
+            // al handler de OnRunStart que re-ejecuta ResolvePlayer con todo listo.
+            if (!ServiceLocator.TryGetService<IRunContextService>(out _))
+            {
+                _playerGuid = Guid.Empty;
+                return;
+            }
+
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null)
             {
-                // Degradacion graceful (hard rule #6): fallback Guid.Empty + warning.
-                Debug.LogWarning(LogPrefix + "IPlayerService no registrado. HUD queda en default. " +
-                                 "Cuando F#0008 mergee, el bootstrap debe registrar el servicio real.", this);
+                Debug.LogWarning(LogPrefix + "IPlayerService no registrado dentro de la run. " +
+                                 "Bootstrap debe registrar el servicio antes de StartRun.", this);
                 _playerGuid = Guid.Empty;
                 BindAll(_playerGuid);
                 return;
@@ -101,8 +132,8 @@ namespace Rollgeon.UI.Screens
             _playerGuid = playerService.PlayerGuid;
             if (_playerGuid == Guid.Empty)
             {
-                Debug.LogWarning(LogPrefix + "IPlayerService.PlayerGuid = Guid.Empty al momento del push. " +
-                                 "HUD queda en default; re-pushear despues del spawn para rebind.", this);
+                Debug.LogWarning(LogPrefix + "IPlayerService.PlayerGuid = Guid.Empty con run activa. " +
+                                 "SetPlayer no corrio antes del bind.", this);
             }
             BindAll(_playerGuid);
         }

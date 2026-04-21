@@ -186,8 +186,11 @@ namespace Patterns.FSM
         {
             if (!IsRunning || Current == null) return;
 
-            // 1) Pregunta al override de CheckInput.
-            if (Current.CheckInput(input, out var next) && next != null && !ReferenceEquals(next, Current))
+            // 1) Pregunta al override de CheckInput. Self-transitions permitidas:
+            //    devolver Current corre Exit(old) + Enter(new) en el mismo estado —
+            //    necesario para cadenas de enemies (EnemyTurnState.Self) y para el
+            //    caso "player unico participante" en PlayerTurnState.Self.
+            if (Current.CheckInput(input, out var next) && next != null)
             {
                 ApplyTransition(Current, next, input);
                 return;
@@ -202,7 +205,7 @@ namespace Patterns.FSM
                     var entry = entries[i];
                     if (entry.Guard == null || entry.Guard(Context))
                     {
-                        if (entry.Target != null && !ReferenceEquals(entry.Target, Current))
+                        if (entry.Target != null)
                         {
                             ApplyTransition(Current, entry.Target, input);
                         }

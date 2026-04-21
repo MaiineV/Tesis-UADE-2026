@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
+                "file": "99-Index/Round3-Checklist.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Implementation-Roadmap"
+              "title": "Round3-Checklist"
             }
           }
         ]
@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 259.5
+    "width": 259.5,
+    "collapsed": true
   },
   "right": {
     "id": "7224e9bc4bf3f3ca",
@@ -94,7 +95,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
+                "file": "99-Index/Round3-Checklist.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +105,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Implementation-Roadmap"
+              "title": "Backlinks for Round3-Checklist"
             }
           },
           {
@@ -113,12 +114,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
+                "file": "99-Index/Round3-Checklist.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from Implementation-Roadmap"
+              "title": "Outgoing links from Round3-Checklist"
             }
           },
           {
@@ -156,13 +157,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "99-Index/Implementation-Roadmap.md",
+                "file": "99-Index/Round3-Checklist.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Implementation-Roadmap"
+              "title": "Outline of Round3-Checklist"
             }
           }
         ]
@@ -185,13 +186,13 @@
   },
   "active": "3c322ad00e0981fb",
   "lastOpenFiles": [
-    "99-Index/Round3-Checklist.md",
     "99-Index/Sprint03-Status.md",
+    "99-Index/Round3-Checklist.md",
+    "99-Index/Implementation-Roadmap.md",
     "Untitled 1.canvas",
     "Untitled.canvas",
     "90-MOCs/Effects-MOC.md",
     "01-Attributes/AttributesManagerBootstrap.md",
-    "99-Index/Implementation-Roadmap.md",
     "90-MOCs/Attributes-MOC.md",
     "Untitled.base",
     "2026-04-20.md",

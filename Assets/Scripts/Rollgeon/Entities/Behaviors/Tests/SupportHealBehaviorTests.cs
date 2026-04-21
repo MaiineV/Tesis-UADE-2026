@@ -143,7 +143,9 @@ namespace Rollgeon.Entities.Behaviors.Tests
         public void Execute_DeadAllies_AreSkipped()
         {
             var dead = SpawnAlly(currentHp: 0, maxHp: 20);
-            var wounded = SpawnAlly(currentHp: 10, maxHp: 20);
+            // 5 + 11 = 16 — por debajo del cap (20) para aislar "dead skipped"
+            // del clamp del MaxHpResolver.
+            var wounded = SpawnAlly(currentHp: 5, maxHp: 20);
 
             var behavior = new SupportHealBehavior
             {
@@ -154,7 +156,7 @@ namespace Rollgeon.Entities.Behaviors.Tests
 
             // Dead permanece en 0 — el Support no resucita.
             Assert.AreEqual(0, _attrs.GetAttributeValue<Health, int>(dead));
-            Assert.AreEqual(10 + 11, _attrs.GetAttributeValue<Health, int>(wounded));
+            Assert.AreEqual(5 + 11, _attrs.GetAttributeValue<Health, int>(wounded));
         }
 
         [Test]

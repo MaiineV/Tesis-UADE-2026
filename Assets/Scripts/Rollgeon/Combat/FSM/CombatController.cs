@@ -119,6 +119,7 @@ namespace Rollgeon.Combat.FSM
             var adapter = new CombatControllerAdapter(this);
             ServiceLocator.AddService<ICombatStarter>(adapter, ServiceScope.Global);
             ServiceLocator.AddService<ICombatSignaller>(adapter, ServiceScope.Global);
+            ServiceLocator.AddService<IPlayerCombatActions>(adapter, ServiceScope.Global);
         }
 
         private void OnDestroy()

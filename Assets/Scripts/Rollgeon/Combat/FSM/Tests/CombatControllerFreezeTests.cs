@@ -51,7 +51,10 @@ namespace Rollgeon.Combat.FSM.Tests
 
             _bootstrap = ScriptableObject.CreateInstance<ServiceBootstrapSO>();
 
-            // Crear el host inactivo para poder setear _bootstrap ANTES de Awake.
+            // Crear el host inactive para evitar que AddComponent dispare Awake con
+            // _bootstrap = null. Seteamos _bootstrap via reflection e invocamos Awake
+            // manualmente — en EditMode, SetActive(true) no dispara Awake de forma
+            // confiable, entonces no lo usamos.
             _host = new GameObject("TestCombatController");
             _host.SetActive(false);
             _controller = _host.AddComponent<CombatController>();
@@ -59,9 +62,15 @@ namespace Rollgeon.Combat.FSM.Tests
                 .GetField("_bootstrap",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                 .SetValue(_controller, _bootstrap);
+            InvokeAwake(_controller);
+        }
 
-            // Ahora activamos — Awake corre y encuentra _bootstrap != null.
-            _host.SetActive(true);
+        private static void InvokeAwake(CombatController controller)
+        {
+            typeof(CombatController)
+                .GetMethod("Awake",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(controller, null);
         }
 
         [TearDown]
@@ -138,6 +147,7 @@ namespace Rollgeon.Combat.FSM.Tests
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Error,
                     new System.Text.RegularExpressions.Regex(@"_bootstrap anchor es null"));
                 var orphan = orphanHost.AddComponent<CombatController>();
+                InvokeAwake(orphan);
                 Assert.IsFalse(orphan.enabled,
                     "Controller sin bootstrap debe deshabilitarse en Awake.");
             }

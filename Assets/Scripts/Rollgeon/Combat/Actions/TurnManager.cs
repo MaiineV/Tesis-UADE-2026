@@ -186,7 +186,9 @@ namespace Rollgeon.Combat.Actions
                 ok = action.Effect.TryExecute(ctx, preCtx);
             }
 
-            if (ok) _actionsUsedThisTurn.Add(action.ActionId);
+            // Solo trackear acciones con BlockOnRepeat=true — las repetibles (movement,
+            // §12.6) no entran al set para que UsedActionsCount refleje las "consumidas".
+            if (ok && action.BlockOnRepeat) _actionsUsedThisTurn.Add(action.ActionId);
             return ok;
         }
 

@@ -24,7 +24,7 @@ namespace Rollgeon.UI.Tests
     public class DefeatScreenTests
     {
         private GameObject _screenGO;
-        private DefeatScreen _screen;
+        private TestableDefeatScreen _screen;
         private Button _returnToMenuButton;
         private TextMeshProUGUI _titleLabel;
         private SpyScreenManager _spyScreenManager;
@@ -32,6 +32,13 @@ namespace Rollgeon.UI.Tests
         // -------------------------------------------------------------------
         // Stubs
         // -------------------------------------------------------------------
+
+        // Override LoadMainMenu para evitar SceneManager.LoadScene en EditMode.
+        private sealed class TestableDefeatScreen : DefeatScreen
+        {
+            public int LoadMainMenuCalls;
+            protected override void LoadMainMenu() => LoadMainMenuCalls++;
+        }
 
         private class SpyScreenManager : IScreenManager
         {
@@ -62,7 +69,7 @@ namespace Rollgeon.UI.Tests
 
             _screenGO = new GameObject("DefeatScreen");
             _screenGO.SetActive(false);
-            _screen = _screenGO.AddComponent<DefeatScreen>();
+            _screen = _screenGO.AddComponent<TestableDefeatScreen>();
 
             _returnToMenuButton = AttachButton("ReturnToMenuButton");
 

@@ -159,7 +159,13 @@ namespace Rollgeon.UI.Tests
         public void OnDisable_Unbinds()
         {
             _view.Bind(_playerGuid);
-            _view.SendMessage("OnDisable");
+            // SendMessage pega contra la assertion interna de Unity
+            // (ShouldRunBehaviour) en EditMode — invocamos OnDisable directo via
+            // reflection para saltar esa check.
+            var onDisable = typeof(PlayerActionButtonsView).GetMethod("OnDisable",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(onDisable, "OnDisable method not found on PlayerActionButtonsView.");
+            onDisable.Invoke(_view, null);
 
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
             Assert.IsFalse(_rollDice.interactable,

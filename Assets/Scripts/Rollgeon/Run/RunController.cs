@@ -1,7 +1,9 @@
 using System;
 using Patterns;
 using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
+using Rollgeon.Combat.Energy;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
@@ -25,6 +27,7 @@ namespace Rollgeon.Run
         private EventManager.EventReceiver _onRunStartHandler;
         private EventManager.EventReceiver _onRunEndHandler;
         private bool _disposed;
+        private Guid _registeredPlayerId;
 
         public bool IsRunActive { get; private set; }
 
@@ -85,9 +88,20 @@ namespace Rollgeon.Run
             var registry = new InMemoryEntityRegistry();
             ServiceLocator.AddService<InMemoryEntityRegistry>(registry, ServiceScope.Run);
 
-            // 2. Enemy spawn resolver (takes concrete InMemoryEntityRegistry)
-            var resolver = new DefaultEnemySpawnResolver(registry);
+            // 2. Enemy spawn resolver — registra spawns en InMemoryEntityRegistry
+            //    (initiative / turn order) y en AttributesManager (stat reads del AI y
+            //    pipelines de daño). Ambos apuntan al mismo ModifiableAttributes.
+            var attributes = ServiceLocator.GetService<AttributesManager>();
+            var resolver = new DefaultEnemySpawnResolver(registry, attributes);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
+
+            // 2b. Register the player hero in both registries. Without this, combat
+            //     pipelines discard damage on the player ("Entity not registered") and
+            //     the turn order falls back to the bottom-of-queue sentinel. EnemyDataSO
+            //     spawns are handled by the resolver above; the hero has no spawner yet,
+            //     so RunController does it via the selected ClassHeroSO's base stats.
+            var playerService = ServiceLocator.GetService<IPlayerService>();
+            RegisterPlayer(playerService, registry, attributes);
 
             // 3. Dungeon
             DungeonManager.CreateAndRegister(_defaultLayout, seed);
@@ -100,10 +114,7 @@ namespace Rollgeon.Run
             var healPipeline = new HealPipeline();
             ServiceLocator.AddService<IHealPipeline>(healPipeline, ServiceScope.Run);
 
-            // 6. Enemy AI
-            var attributes = ServiceLocator.GetService<AttributesManager>();
-            var playerService = ServiceLocator.GetService<IPlayerService>();
-
+            // 6. Enemy AI — reutiliza attributes + playerService resueltos arriba.
             Action onTurnComplete;
             if (ServiceLocator.TryGetService<ICombatSignaller>(out var signaller))
             {
@@ -137,8 +148,46 @@ namespace Rollgeon.Run
 
         private void OnRunEnd(params object[] args)
         {
-            // RunBootstrapper.EndRun already calls ServiceLocator.ClearScope(ServiceScope.Run)
+            // RunBootstrapper.EndRun already calls ServiceLocator.ClearScope(ServiceScope.Run).
+            // AttributesManager is Global scope, so the player entry we added in OnRunStart
+            // must be unregistered explicitly to avoid stale GUIDs leaking across runs.
+            if (_registeredPlayerId != Guid.Empty
+                && ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                && attributes != null)
+            {
+                attributes.Unregister(_registeredPlayerId);
+            }
+            _registeredPlayerId = Guid.Empty;
+
             IsRunActive = false;
+        }
+
+        private void RegisterPlayer(
+            IPlayerService playerService,
+            InMemoryEntityRegistry registry,
+            AttributesManager attributes)
+        {
+            if (playerService == null || attributes == null || registry == null) return;
+            if (playerService.CurrentHero == null) return;
+            if (playerService.PlayerGuid == Guid.Empty) return;
+
+            var hero = playerService.CurrentHero;
+            var playerAttrs = new ModifiableAttributes();
+            playerAttrs.EnsureInitialized();
+            playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
+            playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
+
+            registry.Register(playerService.PlayerGuid, playerAttrs);
+            attributes.Register(playerService.PlayerGuid, playerAttrs);
+            _registeredPlayerId = playerService.PlayerGuid;
+
+            // Hidrata Energy: EnergyService.OnRunStartExternal solo resetea _playerId,
+            // y el caller (esta funcion) tiene que llamar InitializeForEntity con el
+            // Guid real. Ver EnergyService.InitializeForEntity doc-comment.
+            if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
+            {
+                energy.InitializeForEntity(playerService.PlayerGuid);
+            }
         }
     }
 }

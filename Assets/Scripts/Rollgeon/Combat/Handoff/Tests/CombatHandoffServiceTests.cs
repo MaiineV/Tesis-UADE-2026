@@ -120,6 +120,12 @@ namespace Rollgeon.Combat.Handoff.Tests
             }
         }
 
+        private class StubPlayerCombatActions : IPlayerCombatActions
+        {
+            public void SendPlayerAction() { }
+            public void EndPlayerTurn() { }
+        }
+
         // -------------------------------------------------------------------
         // Setup / Teardown
         // -------------------------------------------------------------------
@@ -139,7 +145,7 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             _service = new CombatHandoffService(
                 _stubDungeon, _stubPlayer, _spyResolver,
-                _spyAI, _spyScreen, _spyCombat);
+                _spyAI, _spyScreen, _spyCombat, new StubPlayerCombatActions());
         }
 
         [TearDown]

@@ -137,6 +137,9 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             _bound = false;
             _phase = ButtonPhase.Idle;
+            // Refresh para desactivar todos los botones — sin bind no hay turno
+            // que refleje, entonces buttons deben quedar disabled.
+            RefreshInteractable();
         }
 
         /// <summary>Reads _phase + service queries, updates all button interactable states.</summary>

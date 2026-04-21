@@ -27,7 +27,22 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 0
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Entities.Behaviors.SupportHealBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 1
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: BaseHealAmount
+      Entry: 3
+      Data: 6
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 

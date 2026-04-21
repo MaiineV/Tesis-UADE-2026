@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
@@ -67,6 +68,12 @@ namespace Rollgeon.Run.Tests
             public void SignalEnemyDone() { SignalCount++; }
         }
 
+        private class StubPlayerCombatActions : IPlayerCombatActions
+        {
+            public void SendPlayerAction() { }
+            public void EndPlayerTurn() { }
+        }
+
         // -------------------------------------------------------------------
         // Setup / Teardown
         // -------------------------------------------------------------------
@@ -93,6 +100,7 @@ namespace Rollgeon.Run.Tests
             ServiceLocator.AddService<IScreenManager>(new StubScreenManager(), ServiceScope.Global);
             ServiceLocator.AddService<ICombatStarter>(new StubCombatStarter(), ServiceScope.Global);
             ServiceLocator.AddService<ICombatSignaller>(new StubCombatSignaller(), ServiceScope.Global);
+            ServiceLocator.AddService<IPlayerCombatActions>(new StubPlayerCombatActions(), ServiceScope.Global);
         }
 
         [TearDown]
@@ -192,6 +200,45 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.EndRun(runId);
 
             Assert.IsFalse(_controller.IsRunActive);
+        }
+
+        [Test]
+        public void OnRunStart_RegistersPlayerInAttributesManagerAndRegistry()
+        {
+            _hero.BaseMaxHp = 30;
+            _hero.BaseSpeed = 7;
+
+            CreateController();
+            StartRun();
+
+            var playerGuid = _playerService.PlayerGuid;
+            Assert.AreNotEqual(Guid.Empty, playerGuid, "PlayerService should have assigned a GUID");
+
+            Assert.IsTrue(_attributesManager.IsRegistered(playerGuid),
+                "Player must be registered in AttributesManager so damage pipelines can read Health");
+
+            var registry = ServiceLocator.GetService<InMemoryEntityRegistry>();
+            Assert.IsTrue(registry.TryGetAttributes(playerGuid, out var attrs),
+                "Player must be registered in InMemoryEntityRegistry so initiative can read Speed");
+            Assert.IsNotNull(attrs);
+
+            Assert.AreEqual(30, _attributesManager.GetAttributeValue<Health, int>(playerGuid));
+            Assert.AreEqual(7, _attributesManager.GetAttributeValue<Speed, int>(playerGuid));
+        }
+
+        [Test]
+        public void OnRunEnd_UnregistersPlayerFromAttributesManager()
+        {
+            CreateController();
+            var runId = Guid.NewGuid();
+            RunBootstrapper.StartRun(_hero, null, runId);
+            var playerGuid = _playerService.PlayerGuid;
+            Assert.IsTrue(_attributesManager.IsRegistered(playerGuid));
+
+            RunBootstrapper.EndRun(runId);
+
+            Assert.IsFalse(_attributesManager.IsRegistered(playerGuid),
+                "AttributesManager is Global scope — the player entry must be cleaned up on run end");
         }
 
         [Test]

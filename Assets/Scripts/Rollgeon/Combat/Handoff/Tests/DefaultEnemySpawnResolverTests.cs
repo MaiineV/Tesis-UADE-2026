@@ -14,6 +14,7 @@ namespace Rollgeon.Combat.Handoff.Tests
     public class DefaultEnemySpawnResolverTests
     {
         private InMemoryEntityRegistry _registry;
+        private AttributesManager _attributes;
         private DefaultEnemySpawnResolver _resolver;
         private readonly List<UnityEngine.Object> _createdObjects = new();
 
@@ -25,12 +26,14 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void SetUp()
         {
             _registry = new InMemoryEntityRegistry();
-            _resolver = new DefaultEnemySpawnResolver(_registry);
+            _attributes = new AttributesManager();
+            _resolver = new DefaultEnemySpawnResolver(_registry, _attributes);
         }
 
         [TearDown]
         public void TearDown()
         {
+            _attributes?.Dispose();
             foreach (var obj in _createdObjects)
             {
                 if (obj != null)
@@ -155,6 +158,24 @@ namespace Rollgeon.Combat.Handoff.Tests
             {
                 Assert.IsTrue(_registry.TryGetAttributes(id, out _),
                     $"Enemy {id} should be registered in the entity registry");
+            }
+        }
+
+        [Test]
+        public void Resolve_RegistersEachEnemyInAttributesManager()
+        {
+            var e1 = CreateEnemy("Goblin");
+            var e2 = CreateEnemy("Orc");
+            var pool = CreatePool(e1, e2);
+            var room = CreateRoom(pool);
+
+            var result = _resolver.Resolve(room, 2, new System.Random(42));
+
+            foreach (var (id, _) in result)
+            {
+                Assert.IsTrue(_attributes.IsRegistered(id),
+                    $"Enemy {id} should be registered in AttributesManager " +
+                    "so BasicEnemyAI / damage pipelines can read its stats.");
             }
         }
 

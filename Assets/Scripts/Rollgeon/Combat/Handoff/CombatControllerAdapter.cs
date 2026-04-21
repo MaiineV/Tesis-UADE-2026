@@ -12,7 +12,7 @@ namespace Rollgeon.Combat.Handoff
     /// <see cref="Patterns.ServiceLocator"/> by the bootstrap or by
     /// <see cref="CombatHandoffService.CreateAndRegister"/>.
     /// </summary>
-    public sealed class CombatControllerAdapter : ICombatStarter, ICombatSignaller
+    public sealed class CombatControllerAdapter : ICombatStarter, ICombatSignaller, IPlayerCombatActions
     {
         private readonly CombatController _controller;
 
@@ -31,5 +31,9 @@ namespace Rollgeon.Combat.Handoff
         }
 
         public void SignalEnemyDone() => _controller.SendEnemyDone();
+
+        public void SendPlayerAction() => _controller.SendPlayerAction();
+
+        public void EndPlayerTurn() => _controller.EndPlayerTurn();
     }
 }

@@ -133,11 +133,13 @@ namespace Rollgeon.Dungeon.Tests
 
             second.Dispose();
 
-            // Unity null check — destroyed objects compare == null
+            // Unity null check — destroyed objects compare == null (fake-null).
+            // Nota: NO usar obj?.name en el mensaje — `?.` usa CLR null y dispara
+            // MissingReferenceException sobre objetos destruidos.
             foreach (var obj in refs)
             {
                 Assert.IsTrue(obj == null,
-                    $"Object '{obj?.name ?? "(destroyed)"}' should be destroyed after Dispose");
+                    "Object should be destroyed after Dispose (got non-null ref)");
             }
         }
 

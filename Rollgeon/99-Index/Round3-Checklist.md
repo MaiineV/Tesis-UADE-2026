@@ -265,11 +265,11 @@ Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 - [x] Confirm → BuildSelection
 - [x] Confirm en BuildSelection → console: `[BuildSelectionScreen] Navigating to gameplay. …` → carga `02_Gameplay`
 - [x] `02_Gameplay` loggea `[GameplayBootstrapper] Run started. hero=hero.warrior, runId=…`
-- [ ] ExplorationHUD aparece con HP/Energy/Gold populados. Primera room muestra **"Entrada"** (Start), sin combate — si ves combate ya, falta cablear `StartRoom` en `Floor1_Layout`.
-- [ ] Click **Proceed** → entra a primera sala de combate → aparece `CombatHUD` encima del ExplorationHUD
-- [ ] Navegar entre rooms con `Proceed`
+- [x] ExplorationHUD aparece con HP/Energy/Gold populados. Primera room muestra **"Entrada"** (Start), sin combate — si ves combate ya, falta cablear `StartRoom` en `Floor1_Layout`.
+- [x] Click **Proceed** → entra a primera sala de combate → aparece `CombatHUD` encima del ExplorationHUD
+- [x] Navegar entre rooms con `Proceed`
 - [ ] Player turn: seleccionar acción, reroll, end turn
-- [ ] Enemy turn se ejecuta → vuelve al player
+- [x] Enemy turn se ejecuta → vuelve al player
 - [ ] Floor boss cleared → VictoryScreen ; o muerte → DefeatScreen
 - [ ] `Return to Menu` → `01_MainMenu` limpio, nueva run arrancable (verifica que `ClearScope(Run)` corrió)
 - [ ] **Negativo:** abrir `02_Gameplay` directo en Play → console loggea

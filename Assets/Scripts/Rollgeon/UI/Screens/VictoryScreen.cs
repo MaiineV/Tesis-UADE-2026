@@ -42,13 +42,18 @@ namespace Rollgeon.UI.Screens
 
         private void Awake()
         {
+            // Idempotencia: si ya hay handler (Awake doble-fired por tests /
+            // lifecycle cuirks), salir sin re-suscribir.
+            if (_onFloorClearedHandler != null) return;
             _onFloorClearedHandler = HandleFloorCleared;
             EventManager.Subscribe(EventName.OnFloorCleared, _onFloorClearedHandler);
         }
 
         private void OnDestroy()
         {
+            if (_onFloorClearedHandler == null) return;
             EventManager.UnSubscribe(EventName.OnFloorCleared, _onFloorClearedHandler);
+            _onFloorClearedHandler = null;
         }
 
         private void HandleFloorCleared(params object[] args)
@@ -94,6 +99,16 @@ namespace Rollgeon.UI.Screens
                 Debug.LogWarning(LogPrefix + "IRunContextService not available — skipping EndRun.", this);
             }
 
+            LoadMainMenu();
+        }
+
+        /// <summary>
+        /// Hook de carga de escena. Virtual para que tests EditMode puedan
+        /// overridear sin hitearle al <see cref="SceneManager"/> (que solo
+        /// funciona en PlayMode).
+        /// </summary>
+        protected virtual void LoadMainMenu()
+        {
             SceneManager.LoadScene("01_MainMenu");
         }
     }
