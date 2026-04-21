@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Screen overlay del Combat HUD. Coordina 7 sub-views + spawner de floating
+    /// Screen overlay del Combat HUD. Coordina 6 sub-views + spawner de floating
     /// damage siguiendo el patron <c>Bind(guid)</c> / <c>Unbind()</c> idempotente
     /// de T95a.
     /// Plan §3.1 / §4.1 / TECHNICAL.md §17.D.
@@ -20,11 +20,12 @@ namespace Rollgeon.UI.Screens
     /// sigue consumiendo eventos (<c>OnLoseFocus</c> / <c>OnGainFocus</c> no-op).
     /// </para>
     /// <para>
-    /// <b>Dispatch de acciones</b>. Los botones del <see cref="ActionButtonsView"/>
+    /// <b>Dispatch de acciones</b>. Los botones del <see cref="PlayerActionButtonsView"/>
     /// disparan <see cref="UnityEngine.Events.UnityEvent"/>s que wireamos en
-    /// <c>Awake</c> a los delegates publicos <see cref="OnAttackRequested"/>,
-    /// <see cref="OnEnergyRerollRequested"/>, <see cref="OnEndTurnRequested"/>.
-    /// El <c>CombatController</c> los cablea al hacer push (setup doc §8.7).
+    /// <c>Awake</c> a los delegates publicos <see cref="OnRollDiceRequested"/>,
+    /// <see cref="OnConfirmAttackRequested"/>, <see cref="OnEnergyRerollRequested"/>,
+    /// <see cref="OnEndTurnRequested"/>. El <c>CombatController</c> los cablea
+    /// al hacer push (setup doc §8.7).
     /// </para>
     /// <para>
     /// <b>Safety net</b>: suscribe <c>OnCombatEnd</c> localmente. Si alguien pushea
@@ -38,7 +39,7 @@ namespace Rollgeon.UI.Screens
         private const string LogPrefix = "[CombatHUDView] ";
 
         [Title("Combat HUD — Sub-views")]
-        [InfoBox("Cablear 7 widgets + spawner. Null = sub-view skipped con warning.")]
+        [InfoBox("Cablear 6 sub-views + spawner. Null = sub-view skipped con warning.")]
         [Required("Arrastrar TurnQueueView.")]
         [SerializeField]
         private TurnQueueView _turnQueue;
@@ -50,11 +51,6 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar EnemyPanelView.")]
         [SerializeField]
         private EnemyPanelView _enemyPanel;
-
-        [SerializeField]
-        [Tooltip("Opcional. Panel legacy (Attack/Reroll/EndTurn directo). " +
-                 "Null = skipped. Reemplazado por PlayerActionButtonsView en el flujo dice-first.")]
-        private ActionButtonsView _actionButtons;
 
         [Required("Arrastrar DiceZoneView.")]
         [SerializeField]
@@ -68,9 +64,8 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private FloatingDamageSpawner _floatingDamage;
 
+        [Required("Arrastrar PlayerActionButtonsView.")]
         [SerializeField]
-        [Tooltip("Opcional. Panel dice-first con Roll/Reroll/Confirm/EndTurn. " +
-                 "Null = skipped (coexiste con ActionButtonsView).")]
         private PlayerActionButtonsView _playerActionButtons;
 
         [Title("Combat HUD — Damage Flash")]
@@ -98,11 +93,6 @@ namespace Rollgeon.UI.Screens
         // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
-        // Estos 3 delegates los setea el CombatController al pushear el HUD.
-        // Si no se cablean, los clicks loggean warning pero no crashean.
-
-        /// <summary>Delegate que dispara "atacar" en la FSM. Seteado por <c>CombatController</c>.</summary>
-        public Action OnAttackRequested;
 
         /// <summary>Delegate que dispara "energy reroll". Seteado por <c>CombatController</c>.</summary>
         public Action OnEnergyRerollRequested;
@@ -133,20 +123,9 @@ namespace Rollgeon.UI.Screens
 
         private void Awake()
         {
-            // Wire UnityEvents -> delegates. Los botones de ActionButtonsView disparan
-            // UnityEvents; nosotros los reemitimos como Action para que el CombatController
-            // los cablee con un Action simple (plan §4.5 opcion A).
-            if (_actionButtons != null)
-            {
-                _actionButtons.OnAttackPressed.AddListener(InvokeAttackRequested);
-                _actionButtons.OnEnergyRerollPressed.AddListener(InvokeEnergyRerollRequested);
-                _actionButtons.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
-            }
             if (_rerollCount != null)
-            {
-                // El boton de "extra roll" del RerollCountView mirroea el de ActionButtons.
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeEnergyRerollRequested);
-            }
+
             if (_playerActionButtons != null)
             {
                 _playerActionButtons.OnRollDicePressed.AddListener(InvokeRollDiceRequested);
@@ -158,16 +137,9 @@ namespace Rollgeon.UI.Screens
 
         private void OnDestroy()
         {
-            if (_actionButtons != null)
-            {
-                _actionButtons.OnAttackPressed.RemoveListener(InvokeAttackRequested);
-                _actionButtons.OnEnergyRerollPressed.RemoveListener(InvokeEnergyRerollRequested);
-                _actionButtons.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
-            }
             if (_rerollCount != null)
-            {
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeEnergyRerollRequested);
-            }
+
             if (_playerActionButtons != null)
             {
                 _playerActionButtons.OnRollDicePressed.RemoveListener(InvokeRollDiceRequested);
@@ -252,9 +224,6 @@ namespace Rollgeon.UI.Screens
             if (_enemyPanel != null) _enemyPanel.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_enemyPanel no cableado.", this);
 
-            if (_actionButtons != null) _actionButtons.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_actionButtons no cableado.", this);
-
             if (_rerollCount != null) _rerollCount.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_rerollCount no cableado.", this);
 
@@ -262,6 +231,7 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_floatingDamage no cableado.", this);
 
             if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_playerActionButtons no cableado.", this);
 
             // DiceZoneView no tiene Bind — no-op (plan §3.6).
 
@@ -274,7 +244,6 @@ namespace Rollgeon.UI.Screens
             if (_turnQueue != null) _turnQueue.Unbind();
             if (_comboIndicator != null) _comboIndicator.Unbind();
             if (_enemyPanel != null) _enemyPanel.Unbind();
-            if (_actionButtons != null) _actionButtons.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
@@ -306,17 +275,6 @@ namespace Rollgeon.UI.Screens
                 Debug.LogWarning(LogPrefix + "IPlayerService.PlayerGuid = Guid.Empty al push. " +
                                  "Re-pushear tras spawn para rebind.", this);
             }
-        }
-
-        private void InvokeAttackRequested()
-        {
-            if (OnAttackRequested == null)
-            {
-                Debug.LogWarning(LogPrefix + "OnAttackRequested no cableado. El CombatController " +
-                                 "debe setearlo tras push (setup doc §8.7).", this);
-                return;
-            }
-            OnAttackRequested.Invoke();
         }
 
         private void InvokeEnergyRerollRequested()

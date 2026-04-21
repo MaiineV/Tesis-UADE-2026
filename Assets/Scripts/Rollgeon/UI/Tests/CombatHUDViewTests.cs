@@ -37,10 +37,10 @@ namespace Rollgeon.UI.Tests
         private TurnQueueView _turnQueue;
         private ComboIndicatorView _comboIndicator;
         private EnemyPanelView _enemyPanel;
-        private ActionButtonsView _actionButtons;
         private DiceZoneView _diceZone;
         private RerollCountView _rerollCount;
         private FloatingDamageSpawner _floatingDamage;
+        private PlayerActionButtonsView _playerActionButtons;
         private Guid _playerGuid;
 
         [SetUp]
@@ -56,18 +56,18 @@ namespace Rollgeon.UI.Tests
             _turnQueue = AttachChild<TurnQueueView>("TurnQueue", _hudGO);
             _comboIndicator = AttachChild<ComboIndicatorView>("ComboIndicator", _hudGO);
             _enemyPanel = AttachChild<EnemyPanelView>("EnemyPanel", _hudGO);
-            _actionButtons = AttachChild<ActionButtonsView>("ActionButtons", _hudGO);
             _diceZone = AttachChild<DiceZoneView>("DiceZone", _hudGO);
             _rerollCount = AttachChild<RerollCountView>("RerollCount", _hudGO);
             _floatingDamage = AttachChild<FloatingDamageSpawner>("FloatingDamage", _hudGO);
+            _playerActionButtons = AttachChild<PlayerActionButtonsView>("PlayerActionButtons", _hudGO);
 
             AssignPrivate(_hud, "_turnQueue", _turnQueue);
             AssignPrivate(_hud, "_comboIndicator", _comboIndicator);
             AssignPrivate(_hud, "_enemyPanel", _enemyPanel);
-            AssignPrivate(_hud, "_actionButtons", _actionButtons);
             AssignPrivate(_hud, "_diceZone", _diceZone);
             AssignPrivate(_hud, "_rerollCount", _rerollCount);
             AssignPrivate(_hud, "_floatingDamage", _floatingDamage);
+            AssignPrivate(_hud, "_playerActionButtons", _playerActionButtons);
         }
 
         [TearDown]
@@ -127,8 +127,8 @@ namespace Rollgeon.UI.Tests
         public void InvokeDelegate_WithoutWiring_DoesNotThrow()
         {
             _hud.BindAll(_playerGuid);
-            // OnAttackRequested queda null — simular click via reflection del metodo privado.
-            var method = typeof(CombatHUDView).GetMethod("InvokeAttackRequested",
+            // OnEndTurnRequested queda null — simular click via reflection del metodo privado.
+            var method = typeof(CombatHUDView).GetMethod("InvokeEndTurnRequested",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(method);
 

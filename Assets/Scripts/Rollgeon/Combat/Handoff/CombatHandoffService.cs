@@ -165,9 +165,6 @@ namespace Rollgeon.Combat.Handoff
             var playerGuid = _player.PlayerGuid;
             IReadOnlyList<int> stubFaces = new[] { 1, 2, 3, 4, 5 };
 
-            // OnAttackRequested: solo notifica FSM (ActionButtonsView legacy, sin dados).
-            // El ataque real va por OnConfirmAttackRequested en el flujo dice-first.
-            hud.OnAttackRequested = _playerActions.SendPlayerAction;
             hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
 
             // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
