@@ -160,24 +160,34 @@ namespace Rollgeon.Combat.Handoff
             // loggearian "no cableado" por si mismos — no duplicamos el warning aca.
             if (_screenManager.Current is not CombatHUDView hud) return;
 
+            var playerGuid = _player.PlayerGuid;
+            IReadOnlyList<int> stubFaces = new[] { 1, 2, 3, 4, 5 };
+
             hud.OnAttackRequested = _playerActions.SendPlayerAction;
             hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
 
-            // Roll/Confirm son pasos intra-turno: por ahora los tratamos como
-            // "accion del player termino" (mismo input FSM). Si mas adelante se
-            // agregan inputs dedicados, desdoblar aca.
-            hud.OnRollDiceRequested = _playerActions.SendPlayerAction;
-            hud.OnConfirmAttackRequested = _playerActions.SendPlayerAction;
+            // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
+            // de WaitingForRoll → Rolled (habilita Reroll y Confirm Attack).
+            // Valores stub hasta que DiceRollingService este implementado.
+            hud.OnRollDiceRequested = () =>
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
 
-            // Reroll: el HUD dispara gasto de presupuesto de rerolls. Resolvemos
-            // lazy porque IRerollBudgetService puede no estar registrado en tests.
-            var playerGuid = _player.PlayerGuid;
+            // Confirm Attack: cierra la tirada (fase → Resolved, todos los botones
+            // off) y termina el turno automaticamente. Sin EndPlayerTurn el player
+            // queda atascado porque Resolved deshabilita incluso End Turn.
+            hud.OnConfirmAttackRequested = () =>
+            {
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, stubFaces);
+                _playerActions.EndPlayerTurn();
+            };
+
+            // Reroll: gasta presupuesto y dispara OnDiceRolled para que la UI
+            // refleje el nuevo resultado (fase permanece Rolled).
             hud.OnEnergyRerollRequested = () =>
             {
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
-                {
                     budget.TryExtraRoll(playerGuid);
-                }
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
             };
         }
     }
