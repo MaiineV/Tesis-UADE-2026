@@ -12,8 +12,8 @@
 
 | Escena | Build Index | Contenido |
 |--------|-------------|-----------|
-| `Assets/Rollgeon/Scenes/00_Bootstrap.unity` | 0 | GO `Bootstrap` con componente `BootstrapRunner` |
-| `Assets/Rollgeon/Scenes/01_MainMenu.unity` | 1 | Jerarquia completa (~120 GameObjects, ver abajo) |
+| `Assets/Scenes/00_Bootstrap.unity` | 0 | GO `Bootstrap` con componente `BootstrapRunner` |
+| `Assets/Scenes/01_MainMenu.unity` | 1 | Jerarquia completa (~120 GameObjects, ver abajo) |
 
 ### Jerarquia de 01_MainMenu
 

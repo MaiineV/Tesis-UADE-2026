@@ -464,7 +464,7 @@ Overlays: `Exploration → [Pause]`, `Combat → [Pause]`.
 
 ### Round C — Escena `00_Bootstrap.unity` (10 min)
 
-Abrir `Assets/Rollgeon/Scenes/00_Bootstrap.unity`.
+Abrir `Assets/Scenes/00_Bootstrap.unity`.
 
 #### C.1 GameObject `Bootstrap`
 
@@ -642,7 +642,7 @@ Uso **opción 1** abajo.
 
 1. En Project: click derecho en `01_MainMenu.unity` → `Duplicate` → aparece `01_MainMenu 1.unity`.
 2. Renombrar a `02_Gameplay`.
-3. Moverla (si hace falta) a `Assets/Rollgeon/Scenes/02_Gameplay.unity`.
+3. Moverla (si hace falta) a `Assets/Scenes/02_Gameplay.unity`.
 
 #### E.2 Abrir `02_Gameplay.unity` y limpiar
 

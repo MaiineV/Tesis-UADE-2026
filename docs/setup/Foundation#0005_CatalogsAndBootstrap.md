@@ -34,7 +34,7 @@ Cualquier duda sobre el *por qué* de un paso: ver `plan.md` y `TECHNICAL.md`
    según tu `RenderPipeline`.
 2. Eliminar cualquier GameObject que el template agregue (Main Camera, Directional
    Light, etc.) — esta escena sólo hospeda el runner; no renderiza nada.
-3. `File → Save As…` → guardar en `Assets/Rollgeon/Scenes/00_Bootstrap.unity`
+3. `File → Save As…` → guardar en `Assets/Scenes/00_Bootstrap.unity`
    (crear la carpeta `Scenes` si no existe).
 4. En la jerarquía, `Create Empty` → renombrar a **`Bootstrap`**. Dejar su
    Transform en `(0,0,0)` por prolijidad (no hay renderizado, es irrelevante).
@@ -63,7 +63,7 @@ Cualquier duda sobre el *por qué* de un paso: ver `plan.md` y `TECHNICAL.md`
 
 ## 8.4 Wirear Runner ↔ SO
 
-1. Abrir `Assets/Rollgeon/Scenes/00_Bootstrap.unity` (doble click).
+1. Abrir `Assets/Scenes/00_Bootstrap.unity` (doble click).
 2. Seleccionar el GameObject `Bootstrap` en la jerarquía.
 3. En el Inspector, localizar el componente **Bootstrap Runner**.
 4. Arrastrar el asset `Assets/Rollgeon/Bootstrap/ServiceBootstrap.asset` al slot
@@ -129,7 +129,7 @@ La escena `00_Bootstrap` debe quedar en el **índice 0** del build:
 
 ## 8.8 Smoke-test
 
-1. Abrir `Assets/Rollgeon/Scenes/00_Bootstrap.unity`.
+1. Abrir `Assets/Scenes/00_Bootstrap.unity`.
 2. Click en `Play`.
 3. Verificar en la **Console** de Unity los siguientes logs (en orden):
    - `[Bootstrap] RegisterAll() invoked`

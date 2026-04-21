@@ -77,7 +77,7 @@ Si aun no existe (de un worktree anterior), crearlo:
 
 ## 8.3 Abrir `01_MainMenu.unity`
 
-1. Abrir la escena `Assets/Rollgeon/Scenes/01_MainMenu.unity`.
+1. Abrir la escena `Assets/Scenes/01_MainMenu.unity`.
 2. Confirmar que existen:
    - `Canvas` (el mismo de T102).
    - `ScreenHost` (con `ScreenManager` + `_initialScreenStringId = "MainMenu"`).
@@ -216,7 +216,7 @@ como escena aparte, agregar en Build Settings en index 2 (despues de
 
 ## 8.10 Verificacion funcional — smoke test
 
-1. Abrir `Assets/Rollgeon/Scenes/00_Bootstrap.unity` → presionar **Play**.
+1. Abrir `Assets/Scenes/00_Bootstrap.unity` → presionar **Play**.
 2. Se carga automaticamente `01_MainMenu` (via `BootstrapRunner` + Foundation#0005).
 3. Click **Jugar**:
    - La `MainMenuScreen` se desactiva.

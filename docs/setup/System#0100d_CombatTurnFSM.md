@@ -54,7 +54,7 @@ docs/setup/System#0100d_CombatTurnFSM.md
 2. `Window -> General -> Test Runner -> EditMode -> Run All`. Los tests de
    `Rollgeon.Combat.FSM.Tests` deben pasar (incluyendo el nuevo
    `EnergyZero_DoesNotAutoEndTurn_FSMRemainsInPlayerTurnState`).
-3. Abrir (o crear) una scene de sandbox (`Assets/Rollgeon/Scenes/Sandbox_Combat.unity`).
+3. Abrir (o crear) una scene de sandbox (`Assets/Scenes/Sandbox_Combat.unity`).
 4. Scene: GameObject con `BootstrapRunner` apuntando al `ServiceBootstrapSO`
    global (que incluye `RulesetSO`, `EnergyService`, `TurnOrderServiceBootstrap`,
    `TurnManagerBootstrap`).

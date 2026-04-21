@@ -26,9 +26,9 @@ tags: [index, sprint, status]
 
 ## Round 2 — DONE (via MCP automation)
 
-**Scenes:**
-- `00_Bootstrap.unity` (build index 0) with `BootstrapRunner`.
-- `01_MainMenu.unity` (build index 1) with ~120 hierarchical GameObjects:
+**Scenes (live at `Assets/Scenes/`):**
+- `Assets/Scenes/00_Bootstrap.unity` (build index 0) with `BootstrapRunner`.
+- `Assets/Scenes/01_MainMenu.unity` (build index 1) with ~120 hierarchical GameObjects:
   - `MainMenuScreen`, `ClassSelectionScreen`, `BuildSelectionScreen`.
   - `ExplorationHUDView` (+ 5 sub-views: Health, Energy, Gold, Items, Minimap).
   - `CombatHUDView` (+ 7 sub-views: TurnQueue, Enemy, Combo, DiceZone, Actions, Reroll, FloatingDamage).

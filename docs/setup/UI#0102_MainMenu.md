@@ -30,7 +30,7 @@ Cualquier duda sobre el *por que* de un paso: ver `plan.md` (worktree raiz) y
 1. **Foundation#0001 y #0005 mergeadas** a `develop`. Verificar que existen:
    - `Assets/Scripts/Rollgeon/Patterns/ServiceLocator.cs`.
    - `Assets/Scripts/Rollgeon/Patterns/Bootstrap/BootstrapRunner.cs`.
-   - Escena `Assets/Rollgeon/Scenes/00_Bootstrap.unity` armada siguiendo
+   - Escena `Assets/Scenes/00_Bootstrap.unity` armada siguiendo
      `docs/setup/Foundation#0005_CatalogsAndBootstrap.md`.
 2. **Odin Inspector instalado** (Sirenix). Los scripts de UI usan `[Title]`,
    `[Required]` y `[Tooltip]`.
@@ -45,7 +45,7 @@ Cualquier duda sobre el *por que* de un paso: ver `plan.md` (worktree raiz) y
 
 1. `File → New Scene` → plantilla **Basic (Built-in RP)** o **Basic (URP)** segun
    el render pipeline del proyecto.
-2. `File → Save As…` → guardar en `Assets/Rollgeon/Scenes/01_MainMenu.unity`
+2. `File → Save As…` → guardar en `Assets/Scenes/01_MainMenu.unity`
    (crear la carpeta `Scenes` si no existe).
 3. Dejar la `Main Camera` y `Directional Light` que vienen por default — no
    molestan (Canvas Overlay ignora la camara, pero es util tener una para el
@@ -140,9 +140,9 @@ del push inicial. Para `01_MainMenu`, **dejarlo en `"MainMenu"`**.
 
 1. `File → Build Settings…`.
 2. Verificar / armar el orden:
-   - Indice **0**: `Assets/Rollgeon/Scenes/00_Bootstrap.unity` (creado en
+   - Indice **0**: `Assets/Scenes/00_Bootstrap.unity` (creado en
      Foundation#0005).
-   - Indice **1**: `Assets/Rollgeon/Scenes/01_MainMenu.unity` ← **agregar
+   - Indice **1**: `Assets/Scenes/01_MainMenu.unity` ← **agregar
      ahora** con drag & drop desde Project.
 3. Guardar (Unity persiste Build Settings automaticamente).
 
@@ -154,7 +154,7 @@ Build Settings` y no carga nada.
 
 ## 8.8 Verificacion funcional — smoke test
 
-1. Abrir `Assets/Rollgeon/Scenes/00_Bootstrap.unity`.
+1. Abrir `Assets/Scenes/00_Bootstrap.unity`.
 2. Presionar **Play** en el editor.
 3. Esperado en consola:
    - Logs `[Bootstrap] ...` de `BootstrapRunner.Awake`.
@@ -222,7 +222,7 @@ Si un test falla, verificar que:
 
 ## 8.12 Definicion de Done (validacion del PR)
 
-- [ ] `01_MainMenu.unity` existe en `Assets/Rollgeon/Scenes/`.
+- [ ] `01_MainMenu.unity` existe en `Assets/Scenes/`.
 - [ ] `01_MainMenu` esta en Build Settings en indice 1.
 - [ ] Play desde `00_Bootstrap` → carga `01_MainMenu` automaticamente.
 - [ ] Boton "Jugar" → warning graceful de `ClassSelectionScreen` (hoy) / navega

@@ -36,6 +36,9 @@ inside systems already used by gameplay.
    folders, configure SO values, wire Inspector references, lay out
    RectTransforms. Owner: user (CLAUDE.md forbids Unity MCP). Reference:
    `docs/setup/_SETUP_ROUND2_STATUS.md` + [[Sprint03-Status]].
+   Note: scenes live at `Assets/Scenes/` (the empty
+   `Assets/Rollgeon/Scenes/` folder from earlier drafts is inert — leave
+   as-is or delete in Unity so its `.meta` sibling goes with it).
 2. **Finish [[DamagePipeline]]** — land the `OutgoingDamageMultiplier`,
    `IncomingDamageMultiplier`, and `Shield` stats; wire stages 1, 3 and
    4 of `DamagePipeline.Resolve` (today placeholders). No public API
