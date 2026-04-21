@@ -72,8 +72,8 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  RulesetId: 
-  DisplayName: 
+  RulesetId: BaseRuleSet
+  DisplayName: Ruleset
   Description: 
   TurnOrder:
     SpeedDieMin: 1

@@ -38,7 +38,7 @@ MonoBehaviour:
   _displayName: 
   _description: 
   _icon: {fileID: 0}
-  _baseDamage: 0
+  _baseDamage: 10
   _valueMultipliers:
   - 0
   - 0

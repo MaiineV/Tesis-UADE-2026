@@ -1,21 +1,22 @@
 using System;
 using Patterns;
-using Rollgeon.Balance;
 using Rollgeon.Heroes;
 using Rollgeon.Run;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
     /// Build selection screen (UI#0013a). Shows the selected hero's info,
-    /// dice bag preview, and confirm/back buttons. On confirm, starts the
-    /// run via <see cref="RunBootstrapper.StartRun"/> and navigates to
-    /// <c>ExplorationHUD</c>.
+    /// dice bag preview, and confirm/back buttons. On confirm, stores the
+    /// selected hero in <see cref="PendingRunRequest"/> and loads
+    /// <c>02_Gameplay</c>. <see cref="RunBootstrapper.StartRun"/> is fired
+    /// downstream by <c>GameplayBootstrapper</c> in the new scene.
     /// </summary>
     /// <remarks>
     /// [SETUP] GameObject lives as child of the Canvas in <c>01_MainMenu.unity</c>.
@@ -121,24 +122,9 @@ namespace Rollgeon.UI.Screens
                 return;
             }
 
-            // Resolve RulesetSO
-            RulesetSO ruleset = null;
-            ServiceLocator.TryGetService<RulesetSO>(out ruleset);
-
-            // Start the run via RunBootstrapper
-            RunBootstrapper.StartRun(_selectedHero, ruleset, _runId);
-
-            Debug.Log(LogPrefix + $"Run started. hero={_selectedHero.EntityId}, runId={_runId}", this);
-
-            // Navigate to exploration (stub-graceful if not registered)
-            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
-            {
-                screens.PushByStringId("ExplorationHUD");
-            }
-            else
-            {
-                Debug.LogWarning(LogPrefix + "IScreenManager not registered — can't navigate.", this);
-            }
+            PendingRunRequest.Set(_selectedHero, _runId, _rulesetId);
+            Debug.Log(LogPrefix + $"Navigating to gameplay. hero={_selectedHero.EntityId}, runId={_runId}", this);
+            SceneManager.LoadScene("02_Gameplay");
         }
 
         private void OnBackClicked()

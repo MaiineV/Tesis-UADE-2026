@@ -3,17 +3,20 @@ title: Round3-Checklist
 type: index
 domain: 99-Index
 status: wip
-tags: [index, checklist, round3, setup]
+scenes: 3
+tags: [index, checklist, round3, setup, scenes]
 ---
 
 # Round 3 — Manual Setup Checklist
 
-> Working checklist for the manual Unity setup that closes out Sprint 03.
-> All items are plain Markdown checkboxes — tick them in Obsidian as you
-> go. Values inline; detailed reference lives in
-> `docs/setup/_SETUP_ROUND2_STATUS.md`.
+> Working checklist del setup manual de Unity que cierra Sprint 03.
+> **Arquitectura de 3 escenas**: `00_Bootstrap` + `01_MainMenu` +
+> `02_Gameplay`. Todos los items son checkboxes Markdown — ticklos en
+> Obsidian a medida que avanzás. Valores inline; referencia detallada en
+> `docs/setup/_PLAYABLE_LOOP_TWO_SCENE_SETUP.md` (fuente canónica del
+> split en 3 escenas).
 >
-> Total estimated: **~70–90 min**. Status:
+> Total estimado: **~2h 30min – 3h**. Status:
 > [[Sprint03-Status]] · Plan: [[Implementation-Roadmap]] P1 #1.
 
 ---
@@ -104,20 +107,23 @@ Verificar los ya creados:
 
 ---
 
-## C · Wiring de referencias en Inspector (~45–60 min)
+## C · Wiring de escenas `00_Bootstrap` y `01_MainMenu` (~20 min)
 
-### C.1 Bootstrap (items 1–4)
+### C.1 Bootstrap — `Assets/Scenes/00_Bootstrap.unity` (items 1–4)
 
-**En `Assets/Scenes/00_Bootstrap.unity`:**
+**En el GameObject `Bootstrap` de la escena:**
 
 - [x] (1) `BootstrapRunner._bootstrap` → `Assets/Rollgeon/ServiceBootstrap.asset`
+- [ ] (1b) `BootstrapRunner._dontDestroyOnLoad` → **`true`** (crítico: este GO sobrevive a los loads de 01_MainMenu y 02_Gameplay)
+- [ ] (1c) `BootstrapRunner._preloadCatalogs` → `true`
+- [ ] (1d) Add Component → `Run Controller Bootstrapper` → `_defaultLayout` = `Floor1_Layout.asset`
 
 **En `Assets/Rollgeon/ServiceBootstrap.asset`:**
 
 - [x] (2) `Catalogs`: ActionCatalog, ComboCatalog, EnemyCatalog
 - [x] (3) `SettingsAssets`: Ruleset, PhaseTransitionMatrix
 - [x] (4) `ExtraServices` en orden de Priority:
-  - [ ] **AttributesManagerBootstrap (5)** ← requerido primero; sin esto EnergyService/TurnManager/RerollBudget fallan en cascada
+  - [x] **AttributesManagerBootstrap (5)** ← requerido primero; sin esto EnergyService/TurnManager/RerollBudget fallan en cascada
   - [x] PhaseServiceBootstrap (10)
   - [x] PlayerServiceBootstrap (30)
   - [x] EnergyService (50)
@@ -127,32 +133,69 @@ Verificar los ya creados:
   - [x] WeaknessServiceBootstrap
   - [x] ComboCountersServiceBootstrap
 
-> **Checkpoint C.1:** Play desde `00_Bootstrap` loggea `Registered N catalogs…` sin errores.
+- [ ] `File → Build Settings` → index 0 `00_Bootstrap`, index 1 `01_MainMenu`, index 2 `02_Gameplay` (se agrega al crear la escena en D)
 
-### C.2 Screens principales (items 5–8)
+> **Checkpoint C.1:** Play desde `00_Bootstrap` loggea `Registered N catalogs…` + `[RunControllerBootstrapper] RunController registrado…` sin errores.
 
-**En `Assets/Scenes/01_MainMenu.unity`:**
+### C.2 Menu screens — `Assets/Scenes/01_MainMenu.unity` (items 5–8)
 
-- [ ] (5) `MainMenuScreen`: `_playButton` → PlayButton ; `_quitButton` → QuitButton
-- [ ] (6) `ClassSelectionScreen` — 9 refs:
-  - [ ] `_warriorHero` → `CH_Warrior.asset`
-  - [ ] `_warriorButton`, `_magoButton`, `_picaroButton`
-  - [ ] `_confirmButton`
-  - [ ] `_contractDisplay`
-  - [ ] `_portraitDisplay`
-  - [ ] `_passiveDisplay`
-  - [ ] `_warriorSelectionIndicator`
-- [ ] (7) `ContractDisplayView`: `_headerLabel`, `_rowsContainer`, `_rowPrefab` → `ComboRow.prefab`, `_footerLabel`
-- [ ] (8) `BuildSelectionScreen` — 8 refs:
-  - [ ] `_heroNameLabel`, `_heroDescriptionLabel`
-  - [ ] `_heroPortrait`
-  - [ ] `_diceContainer`, `_diceSlotPrefab` → `DiceSlotView.prefab`
-  - [ ] `_diceBagFallbackLabel`
-  - [ ] `_confirmButton`, `_backButton`
+> **Alcance de esta escena.** Solo los 3 screens de menú (Main, Class,
+> Build). Los HUDs de exploración/combate y las overlays de
+> pause/victory/defeat se mueven a `02_Gameplay` en la sección D.
 
-> **Checkpoint C.2:** Play → `Jugar` → `ClassSelection` → `BuildSelection` sin NullReference.
+- [ ] (0) Bajo el Canvas: **borrar** `ExplorationHUDView`, `CombatHUDView`,
+  `FloorTransitionScreen`, `PauseMenuOverlay`, `VictoryScreen`,
+  `DefeatScreen`. Fuera del Canvas: **borrar** `CombatController` si existe.
+  Deben quedar: `EventSystem`, `ScreenHost` (`_initialScreenStringId = "MainMenu"`),
+  Canvas con `MainMenuScreen` + `ClassSelectionScreen` + `BuildSelectionScreen`.
+- [x] (5) `MainMenuScreen`: `_playButton` → PlayButton ; `_quitButton` → QuitButton
+- [x] (6) `ClassSelectionScreen` — 9 refs:
+  - [x] `_warriorHero` → `CH_Warrior.asset`
+  - [x] `_warriorButton`, `_magoButton`, `_picaroButton`
+  - [x] `_confirmButton`
+  - [x] `_contractDisplay`
+  - [x] `_portraitDisplay`
+  - [x] `_passiveDisplay`
+  - [x] `_warriorSelectionIndicator`
+- [x] (7) `ContractDisplayView`: `_headerLabel`, `_rowsContainer`, `_rowPrefab` → `ComboRow.prefab`, `_footerLabel`
+- [x] (8) `BuildSelectionScreen` — 8 refs:
+  - [x] `_heroNameLabel`, `_heroDescriptionLabel`
+  - [x] `_heroPortrait`
+  - [x] `_diceContainer`, `_diceSlotPrefab` → `DiceSlotView.prefab`
+  - [x] `_diceBagFallbackLabel`
+  - [x] `_confirmButton`, `_backButton`
 
-### C.3 ExplorationHUD (items 9–16)
+> **Checkpoint C.2:** Play desde `00_Bootstrap` → `Jugar` →
+> `ClassSelection` → `BuildSelection` sin NullReference. **No** confirmar
+> todavía — `02_Gameplay` aún no existe y `SceneManager.LoadScene("02_Gameplay")`
+> va a fallar hasta completar la sección D.
+
+---
+
+## D · Escena `02_Gameplay.unity` (~60 min)
+
+> **Cómo crear la escena.** Opción recomendada: click derecho en
+> `Assets/Scenes/01_MainMenu.unity` → `Duplicate` → renombrar a
+> `02_Gameplay.unity`. Trae los HUDs/overlays ya cableados de Round 2.
+> Alternativa (más trabajo): crear desde cero y reconstruir el Canvas.
+
+### D.1 Setup inicial
+
+- [ ] Duplicar `01_MainMenu.unity` → `02_Gameplay.unity` en `Assets/Scenes/`
+- [ ] Abrir la escena nueva. Bajo el Canvas: **borrar** `MainMenuScreen`,
+  `ClassSelectionScreen`, `BuildSelectionScreen`. Deben quedar los HUDs +
+  overlays (`ExplorationHUDView`, `CombatHUDView`, `FloorTransitionScreen`,
+  `PauseMenuOverlay`, `VictoryScreen`, `DefeatScreen`) y fuera del Canvas
+  `EventSystem`, `ScreenHost`, `CombatController`, `Main Camera`, `Directional Light`.
+- [ ] Si el `CombatController` fue borrado en C.2 al limpiar `01_MainMenu`,
+  recrearlo: `GameObject → Create Empty` → `CombatController` → Add Component `Combat Controller`.
+- [ ] `GameObject → Create Empty` → renombrar `GameplayBootstrapper` →
+  Add Component `Gameplay Bootstrapper` (no tiene fields serializados).
+- [ ] `ScreenHost._initialScreenStringId` → **vacío** (lo setea
+  `GameplayBootstrapper.Start` empujando "ExplorationHUD").
+- [ ] `File → Build Settings` → agregar `02_Gameplay.unity` en index 2.
+
+### D.2 ExplorationHUD (items 9–16)
 
 - [ ] (9) `ExplorationHUDView` — 6 refs a sub-views: `_healthBar`, `_energyBar`, `_goldCounter`, `_activeItems`, `_minimap`, `_roomNavigation`
 - [ ] (10) `HealthBarView`: `_slider` → `Slider` hijo ; `_text` → `HPText` hijo
@@ -163,7 +206,7 @@ Verificar los ya creados:
 - [ ] (15) `MinimapView`: `_mapPivot`, `_placeholder`
 - [ ] (16) `RoomNavigationView`: `_roomNameLabel`, `_roomProgressLabel`, `_roomTypeLabel`, `_proceedButton`, `_pauseButton`
 
-### C.4 CombatHUD (items 17–25)
+### D.3 CombatHUD (items 17–25)
 
 - [ ] (17) `CombatHUDView` — 9 refs: `_turnQueue`, `_comboIndicator`, `_enemyPanel`, `_actionButtons`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_damageFlashGroup`, `_playerActionButtons`
 - [ ] (18) `TurnQueueView`: `_slotPrefab` → `TurnSlot.prefab` ; `_container`
@@ -175,72 +218,77 @@ Verificar los ya creados:
 - [ ] (24) `RerollCountView`: `_countLabel`, `_extraRollButton`
 - [ ] (25) `FloatingDamageSpawner`: `_instancePrefab` → `FloatingDamage.prefab` ; `_overlayContainer`
 
-### C.5 Screens finales (items 26–29)
+### D.4 Screens finales (items 26–29)
 
 - [ ] (26) `FloorTransitionScreen`: `_floorNumberLabel`, `_floorTitleLabel`, `_continueButton`
 - [ ] (27) `PauseMenuOverlay`: `_resumeButton`, `_settingsButton`, `_quitRunButton`
 - [ ] (28) `VictoryScreen`: `_returnToMenuButton`, `_titleLabel`
 - [ ] (29) `DefeatScreen`: `_returnToMenuButton`, `_titleLabel`
 
----
-
-## D · RunController binder (~5 min)
-
-- [ ] Crear script `RunBootstrapBehaviour.cs` (o similar) o MonoBehaviour en el GO `Bootstrap` de `00_Bootstrap.unity`
-- [ ] Exponer `[SerializeField] FloorLayoutSO _floor1Layout;`
-- [ ] En `Awake`, tras `BootstrapRunner`, llamar:
-  ```csharp
-  RunController.CreateAndRegister(_floor1Layout);
-  ```
-- [ ] Arrastrar `Floor1_Layout` al campo `_floor1Layout` en el Inspector
+> **Checkpoint D:** Play desde `00_Bootstrap` y llegar hasta `02_Gameplay`.
+> Console debería loggear `[GameplayBootstrapper] Run started. hero=hero.warrior…`.
+> El ExplorationHUD aparece; si no, ver sección Troubleshooting del
+> guide canónico (`_PLAYABLE_LOOP_TWO_SCENE_SETUP.md §4`).
 
 ---
 
 ## E · Layout visual (tiempo variable)
 
-Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente:
+Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
+
+### E.1 `01_MainMenu`
 
 - [ ] `MainMenu`: título centrado arriba, botones en pila vertical centrada abajo
-- [ ] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
-- [ ] `CombatHUD`: TurnQueue arriba · EnemyPanel derecha · DiceZone centro · botones abajo
 - [ ] `ClassSelection`: split 40/60 entre LeftPanel (botones de clase) y RightPanel (detalles)
 - [ ] `BuildSelection`: portrait + datos arriba · dice grid centro · botones abajo
-- [ ] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado
+
+### E.2 `02_Gameplay`
+
+- [ ] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
+- [ ] `CombatHUD`: TurnQueue arriba · EnemyPanel derecha · DiceZone centro · botones abajo
+- [ ] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado con backdrop semi-transparente
 
 ---
 
-## F · Smoke test
+## F · Smoke test end-to-end
 
 Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 
-- [ ] Bootstrap loggea registración limpia
+- [ ] Bootstrap loggea registración limpia + `RunController registrado`
 - [ ] Auto-load de `01_MainMenu`
 - [ ] "Jugar" → ClassSelection
-- [ ] Seleccionar Guerrero → Confirm habilita
+- [ ] Seleccionar Guerrero → panel derecho poblado (8 combos en ContractDisplay) → Confirm habilita
 - [ ] Confirm → BuildSelection
-- [ ] Confirm → Exploration (RunController arrancó)
+- [ ] Confirm en BuildSelection → console: `[BuildSelectionScreen] Navigating to gameplay. …` → carga `02_Gameplay`
+- [ ] `02_Gameplay` loggea `[GameplayBootstrapper] Run started. hero=hero.warrior, runId=…`
+- [ ] ExplorationHUD aparece con HP/Energy/Gold populados
 - [ ] Navegar entre rooms con `Proceed`
-- [ ] Entrar a una combat room → CombatHUD aparece
+- [ ] Entrar a combat room → CombatHUD aparece
 - [ ] Player turn: seleccionar acción, reroll, end turn
 - [ ] Enemy turn se ejecuta → vuelve al player
 - [ ] Floor boss cleared → VictoryScreen ; o muerte → DefeatScreen
-- [ ] `Return to Menu` → volver a MainMenu
+- [ ] `Return to Menu` → `01_MainMenu` limpio, nueva run arrancable (verifica que `ClearScope(Run)` corrió)
+- [ ] **Negativo:** abrir `02_Gameplay` directo en Play → console loggea
+  `[GameplayBootstrapper] No pending run request` (guard del bootstrapper)
 
 ---
 
 ## Cómo usar este checklist
 
 - Tildá los items con `- [x]` en Obsidian (click en el checkbox).
-- Al terminar una sección, cambiá el `status:` del frontmatter a `done` para esa fase si querés llevar estado por bloque.
+- Al terminar una sección, cambiá el `status:` del frontmatter a `done`
+  para esa fase si querés llevar estado por bloque.
 - Cuando termine todo, mover `status: wip` → `done`, commit con
-  `docs(obsidian): round 3 setup complete` y promover el item P1#1 del
-  [[Implementation-Roadmap]] eliminándolo.
+  `docs(obsidian): round 3 setup complete (3 scenes)` y promover el
+  item P1#1 del [[Implementation-Roadmap]] eliminándolo.
 - Si aparece una ref null inesperada, Unity imprime el nombre del campo
   en el log — buscalo por texto en este archivo.
 
 ## Fuentes
 
-- `docs/setup/_SETUP_ROUND2_STATUS.md` — doc canónico (tablas detalladas).
+- `docs/setup/_PLAYABLE_LOOP_TWO_SCENE_SETUP.md` — **fuente canónica** del
+  split en 3 escenas; tablas detalladas por round y troubleshooting.
+- `docs/setup/_SETUP_ROUND2_STATUS.md` — doc del round 2 (2-scene).
 - [[Sprint03-Status]] — resumen de estado del sprint.
 - [[Implementation-Roadmap]] P1 #1.
 - Guías específicas por pantalla en `docs/setup/UI#*.md`.

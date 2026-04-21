@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ea25b26b6cceb4418cd1f5588bb253f, type: 3}
-  m_Name: Combo_Poker
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combos.Concretes.Combo_Poker
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Goblin
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -21,10 +21,10 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: _extraEffects
+    - Name: Behaviors
       Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
-        mscorlib
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 0
@@ -34,16 +34,13 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  _comboId: 
-  _displayName: 
-  _description: 
-  _icon: {fileID: 0}
-  _baseDamage: 60
-  _valueMultipliers:
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
-  _generalMultiplier: 1
+  EntityId: Goblin01
+  DisplayName: Enemy Test
+  Description: 
+  WeaknessComboId: 
+  WeaknessMultiplierOverride: 0
+  BaseHP: 20
+  BaseAttack: 2
+  BaseHealStrength: 5
+  BaseSpeed: 4
+  MaxEnergy: 3

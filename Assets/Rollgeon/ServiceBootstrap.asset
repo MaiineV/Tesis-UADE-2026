@@ -16,7 +16,18 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 931e48afd5b2a0f4da6a8bf015e46e56, type: 2}
+    - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
+    - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
+    - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
+    - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
+    - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
+    - {fileID: 11400000, guid: 770d23ca67712434fba66c1720131b74, type: 2}
+    - {fileID: 11400000, guid: 497954e0bde12fa43bd6148abb7e0fc3, type: 2}
     - {fileID: 11400000, guid: fb853ea367410b944bfcb1e04bdae8e6, type: 2}
+    - {fileID: 11400000, guid: b1c9e5a37a4ae904bb9c4962025c26a3, type: 2}
+    - {fileID: 11400000, guid: 3eecc6591c3d2f94fa05783bf01d9f3d, type: 2}
+    - {fileID: 11400000, guid: 8a1274cee8aa5eb47bd44e94147a8933, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -28,7 +39,16 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 10
       Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
     - Name: 
       Entry: 13
       Data: 
@@ -41,7 +61,13 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 0
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
     - Name: 
       Entry: 13
       Data: 
@@ -54,22 +80,51 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 2
-    - Name: 
-      Entry: 10
-      Data: 0
+      Data: 9
     - Name: 
       Entry: 7
-      Data: 3|Rollgeon.Combat.Energy.EnergyService, Rollgeon
+      Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
     - Name: 
       Entry: 8
       Data: 
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
+      Entry: 7
+      Data: 4|Rollgeon.Combat.Energy.EnergyService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 10
+      Data: 7
+    - Name: 
+      Entry: 10
+      Data: 8
+    - Name: 
+      Entry: 10
+      Data: 9
+    - Name: 
+      Entry: 10
+      Data: 10
+    - Name: 
+      Entry: 10
+      Data: 11
     - Name: 
       Entry: 13
       Data: 
     - Name: 
       Entry: 8
       Data: 
-  Catalogs: []
-  SettingsAssets: []
+  Catalogs:
+  - {fileID: 11400000, guid: 931e48afd5b2a0f4da6a8bf015e46e56, type: 2}
+  - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
+  - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
+  SettingsAssets:
+  - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
+  - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
   _nextSceneName: 01_MainMenu
