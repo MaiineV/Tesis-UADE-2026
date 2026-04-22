@@ -5,6 +5,8 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Visuals;
+using Rollgeon.Grid;
 
 namespace Rollgeon.Combat.Handoff
 {
@@ -27,15 +29,21 @@ namespace Rollgeon.Combat.Handoff
         private readonly InMemoryEntityRegistry _registry;
         private readonly AttributesManager _attributes;
         private readonly IEnemyAIRegistry _aiRegistry;
+        private readonly IGridManager _grid;
+        private readonly IEntityVisualService _visuals;
 
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
             AttributesManager attributes,
-            IEnemyAIRegistry aiRegistry = null)
+            IEnemyAIRegistry aiRegistry = null,
+            IGridManager grid = null,
+            IEntityVisualService visuals = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
             _aiRegistry = aiRegistry;
+            _grid = grid;
+            _visuals = visuals;
         }
 
         public List<(Guid id, EnemyDataSO data)> Resolve(RoomSO room, int spawnCount, System.Random rng)
@@ -48,6 +56,7 @@ namespace Rollgeon.Combat.Handoff
 
             var rolled = room.EnemyPool.RollForSpawns(spawnCount, rng);
 
+            int spawnIndex = 0;
             foreach (var enemyData in rolled)
             {
                 if (enemyData == null) continue;
@@ -63,10 +72,25 @@ namespace Rollgeon.Combat.Handoff
                     _aiRegistry.Register(id, aiRoot, enemyData.BaseHP);
                 }
 
+                var coord = ResolveSpawnCoord(room, spawnIndex);
+                if (_grid != null) _grid.Register(id, coord);
+                if (_visuals != null) _visuals.SpawnEnemy(id, enemyData, coord);
+
                 result.Add((id, enemyData));
+                spawnIndex++;
             }
 
             return result;
+        }
+
+        private static GridCoord ResolveSpawnCoord(RoomSO room, int index)
+        {
+            if (room.EnemySpawnPoints != null && room.EnemySpawnPoints.Count > 0)
+            {
+                return room.EnemySpawnPoints[index % room.EnemySpawnPoints.Count];
+            }
+            // Fallback: fila vertical a +3 del origen, espaciado uno por enemigo.
+            return new GridCoord(3, index);
         }
     }
 }

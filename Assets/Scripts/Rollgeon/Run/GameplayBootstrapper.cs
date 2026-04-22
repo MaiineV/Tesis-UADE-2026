@@ -1,5 +1,8 @@
 using Patterns;
 using Rollgeon.Balance;
+using Rollgeon.Dungeon;
+using Rollgeon.Entities.Visuals;
+using Rollgeon.Grid;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using UnityEngine;
@@ -10,7 +13,8 @@ namespace Rollgeon.Run
     /// MonoBehaviour escena-scoped para <c>02_Gameplay</c>. Lee
     /// <see cref="PendingRunRequest"/>, arranca la run via
     /// <see cref="RunBootstrapper.StartRun"/> (que crea la scope Run + wirea
-    /// servicios via <c>IRunController</c>), y pushea <c>ExplorationHUD</c>.
+    /// servicios via <c>IRunController</c>), pushea <c>ExplorationHUD</c> y
+    /// spawnea el GameObject del hero en la grilla de la primera sala.
     /// </summary>
     /// <remarks>
     /// [SETUP] GameObject vive en 02_Gameplay.unity. Sin fields serializados.
@@ -65,7 +69,38 @@ namespace Rollgeon.Run
                 Debug.Log(LogPrefix + $"Aplicado built dice bag ({builtBag.Dice.Count} dados).", this);
             }
 
+            // 4. Spawn visual del hero en la grilla de la primera sala (§0203).
+            //    RunController.OnRunStart ya corrió, así que grid + dungeon están cargados.
+            SpawnHeroInFirstRoom(hero);
+
             PendingRunRequest.Clear();
+        }
+
+        private void SpawnHeroInFirstRoom(Rollgeon.Heroes.ClassHeroSO hero)
+        {
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService)) return;
+            if (playerService.PlayerGuid == System.Guid.Empty) return;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
+            {
+                Debug.LogWarning(LogPrefix + "IGridManager no registrado — hero no se posiciona en grilla.", this);
+                return;
+            }
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon)) return;
+
+            var room = dungeon.CurrentRoom;
+            var spawnCoord = room != null ? room.PlayerSpawn : GridCoord.Zero;
+
+            grid.Register(playerService.PlayerGuid, spawnCoord);
+
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals))
+            {
+                visuals.SpawnHero(playerService.PlayerGuid, hero, spawnCoord);
+            }
+            else
+            {
+                Debug.LogWarning(LogPrefix + "IEntityVisualService no registrado — hero queda sin pawn visible.", this);
+            }
         }
     }
 }

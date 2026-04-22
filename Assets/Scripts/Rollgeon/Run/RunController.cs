@@ -90,10 +90,13 @@ namespace Rollgeon.Run
 
             // 2. Enemy spawn resolver — registra spawns en InMemoryEntityRegistry
             //    (initiative / turn order), AttributesManager (stat reads del AI y
-            //    pipelines de daño) y IEnemyAIRegistry (árbol clonado por enemigo).
+            //    pipelines de daño), IEnemyAIRegistry (árbol clonado por enemigo),
+            //    IGridManager (placement) y IEntityVisualService (GameObject pawn).
             var attributes = ServiceLocator.GetService<AttributesManager>();
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry);
+            ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid);
+            ServiceLocator.TryGetService<Rollgeon.Entities.Visuals.IEntityVisualService>(out var visuals);
+            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
