@@ -19,9 +19,9 @@ namespace Rollgeon.Dice
     /// </para>
     /// <para>
     /// <b>Single budget.</b> El servicio mantiene un unico <see cref="Current"/> activo
-    /// — single-player, single-active-action. Para multiplayer / AI concurrente se
-    /// refactoriza a dict por Guid (plan §10.6); hoy las firmas ya estan parametrizadas
-    /// por <see cref="Guid"/> para que el cambio sea contenido.
+    /// — Rollgeon es single-player, single-active-action. Las firmas reciben
+    /// <see cref="Guid"/> para que el bookkeeping de energia se atribuya al jugador
+    /// correcto y los eventos lleven el actor en el payload.
     /// </para>
     /// <para>
     /// <b>Lifecycle.</b> Implementaciones son <see cref="Rollgeon.Patterns.Bootstrap.IPreloadableService"/> —

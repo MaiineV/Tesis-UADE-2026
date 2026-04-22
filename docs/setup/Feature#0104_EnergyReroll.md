@@ -150,5 +150,3 @@ de follow-up a Sprint 04 para evaluar wrap transaccional o confirmacion explicit
 - **Adapter `IRerollBudget`** (§6.5 TECHNICAL) — wrapper de ~20 lineas que
   proyecta `IRerollBudgetService` al contrato del `DiceRoller`. Lo autorea
   T95b cuando wirea el roll UI.
-- **Per-actor budgets (multiplayer / AI)** — hoy `_current` es unico. Plan
-  §10.6 detalla el refactor `Dictionary<Guid, RerollBudget>` cuando haga falta.

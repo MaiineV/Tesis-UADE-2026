@@ -989,7 +989,7 @@ public enum ModifierLifetime
 
 Cuando el `SourceId` no aplica (mod auto‑infligido, stat boost permanente de tienda sin origen identificable), se pasa `Guid.Empty`. `RemoveAllModifiersBySource(Guid.Empty)` es **siempre no‑op** por seguridad (evita borrar masivamente mods anónimos por accidente).
 
-**Cambio de naming (changelog interno).** El campo que §3.1 antes llamaba `OwnerId` se renombró a `CarrierId` para evitar la confusión con "host multiplayer" (Rollgeon es single‑player — no existe host). Otros lugares del spec (§7.2 cleanup, §12 pipeline, §20 status) todavía usan `OwnerId` textual; cada tarea downstream los ajusta cuando los toca. La semántica es idéntica.
+**Cambio de naming (changelog interno).** El campo que §3.1 antes llamaba `OwnerId` se renombró a `CarrierId` para evitar confusión con la noción de "owner" en otros contextos. Rollgeon es single‑player — no existen actores remotos ni hosts. Otros lugares del spec (§7.2 cleanup, §12 pipeline, §20 status) todavía usan `OwnerId` textual; cada tarea downstream los ajusta cuando los toca. La semántica es idéntica.
 
 ### 3.2 `ModifierDirection` y por qué importa
 
