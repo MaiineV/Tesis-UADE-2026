@@ -76,10 +76,18 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void Ctor_NullDeps_Throws()
+        public void Ctor_NullGrid_Throws()
         {
             Assert.Throws<ArgumentNullException>(() => new RoomGridLoader(null, _dungeon));
-            Assert.Throws<ArgumentNullException>(() => new RoomGridLoader(_grid, null));
+        }
+
+        [Test]
+        public void Ctor_NullDungeon_ResolvesLazilyFromServiceLocator()
+        {
+            // Sin dungeon explícito ni service registrado → LoadCurrent es no-op
+            // y grid queda con su snapshot previo (Empty por default).
+            using var loader = new RoomGridLoader(_grid, dungeon: null);
+            Assert.IsTrue(_grid.Snapshot.IsEmpty);
         }
 
         private sealed class FakeDungeonService : IDungeonService

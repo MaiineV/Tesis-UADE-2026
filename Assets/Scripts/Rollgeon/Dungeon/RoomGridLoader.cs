@@ -10,21 +10,28 @@ namespace Rollgeon.Dungeon
     /// TECHNICAL.md §17.§I + §13.3.
     /// </summary>
     /// <remarks>
-    /// Se suscribe a <see cref="EventName.OnRoomEntered"/>. Cuando la sala cambia, lee
-    /// <see cref="RoomSO.GridLayout"/> de <see cref="IDungeonService.CurrentRoom"/> y llama
-    /// <see cref="IGridManager.LoadRoom"/>. Si el room no tiene layout autorado, carga un
-    /// snapshot vacío — el <see cref="GridManager"/> trata eso como rectángulo walkable.
+    /// Se suscribe a <see cref="EventName.OnRoomEntered"/>. Resuelve
+    /// <see cref="IDungeonService"/> lazy en cada evento porque el bootstrap del loader
+    /// corre antes de <see cref="Rollgeon.Run.RunController.OnRunStart"/> (donde
+    /// <c>DungeonManager.CreateAndRegister</c> publica el servicio). Cuando la sala
+    /// cambia, lee <see cref="RoomSO.GridLayout"/> de <see cref="IDungeonService.CurrentRoom"/>
+    /// y llama <see cref="IGridManager.LoadRoom"/>.
     /// </remarks>
     public sealed class RoomGridLoader : IDisposable
     {
         private readonly IGridManager _grid;
-        private readonly IDungeonService _dungeon;
+        private readonly IDungeonService _explicitDungeon;
         private bool _subscribed;
 
-        public RoomGridLoader(IGridManager grid, IDungeonService dungeon)
+        /// <summary>
+        /// Overload para tests / wiring manual donde el dungeon service se conoce
+        /// en construcción. En producción, pasar <c>null</c> y dejar que el loader
+        /// resuelva via <see cref="ServiceLocator"/> en cada evento.
+        /// </summary>
+        public RoomGridLoader(IGridManager grid, IDungeonService dungeon = null)
         {
             _grid = grid ?? throw new ArgumentNullException(nameof(grid));
-            _dungeon = dungeon ?? throw new ArgumentNullException(nameof(dungeon));
+            _explicitDungeon = dungeon;
             EventManager.Subscribe(EventName.OnRoomEntered, OnRoomEntered);
             _subscribed = true;
             LoadCurrent();
@@ -41,7 +48,19 @@ namespace Rollgeon.Dungeon
 
         private void LoadCurrent()
         {
-            var room = _dungeon.CurrentRoom;
+            var dungeon = _explicitDungeon;
+            if (dungeon == null)
+            {
+                ServiceLocator.TryGetService<IDungeonService>(out dungeon);
+            }
+            if (dungeon == null)
+            {
+                // Sin run activa — nada que cargar. Al siguiente OnRoomEntered dentro de una run
+                // el service ya va a estar registrado y el loader puede continuar.
+                return;
+            }
+
+            var room = dungeon.CurrentRoom;
             if (room == null)
             {
                 _grid.LoadRoom(GridSnapshot.Empty);

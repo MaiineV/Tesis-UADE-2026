@@ -30,13 +30,9 @@ namespace Rollgeon.Dungeon
                 Debug.LogError("[RoomGridLoaderBootstrap] IGridManager no registrado.");
                 return;
             }
-            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon))
-            {
-                Debug.LogWarning("[RoomGridLoaderBootstrap] IDungeonService no registrado todavia. " +
-                    "El loader queda sin wirear — RunController debe registrarlo antes de OnRoomEntered.");
-                return;
-            }
-            _instance = new RoomGridLoader(grid, dungeon);
+            // IDungeonService todavía no existe en este punto (se crea en RunController.OnRunStart).
+            // El RoomGridLoader lo resuelve lazy en cada OnRoomEntered — ver doc-comment.
+            _instance = new RoomGridLoader(grid);
             ServiceLocator.AddService<RoomGridLoader>(_instance, ServiceScope.Run);
         }
     }
