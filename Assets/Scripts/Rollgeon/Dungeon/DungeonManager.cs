@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.GameCamera;
+using Rollgeon.Dungeon.Components;
 using UnityEngine;
 
 namespace Rollgeon.Dungeon
@@ -114,6 +116,54 @@ namespace Rollgeon.Dungeon
         public IReadOnlyList<RoomSO> GetFloorRooms()
         {
             return _rooms.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Unión de bounds de todos los <see cref="RoomLayout"/> activos en la
+        /// escena, si los hay. FP no instancia room prefabs en world-space →
+        /// retorna <c>default(Bounds)</c> (size == 0) y el camera service lo
+        /// interpreta como "sin clamp".
+        /// </summary>
+        public Bounds GetFloorBounds()
+        {
+            var layouts = UnityEngine.Object.FindObjectsByType<RoomLayout>(
+                FindObjectsSortMode.None);
+            if (layouts == null || layouts.Length == 0) return default;
+
+            var combined = new Bounds(layouts[0].transform.TransformPoint(layouts[0].LocalBounds.center),
+                                      Vector3.zero);
+            combined.size = layouts[0].LocalBounds.size;
+
+            for (int i = 1; i < layouts.Length; i++)
+            {
+                var l = layouts[i];
+                var worldCenter = l.transform.TransformPoint(l.LocalBounds.center);
+                var worldBounds = new Bounds(worldCenter, l.LocalBounds.size);
+                combined.Encapsulate(worldBounds);
+            }
+            return combined;
+        }
+
+        /// <summary>
+        /// <see cref="WallOccluder"/> components bajo el prefab instanciado de
+        /// la sala actual. Si no hay prefab en escena (caso FP), devuelve
+        /// <see cref="Array.Empty{T}"/>.
+        /// </summary>
+        public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders()
+        {
+            if (CurrentRoom == null) return Array.Empty<WallOccluder>();
+
+            var layouts = UnityEngine.Object.FindObjectsByType<RoomLayout>(
+                FindObjectsSortMode.None);
+            if (layouts == null || layouts.Length == 0) return Array.Empty<WallOccluder>();
+
+            var collected = new List<WallOccluder>();
+            foreach (var layout in layouts)
+            {
+                if (layout == null) continue;
+                collected.AddRange(layout.GetComponentsInChildren<WallOccluder>(includeInactive: true));
+            }
+            return collected;
         }
 
         public void Dispose()

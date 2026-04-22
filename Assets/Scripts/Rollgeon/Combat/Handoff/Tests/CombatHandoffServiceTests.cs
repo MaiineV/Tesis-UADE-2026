@@ -36,6 +36,9 @@ namespace Rollgeon.Combat.Handoff.Tests
             public void GenerateFloor(FloorLayoutSO layout, int seed) { }
             public bool NextRoom() => false;
             public IReadOnlyList<RoomSO> GetFloorRooms() => Array.Empty<RoomSO>();
+            public UnityEngine.Bounds GetFloorBounds() => default;
+            public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
+                Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }
 
         private class StubPlayerService : IPlayerService

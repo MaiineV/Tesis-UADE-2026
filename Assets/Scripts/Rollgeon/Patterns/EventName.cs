@@ -194,5 +194,15 @@ namespace Patterns
         OnSceneLoaded,
         /// <summary>args: [string sceneName]. Scene aditiva terminó de descargarse.</summary>
         OnSceneUnloaded,
+
+        // --- Camera (§17.E) ----------------------------------------------------
+        /// <summary>args: [Rollgeon.Camera.CameraFacing newFacing]. Yaw discreto cambió tras un RotateBy45 (§17.E.5).</summary>
+        OnCameraFacingChanged,
+        /// <summary>args: [bool enabled]. Cruce del umbral de floor view (§17.E.9). true = shells visibles, sala actual hidden.</summary>
+        OnCameraFloorViewToggled,
+        /// <summary>args: [bool instant]. Cámara hizo recenter — instant omite el tween (§17.E.6.4).</summary>
+        OnCameraRecentered,
+        /// <summary>args: [float amplitude, float durationSeconds]. Feedback pide un camera shake; el CameraService lo consume (§17.E.10, TODO v8).</summary>
+        OnCameraShakeRequested,
     }
 }

@@ -101,6 +101,9 @@ namespace Rollgeon.Dungeon.Tests
             public bool NextRoom() => false;
             public System.Collections.Generic.IReadOnlyList<RoomSO> GetFloorRooms() =>
                 System.Array.Empty<RoomSO>();
+            public UnityEngine.Bounds GetFloorBounds() => default;
+            public System.Collections.Generic.IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
+                System.Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }
     }
 }

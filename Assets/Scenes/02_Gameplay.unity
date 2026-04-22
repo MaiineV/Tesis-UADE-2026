@@ -8672,6 +8672,8 @@ GameObject:
   - component: {fileID: 1690433639}
   - component: {fileID: 1690433638}
   - component: {fileID: 1690433641}
+  - component: {fileID: 1690433642}
+  - component: {fileID: 1690433643}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -8797,6 +8799,33 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &1690433642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690433637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0036279893d0fd74d9c3444fcea42b7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.CameraService
+  _configOverride: {fileID: 11400000, guid: e90af3b43ab1aea47b5a420f313f86b6, type: 2}
+--- !u!114 &1690433643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690433637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cdfecc5eec0636488bdfdcba5bf7533, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.CameraInputRouter
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _mapName: Camera
 --- !u!1 &1725809372
 GameObject:
   m_ObjectHideFlags: 0

@@ -303,5 +303,28 @@ namespace Rollgeon.Dungeon.Tests
             // State should be fresh — index is 0, rooms are regenerated
             Assert.IsNotNull(_manager.CurrentRoom);
         }
+
+        // --- Camera-facing contract (§17.E) -----------------------------------
+
+        [Test]
+        public void GetFloorBounds_NoRoomLayoutsInScene_ReturnsDefaultBounds()
+        {
+            _manager.GenerateFloor(CreateLayout(), 42);
+
+            var bounds = _manager.GetFloorBounds();
+            Assert.AreEqual(Vector3.zero, bounds.size,
+                "En FP sin prefabs instanciados el floor bounds debe quedar en default (size == 0).");
+        }
+
+        [Test]
+        public void GetCurrentRoomOccluders_NoPrefabInScene_ReturnsEmpty()
+        {
+            _manager.GenerateFloor(CreateLayout(), 42);
+
+            var occluders = _manager.GetCurrentRoomOccluders();
+            Assert.IsNotNull(occluders);
+            Assert.AreEqual(0, occluders.Count,
+                "FP sin room prefabs ⇒ no hay WallOccluders para listar.");
+        }
     }
 }

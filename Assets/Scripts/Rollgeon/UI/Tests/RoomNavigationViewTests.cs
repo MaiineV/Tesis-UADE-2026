@@ -41,6 +41,9 @@ namespace Rollgeon.UI.Tests
             }
 
             public IReadOnlyList<RoomSO> GetFloorRooms() => Array.Empty<RoomSO>();
+            public UnityEngine.Bounds GetFloorBounds() => default;
+            public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
+                Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }
 
         private class StubExplorationController : IExplorationController

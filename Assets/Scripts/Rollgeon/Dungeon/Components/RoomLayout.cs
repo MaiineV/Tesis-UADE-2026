@@ -21,6 +21,18 @@ namespace Rollgeon.Dungeon.Components
         public List<SpawnPoint> SpawnPoints = new List<SpawnPoint>();
         public List<DoorSlot> DoorSlots = new List<DoorSlot>();
 
+        /// <summary>
+        /// Bounding box de la sala en coordenadas locales del prefab.
+        /// Consumido por el camera service para (a) clampear el pan al piso
+        /// (§17.E.6) y (b) dimensionar las shells del floor view (§17.E.9).
+        /// </summary>
+        /// <remarks>
+        /// Si se deja en default y <see cref="GridSnapshot"/> tiene datos, un
+        /// editor tool post-FP puede bakear este valor; por ahora el diseñador
+        /// lo setea a mano en el inspector.
+        /// </remarks>
+        public Bounds LocalBounds = new Bounds(Vector3.zero, Vector3.one);
+
         public Vector3 GetOrigin() =>
             GridOrigin != null ? GridOrigin.position : transform.position;
     }

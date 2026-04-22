@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Rollgeon.GameCamera;
 using Rollgeon.Grid;
 using UnityEngine;
 
@@ -67,6 +68,13 @@ namespace Rollgeon.Dungeon
                 return;
             }
             _grid.LoadRoom(room.GridLayout);
+
+            // Al entrar a una sala, pedir al camera service un recenter
+            // instantáneo para evitar un smooth largo entre salas (§17.E.10).
+            if (ServiceLocator.TryGetService<ICameraService>(out var cam))
+            {
+                cam.RecenterOnPlayer(instant: true);
+            }
         }
     }
 }

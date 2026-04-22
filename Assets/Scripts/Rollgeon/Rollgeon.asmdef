@@ -2,7 +2,9 @@
     "name": "Rollgeon",
     "rootNamespace": "Rollgeon",
     "references": [
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "PrimeTween.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

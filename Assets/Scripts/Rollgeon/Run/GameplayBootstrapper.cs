@@ -1,5 +1,6 @@
 using Patterns;
 using Rollgeon.Balance;
+using Rollgeon.GameCamera;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
@@ -93,13 +94,19 @@ namespace Rollgeon.Run
 
             grid.Register(playerService.PlayerGuid, spawnCoord);
 
+            EntityPawn heroPawn = null;
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals))
             {
-                visuals.SpawnHero(playerService.PlayerGuid, hero, spawnCoord);
+                heroPawn = visuals.SpawnHero(playerService.PlayerGuid, hero, spawnCoord);
             }
             else
             {
                 Debug.LogWarning(LogPrefix + "IEntityVisualService no registrado — hero queda sin pawn visible.", this);
+            }
+
+            if (heroPawn != null && ServiceLocator.TryGetService<ICameraService>(out var cam))
+            {
+                cam.SetFollowTarget(heroPawn.transform);
             }
         }
     }
