@@ -72,5 +72,6 @@ MonoBehaviour:
   BaseMaxHp: 10
   BaseSpeed: 5
   Portrait: {fileID: 0}
-  StartingDiceBagRef: {fileID: 0}
+  StartingDiceBagRef: {fileID: 11400000, guid: 6988ff59247d8b7408e5172395b98872, type: 2}
+  DiceBagPool: {fileID: 11400000, guid: b9b9a7f2c39c8a74e8a246de66f32b32, type: 2}
   PassiveRef: {fileID: 0}

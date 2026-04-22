@@ -1,5 +1,6 @@
 using Patterns;
 using Rollgeon.Balance;
+using Rollgeon.Player;
 using Rollgeon.UI;
 using UnityEngine;
 
@@ -52,6 +53,17 @@ namespace Rollgeon.Run
             //    ProcessRoom) puede pushear CombatHUD con seguridad.
             RunBootstrapper.StartRun(hero, ruleset, runId);
             Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}", this);
+
+            // 3. Bag construido en BuildSelectionScreen (Fase 2). Si vino, pisa lo
+            //    que SetPlayer haya inferido del StartingDiceBagRef. Si no vino,
+            //    el flujo cae al fallback de Fase 1 (StartingDiceBagRef o
+            //    Resources/AD_Warrior_StartingBag) en CombatHandoffService.
+            var builtBag = PendingRunRequest.BuiltDiceBag;
+            if (builtBag != null && ServiceLocator.TryGetService<IPlayerService>(out var playerService))
+            {
+                playerService.SetDiceBag(builtBag);
+                Debug.Log(LogPrefix + $"Aplicado built dice bag ({builtBag.Dice.Count} dados).", this);
+            }
 
             PendingRunRequest.Clear();
         }

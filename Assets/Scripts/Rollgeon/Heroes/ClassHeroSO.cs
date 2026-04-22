@@ -1,3 +1,4 @@
+using Rollgeon.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -59,6 +60,12 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al DiceBagSO inicial " +
                  "de la clase (DiceBagSO aun no existe).")]
         public ScriptableObject StartingDiceBagRef;
+
+        [Title("Dice Bag Pool (Fase 2)")]
+        [Tooltip("Pool de dados disponibles para la clase. El jugador arma su bolsa de 5 " +
+                 "eligiendo de aca en BuildSelectionScreen. Si es null, el flujo cae al " +
+                 "fallback de StartingDiceBagRef / Resources (Fase 1).")]
+        public DiceBagPoolSO DiceBagPool;
 
         [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al PassiveAbilitySO de la clase.")]
         public ScriptableObject PassiveRef;
