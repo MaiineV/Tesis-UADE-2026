@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 
 namespace Rollgeon.Player
@@ -15,8 +16,20 @@ namespace Rollgeon.Player
         /// <summary>Clase heroe seleccionada para la run actual.</summary>
         ClassHeroSO CurrentHero { get; }
 
+        /// <summary>
+        /// Bolsa runtime del jugador (clon del bag de la clase, TECHNICAL.md §6.2).
+        /// <c>null</c> hasta que <see cref="SetPlayer"/> resuelva una bag válida.
+        /// </summary>
+        DiceBagSO DiceBag { get; }
+
         /// <summary>Establece el jugador activo con la clase y run indicados.</summary>
         void SetPlayer(ClassHeroSO hero, Guid runId);
+
+        /// <summary>
+        /// Reemplaza la <see cref="DiceBag"/> activa con un bag construido externamente
+        /// (Fase 2 — <c>BuildSelectionScreen</c>). El servicio asume ownership del clon.
+        /// </summary>
+        void SetDiceBag(DiceBagSO bag);
 
         /// <summary>Limpia el estado del jugador (post-run o reset).</summary>
         void ClearPlayer();

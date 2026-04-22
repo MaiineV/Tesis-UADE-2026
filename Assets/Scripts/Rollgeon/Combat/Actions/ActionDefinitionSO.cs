@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Patterns;
 using Rollgeon.Effects;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -30,7 +27,6 @@ namespace Rollgeon.Combat.Actions
     public class ActionDefinitionSO : SerializedScriptableObject
     {
         [Title("Identity")]
-        [ValueDropdown(nameof(GetActionIds))]
         [Tooltip("Naming convention <tipo>.<subtipo>.<nombre> — ver TECHNICAL.md §12.6.0. " +
                  "Case-sensitive. Ej: 'combo.full_house', 'attack.basic', 'move', 'skill.heal'.")]
         public string ActionId;
@@ -79,20 +75,5 @@ namespace Rollgeon.Combat.Actions
                  "Si esta vacio y hay BackingAsset, el despacho real lo hace el sistema externo.")]
         public EffectData Effect = new EffectData();
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// Fuente de ids del <see cref="ValueDropdown"/>. Consulta el
-        /// <see cref="ActionCatalogSO"/> registrado en <see cref="ServiceLocator"/> —
-        /// si no hay uno (p.ej. editor-time antes del bootstrap), devuelve lista vacia.
-        /// </summary>
-        private static IEnumerable<string> GetActionIds()
-        {
-            if (ServiceLocator.TryGetService<ActionCatalogSO>(out var cat) && cat != null)
-            {
-                return cat.AllIds;
-            }
-            return Array.Empty<string>();
-        }
-#endif
     }
 }

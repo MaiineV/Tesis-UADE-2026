@@ -201,10 +201,12 @@ namespace Rollgeon.Combat.AI.Tests
             public Guid PlayerGuid { get; }
             public Guid RunId => Guid.NewGuid();
             public ClassHeroSO CurrentHero => null;
+            public Rollgeon.Dice.DiceBagSO DiceBag => null;
 
             public FakePlayerService(Guid playerId) { PlayerGuid = playerId; }
 
             public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(Rollgeon.Dice.DiceBagSO bag) { }
             public void ClearPlayer() { }
 
 #pragma warning disable CS0067

@@ -27,7 +27,9 @@ namespace Rollgeon.UI.Tests
             public Guid PlayerGuid { get; set; }
             public Guid RunId { get; set; }
             public ClassHeroSO CurrentHero { get; set; }
+            public Rollgeon.Dice.DiceBagSO DiceBag { get; set; }
             public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(Rollgeon.Dice.DiceBagSO bag) { DiceBag = bag; }
             public void ClearPlayer() { }
             public event Action<ClassHeroSO> OnPlayerSet;
             public event Action OnPlayerCleared;

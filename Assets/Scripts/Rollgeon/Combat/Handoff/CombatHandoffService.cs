@@ -8,6 +8,7 @@ using Rollgeon.Effects;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using Rollgeon.UI.Screens;
+using UnityEngine;
 
 namespace Rollgeon.Combat.Handoff
 {
@@ -22,6 +23,14 @@ namespace Rollgeon.Combat.Handoff
     /// </remarks>
     public sealed class CombatHandoffService : ICombatHandoffService
     {
+        /// <summary>
+        /// Path en <c>Resources/</c> al asset de fallback que se carga cuando
+        /// <see cref="IPlayerService.DiceBag"/> es <c>null</c>. Asset autoreado por el
+        /// usuario (Round3-Checklist) — 5 × D6 para el Guerrero hasta que la pantalla
+        /// de build (Fase 2) construya bags reales.
+        /// </summary>
+        public const string FallbackBagResourcePath = "Dice/AD_Warrior_StartingBag";
+
         private readonly IDungeonService _dungeon;
         private readonly IPlayerService _player;
         private readonly IEnemySpawnResolver _resolver;
@@ -32,6 +41,9 @@ namespace Rollgeon.Combat.Handoff
 
         private EventManager.EventReceiver _onCombatTriggeredHandler;
         private bool _disposed;
+
+        // Estado del roll en curso. Se vuelve null entre Confirm y el próximo Roll.
+        private int[] _lastFaces;
 
         public bool IsHandoffInProgress { get; private set; }
 
@@ -163,19 +175,50 @@ namespace Rollgeon.Combat.Handoff
             if (_screenManager.Current is not CombatHUDView hud) return;
 
             var playerGuid = _player.PlayerGuid;
-            IReadOnlyList<int> stubFaces = new[] { 1, 2, 3, 4, 5 };
+            _lastFaces = null;
 
-            hud.OnEndTurnRequested = _playerActions.EndPlayerTurn;
+            hud.OnEndTurnRequested = () =>
+            {
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                    budget.EndBudget();
 
-            // Roll Dice: dispara OnDiceRolled para avanzar PlayerActionButtonsView
-            // de WaitingForRoll → Rolled (habilita Reroll y Confirm Attack).
-            // Valores stub hasta que DiceRollingService este implementado.
+                // Simétrico con Confirm Attack: emite OnRollResolved para que el HUD
+                // limpie dados/holds incluso cuando el jugador termina sin atacar.
+                var resolved = _lastFaces ?? Array.Empty<int>();
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+
+                _lastFaces = null;
+                _playerActions.EndPlayerTurn();
+            };
+
+            // Roll Dice: abre el budget de rerolls para attack.basic, ejecuta una
+            // tirada real con DiceRoller sobre el bag del jugador, y dispara
+            // OnDiceRolled con el resultado para que el HUD avance la state machine.
             hud.OnRollDiceRequested = () =>
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
+            {
+                if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
+                    && ServiceLocator.TryGetService<IRerollBudgetService>(out var budget)
+                    && catalog != null && budget != null)
+                {
+                    var action = catalog.GetById("attack.basic");
+                    if (action != null)
+                        budget.StartBudget(action);
+                }
+
+                var bag = ResolvePlayerBag();
+                var roller = ResolveRoller();
+                if (bag == null || roller == null)
+                {
+                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
+                    return;
+                }
+
+                _lastFaces = roller.RollAll(bag);
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+            };
 
             // Confirm Attack (flujo dice-first): ejecuta el ataque via TurnManager
-            // (gasta energia, aplica efecto), cierra la tirada y termina el turno.
-            // Resolved deshabilita todos los botones, EndPlayerTurn avanza la FSM.
+            // (gasta energia, aplica efecto), cierra el budget, termina el turno.
             hud.OnConfirmAttackRequested = () =>
             {
                 if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
@@ -189,18 +232,64 @@ namespace Rollgeon.Combat.Handoff
                         tm.TryExecute(action, playerGuid, ctx);
                     }
                 }
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, stubFaces);
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget2) && budget2 != null)
+                    budget2.EndBudget();
+
+                var resolved = _lastFaces ?? Array.Empty<int>();
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+                _lastFaces = null;
                 _playerActions.EndPlayerTurn();
             };
 
-            // Reroll: gasta presupuesto y dispara OnDiceRolled para que la UI
-            // refleje el nuevo resultado (fase permanece Rolled).
+            // Reroll: gasta presupuesto y rolea de nuevo respetando el keep[] del
+            // hold visual del DiceZoneView. La fase del HUD permanece Rolled.
             hud.OnEnergyRerollRequested = () =>
             {
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                     budget.TryExtraRoll(playerGuid);
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, stubFaces);
+
+                var bag = ResolvePlayerBag();
+                var roller = ResolveRoller();
+                if (bag == null || roller == null)
+                {
+                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Reroll abortado.");
+                    return;
+                }
+
+                var keep = hud.GetCurrentKeep();
+                _lastFaces = roller.Reroll(bag, _lastFaces, keep);
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
+        }
+
+        // Bag del jugador con fallback al asset Resources (Fase 1 — hasta que el
+        // BuildSelectionScreen de Fase 2 popule el bag desde un pool por clase).
+        private DiceBagSO ResolvePlayerBag()
+        {
+            var bag = _player?.DiceBag;
+            if (bag != null) return bag;
+
+            var fallback = Resources.Load<DiceBagSO>(FallbackBagResourcePath);
+            if (fallback == null)
+            {
+                Debug.LogError($"[CombatHandoffService] IPlayerService.DiceBag null y fallback " +
+                               $"'{FallbackBagResourcePath}' no encontrado en Resources/. " +
+                               $"Crear el asset (Create → Rollgeon → Dice Bag) o popular DiceBag " +
+                               $"vía Fase 2.");
+                return null;
+            }
+            Debug.LogWarning($"[CombatHandoffService] Usando bag fallback '{fallback.name}' — " +
+                             $"Fase 2 debería popular IPlayerService.DiceBag desde el build screen.");
+            return fallback;
+        }
+
+        private IDiceRoller ResolveRoller()
+        {
+            if (ServiceLocator.TryGetService<IDiceRoller>(out var roller) && roller != null)
+                return roller;
+            Debug.LogError("[CombatHandoffService] IDiceRoller no registrado. " +
+                           "Agregar DiceRollerBootstrap a ServiceBootstrapSO.ExtraServices.");
+            return null;
         }
     }
 }

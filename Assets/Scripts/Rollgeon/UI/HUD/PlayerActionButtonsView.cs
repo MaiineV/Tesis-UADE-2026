@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Rollgeon.Combat;
 using Rollgeon.Dice;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -122,7 +123,18 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             _bound = true;
 
-            _phase = ButtonPhase.Idle;
+            // Catch-up: si OnTurnStarted ya disparó antes del Bind (ej. FSM arrancó
+            // sincrónicamente antes de que la view suscribiera), recuperar el estado correcto.
+            if (ServiceLocator.TryGetService<TurnOrderService>(out var turnOrder)
+                && turnOrder.ParticipantCount > 0
+                && turnOrder.Current == _playerGuid)
+            {
+                _phase = ButtonPhase.WaitingForRoll;
+            }
+            else
+            {
+                _phase = ButtonPhase.Idle;
+            }
             RefreshInteractable();
         }
 
@@ -201,6 +213,7 @@ namespace Rollgeon.UI.HUD
         private void HandleTurnStarted(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnTurnStarted recv guid={guid} | _playerGuid={_playerGuid} | match={guid == _playerGuid}");
             if (guid != _playerGuid) return;
             _phase = ButtonPhase.WaitingForRoll;
             RefreshInteractable();
@@ -210,6 +223,7 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
+            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnTurnFinished — fase previa: {_phase}");
             _phase = ButtonPhase.Idle;
             RefreshInteractable();
         }
@@ -217,6 +231,7 @@ namespace Rollgeon.UI.HUD
         private void HandleDiceRolled(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnDiceRolled recv guid={guid} | _playerGuid={_playerGuid} | match={guid == _playerGuid}");
             if (guid != _playerGuid) return;
             _phase = ButtonPhase.Rolled;
             RefreshInteractable();
@@ -250,6 +265,7 @@ namespace Rollgeon.UI.HUD
 
         private void HandleRollDiceClick()
         {
+            UnityEngine.Debug.Log($"[PlayerActionButtonsView] Roll Dice button clicked, fase={_phase}");
             _onRollDicePressed?.Invoke();
         }
 

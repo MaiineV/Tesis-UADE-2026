@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using UnityEngine;
 
@@ -149,6 +151,59 @@ namespace Rollgeon.Player.Tests
         public void SetPlayer_NullHero_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => _service.SetPlayer(null, Guid.NewGuid()));
+        }
+
+        [Test]
+        public void SetPlayer_HeroWithoutDiceBag_LeavesDiceBagNull()
+        {
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            // hero.StartingDiceBagRef queda null por default.
+
+            _service.SetPlayer(hero, Guid.NewGuid());
+
+            Assert.IsNull(_service.DiceBag);
+
+            UnityEngine.Object.DestroyImmediate(hero);
+        }
+
+        [Test]
+        public void SetPlayer_HeroWithDiceBag_ClonesIt()
+        {
+            var bag = ScriptableObject.CreateInstance<DiceBagSO>();
+            bag.Dice = new List<DiceType>
+            {
+                DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6,
+            };
+
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            hero.StartingDiceBagRef = bag;
+
+            _service.SetPlayer(hero, Guid.NewGuid());
+
+            Assert.IsNotNull(_service.DiceBag);
+            Assert.AreNotSame(bag, _service.DiceBag, "DiceBag debería ser un clon, no el asset original.");
+            CollectionAssert.AreEqual(bag.Dice, _service.DiceBag.Dice);
+
+            UnityEngine.Object.DestroyImmediate(hero);
+            UnityEngine.Object.DestroyImmediate(bag);
+            UnityEngine.Object.DestroyImmediate(_service.DiceBag);
+        }
+
+        [Test]
+        public void SetDiceBag_OverridesActiveBag()
+        {
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            _service.SetPlayer(hero, Guid.NewGuid());
+
+            var bag = ScriptableObject.CreateInstance<DiceBagSO>();
+            bag.Dice = new List<DiceType> { DiceType.D8, DiceType.D8, DiceType.D6, DiceType.D6, DiceType.D6 };
+
+            _service.SetDiceBag(bag);
+
+            Assert.AreSame(bag, _service.DiceBag);
+
+            UnityEngine.Object.DestroyImmediate(hero);
+            UnityEngine.Object.DestroyImmediate(bag);
         }
     }
 }

@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Screen overlay del Combat HUD. Coordina 6 sub-views + spawner de floating
+    /// Screen overlay del Combat HUD. Coordina 8 sub-views + spawner de floating
     /// damage siguiendo el patron <c>Bind(guid)</c> / <c>Unbind()</c> idempotente
     /// de T95a.
     /// Plan §3.1 / §4.1 / TECHNICAL.md §17.D.
@@ -39,7 +39,7 @@ namespace Rollgeon.UI.Screens
         private const string LogPrefix = "[CombatHUDView] ";
 
         [Title("Combat HUD — Sub-views")]
-        [InfoBox("Cablear 6 sub-views + spawner. Null = sub-view skipped con warning.")]
+        [InfoBox("Cablear 8 sub-views + spawner. Null = sub-view skipped con warning.")]
         [Required("Arrastrar TurnQueueView.")]
         [SerializeField]
         private TurnQueueView _turnQueue;
@@ -67,6 +67,14 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar PlayerActionButtonsView.")]
         [SerializeField]
         private PlayerActionButtonsView _playerActionButtons;
+
+        [Required("Arrastrar HealthBarView.")]
+        [SerializeField]
+        private HealthBarView _healthBar;
+
+        [Required("Arrastrar EnergyBarView.")]
+        [SerializeField]
+        private EnergyBarView _energyBar;
 
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
@@ -233,7 +241,14 @@ namespace Rollgeon.UI.Screens
             if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_playerActionButtons no cableado.", this);
 
-            // DiceZoneView no tiene Bind — no-op (plan §3.6).
+            if (_healthBar != null) _healthBar.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_healthBar no cableado.", this);
+
+            if (_energyBar != null) _energyBar.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_energyBar no cableado.", this);
+
+            if (_diceZone != null) _diceZone.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
 
             _subViewsBound = true;
         }
@@ -247,6 +262,9 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
+            if (_healthBar != null) _healthBar.Unbind();
+            if (_energyBar != null) _energyBar.Unbind();
+            if (_diceZone != null) _diceZone.Unbind();
             _subViewsBound = false;
         }
 
@@ -256,6 +274,13 @@ namespace Rollgeon.UI.Screens
             _enemyTarget = enemyGuid;
             if (_enemyPanel != null) _enemyPanel.SetTarget(enemyGuid);
         }
+
+        /// <summary>
+        /// Snapshot del array de holds del <see cref="DiceZoneView"/>. Lo consume el
+        /// <c>CombatHandoffService</c> para pasarlo como <c>keep[]</c> al reroll.
+        /// Devuelve <c>null</c> si el zone view no está cableado.
+        /// </summary>
+        public bool[] GetCurrentKeep() => _diceZone != null ? _diceZone.GetHeldStates() : null;
 
         // ======================================================================
         // Internals

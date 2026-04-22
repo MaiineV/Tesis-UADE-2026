@@ -49,7 +49,46 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 3|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 4|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: RequiresSelection
+      Entry: 5
+      Data: false
+    - Name: Timing
+      Entry: 3
       Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: IsSkippable
+      Entry: 5
+      Data: false
+    - Name: RequireEmptySlot
+      Entry: 5
+      Data: false
+    - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: false
+    - Name: TargetQuery
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -59,9 +98,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ActionId: 
+  ActionId: attack.basic
   Type: 0
-  DisplayName: 
+  DisplayName: Base Attack
   BackingAsset: {fileID: 0}
   EnergyCost: 1
   BlockOnRepeat: 1
@@ -70,7 +109,24 @@ MonoBehaviour:
   Effect:
     Label: Effect Group
     PreConditions: []
-    Effects: []
+    Effects:
+    - rid: 4896031195212021828
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 4896031195212021828
+      type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          TargetQuery:
+            rid: -2
+        _baseAmount: 10
