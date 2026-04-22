@@ -25,3 +25,17 @@ MonoBehaviour:
   DisplayName: Room
   Type: 1
   EnemyPool: {fileID: 11400000, guid: dd00474c454651149a3ef6813cda83a3, type: 2}
+  GridLayout:
+    _width: 0
+    _height: 0
+    _walkable: 
+  PlayerSpawn:
+    X: 0
+    Y: 2
+  EnemySpawnPoints:
+  - X: 5
+    Y: 1
+  - X: 5
+    Y: 3
+  - X: 7
+    Y: 2

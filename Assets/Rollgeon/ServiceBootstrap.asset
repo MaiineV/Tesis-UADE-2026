@@ -24,11 +24,16 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
     - {fileID: 11400000, guid: 770d23ca67712434fba66c1720131b74, type: 2}
     - {fileID: 11400000, guid: 497954e0bde12fa43bd6148abb7e0fc3, type: 2}
-    - {fileID: 11400000, guid: fb853ea367410b944bfcb1e04bdae8e6, type: 2}
     - {fileID: 11400000, guid: b1c9e5a37a4ae904bb9c4962025c26a3, type: 2}
+    - {fileID: 11400000, guid: 7fbaf88a785d4494395960cd4249fd10, type: 2}
+    - {fileID: 11400000, guid: 91d5f7c9ada44a74e8ca09f50ae3e062, type: 2}
+    - {fileID: 11400000, guid: f4d93c0a5cf210a48b89d96a195b6b64, type: 2}
+    - {fileID: 11400000, guid: dc6f112cfe19f5c49baf7377d1fc9049, type: 2}
+    - {fileID: 11400000, guid: f8fd13807067e5345bd7f47a82f02c8a, type: 2}
+    - {fileID: 11400000, guid: c70cdb942edba5e4390d3ca9d7f8dac3, type: 2}
+    - {fileID: 11400000, guid: fb853ea367410b944bfcb1e04bdae8e6, type: 2}
     - {fileID: 11400000, guid: 3eecc6591c3d2f94fa05783bf01d9f3d, type: 2}
     - {fileID: 11400000, guid: 8a1274cee8aa5eb47bd44e94147a8933, type: 2}
-    - {fileID: 11400000, guid: 7fbaf88a785d4494395960cd4249fd10, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -81,7 +86,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 10
+      Data: 15
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -118,6 +123,21 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 12
+    - Name: 
+      Entry: 10
+      Data: 13
+    - Name: 
+      Entry: 10
+      Data: 14
+    - Name: 
+      Entry: 10
+      Data: 15
+    - Name: 
+      Entry: 10
+      Data: 16
+    - Name: 
+      Entry: 10
+      Data: 17
     - Name: 
       Entry: 13
       Data: 
