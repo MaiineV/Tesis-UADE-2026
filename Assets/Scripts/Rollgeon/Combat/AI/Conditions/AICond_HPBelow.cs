@@ -1,6 +1,7 @@
 using System;
 using Rollgeon.Attributes.Stats;
 using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Conditions
 {

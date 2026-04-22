@@ -78,16 +78,24 @@ namespace Rollgeon.Entities.Visuals
         {
             if (!_byGuid.TryGetValue(guid, out var pawn)) return;
             _byGuid.Remove(guid);
-            if (pawn != null) UnityEngine.Object.Destroy(pawn.gameObject);
+            if (pawn != null) DestroyGO(pawn.gameObject);
         }
 
         public void DespawnAll()
         {
             foreach (var pawn in _byGuid.Values)
             {
-                if (pawn != null) UnityEngine.Object.Destroy(pawn.gameObject);
+                if (pawn != null) DestroyGO(pawn.gameObject);
             }
             _byGuid.Clear();
+        }
+
+        private static void DestroyGO(GameObject go)
+        {
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(go);
+            else
+                UnityEngine.Object.DestroyImmediate(go);
         }
 
         public bool TryGetPawn(Guid guid, out EntityPawn pawn) =>

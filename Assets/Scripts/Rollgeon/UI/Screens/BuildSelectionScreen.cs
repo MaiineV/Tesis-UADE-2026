@@ -235,7 +235,7 @@ namespace Rollgeon.UI.Screens
                 row.OnAddRequested -= OnAddDice;
                 row.OnRemoveRequested -= OnRemoveDice;
                 row.Unbind();
-                Destroy(row.gameObject);
+                DestroyGO(row.gameObject);
             }
             _poolRows.Clear();
         }
@@ -244,7 +244,15 @@ namespace Rollgeon.UI.Screens
         {
             if (_diceContainer == null) return;
             for (int i = _diceContainer.childCount - 1; i >= 0; i--)
-                Destroy(_diceContainer.GetChild(i).gameObject);
+                DestroyGO(_diceContainer.GetChild(i).gameObject);
+        }
+
+        private static void DestroyGO(GameObject go)
+        {
+            if (Application.isPlaying)
+                Destroy(go);
+            else
+                DestroyImmediate(go);
         }
 
         private void OnConfirmClicked()
