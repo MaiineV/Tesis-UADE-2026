@@ -2,14 +2,19 @@ using System;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Phase;
-using UnityEngine;
 
 namespace Rollgeon.Exploration
 {
     /// <summary>
-    /// Drives room-to-room exploration within a dungeon floor.
-    /// Listens to <see cref="EventName.OnRoomEntered"/> and routes each room
-    /// to the appropriate phase transition (combat, shop stub, potion stub).
+    /// Drives room-to-room exploration dentro de un piso. Listen a
+    /// <see cref="EventName.OnRoomEntered"/> (disparado por el DungeonManager
+    /// al cruzar una puerta) y rutea la sala activa al transition phase que
+    /// corresponda (combat, shop stub, potion stub).
+    /// <para>
+    /// TECHNICAL.md §13.6 — ya no tiene <c>AdvanceRoom()</c>. La transición
+    /// entre salas es driven por puertas via
+    /// <see cref="IDungeonService.EnterRoomByDoor"/>.
+    /// </para>
     /// </summary>
     public sealed class ExplorationController : IExplorationController, IDisposable
     {
@@ -28,8 +33,8 @@ namespace Rollgeon.Exploration
         }
 
         /// <summary>
-        /// Factory: resolves deps from <see cref="ServiceLocator"/>, creates an instance,
-        /// and registers it as <see cref="IExplorationController"/> in
+        /// Factory: resolves deps from <see cref="ServiceLocator"/>, creates an
+        /// instance, and registers it as <see cref="IExplorationController"/> en
         /// <see cref="ServiceScope.Run"/>.
         /// </summary>
         public static ExplorationController CreateAndRegister()
@@ -48,25 +53,15 @@ namespace Rollgeon.Exploration
             _isExploring = true;
             _phase.ReplacePhase(GamePhase.Exploration);
             EventManager.Trigger(EventName.OnExplorationStarted, Guid.NewGuid());
-            ProcessRoom(_dungeon.CurrentRoom);
-        }
-
-        public bool AdvanceRoom()
-        {
-            if (!_isExploring) return false;
-
-            bool advanced = _dungeon.NextRoom();
-            if (!advanced)
-                _isExploring = false;
-
-            return advanced;
+            ProcessRoom(_dungeon.CurrentRoomInstance);
         }
 
         public void ResumeAfterCombat()
         {
             _isExploring = true;
             _phase.ReplacePhase(GamePhase.Exploration);
-            AdvanceRoom();
+            // Con el sistema de puertas, la sala ya quedó Cleared y el player
+            // sigue in-place. No advance — se espera un EnterRoomByDoor.
         }
 
         public void Dispose()
@@ -78,12 +73,21 @@ namespace Rollgeon.Exploration
         private void OnRoomEntered(params object[] args)
         {
             if (!_isExploring) return;
-            ProcessRoom(_dungeon.CurrentRoom);
+            ProcessRoom(_dungeon.CurrentRoomInstance);
         }
 
-        private void ProcessRoom(RoomSO room)
+        private void ProcessRoom(RoomInstance instance)
         {
-            if (room == null) return;
+            if (instance?.Template == null) return;
+            var room = instance.Template;
+
+            // Salas ya cleareadas (Start, Shop, Potion, o combat re-visitada)
+            // no vuelven a disparar combate al entrar.
+            if (instance.State == RoomState.Cleared && room.Type != RoomType.Shop
+                && room.Type != RoomType.Potion)
+            {
+                return;
+            }
 
             switch (room.Type)
             {
@@ -91,16 +95,18 @@ namespace Rollgeon.Exploration
                 case RoomType.Boss:
                     _isExploring = false;
                     EventManager.Trigger(EventName.OnCombatTriggered,
-                        Guid.NewGuid(), room.RoomId, room.Type);
+                        instance.InstanceId, room.RoomId, room.Type);
                     _phase.ReplacePhase(GamePhase.Combat);
                     break;
 
                 case RoomType.Shop:
-                    Debug.Log($"[ExplorationController] Shop room entered: {room.DisplayName} (stub)");
+                    UnityEngine.Debug.Log(
+                        $"[ExplorationController] Shop room entered: {room.DisplayName} (stub)");
                     break;
 
                 case RoomType.Potion:
-                    Debug.Log($"[ExplorationController] Potion room entered: {room.DisplayName} (stub)");
+                    UnityEngine.Debug.Log(
+                        $"[ExplorationController] Potion room entered: {room.DisplayName} (stub)");
                     break;
 
                 case RoomType.Start:

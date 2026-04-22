@@ -21,6 +21,10 @@ namespace Rollgeon.Dungeon
         public List<RoomSO> PotionRooms = new();
 
         [Title("Boss")]
+        [Tooltip("Template de la sala boss (prefab + setups). El DungeonManager lo coloca en la cell a mayor distancia Manhattan del start.")]
+        public RoomSO DefaultBossRoomTemplate;
+
+        [Tooltip("LEGACY: enemigos candidatos a boss cuando la sala boss se arma runtime. Reemplazado por RoomSO.PossibleSetups dentro de DefaultBossRoomTemplate.")]
         public List<EnemyDataSO> BossCandidates = new();
 
         [Title("Start")]

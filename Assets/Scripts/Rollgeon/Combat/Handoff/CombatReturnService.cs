@@ -85,7 +85,10 @@ namespace Rollgeon.Combat.Handoff
         private void HandleVictory(Guid roomInstanceId)
         {
             _screenManager.PopCurrent();
-            EventManager.Trigger(EventName.OnRoomCleared, roomInstanceId);
+            // OnRoomCleared lo dispara el DungeonManager cuando recibe
+            // OnCombatEnd(Victory) — acá solo cerramos el overlay y volvemos
+            // a la fase de exploración. El player queda en la sala con las
+            // puertas abiertas hasta que decida cruzar una.
             _exploration.ResumeAfterCombat();
         }
 

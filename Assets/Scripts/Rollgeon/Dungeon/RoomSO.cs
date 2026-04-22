@@ -1,11 +1,15 @@
 using System.Collections.Generic;
-using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Dungeon
 {
+    /// <summary>
+    /// Template de sala — prefab + enemy configuration. TECHNICAL.md §13.6.
+    /// El layout físico (grid, spawn points, puertas, bounds) vive en el
+    /// <see cref="Components.RoomLayout"/> del <see cref="RoomPrefab"/>.
+    /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Dungeon/Room", fileName = "Room")]
     public class RoomSO : SerializedScriptableObject
     {
@@ -14,17 +18,18 @@ namespace Rollgeon.Dungeon
         public string DisplayName;
         public RoomType Type;
 
+        [Title("Prefab")]
+        [Tooltip("Prefab instanciado en world-space cuando el player entra a la sala. Debe tener un RoomLayout.")]
+        public GameObject RoomPrefab;
+
+        [Tooltip("Tamaño de la sala en celdas Isaac (usado por la topología del DungeonManager para detectar vecinos 4-adjacent).")]
+        public Vector2Int GridSize = Vector2Int.one;
+
         [Title("Enemies")]
+        [Tooltip("Setups pre-diseñados — al entrar a la sala se elige uno random. Vacío = fallback a EnemyPool ponderado.")]
+        public List<EnemySetupSO> PossibleSetups = new List<EnemySetupSO>();
+
+        [Tooltip("Fallback ponderado cuando PossibleSetups está vacío. Se roteá 1:1 contra RoomLayout.EnemySpawnPoints.")]
         public EnemyPoolSO EnemyPool;
-
-        [Title("Grid Layout")]
-        [Tooltip("Snapshot de tiles walkable/blocked. Si IsEmpty, el GridManager trata la sala como rectángulo sin obstáculos.")]
-        public GridSnapshot GridLayout;
-
-        [Tooltip("Tile donde aparece el hero cuando se entra a esta sala.")]
-        public GridCoord PlayerSpawn = GridCoord.Zero;
-
-        [Tooltip("Tiles donde aparecen los enemigos (asignados en orden, roteando si faltan).")]
-        public List<GridCoord> EnemySpawnPoints = new List<GridCoord>();
     }
 }

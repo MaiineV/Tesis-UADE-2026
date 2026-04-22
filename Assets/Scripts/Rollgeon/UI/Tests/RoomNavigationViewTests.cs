@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Exploration;
 using Rollgeon.UI.HUD;
 using TMPro;
@@ -13,9 +14,9 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// EditMode tests for <see cref="RoomNavigationView"/> (UI#0011d).
-    /// Verifies Bind/Unbind lifecycle, label refresh, button wiring,
-    /// and event-driven UI updates.
+    /// EditMode tests para <see cref="RoomNavigationView"/>. Post-§13.6 el
+    /// widget ya no tiene botón Proceed (la transición la dispara el player
+    /// cruzando puertas). Solo refresca labels ante eventos de room/combat.
     /// </summary>
     [TestFixture]
     public class RoomNavigationViewTests
@@ -27,21 +28,23 @@ namespace Rollgeon.UI.Tests
         private class StubDungeonService : IDungeonService
         {
             public RoomSO CurrentRoom { get; set; }
-            public int CurrentRoomIndex { get; set; }
-            public int RoomCount { get; set; }
-            public bool IsLastRoom { get; set; }
-            public int NextRoomCallCount { get; private set; }
+            public RoomInstance CurrentRoomInstance { get; set; }
+            public Dictionary<Guid, RoomInstance> Instances = new();
 
             public void GenerateFloor(FloorLayoutSO layout, int seed) { }
+            public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() => Instances;
+            public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() => new Dictionary<Guid, FloorShell>();
 
-            public bool NextRoom()
+            public bool CanEnterRoomByDoor(DoorDirection dir, out Guid id)
             {
-                NextRoomCallCount++;
-                return true;
+                id = Guid.Empty;
+                return false;
             }
 
-            public IReadOnlyList<RoomSO> GetFloorRooms() => Array.Empty<RoomSO>();
-            public UnityEngine.Bounds GetFloorBounds() => default;
+            public bool EnterRoomByDoor(DoorDirection dir) => false;
+            public bool EnterRoomByInstanceId(Guid id) => false;
+
+            public Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
                 Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }
@@ -49,16 +52,7 @@ namespace Rollgeon.UI.Tests
         private class StubExplorationController : IExplorationController
         {
             public bool IsExploring { get; set; } = true;
-            public int AdvanceRoomCallCount { get; private set; }
-
             public void BeginExploration() { }
-
-            public bool AdvanceRoom()
-            {
-                AdvanceRoomCallCount++;
-                return true;
-            }
-
             public void ResumeAfterCombat() { }
         }
 
@@ -94,16 +88,13 @@ namespace Rollgeon.UI.Tests
             _viewGO.SetActive(false);
             _view = _viewGO.AddComponent<RoomNavigationView>();
 
-            // Labels
             _roomNameLabel = CreateChildTMP("RoomNameLabel");
             _roomProgressLabel = CreateChildTMP("RoomProgressLabel");
             _roomTypeLabel = CreateChildTMP("RoomTypeLabel");
 
-            // Buttons
             _proceedButton = CreateChildButton("ProceedButton");
             _pauseButton = CreateChildButton("PauseButton");
 
-            // Wire via reflection
             AssignPrivate(_view, "_roomNameLabel", _roomNameLabel);
             AssignPrivate(_view, "_roomProgressLabel", _roomProgressLabel);
             AssignPrivate(_view, "_roomTypeLabel", _roomTypeLabel);
@@ -136,8 +127,7 @@ namespace Rollgeon.UI.Tests
         {
             var room = CreateRoom("hall_01", "Gran Salon", RoomType.Start);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 8;
+            SeedInstances(cleared: 1, total: 8);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
@@ -145,36 +135,18 @@ namespace Rollgeon.UI.Tests
             _view.Bind(Guid.NewGuid());
 
             Assert.AreEqual("Gran Salon", _roomNameLabel.text);
-            Assert.AreEqual("Room 1/8", _roomProgressLabel.text);
+            Assert.AreEqual("Rooms 1/8", _roomProgressLabel.text);
             Assert.AreEqual("Start", _roomTypeLabel.text);
         }
 
         [Test]
         public void Bind_WithNoDungeonService_DegradesGracefully()
         {
-            // No services registered — should not throw, labels show fallback.
             Assert.DoesNotThrow(() => _view.Bind(Guid.NewGuid()));
 
             Assert.AreEqual("???", _roomNameLabel.text);
-            Assert.AreEqual("Room ?/?", _roomProgressLabel.text);
+            Assert.AreEqual("Rooms ?/?", _roomProgressLabel.text);
             Assert.AreEqual("", _roomTypeLabel.text);
-        }
-
-        [Test]
-        public void Bind_WithNoExplorationController_DegradesGracefully()
-        {
-            var room = CreateRoom("room_01", "Room A", RoomType.Shop);
-            _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 4;
-
-            ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
-            // No IExplorationController registered.
-
-            Assert.DoesNotThrow(() => _view.Bind(Guid.NewGuid()));
-
-            // Proceed should be disabled because _exploration is null.
-            Assert.IsFalse(_proceedButton.interactable);
         }
 
         [Test]
@@ -182,70 +154,30 @@ namespace Rollgeon.UI.Tests
         {
             var room = CreateRoom("shop_01", "Bazar Magico", RoomType.Shop);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 3;
-            _stubDungeon.RoomCount = 10;
+            SeedInstances(cleared: 3, total: 10);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
 
             _view.Bind(Guid.NewGuid());
 
-            // Change room and refresh
             var room2 = CreateRoom("potion_01", "Sala de Pociones", RoomType.Potion);
             _stubDungeon.CurrentRoom = room2;
-            _stubDungeon.CurrentRoomIndex = 4;
+            SeedInstances(cleared: 4, total: 10);
 
             _view.RefreshRoomInfo();
 
             Assert.AreEqual("Sala de Pociones", _roomNameLabel.text);
-            Assert.AreEqual("Room 5/10", _roomProgressLabel.text);
+            Assert.AreEqual("Rooms 4/10", _roomProgressLabel.text);
             Assert.AreEqual("Potion", _roomTypeLabel.text);
         }
 
         [Test]
-        public void RefreshRoomInfo_ProgressFormat()
-        {
-            var room = CreateRoom("start_0", "Start", RoomType.Start);
-            _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 8;
-
-            ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
-            ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
-
-            _view.Bind(Guid.NewGuid());
-
-            Assert.AreEqual("Room 1/8", _roomProgressLabel.text,
-                "Progress label must follow 'Room {index+1}/{count}' format.");
-        }
-
-        [Test]
-        public void ProceedButton_CallsAdvanceRoom()
+        public void ProceedButton_AlwaysDisabled_AfterBind()
         {
             var room = CreateRoom("shop_01", "Shop", RoomType.Shop);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 1;
-            _stubDungeon.RoomCount = 5;
-
-            ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
-            ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
-
-            _view.Bind(Guid.NewGuid());
-
-            _proceedButton.onClick.Invoke();
-
-            Assert.AreEqual(1, _stubExploration.AdvanceRoomCallCount,
-                "Clicking proceed should call AdvanceRoom once.");
-        }
-
-        [Test]
-        public void ProceedButton_DisabledWhenNotExploring()
-        {
-            var room = CreateRoom("shop_01", "Shop", RoomType.Shop);
-            _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 4;
-            _stubExploration.IsExploring = false;
+            SeedInstances(cleared: 1, total: 5);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
@@ -253,7 +185,7 @@ namespace Rollgeon.UI.Tests
             _view.Bind(Guid.NewGuid());
 
             Assert.IsFalse(_proceedButton.interactable,
-                "Proceed must be disabled when IsExploring is false.");
+                "Proceed fue deprecado — siempre deshabilitado tras §13.6.");
         }
 
         [Test]
@@ -261,8 +193,7 @@ namespace Rollgeon.UI.Tests
         {
             var room = CreateRoom("start_0", "Start", RoomType.Start);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 5;
+            SeedInstances(cleared: 1, total: 5);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
@@ -270,35 +201,33 @@ namespace Rollgeon.UI.Tests
             _view.Bind(Guid.NewGuid());
             Assert.AreEqual("Start", _roomNameLabel.text);
 
-            // Simulate advancing
             var room2 = CreateRoom("shop_01", "Tienda", RoomType.Shop);
             _stubDungeon.CurrentRoom = room2;
-            _stubDungeon.CurrentRoomIndex = 1;
+            SeedInstances(cleared: 2, total: 5);
 
             EventManager.Trigger(EventName.OnRoomEntered);
 
             Assert.AreEqual("Tienda", _roomNameLabel.text);
-            Assert.AreEqual("Room 2/5", _roomProgressLabel.text);
+            Assert.AreEqual("Rooms 2/5", _roomProgressLabel.text);
         }
 
         [Test]
-        public void OnCombatTriggered_DisablesProceed()
+        public void OnRoomCleared_RefreshesProgressLabel()
         {
-            var room = CreateRoom("combat_01", "Arena", RoomType.Shop);
+            var room = CreateRoom("combat_01", "Arena", RoomType.Combat);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 4;
+            SeedInstances(cleared: 0, total: 4);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
 
             _view.Bind(Guid.NewGuid());
-            Assert.IsTrue(_proceedButton.interactable, "Should be interactable before combat.");
+            Assert.AreEqual("Rooms 0/4", _roomProgressLabel.text);
 
-            EventManager.Trigger(EventName.OnCombatTriggered);
+            SeedInstances(cleared: 1, total: 4);
+            EventManager.Trigger(EventName.OnRoomCleared);
 
-            Assert.IsFalse(_proceedButton.interactable,
-                "Proceed must be disabled when combat is triggered.");
+            Assert.AreEqual("Rooms 1/4", _roomProgressLabel.text);
         }
 
         [Test]
@@ -306,8 +235,7 @@ namespace Rollgeon.UI.Tests
         {
             var room = CreateRoom("start_0", "Start", RoomType.Start);
             _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 5;
+            SeedInstances(cleared: 1, total: 5);
 
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
@@ -315,10 +243,8 @@ namespace Rollgeon.UI.Tests
             _view.Bind(Guid.NewGuid());
             _view.Unbind();
 
-            // Change data and trigger event — labels should NOT update.
             var room2 = CreateRoom("shop_01", "Tienda", RoomType.Shop);
             _stubDungeon.CurrentRoom = room2;
-            _stubDungeon.CurrentRoomIndex = 1;
 
             EventManager.Trigger(EventName.OnRoomEntered);
 
@@ -342,28 +268,6 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnFloorCleared_UpdatesProgressLabelAndDisablesProceed()
-        {
-            var room = CreateRoom("start_0", "Start", RoomType.Start);
-            _stubDungeon.CurrentRoom = room;
-            _stubDungeon.CurrentRoomIndex = 0;
-            _stubDungeon.RoomCount = 5;
-
-            ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
-            ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
-
-            _view.Bind(Guid.NewGuid());
-            Assert.IsTrue(_proceedButton.interactable, "Should be interactable before floor cleared.");
-
-            EventManager.Trigger(EventName.OnFloorCleared);
-
-            Assert.AreEqual("Floor Cleared!", _roomProgressLabel.text,
-                "Progress label must show 'Floor Cleared!' after OnFloorCleared.");
-            Assert.IsFalse(_proceedButton.interactable,
-                "Proceed must be disabled after floor cleared.");
-        }
-
-        [Test]
         public void PauseButton_DoesNotCrash()
         {
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
@@ -378,6 +282,20 @@ namespace Rollgeon.UI.Tests
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        private void SeedInstances(int cleared, int total)
+        {
+            _stubDungeon.Instances.Clear();
+            for (int i = 0; i < total; i++)
+            {
+                var ri = new RoomInstance
+                {
+                    InstanceId = Guid.NewGuid(),
+                    State = i < cleared ? RoomState.Cleared : RoomState.Uncleared,
+                };
+                _stubDungeon.Instances[ri.InstanceId] = ri;
+            }
+        }
 
         private RoomSO CreateRoom(string id, string displayName, RoomType type)
         {
@@ -415,20 +333,6 @@ namespace Rollgeon.UI.Tests
             }
             Assert.IsNotNull(field, $"Field '{fieldName}' not found in {target.GetType().Name}.");
             field.SetValue(target, value);
-        }
-
-        private static T GetPrivate<T>(object target, string fieldName) where T : class
-        {
-            FieldInfo field = null;
-            var type = target.GetType();
-            while (type != null && field == null)
-            {
-                field = type.GetField(fieldName,
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                type = type.BaseType;
-            }
-            Assert.IsNotNull(field, $"Field '{fieldName}' not found in {target.GetType().Name}.");
-            return field.GetValue(target) as T;
         }
     }
 }

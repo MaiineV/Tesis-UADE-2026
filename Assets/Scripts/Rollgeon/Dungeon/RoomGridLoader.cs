@@ -1,23 +1,21 @@
 using System;
 using Patterns;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.GameCamera;
 using Rollgeon.Grid;
-using UnityEngine;
 
 namespace Rollgeon.Dungeon
 {
     /// <summary>
-    /// Listener Run-scope que carga el <see cref="IGridManager"/> al entrar a cada sala.
-    /// TECHNICAL.md §17.§I + §13.3.
+    /// Listener Run-scope que carga el <see cref="IGridManager"/> al entrar a
+    /// cada sala. TECHNICAL.md §17.§I + §13.6.
+    /// <para>
+    /// Se suscribe a <see cref="EventName.OnRoomEntered"/>. Lee el
+    /// <see cref="RoomLayout.GridOverride"/> del prefab instanciado de la sala
+    /// activa y llama <see cref="IGridManager.LoadRoom"/>. Si la sala no tiene
+    /// prefab instanciado (tests EditMode sin prefab), carga un snapshot vacío.
+    /// </para>
     /// </summary>
-    /// <remarks>
-    /// Se suscribe a <see cref="EventName.OnRoomEntered"/>. Resuelve
-    /// <see cref="IDungeonService"/> lazy en cada evento porque el bootstrap del loader
-    /// corre antes de <see cref="Rollgeon.Run.RunController.OnRunStart"/> (donde
-    /// <c>DungeonManager.CreateAndRegister</c> publica el servicio). Cuando la sala
-    /// cambia, lee <see cref="RoomSO.GridLayout"/> de <see cref="IDungeonService.CurrentRoom"/>
-    /// y llama <see cref="IGridManager.LoadRoom"/>.
-    /// </remarks>
     public sealed class RoomGridLoader : IDisposable
     {
         private readonly IGridManager _grid;
@@ -61,14 +59,26 @@ namespace Rollgeon.Dungeon
                 return;
             }
 
-            var room = dungeon.CurrentRoom;
-            if (room == null)
+            var instance = dungeon.CurrentRoomInstance;
+            if (instance?.SpawnedPrefab == null)
             {
                 _grid.LoadRoom(GridSnapshot.Empty);
                 return;
             }
-            _grid.LoadRoom(room.GridLayout);
 
+            var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
+            if (layout == null)
+            {
+                _grid.LoadRoom(GridSnapshot.Empty);
+                return;
+            }
+
+            _grid.LoadRoom(layout.GridOverride, layout.GetOrigin(), layout.TileSize);
+            RecenterCameraIfAvailable();
+        }
+
+        private static void RecenterCameraIfAvailable()
+        {
             // Al entrar a una sala, pedir al camera service un recenter
             // instantáneo para evitar un smooth largo entre salas (§17.E.10).
             if (ServiceLocator.TryGetService<ICameraService>(out var cam))

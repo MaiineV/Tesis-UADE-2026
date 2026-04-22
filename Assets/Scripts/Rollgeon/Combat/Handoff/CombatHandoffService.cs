@@ -115,7 +115,8 @@ namespace Rollgeon.Combat.Handoff
 
             try
             {
-                var room = _dungeon.CurrentRoom;
+                var instance = _dungeon.CurrentRoomInstance;
+                var room = instance?.Template;
                 if (room == null)
                 {
                     UnityEngine.Debug.LogWarning(
@@ -123,10 +124,8 @@ namespace Rollgeon.Combat.Handoff
                     return;
                 }
 
-                int spawnCount = roomType == RoomType.Boss ? 1 : 2;
                 var rng = new System.Random(roomInstanceId.GetHashCode());
-
-                var spawned = _resolver.Resolve(room, spawnCount, rng);
+                var spawned = _resolver.Resolve(instance, rng);
 
                 // Build participant list: player + enemies.
                 var participants = new List<Guid> { _player.PlayerGuid };

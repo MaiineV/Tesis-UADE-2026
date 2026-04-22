@@ -2,6 +2,7 @@ using Patterns;
 using Rollgeon.Balance;
 using Rollgeon.GameCamera;
 using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Player;
@@ -89,8 +90,8 @@ namespace Rollgeon.Run
             }
             if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon)) return;
 
-            var room = dungeon.CurrentRoom;
-            var spawnCoord = room != null ? room.PlayerSpawn : GridCoord.Zero;
+            var instance = dungeon.CurrentRoomInstance;
+            var spawnCoord = ResolveSpawnCoord(instance, grid);
 
             grid.Register(playerService.PlayerGuid, spawnCoord);
 
@@ -108,6 +109,22 @@ namespace Rollgeon.Run
             {
                 cam.SetFollowTarget(heroPawn.transform);
             }
+        }
+
+        /// <summary>
+        /// Resuelve el tile de spawn del hero a partir del
+        /// <see cref="RoomLayout.PlayerSpawnPoint"/> del prefab instanciado.
+        /// Si no hay prefab o no tiene PlayerSpawnPoint, cae a
+        /// <see cref="GridCoord.Zero"/>.
+        /// </summary>
+        private static GridCoord ResolveSpawnCoord(RoomInstance instance, IGridManager grid)
+        {
+            if (instance?.SpawnedPrefab == null) return GridCoord.Zero;
+
+            var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
+            if (layout == null || layout.PlayerSpawnPoint == null) return GridCoord.Zero;
+
+            return grid.WorldToGrid(layout.PlayerSpawnPoint.position);
         }
     }
 }

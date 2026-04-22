@@ -11,14 +11,15 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Sub-view del HUD que muestra informacion de la room actual y permite
-    /// avanzar a la siguiente. Se suscribe a eventos de exploracion en
-    /// <see cref="Bind"/> y actualiza labels + botones.
+    /// Sub-view del HUD que muestra información de la sala actual.
+    /// <para>
+    /// 2026-04-22 (§13.6): con el sistema de puertas físicas el botón
+    /// "Proceed" dejó de tener sentido — la transición entre salas la
+    /// dispara el player cruzando una puerta. El botón permanece en el
+    /// prefab para compatibilidad del Inspector pero siempre queda
+    /// deshabilitado y sin wiring.
+    /// </para>
     /// </summary>
-    /// <remarks>
-    /// Plan §4 / UI#0011d. Sin <c>Update()</c> — pura reaccion a eventos.
-    /// El boton de pausa es stub hasta UI#0014c.
-    /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Room Navigation View")]
     public class RoomNavigationView : MonoBehaviour
     {
@@ -29,7 +30,7 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private TextMeshProUGUI _roomNameLabel;
 
-        [Required("Arrastrar el TextMeshProUGUI del progreso (Room X/Y).")]
+        [Required("Arrastrar el TextMeshProUGUI del progreso (rooms cleared / total).")]
         [SerializeField]
         private TextMeshProUGUI _roomProgressLabel;
 
@@ -37,7 +38,8 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private TextMeshProUGUI _roomTypeLabel;
 
-        [Required("Arrastrar el Button de avanzar room.")]
+        [InfoBox("Deprecado tras §13.6 — se mantiene para no romper prefabs " +
+                 "existentes pero queda disabled y sin onClick.")]
         [SerializeField]
         private Button _proceedButton;
 
@@ -51,17 +53,9 @@ namespace Rollgeon.UI.HUD
         private IDungeonService _dungeon;
         private IExplorationController _exploration;
 
-        /// <summary>
-        /// Engancha la sub-view al jugador. Suscribe handlers al bus y
-        /// refresca la UI. Idempotente: si ya estaba bound, primero hace
-        /// <see cref="Unbind"/>.
-        /// </summary>
         public void Bind(Guid playerGuid)
         {
-            if (_bound)
-            {
-                Unbind();
-            }
+            if (_bound) Unbind();
 
             if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon))
             {
@@ -76,34 +70,28 @@ namespace Rollgeon.UI.HUD
             {
                 _exploration = exploration;
             }
-            else
-            {
-                Debug.LogWarning(LogPrefix + "IExplorationController no registrado. Proceed deshabilitado.", this);
-            }
 
             EventManager.Subscribe(EventName.OnRoomEntered, OnRoomEnteredHandler);
+            EventManager.Subscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.Subscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
-            EventManager.Subscribe(EventName.OnFloorCleared, OnFloorClearedHandler);
             EventManager.Subscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
 
-            if (_proceedButton != null) _proceedButton.onClick.AddListener(OnProceedClicked);
             if (_pauseButton != null) _pauseButton.onClick.AddListener(OnPauseClicked);
+            if (_proceedButton != null) _proceedButton.interactable = false;
 
             RefreshRoomInfo();
             _bound = true;
         }
 
-        /// <summary>Desuscribe del bus y limpia estado. Idempotente.</summary>
         public void Unbind()
         {
             if (!_bound) return;
 
             EventManager.UnSubscribe(EventName.OnRoomEntered, OnRoomEnteredHandler);
+            EventManager.UnSubscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.UnSubscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
-            EventManager.UnSubscribe(EventName.OnFloorCleared, OnFloorClearedHandler);
             EventManager.UnSubscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
 
-            if (_proceedButton != null) _proceedButton.onClick.RemoveListener(OnProceedClicked);
             if (_pauseButton != null) _pauseButton.onClick.RemoveListener(OnPauseClicked);
 
             _dungeon = null;
@@ -112,49 +100,44 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// Actualiza labels y estado del boton a partir de <see cref="IDungeonService"/>.
-        /// Si el servicio no esta disponible, muestra textos de fallback.
+        /// Actualiza labels desde <see cref="IDungeonService"/>. El progreso
+        /// ahora es "cleared / total" sobre el grafo completo del piso.
         /// </summary>
         public void RefreshRoomInfo()
         {
             if (_dungeon == null)
             {
                 if (_roomNameLabel != null) _roomNameLabel.text = "???";
-                if (_roomProgressLabel != null) _roomProgressLabel.text = "Room ?/?";
+                if (_roomProgressLabel != null) _roomProgressLabel.text = "Rooms ?/?";
                 if (_roomTypeLabel != null) _roomTypeLabel.text = "";
                 if (_proceedButton != null) _proceedButton.interactable = false;
                 return;
             }
 
             var room = _dungeon.CurrentRoom;
+            var instances = _dungeon.GetAllRoomInstances();
+
+            int total = instances != null ? instances.Count : 0;
+            int cleared = 0;
+            if (instances != null)
+            {
+                foreach (var ri in instances.Values)
+                {
+                    if (ri.State == RoomState.Cleared) cleared++;
+                }
+            }
 
             if (_roomNameLabel != null)
                 _roomNameLabel.text = room?.DisplayName ?? "???";
 
             if (_roomProgressLabel != null)
-                _roomProgressLabel.text = $"Room {_dungeon.CurrentRoomIndex + 1}/{_dungeon.RoomCount}";
+                _roomProgressLabel.text = $"Rooms {cleared}/{total}";
 
             if (_roomTypeLabel != null)
                 _roomTypeLabel.text = room?.Type.ToString() ?? "";
 
             if (_proceedButton != null)
-            {
-                _proceedButton.interactable = _exploration != null
-                    && _exploration.IsExploring
-                    && room?.Type != RoomType.Combat
-                    && room?.Type != RoomType.Boss;
-            }
-        }
-
-        private void OnProceedClicked()
-        {
-            if (_exploration == null)
-            {
-                Debug.LogWarning(LogPrefix + "Proceed clicked but IExplorationController is null.", this);
-                return;
-            }
-
-            _exploration.AdvanceRoom();
+                _proceedButton.interactable = false;
         }
 
         private void OnPauseClicked()
@@ -168,26 +151,10 @@ namespace Rollgeon.UI.HUD
             screens.PushOverlay<PauseMenuOverlay>();
         }
 
-        private void OnRoomEnteredHandler(params object[] args)
-        {
-            RefreshRoomInfo();
-        }
-
-        private void OnCombatTriggeredHandler(params object[] args)
-        {
-            if (_proceedButton != null) _proceedButton.interactable = false;
-        }
-
-        private void OnFloorClearedHandler(params object[] args)
-        {
-            if (_proceedButton != null) _proceedButton.interactable = false;
-            if (_roomProgressLabel != null) _roomProgressLabel.text = "Floor Cleared!";
-        }
-
-        private void OnExplorationStartedHandler(params object[] args)
-        {
-            RefreshRoomInfo();
-        }
+        private void OnRoomEnteredHandler(params object[] args) => RefreshRoomInfo();
+        private void OnRoomClearedHandler(params object[] args) => RefreshRoomInfo();
+        private void OnCombatTriggeredHandler(params object[] args) => RefreshRoomInfo();
+        private void OnExplorationStartedHandler(params object[] args) => RefreshRoomInfo();
 
         private void OnDisable()
         {

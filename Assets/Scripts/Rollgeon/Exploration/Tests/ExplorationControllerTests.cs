@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Phase;
 using UnityEngine;
 
@@ -22,23 +23,27 @@ namespace Rollgeon.Exploration.Tests
 
         private class StubDungeonService : IDungeonService
         {
-            public RoomSO CurrentRoom { get; set; }
-            public int CurrentRoomIndex { get; set; }
-            public int RoomCount { get; set; }
-            public bool IsLastRoom { get; set; }
-            public bool NextRoomReturnValue { get; set; } = true;
-            public int NextRoomCallCount { get; private set; }
+            public RoomInstance CurrentRoomInstance { get; set; }
+            public RoomSO CurrentRoom => CurrentRoomInstance?.Template;
 
             public void GenerateFloor(FloorLayoutSO layout, int seed) { }
 
-            public bool NextRoom()
+            public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() =>
+                new Dictionary<Guid, RoomInstance>();
+
+            public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() =>
+                new Dictionary<Guid, FloorShell>();
+
+            public bool CanEnterRoomByDoor(DoorDirection dir, out Guid id)
             {
-                NextRoomCallCount++;
-                return NextRoomReturnValue;
+                id = Guid.Empty;
+                return false;
             }
 
-            public IReadOnlyList<RoomSO> GetFloorRooms() => Array.Empty<RoomSO>();
-            public UnityEngine.Bounds GetFloorBounds() => default;
+            public bool EnterRoomByDoor(DoorDirection dir) => false;
+            public bool EnterRoomByInstanceId(Guid id) => false;
+
+            public Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
                 Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }
@@ -94,14 +99,26 @@ namespace Rollgeon.Exploration.Tests
         // Helpers
         // -------------------------------------------------------------------
 
-        private RoomSO CreateRoom(string id, RoomType type)
+        private RoomInstance CreateInstance(string id, RoomType type,
+            RoomState state = RoomState.Uncleared)
         {
             var room = ScriptableObject.CreateInstance<RoomSO>();
             room.RoomId = id;
             room.DisplayName = id;
             room.Type = type;
             _createdObjects.Add(room);
-            return room;
+
+            return new RoomInstance
+            {
+                InstanceId = Guid.NewGuid(),
+                Template = room,
+                State = state
+            };
+        }
+
+        private void SetCurrent(RoomInstance instance)
+        {
+            _stubDungeon.CurrentRoomInstance = instance;
         }
 
         // -------------------------------------------------------------------
@@ -111,7 +128,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_SetsPhaseToExploration()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
 
             _controller.BeginExploration();
 
@@ -121,7 +138,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_FiresOnExplorationStarted()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
             bool fired = false;
             EventManager.Subscribe(EventName.OnExplorationStarted, args => fired = true);
 
@@ -133,7 +150,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_SetsIsExploringTrue()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
 
             _controller.BeginExploration();
 
@@ -143,7 +160,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_CalledTwice_IsIdempotent()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
 
             _controller.BeginExploration();
             int callsAfterFirst = _stubPhase.ReplacePhaseCalls.Count;
@@ -158,7 +175,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_CombatRoom_FiresOnCombatTriggered()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("combat_0", RoomType.Combat);
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
             bool fired = false;
             EventManager.Subscribe(EventName.OnCombatTriggered, args => fired = true);
 
@@ -170,7 +187,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_CombatRoom_TransitionsToCombatPhase()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("combat_0", RoomType.Combat);
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
 
             _controller.BeginExploration();
 
@@ -180,7 +197,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_CombatRoom_SetsIsExploringFalse()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("combat_0", RoomType.Combat);
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
 
             _controller.BeginExploration();
 
@@ -190,7 +207,7 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_BossRoom_FiresOnCombatTriggered()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("boss_0", RoomType.Boss);
+            SetCurrent(CreateInstance("boss_0", RoomType.Boss));
             bool fired = false;
             string receivedRoomId = null;
             EventManager.Subscribe(EventName.OnCombatTriggered, args =>
@@ -208,20 +225,18 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_ShopRoom_LogsStub()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("shop_0", RoomType.Shop);
+            SetCurrent(CreateInstance("shop_0", RoomType.Shop, RoomState.Cleared));
 
             _controller.BeginExploration();
 
-            // Shop is a stub — no phase change, exploration continues
             Assert.IsTrue(_controller.IsExploring);
-            // Phase should still be Exploration (set in BeginExploration), not Combat
             Assert.AreEqual(GamePhase.Exploration, _stubPhase.CurrentBase);
         }
 
         [Test]
         public void BeginExploration_PotionRoom_LogsStub()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("potion_0", RoomType.Potion);
+            SetCurrent(CreateInstance("potion_0", RoomType.Potion, RoomState.Cleared));
 
             _controller.BeginExploration();
 
@@ -232,95 +247,71 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void BeginExploration_StartRoom_IsNoop()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
 
             _controller.BeginExploration();
 
             Assert.IsTrue(_controller.IsExploring);
-            // Only the Exploration phase call, no Combat transition
             Assert.AreEqual(1, _stubPhase.ReplacePhaseCalls.Count);
             Assert.AreEqual(GamePhase.Exploration, _stubPhase.ReplacePhaseCalls[0]);
         }
 
         [Test]
-        public void AdvanceRoom_DelegatesToDungeonNextRoom()
+        public void ResumeAfterCombat_RestoresExplorationPhase()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
             _controller.BeginExploration();
+            Assert.AreEqual(GamePhase.Combat, _stubPhase.CurrentBase);
 
-            _stubDungeon.CurrentRoom = CreateRoom("combat_next", RoomType.Start);
-            _controller.AdvanceRoom();
+            _controller.ResumeAfterCombat();
 
-            Assert.AreEqual(1, _stubDungeon.NextRoomCallCount);
+            Assert.AreEqual(GamePhase.Exploration, _stubPhase.CurrentBase);
+            Assert.IsTrue(_controller.IsExploring);
         }
 
         [Test]
-        public void AdvanceRoom_ReturnsTrueWhenAdvanced()
+        public void OnRoomEntered_ClearedCombatRoom_DoesNotRetriggerCombat()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
             _controller.BeginExploration();
-            _stubDungeon.NextRoomReturnValue = true;
 
-            bool result = _controller.AdvanceRoom();
+            var cleared = CreateInstance("combat_0", RoomType.Combat, RoomState.Cleared);
+            SetCurrent(cleared);
 
-            Assert.IsTrue(result);
+            bool combatFired = false;
+            EventManager.Subscribe(EventName.OnCombatTriggered, args => combatFired = true);
+
+            EventManager.Trigger(EventName.OnRoomEntered, cleared.InstanceId, "combat_0");
+
+            Assert.IsFalse(combatFired, "Re-entrar a sala Cleared no debe re-disparar combate");
         }
 
         [Test]
-        public void AdvanceRoom_ReturnsFalseWhenFloorCleared()
+        public void OnRoomEntered_UnclearedCombatRoom_TriggersCombat()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
-            _controller.BeginExploration();
-            _stubDungeon.NextRoomReturnValue = false;
-
-            bool result = _controller.AdvanceRoom();
-
-            Assert.IsFalse(result);
-        }
-
-        [Test]
-        public void AdvanceRoom_WhenNotExploring_ReturnsFalse()
-        {
-            Assert.IsFalse(_controller.IsExploring);
-
-            bool result = _controller.AdvanceRoom();
-
-            Assert.IsFalse(result);
-            Assert.AreEqual(0, _stubDungeon.NextRoomCallCount,
-                "Should not delegate to dungeon when not exploring");
-        }
-
-        [Test]
-        public void AdvanceRoom_CombatRoomNext_TriggersPhaseTransition()
-        {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
             _controller.BeginExploration();
 
-            // NextRoom fires OnRoomEntered which ProcessRoom picks up
-            _stubDungeon.CurrentRoom = CreateRoom("combat_1", RoomType.Combat);
-            _stubDungeon.NextRoomReturnValue = true;
+            var fresh = CreateInstance("combat_1", RoomType.Combat, RoomState.Uncleared);
+            SetCurrent(fresh);
 
-            bool combatTriggered = false;
-            EventManager.Subscribe(EventName.OnCombatTriggered, args => combatTriggered = true);
+            bool combatFired = false;
+            EventManager.Subscribe(EventName.OnCombatTriggered, args => combatFired = true);
 
-            _controller.AdvanceRoom();
-            // OnRoomEntered is fired by DungeonManager.NextRoom in production;
-            // since we use a stub, simulate the event
-            EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "combat_1");
+            EventManager.Trigger(EventName.OnRoomEntered, fresh.InstanceId, "combat_1");
 
-            Assert.IsTrue(combatTriggered);
+            Assert.IsTrue(combatFired);
             Assert.AreEqual(GamePhase.Combat, _stubPhase.CurrentBase);
         }
 
         [Test]
         public void Dispose_UnsubscribesFromEvents()
         {
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
             _controller.BeginExploration();
             _controller.Dispose();
 
-            // After dispose, triggering OnRoomEntered should NOT call ProcessRoom
-            _stubDungeon.CurrentRoom = CreateRoom("combat_0", RoomType.Combat);
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
             _stubPhase.ReplacePhaseCalls.Clear();
 
             EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "combat_0");
@@ -334,7 +325,7 @@ namespace Rollgeon.Exploration.Tests
         {
             ServiceLocator.AddService<IDungeonService>(_stubDungeon, ServiceScope.Run);
             ServiceLocator.AddService<IPhaseService>(_stubPhase, ServiceScope.Run);
-            _stubDungeon.CurrentRoom = CreateRoom("start_0", RoomType.Start);
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
 
             var registered = ExplorationController.CreateAndRegister();
 

@@ -6,12 +6,19 @@ using Rollgeon.Entities;
 namespace Rollgeon.Combat.Handoff
 {
     /// <summary>
-    /// Resolves which enemies spawn for a given room encounter.
-    /// Returns a list of (runtime Guid, source data) pairs so callers can
-    /// register them in the entity registry and build participant lists.
+    /// Resolves enemy spawns para un encounter. Devuelve pares
+    /// <c>(runtime Guid, source data)</c> que el caller (handoff / combat
+    /// starter) usa para armar el participant list. TECHNICAL.md §13.6.
+    /// <para>
+    /// Prefiere <see cref="RoomSO.PossibleSetups"/> (set pre-diseñado random)
+    /// y cae a <see cref="RoomSO.EnemyPool"/>. Registra cada spawn en
+    /// <see cref="RoomInstance.SpawnedEnemies"/> y seeds un
+    /// <c>EnemySpawnState</c> en <see cref="RoomInstance.ObjectStates"/> para
+    /// persistencia de HP entre visitas.
+    /// </para>
     /// </summary>
     public interface IEnemySpawnResolver
     {
-        List<(Guid id, EnemyDataSO data)> Resolve(RoomSO room, int spawnCount, System.Random rng);
+        List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng);
     }
 }

@@ -27,11 +27,9 @@ namespace Rollgeon.Combat.Handoff.Tests
         {
             public bool IsExploring { get; set; }
             public int BeginExplorationCallCount { get; private set; }
-            public int AdvanceRoomCallCount { get; private set; }
             public int ResumeAfterCombatCallCount { get; private set; }
 
             public void BeginExploration() => BeginExplorationCallCount++;
-            public bool AdvanceRoom() { AdvanceRoomCallCount++; return true; }
             public void ResumeAfterCombat() => ResumeAfterCombatCallCount++;
         }
 
@@ -115,21 +113,6 @@ namespace Rollgeon.Combat.Handoff.Tests
             TriggerCombatEnd(roomId, CombatOutcome.Victory);
 
             Assert.AreEqual(1, _spyScreen.PopCurrentCallCount);
-        }
-
-        [Test]
-        public void OnCombatEnd_Victory_FiresOnRoomCleared()
-        {
-            Guid received = Guid.Empty;
-            EventManager.Subscribe(EventName.OnRoomCleared, (object[] args) =>
-            {
-                received = (Guid)args[0];
-            });
-
-            var roomId = Guid.NewGuid();
-            TriggerCombatEnd(roomId, CombatOutcome.Victory);
-
-            Assert.AreEqual(roomId, received);
         }
 
         [Test]

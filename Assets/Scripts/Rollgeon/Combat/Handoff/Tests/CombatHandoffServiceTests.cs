@@ -30,12 +30,25 @@ namespace Rollgeon.Combat.Handoff.Tests
         private class StubDungeonService : IDungeonService
         {
             public RoomSO CurrentRoom { get; set; }
-            public int CurrentRoomIndex { get; set; }
-            public int RoomCount { get; set; }
-            public bool IsLastRoom { get; set; }
+            public RoomInstance CurrentRoomInstance { get; set; }
+
             public void GenerateFloor(FloorLayoutSO layout, int seed) { }
-            public bool NextRoom() => false;
-            public IReadOnlyList<RoomSO> GetFloorRooms() => Array.Empty<RoomSO>();
+
+            public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() =>
+                new Dictionary<Guid, RoomInstance>();
+
+            public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() =>
+                new Dictionary<Guid, FloorShell>();
+
+            public bool CanEnterRoomByDoor(Rollgeon.Dungeon.Components.DoorDirection dir, out Guid id)
+            {
+                id = Guid.Empty;
+                return false;
+            }
+
+            public bool EnterRoomByDoor(Rollgeon.Dungeon.Components.DoorDirection dir) => false;
+            public bool EnterRoomByInstanceId(Guid id) => false;
+
             public UnityEngine.Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
                 Array.Empty<Rollgeon.GameCamera.WallOccluder>();
@@ -58,14 +71,14 @@ namespace Rollgeon.Combat.Handoff.Tests
         {
             public int ResolveCallCount { get; private set; }
             public RoomSO LastRoom { get; private set; }
-            public int LastSpawnCount { get; private set; }
+            public RoomInstance LastInstance { get; private set; }
             public List<(Guid id, EnemyDataSO data)> ReturnValue { get; set; } = new();
 
-            public List<(Guid id, EnemyDataSO data)> Resolve(RoomSO room, int spawnCount, System.Random rng)
+            public List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng)
             {
                 ResolveCallCount++;
-                LastRoom = room;
-                LastSpawnCount = spawnCount;
+                LastInstance = instance;
+                LastRoom = instance?.Template;
                 return ReturnValue;
             }
         }
@@ -183,6 +196,16 @@ namespace Rollgeon.Combat.Handoff.Tests
             return room;
         }
 
+        private void SetCurrentRoom(RoomSO room)
+        {
+            _stubDungeon.CurrentRoom = room;
+            _stubDungeon.CurrentRoomInstance = new RoomInstance
+            {
+                InstanceId = Guid.NewGuid(),
+                Template = room,
+            };
+        }
+
         private EnemyDataSO CreateEnemy(string name)
         {
             var enemy = ScriptableObject.CreateInstance<EnemyDataSO>();
@@ -204,7 +227,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_CallsResolverWithCurrentRoom()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             var enemy = CreateEnemy("Goblin");
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>
                 { (Guid.NewGuid(), enemy) };
@@ -219,7 +242,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_PushesCombatHUDScreen()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
@@ -232,7 +255,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_CallsStartCombat()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             var roomInstanceId = Guid.NewGuid();
@@ -246,7 +269,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_ParticipantsIncludePlayer()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             var enemyId = Guid.NewGuid();
             var enemy = CreateEnemy("Goblin");
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>
@@ -264,7 +287,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_ParticipantsIncludeEnemies()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             var enemyId = Guid.NewGuid();
             var enemy = CreateEnemy("Goblin");
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>
@@ -281,33 +304,33 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void OnCombatTriggered_BossRoom_SpawnsOneEnemy()
         {
             var room = CreateRoom(RoomType.Boss);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             TriggerCombat(Guid.NewGuid(), "boss_room", RoomType.Boss);
 
-            Assert.AreEqual(1, _spyResolver.LastSpawnCount,
-                "Boss rooms should request 1 enemy spawn");
+            Assert.AreEqual(RoomType.Boss, _spyResolver.LastInstance?.Template?.Type,
+                "Boss rooms should pass the boss instance to the resolver.");
         }
 
         [Test]
-        public void OnCombatTriggered_CombatRoom_SpawnsTwoEnemies()
+        public void OnCombatTriggered_CombatRoom_PassesCombatInstance()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             TriggerCombat(Guid.NewGuid(), "combat_room", RoomType.Combat);
 
-            Assert.AreEqual(2, _spyResolver.LastSpawnCount,
-                "Combat rooms should request 2 enemy spawns");
+            Assert.AreEqual(RoomType.Combat, _spyResolver.LastInstance?.Template?.Type,
+                "Combat rooms should pass the combat instance to the resolver.");
         }
 
         [Test]
         public void OnCombatTriggered_PassesEnemyAIHandlerToStartCombat()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
@@ -324,7 +347,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         public void Dispose_UnsubscribesFromEvent()
         {
             var room = CreateRoom(RoomType.Combat);
-            _stubDungeon.CurrentRoom = room;
+            SetCurrentRoom(room);
             _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
 
             _service.Dispose();

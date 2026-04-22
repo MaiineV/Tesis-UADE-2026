@@ -4,13 +4,15 @@ using UnityEngine;
 namespace Rollgeon.Dungeon.Components
 {
     /// <summary>
-    /// Marker MonoBehaviour opcional para salas autoradas como prefab. TECHNICAL.md §13.3.
+    /// Marker MonoBehaviour opcional para spawn points singulares no cubiertos
+    /// por las listas tipadas de <see cref="RoomLayout"/> (player / enemies /
+    /// rewards / obstáculos). TECHNICAL.md §13.3.
     /// </summary>
     /// <remarks>
-    /// El flujo actual de FP usa <see cref="Rollgeon.Dungeon.RoomSO"/> con
-    /// <c>PlayerSpawn</c> + <c>EnemySpawnPoints</c> embebidos. Este componente existe
-    /// para el pipeline futuro (§13.3) donde cada sala es un prefab completo en escena;
-    /// un editor tool transcribirá la posición world-space a <see cref="GridCoord"/>.
+    /// En el pipeline §13.6 los spawn points principales son Transforms en
+    /// <see cref="RoomLayout"/>. Este componente queda para marcadores custom
+    /// (NPCs, props) donde el diseñador quiera una resolución tile-grid
+    /// explícita.
     /// </remarks>
     public sealed class SpawnPoint : MonoBehaviour
     {
