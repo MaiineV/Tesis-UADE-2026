@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
@@ -7,6 +8,8 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.AI.Tests
 {
@@ -91,6 +94,7 @@ namespace Rollgeon.Combat.AI.Tests
             _registry.Register(_enemyId, new ThrowingNode(), maxHp: 50);
 
             using var handler = NewHandler();
+            LogAssert.Expect(LogType.Error, new Regex(@"\[TreeDrivenEnemyAI\] Exception ticking AIRoot"));
             Assert.DoesNotThrow(() => handler.HandleEnemyTurn(_enemyId));
             Assert.AreEqual(1, _turnCompleteCount, "Excepción en tick NO debe bloquear el turn complete.");
         }

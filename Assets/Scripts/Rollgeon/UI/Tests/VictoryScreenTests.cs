@@ -151,6 +151,9 @@ namespace Rollgeon.UI.Tests
         {
             InvokeAwake();
 
+            // Unity does not call OnDestroy for GOs that were never active.
+            // Invoke it directly to test the unsubscription path.
+            InvokeOnDestroy();
             Object.DestroyImmediate(_screenGO);
             _screenGO = null;
 
@@ -176,6 +179,14 @@ namespace Rollgeon.UI.Tests
             var method = typeof(VictoryScreen).GetMethod("Awake",
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             Assert.IsNotNull(method, "Awake method not found on VictoryScreen.");
+            method.Invoke(_screen, null);
+        }
+
+        private void InvokeOnDestroy()
+        {
+            var method = typeof(VictoryScreen).GetMethod("OnDestroy",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(method, "OnDestroy method not found on VictoryScreen.");
             method.Invoke(_screen, null);
         }
 
