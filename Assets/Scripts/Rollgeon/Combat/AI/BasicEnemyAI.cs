@@ -9,9 +9,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI
 {
     /// <summary>
-    /// Production enemy AI handler that reads the enemy's Attack stat and deals
-    /// damage to the player via <see cref="IDamagePipeline"/>. Replaces
-    /// <see cref="StubEnemyAIHandler"/> (S#0012b).
+    /// Fallback enemy AI handler that reads the enemy's Attack stat and deals
+    /// damage to the player via <see cref="IDamagePipeline"/>. Usado por
+    /// <see cref="TreeDrivenEnemyAI"/> cuando un enemigo no tiene <c>AIRoot</c>
+    /// autorado (ver TECHNICAL.md §7.5).
     /// </summary>
     /// <remarks>
     /// Enemies with Attack &lt;= 0 (e.g. Support archetype) skip the attack

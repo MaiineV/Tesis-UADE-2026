@@ -78,6 +78,16 @@ namespace Rollgeon.Attributes
             return _byEntity.ContainsKey(entityId);
         }
 
+        /// <summary>
+        /// Enumera (Guid, ModifiableAttributes) registrados. Consumido por sistemas que
+        /// necesitan iterar todas las entidades de combate (ej. AI de area-effect,
+        /// checks transversales). Snapshot — copiar si vas a mutar durante iteración.
+        /// </summary>
+        public IEnumerable<KeyValuePair<Guid, ModifiableAttributes>> EnumerateEntries()
+        {
+            return _byEntity;
+        }
+
         // --- Lookups ------------------------------------------------------
 
         public ModifiableAttributes GetAttributes(Guid entityId)

@@ -89,10 +89,11 @@ namespace Rollgeon.Run
             ServiceLocator.AddService<InMemoryEntityRegistry>(registry, ServiceScope.Run);
 
             // 2. Enemy spawn resolver — registra spawns en InMemoryEntityRegistry
-            //    (initiative / turn order) y en AttributesManager (stat reads del AI y
-            //    pipelines de daño). Ambos apuntan al mismo ModifiableAttributes.
+            //    (initiative / turn order), AttributesManager (stat reads del AI y
+            //    pipelines de daño) y IEnemyAIRegistry (árbol clonado por enemigo).
             var attributes = ServiceLocator.GetService<AttributesManager>();
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes);
+            ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
+            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
@@ -127,8 +128,22 @@ namespace Rollgeon.Run
                 onTurnComplete = () => { };
             }
 
-            var enemyAI = new BasicEnemyAI(attributes, playerService, damagePipeline, onTurnComplete);
-            ServiceLocator.AddService<IEnemyAIHandler>(enemyAI, ServiceScope.Run);
+            // BasicEnemyAI sigue siendo el fallback cuando un enemigo no tiene AIRoot autorado.
+            var basicAI = new BasicEnemyAI(attributes, playerService, damagePipeline, onTurnComplete);
+
+            IEnemyAIHandler aiHandler;
+            if (aiRegistry != null)
+            {
+                aiHandler = new TreeDrivenEnemyAI(aiRegistry, attributes, playerService,
+                    damagePipeline, basicAI, onTurnComplete);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[RunController] IEnemyAIRegistry not registered — enemies use BasicEnemyAI fallback only.");
+                aiHandler = basicAI;
+            }
+            ServiceLocator.AddService<IEnemyAIHandler>(aiHandler, ServiceScope.Run);
 
             // 7. Exploration
             ExplorationController.CreateAndRegister();

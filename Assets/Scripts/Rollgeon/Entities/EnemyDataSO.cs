@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combos;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
@@ -95,6 +96,17 @@ namespace Rollgeon.Entities
         public List<BaseBehavior> Behaviors = new List<BaseBehavior>();
 
         // -----------------------------------------------------------------
+        // AI Decision Tree (§7.5 — Sprint04).
+        // -----------------------------------------------------------------
+
+        [Title("AI Decision Tree (§7.5)")]
+        [InfoBox("Árbol polimórfico que decide qué hace el enemigo cada turno. " +
+                 "Null/vacío = fallback al BasicEnemyAI (siempre ataca). " +
+                 "Clonado deep al spawn para evitar shared state entre instancias.")]
+        [OdinSerialize]
+        public AIDecisionNode AIRoot;
+
+        // -----------------------------------------------------------------
         // Runtime builders.
         // -----------------------------------------------------------------
 
@@ -127,6 +139,16 @@ namespace Rollgeon.Entities
                 if (clone != null) result.Add(clone);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Devuelve una copia deep del <see cref="AIRoot"/> (si hay uno autorado).
+        /// <see cref="TreeDrivenEnemyAI"/> la registra por enemigo spawned.
+        /// </summary>
+        public AIDecisionNode CreateRuntimeAIRoot()
+        {
+            if (AIRoot == null) return null;
+            return SerializationUtility.CreateCopy(AIRoot) as AIDecisionNode;
         }
 
         // ---- Odin dropdown source (same pattern as BaseComboSO) ---------
