@@ -5,6 +5,7 @@ using Patterns;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Grid;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.Dungeon.Tests
 {
