@@ -24,18 +24,7 @@ MonoBehaviour:
   RoomId: Combat
   DisplayName: Combat
   Type: 1
+  RoomPrefab: {fileID: 3358072774779011347, guid: 2c785d8f97427a540a83c937976f48d1, type: 3}
+  GridSize: {x: 1, y: 1}
+  PossibleSetups: []
   EnemyPool: {fileID: 11400000, guid: dd00474c454651149a3ef6813cda83a3, type: 2}
-  GridLayout:
-    _width: 0
-    _height: 0
-    _walkable: 
-  PlayerSpawn:
-    X: 0
-    Y: 2
-  EnemySpawnPoints:
-  - X: 5
-    Y: 1
-  - X: 5
-    Y: 3
-  - X: 7
-    Y: 2
