@@ -27,14 +27,21 @@ namespace Rollgeon.Heroes
         public bool BlockOnRepeat = true;
 
         [Title("Dice")]
+        [ToggleLeft]
+        [Tooltip("Si false, el behavior se ejecuta sin tirada de dados (ej. Movement).")]
+        public bool NeedsDiceRoll = true;
+
+        [ShowIf(nameof(NeedsDiceRoll))]
         [MinValue(1), Range(1, 5)]
         [Tooltip("Tiradas totales incluida la inicial. Ej: 3 = 1 roll + 2 rerolls gratis.")]
         public int FreeRollCount = 1;
 
+        [ShowIf(nameof(NeedsDiceRoll))]
         [ToggleLeft]
         [Tooltip("Si false, el boton Reroll no aparece tras la tirada.")]
         public bool AllowsReroll = true;
 
+        [ShowIf(nameof(NeedsDiceRoll))]
         [ToggleLeft]
         [Tooltip("Permite gastar energia para re-rolls extra mas alla del budget gratis.")]
         public bool AllowsEnergyReroll = true;

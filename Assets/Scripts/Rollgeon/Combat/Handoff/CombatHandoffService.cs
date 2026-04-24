@@ -191,59 +191,7 @@ namespace Rollgeon.Combat.Handoff
                 _playerActions.EndPlayerTurn();
             };
 
-            hud.OnBehaviorSelected = (int index) =>
-            {
-                if (_selectedBehavior != null) return;
-
-                var hero = ResolveHero();
-                if (hero == null) return;
-
-                HeroActionBehavior behavior;
-                if (index < 4)
-                    behavior = hero.Actions?.GetByIndex(index);
-                else
-                    behavior = index - 4 < hero.ContextualBehaviors.Count
-                        ? hero.ContextualBehaviors[index - 4]
-                        : null;
-
-                if (behavior == null)
-                {
-                    Debug.LogWarning($"[CombatHandoffService] Behavior index {index} not found.");
-                    return;
-                }
-
-                if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
-                {
-                    if (!tm.CanExecute(behavior, playerGuid, out var reason))
-                    {
-                        Debug.Log($"[CombatHandoffService] Cannot execute '{behavior.ActionName}': {reason}");
-                        return;
-                    }
-                }
-
-                _selectedBehavior = behavior;
-
-                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
-                {
-                    var wrapper = BuildBudgetAction(behavior);
-                    if (wrapper != null)
-                        budget.StartBudget(wrapper);
-                }
-
-                var bag = ResolvePlayerBag();
-                var roller = ResolveRoller();
-                if (bag == null || roller == null)
-                {
-                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
-                    _selectedBehavior = null;
-                    return;
-                }
-
-                _lastFaces = roller.RollAll(bag);
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
-            };
-
-            hud.OnConfirmRequested = () =>
+            void DoConfirm()
             {
                 if (_selectedBehavior == null) return;
 
@@ -305,10 +253,71 @@ namespace Rollgeon.Combat.Handoff
 
                 _lastFaces = null;
                 _selectedBehavior = null;
+            }
+
+            hud.OnBehaviorSelected = (int index) =>
+            {
+                if (_selectedBehavior != null) return;
+
+                var hero = ResolveHero();
+                if (hero == null) return;
+
+                HeroActionBehavior behavior;
+                if (index < 4)
+                    behavior = hero.Actions?.GetByIndex(index);
+                else
+                    behavior = index - 4 < hero.ContextualBehaviors.Count
+                        ? hero.ContextualBehaviors[index - 4]
+                        : null;
+
+                if (behavior == null)
+                {
+                    Debug.LogWarning($"[CombatHandoffService] Behavior index {index} not found.");
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
+                {
+                    if (!tm.CanExecute(behavior, playerGuid, out var reason))
+                    {
+                        Debug.Log($"[CombatHandoffService] Cannot execute '{behavior.ActionName}': {reason}");
+                        return;
+                    }
+                }
+
+                _selectedBehavior = behavior;
+
+                if (!behavior.NeedsDiceRoll)
+                {
+                    DoConfirm();
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                {
+                    var wrapper = BuildBudgetAction(behavior);
+                    if (wrapper != null)
+                        budget.StartBudget(wrapper);
+                }
+
+                var bag = ResolvePlayerBag();
+                var roller = ResolveRoller();
+                if (bag == null || roller == null)
+                {
+                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
+                    _selectedBehavior = null;
+                    return;
+                }
+
+                _lastFaces = roller.RollAll(bag);
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
+
+            hud.OnConfirmRequested = () => DoConfirm();
 
             hud.OnEnergyRerollRequested = () =>
             {
+                if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return;
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                     budget.TryExtraRoll(playerGuid);
 
