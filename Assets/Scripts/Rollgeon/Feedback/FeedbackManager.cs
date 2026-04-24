@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Audio;
 using Rollgeon.Entities.Behaviors;
 using UnityEngine;
 
@@ -161,8 +162,14 @@ namespace Rollgeon.Feedback
         private void DispatchSFX(FeedbackEntry entry, Vector3 position)
         {
             if (entry.AudioClip == null) return;
-            // [TODO §A] cuando exista IAudioService, rutear por ahí para respetar mixer.
-            AudioSource.PlayClipAtPoint(entry.AudioClip, position, entry.Volume);
+
+            // Routing canónico (§17.A.4): IAudioService respeta master/sfx volumes y el mixer.
+            // Fallback a PlayClipAtPoint cuando el service no está registrado — pasa en EditMode
+            // tests y en scenes sin AudioManagerBootstrap. Feature no queda rota, sólo sin mixer.
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx(entry.AudioClip, position, entry.Volume);
+            else
+                AudioSource.PlayClipAtPoint(entry.AudioClip, position, entry.Volume);
         }
 
         private void DispatchAnimation(FeedbackEntry entry, FeedbackRequest request, PlaybackHandle handle)

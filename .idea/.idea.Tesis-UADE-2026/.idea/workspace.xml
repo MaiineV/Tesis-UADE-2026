@@ -5,100 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e6b5528-be66-45c3-8267-652550d7ef45" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Resources/FloatingNumber.prefab" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Resources/FloatingNumber.prefab.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackDB.asset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackDB.asset.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackManagerBootstrap.asset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackManagerBootstrap.asset.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/PawnRegistryBootstrap.asset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/PawnRegistryBootstrap.asset.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffApplyImpulse.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffApplyImpulse.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDealDamage.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDealDamage.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffMove.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffMove.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffPlayFeedback.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffPlayFeedback.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackCallbackListener.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackCallbackListener.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackDBSO.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackDBSO.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEntry.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEntry.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEventBus.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEventBus.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManagerBootstrap.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManagerBootstrap.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackPositionResolver.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackPositionResolver.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackRequest.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackRequest.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceRuntime.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceRuntime.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceStep.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceStep.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStub.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStub.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStubBootstrap.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStubBootstrap.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackType.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackType.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FloatingNumberView.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FloatingNumberView.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/HitImpulseConsumer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/HitImpulseConsumer.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IFeedbackService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IFeedbackService.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPawnRegistry.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPawnRegistry.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPositionReader.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPositionReader.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistry.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistry.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBinding.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBinding.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBootstrap.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBootstrap.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Sounds.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Sounds/SE-Collision_03.ogg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Sounds/SE-Collision_03.ogg.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/setup/System#0300_FeedbackManagerWiring.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/setup/System#0301_PlayableCombatChecklist.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/projectSettingsUpdater.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/projectSettingsUpdater.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/setup/System#0400_AudioManagerWiring.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/core-plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/core-plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/workspace.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/workspace.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Boss.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Boss.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Goblin.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Goblin.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackBasic.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackBasic.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackSpecial.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackSpecial.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_EndTurn.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_EndTurn.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_ForceDoor.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_ForceDoor.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Health.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Health.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Move.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Move.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Classes/CH_Warrior.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Classes/CH_Warrior.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/ServiceBootstrap.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/ServiceBootstrap.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/TurnManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/TurnManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/BaseEffect.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/BaseEffect.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/DamageArgs.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/DamageArgs.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDamage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDamage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffHeal.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffHeal.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/EffectData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/EffectData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetRef.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetRef.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetSelectionResult.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetSelectionResult.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Tests/EffectsPipelineTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Tests/EffectsPipelineTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BaseBehaviorStoredValue.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BaseBehaviorStoredValue.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BehaviorValueKey.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BehaviorValueKey.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" beforeDir="false" afterPath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" afterDir="false" />
     </list>
@@ -208,7 +133,7 @@
       <workItem from="1776738161092" duration="3898000" />
       <workItem from="1776825908492" duration="5000" />
       <workItem from="1776949110055" duration="597000" />
-      <workItem from="1777048516798" duration="6142000" />
+      <workItem from="1777048516798" duration="8332000" />
     </task>
     <servers />
   </component>
