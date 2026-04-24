@@ -25,7 +25,7 @@ namespace Rollgeon.Dungeon
 
         public RoomSO Template;
 
-        /// <summary>Null hasta la primera entrada a la sala; destruido al salir.</summary>
+        /// <summary>Null si Template no tiene RoomPrefab; vive todo el piso.</summary>
         public GameObject SpawnedPrefab;
 
         public Vector3 WorldPosition;

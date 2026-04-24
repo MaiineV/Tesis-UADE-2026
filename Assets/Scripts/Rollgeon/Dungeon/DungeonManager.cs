@@ -141,10 +141,13 @@ namespace Rollgeon.Dungeon
                 }
             }
 
-            // 7. Instanciar solo la start room; seed _currentId.
+            // 7. Instanciar todas las rooms.
+            foreach (var instance in _instances.Values)
+                InstantiateRoomPrefab(instance);
+
+            // 8. Seed _currentId con la start room.
             var startId = FindStartInstanceId(cells);
             _currentId = startId;
-            InstantiateRoomPrefab(_instances[startId]);
 
             EventManager.Trigger(EventName.OnRoomEntered, startId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
@@ -252,29 +255,19 @@ namespace Rollgeon.Dungeon
         {
             if (!_instances.TryGetValue(neighborId, out var neighbor)) return false;
 
-            ExitCurrentRoom();
+            DeactivateCurrentRoomCombat();
 
             _currentId = neighborId;
-            InstantiateRoomPrefab(neighbor);
 
             EventManager.Trigger(EventName.OnRoomEntered, _currentId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
             return true;
         }
 
-        private void ExitCurrentRoom()
+        private void DeactivateCurrentRoomCombat()
         {
             var current = CurrentRoomInstance;
             if (current == null) return;
-
-            // Capture de HP enemigos vivos lo hace el resolver de §10 via
-            // suscripciones; acá solo destruimos el prefab instanciado.
-            if (current.SpawnedPrefab != null)
-            {
-                UnityEngine.Object.Destroy(current.SpawnedPrefab);
-                current.SpawnedPrefab = null;
-            }
-
             current.SpawnedEnemies.Clear();
         }
 
@@ -451,7 +444,15 @@ namespace Rollgeon.Dungeon
 
         private void ClearState()
         {
-            ExitCurrentRoom();
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.SpawnedPrefab != null)
+                {
+                    UnityEngine.Object.Destroy(instance.SpawnedPrefab);
+                    instance.SpawnedPrefab = null;
+                }
+                instance.SpawnedEnemies.Clear();
+            }
 
             if (_runtimeBossRoom != null)
             {
