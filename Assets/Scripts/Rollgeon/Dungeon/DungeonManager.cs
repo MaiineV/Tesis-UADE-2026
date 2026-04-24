@@ -25,7 +25,7 @@ namespace Rollgeon.Dungeon
         private const int MinRoomCount = 3;
         private const float DefaultTileSize = 1f;
         private const float MinShellSize = 6f;
-        private const float CellSpacing = 2f;
+        private const float CellSpacing = 0f;
 
         private static readonly Vector2Int[] CardinalSteps =
         {
