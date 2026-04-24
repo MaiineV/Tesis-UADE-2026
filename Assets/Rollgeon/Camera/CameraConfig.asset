@@ -288,3 +288,4 @@ MonoBehaviour:
   FloorViewZoomThreshold: 18
   FloorViewTweenSeconds: 0.3
   ShellColor: {r: 0.1, g: 0.1, b: 0.15, a: 0.85}
+  ShellMaterial: {fileID: 2100000, guid: bcdf48e9f2104bd4092a7f9c7ef98717, type: 2}

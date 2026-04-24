@@ -145,8 +145,8 @@ namespace Rollgeon.Combat.Handoff
                         }
                         else if (room.EnemyPool != null)
                         {
-                            var rolled = room.EnemyPool.RollForSpawns(1, rng);
-                            if (rolled.Count > 0) plan.Add(rolled[0]);
+                            var currentRolled = room.EnemyPool.RollForSpawns(1, rng);
+                            if (currentRolled.Count > 0) plan.Add(currentRolled[0]);
                         }
                     }
                     return plan;

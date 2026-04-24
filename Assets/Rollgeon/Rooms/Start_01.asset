@@ -24,4 +24,7 @@ MonoBehaviour:
   RoomId: Start01
   DisplayName: Start
   Type: 0
+  RoomPrefab: {fileID: 3358072774779011347, guid: 64a78b147076be34baf52a72e721f491, type: 3}
+  GridSize: {x: 1, y: 1}
+  PossibleSetups: []
   EnemyPool: {fileID: 0}
