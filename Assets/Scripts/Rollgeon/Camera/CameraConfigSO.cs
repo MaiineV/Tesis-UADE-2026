@@ -72,6 +72,10 @@ namespace Rollgeon.GameCamera
         [ToggleGroup(nameof(EnableFloorView))] public float FloorViewTweenSeconds = 0.3f;
         [ToggleGroup(nameof(EnableFloorView))] public Color ShellColor = new(0.1f, 0.1f, 0.15f, 0.85f);
 
+        [ToggleGroup(nameof(EnableFloorView))]
+        [InfoBox("Material para los shells del floor view. Si es null se crea uno con URP/Unlit + ShellColor.")]
+        public Material ShellMaterial;
+
         /// <summary>
         /// Mapa simétrico por default (§17.E.3). Ocluye 1 pared en cardinales
         /// y 2 en diagonales.

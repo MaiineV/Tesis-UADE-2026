@@ -96,11 +96,11 @@ namespace Rollgeon.Dungeon
                 UnityEngine.Object.Destroy(_shellRoot.gameObject);
                 _shellRoot = null;
             }
-            if (_sharedShellMaterial != null)
+            if (_sharedShellMaterial != null && (_config == null || _config.ShellMaterial != _sharedShellMaterial))
             {
                 UnityEngine.Object.Destroy(_sharedShellMaterial);
-                _sharedShellMaterial = null;
             }
+            _sharedShellMaterial = null;
         }
 
         private void OnFloorViewToggled(params object[] args)
@@ -152,9 +152,22 @@ namespace Rollgeon.Dungeon
                 _shellRoot = rootGO.transform;
             }
 
-            Color shellColor = _config != null ? _config.ShellColor : new Color(0.1f, 0.1f, 0.15f, 0.85f);
-            _sharedShellMaterial = new Material(Shader.Find("Standard"));
-            _sharedShellMaterial.color = shellColor;
+            if (_config != null && _config.ShellMaterial != null)
+            {
+                _sharedShellMaterial = _config.ShellMaterial;
+            }
+            else
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null)
+                {
+                    Debug.LogWarning(LogPrefix + "URP Unlit shader not found, falling back to Standard.");
+                    shader = Shader.Find("Standard");
+                }
+                _sharedShellMaterial = new Material(shader);
+                Color shellColor = _config != null ? _config.ShellColor : new Color(0.1f, 0.1f, 0.15f, 0.85f);
+                _sharedShellMaterial.color = shellColor;
+            }
 
             foreach (var (id, shell) in shells)
             {
