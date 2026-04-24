@@ -1,6 +1,8 @@
 using System;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
@@ -19,8 +21,6 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class ExplorationHUDViewTests
     {
-        // Fake service para que ExplorationHUDView pueda resolver un playerGuid sin
-        // depender de una implementacion real de IPlayerService.
 #pragma warning disable 67
         private sealed class FakePlayerService : IPlayerService
         {
@@ -45,28 +45,41 @@ namespace Rollgeon.UI.Tests
         private MinimapView _minimap;
         private RoomNavigationView _roomNavigation;
         private FakePlayerService _playerService;
+        private AttributesManager _attrManager;
+        private ClassHeroSO _hero;
         private Guid _playerGuid;
 
         [SetUp]
         public void Setup()
         {
             _playerGuid = Guid.NewGuid();
-            _playerService = new FakePlayerService { PlayerGuid = _playerGuid };
+
+            _hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            _hero.BaseMaxHp = 100;
+
+            _playerService = new FakePlayerService
+            {
+                PlayerGuid = _playerGuid,
+                CurrentHero = _hero
+            };
             ServiceLocator.AddService<IPlayerService>(_playerService);
 
-            // Construir la jerarquia a mano — no hay prefab. Root con ExplorationHUDView
-            // + 5 hijos, uno por sub-view. Los widgets graficos se crean en memoria
-            // (Slider/Image); para TMP evitamos TextMeshProUGUI (requiere TMP_Settings
-            // en ProjectSettings) — las sub-views tienen null-checks en _text.
+            _attrManager = new AttributesManager();
+            var attrs = new ModifiableAttributes();
+            attrs.EnsureInitialized();
+            attrs.SetAttribute<Health>(new Health(100));
+            _attrManager.Register(_playerGuid, attrs);
+            ServiceLocator.AddService<AttributesManager>(_attrManager);
+
             _hudGO = new GameObject("ExplorationHUDView");
             _hudGO.SetActive(false);
             _hud = _hudGO.AddComponent<ExplorationHUDView>();
 
             _hp = AttachChild<HealthBarView>("HealthBar", _hudGO);
-            AttachSlider(_hp, "_slider");
+            AttachFillImage(_hp, "_fillImage");
 
             _energy = AttachChild<EnergyBarView>("EnergyBar", _hudGO);
-            AttachSlider(_energy, "_slider");
+            AttachFillImage(_energy, "_fillImage");
 
             _gold = AttachChild<GoldCounterView>("Gold", _hudGO);
 
@@ -88,45 +101,61 @@ namespace Rollgeon.UI.Tests
         public void Teardown()
         {
             EventManager.ResetEventDictionary();
+            TypedEvent<DamageResolvedPayload>.Clear();
+            TypedEvent<HealResolvedPayload>.Clear();
             ServiceLocator.RemoveService<IPlayerService>();
+            ServiceLocator.RemoveService<AttributesManager>();
+            if (_attrManager != null) { _attrManager.Dispose(); _attrManager = null; }
+            if (_hero != null) UnityEngine.Object.DestroyImmediate(_hero);
             if (_hudGO != null) UnityEngine.Object.DestroyImmediate(_hudGO);
         }
 
         [Test]
-        public void BindAll_SubscribesHealthBar_EventUpdatesSlider()
+        public void BindAll_SubscribesHealthBar_DamageUpdatesFill()
         {
             _hud.BindAll(_playerGuid);
 
-            var slider = GetPrivate<Slider>(_hp, "_slider");
-            Assert.IsNotNull(slider);
+            _attrManager.SetAttributeValue<Health, int>(_playerGuid, 50);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 50,
+                WeaknessHit = false
+            });
 
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 50, 100);
-
-            Assert.AreEqual(0.5f, slider.value, 0.001f);
+            var fill = GetPrivate<Image>(_hp, "_fillImage");
+            Assert.IsNotNull(fill);
+            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f);
         }
 
         [Test]
-        public void BindAll_SubscribesEnergyBar_EventUpdatesSlider()
+        public void BindAll_SubscribesEnergyBar_EventUpdatesFill()
         {
             _hud.BindAll(_playerGuid);
 
-            var slider = GetPrivate<Slider>(_energy, "_slider");
+            var fill = GetPrivate<Image>(_energy, "_fillImage");
             EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 3, 4);
 
-            Assert.AreEqual(0.75f, slider.value, 0.001f);
+            Assert.AreEqual(0.75f, fill.fillAmount, 0.001f);
         }
 
         [Test]
         public void HealthBar_FiltersByGuid_IgnoresOtherEntities()
         {
             _hud.BindAll(_playerGuid);
-            var slider = GetPrivate<Slider>(_hp, "_slider");
-            slider.value = 0f;
+            var fill = GetPrivate<Image>(_hp, "_fillImage");
 
             var otherGuid = Guid.NewGuid();
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, otherGuid, 50, 100);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = otherGuid,
+                FinalDamage = 50,
+                WeaknessHit = false
+            });
 
-            Assert.AreEqual(0f, slider.value, 0.001f,
+            Assert.AreEqual(1f, fill.fillAmount, 0.001f,
                 "HealthBar debe filtrar por playerGuid — un evento de otra entidad no debe mutar la UI.");
         }
 
@@ -134,14 +163,30 @@ namespace Rollgeon.UI.Tests
         public void UnbindAll_StopsReceivingEvents()
         {
             _hud.BindAll(_playerGuid);
-            var slider = GetPrivate<Slider>(_hp, "_slider");
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 50, 100);
-            Assert.AreEqual(0.5f, slider.value, 0.001f);
+            var fill = GetPrivate<Image>(_hp, "_fillImage");
+
+            _attrManager.SetAttributeValue<Health, int>(_playerGuid, 50);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 50,
+                WeaknessHit = false
+            });
+            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f);
 
             _hud.UnbindAll();
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 100, 100);
 
-            Assert.AreEqual(0.5f, slider.value, 0.001f,
+            _attrManager.SetAttributeValue<Health, int>(_playerGuid, 100);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 0,
+                WeaknessHit = false
+            });
+
+            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f,
                 "Despues de UnbindAll, nuevos eventos no deben mutar la UI.");
         }
 
@@ -149,17 +194,30 @@ namespace Rollgeon.UI.Tests
         public void BindAll_IsIdempotent_NoDoubleSubscription()
         {
             _hud.BindAll(_playerGuid);
-            _hud.BindAll(_playerGuid); // re-bind — no debe duplicar handlers
+            _hud.BindAll(_playerGuid);
 
-            var slider = GetPrivate<Slider>(_hp, "_slider");
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 50, 100);
+            _attrManager.SetAttributeValue<Health, int>(_playerGuid, 50);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 50,
+                WeaknessHit = false
+            });
 
-            // Si hubiera doble subscripcion, SetValue corre 2x — pero el resultado es idempotente.
-            // Cambio: tras un Unbind manual, el valor debe volver a no actualizarse.
             _hud.UnbindAll();
-            slider.value = 0f;
-            EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 100, 100);
-            Assert.AreEqual(0f, slider.value, 0.001f,
+            var fill = GetPrivate<Image>(_hp, "_fillImage");
+            float afterUnbind = fill.fillAmount;
+
+            _attrManager.SetAttributeValue<Health, int>(_playerGuid, 100);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 0,
+                WeaknessHit = false
+            });
+            Assert.AreEqual(afterUnbind, fill.fillAmount, 0.001f,
                 "Un solo UnbindAll debe bastar — si BindAll hubiera duplicado subs, uno quedaria vivo.");
         }
 
@@ -191,14 +249,15 @@ namespace Rollgeon.UI.Tests
             return go.AddComponent<T>();
         }
 
-        private static void AttachSlider(Component host, string fieldName)
+        private static void AttachFillImage(Component host, string fieldName)
         {
-            var sliderGO = new GameObject(fieldName + "_slider");
-            sliderGO.transform.SetParent(host.transform, false);
-            var slider = sliderGO.AddComponent<Slider>();
-            slider.minValue = 0f;
-            slider.maxValue = 1f;
-            AssignPrivate(host, fieldName, slider);
+            var go = new GameObject(fieldName + "_image");
+            go.transform.SetParent(host.transform, false);
+            var img = go.AddComponent<Image>();
+            img.type = Image.Type.Filled;
+            img.fillMethod = Image.FillMethod.Horizontal;
+            img.fillAmount = 1f;
+            AssignPrivate(host, fieldName, img);
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

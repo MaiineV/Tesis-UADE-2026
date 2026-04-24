@@ -11,7 +11,7 @@ namespace Rollgeon.UI.HUD
     /// <summary>
     /// Sub-view del HUD que muestra la barra de Energia del jugador. Se suscribe a
     /// <see cref="EventName.OnPlayerEnergyChanged"/> en <see cref="Bind"/>, filtra
-    /// por <c>playerGuid</c>, y actualiza <see cref="_slider"/> + <see cref="_text"/>.
+    /// por <c>playerGuid</c>, y actualiza <see cref="_fillImage"/> + <see cref="_text"/>.
     /// </summary>
     /// <remarks>
     /// Plan §4.4. FetchInitialState lee via <see cref="IEnergyService"/> (T100a).
@@ -22,9 +22,10 @@ namespace Rollgeon.UI.HUD
         private const string LogPrefix = "[EnergyBarView] ";
 
         [Title("Energy Bar — Widget refs")]
-        [Required("Arrastrar el Slider del widget.")]
+        [Required("Arrastrar la Image (tipo Filled) del widget de energia.")]
         [SerializeField]
-        private Slider _slider;
+        [Tooltip("Image de energia con tipo Filled (Horizontal). fillAmount refleja ratio.")]
+        private Image _fillImage;
 
         [Required("Arrastrar el TextMeshProUGUI del widget.")]
         [SerializeField]
@@ -61,9 +62,9 @@ namespace Rollgeon.UI.HUD
 
         public void SetValue(int current, int max)
         {
-            if (_slider != null)
+            if (_fillImage != null)
             {
-                _slider.value = max > 0 ? (float)current / max : 0f;
+                _fillImage.fillAmount = max > 0 ? (float)current / max : 0f;
             }
             if (_text != null)
             {
