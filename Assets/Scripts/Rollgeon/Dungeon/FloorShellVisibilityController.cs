@@ -122,15 +122,7 @@ namespace Rollgeon.Dungeon
         {
             MaterializeShellsIfNeeded();
 
-            // Sala actual: visible off en floor view, on cuando volvemos al zoom normal.
             var current = _dungeon.CurrentRoomInstance;
-            if (current?.SpawnedPrefab != null)
-            {
-                current.SpawnedPrefab.SetActive(!_isFloorView);
-            }
-
-            // Shells: visibles en floor view, hidden en otro caso. La shell de la
-            // sala activa se esconde aunque estemos en floor view para no taparla.
             foreach (var (id, go) in _shellGOs)
             {
                 if (go == null) continue;
