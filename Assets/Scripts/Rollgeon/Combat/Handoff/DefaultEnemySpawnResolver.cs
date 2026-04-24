@@ -79,7 +79,7 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // 2. Primer spawn de la sala.
-            var plan = BuildSpawnPlan(room, rng);
+            var plan = BuildSpawnPlan(room, layout, rng);
             int spawnIndex = 0;
             foreach (var enemyData in plan)
             {
@@ -110,8 +110,50 @@ namespace Rollgeon.Combat.Handoff
         // Internals
         // -----------------------------------------------------------------
 
-        private List<EnemyDataSO> BuildSpawnPlan(RoomSO room, System.Random rng)
+        private List<EnemyDataSO> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
         {
+            // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
+            if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
+            {
+                var configs = new List<SpawnPointConfig>();
+                foreach (var sp in layout.EnemySpawnPoints)
+                {
+                    if (sp == null) continue;
+                    var config = sp.GetComponent<SpawnPointConfig>();
+                    if (config != null && config.SetCount > 0)
+                        configs.Add(config);
+                }
+
+                if (configs.Count > 0)
+                {
+                    int minSets = int.MaxValue;
+                    foreach (var c in configs)
+                        if (c.SetCount < minSets) minSets = c.SetCount;
+
+                    int setIndex = rng.Next(0, minSets);
+
+                    var plan = new List<EnemyDataSO>();
+                    foreach (var sp in layout.EnemySpawnPoints)
+                    {
+                        if (sp == null) continue;
+                        var config = sp.GetComponent<SpawnPointConfig>();
+                        var enemy = config != null ? config.GetEnemyForSet(setIndex) : null;
+
+                        if (enemy != null)
+                        {
+                            plan.Add(enemy);
+                        }
+                        else if (room.EnemyPool != null)
+                        {
+                            var rolled = room.EnemyPool.RollForSpawns(1, rng);
+                            if (rolled.Count > 0) plan.Add(rolled[0]);
+                        }
+                    }
+                    return plan;
+                }
+            }
+
+            // Legacy path: PossibleSetups then EnemyPool.
             if (room.PossibleSetups != null && room.PossibleSetups.Count > 0)
             {
                 var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];

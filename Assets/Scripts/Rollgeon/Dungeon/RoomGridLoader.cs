@@ -11,7 +11,7 @@ namespace Rollgeon.Dungeon
     /// cada sala. TECHNICAL.md §17.§I + §13.6.
     /// <para>
     /// Se suscribe a <see cref="EventName.OnRoomEntered"/>. Lee el
-    /// <see cref="RoomLayout.GridOverride"/> del prefab instanciado de la sala
+    /// <see cref="RoomLayout.NavGraph"/> del prefab instanciado de la sala
     /// activa y llama <see cref="IGridManager.LoadRoom"/>. Si la sala no tiene
     /// prefab instanciado (tests EditMode sin prefab), carga un snapshot vacío.
     /// </para>
@@ -62,18 +62,18 @@ namespace Rollgeon.Dungeon
             var instance = dungeon.CurrentRoomInstance;
             if (instance?.SpawnedPrefab == null)
             {
-                _grid.LoadRoom(GridSnapshot.Empty);
+                _grid.LoadRoom(new NavGraph());
                 return;
             }
 
             var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
             if (layout == null)
             {
-                _grid.LoadRoom(GridSnapshot.Empty);
+                _grid.LoadRoom(new NavGraph());
                 return;
             }
 
-            _grid.LoadRoom(layout.GridOverride, layout.GetOrigin(), layout.TileSize);
+            _grid.LoadRoom(layout.NavGraph, layout.GetOrigin(), layout.TileSize);
             RecenterCameraIfAvailable();
         }
 

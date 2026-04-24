@@ -86,7 +86,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void PlayerInRange_True_WhenWithinRange()
         {
             var grid = new GridManager();
-            grid.LoadRoom(GridSnapshot.Rect(10, 10));
+            grid.LoadRoom(NavGraph.Rect(10, 10));
             grid.Register(_self, new GridCoord(0, 0));
             grid.Register(_player, new GridCoord(1, 0));
 
@@ -100,7 +100,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void PlayerInRange_False_WhenOutsideRange()
         {
             var grid = new GridManager();
-            grid.LoadRoom(GridSnapshot.Rect(10, 10));
+            grid.LoadRoom(NavGraph.Rect(10, 10));
             grid.Register(_self, new GridCoord(0, 0));
             grid.Register(_player, new GridCoord(3, 3));
 
@@ -114,7 +114,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void PlayerInRange_Chebyshev_DifferentResult()
         {
             var grid = new GridManager();
-            grid.LoadRoom(GridSnapshot.Rect(10, 10));
+            grid.LoadRoom(NavGraph.Rect(10, 10));
             grid.Register(_self, new GridCoord(0, 0));
             grid.Register(_player, new GridCoord(2, 2)); // manhattan=4, chebyshev=2
 

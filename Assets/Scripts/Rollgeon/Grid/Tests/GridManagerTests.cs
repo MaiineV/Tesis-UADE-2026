@@ -14,7 +14,7 @@ namespace Rollgeon.Grid.Tests
         public void SetUp()
         {
             _grid = new GridManager();
-            _grid.LoadRoom(GridSnapshot.Rect(5, 5));
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
         }
 
         [Test]
@@ -24,7 +24,7 @@ namespace Rollgeon.Grid.Tests
             _grid.Register(guid, new GridCoord(1, 1));
             Assert.IsTrue(_grid.IsOccupied(new GridCoord(1, 1)));
 
-            _grid.LoadRoom(GridSnapshot.Rect(3, 3));
+            _grid.LoadRoom(NavGraph.Rect(3, 3));
             Assert.IsFalse(_grid.IsOccupied(new GridCoord(1, 1)));
             Assert.IsFalse(_grid.TryGetPosition(guid, out _));
         }
@@ -100,7 +100,7 @@ namespace Rollgeon.Grid.Tests
         {
             var walkable = Enumerable.Repeat(true, 9).ToArray();
             walkable[4] = false; // (1,1) blocked
-            _grid.LoadRoom(new GridSnapshot(3, 3, walkable));
+            _grid.LoadRoom(NavGraph.FromSnapshot(new GridSnapshot(3, 3, walkable)));
 
             var guid = Guid.NewGuid();
             _grid.Register(guid, new GridCoord(0, 0));
@@ -118,7 +118,7 @@ namespace Rollgeon.Grid.Tests
         [Test]
         public void GridToWorld_WorldToGrid_RoundTrip()
         {
-            _grid.LoadRoom(GridSnapshot.Rect(5, 5), new Vector3(10f, 0f, 20f), 2f);
+            _grid.LoadRoom(NavGraph.Rect(5, 5), new Vector3(10f, 0f, 20f), 2f);
 
             var coord = new GridCoord(3, 4);
             var world = _grid.GridToWorld(coord);

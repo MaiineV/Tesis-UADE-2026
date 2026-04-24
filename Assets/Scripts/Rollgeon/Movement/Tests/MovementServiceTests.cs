@@ -16,7 +16,7 @@ namespace Rollgeon.Movement.Tests
         public void SetUp()
         {
             _grid = new GridManager();
-            _grid.LoadRoom(GridSnapshot.Rect(5, 5));
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
             _movement = new MovementService(_grid);
         }
 
@@ -64,7 +64,7 @@ namespace Rollgeon.Movement.Tests
             var walkable = Enumerable.Repeat(true, 25).ToArray();
             // (1,2): index 2*5+1 = 11 blocked
             walkable[11] = false;
-            _grid.LoadRoom(new GridSnapshot(5, 5, walkable));
+            _grid.LoadRoom(NavGraph.FromSnapshot(new GridSnapshot(5, 5, walkable)));
 
             var tiles = _movement.GetReachableTiles(new GridCoord(2, 2), 1);
             Assert.IsFalse(tiles.Contains(new GridCoord(1, 2)));
@@ -103,7 +103,7 @@ namespace Rollgeon.Movement.Tests
             var w = new bool[25];
             for (int i = 0; i < 25; i++) w[i] = true;
             for (int y = 0; y < 5; y++) w[y * 5 + 1] = false;
-            _grid.LoadRoom(new GridSnapshot(5, 5, w));
+            _grid.LoadRoom(NavGraph.FromSnapshot(new GridSnapshot(5, 5, w)));
 
             var path = _movement.FindPath(new GridCoord(0, 0), new GridCoord(4, 0));
             Assert.AreEqual(0, path.Count);
@@ -158,7 +158,7 @@ namespace Rollgeon.Movement.Tests
             _grid.Register(guid, new GridCoord(0, 0));
 
             // (2, 2) is OOB in a 2x2 grid
-            _grid.LoadRoom(GridSnapshot.Rect(2, 2));
+            _grid.LoadRoom(NavGraph.Rect(2, 2));
             _grid.Register(guid, new GridCoord(0, 0));
 
             var ok = _movement.Move(guid, new GridCoord(5, 5));

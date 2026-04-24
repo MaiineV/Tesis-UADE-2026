@@ -22,7 +22,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             _dungeon = new FakeDungeonService();
             _grid = new GridManager();
-            SetCurrentRoom("test", GridSnapshot.Rect(4, 4));
+            SetCurrentRoom("test", NavGraph.Rect(4, 4));
         }
 
         [TearDown]
@@ -43,8 +43,8 @@ namespace Rollgeon.Dungeon.Tests
         public void Ctor_LoadsCurrentRoomGrid()
         {
             using var loader = new RoomGridLoader(_grid, _dungeon);
-            Assert.AreEqual(4, _grid.Snapshot.Width);
-            Assert.AreEqual(4, _grid.Snapshot.Height);
+            Assert.AreEqual(4, _grid.Graph.Width);
+            Assert.AreEqual(4, _grid.Graph.Height);
         }
 
         [Test]
@@ -52,12 +52,12 @@ namespace Rollgeon.Dungeon.Tests
         {
             using var loader = new RoomGridLoader(_grid, _dungeon);
 
-            SetCurrentRoom("next", GridSnapshot.Rect(6, 6));
+            SetCurrentRoom("next", NavGraph.Rect(6, 6));
 
             EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "next");
 
-            Assert.AreEqual(6, _grid.Snapshot.Width);
-            Assert.AreEqual(6, _grid.Snapshot.Height);
+            Assert.AreEqual(6, _grid.Graph.Width);
+            Assert.AreEqual(6, _grid.Graph.Height);
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace Rollgeon.Dungeon.Tests
             _dungeon.CurrentInstance = null;
             EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "ignored");
 
-            Assert.AreEqual(4, _grid.Snapshot.Width,
+            Assert.AreEqual(4, _grid.Graph.Width,
                 "Snapshot sigue siendo el original 4x4 (loader unsub'd).");
         }
 
@@ -84,7 +84,7 @@ namespace Rollgeon.Dungeon.Tests
         public void Ctor_NullDungeon_ResolvesLazilyFromServiceLocator()
         {
             using var loader = new RoomGridLoader(_grid, dungeon: null);
-            Assert.IsTrue(_grid.Snapshot.IsEmpty);
+            Assert.IsTrue(_grid.Graph.IsEmpty);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Rollgeon.Dungeon.Tests
 
             EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "bare");
 
-            Assert.IsTrue(_grid.Snapshot.IsEmpty,
+            Assert.IsTrue(_grid.Graph.IsEmpty,
                 "Sin RoomLayout en el prefab, el loader carga snapshot Empty.");
         }
 
@@ -116,7 +116,7 @@ namespace Rollgeon.Dungeon.Tests
         // Helpers
         // -----------------------------------------------------------------
 
-        private void SetCurrentRoom(string id, GridSnapshot snapshot)
+        private void SetCurrentRoom(string id, NavGraph graph)
         {
             var room = ScriptableObject.CreateInstance<RoomSO>();
             room.RoomId = id;
@@ -127,7 +127,7 @@ namespace Rollgeon.Dungeon.Tests
             _spawnedObjects.Add(prefab);
 
             var layout = prefab.AddComponent<RoomLayout>();
-            layout.GridOverride = snapshot;
+            layout.NavGraph = graph;
 
             _dungeon.CurrentInstance = new RoomInstance
             {

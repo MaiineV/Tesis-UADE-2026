@@ -21,8 +21,10 @@ namespace Rollgeon.Dungeon.Components
 
         [Min(0.01f)] public float TileSize = 1f;
 
-        [Tooltip("Grid snapshot de la sala (walkable/blocked). Empty = rectángulo sin obstáculos.")]
-        public GridSnapshot GridOverride;
+        [Tooltip("Nav graph de la sala (nodos + edges). Empty = sin restricciones.")]
+        public NavGraph NavGraph;
+
+        public NavGraphBakeSettings BakeSettings = new NavGraphBakeSettings();
 
         [Header("Spawn Points")]
         [Tooltip("Transform donde aparece el hero al entrar a la sala.")]

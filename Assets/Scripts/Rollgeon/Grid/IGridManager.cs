@@ -15,7 +15,7 @@ namespace Rollgeon.Grid
     /// </remarks>
     public interface IGridManager
     {
-        GridSnapshot Snapshot { get; }
+        NavGraph Graph { get; }
 
         /// <summary>Origen en world-space del tile (0,0). Default <see cref="Vector3.zero"/>.</summary>
         Vector3 GridOrigin { get; }
@@ -24,7 +24,7 @@ namespace Rollgeon.Grid
         float TileSize { get; }
 
         /// <summary>Carga una sala nueva. Borra ocupancia previa.</summary>
-        void LoadRoom(GridSnapshot snapshot, Vector3 origin = default, float tileSize = 1f);
+        void LoadRoom(NavGraph graph, Vector3 origin = default, float tileSize = 1f);
 
         bool InBounds(GridCoord c);
         bool IsWalkable(GridCoord c);

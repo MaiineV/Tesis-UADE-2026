@@ -12,22 +12,22 @@ namespace Rollgeon.Grid
         private readonly Dictionary<Guid, GridCoord> _entityToCoord = new Dictionary<Guid, GridCoord>();
         private readonly Dictionary<GridCoord, Guid> _coordToEntity = new Dictionary<GridCoord, Guid>();
 
-        public GridSnapshot Snapshot { get; private set; } = GridSnapshot.Empty;
+        public NavGraph Graph { get; private set; } = new NavGraph();
         public Vector3 GridOrigin { get; private set; } = Vector3.zero;
         public float TileSize { get; private set; } = 1f;
 
-        public void LoadRoom(GridSnapshot snapshot, Vector3 origin = default, float tileSize = 1f)
+        public void LoadRoom(NavGraph graph, Vector3 origin = default, float tileSize = 1f)
         {
-            Snapshot = snapshot;
+            Graph = graph ?? new NavGraph();
             GridOrigin = origin;
             TileSize = tileSize <= 0f ? 1f : tileSize;
             _entityToCoord.Clear();
             _coordToEntity.Clear();
         }
 
-        public bool InBounds(GridCoord c) => Snapshot.IsEmpty || Snapshot.InBounds(c);
+        public bool InBounds(GridCoord c) => Graph.InBounds(c);
 
-        public bool IsWalkable(GridCoord c) => Snapshot.IsWalkable(c);
+        public bool IsWalkable(GridCoord c) => Graph.HasNode(c);
 
         public bool IsOccupied(GridCoord c) => _coordToEntity.ContainsKey(c);
 
