@@ -1,94 +1,113 @@
-# UI#0012c — PlayerActionButtonsView Setup
+# UI#0012c — PlayerActionButtonsView + EndTurnButtonView Setup
 
 ## Prerequisites
 
 - **S#0012a** (CombatScreenAndHandoff) merged into `develop`.
-- **UI#0095b** (CombatHUD) merged — `CombatHUDView` must already have the
-  7 existing sub-views wired.
+- **UI#0095b** (CombatHUD) merged — `CombatHUDView` must already have
+  sub-views wired.
 - **Feature#0104** (EnergyReroll) merged — `IRerollBudgetService` must be
-  available for the Reroll button to enable.
+  available for the reroll button in `RerollCountView`.
 
 ## Overview
 
-`PlayerActionButtonsView` is a dice-first sub-view with 4 buttons that
-follow the combat flow: **Roll Dice → Reroll / Confirm Attack → End Turn**.
-It coexists with the existing `ActionButtonsView` — both can be present
-on the CombatHUD prefab simultaneously.
+The combat HUD player controls are split into 3 components:
 
-## Prefab setup
+| Component | Responsibility |
+|---|---|
+| `PlayerActionButtonsView` | 4 behavior buttons (Movement, Attack, Special, Heal) + Confirm |
+| `EndTurnButtonView` | End Turn button with its own event subscriptions |
+| `RerollCountView` | Reroll counter label + Extra Roll button (see UI#0012b) |
+
+Each follows the `Bind(playerGuid)` / `Unbind()` lifecycle pattern.
+
+## PlayerActionButtonsView — Prefab setup
 
 1. Open the **CombatHUD** prefab.
-2. Create a new child GameObject: `PlayerActionButtonsPanel`.
-3. Add the `PlayerActionButtonsView` component to it.
-4. Create 4 child `Button` GameObjects:
-   - `RollDiceButton`
-   - `RerollButton`
-   - `ConfirmAttackButton`
-   - `EndTurnButton`
-5. Create a child `TextMeshPro - Text (UI)` for the reroll label (e.g.
-   `RerollLabel`).
-6. Wire all 5 references into the `PlayerActionButtonsView` inspector:
-   - `_rollDiceButton` → `RollDiceButton`
-   - `_rerollButton` → `RerollButton`
-   - `_confirmAttackButton` → `ConfirmAttackButton`
-   - `_endTurnButton` → `EndTurnButton`
-   - `_rerollLabel` → `RerollLabel`
+2. Create (or reuse) a child GameObject: `PlayerActionButtonsPanel`.
+3. Add the `PlayerActionButtonsView` component.
+4. Create 5 child `Button` GameObjects:
+   - `MovementButton`
+   - `AttackButton`
+   - `SpecialButton`
+   - `HealButton`
+   - `ConfirmButton`
+5. Wire references in the inspector:
+   - `_movementButton` → `MovementButton`
+   - `_attackButton` → `AttackButton`
+   - `_specialButton` → `SpecialButton`
+   - `_healButton` → `HealButton`
+   - `_confirmButton` → `ConfirmButton`
+
+### Phase state machine
+
+| Phase | Behavior buttons | Confirm |
+|---|---|---|
+| `Idle` | disabled | disabled |
+| `WaitingForAction` | **enabled** | disabled |
+| `Rolled` | disabled | **enabled** |
+
+Transitions:
+- `OnTurnStarted(player)` → `WaitingForAction`
+- `OnDiceRolled(player)` → `Rolled`
+- `OnRollResolved(player)` → `WaitingForAction`
+- `OnTurnFinished(player)` → `Idle`
+
+## EndTurnButtonView — Prefab setup
+
+1. In the **CombatHUD** prefab, create a child GameObject: `EndTurnButtonPanel`.
+2. Add the `EndTurnButtonView` component.
+3. Create a child `Button`: `EndTurnBtn`.
+4. Wire `_endTurnButton` → `EndTurnBtn`.
+
+### State
+
+| Event | Button |
+|---|---|
+| `OnTurnStarted(player)` | **enabled** |
+| `OnDiceRolled(player)` | disabled (behavior in progress) |
+| `OnRollResolved(player)` | **enabled** |
+| `OnTurnFinished(player)` | disabled |
 
 ## CombatHUDView wiring
 
 1. Select the root `CombatHUDView` component on the CombatHUD prefab.
-2. Drag `PlayerActionButtonsPanel` into the new
-   `_playerActionButtons` serialized field.
-3. The `CombatHUDView` will automatically:
-   - Wire `OnRollDicePressed` → `OnRollDiceRequested` delegate
-   - Wire `OnRerollPressed` → `OnEnergyRerollRequested` delegate
-   - Wire `OnConfirmAttackPressed` → `OnConfirmAttackRequested` delegate
-   - Wire `OnEndTurnPressed` → `OnEndTurnRequested` delegate
-   - Call `Bind(playerGuid)` / `Unbind()` alongside other sub-views
+2. Drag `PlayerActionButtonsPanel` into `_playerActionButtons`.
+3. Drag `EndTurnButtonPanel` into `_endTurnButtonView`.
+4. The `CombatHUDView` automatically wires:
+   - `PlayerActionButtonsView.OnConfirmPressed` → `OnConfirmRequested` delegate
+   - `PlayerActionButtonsView.OnBehaviorSelected` → `OnBehaviorSelected` delegate
+   - `EndTurnButtonView.OnEndTurnPressed` → `OnEndTurnRequested` delegate
+   - `RerollCountView.OnExtraRollPressed` → `OnEnergyRerollRequested` delegate
+5. `BindAll` / `UnbindAll` propagates to all sub-views including the new
+   `EndTurnButtonView`.
 
-## Coexistence with ActionButtonsView
+## RerollCountView — optional cost label
 
-Both `ActionButtonsView` and `PlayerActionButtonsView` can be active at
-the same time. They listen to different event combinations:
+If you want the reroll button to show "Free" / "1E" next to it:
 
-| Feature | ActionButtonsView | PlayerActionButtonsView |
-|---|---|---|
-| Attack button | Yes (gated by ActionDef) | No |
-| Roll Dice button | No | Yes |
-| Reroll button | Yes (energy reroll) | Yes (reroll after roll) |
-| Confirm Attack | No | Yes |
-| End Turn | Yes | Yes |
-| Phase state machine | No (binary isPlayerTurn) | Yes (Idle→WaitingForRoll→Rolled→Resolved) |
-
-If only one panel is desired, leave the other's serialized field as
-`null` in `CombatHUDView` — the null-check pattern skips it gracefully.
-
-## CombatController integration
-
-The `CombatController` must set the new delegates on `CombatHUDView`
-after pushing the screen:
-
-```csharp
-hudView.OnRollDiceRequested = () => { /* trigger roll in FSM */ };
-hudView.OnConfirmAttackRequested = () => { /* confirm attack in FSM */ };
-```
-
-The `OnEnergyRerollRequested` and `OnEndTurnRequested` delegates are
-shared with `ActionButtonsView` — they are already wired.
+1. Create a child `TextMeshPro - Text (UI)`: `CostLabel`.
+2. Wire `_costLabel` → `CostLabel` in `RerollCountView`.
+3. Leave `null` to skip cost display.
 
 ## Verification
 
 1. Enter Play mode and start a combat encounter.
-2. Verify all 4 buttons start **disabled** (Idle phase).
-3. When the player's turn starts, **Roll Dice** and **End Turn** should
-   enable.
-4. Click **Roll Dice** — it should disable; **Confirm Attack** and
-   **End Turn** should enable. **Reroll** enables only if
-   `IRerollBudgetService` reports availability.
-5. Click **Confirm Attack** — all buttons should disable (Resolved phase).
-6. When the turn ends, all buttons return to disabled (Idle).
-7. Run EditMode tests:
+2. Verify all buttons start **disabled** (Idle phase).
+3. When the player's turn starts:
+   - 4 behavior buttons enable, Confirm stays disabled.
+   - End Turn enables.
+4. Select a behavior (e.g. Attack) → dice roll:
+   - Behavior buttons disable, Confirm enables.
+   - End Turn disables during roll.
+   - Reroll counter shows "0/2" (or similar per FreeRollCount).
+5. Click reroll → counter updates to "1/2", cost label shows "Free" or "1E".
+6. Click Confirm → all buttons reset to WaitingForAction.
+   - End Turn re-enables.
+   - Counter resets to "-/-".
+7. Click End Turn → all buttons return to Idle.
+8. Run EditMode tests:
    ```
-   Unity → Window → General → Test Runner → EditMode → PlayerActionButtonsViewTests → Run All
+   Unity → Window → General → Test Runner → EditMode → Run All
    ```
-   All 14 tests should pass.
+   Expected: `PlayerActionButtonsViewTests` (11), `EndTurnButtonViewTests` (10),
+   `RerollCountViewTests` (7), `CombatHUDViewTests` (4) — all pass.
