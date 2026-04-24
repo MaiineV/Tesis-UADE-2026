@@ -80,6 +80,9 @@ MonoBehaviour:
     - Name: BlockOnRepeat
       Entry: 5
       Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
     - Name: FreeRollCount
       Entry: 3
       Data: 1
@@ -162,6 +165,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -205,6 +217,9 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
       Entry: 5
       Data: true
     - Name: FreeRollCount
@@ -289,6 +304,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -331,6 +355,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -370,6 +403,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -407,6 +449,15 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
       Entry: 5
       Data: false
     - Name: TargetQuery
@@ -455,6 +506,9 @@ MonoBehaviour:
       Entry: 3
       Data: 2
     - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
       Entry: 5
       Data: true
     - Name: FreeRollCount
@@ -542,6 +596,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -584,6 +647,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -623,6 +695,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 6
       Data: 
@@ -660,6 +741,15 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
       Entry: 5
       Data: false
     - Name: TargetQuery
@@ -710,6 +800,9 @@ MonoBehaviour:
     - Name: BlockOnRepeat
       Entry: 5
       Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
     - Name: FreeRollCount
       Entry: 3
       Data: 1
@@ -792,6 +885,15 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: true
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 7
       Data: 47|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
@@ -838,6 +940,15 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: false
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: AutoAccept
       Entry: 5
       Data: false
     - Name: TargetQuery
@@ -903,48 +1014,52 @@ MonoBehaviour:
       ActionName: Movement
       EnergyCost: 1
       BlockOnRepeat: 1
+      NeedsDiceRoll: 0
       FreeRollCount: 1
       AllowsReroll: 0
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 1893612470269902928
+      - rid: 6161477909521629416
     BaseAttack:
       Trigger: 0
       AllowedPhases: -3
       ActionName: Base Attack
       EnergyCost: 1
       BlockOnRepeat: 1
+      NeedsDiceRoll: 1
       FreeRollCount: 3
       AllowsReroll: 1
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 1893612470269902929
+      - rid: 6161477909521629417
     SpecialAttack:
       Trigger: 0
       AllowedPhases: -3
       ActionName: Special Attack
       EnergyCost: 2
       BlockOnRepeat: 1
+      NeedsDiceRoll: 1
       FreeRollCount: 3
       AllowsReroll: 1
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 1893612470269902930
+      - rid: 6161477909521629418
     Healing:
       Trigger: 0
       AllowedPhases: -1
       ActionName: Healing
       EnergyCost: 2
       BlockOnRepeat: 1
+      NeedsDiceRoll: 0
       FreeRollCount: 1
       AllowsReroll: 0
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 1893612470269902931
+      - rid: 6161477909521629419
   ContextualBehaviors: []
   BaseMaxHp: 10
   BaseSpeed: 5
@@ -957,190 +1072,43 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 1893612470269902928
+    - rid: 6161477909521629416
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612470269902945
-    - rid: 1893612470269902929
+        - rid: 6161477909521629420
+    - rid: 6161477909521629417
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612470269902934
-        - rid: 1893612470269902935
-        - rid: 1893612470269902936
-        - rid: 1893612470269902937
-    - rid: 1893612470269902930
+        - rid: 6161477909521629421
+        - rid: 6161477909521629422
+        - rid: 6161477909521629423
+        - rid: 6161477909521629424
+    - rid: 6161477909521629418
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
         - rid: -2
-        - rid: 1893612470269902939
-        - rid: 1893612470269902940
-        - rid: 1893612470269902941
-        - rid: 1893612470269902942
-    - rid: 1893612470269902931
+        - rid: 6161477909521629425
+        - rid: 6161477909521629426
+        - rid: 6161477909521629427
+        - rid: 6161477909521629428
+    - rid: 6161477909521629419
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612470269902932
-        - rid: 1893612470269902943
-    - rid: 1893612470269902932
-      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 1
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 1
-          TargetQuery:
-            rid: 1893612470269902933
-        _baseAmount: 5
-        _isPercentOfMax: 0
-        _sourceTag: 
-    - rid: 1893612470269902933
-      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 
-    - rid: 1893612470269902934
-      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _baseAmount: 10
-        _attackKind: 1
-    - rid: 1893612470269902935
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: hit.basic
-    - rid: 1893612470269902936
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: hit.impulse
-    - rid: 1893612470269902937
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: sfx.hit
-    - rid: 1893612470269902939
-      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _baseAmount: 10
-        _attackKind: 1
-    - rid: 1893612470269902940
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: hit.basic
-    - rid: 1893612470269902941
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: hit.impulse
-    - rid: 1893612470269902942
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: sfx.hit
-    - rid: 1893612470269902943
-      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 0
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: -2
-        _feedbackId: heal.basic
-    - rid: 1893612470269902945
+        - rid: 6161477909521629429
+        - rid: 6161477909521629430
+    - rid: 6161477909521629420
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1151,5 +1119,185 @@ MonoBehaviour:
           IsSkippable: 0
           RequireEmptySlot: 1
           RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 4
+          AutoAccept: 1
           TargetQuery:
             rid: -2
+    - rid: 6161477909521629421
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _baseAmount: 10
+        _attackKind: 1
+    - rid: 6161477909521629422
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: hit.basic
+    - rid: 6161477909521629423
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: hit.impulse
+    - rid: 6161477909521629424
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: sfx.hit
+    - rid: 6161477909521629425
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _baseAmount: 10
+        _attackKind: 1
+    - rid: 6161477909521629426
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: hit.basic
+    - rid: 6161477909521629427
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: hit.impulse
+    - rid: 6161477909521629428
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: sfx.hit
+    - rid: 6161477909521629429
+      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 1
+          IsGlobal: 0
+          Range: 1
+          AutoAccept: 0
+          TargetQuery:
+            rid: 6161477909521629431
+        _baseAmount: 5
+        _isPercentOfMax: 0
+        _sourceTag: 
+    - rid: 6161477909521629430
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 0
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 0
+          AutoAccept: 0
+          TargetQuery:
+            rid: -2
+        _feedbackId: heal.basic
+    - rid: 6161477909521629431
+      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
