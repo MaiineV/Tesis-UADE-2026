@@ -155,6 +155,9 @@ namespace Rollgeon.Combat.Handoff
             if (_grid != null) _grid.Register(id, coord);
             if (_visuals != null) _visuals.SpawnEnemy(id, enemyData, coord);
 
+            if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
+                pawn.HealthBar.Initialize(id, enemyData.BaseHP, enemyData.BaseHP);
+
             return id;
         }
 
@@ -169,6 +172,9 @@ namespace Rollgeon.Combat.Handoff
             {
                 health.Value = System.Math.Max(0, state.CurrentHP);
             }
+
+            if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
+                pawn.HealthBar.Initialize(id, System.Math.Max(0, state.CurrentHP), enemyData.BaseHP);
 
             return id;
         }

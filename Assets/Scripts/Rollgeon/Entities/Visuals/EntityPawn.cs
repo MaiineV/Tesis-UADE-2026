@@ -17,6 +17,11 @@ namespace Rollgeon.Entities.Visuals
     [AddComponentMenu("Rollgeon/Entities/Entity Pawn")]
     public sealed class EntityPawn : MonoBehaviour
     {
+        [SerializeField, Tooltip("Barra de HP world-space. Null en heroes o pawns sin barra.")]
+        private WorldSpaceHealthBar _healthBar;
+
+        public WorldSpaceHealthBar HealthBar => _healthBar;
+
         public Guid EntityGuid { get; private set; }
         public PawnKind Kind { get; private set; }
 
