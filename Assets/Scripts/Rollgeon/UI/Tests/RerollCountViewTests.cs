@@ -8,11 +8,6 @@ using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tests
 {
-    /// <summary>
-    /// Verifica <see cref="RerollCountView"/>: sin servicio muestra fallback, el
-    /// evento legacy <c>OnRerollBudgetChanged</c> actualiza el label filtrando por
-    /// playerGuid. Plan §3.10.
-    /// </summary>
     [TestFixture]
     public class RerollCountViewTests
     {
@@ -60,22 +55,38 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnRerollBudgetChanged_ForPlayer_DoesNotThrow()
+        public void OnDiceRolled_Player_DoesNotThrow()
         {
             _view.Bind(_playerGuid);
-
             Assert.DoesNotThrow(() =>
-                EventManager.Trigger(EventName.OnRerollBudgetChanged, _playerGuid, 1, 3));
+                EventManager.Trigger(EventName.OnDiceRolled, _playerGuid));
         }
 
         [Test]
-        public void OnRerollBudgetChanged_OtherPlayer_IsIgnored()
+        public void OnDiceRolled_OtherPlayer_IsIgnored()
         {
             _view.Bind(_playerGuid);
-            var otherGuid = Guid.NewGuid();
-
             Assert.DoesNotThrow(() =>
-                EventManager.Trigger(EventName.OnRerollBudgetChanged, otherGuid, 2, 3));
+                EventManager.Trigger(EventName.OnDiceRolled, Guid.NewGuid()));
+        }
+
+        [Test]
+        public void OnRollResolved_Player_DisablesButton()
+        {
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
+            Assert.IsFalse(_extraRoll.interactable,
+                "Tras OnRollResolved, el boton queda disabled (budget terminado).");
+        }
+
+        [Test]
+        public void Unbind_ThenDiceRolled_NoEffect()
+        {
+            _view.Bind(_playerGuid);
+            _view.Unbind();
+            Assert.DoesNotThrow(() =>
+                EventManager.Trigger(EventName.OnDiceRolled, _playerGuid),
+                "Tras Unbind, el evento no debe tener efecto.");
         }
 
         [Test]

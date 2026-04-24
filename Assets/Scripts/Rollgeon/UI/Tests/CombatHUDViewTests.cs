@@ -41,6 +41,7 @@ namespace Rollgeon.UI.Tests
         private RerollCountView _rerollCount;
         private FloatingDamageSpawner _floatingDamage;
         private PlayerActionButtonsView _playerActionButtons;
+        private EndTurnButtonView _endTurnButtonView;
         private Guid _playerGuid;
 
         [SetUp]
@@ -59,6 +60,7 @@ namespace Rollgeon.UI.Tests
             _rerollCount = AttachChild<RerollCountView>("RerollCount", _hudGO);
             _floatingDamage = AttachChild<FloatingDamageSpawner>("FloatingDamage", _hudGO);
             _playerActionButtons = AttachChild<PlayerActionButtonsView>("PlayerActionButtons", _hudGO);
+            _endTurnButtonView = AttachChild<EndTurnButtonView>("EndTurnButton", _hudGO);
 
             AssignPrivate(_hud, "_turnQueue", _turnQueue);
             AssignPrivate(_hud, "_comboIndicator", _comboIndicator);
@@ -66,6 +68,7 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_hud, "_rerollCount", _rerollCount);
             AssignPrivate(_hud, "_floatingDamage", _floatingDamage);
             AssignPrivate(_hud, "_playerActionButtons", _playerActionButtons);
+            AssignPrivate(_hud, "_endTurnButtonView", _endTurnButtonView);
         }
 
         [TearDown]

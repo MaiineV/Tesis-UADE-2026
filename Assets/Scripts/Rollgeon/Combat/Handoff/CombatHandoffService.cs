@@ -5,7 +5,6 @@ using Rollgeon.Combat.Actions;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Dungeon;
-using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
@@ -220,7 +219,6 @@ namespace Rollgeon.Combat.Handoff
                 }
 
                 _selectedBehavior = behavior;
-                hud.NotifyBehaviorAllowsReroll(behavior.AllowsReroll);
 
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                 {
@@ -275,48 +273,6 @@ namespace Rollgeon.Combat.Handoff
 
                 _lastFaces = null;
                 _selectedBehavior = null;
-            };
-
-            // Legacy: keep OnRollDiceRequested wired for backward compat
-            hud.OnRollDiceRequested = () =>
-            {
-                if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
-                    && ServiceLocator.TryGetService<IRerollBudgetService>(out var budget)
-                    && catalog != null && budget != null)
-                {
-                    var action = catalog.GetById("attack.basic");
-                    if (action != null)
-                        budget.StartBudget(action);
-                }
-
-                var bag = ResolvePlayerBag();
-                var roller = ResolveRoller();
-                if (bag == null || roller == null) return;
-
-                _lastFaces = roller.RollAll(bag);
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
-            };
-
-            hud.OnConfirmAttackRequested = () =>
-            {
-                if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
-                    && ServiceLocator.TryGetService<TurnManager>(out var tm)
-                    && catalog != null && tm != null)
-                {
-                    var action = catalog.GetById("attack.basic");
-                    if (action != null)
-                    {
-                        var ctx = new EffectContext { SourceGuid = playerGuid, TargetGuid = firstEnemyId };
-                        tm.TryExecute(action, playerGuid, ctx);
-                    }
-                }
-                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget2) && budget2 != null)
-                    budget2.EndBudget();
-
-                var resolved = _lastFaces ?? Array.Empty<int>();
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
-                _lastFaces = null;
-                _playerActions.EndPlayerTurn();
             };
 
             hud.OnEnergyRerollRequested = () =>
@@ -374,9 +330,18 @@ namespace Rollgeon.Combat.Handoff
         {
             var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
             wrapper.ActionId = behavior.ActionName;
-            wrapper.FreeRollCount = behavior.FreeRollCount;
-            wrapper.AllowsEnergyReroll = behavior.AllowsEnergyReroll;
             wrapper.EnergyCost = behavior.EnergyCost;
+
+            if (behavior.AllowsReroll)
+            {
+                wrapper.FreeRollCount = behavior.FreeRollCount;
+                wrapper.AllowsEnergyReroll = behavior.AllowsEnergyReroll;
+            }
+            else
+            {
+                wrapper.FreeRollCount = 1;
+                wrapper.AllowsEnergyReroll = false;
+            }
             return wrapper;
         }
 

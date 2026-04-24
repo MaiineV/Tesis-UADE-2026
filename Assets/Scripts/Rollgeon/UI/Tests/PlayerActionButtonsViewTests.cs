@@ -8,19 +8,12 @@ using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tests
 {
-    /// <summary>
-    /// Verifica <see cref="PlayerActionButtonsView"/>: los botones se habilitan/deshabilitan
-    /// segun la fase behavior-first (Idle, WaitingForAction, Rolled).
-    /// </summary>
     [TestFixture]
     public class PlayerActionButtonsViewTests
     {
         private GameObject _go;
         private PlayerActionButtonsView _view;
-        private Button _rollDice;
-        private Button _reroll;
-        private Button _confirmAttack;
-        private Button _endTurn;
+        private Button _confirm;
         private Guid _playerGuid;
 
         [SetUp]
@@ -31,17 +24,10 @@ namespace Rollgeon.UI.Tests
             _go = new GameObject("PlayerActionButtons");
             _view = _go.AddComponent<PlayerActionButtonsView>();
 
-            _rollDice = CreateButton("RollDiceBtn", _go);
-            _reroll = CreateButton("RerollBtn", _go);
-            _confirmAttack = CreateButton("ConfirmBtn", _go);
-            _endTurn = CreateButton("EndTurnBtn", _go);
+            _confirm = CreateButton("ConfirmBtn", _go);
 
-            AssignPrivate(_view, "_rollDiceButton", _rollDice);
-            AssignPrivate(_view, "_rerollButton", _reroll);
-            AssignPrivate(_view, "_confirmAttackButton", _confirmAttack);
-            AssignPrivate(_view, "_endTurnButton", _endTurn);
+            AssignPrivate(_view, "_confirmButton", _confirm);
 
-            // Awake ran before fields were assigned; re-invoke to wire onClick listeners
             var awake = typeof(PlayerActionButtonsView).GetMethod("Awake",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             awake?.Invoke(_view, null);
@@ -59,22 +45,16 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable, "RollDice inicia disabled (Idle).");
-            Assert.IsFalse(_reroll.interactable, "Reroll inicia disabled.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm inicia disabled.");
-            Assert.IsFalse(_endTurn.interactable, "EndTurn inicia disabled.");
+            Assert.IsFalse(_confirm.interactable, "Confirm inicia disabled.");
         }
 
         [Test]
-        public void OnTurnStarted_Player_EnablesBehaviorsAndEndTurn()
+        public void OnTurnStarted_Player_EnablesBehaviors()
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
 
-            Assert.IsTrue(_rollDice.interactable, "Legacy RollDice enabled en WaitingForAction.");
-            Assert.IsFalse(_reroll.interactable, "Reroll disabled en WaitingForAction.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en WaitingForAction.");
-            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en WaitingForAction.");
+            Assert.IsFalse(_confirm.interactable, "Confirm disabled en WaitingForAction.");
         }
 
         [Test]
@@ -83,33 +63,17 @@ namespace Rollgeon.UI.Tests
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
 
-            Assert.IsFalse(_rollDice.interactable);
-            Assert.IsFalse(_reroll.interactable);
-            Assert.IsFalse(_confirmAttack.interactable);
-            Assert.IsFalse(_endTurn.interactable);
+            Assert.IsFalse(_confirm.interactable);
         }
 
         [Test]
-        public void OnDiceRolled_Player_DisablesBehaviorsEnablesConfirm()
+        public void OnDiceRolled_Player_EnablesConfirm()
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
             EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable, "Legacy RollDice disabled en Rolled.");
-            Assert.IsTrue(_confirmAttack.interactable, "Confirm enabled en Rolled.");
-            Assert.IsFalse(_endTurn.interactable, "EndTurn disabled en Rolled (behavior in progress).");
-        }
-
-        [Test]
-        public void OnDiceRolled_Player_RerollDisabledWithoutService()
-        {
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-
-            Assert.IsFalse(_reroll.interactable,
-                "Sin IRerollBudgetService registrado, reroll queda disabled.");
+            Assert.IsTrue(_confirm.interactable, "Confirm enabled en Rolled.");
         }
 
         [Test]
@@ -117,14 +81,10 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            Assert.IsTrue(_rollDice.interactable);
 
             EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable, "RollDice disabled tras TurnFinished.");
-            Assert.IsFalse(_reroll.interactable, "Reroll disabled tras TurnFinished.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled tras TurnFinished.");
-            Assert.IsFalse(_endTurn.interactable, "EndTurn disabled tras TurnFinished.");
+            Assert.IsFalse(_confirm.interactable, "Confirm disabled tras TurnFinished.");
         }
 
         [Test]
@@ -135,9 +95,8 @@ namespace Rollgeon.UI.Tests
 
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable,
+            Assert.IsFalse(_confirm.interactable,
                 "Tras Unbind, OnTurnStarted no debe tener efecto.");
-            Assert.IsFalse(_endTurn.interactable);
         }
 
         [Test]
@@ -147,11 +106,12 @@ namespace Rollgeon.UI.Tests
             _view.Bind(_playerGuid);
 
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            Assert.IsTrue(_rollDice.interactable, "Tras doble Bind, un solo handler activo.");
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+            Assert.IsTrue(_confirm.interactable, "Tras doble Bind, un solo handler activo.");
 
             _view.Unbind();
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            Assert.IsFalse(_rollDice.interactable,
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+            Assert.IsFalse(_confirm.interactable,
                 "Tras Unbind del doble Bind, no quedan handlers colgados.");
         }
 
@@ -159,53 +119,24 @@ namespace Rollgeon.UI.Tests
         public void OnDisable_Unbinds()
         {
             _view.Bind(_playerGuid);
-            // SendMessage pega contra la assertion interna de Unity
-            // (ShouldRunBehaviour) en EditMode — invocamos OnDisable directo via
-            // reflection para saltar esa check.
             var onDisable = typeof(PlayerActionButtonsView).GetMethod("OnDisable",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(onDisable, "OnDisable method not found on PlayerActionButtonsView.");
             onDisable.Invoke(_view, null);
 
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            Assert.IsFalse(_rollDice.interactable,
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+            Assert.IsFalse(_confirm.interactable,
                 "OnDisable desuscribe; el evento no tiene efecto.");
-        }
-
-        [Test]
-        public void RollDiceButton_Click_InvokesEvent()
-        {
-            bool fired = false;
-            _view.OnRollDicePressed.AddListener(() => fired = true);
-            _rollDice.onClick.Invoke();
-            Assert.IsTrue(fired, "OnRollDicePressed debe dispararse al clickear RollDice.");
-        }
-
-        [Test]
-        public void RerollButton_Click_InvokesEvent()
-        {
-            bool fired = false;
-            _view.OnRerollPressed.AddListener(() => fired = true);
-            _reroll.onClick.Invoke();
-            Assert.IsTrue(fired, "OnRerollPressed debe dispararse al clickear Reroll.");
         }
 
         [Test]
         public void ConfirmButton_Click_InvokesEvent()
         {
             bool fired = false;
-            _view.OnConfirmAttackPressed.AddListener(() => fired = true);
-            _confirmAttack.onClick.Invoke();
-            Assert.IsTrue(fired, "OnConfirmAttackPressed debe dispararse al clickear Confirm.");
-        }
-
-        [Test]
-        public void EndTurnButton_Click_InvokesEvent()
-        {
-            bool fired = false;
-            _view.OnEndTurnPressed.AddListener(() => fired = true);
-            _endTurn.onClick.Invoke();
-            Assert.IsTrue(fired, "OnEndTurnPressed debe dispararse al clickear EndTurn.");
+            _view.OnConfirmPressed.AddListener(() => fired = true);
+            _confirm.onClick.Invoke();
+            Assert.IsTrue(fired, "OnConfirmPressed debe dispararse al clickear Confirm.");
         }
 
         [Test]
@@ -214,14 +145,28 @@ namespace Rollgeon.UI.Tests
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
             EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-            Assert.IsTrue(_confirmAttack.interactable);
+            Assert.IsTrue(_confirm.interactable);
 
             EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
 
-            Assert.IsTrue(_rollDice.interactable, "Legacy RollDice enabled en WaitingForAction.");
-            Assert.IsFalse(_reroll.interactable, "Reroll disabled en WaitingForAction.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en WaitingForAction.");
-            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en WaitingForAction.");
+            Assert.IsFalse(_confirm.interactable, "Confirm disabled en WaitingForAction.");
+        }
+
+        [Test]
+        public void BehaviorSelected_FiresDelegate()
+        {
+            int selectedIndex = -1;
+            _view.OnBehaviorSelected = (idx) => selectedIndex = idx;
+
+            var movement = CreateButton("MovementBtn", _go);
+            AssignPrivate(_view, "_movementButton", movement);
+
+            var awake = typeof(PlayerActionButtonsView).GetMethod("Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            awake?.Invoke(_view, null);
+
+            movement.onClick.Invoke();
+            Assert.AreEqual(0, selectedIndex, "Movement click debe invocar OnBehaviorSelected(0).");
         }
 
         private static Button CreateButton(string name, GameObject parent)

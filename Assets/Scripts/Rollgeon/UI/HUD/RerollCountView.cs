@@ -12,8 +12,8 @@ namespace Rollgeon.UI.HUD
     /// <summary>
     /// Sub-view que muestra "{used}/{cap}" rerolls + un boton "extra roll (1E)".
     /// Consume <see cref="IRerollBudgetService"/> via <see cref="Patterns.ServiceLocator"/>
-    /// y escucha <see cref="EventName.OnRerollBudgetChanged"/> + el evento tipado
-    /// <see cref="IRerollBudgetService.OnRerollStarted"/>.
+    /// y escucha <see cref="EventName.OnDiceRolled"/> / <see cref="EventName.OnRollResolved"/>
+    /// + el evento tipado <see cref="IRerollBudgetService.OnRerollStarted"/>.
     /// Plan §3.7.
     /// </summary>
     /// <remarks>
@@ -46,6 +46,10 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Texto fallback cuando no hay IRerollBudgetService.")]
         private string _fallbackText = "-/-";
 
+        [SerializeField]
+        [Tooltip("Label opcional de costo del proximo reroll (ej. 'Free', '1E'). Null = skip.")]
+        private TextMeshProUGUI _costLabel;
+
         [Title("Reroll Count — Events")]
         [SerializeField]
         private UnityEvent _onExtraRollPressed = new UnityEvent();
@@ -76,10 +80,9 @@ namespace Rollgeon.UI.HUD
             if (_bound) Unbind();
             _playerGuid = playerGuid;
 
-            // Legacy stub event (T104 puede o no emitirlo).
-            EventManager.Subscribe(EventName.OnRerollBudgetChanged, HandleBudgetChangedLegacy);
+            EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
 
-            // Subscripcion typed al servicio si esta registrado.
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out _budget) && _budget != null)
             {
                 _onRerollStartedTyped = HandleRerollStartedTyped;
@@ -94,13 +97,15 @@ namespace Rollgeon.UI.HUD
             _bound = true;
             RefreshLabel();
             RefreshButtonInteractable();
+            RefreshCostLabel();
         }
 
         public void Unbind()
         {
             if (!_bound) return;
 
-            EventManager.UnSubscribe(EventName.OnRerollBudgetChanged, HandleBudgetChangedLegacy);
+            EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
 
             if (_budget != null && _onRerollStartedTyped != null)
             {
@@ -143,15 +148,24 @@ namespace Rollgeon.UI.HUD
             _onExtraRollPressed?.Invoke();
         }
 
-        private void HandleBudgetChangedLegacy(params object[] args)
+        private void HandleDiceRolled(params object[] args)
         {
-            // [STUB T104] schema: [Guid playerGuid, int used, int cap]
-            if (args == null || args.Length < 3) return;
-            if (!(args[0] is Guid guid) || guid != _playerGuid) return;
-            if (!(args[1] is int used) || !(args[2] is int cap)) return;
-
-            SetCount(used, cap);
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
+            if (_budget == null)
+                ServiceLocator.TryGetService<IRerollBudgetService>(out _budget);
+            RefreshLabel();
             RefreshButtonInteractable();
+            RefreshCostLabel();
+        }
+
+        private void HandleRollResolved(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
+            SetFallback();
+            RefreshCostLabel();
+            if (_extraRollButton != null) _extraRollButton.interactable = false;
         }
 
         private void HandleRerollStartedTyped(RerollStartedPayload payload)
@@ -159,6 +173,7 @@ namespace Rollgeon.UI.HUD
             if (payload.PlayerGuid != _playerGuid) return;
             RefreshLabel();
             RefreshButtonInteractable();
+            RefreshCostLabel();
         }
 
         // ======================================================================
@@ -172,12 +187,29 @@ namespace Rollgeon.UI.HUD
                 SetFallback();
                 return;
             }
-            int used = _budget.Current.PaidRollsUsed;
-            int cap = _budget.Current.FreeRollsRemaining + _budget.Current.PaidRollsUsed;
-            // Nota: el "cap" real (tope de rerolls) depende del ActionDefinitionSO.FreeRollCount;
-            // lo aproximamos con used+remaining como proxy visual. T104 puede exponer un
-            // getter especifico y entonces se reemplaza.
-            SetCount(used, cap);
+            var action = _budget.Current.Action;
+            int initialFree = action != null ? Math.Max(0, action.FreeRollCount - 1) : 0;
+            int freeConsumed = initialFree - _budget.Current.FreeRollsRemaining;
+            if (freeConsumed < 0) freeConsumed = 0;
+            int consumed = freeConsumed + _budget.Current.PaidRollsUsed;
+            SetCount(consumed, initialFree);
+        }
+
+        private void RefreshCostLabel()
+        {
+            if (_costLabel == null) return;
+            if (_budget == null)
+            {
+                _costLabel.text = "";
+                return;
+            }
+            var query = _budget.QueryExtraRoll(_playerGuid);
+            if (query.IsFreeRoll)
+                _costLabel.text = "Free";
+            else if (query.CostsEnergy)
+                _costLabel.text = "1E";
+            else
+                _costLabel.text = "";
         }
 
         private void RefreshButtonInteractable()

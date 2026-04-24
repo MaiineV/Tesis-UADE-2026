@@ -20,11 +20,11 @@ namespace Rollgeon.UI.Screens
     /// sigue consumiendo eventos (<c>OnLoseFocus</c> / <c>OnGainFocus</c> no-op).
     /// </para>
     /// <para>
-    /// <b>Dispatch de acciones</b>. Los botones del <see cref="PlayerActionButtonsView"/>
-    /// disparan <see cref="UnityEngine.Events.UnityEvent"/>s que wireamos en
-    /// <c>Awake</c> a los delegates publicos <see cref="OnRollDiceRequested"/>,
-    /// <see cref="OnConfirmAttackRequested"/>, <see cref="OnEnergyRerollRequested"/>,
-    /// <see cref="OnEndTurnRequested"/>. El <c>CombatController</c> los cablea
+    /// <b>Dispatch de acciones</b>. Los botones de las sub-views disparan
+    /// <see cref="UnityEngine.Events.UnityEvent"/>s que wireamos en <c>Awake</c>
+    /// a los delegates publicos <see cref="OnEnergyRerollRequested"/>,
+    /// <see cref="OnEndTurnRequested"/>, <see cref="OnBehaviorSelected"/>,
+    /// <see cref="OnConfirmRequested"/>. El <c>CombatController</c> los cablea
     /// al hacer push (setup doc §8.7).
     /// </para>
     /// <para>
@@ -72,6 +72,10 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private EnergyBarView _energyBar;
 
+        [Required("Arrastrar EndTurnButtonView.")]
+        [SerializeField]
+        private EndTurnButtonView _endTurnButtonView;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -104,12 +108,6 @@ namespace Rollgeon.UI.Screens
         /// <summary>Delegate que dispara "end turn". Seteado por <c>CombatController</c>.</summary>
         public Action OnEndTurnRequested;
 
-        /// <summary>Delegate que dispara "roll dice" en la FSM. Seteado por <c>CombatController</c>.</summary>
-        public Action OnRollDiceRequested;
-
-        /// <summary>Delegate que dispara "confirm attack" en la FSM. Seteado por <c>CombatController</c>.</summary>
-        public Action OnConfirmAttackRequested;
-
         /// <summary>Delegate que dispara seleccion de behavior (index 0-3 = fijo, 4+ = contextual).</summary>
         public Action<int> OnBehaviorSelected;
 
@@ -135,13 +133,12 @@ namespace Rollgeon.UI.Screens
 
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnRollDicePressed.AddListener(InvokeRollDiceRequested);
-                _playerActionButtons.OnRerollPressed.AddListener(InvokeEnergyRerollRequested);
-                _playerActionButtons.OnConfirmAttackPressed.AddListener(InvokeConfirmAttackRequested);
                 _playerActionButtons.OnConfirmPressed.AddListener(InvokeConfirmRequested);
-                _playerActionButtons.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
                 _playerActionButtons.OnBehaviorSelected = InvokeBehaviorSelected;
             }
+
+            if (_endTurnButtonView != null)
+                _endTurnButtonView.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
         }
 
         private void OnDestroy()
@@ -151,13 +148,12 @@ namespace Rollgeon.UI.Screens
 
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnRollDicePressed.RemoveListener(InvokeRollDiceRequested);
-                _playerActionButtons.OnRerollPressed.RemoveListener(InvokeEnergyRerollRequested);
-                _playerActionButtons.OnConfirmAttackPressed.RemoveListener(InvokeConfirmAttackRequested);
                 _playerActionButtons.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
-                _playerActionButtons.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
                 _playerActionButtons.OnBehaviorSelected = null;
             }
+
+            if (_endTurnButtonView != null)
+                _endTurnButtonView.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
         }
 
         /// <inheritdoc/>
@@ -235,6 +231,9 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
 
+            if (_endTurnButtonView != null) _endTurnButtonView.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
+
             _subViewsBound = true;
         }
 
@@ -249,17 +248,8 @@ namespace Rollgeon.UI.Screens
             if (_healthBar != null) _healthBar.Unbind();
             if (_energyBar != null) _energyBar.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
+            if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             _subViewsBound = false;
-        }
-
-        /// <summary>
-        /// Informa a <see cref="PlayerActionButtonsView"/> si el behavior seleccionado
-        /// permite reroll, para controlar la visibilidad del boton Reroll.
-        /// </summary>
-        public void NotifyBehaviorAllowsReroll(bool allowsReroll)
-        {
-            if (_playerActionButtons != null)
-                _playerActionButtons.NotifyBehaviorAllowsReroll(allowsReroll);
         }
 
         /// <summary>
@@ -307,26 +297,6 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnEndTurnRequested.Invoke();
-        }
-
-        private void InvokeRollDiceRequested()
-        {
-            if (OnRollDiceRequested == null)
-            {
-                Debug.LogWarning(LogPrefix + "OnRollDiceRequested no cableado.", this);
-                return;
-            }
-            OnRollDiceRequested.Invoke();
-        }
-
-        private void InvokeConfirmAttackRequested()
-        {
-            if (OnConfirmAttackRequested == null)
-            {
-                Debug.LogWarning(LogPrefix + "OnConfirmAttackRequested no cableado.", this);
-                return;
-            }
-            OnConfirmAttackRequested.Invoke();
         }
 
         private void InvokeBehaviorSelected(int index)
