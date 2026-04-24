@@ -16,7 +16,7 @@ tags: [index, checklist, round3, setup, scenes]
 > `docs/setup/_PLAYABLE_LOOP_TWO_SCENE_SETUP.md` (fuente canónica del
 > split en 3 escenas).
 >
-> Total estimado: **~2h 30min – 3h**. Status:
+> Total estimado: **~3h – 3h 30min** (incluye secciones G, H, J nuevas). Status:
 > [[Sprint03-Status]] · Plan: [[Implementation-Roadmap]] P1 #1.
 
 ---
@@ -210,17 +210,34 @@ Verificar los ya creados:
 
 ### D.3 CombatHUD (items 17–25)
 
-- [x] (17) `CombatHUDView` — 9 refs: `_turnQueue`, `_comboIndicator`, `_enemyPanel`, `_actionButtons`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_damageFlashGroup`, `_playerActionButtons`
+- [ ] (17) `CombatHUDView` — **10 refs**: `_turnQueue`, `_comboIndicator`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_playerActionButtons`, `_healthBar`, `_energyBar`, `_endTurnButtonView`, `_damageFlashGroup`
+  - ⚠️ Ya NO tiene `_enemyPanel` (reemplazado por WorldSpaceHealthBar §0206) ni `_actionButtons` (legacy).
 - [x] (18) `TurnQueueView`: `_slotPrefab` → `TurnSlot.prefab` ; `_container`
-- [x] (19) `EnemyPanelView`: `_panelRoot`, `_name`, `_hpSlider`, `_hpText`, `_weaknessRoot`, `_weaknessIcon`
+- ~~(19) `EnemyPanelView`~~ — **ELIMINADO**. Reemplazado por `WorldSpaceHealthBar` sobre cada pawn (ver sección G).
 - [ ] (20) `ComboIndicatorView`: `_currentComboLabel` → TMP del combo actual ; `_rows` → array de 8 `ComboRow` (`ComboId`, `Label`, `BlockedOverlay`). Un `ComboRow` por combo del contrato del Guerrero:
   - `combo.par` (Par), `combo.double_pair` (DoblePar), `combo.triple` (Trio), `combo.straight` (Escalera), `combo.full_house` (FullHouse), `combo.poker` (Poker), `combo.generala` (Generala), `combo.sum_x` (SumaX).
   - **Para el smoke test** podés dejar `_rows` **vacío** — el view no crashea; solo perdés la lista visual del contrato y el feedback de "combo bloqueado" (boss T103). `_currentComboLabel` funciona independiente. Armá las 8 rows cuando hagas el layout visual.
 - [x] (21) `DiceZoneView`: `_rollArea`, `_holdArea`, `_diceSlots` array
-- [x] (22) `ActionButtonsView`: `_attackButton`, `_energyRerollButton`, `_endTurnButton`
-  - [x] (22b) `ActionButtonsView._attackAction` → `Assets/Rollgeon/Actions/AD_AttackBasic.asset` ← **requerido** para que el botón Atacar se habilite; sin esto `CanExecuteAttack()` retorna `false` y queda siempre deshabilitado
-- [x] (23) `PlayerActionButtonsView`: `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, `_rerollLabel`
-- [x] (24) `RerollCountView`: `_countLabel`, `_extraRollButton`
+- [x] (22) `ActionButtonsView` (legacy, puede coexistir): `_attackButton`, `_energyRerollButton`, `_endTurnButton`
+  - [x] (22b) `ActionButtonsView._attackAction` → `Assets/Rollgeon/Actions/AD_AttackBasic.asset`
+  - **Nota**: si solo usás `PlayerActionButtonsView` + `EndTurnButtonView` + `RerollCountView`, podés dejar `ActionButtonsView` sin cablear (null-safe).
+- [ ] (23) `PlayerActionButtonsView` — **5 refs** (post-refactor):
+  - `_movementButton` → MovementBtn
+  - `_attackButton` → AttackBtn
+  - `_specialButton` → SpecialBtn
+  - `_healButton` → HealBtn
+  - `_confirmButton` → ConfirmBtn
+  - ⚠️ Ya NO tiene `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, ni `_rerollLabel`. Los botones de Reroll están en `RerollCountView`, EndTurn en `EndTurnButtonView`.
+- [ ] (23b) `EndTurnButtonView` — **NUEVO** componente separado:
+  - Crear un hijo del CombatHUD: `EndTurnButtonPanel`
+  - Add Component → `EndTurnButtonView`
+  - Crear hijo `Button`: `EndTurnBtn`
+  - `_endTurnButton` → EndTurnBtn
+  - Cablear `CombatHUDView._endTurnButtonView` → este GO
+- [ ] (24) `RerollCountView` — **3 refs** (actualizado):
+  - `_countLabel` → TMP que muestra "{used}/{cap}"
+  - `_extraRollButton` → botón de extra roll
+  - `_costLabel` → TMP opcional que muestra "Free" / "1E" (null = skip)
 - [x] (25) `FloatingDamageSpawner`: `_instancePrefab` → `FloatingDamage.prefab` ; `_overlayContainer`
 
 ### D.4 Screens finales (items 26–29)
@@ -250,12 +267,131 @@ Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
 ### E.2 `02_Gameplay`
 
 - [x] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
-- [x] `CombatHUD`: TurnQueue arriba · EnemyPanel derecha · DiceZone centro · botones abajo
+- [ ] `CombatHUD`: TurnQueue arriba · DiceZone centro · Behaviors + Confirm abajo-izquierda · EndTurn abajo-derecha · RerollCount junto a DiceZone · HealthBar/EnergyBar del player arriba-izquierda
+  - ⚠️ `EnemyPanel` ya no existe — las barras de vida de los enemigos son world-space sobre cada pawn (sección G).
 - [x] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado con backdrop semi-transparente
 
 ---
 
-## F · Smoke test end-to-end
+## G · World-Space Health Bars (§0206) (~15 min)
+
+> Reemplaza el antiguo `EnemyPanelView` screen-space. Cada pawn de
+> enemigo/boss muestra una barra de HP world-space sobre su cabeza.
+> Ref: `docs/setup/System#0206_WorldSpaceHealthBars.md`.
+
+### G.1 Prefab de enemy — agregar barra
+
+Para cada prefab de enemy (ej. `Goblin.prefab`, `Boss.prefab`):
+
+- [ ] Crear hijo del root: `Canvas` con **Render Mode = World Space**
+  - Scale ≈ `(0.01, 0.01, 0.01)` (ajustar según tamaño visual)
+- [ ] Dentro del Canvas:
+  - [ ] **Image** `Fill`: `Image Type = Filled`, `Fill Method = Horizontal`, `Fill Origin = Left`
+  - [ ] **TextMeshPro** `HpText` (opcional): centrado, font size apropiado
+- [ ] Add Component → `WorldSpaceHealthBar` al Canvas GO
+- [ ] Cablear en Inspector:
+  - `_fillImage` → `Fill`
+  - `_hpText` → `HpText` (o null)
+  - `_barRoot` → el Canvas GO (para show/hide)
+  - `_offset` → `(0, 2, 0)` (ajustar Y para que quede sobre la cabeza)
+
+### G.2 EntityPawn — cablear referencia
+
+- [ ] En el `EntityPawn` del mismo prefab: `_healthBar` → el `WorldSpaceHealthBar`
+- [ ] Para prefabs de **hero**: dejar `_healthBar` en **null**
+
+### G.3 Limpieza de escena
+
+- [ ] En `02_Gameplay`, si existe un GO `EnemyPanelRoot` bajo el Canvas del CombatHUD → **eliminarlo**
+- [ ] Verificar que `CombatHUDView` no tenga Missing References
+
+---
+
+## H · Hero Behavior Slots — Configurar `CH_Warrior.asset` (~20 min)
+
+> El sistema de behavior slots permite configurar las 4 acciones de
+> cada clase (Movement, Base Attack, Special Attack, Healing) desde el
+> editor con precondiciones y efectos inline. Ya NO se usan los viejos
+> `ActionDefinitionSO` hardcodeados.
+> Ref: `docs/setup/UI#0012c_PlayerActionButtons.md`.
+
+### H.1 Abrir ClassHeroSO del Guerrero
+
+- [ ] Abrir `Assets/Rollgeon/Heroes/CH_Warrior.asset` en Inspector (Odin)
+- [ ] Expandir el foldout **"Actions"** (`HeroBehaviorSet`)
+
+### H.2 Configurar los 4 slots
+
+Cada slot es un `HeroActionBehavior` con estos campos editables:
+
+#### H.2a Movement
+
+- [ ] `ActionName` = `"Movement"`
+- [ ] `EnergyCost` = **1**
+- [ ] `BlockOnRepeat` = **false** (puede moverse varias veces por turno)
+- [ ] `FreeRollCount` = **1** (sin rerolls)
+- [ ] `AllowsReroll` = **false**
+- [ ] `AllowsEnergyReroll` = **false**
+- [ ] `ShowConditions` = [] (siempre visible)
+- [ ] `Effects` = al menos 1 `EffectData`:
+  - Label: `"Move to target"`
+  - PreConditions: las que correspondan (ej. `PCEntityInRange`, o vacío para smoke)
+  - Effects: el `IEffect` concreto de movimiento (ej. `MoveToSlotEffect`)
+  - ⚠️ Para smoke test: podés dejar `Effects` vacío — el behavior se ejecutará sin hacer nada pero no crashea.
+
+#### H.2b Base Attack
+
+- [ ] `ActionName` = `"Base Attack"`
+- [ ] `EnergyCost` = **1**
+- [ ] `BlockOnRepeat` = **true**
+- [ ] `FreeRollCount` = **3** (1 roll inicial + 2 rerolls gratis)
+- [ ] `AllowsReroll` = **true**
+- [ ] `AllowsEnergyReroll` = **true** (puede gastar energía para rerolls extra)
+- [ ] `Effects` = al menos 1 `EffectData`:
+  - Label: `"Deal damage"`
+  - PreConditions: [] (siempre ejecuta)
+  - Effects: el `IEffect` de daño (ej. `DealDamageEffect`)
+  - El combo matcheo viene por context (`EffectContext.ComboResult`)
+
+#### H.2c Special Attack
+
+- [ ] `ActionName` = `"Special Attack"`
+- [ ] `EnergyCost` = **2**
+- [ ] `BlockOnRepeat` = **true**
+- [ ] `FreeRollCount` = **1** (sin rerolls)
+- [ ] `AllowsReroll` = **false**
+- [ ] `AllowsEnergyReroll` = **false**
+- [ ] `Effects` = EffectData con la lógica del ataque especial
+
+#### H.2d Healing
+
+- [ ] `ActionName` = `"Healing"`
+- [ ] `EnergyCost` = **1**
+- [ ] `BlockOnRepeat` = **true**
+- [ ] `FreeRollCount` = **1**
+- [ ] `AllowsReroll` = **false**
+- [ ] `AllowsEnergyReroll` = **false**
+- [ ] `Effects` = EffectData con efecto de curación (ej. `HealEffect`)
+
+### H.3 Contextual Behaviors (opcional)
+
+- [ ] En `CH_Warrior.asset` → `ContextualBehaviors` (lista)
+- [ ] Agregar behaviors condicionales si aplica (ej. `Force Door` con `ShowConditions = [PCRoomType(Locked)]`)
+- [ ] Dejar vacío para el smoke test
+
+### H.4 Verificar
+
+- [ ] En Inspector: expandir `Actions` → los 4 slots muestran nombre y config correctos
+- [ ] `Actions.IsValid` = **true** (Odin muestra validación)
+- [ ] Los botones del `PlayerActionButtonsView` corresponden 1:1:
+  - Movement (index 0) → `_movementButton`
+  - Base Attack (index 1) → `_attackButton`
+  - Special Attack (index 2) → `_specialButton`
+  - Healing (index 3) → `_healButton`
+
+---
+
+## I · Smoke test end-to-end
 
 Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 
@@ -269,12 +405,34 @@ Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 - [x] ExplorationHUD aparece con HP/Energy/Gold populados. Primera room muestra **"Entrada"** (Start), sin combate — si ves combate ya, falta cablear `StartRoom` en `Floor1_Layout`.
 - [x] Click **Proceed** → entra a primera sala de combate → aparece `CombatHUD` encima del ExplorationHUD
 - [x] Navegar entre rooms con `Proceed`
-- [ ] Player turn: seleccionar acción, reroll, end turn
+- [ ] Player turn: 4 botones de behavior habilitados (Movement, Attack, Special, Heal)
+  - [ ] Click en behavior → dados ruedan → botones de behavior se deshabilitan, Confirm se habilita
+  - [ ] Si behavior tiene `AllowsReroll=true`: `RerollCountView` muestra "0/2", botón Extra Roll habilitado
+  - [ ] Click Reroll → counter actualiza "1/2", `_costLabel` muestra "Free" o "1E"
+  - [ ] Click Confirm → counter vuelve a "-/-", vuelve a WaitingForAction
+  - [ ] EndTurn funciona desde su componente separado (`EndTurnButtonView`)
+  - [ ] EndTurn se deshabilita durante roll, se re-habilita post confirm
+- [ ] Enemigos muestran barras de HP world-space sobre su cabeza
+  - [ ] Barra baja al recibir daño, sube al recibir heal
+  - [ ] Barra se oculta al morir
 - [x] Enemy turn se ejecuta → vuelve al player
 - [ ] Floor boss cleared → VictoryScreen ; o muerte → DefeatScreen
 - [ ] `Return to Menu` → `01_MainMenu` limpio, nueva run arrancable (verifica que `ClearScope(Run)` corrió)
 - [ ] **Negativo:** abrir `02_Gameplay` directo en Play → console loggea
   `[GameplayBootstrapper] No pending run request` (guard del bootstrapper)
+
+---
+
+## J · EditMode Tests (~5 min)
+
+Correr todos los tests en `Unity → Window → General → Test Runner → EditMode`:
+
+- [ ] `PlayerActionButtonsViewTests` — 11 tests (behaviors + confirm, sin reroll/endturn/legacy)
+- [ ] `EndTurnButtonViewTests` — 10 tests (enable/disable/bind/unbind)
+- [ ] `RerollCountViewTests` — 7 tests (OnDiceRolled/OnRollResolved, no OnRerollBudgetChanged)
+- [ ] `CombatHUDViewTests` — 4 tests (BindAll/UnbindAll smoke)
+- [ ] `WorldSpaceHealthBarTests` — tests del health bar world-space
+- [ ] Todos los demás tests pasan sin regresiones
 
 ---
 
@@ -294,6 +452,8 @@ Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 - `docs/setup/_PLAYABLE_LOOP_TWO_SCENE_SETUP.md` — **fuente canónica** del
   split en 3 escenas; tablas detalladas por round y troubleshooting.
 - `docs/setup/_SETUP_ROUND2_STATUS.md` — doc del round 2 (2-scene).
+- `docs/setup/UI#0012c_PlayerActionButtons.md` — setup detallado de PlayerActionButtonsView + EndTurnButtonView.
+- `docs/setup/System#0206_WorldSpaceHealthBars.md` — setup detallado de WorldSpaceHealthBar.
 - [[Sprint03-Status]] — resumen de estado del sprint.
 - [[Implementation-Roadmap]] P1 #1.
 - Guías específicas por pantalla en `docs/setup/UI#*.md`.
