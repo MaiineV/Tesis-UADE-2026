@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
 using Sirenix.OdinInspector;

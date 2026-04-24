@@ -1,5 +1,6 @@
 using System;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using UnityEngine;
 

@@ -2,6 +2,8 @@ using System;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using UnityEngine;
 

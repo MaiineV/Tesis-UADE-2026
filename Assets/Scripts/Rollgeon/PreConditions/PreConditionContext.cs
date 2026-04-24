@@ -1,5 +1,5 @@
 using System;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 
 namespace Rollgeon.PreConditions
 {

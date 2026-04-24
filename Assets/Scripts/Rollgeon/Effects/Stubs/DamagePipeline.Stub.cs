@@ -1,6 +1,7 @@
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Entities;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Stubs

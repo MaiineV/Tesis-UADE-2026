@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Sirenix.OdinInspector;
 using UnityEngine;
 

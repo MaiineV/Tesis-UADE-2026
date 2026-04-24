@@ -6,7 +6,7 @@ using Rollgeon.Combat.ComboBlock;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Combos.Tests;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Bosses;
 using Rollgeon.Heroes;

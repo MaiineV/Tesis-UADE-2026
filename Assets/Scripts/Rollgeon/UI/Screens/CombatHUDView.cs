@@ -48,10 +48,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ComboIndicatorView _comboIndicator;
 
-        [Required("Arrastrar EnemyPanelView.")]
-        [SerializeField]
-        private EnemyPanelView _enemyPanel;
-
         [Required("Arrastrar DiceZoneView.")]
         [SerializeField]
         private DiceZoneView _diceZone;
@@ -114,14 +110,17 @@ namespace Rollgeon.UI.Screens
         /// <summary>Delegate que dispara "confirm attack" en la FSM. Seteado por <c>CombatController</c>.</summary>
         public Action OnConfirmAttackRequested;
 
+        /// <summary>Delegate que dispara seleccion de behavior (index 0-3 = fijo, 4+ = contextual).</summary>
+        public Action<int> OnBehaviorSelected;
+
+        /// <summary>Delegate que dispara "confirm" (generico, no solo attack).</summary>
+        public Action OnConfirmRequested;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "CombatHUD";
 
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
-
-        [ShowInInspector, ReadOnly]
-        private Guid _enemyTarget;
 
         [ShowInInspector, ReadOnly]
         private bool _subViewsBound;
@@ -139,7 +138,9 @@ namespace Rollgeon.UI.Screens
                 _playerActionButtons.OnRollDicePressed.AddListener(InvokeRollDiceRequested);
                 _playerActionButtons.OnRerollPressed.AddListener(InvokeEnergyRerollRequested);
                 _playerActionButtons.OnConfirmAttackPressed.AddListener(InvokeConfirmAttackRequested);
+                _playerActionButtons.OnConfirmPressed.AddListener(InvokeConfirmRequested);
                 _playerActionButtons.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
+                _playerActionButtons.OnBehaviorSelected = InvokeBehaviorSelected;
             }
         }
 
@@ -153,7 +154,9 @@ namespace Rollgeon.UI.Screens
                 _playerActionButtons.OnRollDicePressed.RemoveListener(InvokeRollDiceRequested);
                 _playerActionButtons.OnRerollPressed.RemoveListener(InvokeEnergyRerollRequested);
                 _playerActionButtons.OnConfirmAttackPressed.RemoveListener(InvokeConfirmAttackRequested);
+                _playerActionButtons.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
                 _playerActionButtons.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
+                _playerActionButtons.OnBehaviorSelected = null;
             }
         }
 
@@ -162,21 +165,7 @@ namespace Rollgeon.UI.Screens
         {
             ResolvePlayer();
 
-            _enemyTarget = Guid.Empty;
-            if (payload is CombatHUDPayload p)
-            {
-                _enemyTarget = p.EnemyTargetGuid;
-                if (!string.IsNullOrEmpty(p.EncounterDisplayName) && _enemyPanel != null)
-                {
-                    _enemyPanel.SetNameText(p.EncounterDisplayName);
-                }
-            }
-
             BindAll(_playerGuid);
-
-            // Aplicar target despues del bind (EnemyPanelView.SetTarget requiere que Bind
-            // haya corrido para que el filtro por targetGuid funcione).
-            if (_enemyPanel != null) _enemyPanel.SetTarget(_enemyTarget);
 
             // Safety net: feedback de dano + auto-pop opcional.
             _onDamageResolved = HandleDamageResolvedForFlash;
@@ -209,7 +198,6 @@ namespace Rollgeon.UI.Screens
                 _flashCoroutine = null;
             }
             _playerGuid = Guid.Empty;
-            _enemyTarget = Guid.Empty;
         }
 
         // ======================================================================
@@ -228,9 +216,6 @@ namespace Rollgeon.UI.Screens
 
             if (_comboIndicator != null) _comboIndicator.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_comboIndicator no cableado.", this);
-
-            if (_enemyPanel != null) _enemyPanel.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_enemyPanel no cableado.", this);
 
             if (_rerollCount != null) _rerollCount.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_rerollCount no cableado.", this);
@@ -258,7 +243,6 @@ namespace Rollgeon.UI.Screens
         {
             if (_turnQueue != null) _turnQueue.Unbind();
             if (_comboIndicator != null) _comboIndicator.Unbind();
-            if (_enemyPanel != null) _enemyPanel.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
@@ -268,11 +252,14 @@ namespace Rollgeon.UI.Screens
             _subViewsBound = false;
         }
 
-        /// <summary>Re-target del enemy panel. Invocado por el <c>CombatController</c>.</summary>
-        public void SetEnemyTarget(Guid enemyGuid)
+        /// <summary>
+        /// Informa a <see cref="PlayerActionButtonsView"/> si el behavior seleccionado
+        /// permite reroll, para controlar la visibilidad del boton Reroll.
+        /// </summary>
+        public void NotifyBehaviorAllowsReroll(bool allowsReroll)
         {
-            _enemyTarget = enemyGuid;
-            if (_enemyPanel != null) _enemyPanel.SetTarget(enemyGuid);
+            if (_playerActionButtons != null)
+                _playerActionButtons.NotifyBehaviorAllowsReroll(allowsReroll);
         }
 
         /// <summary>
@@ -340,6 +327,26 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnConfirmAttackRequested.Invoke();
+        }
+
+        private void InvokeBehaviorSelected(int index)
+        {
+            if (OnBehaviorSelected == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnBehaviorSelected no cableado.", this);
+                return;
+            }
+            OnBehaviorSelected.Invoke(index);
+        }
+
+        private void InvokeConfirmRequested()
+        {
+            if (OnConfirmRequested == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnConfirmRequested no cableado.", this);
+                return;
+            }
+            OnConfirmRequested.Invoke();
         }
 
         private void HandleDamageResolvedForFlash(DamageResolvedPayload payload)

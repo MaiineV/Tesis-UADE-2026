@@ -1,4 +1,4 @@
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 
 namespace Rollgeon.Effects.Readers
 {

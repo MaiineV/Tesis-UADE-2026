@@ -107,7 +107,7 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void CanExecute_NullAction_FalseWithReason()
         {
-            bool ok = _tm.CanExecute(null, _actor, out var reason);
+            bool ok = _tm.CanExecute((ActionDefinitionSO)null, _actor, out var reason);
 
             Assert.IsFalse(ok);
             Assert.IsNotNull(reason);

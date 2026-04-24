@@ -1,29 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Rollgeon.Effects.Stubs;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Rollgeon.Entities.Behaviors
 {
     /// <summary>
-    /// Clase base "real" de todos los behaviors. TECHNICAL.md §7.2.
-    /// Unifica el contrato: <c>Trigger</c> + filtro de fase + <c>Effects</c> + <c>Execute</c>
-    /// + StoredValues API (§9.3). El stub <c>Rollgeon.Effects.Stubs.BaseBehavior</c> de
-    /// Foundation#0004 ahora hereda de este tipo (adapter) para no romper EffHeal/EffDamage.
+    /// Base class for all behaviors. TECHNICAL.md §7.2.
+    /// Contract: <c>Trigger</c> + phase filter + <c>Execute</c> + StoredValues API (§9.3).
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>StoredValues.</b> El API <see cref="SetBehaviorValue"/> /
-    /// <see cref="TryGetBehaviorValues{T}"/> / <see cref="ClearBehaviorValues"/> vive aca
-    /// y lo heredan tanto los behaviors reales como el stub adapter. TECHNICAL.md §9.3.
-    /// </para>
-    /// <para>
-    /// <b>Lifecycle.</b> <c>ClearBehaviorValues</c> lo llama el dispatcher del turn manager
-    /// en un <c>finally</c> post-resolve; el behavior no se auto-limpia. Downstream
-    /// (T100d+) agrega lifecycle completo.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public abstract class BaseBehavior
     {

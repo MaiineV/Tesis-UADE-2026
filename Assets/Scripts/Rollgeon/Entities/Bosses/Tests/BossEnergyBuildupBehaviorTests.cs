@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using Rollgeon.Effects.Stubs;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Bosses;
 using UnityEngine;

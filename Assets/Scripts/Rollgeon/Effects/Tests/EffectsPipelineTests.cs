@@ -5,7 +5,8 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Effects.Selection.Queries;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Behaviors;
 using Rollgeon.PreConditions;
 using Sirenix.Serialization;
 

@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using Rollgeon.Combos;
 using Rollgeon.Effects.Selection;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Behaviors;
 
 namespace Rollgeon.Effects
 {
@@ -36,6 +39,12 @@ namespace Rollgeon.Effects
         /// <see cref="EffectData.Execute"/>.
         /// </summary>
         public bool lastResult = true;
+
+        /// <summary>Resultado de la tirada de dados (las caras). Null si el behavior no usa dados.</summary>
+        public IReadOnlyList<int> DiceResult;
+
+        /// <summary>Resultado del combo matching via ContractSheet.MatchBest. Null si no hubo match.</summary>
+        public ComboDetectionResult? ComboResult;
 
         /// <summary>Behavior que armó este contexto — expone <c>SetBehaviorValue</c> (§9.3).</summary>
         public BaseBehavior SourceBehavior;

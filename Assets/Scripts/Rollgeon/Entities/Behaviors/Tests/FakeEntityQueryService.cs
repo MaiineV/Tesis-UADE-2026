@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 
 namespace Rollgeon.Entities.Behaviors.Tests
 {

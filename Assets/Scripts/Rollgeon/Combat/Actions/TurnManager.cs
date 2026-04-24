@@ -4,6 +4,8 @@ using Patterns;
 using Rollgeon.Balance;
 using Rollgeon.Combat.Energy;
 using Rollgeon.Effects;
+using Rollgeon.Entities.Behaviors;
+using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.PreConditions;
 using UnityEngine;
@@ -190,6 +192,71 @@ namespace Rollgeon.Combat.Actions
             // §12.6) no entran al set para que UsedActionsCount refleje las "consumidas".
             if (ok && action.BlockOnRepeat) _actionsUsedThisTurn.Add(action.ActionId);
             return ok;
+        }
+
+        // ======================================================================
+        // HeroActionBehavior overloads
+        // ======================================================================
+
+        /// <summary>
+        /// Valida que <paramref name="behavior"/> se puede ejecutar ahora.
+        /// Misma semantica que el overload de <see cref="ActionDefinitionSO"/>:
+        /// ruleset, repetition (usa <see cref="HeroActionBehavior.ActionName"/> como key),
+        /// y energy check.
+        /// </summary>
+        public bool CanExecute(HeroActionBehavior behavior, Guid playerGuid, out string reason)
+        {
+            reason = null;
+
+            if (behavior == null)
+            {
+                reason = "Behavior is null.";
+                return false;
+            }
+
+            if (IsForbiddenByRuleset(behavior.ActionName))
+            {
+                reason = $"Behavior '{behavior.ActionName}' is forbidden by the active ruleset.";
+                return false;
+            }
+
+            if (behavior.BlockOnRepeat && _actionsUsedThisTurn.Contains(behavior.ActionName))
+            {
+                reason = $"Behavior '{behavior.ActionName}' already used this turn.";
+                return false;
+            }
+
+            if (_energy == null)
+            {
+                reason = "IEnergyService not available.";
+                return false;
+            }
+
+            int available = _energy.GetCurrent(playerGuid);
+            if (available < behavior.EnergyCost)
+            {
+                reason = $"Not enough energy ({available}/{behavior.EnergyCost}).";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Ejecuta un <see cref="HeroActionBehavior"/>: valida, cobra energia, ejecuta
+        /// via <see cref="HeroActionBehavior.Execute"/>, y trackea repeticion.
+        /// </summary>
+        public bool TryExecute(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
+        {
+            if (!CanExecute(behavior, playerGuid, out _)) return false;
+            if (!_energy.SpendEnergy(playerGuid, behavior.EnergyCost)) return false;
+
+            behavior.Execute(ctx);
+
+            if (behavior.BlockOnRepeat)
+                _actionsUsedThisTurn.Add(behavior.ActionName);
+
+            return true;
         }
 
         // ======================================================================

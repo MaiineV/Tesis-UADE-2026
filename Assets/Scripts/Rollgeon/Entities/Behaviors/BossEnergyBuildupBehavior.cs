@@ -1,5 +1,4 @@
 using System;
-using Rollgeon.Effects.Stubs;
 using Rollgeon.Entities.Bosses;
 using Sirenix.OdinInspector;
 using UnityEngine;

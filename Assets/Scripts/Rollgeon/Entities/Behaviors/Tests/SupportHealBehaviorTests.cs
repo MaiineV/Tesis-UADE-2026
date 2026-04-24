@@ -4,7 +4,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 
 namespace Rollgeon.Entities.Behaviors.Tests

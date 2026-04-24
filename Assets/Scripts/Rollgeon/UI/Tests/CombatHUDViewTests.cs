@@ -12,9 +12,8 @@ namespace Rollgeon.UI.Tests
 {
     /// <summary>
     /// Smoke test del <see cref="CombatHUDView"/>. Verifica que <c>BindAll</c>
-    /// propaga a cada sub-view, que <c>SetEnemyTarget</c> llega al <see cref="EnemyPanelView"/>,
-    /// y que los delegates de acciones no crashean cuando no estan cableados.
-    /// Plan §3.10.
+    /// propaga a cada sub-view y que los delegates de acciones no crashean
+    /// cuando no estan cableados. Plan §3.10.
     /// </summary>
     [TestFixture]
     public class CombatHUDViewTests
@@ -38,7 +37,6 @@ namespace Rollgeon.UI.Tests
         private CombatHUDView _hud;
         private TurnQueueView _turnQueue;
         private ComboIndicatorView _comboIndicator;
-        private EnemyPanelView _enemyPanel;
         private DiceZoneView _diceZone;
         private RerollCountView _rerollCount;
         private FloatingDamageSpawner _floatingDamage;
@@ -57,7 +55,6 @@ namespace Rollgeon.UI.Tests
 
             _turnQueue = AttachChild<TurnQueueView>("TurnQueue", _hudGO);
             _comboIndicator = AttachChild<ComboIndicatorView>("ComboIndicator", _hudGO);
-            _enemyPanel = AttachChild<EnemyPanelView>("EnemyPanel", _hudGO);
             _diceZone = AttachChild<DiceZoneView>("DiceZone", _hudGO);
             _rerollCount = AttachChild<RerollCountView>("RerollCount", _hudGO);
             _floatingDamage = AttachChild<FloatingDamageSpawner>("FloatingDamage", _hudGO);
@@ -65,7 +62,6 @@ namespace Rollgeon.UI.Tests
 
             AssignPrivate(_hud, "_turnQueue", _turnQueue);
             AssignPrivate(_hud, "_comboIndicator", _comboIndicator);
-            AssignPrivate(_hud, "_enemyPanel", _enemyPanel);
             AssignPrivate(_hud, "_diceZone", _diceZone);
             AssignPrivate(_hud, "_rerollCount", _rerollCount);
             AssignPrivate(_hud, "_floatingDamage", _floatingDamage);
@@ -77,7 +73,6 @@ namespace Rollgeon.UI.Tests
         {
             EventManager.ResetEventDictionary();
             TypedEvent<ComboMatchedPayload>.Clear();
-            TypedEvent<HealthChangedPayload>.Clear();
             TypedEvent<DamageResolvedPayload>.Clear();
             ServiceLocator.RemoveService<IPlayerService>();
             if (_hudGO != null) UnityEngine.Object.DestroyImmediate(_hudGO);
@@ -100,18 +95,6 @@ namespace Rollgeon.UI.Tests
 
             bool bound = (bool)GetPrivateValue(_hud, "_subViewsBound");
             Assert.IsFalse(bound, "_subViewsBound debe ser false tras UnbindAll.");
-        }
-
-        [Test]
-        public void SetEnemyTarget_PassesGuidToEnemyPanel()
-        {
-            _hud.BindAll(_playerGuid);
-            var enemyGuid = Guid.NewGuid();
-
-            _hud.SetEnemyTarget(enemyGuid);
-
-            Assert.AreEqual(enemyGuid, _enemyPanel.CurrentTarget,
-                "EnemyPanelView.CurrentTarget debe reflejar el target seteado por el HUD.");
         }
 
         [Test]

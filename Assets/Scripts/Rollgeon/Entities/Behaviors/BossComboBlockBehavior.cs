@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.ComboBlock;
 using Rollgeon.Combos;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Rollgeon.Entities.Bosses;
 using Rollgeon.Heroes;
 using Sirenix.OdinInspector;

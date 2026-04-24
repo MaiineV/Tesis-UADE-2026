@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Dungeon;
 using Rollgeon.Effects;
+using Rollgeon.Entities.Behaviors;
+using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using Rollgeon.UI.Screens;
@@ -42,8 +45,8 @@ namespace Rollgeon.Combat.Handoff
         private EventManager.EventReceiver _onCombatTriggeredHandler;
         private bool _disposed;
 
-        // Estado del roll en curso. Se vuelve null entre Confirm y el próximo Roll.
         private int[] _lastFaces;
+        private HeroActionBehavior _selectedBehavior;
 
         public bool IsHandoffInProgress { get; private set; }
 
@@ -142,7 +145,6 @@ namespace Rollgeon.Combat.Handoff
                 _screenManager.PushByStringId("CombatHUD",
                     new CombatHUDPayload
                     {
-                        EnemyTargetGuid = firstEnemyId,
                         RoomInstanceId = roomInstanceId,
                         EncounterDisplayName = room.DisplayName
                     });
@@ -167,22 +169,19 @@ namespace Rollgeon.Combat.Handoff
 
         private void WireCombatHUDDelegates(Guid firstEnemyId)
         {
-            // Silent skip si el screen manager no esta produciendo la HUD view real
-            // (tests con stubs de ScreenManager). En produccion, Current == HUD recien
-            // pushada. Si estuvieramos en prod y el cast fallara, los clicks del HUD
-            // loggearian "no cableado" por si mismos — no duplicamos el warning aca.
             if (_screenManager.Current is not CombatHUDView hud) return;
 
             var playerGuid = _player.PlayerGuid;
             _lastFaces = null;
+            _selectedBehavior = null;
 
             hud.OnEndTurnRequested = () =>
             {
+                if (_selectedBehavior != null) return;
+
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                     budget.EndBudget();
 
-                // Simétrico con Confirm Attack: emite OnRollResolved para que el HUD
-                // limpie dados/holds incluso cuando el jugador termina sin atacar.
                 var resolved = _lastFaces ?? Array.Empty<int>();
                 EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
 
@@ -190,9 +189,95 @@ namespace Rollgeon.Combat.Handoff
                 _playerActions.EndPlayerTurn();
             };
 
-            // Roll Dice: abre el budget de rerolls para attack.basic, ejecuta una
-            // tirada real con DiceRoller sobre el bag del jugador, y dispara
-            // OnDiceRolled con el resultado para que el HUD avance la state machine.
+            hud.OnBehaviorSelected = (int index) =>
+            {
+                if (_selectedBehavior != null) return;
+
+                var hero = ResolveHero();
+                if (hero == null) return;
+
+                HeroActionBehavior behavior;
+                if (index < 4)
+                    behavior = hero.Actions?.GetByIndex(index);
+                else
+                    behavior = index - 4 < hero.ContextualBehaviors.Count
+                        ? hero.ContextualBehaviors[index - 4]
+                        : null;
+
+                if (behavior == null)
+                {
+                    Debug.LogWarning($"[CombatHandoffService] Behavior index {index} not found.");
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
+                {
+                    if (!tm.CanExecute(behavior, playerGuid, out var reason))
+                    {
+                        Debug.Log($"[CombatHandoffService] Cannot execute '{behavior.ActionName}': {reason}");
+                        return;
+                    }
+                }
+
+                _selectedBehavior = behavior;
+                hud.NotifyBehaviorAllowsReroll(behavior.AllowsReroll);
+
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                {
+                    var wrapper = BuildBudgetAction(behavior);
+                    if (wrapper != null)
+                        budget.StartBudget(wrapper);
+                }
+
+                var bag = ResolvePlayerBag();
+                var roller = ResolveRoller();
+                if (bag == null || roller == null)
+                {
+                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
+                    _selectedBehavior = null;
+                    return;
+                }
+
+                _lastFaces = roller.RollAll(bag);
+                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+            };
+
+            hud.OnConfirmRequested = () =>
+            {
+                if (_selectedBehavior == null) return;
+
+                var hero = ResolveHero();
+                BaseComboSO combo = null;
+                ComboDetectionResult? comboResult = null;
+
+                if (hero != null && _lastFaces != null)
+                {
+                    combo = hero.Sheet?.MatchBest(_lastFaces);
+                    if (combo != null)
+                        comboResult = combo.Detect(_lastFaces);
+                }
+
+                var behaviorCtx = new HeroBehaviorContext
+                {
+                    DiceResult = _lastFaces,
+                    MatchedComboResult = comboResult,
+                    TargetGuid = firstEnemyId,
+                };
+
+                if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
+                    tm.TryExecute(_selectedBehavior, playerGuid, behaviorCtx);
+
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                    budget.EndBudget();
+
+                var resolved = _lastFaces ?? Array.Empty<int>();
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+
+                _lastFaces = null;
+                _selectedBehavior = null;
+            };
+
+            // Legacy: keep OnRollDiceRequested wired for backward compat
             hud.OnRollDiceRequested = () =>
             {
                 if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
@@ -206,18 +291,12 @@ namespace Rollgeon.Combat.Handoff
 
                 var bag = ResolvePlayerBag();
                 var roller = ResolveRoller();
-                if (bag == null || roller == null)
-                {
-                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
-                    return;
-                }
+                if (bag == null || roller == null) return;
 
                 _lastFaces = roller.RollAll(bag);
                 EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
 
-            // Confirm Attack (flujo dice-first): ejecuta el ataque via TurnManager
-            // (gasta energia, aplica efecto), cierra el budget, termina el turno.
             hud.OnConfirmAttackRequested = () =>
             {
                 if (ServiceLocator.TryGetService<ActionCatalogSO>(out var catalog)
@@ -240,8 +319,6 @@ namespace Rollgeon.Combat.Handoff
                 _playerActions.EndPlayerTurn();
             };
 
-            // Reroll: gasta presupuesto y rolea de nuevo respetando el keep[] del
-            // hold visual del DiceZoneView. La fase del HUD permanece Rolled.
             hud.OnEnergyRerollRequested = () =>
             {
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
@@ -280,6 +357,27 @@ namespace Rollgeon.Combat.Handoff
             Debug.LogWarning($"[CombatHandoffService] Usando bag fallback '{fallback.name}' — " +
                              $"Fase 2 debería popular IPlayerService.DiceBag desde el build screen.");
             return fallback;
+        }
+
+        private ClassHeroSO ResolveHero()
+        {
+            var hero = _player?.CurrentHero;
+            if (hero == null)
+            {
+                Debug.LogWarning("[CombatHandoffService] IPlayerService.CurrentHero is null — " +
+                                 "cannot resolve hero behaviors.");
+            }
+            return hero;
+        }
+
+        private ActionDefinitionSO BuildBudgetAction(HeroActionBehavior behavior)
+        {
+            var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
+            wrapper.ActionId = behavior.ActionName;
+            wrapper.FreeRollCount = behavior.FreeRollCount;
+            wrapper.AllowsEnergyReroll = behavior.AllowsEnergyReroll;
+            wrapper.EnergyCost = behavior.EnergyCost;
+            return wrapper;
         }
 
         private IDiceRoller ResolveRoller()

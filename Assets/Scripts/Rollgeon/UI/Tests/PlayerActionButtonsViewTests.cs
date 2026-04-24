@@ -10,7 +10,7 @@ namespace Rollgeon.UI.Tests
 {
     /// <summary>
     /// Verifica <see cref="PlayerActionButtonsView"/>: los botones se habilitan/deshabilitan
-    /// segun la fase dice-first (Idle, WaitingForRoll, Rolled, Resolved).
+    /// segun la fase behavior-first (Idle, WaitingForAction, Rolled).
     /// </summary>
     [TestFixture]
     public class PlayerActionButtonsViewTests
@@ -66,15 +66,15 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnTurnStarted_Player_EnablesRollAndEndTurn()
+        public void OnTurnStarted_Player_EnablesBehaviorsAndEndTurn()
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
 
-            Assert.IsTrue(_rollDice.interactable, "RollDice enabled en WaitingForRoll.");
-            Assert.IsFalse(_reroll.interactable, "Reroll disabled en WaitingForRoll.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en WaitingForRoll.");
-            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en WaitingForRoll.");
+            Assert.IsTrue(_rollDice.interactable, "Legacy RollDice enabled en WaitingForAction.");
+            Assert.IsFalse(_reroll.interactable, "Reroll disabled en WaitingForAction.");
+            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en WaitingForAction.");
+            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en WaitingForAction.");
         }
 
         [Test]
@@ -90,15 +90,15 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnDiceRolled_Player_DisablesRollEnablesConfirmAndEndTurn()
+        public void OnDiceRolled_Player_DisablesBehaviorsEnablesConfirm()
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
             EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable, "RollDice disabled en Rolled.");
+            Assert.IsFalse(_rollDice.interactable, "Legacy RollDice disabled en Rolled.");
             Assert.IsTrue(_confirmAttack.interactable, "Confirm enabled en Rolled.");
-            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en Rolled.");
+            Assert.IsFalse(_endTurn.interactable, "EndTurn disabled en Rolled (behavior in progress).");
         }
 
         [Test]
@@ -209,7 +209,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnRollResolved_Player_DisablesAll()
+        public void OnRollResolved_Player_ReturnsToWaitingForAction()
         {
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
@@ -218,10 +218,10 @@ namespace Rollgeon.UI.Tests
 
             EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
 
-            Assert.IsFalse(_rollDice.interactable, "RollDice disabled en Resolved.");
-            Assert.IsFalse(_reroll.interactable, "Reroll disabled en Resolved.");
-            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en Resolved.");
-            Assert.IsFalse(_endTurn.interactable, "EndTurn disabled en Resolved.");
+            Assert.IsTrue(_rollDice.interactable, "Legacy RollDice enabled en WaitingForAction.");
+            Assert.IsFalse(_reroll.interactable, "Reroll disabled en WaitingForAction.");
+            Assert.IsFalse(_confirmAttack.interactable, "Confirm disabled en WaitingForAction.");
+            Assert.IsTrue(_endTurn.interactable, "EndTurn enabled en WaitingForAction.");
         }
 
         private static Button CreateButton(string name, GameObject parent)

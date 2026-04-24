@@ -2,7 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities;
 using Sirenix.OdinInspector;
 using UnityEngine;
 

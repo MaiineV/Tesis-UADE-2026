@@ -10,34 +10,40 @@ using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
-    /// <summary>
-    /// Sub-view con 4 botones que siguen el flujo dice-first del combate:
-    /// Roll Dice -> Reroll / Confirm -> End Turn.
-    /// El estado de cada boton depende de la <see cref="ButtonPhase"/> actual,
-    /// derivada de eventos del bus (<c>OnTurnStarted</c>, <c>OnDiceRolled</c>,
-    /// <c>OnRollResolved</c>, <c>OnTurnFinished</c>).
-    /// </summary>
     [AddComponentMenu("Rollgeon/UI/HUD/Player Action Buttons View")]
     public class PlayerActionButtonsView : MonoBehaviour
     {
         private const string LogPrefix = "[PlayerActionButtonsView] ";
 
         // ======================================================================
-        // Serialized fields
+        // Serialized fields — behavior buttons
         // ======================================================================
 
-        [Title("Player Action Buttons - Widgets")]
-        [Required("Arrastrar el boton de Roll Dice.")]
+        [Title("Behavior Buttons")]
         [SerializeField]
-        private Button _rollDiceButton;
+        private Button _movementButton;
 
+        [SerializeField]
+        private Button _attackButton;
+
+        [SerializeField]
+        private Button _specialButton;
+
+        [SerializeField]
+        private Button _healButton;
+
+        // ======================================================================
+        // Serialized fields — action buttons
+        // ======================================================================
+
+        [Title("Action Buttons")]
         [Required("Arrastrar el boton de Reroll.")]
         [SerializeField]
         private Button _rerollButton;
 
-        [Required("Arrastrar el boton de Confirm Attack.")]
+        [Required("Arrastrar el boton de Confirm.")]
         [SerializeField]
-        private Button _confirmAttackButton;
+        private Button _confirmButton;
 
         [Required("Arrastrar el boton de End Turn.")]
         [SerializeField]
@@ -47,29 +53,51 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private TextMeshProUGUI _rerollLabel;
 
-        [Title("Player Action Buttons - Events")]
-        [SerializeField]
-        private UnityEvent _onRollDicePressed = new UnityEvent();
+        // ======================================================================
+        // Serialized fields — legacy (backward compat)
+        // ======================================================================
 
+        [Title("Legacy (deprecated)")]
+        [SerializeField]
+        private Button _rollDiceButton;
+
+        [SerializeField]
+        private Button _confirmAttackButton;
+
+        // ======================================================================
+        // Events
+        // ======================================================================
+
+        [Title("Events")]
         [SerializeField]
         private UnityEvent _onRerollPressed = new UnityEvent();
 
         [SerializeField]
-        private UnityEvent _onConfirmAttackPressed = new UnityEvent();
+        private UnityEvent _onConfirmPressed = new UnityEvent();
 
         [SerializeField]
         private UnityEvent _onEndTurnPressed = new UnityEvent();
 
-        public UnityEvent OnRollDicePressed => _onRollDicePressed;
+        [SerializeField]
+        private UnityEvent _onRollDicePressed = new UnityEvent();
+
+        [SerializeField]
+        private UnityEvent _onConfirmAttackPressed = new UnityEvent();
+
         public UnityEvent OnRerollPressed => _onRerollPressed;
-        public UnityEvent OnConfirmAttackPressed => _onConfirmAttackPressed;
+        public UnityEvent OnConfirmPressed => _onConfirmPressed;
         public UnityEvent OnEndTurnPressed => _onEndTurnPressed;
+
+        public UnityEvent OnRollDicePressed => _onRollDicePressed;
+        public UnityEvent OnConfirmAttackPressed => _onConfirmAttackPressed;
+
+        public Action<int> OnBehaviorSelected;
 
         // ======================================================================
         // Internal state
         // ======================================================================
 
-        private enum ButtonPhase { Idle, WaitingForRoll, Rolled, Resolved }
+        public enum ButtonPhase { Idle, WaitingForAction, Rolled }
 
         [ShowInInspector, ReadOnly]
         private ButtonPhase _phase = ButtonPhase.Idle;
@@ -80,24 +108,41 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _bound;
 
+        [ShowInInspector, ReadOnly]
+        private bool _selectedBehaviorAllowsReroll;
+
         // ======================================================================
         // Lifecycle
         // ======================================================================
 
         private void Awake()
         {
-            if (_rollDiceButton != null) _rollDiceButton.onClick.AddListener(HandleRollDiceClick);
+            if (_movementButton != null) _movementButton.onClick.AddListener(() => HandleBehaviorClick(0));
+            if (_attackButton != null) _attackButton.onClick.AddListener(() => HandleBehaviorClick(1));
+            if (_specialButton != null) _specialButton.onClick.AddListener(() => HandleBehaviorClick(2));
+            if (_healButton != null) _healButton.onClick.AddListener(() => HandleBehaviorClick(3));
+
             if (_rerollButton != null) _rerollButton.onClick.AddListener(HandleRerollClick);
-            if (_confirmAttackButton != null) _confirmAttackButton.onClick.AddListener(HandleConfirmAttackClick);
+            if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClick);
             if (_endTurnButton != null) _endTurnButton.onClick.AddListener(HandleEndTurnClick);
+
+            if (_rollDiceButton != null) _rollDiceButton.onClick.AddListener(HandleRollDiceClick);
+            if (_confirmAttackButton != null) _confirmAttackButton.onClick.AddListener(HandleConfirmAttackClick);
         }
 
         private void OnDestroy()
         {
-            if (_rollDiceButton != null) _rollDiceButton.onClick.RemoveListener(HandleRollDiceClick);
+            if (_movementButton != null) _movementButton.onClick.RemoveAllListeners();
+            if (_attackButton != null) _attackButton.onClick.RemoveAllListeners();
+            if (_specialButton != null) _specialButton.onClick.RemoveAllListeners();
+            if (_healButton != null) _healButton.onClick.RemoveAllListeners();
+
             if (_rerollButton != null) _rerollButton.onClick.RemoveListener(HandleRerollClick);
-            if (_confirmAttackButton != null) _confirmAttackButton.onClick.RemoveListener(HandleConfirmAttackClick);
+            if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClick);
             if (_endTurnButton != null) _endTurnButton.onClick.RemoveListener(HandleEndTurnClick);
+
+            if (_rollDiceButton != null) _rollDiceButton.onClick.RemoveListener(HandleRollDiceClick);
+            if (_confirmAttackButton != null) _confirmAttackButton.onClick.RemoveListener(HandleConfirmAttackClick);
         }
 
         private void OnDisable()
@@ -109,7 +154,6 @@ namespace Rollgeon.UI.HUD
         // Public API
         // ======================================================================
 
-        /// <summary>Suscribe al bus. Arranca en Idle con todos los botones deshabilitados.</summary>
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
@@ -123,13 +167,11 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             _bound = true;
 
-            // Catch-up: si OnTurnStarted ya disparó antes del Bind (ej. FSM arrancó
-            // sincrónicamente antes de que la view suscribiera), recuperar el estado correcto.
             if (ServiceLocator.TryGetService<TurnOrderService>(out var turnOrder)
                 && turnOrder.ParticipantCount > 0
                 && turnOrder.Current == _playerGuid)
             {
-                _phase = ButtonPhase.WaitingForRoll;
+                _phase = ButtonPhase.WaitingForAction;
             }
             else
             {
@@ -149,15 +191,17 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             _bound = false;
             _phase = ButtonPhase.Idle;
-            // Refresh para desactivar todos los botones — sin bind no hay turno
-            // que refleje, entonces buttons deben quedar disabled.
             RefreshInteractable();
         }
 
-        /// <summary>Reads _phase + service queries, updates all button interactable states.</summary>
+        public void NotifyBehaviorAllowsReroll(bool allowsReroll)
+        {
+            _selectedBehaviorAllowsReroll = allowsReroll;
+        }
+
         public void RefreshInteractable()
         {
-            bool rollDice = false;
+            bool behaviors = false;
             bool reroll = false;
             bool confirm = false;
             bool endTurn = false;
@@ -166,23 +210,28 @@ namespace Rollgeon.UI.HUD
             {
                 case ButtonPhase.Idle:
                     break;
-                case ButtonPhase.WaitingForRoll:
-                    rollDice = true;
+                case ButtonPhase.WaitingForAction:
+                    behaviors = true;
                     endTurn = true;
                     break;
                 case ButtonPhase.Rolled:
-                    reroll = CanReroll();
+                    reroll = _selectedBehaviorAllowsReroll && CanReroll();
                     confirm = true;
-                    endTurn = true;
-                    break;
-                case ButtonPhase.Resolved:
+                    endTurn = false;
                     break;
             }
 
-            if (_rollDiceButton != null) _rollDiceButton.interactable = rollDice;
+            if (_movementButton != null) _movementButton.interactable = behaviors;
+            if (_attackButton != null) _attackButton.interactable = behaviors;
+            if (_specialButton != null) _specialButton.interactable = behaviors;
+            if (_healButton != null) _healButton.interactable = behaviors;
+
             if (_rerollButton != null) _rerollButton.interactable = reroll;
-            if (_confirmAttackButton != null) _confirmAttackButton.interactable = confirm;
+            if (_confirmButton != null) _confirmButton.interactable = confirm;
             if (_endTurnButton != null) _endTurnButton.interactable = endTurn;
+
+            if (_rollDiceButton != null) _rollDiceButton.interactable = behaviors;
+            if (_confirmAttackButton != null) _confirmAttackButton.interactable = confirm;
 
             UpdateRerollLabel();
         }
@@ -213,9 +262,9 @@ namespace Rollgeon.UI.HUD
         private void HandleTurnStarted(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
-            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnTurnStarted recv guid={guid} | _playerGuid={_playerGuid} | match={guid == _playerGuid}");
             if (guid != _playerGuid) return;
-            _phase = ButtonPhase.WaitingForRoll;
+            _phase = ButtonPhase.WaitingForAction;
+            _selectedBehaviorAllowsReroll = false;
             RefreshInteractable();
         }
 
@@ -223,7 +272,6 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
-            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnTurnFinished — fase previa: {_phase}");
             _phase = ButtonPhase.Idle;
             RefreshInteractable();
         }
@@ -231,7 +279,6 @@ namespace Rollgeon.UI.HUD
         private void HandleDiceRolled(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
-            UnityEngine.Debug.Log($"[PlayerActionButtonsView] OnDiceRolled recv guid={guid} | _playerGuid={_playerGuid} | match={guid == _playerGuid}");
             if (guid != _playerGuid) return;
             _phase = ButtonPhase.Rolled;
             RefreshInteractable();
@@ -255,7 +302,8 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
-            _phase = ButtonPhase.Resolved;
+            _phase = ButtonPhase.WaitingForAction;
+            _selectedBehaviorAllowsReroll = false;
             RefreshInteractable();
         }
 
@@ -263,10 +311,9 @@ namespace Rollgeon.UI.HUD
         // Click handlers
         // ======================================================================
 
-        private void HandleRollDiceClick()
+        private void HandleBehaviorClick(int index)
         {
-            UnityEngine.Debug.Log($"[PlayerActionButtonsView] Roll Dice button clicked, fase={_phase}");
-            _onRollDicePressed?.Invoke();
+            OnBehaviorSelected?.Invoke(index);
         }
 
         private void HandleRerollClick()
@@ -274,14 +321,24 @@ namespace Rollgeon.UI.HUD
             _onRerollPressed?.Invoke();
         }
 
-        private void HandleConfirmAttackClick()
+        private void HandleConfirmClick()
         {
-            _onConfirmAttackPressed?.Invoke();
+            _onConfirmPressed?.Invoke();
         }
 
         private void HandleEndTurnClick()
         {
             _onEndTurnPressed?.Invoke();
+        }
+
+        private void HandleRollDiceClick()
+        {
+            _onRollDicePressed?.Invoke();
+        }
+
+        private void HandleConfirmAttackClick()
+        {
+            _onConfirmAttackPressed?.Invoke();
         }
 
         // ======================================================================

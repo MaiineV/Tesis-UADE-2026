@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Rollgeon.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -37,6 +38,19 @@ namespace Rollgeon.Heroes
         [OdinSerialize]
         [Required]
         public ContractSheet Sheet = new ContractSheet();
+
+        [Title("Actions (Hero Behavior Slots)")]
+        [InfoBox("4 fixed behavior slots + contextual behaviors. Each has inline " +
+                 "PreConditions + Effects, fully editable from the inspector.")]
+        [OdinSerialize]
+        public HeroBehaviorSet Actions = new HeroBehaviorSet();
+
+        [Title("Contextual Behaviors")]
+        [InfoBox("Behaviors adicionales que aparecen segun ShowConditions " +
+                 "(ej. Forzar Puerta, Abrir Cofre). Se evaluan cada turno.")]
+        [OdinSerialize]
+        [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
+        public List<HeroActionBehavior> ContextualBehaviors = new List<HeroActionBehavior>();
 
         // ------------------------------------------------------------------
         // [STUB] — elevated by Hero Template task.

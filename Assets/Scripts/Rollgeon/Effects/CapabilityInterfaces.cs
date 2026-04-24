@@ -1,4 +1,4 @@
-using Rollgeon.Effects.Stubs;
+using Rollgeon.Entities.Behaviors;
 
 namespace Rollgeon.Effects
 {
