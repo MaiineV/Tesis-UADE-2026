@@ -59,6 +59,557 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: Actions
+      Entry: 7
+      Data: 2|Rollgeon.Heroes.HeroBehaviorSet, Rollgeon
+    - Name: Movement
+      Entry: 7
+      Data: 3|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ActionName
+      Entry: 1
+      Data: Movement
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 6|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 9|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 10|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: RequiresSelection
+      Entry: 5
+      Data: true
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: IsSkippable
+      Entry: 5
+      Data: false
+    - Name: RequireEmptySlot
+      Entry: 5
+      Data: true
+    - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: false
+    - Name: TargetQuery
+      Entry: 7
+      Data: 11|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _baseAmount
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: BaseAttack
+      Entry: 7
+      Data: 12|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Base Attack
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: ShowConditions
+      Entry: 7
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 15|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 18|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 19|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: RequiresSelection
+      Entry: 5
+      Data: true
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: IsSkippable
+      Entry: 5
+      Data: false
+    - Name: RequireEmptySlot
+      Entry: 5
+      Data: false
+    - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: true
+    - Name: TargetQuery
+      Entry: 7
+      Data: 20|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: SpecialAttack
+      Entry: 7
+      Data: 21|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Special Attack
+    - Name: EnergyCost
+      Entry: 3
+      Data: 2
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: ShowConditions
+      Entry: 7
+      Data: 22|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 24|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 27|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 28|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: RequiresSelection
+      Entry: 5
+      Data: true
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 2
+    - Name: IsSkippable
+      Entry: 5
+      Data: false
+    - Name: RequireEmptySlot
+      Entry: 5
+      Data: false
+    - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: true
+    - Name: TargetQuery
+      Entry: 7
+      Data: 29|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _baseAmount
+      Entry: 3
+      Data: 7
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Healing
+      Entry: 7
+      Data: 30|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ActionName
+      Entry: 1
+      Data: Healing
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 31|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 33|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 35|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 36|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 37|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: RequiresSelection
+      Entry: 5
+      Data: true
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: IsSkippable
+      Entry: 5
+      Data: false
+    - Name: RequireEmptySlot
+      Entry: 5
+      Data: false
+    - Name: RequireOccupiedSlot
+      Entry: 5
+      Data: true
+    - Name: TargetQuery
+      Entry: 7
+      Data: 38|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _baseAmount
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ContextualBehaviors
+      Entry: 7
+      Data: 39|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: Warrior
   DisplayName: Warrior
   Description: 
@@ -69,9 +620,158 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
     - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
     _displayLabel: 
+  Actions:
+    Movement:
+      Trigger: 0
+      AllowedPhases: -1
+      ActionName: Movement
+      EnergyCost: 1
+      BlockOnRepeat: 1
+      FreeRollCount: 1
+      AllowsReroll: 0
+      AllowsEnergyReroll: 0
+      ShowConditions: []
+      Effects:
+      - rid: 6161477886452695112
+    BaseAttack:
+      Trigger: 0
+      AllowedPhases: -3
+      ActionName: Base Attack
+      EnergyCost: 1
+      BlockOnRepeat: 1
+      FreeRollCount: 3
+      AllowsReroll: 1
+      AllowsEnergyReroll: 1
+      ShowConditions: []
+      Effects:
+      - rid: 6161477886452695114
+    SpecialAttack:
+      Trigger: 0
+      AllowedPhases: -3
+      ActionName: Special Attack
+      EnergyCost: 2
+      BlockOnRepeat: 1
+      FreeRollCount: 3
+      AllowsReroll: 1
+      AllowsEnergyReroll: 1
+      ShowConditions: []
+      Effects:
+      - rid: 6161477886452695116
+    Healing:
+      Trigger: 0
+      AllowedPhases: -1
+      ActionName: Healing
+      EnergyCost: 1
+      BlockOnRepeat: 1
+      FreeRollCount: 1
+      AllowsReroll: 0
+      AllowsEnergyReroll: 0
+      ShowConditions: []
+      Effects:
+      - rid: 6161477886452695121
+  ContextualBehaviors: []
   BaseMaxHp: 10
   BaseSpeed: 5
   Portrait: {fileID: 0}
   StartingDiceBagRef: {fileID: 11400000, guid: 6988ff59247d8b7408e5172395b98872, type: 2}
   DiceBagPool: {fileID: 11400000, guid: b9b9a7f2c39c8a74e8a246de66f32b32, type: 2}
   PassiveRef: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 6161477886452695112
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695113
+    - rid: 6161477886452695113
+      type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 1
+          RequireOccupiedSlot: 0
+          TargetQuery:
+            rid: 6161477886452695120
+        _baseAmount: 1
+    - rid: 6161477886452695114
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695115
+    - rid: 6161477886452695115
+      type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 1
+          TargetQuery:
+            rid: 6161477886452695119
+        _baseAmount: 10
+    - rid: 6161477886452695116
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695117
+    - rid: 6161477886452695117
+      type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 2
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 1
+          TargetQuery:
+            rid: 6161477886452695118
+        _baseAmount: 7
+    - rid: 6161477886452695118
+      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
+    - rid: 6161477886452695119
+      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
+    - rid: 6161477886452695120
+      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
+    - rid: 6161477886452695121
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695122
+    - rid: 6161477886452695122
+      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 0
+          RequireOccupiedSlot: 1
+          TargetQuery:
+            rid: 6161477886452695123
+        _baseAmount: 5
+    - rid: 6161477886452695123
+      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 

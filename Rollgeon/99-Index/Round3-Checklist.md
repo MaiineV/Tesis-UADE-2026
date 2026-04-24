@@ -210,7 +210,7 @@ Verificar los ya creados:
 
 ### D.3 CombatHUD (items 17–25)
 
-- [ ] (17) `CombatHUDView` — **10 refs**: `_turnQueue`, `_comboIndicator`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_playerActionButtons`, `_healthBar`, `_energyBar`, `_endTurnButtonView`, `_damageFlashGroup`
+- [x] (17) `CombatHUDView` — **10 refs**: `_turnQueue`, `_comboIndicator`, `_diceZone`, `_rerollCount`, `_floatingDamage`, `_playerActionButtons`, `_healthBar`, `_energyBar`, `_endTurnButtonView`, `_damageFlashGroup`
   - ⚠️ Ya NO tiene `_enemyPanel` (reemplazado por WorldSpaceHealthBar §0206) ni `_actionButtons` (legacy).
 - [x] (18) `TurnQueueView`: `_slotPrefab` → `TurnSlot.prefab` ; `_container`
 - ~~(19) `EnemyPanelView`~~ — **ELIMINADO**. Reemplazado por `WorldSpaceHealthBar` sobre cada pawn (ver sección G).
@@ -221,20 +221,20 @@ Verificar los ya creados:
 - [x] (22) `ActionButtonsView` (legacy, puede coexistir): `_attackButton`, `_energyRerollButton`, `_endTurnButton`
   - [x] (22b) `ActionButtonsView._attackAction` → `Assets/Rollgeon/Actions/AD_AttackBasic.asset`
   - **Nota**: si solo usás `PlayerActionButtonsView` + `EndTurnButtonView` + `RerollCountView`, podés dejar `ActionButtonsView` sin cablear (null-safe).
-- [ ] (23) `PlayerActionButtonsView` — **5 refs** (post-refactor):
+- [x] (23) `PlayerActionButtonsView` — **5 refs** (post-refactor):
   - `_movementButton` → MovementBtn
   - `_attackButton` → AttackBtn
   - `_specialButton` → SpecialBtn
   - `_healButton` → HealBtn
   - `_confirmButton` → ConfirmBtn
   - ⚠️ Ya NO tiene `_rollDiceButton`, `_rerollButton`, `_confirmAttackButton`, `_endTurnButton`, ni `_rerollLabel`. Los botones de Reroll están en `RerollCountView`, EndTurn en `EndTurnButtonView`.
-- [ ] (23b) `EndTurnButtonView` — **NUEVO** componente separado:
+- [x] (23b) `EndTurnButtonView` — **NUEVO** componente separado:
   - Crear un hijo del CombatHUD: `EndTurnButtonPanel`
   - Add Component → `EndTurnButtonView`
   - Crear hijo `Button`: `EndTurnBtn`
   - `_endTurnButton` → EndTurnBtn
   - Cablear `CombatHUDView._endTurnButtonView` → este GO
-- [ ] (24) `RerollCountView` — **3 refs** (actualizado):
+- [x] (24) `RerollCountView` — **3 refs** (actualizado):
   - `_countLabel` → TMP que muestra "{used}/{cap}"
   - `_extraRollButton` → botón de extra roll
   - `_costLabel` → TMP opcional que muestra "Free" / "1E" (null = skip)
@@ -267,7 +267,7 @@ Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
 ### E.2 `02_Gameplay`
 
 - [x] `ExplorationHUD`: HP/Energy arriba-izquierda · Gold debajo · Minimap arriba-derecha · RoomNavigation centrado abajo
-- [ ] `CombatHUD`: TurnQueue arriba · DiceZone centro · Behaviors + Confirm abajo-izquierda · EndTurn abajo-derecha · RerollCount junto a DiceZone · HealthBar/EnergyBar del player arriba-izquierda
+- [x] `CombatHUD`: TurnQueue arriba · DiceZone centro · Behaviors + Confirm abajo-izquierda · EndTurn abajo-derecha · RerollCount junto a DiceZone · HealthBar/EnergyBar del player arriba-izquierda
   - ⚠️ `EnemyPanel` ya no existe — las barras de vida de los enemigos son world-space sobre cada pawn (sección G).
 - [x] `FloorTransition`, `Pause`, `Victory`, `Defeat`: overlay centrado con backdrop semi-transparente
 
@@ -283,13 +283,13 @@ Todos los `RectTransform` arrancan en `(0,0,0)`. Posicionar manualmente.
 
 Para cada prefab de enemy (ej. `Goblin.prefab`, `Boss.prefab`):
 
-- [ ] Crear hijo del root: `Canvas` con **Render Mode = World Space**
+- [x] Crear hijo del root: `Canvas` con **Render Mode = World Space**
   - Scale ≈ `(0.01, 0.01, 0.01)` (ajustar según tamaño visual)
-- [ ] Dentro del Canvas:
-  - [ ] **Image** `Fill`: `Image Type = Filled`, `Fill Method = Horizontal`, `Fill Origin = Left`
-  - [ ] **TextMeshPro** `HpText` (opcional): centrado, font size apropiado
-- [ ] Add Component → `WorldSpaceHealthBar` al Canvas GO
-- [ ] Cablear en Inspector:
+- [x] Dentro del Canvas:
+  - [x] **Image** `Fill`: `Image Type = Filled`, `Fill Method = Horizontal`, `Fill Origin = Left`
+  - [x] **TextMeshPro** `HpText` (opcional): centrado, font size apropiado
+- [x] Add Component → `WorldSpaceHealthBar` al Canvas GO
+- [x] Cablear en Inspector:
   - `_fillImage` → `Fill`
   - `_hpText` → `HpText` (o null)
   - `_barRoot` → el Canvas GO (para show/hide)
@@ -297,13 +297,13 @@ Para cada prefab de enemy (ej. `Goblin.prefab`, `Boss.prefab`):
 
 ### G.2 EntityPawn — cablear referencia
 
-- [ ] En el `EntityPawn` del mismo prefab: `_healthBar` → el `WorldSpaceHealthBar`
-- [ ] Para prefabs de **hero**: dejar `_healthBar` en **null**
+- [x] En el `EntityPawn` del mismo prefab: `_healthBar` → el `WorldSpaceHealthBar`
+- [x] Para prefabs de **hero**: dejar `_healthBar` en **null**
 
 ### G.3 Limpieza de escena
 
-- [ ] En `02_Gameplay`, si existe un GO `EnemyPanelRoot` bajo el Canvas del CombatHUD → **eliminarlo**
-- [ ] Verificar que `CombatHUDView` no tenga Missing References
+- [x] En `02_Gameplay`, si existe un GO `EnemyPanelRoot` bajo el Canvas del CombatHUD → **eliminarlo**
+- [x] Verificar que `CombatHUDView` no tenga Missing References
 
 ---
 
@@ -317,8 +317,8 @@ Para cada prefab de enemy (ej. `Goblin.prefab`, `Boss.prefab`):
 
 ### H.1 Abrir ClassHeroSO del Guerrero
 
-- [ ] Abrir `Assets/Rollgeon/Heroes/CH_Warrior.asset` en Inspector (Odin)
-- [ ] Expandir el foldout **"Actions"** (`HeroBehaviorSet`)
+- [x] Abrir `Assets/Rollgeon/Heroes/CH_Warrior.asset` en Inspector (Odin)
+- [x] Expandir el foldout **"Actions"** (`HeroBehaviorSet`)
 
 ### H.2 Configurar los 4 slots
 
@@ -326,14 +326,14 @@ Cada slot es un `HeroActionBehavior` con estos campos editables:
 
 #### H.2a Movement
 
-- [ ] `ActionName` = `"Movement"`
-- [ ] `EnergyCost` = **1**
-- [ ] `BlockOnRepeat` = **false** (puede moverse varias veces por turno)
-- [ ] `FreeRollCount` = **1** (sin rerolls)
-- [ ] `AllowsReroll` = **false**
-- [ ] `AllowsEnergyReroll` = **false**
-- [ ] `ShowConditions` = [] (siempre visible)
-- [ ] `Effects` = al menos 1 `EffectData`:
+- [x] `ActionName` = `"Movement"`
+- [x] `EnergyCost` = **1**
+- [x] `BlockOnRepeat` = **false** (puede moverse varias veces por turno)
+- [x] `FreeRollCount` = **1** (sin rerolls)
+- [x] `AllowsReroll` = **false**
+- [x] `AllowsEnergyReroll` = **false**
+- [x] `ShowConditions` = [] (siempre visible)
+- [x] `Effects` = al menos 1 `EffectData`:
   - Label: `"Move to target"`
   - PreConditions: las que correspondan (ej. `PCEntityInRange`, o vacío para smoke)
   - Effects: el `IEffect` concreto de movimiento (ej. `MoveToSlotEffect`)
@@ -341,13 +341,13 @@ Cada slot es un `HeroActionBehavior` con estos campos editables:
 
 #### H.2b Base Attack
 
-- [ ] `ActionName` = `"Base Attack"`
-- [ ] `EnergyCost` = **1**
-- [ ] `BlockOnRepeat` = **true**
-- [ ] `FreeRollCount` = **3** (1 roll inicial + 2 rerolls gratis)
-- [ ] `AllowsReroll` = **true**
-- [ ] `AllowsEnergyReroll` = **true** (puede gastar energía para rerolls extra)
-- [ ] `Effects` = al menos 1 `EffectData`:
+- [x] `ActionName` = `"Base Attack"`
+- [x] `EnergyCost` = **1**
+- [x] `BlockOnRepeat` = **true**
+- [x] `FreeRollCount` = **3** (1 roll inicial + 2 rerolls gratis)
+- [x] `AllowsReroll` = **true**
+- [x] `AllowsEnergyReroll` = **true** (puede gastar energía para rerolls extra)
+- [x] `Effects` = al menos 1 `EffectData`:
   - Label: `"Deal damage"`
   - PreConditions: [] (siempre ejecuta)
   - Effects: el `IEffect` de daño (ej. `DealDamageEffect`)

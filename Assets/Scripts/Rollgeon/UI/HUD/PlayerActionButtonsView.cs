@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Rollgeon.Combat;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;

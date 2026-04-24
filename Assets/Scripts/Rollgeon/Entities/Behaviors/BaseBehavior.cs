@@ -26,8 +26,10 @@ namespace Rollgeon.Entities.Behaviors
         [Tooltip("Fases del juego en las que este behavior puede ejecutar (AND con Trigger).")]
         public GamePhaseMask AllowedPhases = GamePhaseMask.All;
 
-        private readonly Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>> _storedValues
-            = new Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>();
+        private Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>> _storedValues;
+
+        private Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>> StoredValues
+            => _storedValues ??= new Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>();
 
         /// <summary>Nombre legible del behavior para UI / debug.</summary>
         public virtual string BehaviorName => GetType().Name;
@@ -50,10 +52,10 @@ namespace Rollgeon.Entities.Behaviors
         /// <summary>Append semantico — cada call agrega un valor a la lista bajo la key.</summary>
         public void SetBehaviorValue(BehaviorValueKey key, BaseBehaviorStoredValue value)
         {
-            if (!_storedValues.TryGetValue(key, out var list))
+            if (!StoredValues.TryGetValue(key, out var list))
             {
                 list = new List<BaseBehaviorStoredValue>();
-                _storedValues[key] = list;
+                StoredValues[key] = list;
             }
             list.Add(value);
         }
@@ -66,7 +68,7 @@ namespace Rollgeon.Entities.Behaviors
             where T : BaseBehaviorStoredValue
         {
             values = null;
-            if (!_storedValues.TryGetValue(key, out var list)) return false;
+            if (!StoredValues.TryGetValue(key, out var list)) return false;
 
             values = new List<T>(list.Count);
             foreach (var raw in list)
@@ -79,7 +81,7 @@ namespace Rollgeon.Entities.Behaviors
         /// <summary>Limpia todos los valores. Idempotente. Llamado por el <c>finally</c> post resolve.</summary>
         public void ClearBehaviorValues()
         {
-            _storedValues.Clear();
+            StoredValues.Clear();
         }
     }
 }
