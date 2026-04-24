@@ -137,7 +137,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 9|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+      Data: 9|Rollgeon.Effects.Concretes.EffMove, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 10|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -162,18 +162,21 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 7
-      Data: 11|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: _baseAmount
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
       Entry: 3
-      Data: 1
+      Data: 3
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: TargetQuery
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -197,7 +200,7 @@ MonoBehaviour:
       Data: 
     - Name: BaseAttack
       Entry: 7
-      Data: 12|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 11|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -224,7 +227,7 @@ MonoBehaviour:
       Data: true
     - Name: ShowConditions
       Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -237,20 +240,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 15|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 14|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 16|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -263,17 +266,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 18|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+      Data: 17|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 19|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 18|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: RequiresSelection
       Entry: 5
       Data: true
@@ -295,9 +298,18 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: true
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 7
-      Data: 20|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
+      Data: 19|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -330,7 +342,7 @@ MonoBehaviour:
       Data: 
     - Name: SpecialAttack
       Entry: 7
-      Data: 21|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 20|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -357,7 +369,7 @@ MonoBehaviour:
       Data: true
     - Name: ShowConditions
       Entry: 7
-      Data: 22|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 21|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -370,20 +382,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 23|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 22|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 23|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 25|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -396,17 +408,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 27|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
+      Data: 26|Rollgeon.Effects.Concretes.EffDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 28|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 27|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: RequiresSelection
       Entry: 5
       Data: true
@@ -428,9 +440,18 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: true
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 7
-      Data: 29|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
+      Data: 28|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -463,7 +484,7 @@ MonoBehaviour:
       Data: 
     - Name: Healing
       Entry: 7
-      Data: 30|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 29|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -490,7 +511,7 @@ MonoBehaviour:
       Data: false
     - Name: ShowConditions
       Entry: 7
-      Data: 31|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -503,20 +524,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 31|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 33|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 32|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 34|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 33|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -529,17 +550,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 35|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+      Data: 35|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 37|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 36|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: RequiresSelection
       Entry: 5
       Data: true
@@ -561,9 +582,18 @@ MonoBehaviour:
     - Name: RequireOccupiedSlot
       Entry: 5
       Data: true
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
     - Name: TargetQuery
       Entry: 7
-      Data: 38|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
+      Data: 37|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -599,7 +629,7 @@ MonoBehaviour:
       Data: 
     - Name: ContextualBehaviors
       Entry: 7
-      Data: 39|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+      Data: 38|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -632,7 +662,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 6161477886452695112
+      - rid: 6161477886452695294
     BaseAttack:
       Trigger: 0
       AllowedPhases: -3
@@ -644,7 +674,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 6161477886452695114
+      - rid: 6161477886452695295
     SpecialAttack:
       Trigger: 0
       AllowedPhases: -3
@@ -656,7 +686,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 6161477886452695116
+      - rid: 6161477886452695296
     Healing:
       Trigger: 0
       AllowedPhases: -1
@@ -668,7 +698,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 6161477886452695121
+      - rid: 6161477886452695297
   ContextualBehaviors: []
   BaseMaxHp: 10
   BaseSpeed: 5
@@ -679,35 +709,37 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 6161477886452695112
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6161477886452695294
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 6161477886452695113
-    - rid: 6161477886452695113
-      type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          RequiresSelection: 1
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 1
-          RequireOccupiedSlot: 0
-          TargetQuery:
-            rid: 6161477886452695120
-        _baseAmount: 1
-    - rid: 6161477886452695114
+        - rid: 6161477886452695306
+    - rid: 6161477886452695295
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 6161477886452695115
-    - rid: 6161477886452695115
+        - rid: 6161477886452695299
+    - rid: 6161477886452695296
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695300
+    - rid: 6161477886452695297
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6161477886452695301
+    - rid: 6161477886452695299
       type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -718,17 +750,13 @@ MonoBehaviour:
           IsSkippable: 0
           RequireEmptySlot: 0
           RequireOccupiedSlot: 1
+          IsGlobal: 0
+          Range: 1
+          AutoAccept: 0
           TargetQuery:
-            rid: 6161477886452695119
+            rid: 6161477886452695303
         _baseAmount: 10
-    - rid: 6161477886452695116
-      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
-      data:
-        Label: Effect Group
-        PreConditions: []
-        Effects:
-        - rid: 6161477886452695117
-    - rid: 6161477886452695117
+    - rid: 6161477886452695300
       type: {class: EffDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -739,26 +767,13 @@ MonoBehaviour:
           IsSkippable: 0
           RequireEmptySlot: 0
           RequireOccupiedSlot: 1
+          IsGlobal: 0
+          Range: 1
+          AutoAccept: 0
           TargetQuery:
-            rid: 6161477886452695118
+            rid: 6161477886452695304
         _baseAmount: 7
-    - rid: 6161477886452695118
-      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 
-    - rid: 6161477886452695119
-      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 
-    - rid: 6161477886452695120
-      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 
-    - rid: 6161477886452695121
-      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
-      data:
-        Label: Effect Group
-        PreConditions: []
-        Effects:
-        - rid: 6161477886452695122
-    - rid: 6161477886452695122
+    - rid: 6161477886452695301
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -769,9 +784,34 @@ MonoBehaviour:
           IsSkippable: 0
           RequireEmptySlot: 0
           RequireOccupiedSlot: 1
+          IsGlobal: 0
+          Range: 1
+          AutoAccept: 0
           TargetQuery:
-            rid: 6161477886452695123
+            rid: 6161477886452695305
         _baseAmount: 5
-    - rid: 6161477886452695123
+    - rid: 6161477886452695303
+      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
+    - rid: 6161477886452695304
+      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
+      data: 
+    - rid: 6161477886452695305
       type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
       data: 
+    - rid: 6161477886452695306
+      type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          RequiresSelection: 1
+          Timing: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          IsSkippable: 0
+          RequireEmptySlot: 1
+          RequireOccupiedSlot: 0
+          IsGlobal: 0
+          Range: 3
+          AutoAccept: 1
+          TargetQuery:
+            rid: -2

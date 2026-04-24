@@ -405,20 +405,20 @@ Desde `Assets/Scenes/00_Bootstrap.unity` en Play mode:
 - [x] ExplorationHUD aparece con HP/Energy/Gold populados. Primera room muestra **"Entrada"** (Start), sin combate — si ves combate ya, falta cablear `StartRoom` en `Floor1_Layout`.
 - [x] Click **Proceed** → entra a primera sala de combate → aparece `CombatHUD` encima del ExplorationHUD
 - [x] Navegar entre rooms con `Proceed`
-- [ ] Player turn: 4 botones de behavior habilitados (Movement, Attack, Special, Heal)
-  - [ ] Click en behavior → dados ruedan → botones de behavior se deshabilitan, Confirm se habilita
-  - [ ] Si behavior tiene `AllowsReroll=true`: `RerollCountView` muestra "0/2", botón Extra Roll habilitado
-  - [ ] Click Reroll → counter actualiza "1/2", `_costLabel` muestra "Free" o "1E"
-  - [ ] Click Confirm → counter vuelve a "-/-", vuelve a WaitingForAction
-  - [ ] EndTurn funciona desde su componente separado (`EndTurnButtonView`)
-  - [ ] EndTurn se deshabilita durante roll, se re-habilita post confirm
-- [ ] Enemigos muestran barras de HP world-space sobre su cabeza
-  - [ ] Barra baja al recibir daño, sube al recibir heal
-  - [ ] Barra se oculta al morir
+- [x] Player turn: 4 botones de behavior habilitados (Movement, Attack, Special, Heal)
+  - [x] Click en behavior → dados ruedan → botones de behavior se deshabilitan, Confirm se habilita
+  - [x] Si behavior tiene `AllowsReroll=true`: `RerollCountView` muestra "0/2", botón Extra Roll habilitado
+  - [x] Click Reroll → counter actualiza "1/2", `_costLabel` muestra "Free" o "1E"
+  - [x] Click Confirm → counter vuelve a "-/-", vuelve a WaitingForAction
+  - [x] EndTurn funciona desde su componente separado (`EndTurnButtonView`)
+  - [x] EndTurn se deshabilita durante roll, se re-habilita post confirm
+- [x] Enemigos muestran barras de HP world-space sobre su cabeza
+  - [x] Barra baja al recibir daño, sube al recibir heal
+  - [x] Barra se oculta al morir
 - [x] Enemy turn se ejecuta → vuelve al player
 - [ ] Floor boss cleared → VictoryScreen ; o muerte → DefeatScreen
 - [ ] `Return to Menu` → `01_MainMenu` limpio, nueva run arrancable (verifica que `ClearScope(Run)` corrió)
-- [ ] **Negativo:** abrir `02_Gameplay` directo en Play → console loggea
+- [x] **Negativo:** abrir `02_Gameplay` directo en Play → console loggea
   `[GameplayBootstrapper] No pending run request` (guard del bootstrapper)
 
 ---

@@ -123,6 +123,7 @@ namespace Rollgeon.Heroes
                 effCtx.DiceResult = heroCtx.DiceResult;
                 effCtx.ComboResult = heroCtx.MatchedComboResult;
                 effCtx.TargetGuid = heroCtx.TargetGuid;
+                effCtx.SelectionResult = heroCtx.SelectionResult;
             }
 
             return effCtx;

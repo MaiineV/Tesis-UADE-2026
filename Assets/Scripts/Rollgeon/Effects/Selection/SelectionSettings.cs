@@ -1,20 +1,14 @@
 using System;
+using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Grid;
+using Rollgeon.Movement;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Selection
 {
-    /// <summary>
-    /// Struct de configuración de selección embebido dentro de cada <see cref="IEffect"/>
-    /// que implemente <see cref="IUsesSelection"/>. TECHNICAL.md §11.2.
-    /// <para>
-    /// <see cref="TargetQuery"/> es un campo polimórfico — lleva <c>[OdinSerialize]</c> +
-    /// <c>[SerializeReference]</c> según §13.6.1 para que el subtipo concreto sobreviva al
-    /// round-trip de save/load. <c>[HideReferenceObjectPicker]</c> aparece en la clase base
-    /// <see cref="BaseTargetQuery"/>, no acá.
-    /// </para>
-    /// </summary>
     [Serializable]
     public class SelectionSettings
     {
@@ -41,33 +35,61 @@ namespace Rollgeon.Effects.Selection
         [Tooltip("Sólo son válidos los slots ocupados (ataques, interacciones).")]
         public bool RequireOccupiedSlot;
 
-        /// <summary>
-        /// Query inline polimórfica. El doble atributo <c>[OdinSerialize, SerializeReference]</c>
-        /// cumple §13.6.1 — Odin serializa el subtipo en editor/save polimórficamente y
-        /// <c>[SerializeReference]</c> activa la ruta nativa de Unity para prefab overrides.
-        /// </summary>
+        [ToggleLeft]
+        [Tooltip("Si true, busca en toda la sala. Si false, usa Range desde la entidad.")]
+        public bool IsGlobal;
+
+        [MinValue(1), MaxValue(20)]
+        [ShowIf("@RequiresSelection && !IsGlobal")]
+        [Tooltip("Rango BFS desde la posición del ejecutor.")]
+        public int Range = 1;
+
+        [ToggleLeft]
+        [Tooltip("Auto-confirma cuando se alcanza SelectionCount.")]
+        public bool AutoAccept = true;
+
         [OdinSerialize, SerializeReference]
         public BaseTargetQuery TargetQuery;
 
-        /// <summary>
-        /// Resuelve la cantidad efectiva de targets. En esta foundation devuelve
-        /// <see cref="SelectionCount"/> — si <see cref="IsConstantSelectionCount"/> es false,
-        /// downstream readers overridean este método (la API queda congelada).
-        /// </summary>
         public int GetSelectionCount(ReadInfo info)
         {
-            // [TODO downstream] — si IsConstantSelectionCount == false, leer del reader asociado.
             return SelectionCount;
         }
 
-        /// <summary>
-        /// True si la selección debe resolverse al timing dado. Consumido por el dispatcher
-        /// del behavior para saber si pre-resolver (BeforeResolve) o delegar al ApplyEffect
-        /// (DuringResolve).
-        /// </summary>
         public bool NeedsSelectionAt(SelectionTiming t)
         {
             return RequiresSelection && Timing == t;
+        }
+
+        public List<TargetRef> ResolveValidTiles(GridCoord ownerPosition)
+        {
+            var result = new List<TargetRef>();
+
+            if (IsGlobal)
+            {
+                if (!ServiceLocator.TryGetService<IGridManager>(out var grid)) return result;
+                foreach (var coord in grid.Graph.AllCoords())
+                {
+                    if (!PassesSlotFilters(grid, coord, ownerPosition)) continue;
+                    result.Add(TargetRef.At(coord));
+                }
+            }
+            else
+            {
+                if (!ServiceLocator.TryGetService<IMovementService>(out var movement)) return result;
+                foreach (var coord in movement.GetReachableTiles(ownerPosition, Range))
+                    result.Add(TargetRef.At(coord));
+            }
+
+            return result;
+        }
+
+        private bool PassesSlotFilters(IGridManager grid, GridCoord coord, GridCoord ownerPos)
+        {
+            if (coord == ownerPos) return false;
+            if (RequireEmptySlot && !grid.IsFree(coord)) return false;
+            if (RequireOccupiedSlot && !grid.IsOccupied(coord)) return false;
+            return true;
         }
     }
 }

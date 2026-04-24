@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.FSM;
+using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Dungeon;
+using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
@@ -261,6 +264,35 @@ namespace Rollgeon.Combat.Handoff
                     MatchedComboResult = comboResult,
                     TargetGuid = firstEnemyId,
                 };
+
+                bool hasBeforeResolve = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeResolve);
+                Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeResolve={hasBeforeResolve}");
+
+                if (hasBeforeResolve
+                    && ServiceLocator.TryGetService<ICombatStarter>(out var starter))
+                {
+                    var controller = starter as CombatControllerAdapter;
+                    Debug.Log($"[CombatHandoff] ICombatStarter resolved={starter != null}, adapter={controller != null}, " +
+                              $"controller={controller?.Controller != null}, fsm={controller?.Controller?.FSM != null}, " +
+                              $"player={controller?.Controller?.FSM?.Player != null}");
+                    var playerState = controller?.Controller?.FSM?.Player;
+                    if (playerState != null)
+                    {
+                        if (ServiceLocator.TryGetService<IRerollBudgetService>(out var b) && b != null)
+                            b.EndBudget();
+
+                        var r = _lastFaces ?? Array.Empty<int>();
+                        EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)r);
+
+                        Debug.Log("[CombatHandoff] → RequestAction on PlayerTurnState");
+                        playerState.RequestAction(_selectedBehavior, behaviorCtx);
+
+                        _lastFaces = null;
+                        _selectedBehavior = null;
+                        return;
+                    }
+                    Debug.LogWarning("[CombatHandoff] playerState is null — falling through to TurnManager path");
+                }
 
                 if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
                     tm.TryExecute(_selectedBehavior, playerGuid, behaviorCtx);

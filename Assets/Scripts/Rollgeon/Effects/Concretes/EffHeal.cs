@@ -1,6 +1,8 @@
 using System;
+using Patterns;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -45,8 +47,12 @@ namespace Rollgeon.Effects.Concretes
             if (amount <= 0) return true; // no-op
 
             var targetGuid = Guid.Empty;
-            if (context.SelectionResult != null) targetGuid = context.SelectionResult.FirstSelectedGuid;
-            if (targetGuid == Guid.Empty) targetGuid = context.SourceGuid; // heal self por default
+            if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord)
+            {
+                if (ServiceLocator.TryGetService<IGridManager>(out var grid))
+                    grid.TryGetOccupant(coord, out targetGuid);
+            }
+            if (targetGuid == Guid.Empty) targetGuid = context.SourceGuid;
 
             Debug.Log($"[EffHeal example] source {context.SourceGuid} heals {targetGuid} for {amount}");
 

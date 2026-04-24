@@ -4,11 +4,6 @@ using Sirenix.OdinInspector;
 
 namespace Rollgeon.Effects.Selection.Queries
 {
-    /// <summary>
-    /// Query degenerada — el target es siempre el owner. TECHNICAL.md §11.2b.
-    /// Caso típico: buffs self, heals auto-aplicados, efectos que disparan pasivas propias.
-    /// Prueba el patrón de single-target y la infra de selección sin tocar servicios externos.
-    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public class TQ_Self : BaseTargetQuery
     {
@@ -18,7 +13,7 @@ namespace Rollgeon.Effects.Selection.Queries
         {
             var result = new List<TargetRef>(1);
             if (context == null) return result;
-            result.Add(TargetRef.Entity(context.OwnerGuid));
+            result.Add(TargetRef.At(context.OwnerPosition));
             return result;
         }
     }

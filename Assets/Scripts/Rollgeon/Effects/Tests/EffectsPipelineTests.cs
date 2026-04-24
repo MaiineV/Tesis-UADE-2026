@@ -7,6 +7,7 @@ using Rollgeon.Effects.Selection;
 using Rollgeon.Effects.Selection.Queries;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Grid;
 using Rollgeon.PreConditions;
 using Sirenix.Serialization;
 
@@ -154,15 +155,14 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void BaseTargetQuery_TQSelf_ReturnsOwnerAsTarget()
         {
-            var owner = Guid.NewGuid();
+            var ownerPos = new GridCoord(3, 5);
             var q = new TQ_Self();
-            var ctx = new TargetQueryContext { OwnerGuid = owner };
+            var ctx = new TargetQueryContext { OwnerGuid = Guid.NewGuid(), OwnerPosition = ownerPos };
 
             var result = q.Evaluate(ctx);
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(owner, result[0].Guid);
-            Assert.AreEqual(-1, result[0].SlotId);
+            Assert.AreEqual(ownerPos, result[0].Coord);
         }
 
         // ───── Plan §3.6 scenario 5 ───────────────────────────────────────────────

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combos;
+using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
 
 namespace Rollgeon.Heroes
@@ -10,5 +11,6 @@ namespace Rollgeon.Heroes
         public IReadOnlyList<int> DiceResult;
         public ComboDetectionResult? MatchedComboResult;
         public Guid TargetGuid;
+        public TargetSelectionResult SelectionResult;
     }
 }

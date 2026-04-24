@@ -16,6 +16,8 @@ namespace Rollgeon.Combat.Handoff
     {
         private readonly CombatController _controller;
 
+        public CombatController Controller => _controller;
+
         public CombatControllerAdapter(CombatController controller)
         {
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));

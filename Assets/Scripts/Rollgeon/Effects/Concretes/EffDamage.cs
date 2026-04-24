@@ -4,6 +4,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Stubs;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -52,17 +53,14 @@ namespace Rollgeon.Effects.Concretes
             var amount = args.BaseAmount;
             if (amount <= 0) return true; // no-op, but not an error
 
-            // Resolver target — primero SelectionResult, si no hay, TargetGuid del contexto.
             Entity target = null;
             var targetGuid = Guid.Empty;
-            if (context.SelectionResult != null)
+            if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord)
             {
-                targetGuid = context.SelectionResult.FirstSelectedGuid;
+                if (ServiceLocator.TryGetService<IGridManager>(out var grid))
+                    grid.TryGetOccupant(coord, out targetGuid);
             }
             if (targetGuid == Guid.Empty) targetGuid = context.TargetGuid;
-            // La foundation no resuelve Guid → Entity (no hay EntityRegistry todavía) — el
-            // stub de DamagePipeline tolera Entity == null y sólo loggea.
-
             // Prefer the real DamagePipeline when registered; fall back to stub otherwise.
             int resolvedDamage = amount;
             if (ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline))
