@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Grid;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -94,6 +96,57 @@ namespace Rollgeon.Heroes
                         return true;
                 }
             }
+            return false;
+        }
+
+        public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason)
+        {
+            reason = null;
+            if (Effects == null || Effects.Count == 0) return true;
+
+            var preCtx = new PreConditionContext
+            {
+                OwnerGuid = ownerGuid,
+                OpponentGuid = opponentGuid,
+                Entity = new Entity { Guid = ownerGuid },
+            };
+
+            GridCoord ownerPos = default;
+            bool hasOwnerPos = ServiceLocator.TryGetService<IGridManager>(out var grid)
+                               && grid.TryGetPosition(ownerGuid, out ownerPos);
+
+            foreach (var group in Effects)
+            {
+                if (group == null) continue;
+                if (!group.CanBeExecuted(preCtx)) continue;
+
+                bool groupUsable = true;
+                if (group.Effects != null)
+                {
+                    foreach (var eff in group.Effects)
+                    {
+                        if (eff == null) continue;
+                        if (!eff.RequiresSelectionAt(SelectionTiming.BeforeResolve)) continue;
+
+                        if (!hasOwnerPos)
+                        {
+                            groupUsable = false;
+                            break;
+                        }
+
+                        var targets = eff.GetSelection().ResolveValidTiles(ownerPos);
+                        if (targets == null || targets.Count == 0)
+                        {
+                            groupUsable = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (groupUsable) return true;
+            }
+
+            reason = "No usable effect group: all groups have failing preconditions or no valid targets.";
             return false;
         }
 

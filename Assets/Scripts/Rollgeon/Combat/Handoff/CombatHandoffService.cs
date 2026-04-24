@@ -285,6 +285,12 @@ namespace Rollgeon.Combat.Handoff
                     }
                 }
 
+                if (!behavior.HasUsableEffectGroup(playerGuid, firstEnemyId, out var effectReason))
+                {
+                    Debug.Log($"[CombatHandoffService] No usable effect group for '{behavior.ActionName}': {effectReason}");
+                    return;
+                }
+
                 _selectedBehavior = behavior;
 
                 if (!behavior.NeedsDiceRoll)
