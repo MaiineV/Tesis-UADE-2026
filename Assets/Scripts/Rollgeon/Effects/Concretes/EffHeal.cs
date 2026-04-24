@@ -97,8 +97,11 @@ namespace Rollgeon.Effects.Concretes
 
         private static Guid ResolveTargetGuid(EffectContext context)
         {
-            if (context.SelectionResult != null && context.SelectionResult.FirstSelectedGuid != Guid.Empty)
-                return context.SelectionResult.FirstSelectedGuid;
+            if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord
+                && ServiceLocator.TryGetService<IGridManager>(out var grid)
+                && grid.TryGetOccupant(coord, out var occupant)
+                && occupant != Guid.Empty)
+                return occupant;
             return context.SourceGuid;
         }
     }

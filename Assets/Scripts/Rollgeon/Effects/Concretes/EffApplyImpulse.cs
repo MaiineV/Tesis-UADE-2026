@@ -1,4 +1,5 @@
 using System;
+using Patterns;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -53,8 +54,11 @@ namespace Rollgeon.Effects.Concretes
 
         private static Guid ResolveTargetGuid(EffectContext context)
         {
-            if (context.SelectionResult != null && context.SelectionResult.FirstSelectedGuid != Guid.Empty)
-                return context.SelectionResult.FirstSelectedGuid;
+            if (context.SelectionResult?.FirstSelectedCoord is Grid.GridCoord coord
+                && ServiceLocator.TryGetService<Grid.IGridManager>(out var grid)
+                && grid.TryGetOccupant(coord, out var occupant)
+                && occupant != Guid.Empty)
+                return occupant;
             return context.TargetGuid;
         }
     }

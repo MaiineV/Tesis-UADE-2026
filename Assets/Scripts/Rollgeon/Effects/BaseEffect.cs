@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Feedback;
+using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 
 namespace Rollgeon.Effects
@@ -90,9 +92,13 @@ namespace Rollgeon.Effects
             if (context == null) return req;
 
             req.SourceGuid = context.SourceGuid;
-            req.TargetGuid = context.SelectionResult != null && context.SelectionResult.FirstSelectedGuid != Guid.Empty
-                ? context.SelectionResult.FirstSelectedGuid
-                : context.TargetGuid;
+            var resolvedTarget = context.TargetGuid;
+            if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord
+                && ServiceLocator.TryGetService<IGridManager>(out var grid)
+                && grid.TryGetOccupant(coord, out var occupant)
+                && occupant != Guid.Empty)
+                resolvedTarget = occupant;
+            req.TargetGuid = resolvedTarget;
             req.StoredValues = SnapshotStoredValues(context.SourceBehavior);
             return req;
         }
