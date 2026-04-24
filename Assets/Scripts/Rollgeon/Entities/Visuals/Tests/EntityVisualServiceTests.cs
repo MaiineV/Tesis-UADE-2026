@@ -22,7 +22,7 @@ namespace Rollgeon.Entities.Visuals.Tests
         public void SetUp()
         {
             _grid = new GridManager();
-            _grid.LoadRoom(GridSnapshot.Rect(5, 5));
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
             _movement = new MovementService(_grid);
 
             _heroPrefab = MakePrefab("HeroPrefab");

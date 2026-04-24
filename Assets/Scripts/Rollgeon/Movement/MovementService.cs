@@ -37,8 +37,9 @@ namespace Rollgeon.Movement
                 if (distance > 0 || includeOrigin) result.Add(current);
                 if (distance == range) continue;
 
-                foreach (var n in current.Neighbors4())
+                foreach (var edge in _grid.Graph.GetNeighbors(current))
                 {
+                    var n = edge.To;
                     if (visited.ContainsKey(n)) continue;
                     if (!_grid.IsWalkable(n)) continue;
                     if (_grid.IsOccupied(n)) continue;
@@ -71,8 +72,9 @@ namespace Rollgeon.Movement
                 var current = queue.Dequeue();
                 if (current == to) { reached = true; break; }
 
-                foreach (var n in current.Neighbors4())
+                foreach (var edge in _grid.Graph.GetNeighbors(current))
                 {
+                    var n = edge.To;
                     if (cameFrom.ContainsKey(n)) continue;
                     if (!_grid.IsWalkable(n)) continue;
 
