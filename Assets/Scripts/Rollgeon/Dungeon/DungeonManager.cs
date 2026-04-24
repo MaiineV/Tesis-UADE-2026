@@ -403,9 +403,8 @@ namespace Rollgeon.Dungeon
         /// <summary>
         /// Hook global de muertes — cuando un enemigo registrado por el resolver
         /// en <see cref="RoomInstance.SpawnedEnemies"/> cae, actualiza su
-        /// <see cref="EnemySpawnState.IsDead"/> y, si todos los enemigos de la
-        /// sala actual murieron, dispara <see cref="EventName.OnCombatEnd"/>
-        /// con <see cref="CombatOutcome.Victory"/>.
+        /// <see cref="EnemySpawnState.IsDead"/>. La señal de victoria la dispara
+        /// <c>CombatDeathWatcher</c> cuando <c>SpawnedEnemies.Count == 0</c>.
         /// </summary>
         private void OnEntityDestroyed(params object[] args)
         {
@@ -430,14 +429,6 @@ namespace Rollgeon.Dungeon
                     }
                 }
 
-                // Si la sala activa queda sin enemigos → Victory.
-                if (instance.InstanceId == _currentId
-                    && instance.State == RoomState.Uncleared
-                    && instance.SpawnedEnemies.Count == 0)
-                {
-                    EventManager.Trigger(EventName.OnCombatEnd,
-                        instance.InstanceId, CombatOutcome.Victory);
-                }
                 return;
             }
         }

@@ -7,5 +7,6 @@ namespace Rollgeon.Combat.AI
     public interface ICombatSignaller
     {
         void SignalEnemyDone();
+        void NotifyCombatEnded(FSM.CombatOutcome outcome);
     }
 }

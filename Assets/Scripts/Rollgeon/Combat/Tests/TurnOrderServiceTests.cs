@@ -346,6 +346,100 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(noSpeed, _service.OrderForRound[1]);
         }
 
+        // --- Remove -------------------------------------------------------
+
+        [Test]
+        public void Remove_BeforeCursor_DecrementsCursor()
+        {
+            var a = RegisterEntityWithSpeed(10);
+            var b = RegisterEntityWithSpeed(5);
+            var c = RegisterEntityWithSpeed(1);
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { a, b, c });
+            _service.Advance(); // cursor → b (index 1)
+
+            _service.Remove(a); // remove index 0, before cursor
+
+            Assert.AreEqual(2, _service.ParticipantCount);
+            Assert.AreEqual(b, _service.Current, "Cursor should still point to b after removing a.");
+        }
+
+        [Test]
+        public void Remove_AtCursor_CursorPointsToNextEntity()
+        {
+            var a = RegisterEntityWithSpeed(10);
+            var b = RegisterEntityWithSpeed(5);
+            var c = RegisterEntityWithSpeed(1);
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { a, b, c });
+            _service.Advance(); // cursor → b (index 1)
+
+            _service.Remove(b); // remove at cursor
+
+            Assert.AreEqual(2, _service.ParticipantCount);
+            Assert.AreEqual(c, _service.Current, "After removing b at cursor, cursor should land on c.");
+        }
+
+        [Test]
+        public void Remove_AfterCursor_CursorUnchanged()
+        {
+            var a = RegisterEntityWithSpeed(10);
+            var b = RegisterEntityWithSpeed(5);
+            var c = RegisterEntityWithSpeed(1);
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { a, b, c });
+            // cursor at a (index 0)
+
+            _service.Remove(c); // remove index 2, after cursor
+
+            Assert.AreEqual(2, _service.ParticipantCount);
+            Assert.AreEqual(a, _service.Current, "Cursor should still point to a.");
+        }
+
+        [Test]
+        public void Remove_LastRemainingEntity_EmptiesQueue()
+        {
+            var a = RegisterEntityWithSpeed(5);
+            InstallProvider(1);
+
+            _service.BuildForCombat(new[] { a });
+            _service.Remove(a);
+
+            Assert.AreEqual(0, _service.ParticipantCount);
+        }
+
+        [Test]
+        public void Remove_UnknownGuid_ReturnsFalse()
+        {
+            var a = RegisterEntityWithSpeed(5);
+            InstallProvider(1);
+
+            _service.BuildForCombat(new[] { a });
+
+            var result = _service.Remove(Guid.NewGuid());
+            Assert.IsFalse(result);
+            Assert.AreEqual(1, _service.ParticipantCount);
+        }
+
+        [Test]
+        public void Remove_AtCursor_LastIndex_WrapsToZero()
+        {
+            var a = RegisterEntityWithSpeed(10);
+            var b = RegisterEntityWithSpeed(5);
+            InstallProvider(1, 1);
+
+            _service.BuildForCombat(new[] { a, b });
+            _service.Advance(); // cursor → b (index 1)
+
+            _service.Remove(b); // remove at cursor (last index)
+
+            Assert.AreEqual(1, _service.ParticipantCount);
+            Assert.AreEqual(a, _service.Current, "Cursor should wrap to index 0.");
+        }
+
         // --- Reset --------------------------------------------------------
 
         [Test]

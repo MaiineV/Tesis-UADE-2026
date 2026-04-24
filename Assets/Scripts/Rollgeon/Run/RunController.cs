@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Energy;
 using Rollgeon.Combat.Handoff;
@@ -159,6 +160,9 @@ namespace Rollgeon.Run
 
             // 9. Combat return
             CombatReturnService.CreateAndRegister();
+
+            // 9b. Death watcher
+            CombatDeathWatcher.CreateAndRegister();
 
             // 10. Begin exploration
             var exploration = ServiceLocator.GetService<IExplorationController>();

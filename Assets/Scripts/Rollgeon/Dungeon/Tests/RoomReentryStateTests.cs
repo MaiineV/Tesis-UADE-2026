@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
-using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
@@ -77,14 +76,13 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void OnEntityDestroyed_LastAliveEnemy_TriggersCombatEndVictory()
+        public void OnEntityDestroyed_LastAliveEnemy_ClearsSpawnedEnemies()
         {
             _manager.GenerateFloor(CreateLayout(), 42);
             var combat = _manager.GetAllRoomInstances().Values
                 .FirstOrDefault(i => i.Template.Type == RoomType.Combat);
             if (combat == null) Assert.Pass();
 
-            // Forzar transición a la combat sin bloqueo (setting forced=true).
             _manager.EnterRoomByInstanceId(combat.InstanceId);
 
             var enemyId = Guid.NewGuid();
@@ -98,16 +96,14 @@ namespace Rollgeon.Dungeon.Tests
                 SpawnPointIndex = 0,
             });
 
-            CombatOutcome? receivedOutcome = null;
-            EventManager.Subscribe(EventName.OnCombatEnd, args =>
-            {
-                if (args != null && args.Length >= 2 && args[1] is CombatOutcome o)
-                    receivedOutcome = o;
-            });
-
             EventManager.Trigger(EventName.OnEntityDestroyed, enemyId, Guid.Empty);
 
-            Assert.AreEqual(CombatOutcome.Victory, receivedOutcome);
+            Assert.AreEqual(0, combat.SpawnedEnemies.Count,
+                "SpawnedEnemies should be empty after last enemy destroyed.");
+            combat.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var state);
+            Assert.IsNotNull(state);
+            Assert.IsTrue(state.IsDead,
+                "EnemySpawnState.IsDead should be true for destroyed enemy.");
         }
 
         [Test]

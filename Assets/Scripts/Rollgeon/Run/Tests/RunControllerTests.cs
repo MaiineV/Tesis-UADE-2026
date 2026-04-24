@@ -66,6 +66,7 @@ namespace Rollgeon.Run.Tests
         {
             public int SignalCount { get; private set; }
             public void SignalEnemyDone() { SignalCount++; }
+            public void NotifyCombatEnded(Combat.FSM.CombatOutcome outcome) { }
         }
 
         private class StubPlayerCombatActions : IPlayerCombatActions

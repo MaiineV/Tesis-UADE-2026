@@ -32,6 +32,8 @@ namespace Rollgeon.Combat.Handoff
 
         public void SignalEnemyDone() => _controller.SendEnemyDone();
 
+        public void NotifyCombatEnded(CombatOutcome outcome) => _controller.NotifyCombatEnded(outcome);
+
         public void SendPlayerAction() => _controller.SendPlayerAction();
 
         public void EndPlayerTurn() => _controller.EndPlayerTurn();

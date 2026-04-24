@@ -138,6 +138,37 @@ namespace Rollgeon.Combat
             return _orderForRound[_cursor];
         }
 
+        /// <summary>
+        /// Removes an entity from the current round (e.g. when it dies mid-combat).
+        /// Adjusts the cursor so that the currently-acting entity is unaffected
+        /// unless it is the one removed.
+        /// </summary>
+        /// <returns><c>true</c> if the entity was found and removed.</returns>
+        public bool Remove(Guid guid)
+        {
+            int idx = _orderForRound.IndexOf(guid);
+            if (idx < 0) return false;
+
+            _orderForRound.RemoveAt(idx);
+
+            if (_orderForRound.Count == 0)
+            {
+                _cursor = 0;
+                return true;
+            }
+
+            if (idx < _cursor)
+            {
+                _cursor--;
+            }
+            else if (idx == _cursor && _cursor >= _orderForRound.Count)
+            {
+                _cursor = 0;
+            }
+
+            return true;
+        }
+
         /// <summary>Limpia el estado al cerrar combate.</summary>
         public void Reset()
         {

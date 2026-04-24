@@ -130,6 +130,7 @@ namespace Rollgeon.Combat.Pipelines
                 TargetGuid = ctx.TargetId,
                 FinalDamage = ctx.FinalDamage,
                 WeaknessHit = ctx.WeaknessMultiplier > 1f,
+                WasLethal = ctx.WasLethal,
             });
 
             return ctx;

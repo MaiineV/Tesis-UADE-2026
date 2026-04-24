@@ -19,6 +19,9 @@ namespace Patterns
 
         /// <summary><c>true</c> si el golpe impactó una debilidad del target.</summary>
         public bool WeaknessHit;
+
+        /// <summary><c>true</c> si el Health del target llegó a 0 como resultado de este daño.</summary>
+        public bool WasLethal;
     }
 
     /// <summary>
