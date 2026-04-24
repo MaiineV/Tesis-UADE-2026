@@ -10,5 +10,6 @@ namespace Rollgeon.Entities.Behaviors
         FloatingDamage = 1,
         FloatingHeal = 2,
         FloatingShield = 3,
+        HitImpulse = 4,
     }
 }

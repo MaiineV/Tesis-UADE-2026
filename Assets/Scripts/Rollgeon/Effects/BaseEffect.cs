@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Effects.Selection;
+using Rollgeon.Entities.Behaviors;
+using Rollgeon.Feedback;
 using Sirenix.OdinInspector;
 
 namespace Rollgeon.Effects
@@ -62,6 +65,58 @@ namespace Rollgeon.Effects
         public bool RequiresSelectionAt(SelectionTiming timing)
         {
             return HasSelectionRequirement() && Selection.Timing == timing;
+        }
+
+        /// <summary>
+        /// Id de la entry en el <c>FeedbackDBSO</c> que este effect dispara. Default vacío.
+        /// Effects con <see cref="IUsesFeedback"/> overridean (o exponen un <c>[SerializeField]</c>
+        /// en su propio tipo y lo devuelven acá). TECHNICAL.md §10.9.
+        /// </summary>
+        public virtual string GetFeedbackId() => null;
+
+        /// <summary>
+        /// Arma un <see cref="FeedbackRequest"/> para este effect, leyendo los ids del
+        /// contexto y snapshotteando el bag de <c>context.SourceBehavior.StoredValues</c>
+        /// (§9.5 — el snapshot desacopla al request del lifecycle del behavior).
+        /// TECHNICAL.md §10.9.
+        /// </summary>
+        public virtual FeedbackRequest GetFeedbackRequest(EffectContext context)
+        {
+            var req = new FeedbackRequest
+            {
+                FeedbackId = GetFeedbackId(),
+            };
+
+            if (context == null) return req;
+
+            req.SourceGuid = context.SourceGuid;
+            req.TargetGuid = context.SelectionResult != null && context.SelectionResult.FirstSelectedGuid != Guid.Empty
+                ? context.SelectionResult.FirstSelectedGuid
+                : context.TargetGuid;
+            req.StoredValues = SnapshotStoredValues(context.SourceBehavior);
+            return req;
+        }
+
+        /// <summary>
+        /// Copia defensiva del bag de un behavior — referencia al dict original rompe la
+        /// regla de §9.5 ("snapshot, no referencia viva"). Devuelve <c>null</c> si el
+        /// behavior es null o no tiene valores.
+        /// </summary>
+        private static IReadOnlyDictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>
+            SnapshotStoredValues(BaseBehavior behavior)
+        {
+            if (behavior == null) return null;
+
+            var copy = new Dictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>();
+            foreach (BehaviorValueKey key in Enum.GetValues(typeof(BehaviorValueKey)))
+            {
+                if (key == BehaviorValueKey.None) continue;
+                if (behavior.TryGetBehaviorValues<BaseBehaviorStoredValue>(key, out var list) && list.Count > 0)
+                {
+                    copy[key] = new List<BaseBehaviorStoredValue>(list);
+                }
+            }
+            return copy.Count > 0 ? copy : null;
         }
 
         /// <summary>

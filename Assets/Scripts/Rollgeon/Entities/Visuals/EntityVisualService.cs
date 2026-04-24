@@ -121,6 +121,11 @@ namespace Rollgeon.Entities.Visuals
             pawn.Bind(guid, kind);
             pawn.SnapToGrid(_grid, coord);
 
+            // §10 feedback pipeline: el pawn queda descubierto por IPawnRegistry via este binding.
+            var binding = go.GetComponent<Rollgeon.Feedback.PawnRegistryBinding>();
+            if (binding == null) binding = go.GetComponentInChildren<Rollgeon.Feedback.PawnRegistryBinding>(true);
+            if (binding != null) binding.SetGuid(guid);
+
             _byGuid[guid] = pawn;
             return pawn;
         }

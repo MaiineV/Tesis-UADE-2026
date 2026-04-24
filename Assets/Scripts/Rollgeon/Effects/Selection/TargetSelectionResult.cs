@@ -41,5 +41,19 @@ namespace Rollgeon.Effects.Selection
                 return SelectedTargets[0]?.Guid ?? Guid.Empty;
             }
         }
+
+        /// <summary>
+        /// Azúcar — primera celda seleccionada. Devuelve <c>false</c> si no hay targets
+        /// o si el primer <see cref="TargetRef"/> no trae <see cref="TargetRef.Cell"/>.
+        /// </summary>
+        public bool TryGetFirstSelectedCell(out Rollgeon.Grid.GridCoord cell)
+        {
+            cell = default;
+            if (SelectedTargets == null || SelectedTargets.Count == 0) return false;
+            var first = SelectedTargets[0];
+            if (first == null || !first.HasCell) return false;
+            cell = first.Cell;
+            return true;
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Balance;
@@ -257,6 +258,60 @@ namespace Rollgeon.Combat.Actions
                 _actionsUsedThisTurn.Add(behavior.ActionName);
 
             return true;
+        }
+
+        // ======================================================================
+        // Feedback blocking hooks (§10.9)
+        // ======================================================================
+
+        private int _feedbackWaitDepth;
+
+        /// <summary>
+        /// <c>true</c> mientras haya al menos un feedback bloqueante en vuelo. El resolver
+        /// de effects puede chequear este flag para suspender el avance de la cadena.
+        /// </summary>
+        public bool IsWaitingForFeedback => _feedbackWaitDepth > 0;
+
+        /// <summary>
+        /// Marca el inicio de un feedback bloqueante. Llamado por <c>EffPlayFeedback</c>
+        /// antes de <see cref="IFeedbackService.RequestFeedbackBlocking"/>. TECHNICAL.md §10.9.
+        /// </summary>
+        public void BeginFeedbackWait()
+        {
+            _feedbackWaitDepth++;
+        }
+
+        /// <summary>
+        /// Callback que el <see cref="Rollgeon.Feedback.IFeedbackService"/> invoca cuando
+        /// el feedback termina. Contraparte de <see cref="BeginFeedbackWait"/>.
+        /// </summary>
+        public void OnFeedbackComplete()
+        {
+            if (_feedbackWaitDepth > 0) _feedbackWaitDepth--;
+        }
+
+        /// <summary>
+        /// Coroutine helper que yieldea hasta que todos los feedbacks bloqueantes en vuelo
+        /// hayan disparado su <see cref="OnFeedbackComplete"/>, con un timeout de seguridad.
+        /// </summary>
+        /// <remarks>
+        /// Usado por <see cref="EffectData.ExecuteCoroutine"/> y por el combat driver entre
+        /// turnos. El timeout degrada a fuerza bruta (resetea el counter) si se supera —
+        /// evita deadlocks si una callback de feedback se pierde.
+        /// </remarks>
+        public static IEnumerator WaitForFeedbackCompletion(TurnManager manager, float timeoutSeconds = 10f)
+        {
+            if (manager == null) yield break;
+            float deadline = Time.time + Mathf.Max(0.1f, timeoutSeconds);
+            while (manager._feedbackWaitDepth > 0 && Time.time < deadline)
+                yield return null;
+
+            if (manager._feedbackWaitDepth > 0)
+            {
+                Debug.LogWarning($"[TurnManager] Feedback wait timed out after {timeoutSeconds}s — " +
+                                 $"force-resetting depth from {manager._feedbackWaitDepth} to 0.");
+                manager._feedbackWaitDepth = 0;
+            }
         }
 
         // ======================================================================

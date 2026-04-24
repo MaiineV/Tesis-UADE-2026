@@ -458,6 +458,8 @@ GameObject:
   - component: {fileID: 9105464449053552884}
   - component: {fileID: 5736308957682480094}
   - component: {fileID: 7937393824760835357}
+  - component: {fileID: 3821633793728467348}
+  - component: {fileID: -5253838994059866951}
   m_Layer: 0
   m_Name: Goblin
   m_TagString: Untagged
@@ -518,3 +520,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 4900675398012603257}
+--- !u!114 &3821633793728467348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816966952657547766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d40171f6746dcf4c866ca834f15bb2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnRegistryBinding
+  _entityGuidString: 
+--- !u!114 &-5253838994059866951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816966952657547766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0516dc3b2a590754bbf302949f077cc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.HitImpulseConsumer
+  _returnSeconds: 0.18
+  _strength: 1
+  _localSpace: 1

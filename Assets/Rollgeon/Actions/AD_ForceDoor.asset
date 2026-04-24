@@ -59,9 +59,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ActionId: 
+  ActionId: door.force
   Type: 0
-  DisplayName: 
+  DisplayName: Force Door
   BackingAsset: {fileID: 0}
   EnergyCost: 1
   BlockOnRepeat: 1

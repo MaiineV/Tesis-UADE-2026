@@ -19,7 +19,7 @@ namespace Rollgeon.Entities.Behaviors
     }
 
     /// <summary>
-    /// Payload for floating damage/heal numbers written by EffDamage/EffHeal during apply.
+    /// Payload for floating damage/heal numbers written by EffDealDamage/EffHeal during apply.
     /// </summary>
     [Serializable]
     public class FloatingNumberBehaviorValue : BaseBehaviorStoredValue
@@ -28,5 +28,17 @@ namespace Rollgeon.Entities.Behaviors
         public Vector3 Offset;
         public Guid TargetEntityGuid;
         public float Delay;
+    }
+
+    /// <summary>
+    /// Payload for knockback / impulse vectors written by <c>EffApplyImpulse</c>.
+    /// Consumed by downstream feedback (camera shake magnitude, hitstop scaling) and,
+    /// eventually, by a physics/animation layer that moves the target pawn.
+    /// </summary>
+    [Serializable]
+    public class ImpulseBehaviorValue : BaseBehaviorStoredValue
+    {
+        public Vector3 Impulse;
+        public Guid TargetEntityGuid;
     }
 }

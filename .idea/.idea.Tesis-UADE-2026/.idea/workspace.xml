@@ -5,16 +5,102 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e6b5528-be66-45c3-8267-652550d7ef45" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Resources/FloatingNumber.prefab" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Resources/FloatingNumber.prefab.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackDB.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackDB.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackManagerBootstrap.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/FeedbackManagerBootstrap.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/PawnRegistryBootstrap.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Feedback/PawnRegistryBootstrap.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffApplyImpulse.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffApplyImpulse.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDealDamage.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDealDamage.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffMove.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffMove.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffPlayFeedback.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffPlayFeedback.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackCallbackListener.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackCallbackListener.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackDBSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackDBSO.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEntry.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEntry.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEventBus.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackEventBus.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManagerBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManagerBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackPositionResolver.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackPositionResolver.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackRequest.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackRequest.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceRuntime.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceRuntime.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceStep.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackSequenceStep.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStub.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStub.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStubBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackServiceStubBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackType.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackType.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FloatingNumberView.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FloatingNumberView.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/HitImpulseConsumer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/HitImpulseConsumer.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IFeedbackService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IFeedbackService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPawnRegistry.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPawnRegistry.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPositionReader.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/IPositionReader.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistry.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistry.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBinding.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBinding.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/PawnRegistryBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Sounds.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Sounds/SE-Collision_03.ogg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Sounds/SE-Collision_03.ogg.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/setup/System#0300_FeedbackManagerWiring.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/setup/System#0301_PlayableCombatChecklist.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/projectSettingsUpdater.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/projectSettingsUpdater.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.obsidian/core-plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/core-plugins.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.obsidian/workspace.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/workspace.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Boss.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Boss.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Goblin.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Goblin.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackBasic.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackBasic.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/02_Gameplay.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/02_Gameplay.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/ActionDefinitionSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/ActionDefinitionSO.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Handoff/CombatHandoffService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Handoff/CombatHandoffService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/DiceSlotView.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/DiceSlotView.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/DiceZoneView.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/DiceZoneView.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/PlayerActionButtonsView.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/HUD/PlayerActionButtonsView.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/Screens/CombatHUDView.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/UI/Screens/CombatHUDView.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Rollgeon/99-Index/Round3-Checklist.md" beforeDir="false" afterPath="$PROJECT_DIR$/Rollgeon/99-Index/Round3-Checklist.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackSpecial.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_AttackSpecial.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_EndTurn.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_EndTurn.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_ForceDoor.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_ForceDoor.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Health.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Health.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Move.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Actions/AD_Move.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/Classes/CH_Warrior.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/Classes/CH_Warrior.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Rollgeon/ServiceBootstrap.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Rollgeon/ServiceBootstrap.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/TurnManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/Actions/TurnManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/BaseEffect.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/BaseEffect.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/DamageArgs.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/DamageArgs.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDamage.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffDamage.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffHeal.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Concretes/EffHeal.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/EffectData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/EffectData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetRef.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetRef.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetSelectionResult.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Selection/TargetSelectionResult.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Tests/EffectsPipelineTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Effects/Tests/EffectsPipelineTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BaseBehaviorStoredValue.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BaseBehaviorStoredValue.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BehaviorValueKey.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Behaviors/BehaviorValueKey.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" beforeDir="false" afterPath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,36 +118,46 @@
   &quot;associatedIndex&quot;: 3
 }</component>
   <component name="ProjectId" id="3CeFWR9DFduKV8s5R8DDodSWhmR" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Attach to Unity Editor.Attach to Unity Editor.executor&quot;: &quot;Debug&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;XThreadsFramesViewSplitterKey&quot;: &quot;0.5005903&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Attach to Unity Editor.Attach to Unity Editor.executor": "Debug",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "XThreadsFramesViewSplitterKey": "0.5005903",
+    "git-widget-placeholder": "develop",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "rider.external.source.directories": [
+      "C:\\Users\\franc\\AppData\\Roaming\\JetBrains\\Rider2023.2\\resharper-host\\DecompilerCache",
+      "C:\\Users\\franc\\AppData\\Roaming\\JetBrains\\Rider2023.2\\resharper-host\\SourcesCache",
+      "C:\\Users\\franc\\AppData\\Local\\Symbols\\src"
+    ]
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Standalone Player" type="RunUnityExe" factoryName="Unity Executable">
-      <option name="EXE_PATH" value="$USER_HOME$/Desktop/BuildTesis\RollTheLuck.exe" />
+      <option name="EXE_PATH" value="$PROJECT_DIR$/Build\My project.exe" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="C:\Users\agust\Desktop\BuildTesis" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
-      <option name="ENV_FILE_PATHS" value="" />
-      <option name="REDIRECT_INPUT_PATH" value="" />
-      <option name="PTY_MODE" value="Auto" />
       <method v="2" />
     </configuration>
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
@@ -70,9 +166,6 @@
       <option name="WORKING_DIRECTORY" value="C:\Users\agust\Documents\GitHub\Tesis-UADE-2026" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
-      <option name="ENV_FILE_PATHS" value="" />
-      <option name="REDIRECT_INPUT_PATH" value="" />
-      <option name="PTY_MODE" value="Auto" />
       <method v="2" />
     </configuration>
     <configuration name="Unit Tests (batch mode)" type="RunUnityExe" factoryName="Unity Executable">
@@ -81,9 +174,6 @@
       <option name="WORKING_DIRECTORY" value="C:\Users\agust\Documents\GitHub\Tesis-UADE-2026" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
-      <option name="ENV_FILE_PATHS" value="" />
-      <option name="REDIRECT_INPUT_PATH" value="" />
-      <option name="PTY_MODE" value="Auto" />
       <method v="2" />
     </configuration>
     <configuration name="Attach to Unity Editor &amp; Play" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="UNITY_ATTACH_AND_PLAY" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
@@ -91,13 +181,9 @@
       <option name="listenPortForConnections" value="false" />
       <option name="pid" />
       <option name="projectPathOnTarget" />
-      <option name="runtimes">
-        <list />
-      </option>
       <option name="selectedOptions">
         <list />
       </option>
-      <option name="useMixedMode" value="false" />
       <method v="2" />
     </configuration>
     <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
@@ -105,16 +191,13 @@
       <option name="listenPortForConnections" value="false" />
       <option name="pid" />
       <option name="projectPathOnTarget" />
-      <option name="runtimes">
-        <list />
-      </option>
       <option name="selectedOptions">
         <list />
       </option>
-      <option name="useMixedMode" value="false" />
       <method v="2" />
     </configuration>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="5e6b5528-be66-45c3-8267-652550d7ef45" name="Changes" comment="" />
@@ -124,6 +207,8 @@
       <updated>1776738159801</updated>
       <workItem from="1776738161092" duration="3898000" />
       <workItem from="1776825908492" duration="5000" />
+      <workItem from="1776949110055" duration="597000" />
+      <workItem from="1777048516798" duration="6142000" />
     </task>
     <servers />
   </component>
@@ -138,24 +223,7 @@
   </component>
   <component name="UnityUnitTestConfiguration" currentTestLauncher="Both" />
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
-          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
-          <option name="timeStamp" value="1" />
-        </breakpoint>
-        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
-          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
-          <option name="timeStamp" value="2" />
-        </breakpoint>
-        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
-          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
-          <option name="timeStamp" value="3" />
-        </breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>
