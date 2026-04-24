@@ -30,10 +30,13 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             }
 
             var behaviorCtx = Context.PendingBehaviorContext;
+            if (behaviorCtx != null && behaviorCtx.SourceEntity == null)
+                behaviorCtx.SourceEntity = new Rollgeon.Entities.Entity { Guid = Context.ActingGuid };
+
             if (behaviorCtx is HeroBehaviorContext heroCtx)
             {
                 heroCtx.SelectionResult = Context.SelectionResult;
-                UnityEngine.Debug.Log($"[PlayerExecutingSubState] Executing '{action.BehaviorName}' selectionCoord={heroCtx.SelectionResult?.FirstSelectedCoord}");
+                UnityEngine.Debug.Log($"[PlayerExecutingSubState] Executing '{action.BehaviorName}' selectionCoord={heroCtx.SelectionResult?.FirstSelectedCoord} sourceGuid={Context.ActingGuid}");
             }
             else
             {

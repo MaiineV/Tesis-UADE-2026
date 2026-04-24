@@ -242,8 +242,8 @@ namespace Rollgeon.Dungeon
         public static DungeonManager CreateAndRegister(FloorLayoutSO layout, int seed)
         {
             var manager = new DungeonManager();
-            manager.GenerateFloor(layout, seed);
             ServiceLocator.AddService<IDungeonService>(manager, ServiceScope.Run);
+            manager.GenerateFloor(layout, seed);
             return manager;
         }
 
