@@ -5,7 +5,7 @@ namespace Rollgeon.Grid
 {
     public sealed class TileHighlightService : ITileHighlightService
     {
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int ColorId = Shader.PropertyToID("_BaseColor");
 
         private readonly Dictionary<GridCoord, Renderer> _tileRenderers;
         private readonly Dictionary<string, Color> _styleColors;
@@ -36,13 +36,17 @@ namespace Rollgeon.Grid
         public void Highlight(IEnumerable<GridCoord> tiles, string style)
         {
             var color = _styleColors.TryGetValue(style, out var c) ? c : Color.yellow;
+            int total = 0, matched = 0;
             foreach (var coord in tiles)
             {
+                total++;
                 if (!_tileRenderers.TryGetValue(coord, out var renderer)) continue;
                 _block.SetColor(ColorId, color);
                 renderer.SetPropertyBlock(_block);
                 _active.Add(coord);
+                matched++;
             }
+            Debug.Log($"[TileHighlightService] Highlight style='{style}' — {matched}/{total} tiles matched ({_tileRenderers.Count} registered renderers)");
         }
 
         public void ClearAll()
