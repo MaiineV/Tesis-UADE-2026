@@ -59,11 +59,11 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ActionId: 
+  ActionId: player.heal
   Type: 0
-  DisplayName: 
+  DisplayName: Heal
   BackingAsset: {fileID: 0}
-  EnergyCost: 1
+  EnergyCost: 2
   BlockOnRepeat: 1
   FreeRollCount: 1
   AllowsEnergyReroll: 1

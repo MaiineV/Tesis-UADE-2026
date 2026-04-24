@@ -59,9 +59,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ActionId: 
+  ActionId: turn.end
   Type: 0
-  DisplayName: 
+  DisplayName: End Turn
   BackingAsset: {fileID: 0}
   EnergyCost: 0
   BlockOnRepeat: 1

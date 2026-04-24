@@ -59,9 +59,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ActionId: 
+  ActionId: player.move
   Type: 4
-  DisplayName: 
+  DisplayName: Move
   BackingAsset: {fileID: 0}
   EnergyCost: 1
   BlockOnRepeat: 1

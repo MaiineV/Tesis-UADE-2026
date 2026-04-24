@@ -242,7 +242,7 @@ namespace Rollgeon.Effects.Tests
         public void EffectData_PolymorphicRoundTrip_WithOdin()
         {
             // Armar un EffectData con subtipos concretos mixtos — PCComposite anidado,
-            // EffDamage + EffHeal, SelectionSettings con TQ_Self.
+            // EffDealDamage + EffHeal, SelectionSettings con TQ_Self.
             var original = new EffectData
             {
                 Label = "Roundtrip",
@@ -260,14 +260,14 @@ namespace Rollgeon.Effects.Tests
                 },
                 Effects = new List<IEffect>
                 {
-                    new EffDamage(),
+                    new EffDealDamage(),
                     new EffHeal(),
                 },
             };
 
-            // EffDamage lleva Selection con su propio TargetQuery para forzar round-trip
+            // EffDealDamage lleva Selection con su propio TargetQuery para forzar round-trip
             // polimórfico del campo inline de SelectionSettings (§13.6.1 + §11.2).
-            var damage = (EffDamage)original.Effects[0];
+            var damage = (EffDealDamage)original.Effects[0];
             damage.Selection = new SelectionSettings
             {
                 RequiresSelection = true,
@@ -294,11 +294,11 @@ namespace Rollgeon.Effects.Tests
             Assert.IsInstanceOf<PC_AlwaysFalse>(composite.Children[1]);
 
             Assert.AreEqual(2, restored.Effects.Count);
-            Assert.IsInstanceOf<EffDamage>(restored.Effects[0]);
+            Assert.IsInstanceOf<EffDealDamage>(restored.Effects[0]);
             Assert.IsInstanceOf<EffHeal>(restored.Effects[1]);
 
-            // El SelectionSettings dentro de EffDamage también sobrevivió.
-            var restoredDmg = (EffDamage)restored.Effects[0];
+            // El SelectionSettings dentro de EffDealDamage también sobrevivió.
+            var restoredDmg = (EffDealDamage)restored.Effects[0];
             Assert.IsNotNull(restoredDmg.Selection);
             Assert.IsTrue(restoredDmg.Selection.RequiresSelection);
             Assert.AreEqual(3, restoredDmg.Selection.SelectionCount);
@@ -327,15 +327,15 @@ namespace Rollgeon.Effects.Tests
                 BehaviorValueKey.FloatingDamage, out _));
         }
 
-        // ───── EffDamage integration — example effect writes storedValue ──────────
+        // ───── EffDealDamage integration — example effect writes storedValue ──────────
         [Test]
-        public void EffDamage_Example_WritesFloatingDamageToBehavior()
+        public void EffDealDamage_Example_WritesFloatingDamageToBehavior()
         {
             var bh = new TestBehavior();
             var ctx = MakeCtx(bh);
             ctx.TargetGuid = Guid.NewGuid();
 
-            var eff = new EffDamage();
+            var eff = new EffDealDamage();
             var data = new EffectData { Effects = new List<IEffect> { eff } };
 
             var ok = data.TryExecute(ctx, MakePreCtx());

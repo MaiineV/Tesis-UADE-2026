@@ -1,6 +1,6 @@
 using System;
 using Patterns;
-using Rollgeon.Entities;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
@@ -9,42 +9,45 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// <b>EXAMPLE — subject to refinement by downstream combat task (T100b / T103).</b>
-    /// <para>
-    /// Contraparte de <see cref="EffDamage"/>. Escribe un <c>FloatingNumberBehaviorValue</c>
-    /// bajo la key <see cref="BehaviorValueKey.FloatingHeal"/>. La lógica real de sumar HP
-    /// via <c>IModifiable&lt;HealthAttribute&gt;</c> se implementa cuando Foundation#0003
-    /// exponga su API completa de readers — hasta entonces, este stub loggea intención.
-    /// </para>
+    /// Resuelve y aplica curación al target vía <see cref="IHealPipeline"/>. Escribe el
+    /// valor curado bajo <see cref="BehaviorValueKey.FloatingHeal"/> para consumo del
+    /// feedback downstream. TECHNICAL.md §8.7, §9.5, §17.M.
     /// </summary>
+    /// <remarks>
+    /// Atómico: resuelve el target desde <see cref="EffectContext.SelectionResult"/>
+    /// o <see cref="EffectContext.SourceGuid"/> como fallback (heal self). Si
+    /// <see cref="IHealPipeline"/> no está registrado, aborta la cadena (§8.8).
+    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffHeal : BaseEffect<HealArgs, int>,
         IUsesSelection, IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
     {
         [Title("Heal")]
         [SerializeField, MinValue(0), MaxValue(999)]
-        [Tooltip("Curación base antes de modificadores. Rango defensivo 0..999.")]
+        [Tooltip("Curación base antes de pipeline (overheal, shields).")]
         private int _baseAmount = 10;
 
-        public override string GetEffectName() => "Heal (example)";
+        [SerializeField]
+        [Tooltip("Si true, BaseAmount es porcentaje del max HP del target.")]
+        private bool _isPercentOfMax;
 
-        protected override HealArgs ResolveArgs(EffectContext context)
-        {
-            return new HealArgs { BaseAmount = _baseAmount };
-        }
+        [SerializeField]
+        [Tooltip("Tag libre para logging/telemetría — ej. 'potion', 'support.heal'.")]
+        private string _sourceTag = "eff.heal";
 
-        protected override int ResolveValue(EffectContext context)
-        {
-            return _baseAmount;
-        }
+        public override string GetEffectName() => "Heal";
+
+        protected override HealArgs ResolveArgs(EffectContext context) =>
+            new HealArgs { BaseAmount = _baseAmount };
+
+        protected override int ResolveValue(EffectContext context) => _baseAmount;
 
         public override bool ApplyEffect(EffectContext context)
         {
             if (context == null) return false;
 
-            var args = ResolveArgs(context);
-            var amount = args.BaseAmount;
-            if (amount <= 0) return true; // no-op
+            var amount = ResolveArgs(context).BaseAmount;
+            if (amount <= 0) return true;
 
             var targetGuid = Guid.Empty;
             if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord)
@@ -52,9 +55,31 @@ namespace Rollgeon.Effects.Concretes
                 if (ServiceLocator.TryGetService<IGridManager>(out var grid))
                     grid.TryGetOccupant(coord, out targetGuid);
             }
-            if (targetGuid == Guid.Empty) targetGuid = context.SourceGuid;
 
-            Debug.Log($"[EffHeal example] source {context.SourceGuid} heals {targetGuid} for {amount}");
+            if (targetGuid == Guid.Empty)
+            {
+                Debug.LogWarning("[EffHeal] No target resuelto — aborta cadena.");
+                return false;
+            }
+            
+            int resolvedHeal = amount;
+            if (ServiceLocator.TryGetService<IHealPipeline>(out var pipeline) && pipeline != null)
+            {
+                var healCtx = new HealContext
+                {
+                    SourceId = context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid,
+                    TargetId = targetGuid,
+                    BaseHeal = amount,
+                    IsPercentOfMax = _isPercentOfMax,
+                    SourceTag = _sourceTag,
+                };
+                pipeline.Resolve(healCtx);
+                resolvedHeal = healCtx.FinalHeal;
+            }
+            else
+            {
+                Debug.LogWarning("[EffHeal] IHealPipeline no registrado — usando amount crudo.");
+            }
 
             if (context.SourceBehavior != null)
             {
@@ -62,12 +87,19 @@ namespace Rollgeon.Effects.Concretes
                     BehaviorValueKey.FloatingHeal,
                     new FloatingNumberBehaviorValue
                     {
-                        Value = amount,
+                        Value = resolvedHeal,
                         TargetEntityGuid = targetGuid,
                     });
             }
 
             return true;
+        }
+
+        private static Guid ResolveTargetGuid(EffectContext context)
+        {
+            if (context.SelectionResult != null && context.SelectionResult.FirstSelectedGuid != Guid.Empty)
+                return context.SelectionResult.FirstSelectedGuid;
+            return context.SourceGuid;
         }
     }
 }

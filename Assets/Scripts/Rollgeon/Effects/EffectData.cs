@@ -1,5 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Effects.Selection;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
@@ -71,6 +74,58 @@ namespace Rollgeon.Effects
             if (!CanBeExecuted(preCtx)) return false;
             Execute(ctx);
             return ctx != null && ctx.lastResult;
+        }
+
+        /// <summary>
+        /// Variante coroutine de <see cref="Execute"/>: después de cada efecto, yieldea hasta
+        /// que <see cref="TurnManager.IsWaitingForFeedback"/> vuelva a <c>false</c>. TECHNICAL.md §10.9.
+        /// </summary>
+        /// <param name="ctx">Contexto del effect pass.</param>
+        /// <param name="feedbackTimeoutSeconds">Cap de seguridad por-efecto para el wait.</param>
+        /// <remarks>
+        /// <para>
+        /// Si no hay <see cref="TurnManager"/> registrado (ej. EditMode tests), se comporta igual
+        /// que <see cref="Execute"/> pero expresado como coroutine — un solo <c>yield break</c>
+        /// al final. Los efectos que no tocan el pipeline de feedback no pagan ningún overhead.
+        /// </para>
+        /// </remarks>
+        public IEnumerator ExecuteCoroutine(EffectContext ctx, float feedbackTimeoutSeconds = 10f)
+        {
+            if (ctx == null || Effects == null) yield break;
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+
+            for (int i = 0; i < Effects.Count; i++)
+            {
+                var eff = Effects[i];
+                if (eff == null) continue;
+                ctx.EffectIndex = i;
+                if (!ctx.lastResult) yield break;
+                eff.Apply(ctx);
+
+                if (turn != null && turn.IsWaitingForFeedback)
+                {
+                    var wait = TurnManager.WaitForFeedbackCompletion(turn, feedbackTimeoutSeconds);
+                    while (wait.MoveNext()) yield return wait.Current;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Variante coroutine de <see cref="TryExecute"/>. Respeta el feedback gate entre efectos.
+        /// </summary>
+        public IEnumerator TryExecuteCoroutine(
+            EffectContext ctx, PreConditionContext preCtx,
+            System.Action<bool> onComplete, float feedbackTimeoutSeconds = 10f)
+        {
+            if (!CanBeExecuted(preCtx))
+            {
+                onComplete?.Invoke(false);
+                yield break;
+            }
+            var co = ExecuteCoroutine(ctx, feedbackTimeoutSeconds);
+            while (co.MoveNext()) yield return co.Current;
+            onComplete?.Invoke(ctx != null && ctx.lastResult);
         }
 
         /// <summary>
