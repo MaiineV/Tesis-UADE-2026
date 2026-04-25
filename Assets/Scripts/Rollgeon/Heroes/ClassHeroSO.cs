@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Rollgeon.Dice;
+using Rollgeon.Entities.Behaviors;
+using Rollgeon.Phase;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -45,12 +49,36 @@ namespace Rollgeon.Heroes
         [OdinSerialize]
         public HeroBehaviorSet Actions = new HeroBehaviorSet();
 
-        [Title("Contextual Behaviors")]
-        [InfoBox("Behaviors adicionales que aparecen segun ShowConditions " +
-                 "(ej. Forzar Puerta, Abrir Cofre). Se evaluan cada turno.")]
+        [Title("Phase Behaviors")]
+        [InfoBox("Behaviors por fase. IsBaseBehavior + Slot para mapear a un slot base " +
+                 "(overridea el de Actions para esa fase). IsBaseBehavior=false usa ActionName. " +
+                 "AllowedPhases determina la fase. ShowConditions controla visibilidad.")]
         [OdinSerialize]
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
-        public List<HeroActionBehavior> ContextualBehaviors = new List<HeroActionBehavior>();
+        public List<HeroActionBehavior> PhaseBehaviors = new List<HeroActionBehavior>();
+
+        public HeroActionBehavior ResolveBaseBehavior(HeroBehaviorSlot slot, GamePhase phase)
+        {
+            return PhaseBehaviors?
+                       .FirstOrDefault(b => b != null
+                                            && b.IsBaseBehavior
+                                            && b.Slot == slot
+                                            && b.AllowedPhases.Allows(phase))
+                   ?? Actions?.GetByIndex((int)slot);
+        }
+
+        public List<HeroActionBehavior> GetBehaviorsForPhase(GamePhase phase)
+        {
+            var baseBehaviors = Enum.GetValues(typeof(HeroBehaviorSlot))
+                .Cast<HeroBehaviorSlot>()
+                .Select(slot => ResolveBaseBehavior(slot, phase))
+                .Where(b => b != null && b.AllowedPhases.Allows(phase));
+
+            var customBehaviors = (PhaseBehaviors ?? Enumerable.Empty<HeroActionBehavior>())
+                .Where(b => b != null && !b.IsBaseBehavior && b.AllowedPhases.Allows(phase));
+
+            return baseBehaviors.Concat(customBehaviors).ToList();
+        }
 
         // ------------------------------------------------------------------
         // [STUB] — elevated by Hero Template task.

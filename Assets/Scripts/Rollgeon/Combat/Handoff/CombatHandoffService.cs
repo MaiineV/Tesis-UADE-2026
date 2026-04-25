@@ -11,6 +11,7 @@ using Rollgeon.Dungeon;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
+using Rollgeon.Phase;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using Rollgeon.UI.Screens;
@@ -268,13 +269,10 @@ namespace Rollgeon.Combat.Handoff
                 var hero = ResolveHero();
                 if (hero == null) return;
 
-                HeroActionBehavior behavior;
-                if (index < 4)
-                    behavior = hero.Actions?.GetByIndex(index);
-                else
-                    behavior = index - 4 < hero.ContextualBehaviors.Count
-                        ? hero.ContextualBehaviors[index - 4]
-                        : null;
+                var phaseBehaviors = hero.GetBehaviorsForPhase(GamePhase.Combat);
+                HeroActionBehavior behavior = index < phaseBehaviors.Count
+                    ? phaseBehaviors[index]
+                    : null;
 
                 if (behavior == null)
                 {

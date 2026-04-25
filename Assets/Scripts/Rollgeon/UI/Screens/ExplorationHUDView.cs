@@ -64,6 +64,10 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private RoomNavigationView _roomNavigation;
 
+        [Tooltip("Botones de accion para exploracion (Movement, Heal, etc.). Null = sin acciones.")]
+        [SerializeField]
+        private ExplorationActionButtonsView _explorationActions;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "ExplorationHUD";
 
@@ -164,6 +168,8 @@ namespace Rollgeon.UI.Screens
             if (_roomNavigation != null) _roomNavigation.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_roomNavigation no esta cableado en el Inspector.", this);
 
+            if (_explorationActions != null) _explorationActions.Bind(playerGuid);
+
             _subViewsBound = true;
         }
 
@@ -176,6 +182,7 @@ namespace Rollgeon.UI.Screens
             if (_activeItems != null) _activeItems.Unbind();
             if (_minimap != null) _minimap.Unbind();
             if (_roomNavigation != null) _roomNavigation.Unbind();
+            if (_explorationActions != null) _explorationActions.Unbind();
             _subViewsBound = false;
         }
     }

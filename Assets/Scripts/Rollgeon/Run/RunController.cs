@@ -158,6 +158,9 @@ namespace Rollgeon.Run
             // 8. Combat handoff
             CombatHandoffService.CreateAndRegister();
 
+            // 8b. Exploration behavior dispatch
+            ExplorationBehaviorService.CreateAndRegister();
+
             // 9. Combat return
             CombatReturnService.CreateAndRegister();
 

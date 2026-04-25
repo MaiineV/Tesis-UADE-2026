@@ -8,6 +8,7 @@ using Rollgeon.Combat.Energy;
 using Rollgeon.Combos;
 using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Phase;
 using Rollgeon.PreConditions;
 using UnityEngine;
 
@@ -91,18 +92,206 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void ClassHeroSO_ContextualBehaviors_DefaultEmpty()
+        public void ClassHeroSO_PhaseBehaviors_DefaultEmpty()
         {
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                Assert.IsNotNull(so.ContextualBehaviors);
-                Assert.AreEqual(0, so.ContextualBehaviors.Count);
+                Assert.IsNotNull(so.PhaseBehaviors);
+                Assert.AreEqual(0, so.PhaseBehaviors.Count);
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(so);
             }
+        }
+    }
+
+    [TestFixture]
+    public class ClassHeroSOPhaseBehaviorTests
+    {
+        [TearDown]
+        public void Teardown()
+        {
+            ServiceLocator.Clear();
+        }
+
+        [Test]
+        public void ResolveBaseBehavior_WithPhaseBehavior_ReturnsOverride()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                var explorationMove = new HeroActionBehavior
+                {
+                    ActionName = "ExploreMove",
+                    IsBaseBehavior = true,
+                    Slot = HeroBehaviorSlot.Movement,
+                    AllowedPhases = GamePhaseMask.Exploration,
+                };
+                so.PhaseBehaviors.Add(explorationMove);
+
+                var result = so.ResolveBaseBehavior(HeroBehaviorSlot.Movement, GamePhase.Exploration);
+                Assert.AreSame(explorationMove, result);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void ResolveBaseBehavior_NoPhaseBehavior_FallsBackToActions()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                var result = so.ResolveBaseBehavior(HeroBehaviorSlot.Movement, GamePhase.Combat);
+                Assert.AreSame(so.Actions.Movement, result);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void ResolveBaseBehavior_PhaseMismatch_FallsBackToActions()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                var explorationOnly = new HeroActionBehavior
+                {
+                    ActionName = "ExploreMove",
+                    IsBaseBehavior = true,
+                    Slot = HeroBehaviorSlot.Movement,
+                    AllowedPhases = GamePhaseMask.Exploration,
+                };
+                so.PhaseBehaviors.Add(explorationOnly);
+
+                var result = so.ResolveBaseBehavior(HeroBehaviorSlot.Movement, GamePhase.Combat);
+                Assert.AreSame(so.Actions.Movement, result);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_Combat_ReturnsAllBaseSlots()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
+                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Combat);
+                Assert.AreEqual(4, result.Count);
+                Assert.AreSame(so.Actions.Movement, result[0]);
+                Assert.AreSame(so.Actions.BaseAttack, result[1]);
+                Assert.AreSame(so.Actions.SpecialAttack, result[2]);
+                Assert.AreSame(so.Actions.Healing, result[3]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_Exploration_ExcludesCombatOnly()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
+                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
+                Assert.AreEqual(2, result.Count);
+                Assert.AreSame(so.Actions.Movement, result[0]);
+                Assert.AreSame(so.Actions.Healing, result[1]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_Exploration_OverridesBaseSlot()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
+                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
+
+                var exploreMove = new HeroActionBehavior
+                {
+                    ActionName = "FreeMove",
+                    IsBaseBehavior = true,
+                    Slot = HeroBehaviorSlot.Movement,
+                    AllowedPhases = GamePhaseMask.Exploration,
+                };
+                so.PhaseBehaviors.Add(exploreMove);
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
+                Assert.AreEqual(2, result.Count);
+                Assert.AreSame(exploreMove, result[0]);
+                Assert.AreSame(so.Actions.Healing, result[1]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_IncludesCustomNonBaseBehaviors()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                so.Actions.Movement.AllowedPhases = GamePhaseMask.Exploration;
+                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.Healing.AllowedPhases = GamePhaseMask.Combat;
+
+                var customBehavior = new HeroActionBehavior
+                {
+                    ActionName = "Force Door",
+                    IsBaseBehavior = false,
+                    AllowedPhases = GamePhaseMask.Exploration,
+                };
+                so.PhaseBehaviors.Add(customBehavior);
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
+                Assert.AreEqual(2, result.Count);
+                Assert.AreSame(so.Actions.Movement, result[0]);
+                Assert.AreSame(customBehavior, result[1]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_CustomBehavior_FilteredByPhase()
+        {
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                so.Actions.Movement.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
+                so.Actions.Healing.AllowedPhases = GamePhaseMask.Combat;
+
+                var combatCustom = new HeroActionBehavior
+                {
+                    ActionName = "Taunt",
+                    IsBaseBehavior = false,
+                    AllowedPhases = GamePhaseMask.Combat,
+                };
+                so.PhaseBehaviors.Add(combatCustom);
+
+                var explorationResult = so.GetBehaviorsForPhase(GamePhase.Exploration);
+                Assert.AreEqual(0, explorationResult.Count);
+
+                var combatResult = so.GetBehaviorsForPhase(GamePhase.Combat);
+                Assert.AreEqual(5, combatResult.Count);
+                Assert.AreSame(combatCustom, combatResult[4]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
         }
     }
 

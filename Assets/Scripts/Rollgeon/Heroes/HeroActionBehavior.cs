@@ -21,6 +21,14 @@ namespace Rollgeon.Heroes
         [Tooltip("Nombre visible en UI y logs.")]
         public string ActionName = "Action";
 
+        [ToggleLeft]
+        [Tooltip("Si true, mapea a uno de los 4 slots base.")]
+        public bool IsBaseBehavior;
+
+        [ShowIf(nameof(IsBaseBehavior))]
+        [Tooltip("A cuál slot base corresponde.")]
+        public HeroBehaviorSlot Slot;
+
         [MinValue(0), Range(0, 5)]
         [Tooltip("Energia cobrada al ejecutar este behavior.")]
         public int EnergyCost;
