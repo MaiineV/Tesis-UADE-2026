@@ -8,6 +8,9 @@
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/core-plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/core-plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/workspace.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/workspace.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Enemies/Player.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Rooms/Start_Room01.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Rooms/Start_Room01.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityPawn.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Entities/Visuals/EntityPawn.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" beforeDir="false" afterPath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" afterDir="false" />
     </list>
@@ -21,6 +24,10 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Unity/Hub/Editor/6000.3.11f1/Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/Samples~/URPPackageSamples/SharedAssets/Scripts/FirstPersonController.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Unity/Hub/Editor/6000.3.11f1/Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.ugui/Runtime/UGUI/EventSystem/InputModules/StandaloneInputModule.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -117,7 +124,7 @@
       <workItem from="1776738161092" duration="3898000" />
       <workItem from="1776825908492" duration="5000" />
       <workItem from="1776949110055" duration="597000" />
-      <workItem from="1777048516798" duration="13967000" />
+      <workItem from="1777048516798" duration="15228000" />
     </task>
     <servers />
   </component>
