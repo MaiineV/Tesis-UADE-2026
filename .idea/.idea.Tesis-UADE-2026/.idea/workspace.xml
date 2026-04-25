@@ -5,25 +5,39 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e6b5528-be66-45c3-8267-652550d7ef45" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/setup/System#0400_AudioManagerWiring.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/EconomyBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/EconomyBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/EconomyService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/EconomyService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/IEconomyService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Economy/IEconomyService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/IShopManagerService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/IShopManagerService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopConfigSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopConfigSO.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopItemDef.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopItemDef.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopItemPedestalInteractable.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopItemPedestalInteractable.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopManagerBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopManagerBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopManagerService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopManagerService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopPoolSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopPoolSO.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopRollResult.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopRollResult.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopSlot.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/ShopSlot.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/WeightedShopItem.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Shop/WeightedShopItem.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/setup/System#0500_ShopManagerWiring.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/core-plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/core-plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/workspace.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/workspace.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Dungeon/FloorLayoutSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Dungeon/FloorLayoutSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" beforeDir="false" afterPath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" afterDir="false" />
     </list>
@@ -133,7 +147,7 @@
       <workItem from="1776738161092" duration="3898000" />
       <workItem from="1776825908492" duration="5000" />
       <workItem from="1776949110055" duration="597000" />
-      <workItem from="1777048516798" duration="8332000" />
+      <workItem from="1777048516798" duration="11986000" />
     </task>
     <servers />
   </component>

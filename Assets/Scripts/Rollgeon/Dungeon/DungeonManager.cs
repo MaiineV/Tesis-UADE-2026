@@ -541,12 +541,42 @@ namespace Rollgeon.Dungeon
 
             Vector2Int? shopCell = null;
             Vector2Int? potionCell = null;
-
-            if (layout.ShopRooms != null && layout.ShopRooms.Count > 0 && intermediate.Count > 0)
+            
+            // §17.F invariante: 1 shop por piso obligatorio. Si la lista viene
+            // vacía es error de data — no-op runtime (el piso sale sin shop) +
+            // log para que el review lo atrape. Si hay entries pero no quedan
+            // cells intermedias, forzamos la cell más lejana no-start/no-boss.
+            bool shopRequested = layout.ShopRooms != null && layout.ShopRooms.Count > 0;
+            if (!shopRequested)
+            {
+                Debug.LogError(
+                    "[DungeonManager] FloorLayoutSO.ShopRooms está vacío — §17.F exige " +
+                    "1 shop por piso. Asignar al menos un RoomSO de tipo Shop.");
+            }
+            else if (intermediate.Count > 0)
             {
                 int idx = rng.Next(intermediate.Count);
                 shopCell = intermediate[idx];
                 intermediate.RemoveAt(idx);
+            }
+            else
+            {
+                // Edge: piso mínimo sin cell intermedia. Reclasificamos la cell
+                // boss como shop y relocamos el boss al siguiente candidato más
+                // lejano — invariante shop pesa más que ubicación óptima del boss.
+                Debug.LogWarning(
+                    "[DungeonManager] Piso sin cells intermedias — reclasificando boss cell como shop. " +
+                    "Considerar subir FloorLayoutSO.RoomCountMin.");
+                shopCell = bossCell;
+                Vector2Int newBoss = startCell;
+                int newBossDist = -1;
+                foreach (var c in cells)
+                {
+                    if (c == startCell || c == bossCell) continue;
+                    int d = Math.Abs(c.x - startCell.x) + Math.Abs(c.y - startCell.y);
+                    if (d > newBossDist) { newBossDist = d; newBoss = c; }
+                }
+                bossCell = newBoss;
             }
 
             if (layout.PotionRooms != null && layout.PotionRooms.Count > 0 && intermediate.Count > 0)
