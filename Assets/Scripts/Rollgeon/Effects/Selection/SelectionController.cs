@@ -53,7 +53,19 @@ namespace Rollgeon.Effects.Selection
 
             if (!isValid) return;
 
+            foreach (var s in _selected)
+            {
+                if (s.Coord == target.Coord)
+                {
+                    UnityEngine.Debug.Log($"[SelectionController] OnTargetClicked coord={target.Coord} SKIPPED (already selected)");
+                    return;
+                }
+            }
+
             _selected.Add(target);
+
+            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+                highlight.HighlightSingle(target.Coord, "selected");
 
             var settings = _request.Settings;
             if (settings != null && settings.AutoAccept)

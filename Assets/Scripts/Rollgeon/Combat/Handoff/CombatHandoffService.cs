@@ -213,10 +213,10 @@ namespace Rollgeon.Combat.Handoff
                     TargetGuid = firstEnemyId,
                 };
 
-                bool hasBeforeResolve = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeResolve);
-                Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeResolve={hasBeforeResolve}");
+                bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
+                Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeRoll={hasBeforeRoll}");
 
-                if (hasBeforeResolve
+                if (hasBeforeRoll
                     && ServiceLocator.TryGetService<ICombatStarter>(out var starter))
                 {
                     var controller = starter as CombatControllerAdapter;

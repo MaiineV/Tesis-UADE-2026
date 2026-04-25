@@ -21,7 +21,7 @@ namespace Rollgeon.Effects.Concretes
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffDealDamage : BaseEffect<DamageArgs, int>,
-        IUsesSelection, IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
     {
         [Title("Damage")]
         [SerializeField, MinValue(0), MaxValue(999)]
@@ -46,48 +46,64 @@ namespace Rollgeon.Effects.Concretes
             var amount = ResolveArgs(context).BaseAmount;
             if (amount <= 0) return true;
 
-            var targetGuid = ResolveTargetGuid(context);
+            var targets = ResolveAllTargetGuids(context);
+            Debug.Log($"[EffDealDamage] ApplyEffect — resolved {targets.Count} target(s), selectedTargets={context.SelectionResult?.SelectedTargets?.Count ?? 0}, fallbackTargetGuid={context.TargetGuid}");
+            for (int i = 0; i < targets.Count; i++)
+                Debug.Log($"[EffDealDamage]   target[{i}] = {targets[i]}");
+            if (targets.Count == 0) return true;
 
-            int resolvedDamage = amount;
-            if (ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline) && pipeline != null)
+            var sourceId = context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
+            ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline);
+
+            foreach (var targetGuid in targets)
             {
-                var dmgCtx = new DamageContext
+                int resolvedDamage = amount;
+                if (pipeline != null)
                 {
-                    SourceId = context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid,
-                    TargetId = targetGuid,
-                    BaseDamage = amount,
-                    Kind = _attackKind,
-                };
-                pipeline.Resolve(dmgCtx);
-                resolvedDamage = dmgCtx.FinalDamage;
-            }
-            else
-            {
-                Debug.LogWarning("[EffDealDamage] IDamagePipeline no registrado — usando BaseAmount crudo.");
-            }
-
-            if (context.SourceBehavior != null)
-            {
-                context.SourceBehavior.SetBehaviorValue(
-                    BehaviorValueKey.FloatingDamage,
-                    new FloatingNumberBehaviorValue
+                    var dmgCtx = new DamageContext
                     {
-                        Value = resolvedDamage,
-                        TargetEntityGuid = targetGuid,
-                    });
+                        SourceId = sourceId,
+                        TargetId = targetGuid,
+                        BaseDamage = amount,
+                        Kind = _attackKind,
+                    };
+                    pipeline.Resolve(dmgCtx);
+                    resolvedDamage = dmgCtx.FinalDamage;
+                }
+
+                if (context.SourceBehavior != null)
+                {
+                    context.SourceBehavior.SetBehaviorValue(
+                        BehaviorValueKey.FloatingDamage,
+                        new FloatingNumberBehaviorValue
+                        {
+                            Value = resolvedDamage,
+                            TargetEntityGuid = targetGuid,
+                        });
+                }
             }
 
             return true;
         }
 
-        private static Guid ResolveTargetGuid(EffectContext context)
+        private static System.Collections.Generic.List<Guid> ResolveAllTargetGuids(EffectContext context)
         {
-            if (context.SelectionResult?.FirstSelectedCoord is Grid.GridCoord coord
-                && ServiceLocator.TryGetService<Grid.IGridManager>(out var grid)
-                && grid.TryGetOccupant(coord, out var occupant)
-                && occupant != Guid.Empty)
-                return occupant;
-            return context.TargetGuid;
+            var result = new System.Collections.Generic.List<Guid>();
+
+            if (context.SelectionResult?.SelectedTargets != null
+                && ServiceLocator.TryGetService<Grid.IGridManager>(out var grid))
+            {
+                foreach (var target in context.SelectionResult.SelectedTargets)
+                {
+                    if (grid.TryGetOccupant(target.Coord, out var occupant) && occupant != Guid.Empty)
+                        result.Add(occupant);
+                }
+            }
+
+            if (result.Count == 0 && context.TargetGuid != Guid.Empty)
+                result.Add(context.TargetGuid);
+
+            return result;
         }
     }
 }

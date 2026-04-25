@@ -6,12 +6,10 @@ namespace Rollgeon.Effects.Selection
     /// </summary>
     public enum SelectionTiming
     {
-        /// <summary>El caller (behavior dispatcher) resuelve la selección ANTES de llamar
-        /// <c>TryExecute</c>, poblando <see cref="EffectContext.SelectionResult"/>.</summary>
-        BeforeResolve = 0,
+        /// <summary>La selección se resuelve ANTES de la tirada de dados.</summary>
+        BeforeRoll = 0,
 
-        /// <summary>El <c>ApplyEffect</c> del efecto resuelve la selección via
-        /// <see cref="SelectionSettings.TargetQuery"/> durante su propia ejecución.</summary>
-        DuringResolve = 1,
+        /// <summary>La selección se resuelve DESPUÉS de resolver los dados.</summary>
+        AfterRoll = 1,
     }
 }

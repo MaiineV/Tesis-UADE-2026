@@ -37,9 +37,6 @@ namespace Rollgeon.Effects
     /// <summary>Habilita la opción "Generic / parameterized value".</summary>
     public interface ICanBeGenericValue { }
 
-    /// <summary>Declara que el efecto requiere selección (§11) — muestra SelectionSettings.</summary>
-    public interface IUsesSelection { }
-
     /// <summary>Declara que el efecto usa grid selection booleana (<c>bool[,]</c> con <c>[TableMatrix]</c>).</summary>
     public interface IUsesGridSelection { }
 

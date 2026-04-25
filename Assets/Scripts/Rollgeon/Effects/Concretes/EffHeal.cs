@@ -20,7 +20,7 @@ namespace Rollgeon.Effects.Concretes
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffHeal : BaseEffect<HealArgs, int>,
-        IUsesSelection, IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
     {
         [Title("Heal")]
         [SerializeField, MinValue(0), MaxValue(999)]

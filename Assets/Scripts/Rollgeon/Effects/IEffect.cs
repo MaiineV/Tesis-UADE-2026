@@ -19,7 +19,7 @@ namespace Rollgeon.Effects
         /// <summary>Settings de selección del efecto. Nunca null.</summary>
         SelectionSettings GetSelection();
 
-        /// <summary>True si la selección está activa (<c>RequiresSelection == true</c>).</summary>
+        /// <summary>True si el efecto necesita interacción del jugador para seleccionar targets.</summary>
         bool HasSelectionRequirement();
 
         /// <summary>

@@ -4,7 +4,6 @@ using NUnit.Framework;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
-using Rollgeon.Effects.Selection.Queries;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
@@ -151,31 +150,15 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(0, c.ExecutionCount, "Effect after stopper must be short-circuited");
         }
 
-        // ───── Plan §3.6 scenario 4 ───────────────────────────────────────────────
+        // ───── Selection validation — cancelled selection fails ───────────────────
         [Test]
-        public void BaseTargetQuery_TQSelf_ReturnsOwnerAsTarget()
-        {
-            var ownerPos = new GridCoord(3, 5);
-            var q = new TQ_Self();
-            var ctx = new TargetQueryContext { OwnerGuid = Guid.NewGuid(), OwnerPosition = ownerPos };
-
-            var result = q.Evaluate(ctx);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(ownerPos, result[0].Coord);
-        }
-
-        // ───── Plan §3.6 scenario 5 ───────────────────────────────────────────────
-        [Test]
-        public void BaseEffect_ApplySelectionValidation_FailsWhenCancelledAndNotSkippable()
+        public void BaseEffect_ApplySelectionValidation_FailsWhenCancelled()
         {
             var eff = new Eff_ReturnsConfigured();
             eff.Selection = new SelectionSettings
             {
-                RequiresSelection = true,
-                IsSkippable = false,
+                SlotState = SlotState.Occupied,
                 SelectionCount = 1,
-                TargetQuery = new TQ_Self(),
             };
 
             var cancelled = new TargetSelectionResult { WasCancelled = true };
@@ -184,11 +167,22 @@ namespace Rollgeon.Effects.Tests
             Assert.IsFalse(passed);
             Assert.IsNotNull(err);
             StringAssert.Contains("cancelled", err.ToLowerInvariant());
+        }
 
-            // Skippable → cancelled es aceptable.
-            eff.Selection.IsSkippable = true;
-            var skipPassed = eff.ValidateSelection(cancelled, Guid.NewGuid(), out _);
-            Assert.IsTrue(skipPassed);
+        // ───── Selection validation — Self always passes ──────────────────────────
+        [Test]
+        public void BaseEffect_ApplySelectionValidation_SelfAlwaysPasses()
+        {
+            var eff = new Eff_ReturnsConfigured();
+            eff.Selection = new SelectionSettings
+            {
+                SlotState = SlotState.Self,
+            };
+
+            var cancelled = new TargetSelectionResult { WasCancelled = true };
+            var passed = eff.ValidateSelection(cancelled, Guid.NewGuid(), out _);
+
+            Assert.IsTrue(passed, "Self selection should always pass validation");
         }
 
         // ───── Plan §3.6 scenario 6 — truth table AND/OR/NOT ──────────────────────
@@ -241,8 +235,6 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void EffectData_PolymorphicRoundTrip_WithOdin()
         {
-            // Armar un EffectData con subtipos concretos mixtos — PCComposite anidado,
-            // EffDealDamage + EffHeal, SelectionSettings con TQ_Self.
             var original = new EffectData
             {
                 Label = "Roundtrip",
@@ -265,14 +257,11 @@ namespace Rollgeon.Effects.Tests
                 },
             };
 
-            // EffDealDamage lleva Selection con su propio TargetQuery para forzar round-trip
-            // polimórfico del campo inline de SelectionSettings (§13.6.1 + §11.2).
             var damage = (EffDealDamage)original.Effects[0];
             damage.Selection = new SelectionSettings
             {
-                RequiresSelection = true,
+                SlotState = SlotState.Occupied,
                 SelectionCount = 3,
-                TargetQuery = new TQ_Self(),
             };
 
             var bytes = SerializationUtility.SerializeValue(original, DataFormat.JSON);
@@ -281,7 +270,6 @@ namespace Rollgeon.Effects.Tests
 
             var restored = SerializationUtility.DeserializeValue<EffectData>(bytes, DataFormat.JSON);
 
-            // Validaciones — los subtipos concretos sobreviven.
             Assert.IsNotNull(restored);
             Assert.AreEqual("Roundtrip", restored.Label);
 
@@ -297,12 +285,10 @@ namespace Rollgeon.Effects.Tests
             Assert.IsInstanceOf<EffDealDamage>(restored.Effects[0]);
             Assert.IsInstanceOf<EffHeal>(restored.Effects[1]);
 
-            // El SelectionSettings dentro de EffDealDamage también sobrevivió.
             var restoredDmg = (EffDealDamage)restored.Effects[0];
             Assert.IsNotNull(restoredDmg.Selection);
-            Assert.IsTrue(restoredDmg.Selection.RequiresSelection);
+            Assert.AreEqual(SlotState.Occupied, restoredDmg.Selection.SlotState);
             Assert.AreEqual(3, restoredDmg.Selection.SelectionCount);
-            Assert.IsInstanceOf<TQ_Self>(restoredDmg.Selection.TargetQuery);
         }
 
         // ───── BaseBehavior stub — SetBehaviorValue / TryGetBehaviorValues ────────
@@ -345,6 +331,48 @@ namespace Rollgeon.Effects.Tests
                 BehaviorValueKey.FloatingDamage, out var list));
             Assert.AreEqual(1, list.Count);
             Assert.Greater(list[0].Value, 0);
+        }
+
+        // ───── SelectionSettings — NeedsPlayerInteraction ─────────────────────────
+        [Test]
+        public void SelectionSettings_Self_NeedsPlayerInteraction_ReturnsFalse()
+        {
+            var settings = new SelectionSettings { SlotState = SlotState.Self };
+            Assert.IsFalse(settings.NeedsPlayerInteraction());
+        }
+
+        [Test]
+        public void SelectionSettings_AutoResolve_NeedsPlayerInteraction_ReturnsFalse()
+        {
+            var settings = new SelectionSettings
+            {
+                SlotState = SlotState.Occupied,
+                AutoResolve = true,
+            };
+            Assert.IsFalse(settings.NeedsPlayerInteraction());
+        }
+
+        [Test]
+        public void SelectionSettings_Occupied_NeedsPlayerInteraction_ReturnsTrue()
+        {
+            var settings = new SelectionSettings
+            {
+                SlotState = SlotState.Occupied,
+                AutoResolve = false,
+            };
+            Assert.IsTrue(settings.NeedsPlayerInteraction());
+        }
+
+        [Test]
+        public void SelectionSettings_Self_ResolveValidTiles_ReturnsOwnerPosition()
+        {
+            var settings = new SelectionSettings { SlotState = SlotState.Self };
+            var ownerPos = new GridCoord(3, 5);
+
+            var result = settings.ResolveValidTiles(ownerPos, Guid.NewGuid());
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(ownerPos, result[0].Coord);
         }
     }
 }

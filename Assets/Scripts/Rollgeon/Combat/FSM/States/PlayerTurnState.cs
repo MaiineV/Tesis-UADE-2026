@@ -81,7 +81,7 @@ namespace Rollgeon.Combat.FSM.States
             _subCtx.PendingAction = action;
             _subCtx.PendingBehaviorContext = behaviorContext;
 
-            bool needsSelection = action.HasEffectsWithSelectionAt(SelectionTiming.BeforeResolve);
+            bool needsSelection = action.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
             UnityEngine.Debug.Log($"[PlayerTurnState] RequestAction '{action.ActionName}' needsSelection={needsSelection} currentSubState={_subFSM.Current?.GetType().Name}");
 
             if (needsSelection)

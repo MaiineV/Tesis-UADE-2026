@@ -126,7 +126,7 @@ namespace Rollgeon.Heroes
                     foreach (var eff in group.Effects)
                     {
                         if (eff == null) continue;
-                        if (!eff.RequiresSelectionAt(SelectionTiming.BeforeResolve)) continue;
+                        if (!eff.RequiresSelectionAt(SelectionTiming.BeforeRoll)) continue;
 
                         if (!hasOwnerPos)
                         {
@@ -134,7 +134,7 @@ namespace Rollgeon.Heroes
                             break;
                         }
 
-                        var targets = eff.GetSelection().ResolveValidTiles(ownerPos);
+                        var targets = eff.GetSelection().ResolveValidTiles(ownerPos, ownerGuid);
                         if (targets == null || targets.Count == 0)
                         {
                             groupUsable = false;

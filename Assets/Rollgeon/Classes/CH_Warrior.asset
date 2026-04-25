@@ -144,39 +144,33 @@ MonoBehaviour:
     - Name: Selection
       Entry: 7
       Data: 10|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
-      Entry: 5
-      Data: true
+    - Name: SlotState
+      Entry: 3
+      Data: 2
     - Name: Timing
       Entry: 3
       Data: 0
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
+    - Name: EntityFilter
       Entry: 3
-      Data: 1
-    - Name: IsSkippable
-      Entry: 5
-      Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: true
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
+      Data: 0
     - Name: IsGlobal
       Entry: 5
       Data: false
     - Name: Range
       Entry: 3
       Data: 4
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
     - Name: AutoAccept
       Entry: 5
       Data: true
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -283,42 +277,33 @@ MonoBehaviour:
     - Name: Selection
       Entry: 7
       Data: 18|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
-      Entry: 5
-      Data: true
+    - Name: SlotState
+      Entry: 3
+      Data: 1
     - Name: Timing
       Entry: 3
       Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 18
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: true
-    - Name: IsGlobal
-      Entry: 5
-      Data: true
-    - Name: Range
-      Entry: 3
-      Data: 1
     - Name: AutoAccept
       Entry: 5
       Data: true
-    - Name: TargetQuery
-      Entry: 7
-      Data: 19|Rollgeon.Effects.Selection.Queries.TQ_AllEnemies, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -333,14 +318,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 20|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 19|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 21|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 20|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -349,27 +343,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -381,14 +360,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 22|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 21|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 23|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 22|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -397,27 +385,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -429,14 +402,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 23|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 25|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 24|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -445,27 +427,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -495,7 +462,7 @@ MonoBehaviour:
       Data: 
     - Name: SpecialAttack
       Entry: 7
-      Data: 26|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 25|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -525,7 +492,7 @@ MonoBehaviour:
       Data: true
     - Name: ShowConditions
       Entry: 7
-      Data: 27|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -538,20 +505,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 27|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 29|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 28|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 30|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 29|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -564,59 +531,50 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 31|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
-      Data: 5
-    - Name: 
-      Entry: 6
-      Data: 
+      Data: 4
     - Name: 
       Entry: 7
-      Data: 32|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 31|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 33|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
-      Entry: 5
-      Data: false
+      Data: 32|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
     - Name: Timing
       Entry: 3
       Data: 0
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
+    - Name: EntityFilter
       Entry: 3
-      Data: 1
-    - Name: IsSkippable
-      Entry: 5
-      Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
+      Data: 2
     - Name: IsGlobal
       Entry: 5
       Data: false
     - Name: Range
       Entry: 3
-      Data: 0
-    - Name: AutoAccept
+      Data: 2
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 2
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
     - Name: _baseAmount
       Entry: 3
-      Data: 10
+      Data: 7
     - Name: _attackKind
       Entry: 3
       Data: 1
@@ -625,14 +583,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 33|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 35|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 34|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -641,27 +608,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -673,14 +625,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 35|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 37|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 36|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -689,27 +650,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -721,14 +667,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 38|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 37|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 39|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 38|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -737,27 +692,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -787,7 +727,7 @@ MonoBehaviour:
       Data: 
     - Name: Healing
       Entry: 7
-      Data: 40|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 39|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -817,7 +757,7 @@ MonoBehaviour:
       Data: false
     - Name: ShowConditions
       Entry: 7
-      Data: 41|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 40|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -830,20 +770,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 42|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 41|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 43|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 42|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 44|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -856,53 +796,44 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 45|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 44|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 46|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+      Data: 45|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 47|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
-      Entry: 5
-      Data: true
-    - Name: Timing
+      Data: 46|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
       Entry: 3
       Data: 0
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
+    - Name: Timing
       Entry: 3
       Data: 1
-    - Name: IsSkippable
-      Entry: 5
-      Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: true
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
     - Name: IsGlobal
       Entry: 5
       Data: false
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 7
-      Data: 48|Rollgeon.Effects.Selection.Queries.TQ_Self, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -920,14 +851,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 49|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 47|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: RequiresSelection
+      Data: 48|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
       Entry: 5
       Data: false
-    - Name: Timing
+    - Name: Range
       Entry: 3
       Data: 0
     - Name: IsConstantSelectionCount
@@ -936,27 +876,12 @@ MonoBehaviour:
     - Name: SelectionCount
       Entry: 3
       Data: 1
-    - Name: IsSkippable
+    - Name: AutoResolve
       Entry: 5
       Data: false
-    - Name: RequireEmptySlot
-      Entry: 5
-      Data: false
-    - Name: RequireOccupiedSlot
-      Entry: 5
-      Data: false
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 0
     - Name: AutoAccept
       Entry: 5
       Data: false
-    - Name: TargetQuery
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -989,7 +914,7 @@ MonoBehaviour:
       Data: 
     - Name: ContextualBehaviors
       Entry: 7
-      Data: 51|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+      Data: 49|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1023,7 +948,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 6161477909521629448
+      - rid: 6161477909521629529
     BaseAttack:
       Trigger: 0
       AllowedPhases: -3
@@ -1036,7 +961,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 6161477909521629449
+      - rid: 6161477909521629530
     SpecialAttack:
       Trigger: 0
       AllowedPhases: -3
@@ -1049,7 +974,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 1
       ShowConditions: []
       Effects:
-      - rid: 6161477909521629450
+      - rid: 6161477909521629531
     Healing:
       Trigger: 0
       AllowedPhases: -1
@@ -1062,7 +987,7 @@ MonoBehaviour:
       AllowsEnergyReroll: 0
       ShowConditions: []
       Effects:
-      - rid: 6161477909521629451
+      - rid: 6161477909521629532
   ContextualBehaviors: []
   BaseMaxHp: 10
   BaseSpeed: 5
@@ -1073,237 +998,195 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 6161477909521629448
+    - rid: 6161477909521629529
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 6161477909521629452
-    - rid: 6161477909521629449
+        - rid: 6161477909521629533
+    - rid: 6161477909521629530
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 6161477909521629453
-        - rid: 6161477909521629454
-        - rid: 6161477909521629455
-        - rid: 6161477909521629456
-    - rid: 6161477909521629450
+        - rid: 6161477909521629534
+        - rid: 6161477909521629535
+        - rid: 6161477909521629536
+        - rid: 6161477909521629537
+    - rid: 6161477909521629531
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: -2
-        - rid: 6161477909521629457
-        - rid: 6161477909521629458
-        - rid: 6161477909521629459
-        - rid: 6161477909521629460
-    - rid: 6161477909521629451
+        - rid: 6161477909521629538
+        - rid: 6161477909521629539
+        - rid: 6161477909521629540
+        - rid: 6161477909521629541
+    - rid: 6161477909521629532
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 6161477909521629461
-        - rid: 6161477909521629462
-    - rid: 6161477909521629452
+        - rid: 6161477909521629542
+        - rid: 6161477909521629543
+    - rid: 6161477909521629533
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 1
+          SlotState: 2
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 1
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 4
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 1
-          TargetQuery:
-            rid: -2
-    - rid: 6161477909521629453
+    - rid: 6161477909521629534
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 1
+          SlotState: 1
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 1
-          IsGlobal: 1
+          EntityFilter: 18
+          IsGlobal: 0
           Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 1
-          TargetQuery:
-            rid: 6161477909521629464
         _baseAmount: 10
         _attackKind: 1
-    - rid: 6161477909521629454
+    - rid: 6161477909521629535
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: hit.basic
-    - rid: 6161477909521629455
+    - rid: 6161477909521629536
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: hit.impulse
-    - rid: 6161477909521629456
+    - rid: 6161477909521629537
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: sfx.hit
-    - rid: 6161477909521629457
+    - rid: 6161477909521629538
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 1
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 2
           IsGlobal: 0
-          Range: 0
-          AutoAccept: 0
-          TargetQuery:
-            rid: -2
-        _baseAmount: 10
+          Range: 2
+          IsConstantSelectionCount: 1
+          SelectionCount: 2
+          AutoResolve: 0
+          AutoAccept: 1
+        _baseAmount: 7
         _attackKind: 1
-    - rid: 6161477909521629458
+    - rid: 6161477909521629539
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: hit.basic
-    - rid: 6161477909521629459
+    - rid: 6161477909521629540
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: hit.impulse
-    - rid: 6161477909521629460
+    - rid: 6161477909521629541
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: sfx.hit
-    - rid: 6161477909521629461
+    - rid: 6161477909521629542
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 1
-          Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 1
+          SlotState: 0
+          Timing: 1
+          EntityFilter: 0
           IsGlobal: 0
           Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: 6161477909521629463
         _baseAmount: 5
         _isPercentOfMax: 0
         _sourceTag: 
-    - rid: 6161477909521629462
+    - rid: 6161477909521629543
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          RequiresSelection: 0
+          SlotState: 0
           Timing: 0
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          IsSkippable: 0
-          RequireEmptySlot: 0
-          RequireOccupiedSlot: 0
+          EntityFilter: 0
           IsGlobal: 0
           Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
           AutoAccept: 0
-          TargetQuery:
-            rid: -2
         _feedbackId: heal.basic
-    - rid: 6161477909521629463
-      type: {class: TQ_Self, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 
-    - rid: 6161477909521629464
-      type: {class: TQ_AllEnemies, ns: Rollgeon.Effects.Selection.Queries, asm: Rollgeon}
-      data: 

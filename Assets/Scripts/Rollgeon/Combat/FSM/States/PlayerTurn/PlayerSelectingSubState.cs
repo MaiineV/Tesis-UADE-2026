@@ -39,7 +39,7 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
                 if (group?.Effects == null) continue;
                 foreach (var eff in group.Effects)
                 {
-                    if (eff != null && eff.RequiresSelectionAt(SelectionTiming.BeforeResolve))
+                    if (eff != null && eff.RequiresSelectionAt(SelectionTiming.BeforeRoll))
                     {
                         targetSettings = eff.GetSelection();
                         break;
@@ -50,12 +50,12 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
 
             if (targetSettings == null)
             {
-                UnityEngine.Debug.LogWarning("[PlayerSelectingSubState] No effect with BeforeResolve selection found — skipping");
+                UnityEngine.Debug.LogWarning("[PlayerSelectingSubState] No effect with BeforeRoll selection found — skipping");
                 _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
                 return;
             }
 
-            UnityEngine.Debug.Log($"[PlayerSelectingSubState] SelectionSettings found — IsGlobal={targetSettings.IsGlobal} Range={targetSettings.Range} RequireEmpty={targetSettings.RequireEmptySlot} AutoAccept={targetSettings.AutoAccept}");
+            UnityEngine.Debug.Log($"[PlayerSelectingSubState] SelectionSettings found — SlotState={targetSettings.SlotState} IsGlobal={targetSettings.IsGlobal} Range={targetSettings.Range} AutoAccept={targetSettings.AutoAccept}");
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
             {
@@ -73,7 +73,25 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
 
             UnityEngine.Debug.Log($"[PlayerSelectingSubState] Owner position = {ownerPos}");
 
-            var validTargets = targetSettings.ResolveValidTiles(ownerPos);
+            if (targetSettings.SlotState == SlotState.Self)
+            {
+                Context.SelectionResult = new TargetSelectionResult
+                {
+                    WasCompleted = true,
+                    SelectedTargets = new List<TargetRef> { TargetRef.At(ownerPos) },
+                };
+                _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
+                return;
+            }
+
+            if (targetSettings.AutoResolve)
+            {
+                Context.SelectionResult = targetSettings.AutoResolveTargets(ownerPos, Context.ActingGuid);
+                _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
+                return;
+            }
+
+            var validTargets = targetSettings.ResolveValidTiles(ownerPos, Context.ActingGuid);
             UnityEngine.Debug.Log($"[PlayerSelectingSubState] ResolveValidTiles returned {validTargets.Count} tiles");
 
             if (!ServiceLocator.TryGetService<ISelectionController>(out _controller))

@@ -19,6 +19,7 @@ namespace Rollgeon.Grid
             {
                 { "move", new Color(0.3f, 0.8f, 1f, 0.6f) },
                 { "attack", new Color(1f, 0.3f, 0.3f, 0.6f) },
+                { "selected", new Color(1f, 0.9f, 0.2f, 0.7f) },
             };
         }
 
@@ -47,6 +48,15 @@ namespace Rollgeon.Grid
                 matched++;
             }
             Debug.Log($"[TileHighlightService] Highlight style='{style}' — {matched}/{total} tiles matched ({_tileRenderers.Count} registered renderers)");
+        }
+
+        public void HighlightSingle(GridCoord coord, string style)
+        {
+            if (!_tileRenderers.TryGetValue(coord, out var renderer)) return;
+            var color = _styleColors.TryGetValue(style, out var c) ? c : Color.yellow;
+            _block.SetColor(ColorId, color);
+            renderer.SetPropertyBlock(_block);
+            _active.Add(coord);
         }
 
         public void ClearAll()

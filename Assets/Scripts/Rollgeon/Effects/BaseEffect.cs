@@ -25,11 +25,8 @@ namespace Rollgeon.Effects
     public abstract class BaseEffect : IEffect
     {
         /// <summary>
-        /// Settings de selección embebido. Default es una instancia vacía con
-        /// <c>RequiresSelection = false</c> — efectos que usan selección reemplazan
-        /// esta instancia desde su constructor o via <see cref="IUsesSelection"/> marker.
-        /// Visible en inspector cuando el concreto implementa <see cref="IUsesSelection"/>;
-        /// la conditional rendering la aplica la editor extension downstream.
+        /// Settings de selección embebido. Todos los efectos tienen config de selección
+        /// (puede ser Self, AutoResolve, o interactiva).
         /// </summary>
         public SelectionSettings Selection = new SelectionSettings();
 
@@ -40,7 +37,7 @@ namespace Rollgeon.Effects
 
         public bool HasSelectionRequirement()
         {
-            return Selection != null && Selection.RequiresSelection;
+            return Selection != null && Selection.NeedsPlayerInteraction();
         }
 
         /// <summary>
@@ -52,11 +49,6 @@ namespace Rollgeon.Effects
             if (context == null) return false;
             if (!context.lastResult) return false;
 
-            // Grid seed: si el efecto declara IUsesGridSelection y no tiene RequiresSelection,
-            // downstream inyecta la grilla default. La foundation no implementa ese seeding —
-            // es responsabilidad de la capa que habilite grid selection agregarlo ahí.
-            // Hook documentado por simetría con TECHNICAL.md §8.8.
-
             context.lastResult = ApplyEffect(context);
             return context.lastResult;
         }
@@ -66,7 +58,7 @@ namespace Rollgeon.Effects
 
         public bool RequiresSelectionAt(SelectionTiming timing)
         {
-            return HasSelectionRequirement() && Selection.Timing == timing;
+            return Selection != null && Selection.NeedsSelectionAt(timing);
         }
 
         /// <summary>
@@ -125,16 +117,12 @@ namespace Rollgeon.Effects
             return copy.Count > 0 ? copy : null;
         }
 
-        /// <summary>
-        /// Default de validación de selección. TECHNICAL.md §11.5. Los concretes con reglas
-        /// especiales (ej. "al menos 1 enemigo del tipo X") overridean.
-        /// </summary>
         public virtual bool ValidateSelection(TargetSelectionResult result, Guid ownerGuid, out string error)
         {
             error = null;
-            if (!HasSelectionRequirement()) return true;
+            if (Selection == null || !Selection.NeedsPlayerInteraction()) return true;
             if (result == null) { error = "Selection result is null"; return false; }
-            if (result.WasCancelled && !Selection.IsSkippable)
+            if (result.WasCancelled)
             {
                 error = "Selection cancelled";
                 return false;

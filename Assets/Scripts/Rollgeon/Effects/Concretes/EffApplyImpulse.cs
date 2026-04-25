@@ -21,7 +21,7 @@ namespace Rollgeon.Effects.Concretes
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffApplyImpulse : BaseEffect,
-        IUsesSelection, IShouldStoreValuesOnBehavior
+        IShouldStoreValuesOnBehavior
     {
         [Title("Impulse")]
         [SerializeField]

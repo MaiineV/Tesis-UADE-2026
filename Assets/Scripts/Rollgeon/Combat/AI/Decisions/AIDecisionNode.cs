@@ -8,7 +8,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </summary>
     /// <remarks>
     /// Serializada via <c>[SerializeReference]</c> en <c>EnemyDataSO.AIRoot</c> + Odin
-    /// para inspector autorable. Ver regla §13.6.1 (similar a <c>BaseTargetQuery</c>).
+    /// para inspector autorable. Ver regla §13.6.1.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public abstract class AIDecisionNode

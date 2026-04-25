@@ -7,7 +7,7 @@ using Sirenix.OdinInspector;
 namespace Rollgeon.Effects.Concretes
 {
     [Serializable, HideReferenceObjectPicker]
-    public sealed class EffMove : BaseEffect, IUsesSelection
+    public sealed class EffMove : BaseEffect
     {
         public override string GetEffectName() => "Move";
 
