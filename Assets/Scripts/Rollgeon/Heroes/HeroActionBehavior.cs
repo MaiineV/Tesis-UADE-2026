@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
@@ -187,6 +188,20 @@ namespace Rollgeon.Heroes
             }
 
             return effCtx;
+        }
+
+        public EffDealDamage FindFirstDealDamageEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is EffDealDamage dealDmg) return dealDmg;
+                }
+            }
+            return null;
         }
 
         private PreConditionContext BuildPreConditionContext(BehaviorContext ctx)

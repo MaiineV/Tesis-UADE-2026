@@ -24,20 +24,42 @@ namespace Rollgeon.Effects.Concretes
         IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
     {
         [Title("Damage")]
-        [SerializeField, MinValue(0), MaxValue(999)]
+        [SerializeField]
+        [Tooltip("Fuente del daño base: Constant usa _baseAmount, ComboValue usa el resultado del combo.")]
+        private DamageSource _damageSource = DamageSource.Constant;
+
+        [SerializeField, ShowIf("_damageSource", DamageSource.Constant)]
+        [MinValue(0), MaxValue(999)]
         [Tooltip("Daño base antes de pipeline (mitigación, críticos, weakness).")]
         private int _baseAmount = 10;
+
+        [SerializeField, ShowIf("_damageSource", DamageSource.ComboValue)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al BaseDamage del combo resuelto.")]
+        private float _comboMultiplier = 1f;
 
         [SerializeField]
         [Tooltip("Tipo de ataque usado al construir el DamageContext.")]
         private AttackKind _attackKind = AttackKind.BasicAttack;
 
+        public DamageSource Source => _damageSource;
+        public float ComboMultiplier => _comboMultiplier;
+        public int BaseAmount => _baseAmount;
+
         public override string GetEffectName() => "Deal Damage";
 
-        protected override DamageArgs ResolveArgs(EffectContext context) =>
-            new DamageArgs { BaseAmount = _baseAmount };
+        protected override DamageArgs ResolveArgs(EffectContext context)
+        {
+            int amount = _damageSource switch
+            {
+                DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
+                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                _ => _baseAmount,
+            };
+            return new DamageArgs { BaseAmount = amount };
+        }
 
-        protected override int ResolveValue(EffectContext context) => _baseAmount;
+        protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 
         public override bool ApplyEffect(EffectContext context)
         {

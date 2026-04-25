@@ -12,5 +12,6 @@ namespace Rollgeon.Heroes
         public ComboDetectionResult? MatchedComboResult;
         public Guid TargetGuid;
         public TargetSelectionResult SelectionResult;
+        public bool EnergyPrepaid;
     }
 }

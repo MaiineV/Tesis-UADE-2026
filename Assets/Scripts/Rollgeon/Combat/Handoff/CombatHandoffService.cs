@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.Energy;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
@@ -188,6 +189,7 @@ namespace Rollgeon.Combat.Handoff
                 EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
 
                 _lastFaces = null;
+                hud.ClearBehaviorForFormula();
                 _playerActions.EndPlayerTurn();
             };
 
@@ -201,9 +203,10 @@ namespace Rollgeon.Combat.Handoff
 
                 if (hero != null && _lastFaces != null)
                 {
-                    combo = hero.Sheet?.MatchBest(_lastFaces);
+                    var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
+                    combo = hero.Sheet?.MatchBest(keptDice);
                     if (combo != null)
-                        comboResult = combo.Detect(_lastFaces);
+                        comboResult = combo.Detect(keptDice);
                 }
 
                 var behaviorCtx = new HeroBehaviorContext
@@ -211,6 +214,7 @@ namespace Rollgeon.Combat.Handoff
                     DiceResult = _lastFaces,
                     MatchedComboResult = comboResult,
                     TargetGuid = firstEnemyId,
+                    EnergyPrepaid = true,
                 };
 
                 bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
@@ -237,13 +241,14 @@ namespace Rollgeon.Combat.Handoff
 
                         _lastFaces = null;
                         _selectedBehavior = null;
+                        hud.ClearBehaviorForFormula();
                         return;
                     }
                     Debug.LogWarning("[CombatHandoff] playerState is null — falling through to TurnManager path");
                 }
 
                 if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
-                    tm.TryExecute(_selectedBehavior, playerGuid, behaviorCtx);
+                    tm.TryExecuteEnergyPrepaid(_selectedBehavior, playerGuid, behaviorCtx);
 
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                     budget.EndBudget();
@@ -253,6 +258,7 @@ namespace Rollgeon.Combat.Handoff
 
                 _lastFaces = null;
                 _selectedBehavior = null;
+                hud.ClearBehaviorForFormula();
             }
 
             hud.OnBehaviorSelected = (int index) =>
@@ -292,9 +298,16 @@ namespace Rollgeon.Combat.Handoff
                 }
 
                 _selectedBehavior = behavior;
+                hud.SetBehaviorForFormula(behavior);
 
                 if (!behavior.NeedsDiceRoll)
                 {
+                    if (!SpendEnergyNow(behavior, playerGuid))
+                    {
+                        _selectedBehavior = null;
+                        hud.ClearBehaviorForFormula();
+                        return;
+                    }
                     DoConfirm();
                     return;
                 }
@@ -312,6 +325,14 @@ namespace Rollgeon.Combat.Handoff
                 {
                     Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
                     _selectedBehavior = null;
+                    hud.ClearBehaviorForFormula();
+                    return;
+                }
+
+                if (!SpendEnergyNow(behavior, playerGuid))
+                {
+                    _selectedBehavior = null;
+                    hud.ClearBehaviorForFormula();
                     return;
                 }
 
@@ -399,6 +420,39 @@ namespace Rollgeon.Combat.Handoff
             Debug.LogError("[CombatHandoffService] IDiceRoller no registrado. " +
                            "Agregar DiceRollerBootstrap a ServiceBootstrapSO.ExtraServices.");
             return null;
+        }
+
+        public static int[] FilterKeptDice(int[] faces, bool[] keep)
+        {
+            if (faces == null) return Array.Empty<int>();
+            if (keep == null || keep.Length == 0) return faces;
+
+            int count = 0;
+            int len = Math.Min(faces.Length, keep.Length);
+            for (int i = 0; i < len; i++)
+                if (keep[i]) count++;
+
+            if (count == 0) return Array.Empty<int>();
+            if (count == faces.Length) return faces;
+
+            var result = new int[count];
+            int idx = 0;
+            for (int i = 0; i < len; i++)
+                if (keep[i]) result[idx++] = faces[i];
+            return result;
+        }
+
+        private static bool SpendEnergyNow(HeroActionBehavior behavior, Guid playerGuid)
+        {
+            if (behavior.EnergyCost <= 0) return true;
+            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
+                return true;
+            if (!energy.SpendEnergy(playerGuid, behavior.EnergyCost))
+            {
+                Debug.Log($"[CombatHandoffService] SpendEnergy failed for '{behavior.ActionName}' at selection time.");
+                return false;
+            }
+            return true;
         }
     }
 }

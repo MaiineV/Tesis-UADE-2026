@@ -260,6 +260,18 @@ namespace Rollgeon.Combat.Actions
             return true;
         }
 
+        public bool TryExecuteEnergyPrepaid(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
+        {
+            if (behavior == null) return false;
+
+            behavior.Execute(ctx);
+
+            if (behavior.BlockOnRepeat)
+                _actionsUsedThisTurn.Add(behavior.ActionName);
+
+            return true;
+        }
+
         // ======================================================================
         // Feedback blocking hooks (§10.9)
         // ======================================================================

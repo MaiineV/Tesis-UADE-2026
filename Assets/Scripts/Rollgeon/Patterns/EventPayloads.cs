@@ -71,6 +71,9 @@ namespace Patterns
         /// <summary>Id del combo matcheado (clave del catálogo de combos).</summary>
         public string ComboId;
 
+        /// <summary>Nombre legible del combo para UI.</summary>
+        public string DisplayName;
+
         /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
         public int BaseDamage;
     }

@@ -43,8 +43,14 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
                 UnityEngine.Debug.Log($"[PlayerExecutingSubState] Executing '{action.BehaviorName}' (no HeroBehaviorContext)");
             }
 
+            bool energyPrepaid = behaviorCtx is HeroBehaviorContext hbc && hbc.EnergyPrepaid;
             if (ServiceLocator.TryGetService<TurnManager>(out var tm))
-                tm.TryExecute(action, Context.ActingGuid, behaviorCtx);
+            {
+                if (energyPrepaid)
+                    tm.TryExecuteEnergyPrepaid(action, Context.ActingGuid, behaviorCtx);
+                else
+                    tm.TryExecute(action, Context.ActingGuid, behaviorCtx);
+            }
             else
                 action.Execute(behaviorCtx);
 
