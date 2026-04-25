@@ -157,7 +157,7 @@ namespace Rollgeon.Dungeon.Tests
             // Cruzar a la vecina y volver.
             var originalStartId = start.InstanceId;
             Assume.That(_manager.EnterRoomByDoor(firstDir), Is.True);
-            var backDir = OppositeOf(firstDir);
+            var backDir = firstDir.Opposite();
             if (!_manager.CanEnterRoomByDoor(backDir, out _))
             {
                 // Si es combat Uncleared no podemos volver — saltamos el test.
@@ -172,22 +172,6 @@ namespace Rollgeon.Dungeon.Tests
             Assert.IsTrue(restored.Forced, "DoorState.Forced debe persistir entre exits.");
         }
 
-        private static DoorDirection OppositeOf(DoorDirection dir) => dir switch
-        {
-            DoorDirection.North => DoorDirection.South,
-            DoorDirection.South => DoorDirection.North,
-            DoorDirection.East  => DoorDirection.West,
-            DoorDirection.West  => DoorDirection.East,
-            _                   => dir,
-        };
-
-        private static string DoorKey(DoorDirection dir) => dir switch
-        {
-            DoorDirection.North => "door_N",
-            DoorDirection.South => "door_S",
-            DoorDirection.East  => "door_E",
-            DoorDirection.West  => "door_W",
-            _                   => "door_?",
-        };
+        private static string DoorKey(DoorDirection dir) => dir.DoorStateKey();
     }
 }

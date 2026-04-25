@@ -433,13 +433,51 @@ namespace Rollgeon.Dungeon.Tests
             Assert.AreEqual(Vector2Int.zero, _manager.CurrentRoomInstance.GridCell);
         }
 
-        private static string DoorKey(DoorDirection dir) => dir switch
+        // -----------------------------------------------------------------
+        // LastEntryDirection
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void GenerateFloor_LastEntryDirection_IsNull()
         {
-            DoorDirection.North => "door_N",
-            DoorDirection.South => "door_S",
-            DoorDirection.East  => "door_E",
-            DoorDirection.West  => "door_W",
-            _                   => "door_?",
-        };
+            var layout = CreateLayout();
+            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            _manager.GenerateFloor(layout, 42);
+
+            Assert.IsNull(_manager.LastEntryDirection);
+        }
+
+        [Test]
+        public void EnterRoomByDoor_SetsLastEntryDirectionToOpposite()
+        {
+            var layout = CreateLayout();
+            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            _manager.GenerateFloor(layout, 42);
+
+            var firstDir = _manager.CurrentRoomInstance.Connections.Keys.First();
+            _manager.EnterRoomByDoor(firstDir);
+
+            Assert.AreEqual(firstDir.Opposite(), _manager.LastEntryDirection);
+        }
+
+        [Test]
+        public void EnterRoomByInstanceId_SetsLastEntryDirectionToNull()
+        {
+            var layout = CreateLayout();
+            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            _manager.GenerateFloor(layout, 42);
+
+            var firstDir = _manager.CurrentRoomInstance.Connections.Keys.First();
+            _manager.EnterRoomByDoor(firstDir);
+            Assume.That(_manager.LastEntryDirection, Is.Not.Null);
+
+            var targetId = _manager.GetAllRoomInstances().Values
+                .First(i => i.InstanceId != _manager.CurrentRoomInstance.InstanceId).InstanceId;
+            _manager.EnterRoomByInstanceId(targetId);
+
+            Assert.IsNull(_manager.LastEntryDirection);
+        }
+
+        private static string DoorKey(DoorDirection dir) => dir.DoorStateKey();
     }
 }

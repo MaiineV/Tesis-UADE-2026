@@ -46,6 +46,7 @@ namespace Rollgeon.Combat.Handoff.Tests
                 return false;
             }
 
+            public Rollgeon.Dungeon.Components.DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(Rollgeon.Dungeon.Components.DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
 

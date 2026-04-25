@@ -56,6 +56,13 @@ namespace Rollgeon.Dungeon
         bool EnterRoomByDoor(DoorDirection direction);
 
         /// <summary>
+        /// Dirección de la puerta en la sala DESTINO por la que el player entró.
+        /// <c>null</c> para el spawn inicial o teleports via <see cref="EnterRoomByInstanceId"/>.
+        /// Ejemplo: si el player salió por la puerta Norte, <c>LastEntryDirection == South</c>.
+        /// </summary>
+        DoorDirection? LastEntryDirection { get; }
+
+        /// <summary>
         /// Debug / minimap hook — transición directa a una instancia del grafo
         /// sin validar conectividad o locks.
         /// </summary>

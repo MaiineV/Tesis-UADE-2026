@@ -294,6 +294,7 @@ namespace Rollgeon.Combat.Tests
             public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() => new Dictionary<Guid, RoomInstance>();
             public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() => new Dictionary<Guid, FloorShell>();
             public bool CanEnterRoomByDoor(DoorDirection direction, out Guid neighborInstanceId) { neighborInstanceId = Guid.Empty; return false; }
+            public DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(DoorDirection direction) => false;
             public bool EnterRoomByInstanceId(Guid instanceId) => false;
             public UnityEngine.Bounds GetFloorBounds() => default;

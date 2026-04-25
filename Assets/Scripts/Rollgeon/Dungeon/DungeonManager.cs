@@ -40,6 +40,7 @@ namespace Rollgeon.Dungeon
         private readonly Dictionary<Vector2Int, Guid> _cellIndex = new();
 
         private Guid _currentId = Guid.Empty;
+        private DoorDirection? _lastEntryDirection;
         private RoomSO _runtimeBossRoom;
         private Vector3 _stepSize = new(10f, 0f, 10f);
 
@@ -50,6 +51,8 @@ namespace Rollgeon.Dungeon
 
         public RoomInstance CurrentRoomInstance =>
             _currentId != Guid.Empty && _instances.TryGetValue(_currentId, out var ri) ? ri : null;
+
+        public DoorDirection? LastEntryDirection => _lastEntryDirection;
 
         public DungeonManager()
         {
@@ -64,6 +67,7 @@ namespace Rollgeon.Dungeon
             if (layout == null) throw new ArgumentNullException(nameof(layout));
 
             ClearState();
+            _lastEntryDirection = null;
 
             var rng = new System.Random(seed);
             int targetCount = rng.Next(
@@ -127,7 +131,7 @@ namespace Rollgeon.Dungeon
                 foreach (var dir in AllDirections())
                 {
                     if (!instance.Connections.ContainsKey(dir)) continue;
-                    var key = DoorStateKey(dir);
+                    var key = dir.DoorStateKey();
                     if (!instance.ObjectStates.ContainsKey(key))
                     {
                         instance.ObjectStates.Set(key, new DoorState
@@ -168,7 +172,7 @@ namespace Rollgeon.Dungeon
             if (current.State == RoomState.Cleared) return true;
 
             // Uncleared + forced door → libre.
-            if (current.ObjectStates.TryGet<DoorState>(DoorStateKey(direction), out var doorState)
+            if (current.ObjectStates.TryGet<DoorState>(direction.DoorStateKey(), out var doorState)
                 && (doorState.Forced || doorState.Unlocked))
             {
                 return true;
@@ -181,12 +185,14 @@ namespace Rollgeon.Dungeon
         public bool EnterRoomByDoor(DoorDirection direction)
         {
             if (!CanEnterRoomByDoor(direction, out var neighborId)) return false;
+            _lastEntryDirection = direction.Opposite();
             return TransitionTo(neighborId);
         }
 
         public bool EnterRoomByInstanceId(Guid instanceId)
         {
             if (!_instances.ContainsKey(instanceId)) return false;
+            _lastEntryDirection = null;
             return TransitionTo(instanceId);
         }
 
@@ -319,7 +325,7 @@ namespace Rollgeon.Dungeon
 
                 controller.OwnerRoomInstanceId = instance.InstanceId;
                 controller.Direction = slot.Direction;
-                controller.SpawnPointId = DoorStateKey(slot.Direction);
+                controller.SpawnPointId = slot.Direction.DoorStateKey();
             }
 
             SyncDoorVisualStates(instance);
@@ -348,7 +354,7 @@ namespace Rollgeon.Dungeon
                     continue;
                 }
 
-                instance.ObjectStates.TryGet<DoorState>(DoorStateKey(slot.Direction), out var doorState);
+                instance.ObjectStates.TryGet<DoorState>(slot.Direction.DoorStateKey(), out var doorState);
                 bool forced = doorState != null && (doorState.Forced || doorState.Unlocked);
 
                 if (instance.State == RoomState.Cleared || forced)
@@ -379,7 +385,7 @@ namespace Rollgeon.Dungeon
             foreach (var dir in AllDirections())
             {
                 if (!instance.Connections.ContainsKey(dir)) continue;
-                var key = DoorStateKey(dir);
+                var key = dir.DoorStateKey();
                 if (!instance.ObjectStates.TryGet<DoorState>(key, out var doorState)) continue;
                 doorState.Unlocked = true;
             }
@@ -455,6 +461,7 @@ namespace Rollgeon.Dungeon
             _shells.Clear();
             _cellIndex.Clear();
             _currentId = Guid.Empty;
+            _lastEntryDirection = null;
         }
 
         // -----------------------------------------------------------------
@@ -689,13 +696,5 @@ namespace Rollgeon.Dungeon
             yield return DoorDirection.West;
         }
 
-        private static string DoorStateKey(DoorDirection dir) => dir switch
-        {
-            DoorDirection.North => "door_N",
-            DoorDirection.South => "door_S",
-            DoorDirection.East  => "door_E",
-            DoorDirection.West  => "door_W",
-            _                   => "door_?",
-        };
     }
 }

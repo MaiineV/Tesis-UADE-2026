@@ -40,6 +40,7 @@ namespace Rollgeon.Exploration.Tests
                 return false;
             }
 
+            public DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
 
