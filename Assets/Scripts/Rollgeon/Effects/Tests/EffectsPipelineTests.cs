@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using Rollgeon.Combos;
+using Rollgeon.Combat.Handoff;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
@@ -373,6 +376,202 @@ namespace Rollgeon.Effects.Tests
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(ownerPos, result[0].Coord);
+        }
+
+        // ───── EffDealDamage — DamageSource.ComboValue tests ─────────────────────
+
+        private static void SetPrivateField(object obj, string fieldName, object value)
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {obj.GetType().Name}");
+            field.SetValue(obj, value);
+        }
+
+        [Test]
+        public void EffDealDamage_ComboValue_UsesComboBaseDamageTimesMultiplier()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = ComboDetectionResult.Match(20, 2);
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_comboMultiplier", 2f);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(1, list.Count);
+            Assert.AreEqual(40f, list[0].Value);
+        }
+
+        [Test]
+        public void EffDealDamage_ComboValue_FallsBackToBaseAmount_WhenNoCombo()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = null;
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_baseAmount", 15);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(15f, list[0].Value);
+        }
+
+        [Test]
+        public void EffDealDamage_ComboValue_FallsBackToBaseAmount_WhenComboNoMatch()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = ComboDetectionResult.NoMatch();
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_baseAmount", 12);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(12f, list[0].Value);
+        }
+
+        [Test]
+        public void EffDealDamage_Constant_IgnoresComboEvenWhenPresent()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = ComboDetectionResult.Match(100, 3);
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.Constant);
+            SetPrivateField(eff, "_baseAmount", 10);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(10f, list[0].Value);
+        }
+
+        [Test]
+        public void EffDealDamage_ComboValue_HalfMultiplier_RoundsCorrectly()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = ComboDetectionResult.Match(15, 2);
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_comboMultiplier", 0.5f);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(8f, list[0].Value);
+        }
+
+        // ==================================================================
+        // EffDealDamage — read-only property accessors
+        // ==================================================================
+
+        [Test]
+        public void EffDealDamage_SourceProperty_ReturnsConfiguredValue()
+        {
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            Assert.AreEqual(DamageSource.ComboValue, eff.Source);
+        }
+
+        [Test]
+        public void EffDealDamage_ComboMultiplierProperty_ReturnsConfiguredValue()
+        {
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_comboMultiplier", 2.5f);
+            Assert.AreEqual(2.5f, eff.ComboMultiplier);
+        }
+
+        [Test]
+        public void EffDealDamage_BaseAmountProperty_ReturnsConfiguredValue()
+        {
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_baseAmount", 42);
+            Assert.AreEqual(42, eff.BaseAmount);
+        }
+    }
+
+    // ======================================================================
+    // FilterKeptDice tests
+    // ======================================================================
+
+    [TestFixture]
+    public class FilterKeptDiceTests
+    {
+        [Test]
+        public void AllKept_ReturnsAllFaces()
+        {
+            var faces = new[] { 3, 5, 2, 6, 1 };
+            var keep = new[] { true, true, true, true, true };
+            var result = CombatHandoffService.FilterKeptDice(faces, keep);
+            Assert.AreEqual(faces, result);
+        }
+
+        [Test]
+        public void NoneKept_ReturnsEmpty()
+        {
+            var faces = new[] { 3, 5, 2, 6, 1 };
+            var keep = new[] { false, false, false, false, false };
+            var result = CombatHandoffService.FilterKeptDice(faces, keep);
+            Assert.AreEqual(0, result.Length);
+        }
+
+        [Test]
+        public void Partial_ReturnsOnlyKeptIndices()
+        {
+            var faces = new[] { 3, 5, 2, 6, 1 };
+            var keep = new[] { true, false, true, false, true };
+            var result = CombatHandoffService.FilterKeptDice(faces, keep);
+            Assert.AreEqual(new[] { 3, 2, 1 }, result);
+        }
+
+        [Test]
+        public void NullKeep_ReturnsFacesUnchanged()
+        {
+            var faces = new[] { 3, 5, 2, 6, 1 };
+            var result = CombatHandoffService.FilterKeptDice(faces, null);
+            Assert.AreEqual(faces, result);
+        }
+
+        [Test]
+        public void EmptyKeep_ReturnsFacesUnchanged()
+        {
+            var faces = new[] { 3, 5, 2 };
+            var result = CombatHandoffService.FilterKeptDice(faces, new bool[0]);
+            Assert.AreEqual(faces, result);
+        }
+
+        [Test]
+        public void NullFaces_ReturnsEmpty()
+        {
+            var result = CombatHandoffService.FilterKeptDice(null, new[] { true });
+            Assert.AreEqual(0, result.Length);
         }
     }
 }
