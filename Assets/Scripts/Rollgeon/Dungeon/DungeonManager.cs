@@ -149,9 +149,17 @@ namespace Rollgeon.Dungeon
             foreach (var instance in _instances.Values)
                 InstantiateRoomPrefab(instance);
 
+            // 7b. Auditar reciprocidad de DoorSlotRefs entre vecinos — sirve
+            //     para detectar prefabs con slots N/S/E/W faltantes que dejan
+            //     rooms "aisladas" pese a tener Connections válidas.
+            AuditDoorSlotReciprocity();
+
             // 8. Seed _currentId con la start room.
             var startId = FindStartInstanceId(cells);
             _currentId = startId;
+
+            // 8b. Fog of war — solo la sala actual queda visible.
+            RefreshRoomVisibility();
 
             EventManager.Trigger(EventName.OnRoomEntered, startId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
@@ -265,6 +273,8 @@ namespace Rollgeon.Dungeon
 
             _currentId = neighborId;
 
+            RefreshRoomVisibility();
+
             EventManager.Trigger(EventName.OnRoomEntered, _currentId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
             return true;
@@ -308,9 +318,15 @@ namespace Rollgeon.Dungeon
             var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
             if (layout == null) return;
 
+            // Track qué direcciones están autoreadas para detectar slots faltantes
+            // contra Connections — un connection sin DoorSlotRef significa puerta
+            // invisible/ no walkable y la sala vecina queda inalcanzable.
+            var authored = new HashSet<DoorDirection>();
+
             foreach (var slot in layout.DoorSlots)
             {
                 if (slot == null) continue;
+                authored.Add(slot.Direction);
 
                 bool connected = instance.Connections.ContainsKey(slot.Direction);
 
@@ -328,7 +344,80 @@ namespace Rollgeon.Dungeon
                 controller.SpawnPointId = slot.Direction.DoorStateKey();
             }
 
+            foreach (var connDir in instance.Connections.Keys)
+            {
+                if (!authored.Contains(connDir))
+                {
+                    var roomId = instance.Template != null ? instance.Template.RoomId : "<null>";
+                    Debug.LogWarning(
+                        $"[DungeonManager] Room '{roomId}' (cell {instance.GridCell}) tiene Connection " +
+                        $"al {connDir} pero el prefab no tiene DoorSlotRef autoreado para esa dirección. " +
+                        $"La sala vecina queda inalcanzable. Agregar DoorSlotRef[{connDir}] al prefab.");
+                }
+            }
+
             SyncDoorVisualStates(instance);
+        }
+
+        /// <summary>
+        /// Recorre todas las instancias y verifica que cada conexión tenga
+        /// reciprocidad de DoorSlotRef en ambas rooms — si una room tiene
+        /// slot al East pero su vecina no tiene slot al West, la puerta queda
+        /// asimétrica y el jugador no puede volver. Solo loggea, no fixea.
+        /// </summary>
+        private void AuditDoorSlotReciprocity()
+        {
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.SpawnedPrefab == null) continue;
+                var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
+                if (layout == null) continue;
+
+                foreach (var slot in layout.DoorSlots)
+                {
+                    if (slot == null) continue;
+                    if (!instance.Connections.TryGetValue(slot.Direction, out var neighborId)) continue;
+                    if (!_instances.TryGetValue(neighborId, out var neighbor)) continue;
+                    if (neighbor.SpawnedPrefab == null) continue;
+
+                    var neighborLayout = neighbor.SpawnedPrefab.GetComponent<RoomLayout>();
+                    if (neighborLayout == null) continue;
+
+                    var opposite = slot.Direction.Opposite();
+                    bool reciprocal = false;
+                    foreach (var ns in neighborLayout.DoorSlots)
+                    {
+                        if (ns != null && ns.Direction == opposite) { reciprocal = true; break; }
+                    }
+                    if (!reciprocal)
+                    {
+                        var roomId = instance.Template != null ? instance.Template.RoomId : "<null>";
+                        var neighborRoomId = neighbor.Template != null ? neighbor.Template.RoomId : "<null>";
+                        Debug.LogWarning(
+                            $"[DungeonManager] Asimetría de puertas: '{roomId}' (cell {instance.GridCell}) " +
+                            $"tiene slot {slot.Direction} hacia '{neighborRoomId}' (cell {neighbor.GridCell}), " +
+                            $"pero el vecino no tiene slot {opposite}. Agregar DoorSlotRef[{opposite}] al prefab vecino.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fog of war: solo el <see cref="CurrentRoomInstance"/> queda activo
+        /// en escena. Los shells procedurales del floor view (§17.E.9) no se
+        /// tocan — siguen visibles como minimap zoom-out.
+        /// </summary>
+        private void RefreshRoomVisibility()
+        {
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.SpawnedPrefab == null) continue;
+                bool isCurrent = instance.InstanceId == _currentId;
+                if (instance.SpawnedPrefab.activeSelf != isCurrent)
+                {
+                    instance.SpawnedPrefab.SetActive(isCurrent);
+                }
+            }
         }
 
         /// <summary>
