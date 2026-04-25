@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Effects.Concretes;
+using Rollgeon.Heroes;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -67,6 +69,11 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private List<ComboRow> _rows = new List<ComboRow>();
 
+        [Title("Combo Indicator — Formula label (opcional)")]
+        [SerializeField]
+        [Tooltip("Label extra para la formula de dano. Si es null se usa _currentComboLabel.")]
+        private TextMeshProUGUI _formulaLabel;
+
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
@@ -74,6 +81,7 @@ namespace Rollgeon.UI.HUD
         private bool _bound;
 
         private Action<ComboMatchedPayload> _onComboMatched;
+        private HeroActionBehavior _selectedBehavior;
 
         /// <summary>Suscribe al bus legacy + al <c>TypedEvent</c>.</summary>
         public void Bind(Guid playerGuid)
@@ -127,6 +135,19 @@ namespace Rollgeon.UI.HUD
             _currentComboLabel.color = _highlightColor;
         }
 
+        public void SetSelectedBehavior(HeroActionBehavior behavior)
+        {
+            _selectedBehavior = behavior;
+            Debug.Log($"{LogPrefix}SetSelectedBehavior — '{behavior?.ActionName ?? "null"}'");
+        }
+
+        public void ClearSelectedBehavior()
+        {
+            Debug.Log($"{LogPrefix}ClearSelectedBehavior");
+            _selectedBehavior = null;
+            SetFormulaText(string.Empty);
+        }
+
         /// <summary>
         /// Togglea el overlay "blocked" del combo <paramref name="comboId"/>. Public
         /// para tests y tooling. <paramref name="turnsRemaining"/> es informativo
@@ -152,8 +173,76 @@ namespace Rollgeon.UI.HUD
 
         private void HandleComboMatched(ComboMatchedPayload payload)
         {
-            if (payload.SourceGuid != _playerGuid) return;
-            SetCurrentComboText(payload.ComboId);
+            if (payload.SourceGuid != _playerGuid)
+            {
+                Debug.Log($"{LogPrefix}HandleComboMatched — SKIPPED: payload.SourceGuid={payload.SourceGuid} != _playerGuid={_playerGuid}");
+                return;
+            }
+            string displayText = !string.IsNullOrEmpty(payload.DisplayName) ? payload.DisplayName
+                               : !string.IsNullOrEmpty(payload.ComboId) ? payload.ComboId
+                               : (payload.BaseDamage > 0 ? "Combo" : string.Empty);
+            Debug.Log($"{LogPrefix}HandleComboMatched — comboId={payload.ComboId} displayName={payload.DisplayName} baseDmg={payload.BaseDamage} _selectedBehavior={_selectedBehavior?.ActionName ?? "null"}");
+            SetCurrentComboText(displayText);
+            UpdateFormulaFromPayload(payload);
+        }
+
+        private void UpdateFormulaFromPayload(ComboMatchedPayload payload)
+        {
+            if (_selectedBehavior == null)
+            {
+                Debug.Log($"{LogPrefix}UpdateFormula — _selectedBehavior is null, clearing");
+                SetFormulaText(string.Empty);
+                return;
+            }
+
+            var dmgEff = _selectedBehavior.FindFirstDealDamageEffect();
+            if (dmgEff == null)
+            {
+                Debug.Log($"{LogPrefix}UpdateFormula — FindFirstDealDamageEffect returned null for '{_selectedBehavior.ActionName}'");
+                SetFormulaText(string.Empty);
+                return;
+            }
+
+            Debug.Log($"{LogPrefix}UpdateFormula — Source={dmgEff.Source} BaseAmount={dmgEff.BaseAmount} ComboMult={dmgEff.ComboMultiplier}");
+
+            if (dmgEff.Source == DamageSource.Constant)
+            {
+                var text = $"{_selectedBehavior.ActionName} ({dmgEff.BaseAmount})";
+                Debug.Log($"{LogPrefix}UpdateFormula — Constant → \"{text}\"");
+                SetFormulaText(text);
+                return;
+            }
+
+            if (payload.BaseDamage <= 0)
+            {
+                var text = $"{_selectedBehavior.ActionName} (sin combo)";
+                Debug.Log($"{LogPrefix}UpdateFormula — ComboValue sin combo → \"{text}\"");
+                SetFormulaText(text);
+                return;
+            }
+
+            string comboName = !string.IsNullOrEmpty(payload.DisplayName) ? payload.DisplayName
+                             : !string.IsNullOrEmpty(payload.ComboId) ? payload.ComboId
+                             : "Combo";
+            int total = Mathf.RoundToInt(payload.BaseDamage * dmgEff.ComboMultiplier);
+            var formula = $"{comboName} ({payload.BaseDamage}) \u00d7 {_selectedBehavior.ActionName} ({dmgEff.ComboMultiplier}) = {total}";
+            Debug.Log($"{LogPrefix}UpdateFormula — ComboValue con combo → \"{formula}\"");
+            SetFormulaText(formula);
+        }
+
+        private void SetFormulaText(string text)
+        {
+            Debug.Log($"{LogPrefix}SetFormulaText — text=\"{text}\" _formulaLabel={(_formulaLabel != null ? "set" : "null")} _currentComboLabel={(_currentComboLabel != null ? "set" : "null")}");
+            if (_formulaLabel != null)
+            {
+                _formulaLabel.text = text ?? string.Empty;
+                return;
+            }
+            if (_currentComboLabel != null && !string.IsNullOrEmpty(text))
+            {
+                _currentComboLabel.text = text;
+                _currentComboLabel.color = _highlightColor;
+            }
         }
 
         private void HandleComboBlocked(params object[] args)

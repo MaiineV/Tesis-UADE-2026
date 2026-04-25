@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -166,9 +167,14 @@ namespace Rollgeon.UI.HUD
 
         private void ToggleHold(int i)
         {
-            if (_heldStates == null || i >= _heldStates.Length) return;
+            if (_heldStates == null || i >= _heldStates.Length)
+            {
+                Debug.Log($"[DiceZoneView] ToggleHold({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
+                return;
+            }
             _heldStates[i] = !_heldStates[i];
             _resolvedSlots[i]?.SetHeld(_heldStates[i]);
+            Debug.Log($"[DiceZoneView] ToggleHold({i}) — held={_heldStates[i]}, calling RunComboDetection");
             RunComboDetection();
         }
 
@@ -176,14 +182,25 @@ namespace Rollgeon.UI.HUD
 
         private void RunComboDetection()
         {
-            if (_currentFaces == null) return;
-            if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null) return;
+            if (_currentFaces == null)
+            {
+                Debug.Log("[DiceZoneView] RunComboDetection — aborted: _currentFaces is null");
+                return;
+            }
+            if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null)
+            {
+                Debug.Log("[DiceZoneView] RunComboDetection — aborted: ComboCatalogSO not in ServiceLocator");
+                return;
+            }
+
+            var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, _heldStates);
+            Debug.Log($"[DiceZoneView] RunComboDetection — keptDice.Length={keptDice.Length} values=[{string.Join(",", keptDice)}] catalogEntries={catalog.Entries?.Count}");
 
             BaseComboSO best = null;
             int bestPriority = -1;
             foreach (var combo in catalog.Entries)
             {
-                var result = combo.Detect(_currentFaces);
+                var result = combo.Detect(keptDice);
                 if (result.IsMatch && combo.Priority > bestPriority)
                 {
                     best = combo;
@@ -191,10 +208,13 @@ namespace Rollgeon.UI.HUD
                 }
             }
 
+            Debug.Log($"[DiceZoneView] RunComboDetection — best={best?.ComboId ?? "null"} displayName={best?.DisplayName ?? "null"} baseDmg={best?.BaseDamage ?? 0}");
+
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
+                DisplayName = best?.DisplayName ?? string.Empty,
                 BaseDamage = best?.BaseDamage ?? 0
             });
         }

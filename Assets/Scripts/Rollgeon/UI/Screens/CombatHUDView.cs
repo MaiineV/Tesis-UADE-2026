@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Patterns;
+using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
@@ -75,6 +76,10 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
         private EndTurnButtonView _endTurnButtonView;
+
+        [Tooltip("Opcional — muestra la formula de dano del behavior seleccionado.")]
+        [SerializeField]
+        private DamageFormulaView _damageFormula;
 
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
@@ -234,6 +239,8 @@ namespace Rollgeon.UI.Screens
             if (_endTurnButtonView != null) _endTurnButtonView.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
+            if (_damageFormula != null) _damageFormula.Bind(playerGuid);
+
             _subViewsBound = true;
         }
 
@@ -249,6 +256,7 @@ namespace Rollgeon.UI.Screens
             if (_energyBar != null) _energyBar.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
+            if (_damageFormula != null) _damageFormula.Unbind();
             _subViewsBound = false;
         }
 
@@ -258,6 +266,20 @@ namespace Rollgeon.UI.Screens
         /// Devuelve <c>null</c> si el zone view no está cableado.
         /// </summary>
         public bool[] GetCurrentKeep() => _diceZone != null ? _diceZone.GetHeldStates() : null;
+
+        public void SetBehaviorForFormula(HeroActionBehavior behavior)
+        {
+            Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")} _comboIndicator={(_comboIndicator != null ? "set" : "null")}");
+            if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
+            if (_comboIndicator != null) _comboIndicator.SetSelectedBehavior(behavior);
+        }
+
+        public void ClearBehaviorForFormula()
+        {
+            Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
+            if (_damageFormula != null) _damageFormula.ClearBehavior();
+            if (_comboIndicator != null) _comboIndicator.ClearSelectedBehavior();
+        }
 
         // ======================================================================
         // Internals
