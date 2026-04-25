@@ -11,7 +11,7 @@ namespace Rollgeon.Combos.Concretes
     /// por error el <c>BaseDamage</c> de Poker a un valor mayor que 100.
     /// </para>
     /// <para>
-    /// Detecta si <c>dice.Distinct().Count() == 1</c> y hay al menos 1 dado. Input vacio o null
+    /// Detecta si <c>dice.Distinct().Count() == 1</c> y hay al menos 5 dados. Input con menos de 5
     /// devuelve NoMatch.
     /// </para>
     /// </summary>
@@ -21,7 +21,7 @@ namespace Rollgeon.Combos.Concretes
         /// <inheritdoc />
         public override bool Matches(int[] finalDice)
         {
-            if (finalDice == null || finalDice.Length == 0) return false;
+            if (finalDice == null || finalDice.Length < 5) return false;
             return finalDice.Distinct().Count() == 1;
         }
 
