@@ -17,6 +17,10 @@ namespace Rollgeon.Entities.Visuals
     [AddComponentMenu("Rollgeon/Entities/Entity Pawn")]
     public sealed class EntityPawn : MonoBehaviour
     {
+        // El hero queda elevado sobre el tile para que el modelo no clipée con
+        // el piso/grid — los enemies se quedan al ras (Y=0).
+        private const float HeroYOffset = 1.4f;
+
         [SerializeField, Tooltip("Barra de HP world-space. Null en heroes o pawns sin barra.")]
         private WorldSpaceHealthBar _healthBar;
 
@@ -40,7 +44,9 @@ namespace Rollgeon.Entities.Visuals
         public void SnapToGrid(IGridManager grid, GridCoord coord)
         {
             if (grid == null) return;
-            transform.position = grid.GridToWorld(coord);
+            var pos = grid.GridToWorld(coord);
+            if (Kind == PawnKind.Hero) pos.y += HeroYOffset;
+            transform.position = pos;
         }
 
         public enum PawnKind { Hero, Enemy, Boss }

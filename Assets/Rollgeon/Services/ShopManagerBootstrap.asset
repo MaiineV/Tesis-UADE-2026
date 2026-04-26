@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba6f29d102c86e04c9bb7b0332d4068a, type: 3}
+  m_Name: ShopManagerBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Shop.ShopManagerBootstrap
+  _config: {fileID: 11400000, guid: 9560f0ed8d77ac74b8d1614ba8c52502, type: 2}
+  _pool: {fileID: 11400000, guid: f71476b04e564f040a98ce22a25a9268, type: 2}

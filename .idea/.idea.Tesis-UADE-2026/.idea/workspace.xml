@@ -5,25 +5,59 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e6b5528-be66-45c3-8267-652550d7ef45" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Audio/RollgeonMixer.mixer.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioChannel.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManager.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioManagerBootstrap.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/AudioSettingsSO.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Audio/IAudioService.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/setup/System#0400_AudioManagerWiring.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Prefabs/Rooms/Shop_Room01.prefab" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Prefabs/Rooms/Shop_Room01.prefab.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopConfig.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopConfig.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopItem.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopItem.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopPool.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Rooms/Shop/ShopPool.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Services/ShopManagerBootstrap.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Rollgeon/Services/ShopManagerBootstrap.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/FirstRollTrackerBootstrap.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/FirstRollTrackerBootstrap.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/FirstRollTrackerService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/FirstRollTrackerService.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/IFirstRollTracker.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Combat/FirstRoll/IFirstRollTracker.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/IntComparison.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/IntComparison.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCComboAvailable.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCComboAvailable.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCCurrentPhase.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCCurrentPhase.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCEntityInRange.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCEntityInRange.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCFirstRollOfCombat.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCFirstRollOfCombat.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCHasIntAttribute.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCHasIntAttribute.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCHasModifier.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Concretes/PCHasModifier.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/FirstRollTrackerServiceTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/FirstRollTrackerServiceTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCComboAvailableTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCComboAvailableTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCCurrentPhaseTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCCurrentPhaseTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCEntityInRangeTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCEntityInRangeTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCHasIntAttributeTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCHasIntAttributeTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCHasModifierTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/PCHasModifierTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/Rollgeon.PreConditions.Tests.asmdef" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/Rollgeon.PreConditions.Tests.asmdef.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/TestStats.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/PreConditions/Tests/TestStats.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/core-plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/core-plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.obsidian/workspace.json" beforeDir="false" afterPath="$PROJECT_DIR$/.obsidian/workspace.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Rollgeon/Feedback/FeedbackManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" beforeDir="false" afterPath="$PROJECT_DIR$/Sprint03_Tareas_AgustinMartinez.md" afterDir="false" />
     </list>
@@ -37,6 +71,11 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Unity/Hub/Editor/6000.3.11f1/Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/Samples~/URPPackageSamples/SharedAssets/Scripts/FirstPersonController.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Unity/Hub/Editor/6000.3.11f1/Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/Samples~/URPRenderGraphSamples/BlitWithFrameData/BlitRendererFeature.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Unity/Hub/Editor/6000.3.11f1/Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.ugui/Runtime/UGUI/EventSystem/InputModules/StandaloneInputModule.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -133,7 +172,7 @@
       <workItem from="1776738161092" duration="3898000" />
       <workItem from="1776825908492" duration="5000" />
       <workItem from="1776949110055" duration="597000" />
-      <workItem from="1777048516798" duration="8332000" />
+      <workItem from="1777048516798" duration="18464000" />
     </task>
     <servers />
   </component>

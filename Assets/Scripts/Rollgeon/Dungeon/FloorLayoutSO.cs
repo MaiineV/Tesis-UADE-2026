@@ -17,6 +17,9 @@ namespace Rollgeon.Dungeon
         public List<RoomSO> CombatRooms = new();
 
         [Title("Special Rooms")]
+        [InfoBox("ShopRooms es obligatorio — TECHNICAL.md §17.F dice 1 shop por piso siempre. " +
+                 "El DungeonManager logea error si la lista queda vacía.")]
+        [Required("Asignar al menos un RoomSO de tipo Shop — 1 shop por piso es invariante (§17.F).")]
         public List<RoomSO> ShopRooms = new();
         public List<RoomSO> PotionRooms = new();
 
