@@ -5,6 +5,7 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities.Visuals;
+using Rollgeon.Grid;
 using Rollgeon.Player;
 
 namespace Rollgeon.Combat
@@ -16,6 +17,7 @@ namespace Rollgeon.Combat
         private readonly TurnOrderService _turnOrder;
         private readonly IEntityVisualService _visuals;
         private readonly IDungeonService _dungeon;
+        private readonly IGridManager _grid;
 
         private readonly HashSet<Guid> _processed = new();
         private Action<DamageResolvedPayload> _handler;
@@ -26,13 +28,15 @@ namespace Rollgeon.Combat
             ICombatSignaller signaller,
             TurnOrderService turnOrder,
             IEntityVisualService visuals,
-            IDungeonService dungeon)
+            IDungeonService dungeon,
+            IGridManager grid = null)
         {
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _signaller = signaller ?? throw new ArgumentNullException(nameof(signaller));
             _turnOrder = turnOrder ?? throw new ArgumentNullException(nameof(turnOrder));
             _visuals = visuals;
             _dungeon = dungeon ?? throw new ArgumentNullException(nameof(dungeon));
+            _grid = grid;
 
             _handler = OnDamageResolved;
             TypedEvent<DamageResolvedPayload>.Subscribe(_handler);
@@ -45,8 +49,9 @@ namespace Rollgeon.Combat
             var turnOrder = ServiceLocator.GetService<TurnOrderService>();
             ServiceLocator.TryGetService<IEntityVisualService>(out var visuals);
             var dungeon = ServiceLocator.GetService<IDungeonService>();
+            ServiceLocator.TryGetService<IGridManager>(out var grid);
 
-            var watcher = new CombatDeathWatcher(player, signaller, turnOrder, visuals, dungeon);
+            var watcher = new CombatDeathWatcher(player, signaller, turnOrder, visuals, dungeon, grid);
             ServiceLocator.AddService<ICombatDeathWatcher>(watcher, ServiceScope.Run);
             return watcher;
         }
@@ -80,6 +85,7 @@ namespace Rollgeon.Combat
 
             _turnOrder.Remove(payload.TargetGuid);
             _visuals?.Despawn(payload.TargetGuid);
+            _grid?.Unregister(payload.TargetGuid);
 
             var room = _dungeon.CurrentRoomInstance;
             if (room != null
