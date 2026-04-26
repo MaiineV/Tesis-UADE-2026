@@ -9,6 +9,7 @@ using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dungeon;
+using Rollgeon.Entities;
 using Rollgeon.Exploration;
 using Rollgeon.Player;
 using UnityEngine;
@@ -29,6 +30,7 @@ namespace Rollgeon.Run
         private EventManager.EventReceiver _onRunEndHandler;
         private bool _disposed;
         private Guid _registeredPlayerId;
+        private Entity _playerEntity;
 
         public bool IsRunActive { get; private set; }
 
@@ -187,6 +189,9 @@ namespace Rollgeon.Run
             }
             _registeredPlayerId = Guid.Empty;
 
+            _playerEntity?.Dispose();
+            _playerEntity = null;
+
             IsRunActive = false;
         }
 
@@ -208,6 +213,11 @@ namespace Rollgeon.Run
             registry.Register(playerService.PlayerGuid, playerAttrs);
             attributes.Register(playerService.PlayerGuid, playerAttrs);
             _registeredPlayerId = playerService.PlayerGuid;
+
+            // Passive — §4.4.1: bind hero passive to the player entity.
+            _playerEntity = new Entity { InstanceId = playerService.PlayerGuid };
+            if (hero.Passive != null)
+                _playerEntity.BindPassive(hero.Passive);
 
             // Hidrata Energy: EnergyService.OnRunStartExternal solo resetea _playerId,
             // y el caller (esta funcion) tiene que llamar InitializeForEntity con el
