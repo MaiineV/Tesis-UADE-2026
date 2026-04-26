@@ -48,10 +48,6 @@ namespace Rollgeon.UI.HUD
             {
                 if (btn != null) btn.onClick.RemoveAllListeners();
             }
-        }
-
-        private void OnDisable()
-        {
             if (_bound) Unbind();
         }
 
