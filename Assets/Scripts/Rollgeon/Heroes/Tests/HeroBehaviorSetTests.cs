@@ -15,80 +15,12 @@ using UnityEngine;
 namespace Rollgeon.Heroes.Tests
 {
     [TestFixture]
-    public class HeroBehaviorSetTests
+    public class ClassHeroSOPhaseBehaviorTests
     {
-        [Test]
-        public void IsValid_AllAssigned_ReturnsTrue()
+        [TearDown]
+        public void Teardown()
         {
-            var set = new HeroBehaviorSet();
-            Assert.IsTrue(set.IsValid);
-        }
-
-        [Test]
-        public void IsValid_MissingMovement_ReturnsFalse()
-        {
-            var set = new HeroBehaviorSet { Movement = null };
-            Assert.IsFalse(set.IsValid);
-        }
-
-        [Test]
-        public void IsValid_MissingBaseAttack_ReturnsFalse()
-        {
-            var set = new HeroBehaviorSet { BaseAttack = null };
-            Assert.IsFalse(set.IsValid);
-        }
-
-        [Test]
-        public void IsValid_MissingSpecialAttack_ReturnsFalse()
-        {
-            var set = new HeroBehaviorSet { SpecialAttack = null };
-            Assert.IsFalse(set.IsValid);
-        }
-
-        [Test]
-        public void IsValid_MissingHealing_ReturnsFalse()
-        {
-            var set = new HeroBehaviorSet { Healing = null };
-            Assert.IsFalse(set.IsValid);
-        }
-
-        [Test]
-        public void All_YieldsFour()
-        {
-            var set = new HeroBehaviorSet();
-            var all = set.All.ToList();
-            Assert.AreEqual(4, all.Count);
-            Assert.AreSame(set.Movement, all[0]);
-            Assert.AreSame(set.BaseAttack, all[1]);
-            Assert.AreSame(set.SpecialAttack, all[2]);
-            Assert.AreSame(set.Healing, all[3]);
-        }
-
-        [Test]
-        public void GetByIndex_ReturnsCorrectSlot()
-        {
-            var set = new HeroBehaviorSet();
-            Assert.AreSame(set.Movement, set.GetByIndex(0));
-            Assert.AreSame(set.BaseAttack, set.GetByIndex(1));
-            Assert.AreSame(set.SpecialAttack, set.GetByIndex(2));
-            Assert.AreSame(set.Healing, set.GetByIndex(3));
-            Assert.IsNull(set.GetByIndex(4));
-            Assert.IsNull(set.GetByIndex(-1));
-        }
-
-        [Test]
-        public void ClassHeroSO_Actions_DefaultNotNull()
-        {
-            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
-            try
-            {
-                Assert.IsNotNull(so.Actions);
-                Assert.IsTrue(so.Actions.IsValid);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(so);
-            }
+            ServiceLocator.Clear();
         }
 
         [Test]
@@ -100,20 +32,7 @@ namespace Rollgeon.Heroes.Tests
                 Assert.IsNotNull(so.PhaseBehaviors);
                 Assert.AreEqual(0, so.PhaseBehaviors.Count);
             }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(so);
-            }
-        }
-    }
-
-    [TestFixture]
-    public class ClassHeroSOPhaseBehaviorTests
-    {
-        [TearDown]
-        public void Teardown()
-        {
-            ServiceLocator.Clear();
+            finally { UnityEngine.Object.DestroyImmediate(so); }
         }
 
         [Test]
@@ -138,19 +57,19 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void ResolveBaseBehavior_NoPhaseBehavior_FallsBackToActions()
+        public void ResolveBaseBehavior_NoPhaseBehavior_ReturnsNull()
         {
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
                 var result = so.ResolveBaseBehavior(HeroBehaviorSlot.Movement, GamePhase.Combat);
-                Assert.AreSame(so.Actions.Movement, result);
+                Assert.IsNull(result);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
 
         [Test]
-        public void ResolveBaseBehavior_PhaseMismatch_FallsBackToActions()
+        public void ResolveBaseBehavior_PhaseMismatch_ReturnsNull()
         {
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
@@ -165,7 +84,7 @@ namespace Rollgeon.Heroes.Tests
                 so.PhaseBehaviors.Add(explorationOnly);
 
                 var result = so.ResolveBaseBehavior(HeroBehaviorSlot.Movement, GamePhase.Combat);
-                Assert.AreSame(so.Actions.Movement, result);
+                Assert.IsNull(result);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
@@ -176,17 +95,18 @@ namespace Rollgeon.Heroes.Tests
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
-                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Combat);
                 Assert.AreEqual(4, result.Count);
-                Assert.AreSame(so.Actions.Movement, result[0]);
-                Assert.AreSame(so.Actions.BaseAttack, result[1]);
-                Assert.AreSame(so.Actions.SpecialAttack, result[2]);
-                Assert.AreSame(so.Actions.Healing, result[3]);
+                Assert.AreSame(movement,      result[0]);
+                Assert.AreSame(baseAttack,    result[1]);
+                Assert.AreSame(specialAttack, result[2]);
+                Assert.AreSame(healing,       result[3]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
@@ -197,43 +117,42 @@ namespace Rollgeon.Heroes.Tests
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
-                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
-                Assert.AreSame(so.Actions.Movement, result[0]);
-                Assert.AreSame(so.Actions.Healing, result[1]);
+                Assert.AreSame(movement, result[0]);
+                Assert.AreSame(healing,  result[1]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
 
         [Test]
-        public void GetBehaviorsForPhase_Exploration_OverridesBaseSlot()
+        public void GetBehaviorsForPhase_Exploration_SelectsPhaseMatchingBase()
         {
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                so.Actions.Movement.AllowedPhases = GamePhaseMask.All;
-                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.Healing.AllowedPhases = GamePhaseMask.All;
-
-                var exploreMove = new HeroActionBehavior
+                var exploreMove  = new HeroActionBehavior
                 {
-                    ActionName = "FreeMove",
+                    ActionName    = "FreeMove",
                     IsBaseBehavior = true,
-                    Slot = HeroBehaviorSlot.Movement,
+                    Slot          = HeroBehaviorSlot.Movement,
                     AllowedPhases = GamePhaseMask.Exploration,
                 };
-                so.PhaseBehaviors.Add(exploreMove);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                so.PhaseBehaviors.AddRange(new[] { exploreMove, healing, baseAttack, specialAttack });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
                 Assert.AreSame(exploreMove, result[0]);
-                Assert.AreSame(so.Actions.Healing, result[1]);
+                Assert.AreSame(healing,     result[1]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
@@ -244,23 +163,22 @@ namespace Rollgeon.Heroes.Tests
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                so.Actions.Movement.AllowedPhases = GamePhaseMask.Exploration;
-                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.Healing.AllowedPhases = GamePhaseMask.Combat;
-
-                var customBehavior = new HeroActionBehavior
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Exploration);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
+                var custom       = new HeroActionBehavior
                 {
-                    ActionName = "Force Door",
+                    ActionName    = "Force Door",
                     IsBaseBehavior = false,
                     AllowedPhases = GamePhaseMask.Exploration,
                 };
-                so.PhaseBehaviors.Add(customBehavior);
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing, custom });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
-                Assert.AreSame(so.Actions.Movement, result[0]);
-                Assert.AreSame(customBehavior, result[1]);
+                Assert.AreSame(movement, result[0]);
+                Assert.AreSame(custom,   result[1]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
@@ -271,18 +189,17 @@ namespace Rollgeon.Heroes.Tests
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();
             try
             {
-                so.Actions.Movement.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-                so.Actions.Healing.AllowedPhases = GamePhaseMask.Combat;
-
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Combat);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
                 var combatCustom = new HeroActionBehavior
                 {
-                    ActionName = "Taunt",
+                    ActionName    = "Taunt",
                     IsBaseBehavior = false,
                     AllowedPhases = GamePhaseMask.Combat,
                 };
-                so.PhaseBehaviors.Add(combatCustom);
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing, combatCustom });
 
                 var explorationResult = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(0, explorationResult.Count);
@@ -293,6 +210,9 @@ namespace Rollgeon.Heroes.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
+
+        private static HeroActionBehavior MakeBase(HeroBehaviorSlot slot, GamePhaseMask phases)
+            => new HeroActionBehavior { IsBaseBehavior = true, Slot = slot, AllowedPhases = phases };
     }
 
     [TestFixture]

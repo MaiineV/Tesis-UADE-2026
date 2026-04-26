@@ -36,10 +36,8 @@ namespace Rollgeon.Exploration.Tests
             _playerGuid = Guid.NewGuid();
 
             _heroSO = ScriptableObject.CreateInstance<ClassHeroSO>();
-            _heroSO.Actions.Movement.AllowedPhases = GamePhaseMask.Combat;
-            _heroSO.Actions.BaseAttack.AllowedPhases = GamePhaseMask.Combat;
-            _heroSO.Actions.SpecialAttack.AllowedPhases = GamePhaseMask.Combat;
-            _heroSO.Actions.Healing.AllowedPhases = GamePhaseMask.Combat;
+            foreach (var slot in new[] { HeroBehaviorSlot.Movement, HeroBehaviorSlot.BaseAttack, HeroBehaviorSlot.SpecialAttack, HeroBehaviorSlot.Healing })
+                _heroSO.PhaseBehaviors.Add(new HeroActionBehavior { IsBaseBehavior = true, Slot = slot, AllowedPhases = GamePhaseMask.Combat });
 
             _playerService = new StubPlayerService
             {

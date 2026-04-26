@@ -43,18 +43,12 @@ namespace Rollgeon.Heroes
         [Required]
         public ContractSheet Sheet = new ContractSheet();
 
-        [Title("Actions (Hero Behavior Slots)")]
-        [InfoBox("4 fixed behavior slots + contextual behaviors. Each has inline " +
-                 "PreConditions + Effects, fully editable from the inspector.")]
-        [OdinSerialize]
-        public HeroBehaviorSet Actions = new HeroBehaviorSet();
-
         [Title("Phase Behaviors")]
-        [InfoBox("Behaviors por fase. IsBaseBehavior + Slot para mapear a un slot base " +
-                 "(overridea el de Actions para esa fase). IsBaseBehavior=false usa ActionName. " +
+        [InfoBox("Behaviors por fase. IsBaseBehavior + Slot para mapear a un slot base. " +
+                 "IsBaseBehavior=false define una accion custom. " +
                  "AllowedPhases determina la fase. ShowConditions controla visibilidad.")]
         [OdinSerialize]
-        [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
+        [ListDrawerSettings(DraggableItems = true)]
         public List<HeroActionBehavior> PhaseBehaviors = new List<HeroActionBehavior>();
 
         public HeroActionBehavior ResolveBaseBehavior(HeroBehaviorSlot slot, GamePhase phase)
@@ -63,8 +57,7 @@ namespace Rollgeon.Heroes
                        .FirstOrDefault(b => b != null
                                             && b.IsBaseBehavior
                                             && b.Slot == slot
-                                            && b.AllowedPhases.Allows(phase))
-                   ?? Actions?.GetByIndex((int)slot);
+                                            && b.AllowedPhases.Allows(phase));
         }
 
         public List<HeroActionBehavior> GetBehaviorsForPhase(GamePhase phase)
