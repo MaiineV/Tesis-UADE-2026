@@ -81,7 +81,7 @@ namespace Rollgeon.Heroes
                  "fallback de StartingDiceBagRef / Resources (Fase 1).")]
         public DiceBagPoolSO DiceBagPool;
 
-        [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al PassiveAbilitySO de la clase.")]
-        public ScriptableObject PassiveRef;
+        [Tooltip("Pasiva de la clase (§4.4). Null = sin pasiva.")]
+        public ClassPassiveSO Passive;
     }
 }
