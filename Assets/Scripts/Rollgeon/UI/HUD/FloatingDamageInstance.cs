@@ -50,12 +50,12 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void Play(string text, Color tint, Vector3 screenPos)
         {
-            // Si el prefab base se instancia inactive, StartCoroutine tiraria error —
-            // activar acá garantiza que el GO pueda correr la animacion.
             if (!gameObject.activeSelf)
-            {
                 gameObject.SetActive(true);
-            }
+
+            // activeSelf no basta si el padre esta inactivo — coroutines requieren activeInHierarchy.
+            if (!gameObject.activeInHierarchy)
+                return;
 
             if (_text != null)
             {
