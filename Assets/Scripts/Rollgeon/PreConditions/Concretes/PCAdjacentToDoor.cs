@@ -26,7 +26,11 @@ namespace Rollgeon.PreConditions.Concretes
             var room = dungeon.CurrentRoomInstance;
             if (room?.SpawnedPrefab == null) return false;
 
-            if (!grid.TryGetPosition(context.OwnerGuid, out var playerCoord)) return false;
+            if (!grid.TryGetPosition(context.OwnerGuid, out var playerCoord))
+            {
+                UnityEngine.Debug.LogWarning($"[PCAdjacentToDoor] Player {context.OwnerGuid:N} no tiene posición en el grid.");
+                return false;
+            }
 
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
@@ -35,6 +39,7 @@ namespace Rollgeon.PreConditions.Concretes
                 if (playerCoord.Chebyshev(doorCoord) <= 1) return true;
             }
 
+            UnityEngine.Debug.LogWarning($"[PCAdjacentToDoor] Player en {playerCoord} — ninguna puerta no-tapiada está a Chebyshev≤1.");
             return false;
         }
     }

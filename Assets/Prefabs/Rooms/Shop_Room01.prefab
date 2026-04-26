@@ -154,7 +154,7 @@ GameObject:
   - component: {fileID: 5142958218789693794}
   - component: {fileID: 4160127387937232356}
   m_Layer: 0
-  m_Name: Door_W
+  m_Name: Door_N
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -206,7 +206,7 @@ GameObject:
   - component: {fileID: 1861789218857891522}
   - component: {fileID: 5737398169103645413}
   m_Layer: 0
-  m_Name: Door_N
+  m_Name: Door_E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 2
   SpawnPointId: 
   _meshOpen: {fileID: 3900630819890260016}
   _meshClosed: {fileID: 6062442928660360250}
@@ -4839,7 +4839,7 @@ GameObject:
   - component: {fileID: 8719648427237489199}
   - component: {fileID: 9119574278181664772}
   m_Layer: 0
-  m_Name: Door_E
+  m_Name: Door_S
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4875,7 +4875,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 1
   SpawnPointId: 
   _meshOpen: {fileID: 7203183267797077655}
   _meshClosed: {fileID: 6994646405425380519}
@@ -5374,7 +5374,7 @@ GameObject:
   - component: {fileID: 4367037321060065154}
   - component: {fileID: 3538359225505942640}
   m_Layer: 0
-  m_Name: Door_S
+  m_Name: Door_W
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5410,7 +5410,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 3
   SpawnPointId: 
   _meshOpen: {fileID: 2222674966285541325}
   _meshClosed: {fileID: 3181487908822914695}

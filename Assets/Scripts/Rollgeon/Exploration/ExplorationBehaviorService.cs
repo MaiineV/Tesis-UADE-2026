@@ -44,6 +44,7 @@ namespace Rollgeon.Exploration
 
         public void OnBehaviorSelected(int index)
         {
+            Debug.Log($"[ExplorationBehaviorService] OnBehaviorSelected({index}) — _state={_state}");
             if (_state != State.Idle) return;
 
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService))
@@ -76,7 +77,7 @@ namespace Rollgeon.Exploration
             if (behavior.ShowConditions != null && behavior.ShowConditions.Count > 0
                 && !behavior.ShouldShow(preCtx))
             {
-                Debug.Log($"[ExplorationBehaviorService] '{behavior.ActionName}' ShowConditions failed.");
+                Debug.LogWarning($"[ExplorationBehaviorService] '{behavior.ActionName}' ShowConditions failed — behavior no ejecutado.");
                 return;
             }
 
@@ -229,7 +230,10 @@ namespace Rollgeon.Exploration
         {
             if (args == null || args.Length == 0) return;
             if ((GamePhase)args[0] == GamePhase.Exploration)
+            {
+                Debug.Log("[ExplorationBehaviorService] OnPhaseEnter(Exploration) — _state cambia a Idle.");
                 _state = State.Idle;
+            }
         }
 
         private void OnPhaseExit(params object[] args)

@@ -45,10 +45,12 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
+            Debug.Log($"[EffPassDoor] Player en {playerCoord}. Buscando puertas en '{room.SpawnedPrefab.name}'.");
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
                 if (door.CurrentState == DoorVisualState.Tapiada) continue;
                 var doorCoord = grid.WorldToGrid(door.transform.position);
+                Debug.Log($"[EffPassDoor] Puerta dir={door.Direction} state={door.CurrentState} coord={doorCoord} dist={playerCoord.Chebyshev(doorCoord)}");
                 if (playerCoord.Chebyshev(doorCoord) <= 1)
                     return dungeon.EnterRoomByDoor(door.Direction);
             }

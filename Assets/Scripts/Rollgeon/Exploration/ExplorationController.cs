@@ -59,6 +59,7 @@ namespace Rollgeon.Exploration
         public void ResumeAfterCombat()
         {
             _isExploring = true;
+            UnityEngine.Debug.Log("[ExplorationController] ResumeAfterCombat — _isExploring=true, cambiando fase a Exploration.");
             _phase.ReplacePhase(GamePhase.Exploration);
             // Con el sistema de puertas, la sala ya quedó Cleared y el player
             // sigue in-place. No advance — se espera un EnterRoomByDoor.

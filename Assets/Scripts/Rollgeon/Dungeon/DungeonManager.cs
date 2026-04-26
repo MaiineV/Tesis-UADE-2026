@@ -187,6 +187,7 @@ namespace Rollgeon.Dungeon
             }
 
             // Uncleared + combat activo → locked.
+            Debug.LogWarning($"[DungeonManager] CanEnterRoomByDoor({direction}) bloqueado — sala '{current.InstanceId:N}' state={current.State}.");
             return false;
         }
 
