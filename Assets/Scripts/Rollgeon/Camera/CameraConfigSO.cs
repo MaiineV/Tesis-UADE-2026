@@ -63,6 +63,15 @@ namespace Rollgeon.GameCamera
         [OdinSerialize]
         public Dictionary<CameraFacing, List<WallDirection>> OcclusionMap = DefaultOcclusionMap();
 
+        // === Pixel Snap ======================================================
+        [Title("Pixel Snap")]
+        [InfoBox("Snappea la cámara a la grilla de texels del RenderTexture para eliminar " +
+                 "pixel crawl. Requiere cámara ortográfica + RT de baja resolución.")]
+        [ToggleGroup(nameof(EnablePixelSnap))] public bool EnablePixelSnap = true;
+        [ToggleGroup(nameof(EnablePixelSnap))]
+        [InfoBox("Debe coincidir con la altura del RenderTexture (ej. 180 para 320×180).")]
+        public int PixelRenderHeight = 180;
+
         // === Floor view ======================================================
         [Title("Floor View")]
         [ToggleGroup(nameof(EnableFloorView))] public bool EnableFloorView = true;
