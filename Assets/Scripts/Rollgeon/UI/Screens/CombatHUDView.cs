@@ -356,7 +356,7 @@ namespace Rollgeon.UI.Screens
             OnConfirmRequested.Invoke();
         }
 
-        private void InvokeChainPassRequested()
+        public void InvokeChainPassRequested()
         {
             if (OnChainPassRequested == null)
             {
