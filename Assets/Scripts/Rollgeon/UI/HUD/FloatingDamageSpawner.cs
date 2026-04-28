@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Entities;
 using Sirenix.OdinInspector;
@@ -69,10 +70,22 @@ namespace Rollgeon.UI.HUD
 
         private Action<DamageResolvedPayload> _onDamageResolved;
 
+        // Cache de la última worldPos conocida por GUID. Cuando un damage es lethal,
+        // el CombatDeathWatcher despawnea al target antes de que este handler corra
+        // — sin cache, el último hit caería al centro. Con cache, lo mostramos sobre
+        // la última posición conocida del target.
+        private readonly Dictionary<Guid, Vector3> _lastKnownWorldPos = new Dictionary<Guid, Vector3>();
+
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
             _playerGuid = playerGuid;
+
+            // Si el combate anterior se cerró con animaciones en curso, las coroutines
+            // quedaron suspendidas en GOs residuales del container — al reactivar el HUD
+            // aparecen visibles. Limpiamos antes de bindear para garantizar estado limpio.
+            ClearActiveInstances();
+            _lastKnownWorldPos.Clear();
 
             _onDamageResolved = HandleDamageResolved;
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
@@ -92,7 +105,18 @@ namespace Rollgeon.UI.HUD
             }
 
             EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            ClearActiveInstances();
             _bound = false;
+        }
+
+        private void ClearActiveInstances()
+        {
+            if (_overlayContainer == null) return;
+            var instances = _overlayContainer.GetComponentsInChildren<FloatingDamageInstance>(includeInactive: true);
+            for (int i = 0; i < instances.Length; i++)
+            {
+                if (instances[i] != null) Destroy(instances[i].gameObject);
+            }
         }
 
         private void OnDisable()
@@ -161,22 +185,35 @@ namespace Rollgeon.UI.HUD
 
         private Vector3 ResolveScreenPos(Guid entityGuid)
         {
-            // Servicio opcional — plan §3.8. Fallback: centro de la pantalla.
+            Vector3? worldPos = null;
             if (ServiceLocator.TryGetService<IEntityPositionResolver>(out var resolver) && resolver != null)
             {
-                var worldPos = resolver.TryGetWorldPosition(entityGuid);
+                worldPos = resolver.TryGetWorldPosition(entityGuid);
                 if (worldPos.HasValue)
+                    _lastKnownWorldPos[entityGuid] = worldPos.Value;
+            }
+
+            // Fallback al cache: si el target ya fue despawneado (lethal hit), usamos
+            // la última posición conocida en vez del centro de pantalla.
+            if (!worldPos.HasValue && _lastKnownWorldPos.TryGetValue(entityGuid, out var cached))
+                worldPos = cached;
+
+            if (worldPos.HasValue)
+            {
+                var cam = _uiCamera != null ? _uiCamera : Camera.main;
+                if (cam != null)
                 {
-                    var cam = _uiCamera != null ? _uiCamera : Camera.main;
-                    if (cam != null)
-                    {
-                        return cam.WorldToScreenPoint(worldPos.Value);
-                    }
-                    // Sin camara no podemos convertir — caemos al center.
+                    // Cámara renderiza al RT del pipeline pixel-art: WorldToScreenPoint
+                    // devuelve coords en el espacio del RT (cam.pixelWidth/Height), no
+                    // en Screen space. El canvas overlay del HUD usa Screen — escalamos.
+                    var rtPos = cam.WorldToScreenPoint(worldPos.Value);
+                    float sx = cam.pixelWidth > 0 ? rtPos.x / cam.pixelWidth * Screen.width : rtPos.x;
+                    float sy = cam.pixelHeight > 0 ? rtPos.y / cam.pixelHeight * Screen.height : rtPos.y;
+                    return new Vector3(sx, sy, rtPos.z);
                 }
             }
 
-            // Fallback: centro de la pantalla.
+            // Fallback final: centro de la pantalla.
             return new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
         }
     }

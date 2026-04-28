@@ -4662,7 +4662,6 @@ MonoBehaviour:
   PlayerSpawnPoint: {fileID: 6170970368573748303}
   EnemySpawnPoints:
   - {fileID: 8195407830903129602}
-  - {fileID: 0}
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
   DoorSlots:

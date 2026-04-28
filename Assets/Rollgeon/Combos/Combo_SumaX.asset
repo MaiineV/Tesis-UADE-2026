@@ -38,7 +38,7 @@ MonoBehaviour:
   _displayName: Higher Number
   _description: Dado mas alto
   _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  _baseDamage: 25
+  _baseDamage: 10
   _valueMultipliers:
   - 0
   - 0
@@ -48,4 +48,4 @@ MonoBehaviour:
   - 0
   _generalMultiplier: 1
   _x: 4
-  _baseDamageConfigurable: 25
+  _baseDamageConfigurable: 10

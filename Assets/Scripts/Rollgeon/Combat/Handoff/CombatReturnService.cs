@@ -1,6 +1,7 @@
 using System;
 using Patterns;
 using Rollgeon.Combat.FSM;
+using Rollgeon.Dungeon;
 using Rollgeon.Exploration;
 using Rollgeon.Player;
 using Rollgeon.UI;
@@ -84,6 +85,20 @@ namespace Rollgeon.Combat.Handoff
 
         private void HandleVictory(Guid roomInstanceId)
         {
+            // Si la sala es Boss, el DungeonManager ya disparó OnFloorCleared antes
+            // que este handler corra (mismo bus de eventos), y la VictoryScreen ya
+            // se pusheó al top del stack. Si hiciéramos PopCurrent + ResumeAfterCombat,
+            // popearíamos la VictoryScreen recién pusheada y volveríamos a Exploration —
+            // el jugador no vería la pantalla de victoria. Para Boss, salimos sin tocar.
+            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon)
+                && dungeon != null
+                && dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var instance)
+                && instance?.Template != null
+                && instance.Template.Type == RoomType.Boss)
+            {
+                return;
+            }
+
             _screenManager.PopCurrent();
             // OnRoomCleared lo dispara el DungeonManager cuando recibe
             // OnCombatEnd(Victory) — acá solo cerramos el overlay y volvemos
