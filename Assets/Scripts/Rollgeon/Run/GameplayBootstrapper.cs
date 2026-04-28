@@ -5,6 +5,7 @@ using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
+using Rollgeon.Items;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using UnityEngine;
@@ -69,6 +70,24 @@ namespace Rollgeon.Run
             {
                 playerService.SetDiceBag(builtBag);
                 Debug.Log(LogPrefix + $"Aplicado built dice bag ({builtBag.Dice.Count} dados).", this);
+            }
+
+            var startingItems = PendingRunRequest.StartingItems;
+            if (startingItems != null && startingItems.Count > 0)
+            {
+                if (ServiceLocator.TryGetService<IInventoryService>(out var inventory))
+                {
+                    int added = 0;
+                    foreach (var item in startingItems)
+                    {
+                        if (item != null && inventory.AddItem(item)) added++;
+                    }
+                    Debug.Log(LogPrefix + $"Aplicados {added}/{startingItems.Count} starting items.", this);
+                }
+                else
+                {
+                    Debug.LogWarning(LogPrefix + "IInventoryService no registrado — starting items ignorados.", this);
+                }
             }
 
             // 4. Spawn visual del hero en la grilla de la primera sala (§0203).

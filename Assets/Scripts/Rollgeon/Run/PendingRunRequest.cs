@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Dice;
 using Rollgeon.Heroes;
+using Rollgeon.Items;
 
 namespace Rollgeon.Run
 {
@@ -18,14 +20,21 @@ namespace Rollgeon.Run
         public static Guid RunId { get; private set; }
         public static string RulesetId { get; private set; }
         public static DiceBagSO BuiltDiceBag { get; private set; }
+        public static IReadOnlyList<ItemSO> StartingItems { get; private set; }
         public static bool HasRequest { get; private set; }
 
-        public static void Set(ClassHeroSO hero, Guid runId, string rulesetId, DiceBagSO builtDiceBag = null)
+        public static void Set(
+            ClassHeroSO hero,
+            Guid runId,
+            string rulesetId,
+            DiceBagSO builtDiceBag = null,
+            IReadOnlyList<ItemSO> startingItems = null)
         {
             SelectedHero = hero;
             RunId = runId;
             RulesetId = rulesetId;
             BuiltDiceBag = builtDiceBag;
+            StartingItems = startingItems;
             HasRequest = true;
         }
 
@@ -35,6 +44,7 @@ namespace Rollgeon.Run
             RunId = Guid.Empty;
             RulesetId = null;
             BuiltDiceBag = null;
+            StartingItems = null;
             HasRequest = false;
         }
     }

@@ -1,4 +1,7 @@
 using System;
+using Patterns;
+using Rollgeon.Balance;
+using Rollgeon.Run;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -48,6 +51,8 @@ namespace Rollgeon.Patterns.Bootstrap
         {
             get
             {
+                if (BootstrapRunOverride.HasOverride && !string.IsNullOrEmpty(BootstrapRunOverride.TargetScene))
+                    return BootstrapRunOverride.TargetScene;
                 if (!string.IsNullOrEmpty(_nextScene)) return _nextScene;
                 if (_bootstrap != null && !string.IsNullOrEmpty(_bootstrap.NextSceneName)) return _bootstrap.NextSceneName;
                 return "01_MainMenu";
@@ -85,6 +90,21 @@ namespace Rollgeon.Patterns.Bootstrap
                 BootstrapHooks.Install();
 
                 var next = EffectiveNextScene;
+
+                if (BootstrapRunOverride.HasOverride && BootstrapRunOverride.Hero != null)
+                {
+                    var ruleset = BootstrapRunOverride.Ruleset;
+                    if (ruleset != null) ServiceLocator.AddService<RulesetSO>(ruleset);
+                    PendingRunRequest.Set(
+                        BootstrapRunOverride.Hero,
+                        Guid.NewGuid(),
+                        ruleset != null ? ruleset.RulesetId : null,
+                        BootstrapRunOverride.DiceBag,
+                        BootstrapRunOverride.StartingItems);
+                    BootstrapLog.Info($"Editor override applied: hero={BootstrapRunOverride.Hero.EntityId}, target={next}");
+                    BootstrapRunOverride.Consume();
+                }
+
                 BootstrapLog.Info($"Loading scene {next}");
                 if (!Application.CanStreamedLevelBeLoaded(next))
                 {

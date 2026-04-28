@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Rollgeon.EditorTools
 {
     [CustomEditor(typeof(RoomLayout))]
-    public class RoomLayoutEditor : Editor
+    public class RoomLayoutEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
