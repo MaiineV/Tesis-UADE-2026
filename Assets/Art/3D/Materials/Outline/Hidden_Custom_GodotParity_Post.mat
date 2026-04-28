@@ -31,11 +31,11 @@ Material:
     - _ConcaveZCutoff: 0.5
     - _ConvexCutoff: 0.1
     - _CreaseAlpha: 1
-    - _CreaseFeather: 0
+    - _CreaseFeather: 0.5
     - _CreaseOverlay: 1
     - _FlipPalettes: 0
-    - _KernelRadius: 1
-    - _LineAlpha: 0.5
+    - _KernelRadius: 4
+    - _LineAlpha: 0.418
     - _LineOverlay: 1
     - _PixelSize: 4
     - _ZDeltaCutoff: 0.25
