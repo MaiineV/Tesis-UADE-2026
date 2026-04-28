@@ -34,6 +34,8 @@ namespace Rollgeon.GameCamera
         private Tween _recenterTween;
         private Tween _shakeTween;
 
+        static readonly int s_PixelPanOffset = Shader.PropertyToID("_PixelPanOffset");
+
         public CameraFacing CurrentFacing => _currentFacing;
         public float CurrentZoom => _currentZoom;
         public Transform FollowTarget => _followTarget;
@@ -135,6 +137,47 @@ namespace Rollgeon.GameCamera
             {
                 PlaceRigAt(_panOffset);
             }
+
+            // Pixel snap siempre al final, después de todo posicionamiento.
+            if (_config.EnablePixelSnap)
+                ApplyPixelSnap();
+        }
+
+        // ------------------------------------------------------------------ //
+        // Pixel Snap                                                          //
+        // ------------------------------------------------------------------ //
+
+        /// <summary>
+        /// Snappea la posición del rig a la grilla de texels del RenderTexture.
+        /// Proyecta la posición world sobre los ejes screen-plane de la cámara
+        /// via dot product (no InverseTransformPoint — evita drift por origen).
+        /// El error de redondeo se empuja como _PixelPanOffset al SharpUpscale
+        /// shader para compensar en UV y recuperar movimiento perfectamente suave.
+        /// </summary>
+        private void ApplyPixelSnap()
+        {
+            if (_camera == null || !_camera.orthographic) return;
+            if (_config.PixelRenderHeight <= 0) return;
+
+            float texelSize = (_camera.orthographicSize * 2f) / _config.PixelRenderHeight;
+            if (texelSize <= 1e-5f) return;
+
+            Vector3 pos   = _rig.position;
+            Vector3 right = _camera.transform.right;
+            Vector3 up    = _camera.transform.up;
+
+            float projRight    = Vector3.Dot(pos, right);
+            float projUp       = Vector3.Dot(pos, up);
+            float snappedRight = Mathf.Round(projRight / texelSize) * texelSize;
+            float snappedUp    = Mathf.Round(projUp    / texelSize) * texelSize;
+            float errRight     = snappedRight - projRight;
+            float errUp        = snappedUp    - projUp;
+
+            _rig.position = pos + right * errRight + up * errUp;
+
+            float uvErrX = errRight / (_camera.orthographicSize * 2f * _camera.aspect);
+            float uvErrY = errUp    / (_camera.orthographicSize * 2f);
+            Shader.SetGlobalVector(s_PixelPanOffset, new Vector4(uvErrX, uvErrY, 0f, 0f));
         }
 
         /// <summary>
