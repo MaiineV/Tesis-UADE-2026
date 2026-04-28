@@ -357,6 +357,31 @@ namespace Rollgeon.Dungeon
                 }
             }
 
+            var allControllers = instance.SpawnedPrefab
+                .GetComponentsInChildren<DoorController>(includeInactive: true);
+            foreach (var controller in allControllers)
+            {
+                if (authored.Contains(controller.Direction)) continue;
+
+                var roomId = instance.Template != null ? instance.Template.RoomId : "<null>";
+                bool connected = instance.Connections.ContainsKey(controller.Direction);
+
+                if (connected)
+                {
+                    controller.OwnerRoomInstanceId = instance.InstanceId;
+                    controller.SpawnPointId = controller.Direction.DoorStateKey();
+                }
+                else
+                {
+                    controller.SetState(DoorVisualState.Tapiada);
+                    controller.gameObject.SetActive(false);
+                }
+
+                Debug.LogWarning(
+                    $"[DungeonManager] Room '{roomId}' (cell {instance.GridCell}) tiene DoorController " +
+                    $"dir={controller.Direction} sin DoorSlotRef. Usar Auto-Populate en RoomLayout.");
+            }
+
             SyncDoorVisualStates(instance);
         }
 

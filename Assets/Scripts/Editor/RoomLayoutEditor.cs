@@ -16,6 +16,11 @@ namespace Rollgeon.EditorTools
 
             EditorGUILayout.Space(10);
 
+            if (GUILayout.Button("Auto-Populate Door Slots", GUILayout.Height(30)))
+            {
+                layout.AutoPopulateDoorSlots();
+            }
+
             if (GUILayout.Button("Bake NavGraph", GUILayout.Height(30)))
             {
                 Undo.RecordObject(layout, "Bake NavGraph");

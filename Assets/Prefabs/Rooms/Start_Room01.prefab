@@ -1549,7 +1549,7 @@ MonoBehaviour:
     - Coord:
         X: 6
         Y: 0
-      Height: 0.5
+      Height: 1
     - Coord:
         X: -6
         Y: 0
@@ -4575,20 +4575,6 @@ MonoBehaviour:
       Cost: 1
     - From:
         X: 5
-        Y: 0
-      To:
-        X: 6
-        Y: 0
-      Cost: 1
-    - From:
-        X: 6
-        Y: 0
-      To:
-        X: 5
-        Y: 0
-      Cost: 1
-    - From:
-        X: 5
         Y: 1
       To:
         X: 5
@@ -4708,7 +4694,23 @@ MonoBehaviour:
   - {fileID: 6723749687048424586}
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
-  DoorSlots: []
+  DoorSlots:
+  - Direction: 2
+    Anchor: {fileID: 1861789218857891522}
+    WallPlug: {fileID: 1142551355444977634}
+    DoorRoot: {fileID: 1832780176720489718}
+  - Direction: 3
+    Anchor: {fileID: 4367037321060065154}
+    WallPlug: {fileID: 8149385025995213684}
+    DoorRoot: {fileID: 7187764946280950053}
+  - Direction: 0
+    Anchor: {fileID: 5142958218789693794}
+    WallPlug: {fileID: 8148556867672521699}
+    DoorRoot: {fileID: 1598296719709538394}
+  - Direction: 1
+    Anchor: {fileID: 8719648427237489199}
+    WallPlug: {fileID: 4718426743259561937}
+    DoorRoot: {fileID: 4233233274997704069}
   LocalBounds:
     m_Center: {x: 0.00000047683716, y: 0, z: 0.00000047683716}
     m_Extent: {x: 5.6000004, y: 2.5, z: 5.6000004}

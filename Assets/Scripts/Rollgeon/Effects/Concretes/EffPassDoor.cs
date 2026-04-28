@@ -49,6 +49,7 @@ namespace Rollgeon.Effects.Concretes
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
                 if (door.CurrentState == DoorVisualState.Tapiada) continue;
+                if (!room.Connections.ContainsKey(door.Direction)) continue;
                 var doorCoord = grid.WorldToGrid(door.transform.position);
                 Debug.Log($"[EffPassDoor] Puerta dir={door.Direction} state={door.CurrentState} coord={doorCoord} dist={playerCoord.Chebyshev(doorCoord)}");
                 if (playerCoord.Chebyshev(doorCoord) <= 1)

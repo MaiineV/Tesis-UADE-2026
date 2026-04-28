@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 2
   SpawnPointId: 
   _meshOpen: {fileID: 3900630819890260016}
   _meshClosed: {fileID: 6062442928660360250}
@@ -4665,7 +4665,23 @@ MonoBehaviour:
   - {fileID: 0}
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
-  DoorSlots: []
+  DoorSlots:
+  - Direction: 2
+    Anchor: {fileID: 1861789218857891522}
+    WallPlug: {fileID: 1142551355444977634}
+    DoorRoot: {fileID: 1832780176720489718}
+  - Direction: 3
+    Anchor: {fileID: 4367037321060065154}
+    WallPlug: {fileID: 8149385025995213684}
+    DoorRoot: {fileID: 7187764946280950053}
+  - Direction: 0
+    Anchor: {fileID: 5142958218789693794}
+    WallPlug: {fileID: 8148556867672521699}
+    DoorRoot: {fileID: 1598296719709538394}
+  - Direction: 1
+    Anchor: {fileID: 8719648427237489199}
+    WallPlug: {fileID: 4718426743259561937}
+    DoorRoot: {fileID: 4233233274997704069}
   LocalBounds:
     m_Center: {x: 0.00000047683716, y: 0.5, z: 0.00000047683716}
     m_Extent: {x: 5.6000004, y: 3, z: 5.6000004}
@@ -4859,7 +4875,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 1
   SpawnPointId: 
   _meshOpen: {fileID: 7203183267797077655}
   _meshClosed: {fileID: 6994646405425380519}
@@ -5440,7 +5456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
+  Direction: 3
   SpawnPointId: 
   _meshOpen: {fileID: 2222674966285541325}
   _meshClosed: {fileID: 3181487908822914695}
