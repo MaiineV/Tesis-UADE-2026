@@ -16,14 +16,16 @@ namespace Rollgeon.Items
         public float Amount;
         public ModifierDirection Direction = ModifierDirection.Intrinsic;
 
-#if UNITY_EDITOR
         private static IEnumerable<ValueDropdownItem<Type>> GetStatTypes()
         {
+#if UNITY_EDITOR
             return AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(a => { try { return a.GetTypes(); } catch { return Type.EmptyTypes; } })
                 .Where(t => typeof(IModifiable).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
                 .Select(t => new ValueDropdownItem<Type>(t.Name, t));
-        }
+#else
+            return System.Linq.Enumerable.Empty<ValueDropdownItem<Type>>();
 #endif
+        }
     }
 }

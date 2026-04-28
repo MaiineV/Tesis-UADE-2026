@@ -54,8 +54,16 @@ namespace Rollgeon.Effects.Concretes
             return true;
         }
 
+        // Método siempre compilado (player build incluido) porque [ValueDropdown(nameof(...))]
+        // resuelve el nombre en compile-time. La lógica de scan vive dentro de
+        // ItemCatalogSO.GetEditorAllIds que ya tiene su propio #if UNITY_EDITOR.
+        private static IEnumerable<string> GetItemIds()
+        {
 #if UNITY_EDITOR
-        private static IEnumerable<string> GetItemIds() => ItemCatalogSO.GetEditorAllIds();
+            return ItemCatalogSO.GetEditorAllIds();
+#else
+            return Array.Empty<string>();
 #endif
+        }
     }
 }

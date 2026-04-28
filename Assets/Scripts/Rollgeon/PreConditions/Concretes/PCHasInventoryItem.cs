@@ -39,8 +39,13 @@ namespace Rollgeon.PreConditions.Concretes
             return inventory.HasItem(ItemId);
         }
 
+        private static IEnumerable<string> GetItemIds()
+        {
 #if UNITY_EDITOR
-        private static IEnumerable<string> GetItemIds() => ItemCatalogSO.GetEditorAllIds();
+            return ItemCatalogSO.GetEditorAllIds();
+#else
+            return Array.Empty<string>();
 #endif
+        }
     }
 }
