@@ -212,6 +212,20 @@ namespace Rollgeon.Heroes
             return null;
         }
 
+        public EffChain FindChainEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is EffChain chain) return chain;
+                }
+            }
+            return null;
+        }
+
         private PreConditionContext BuildPreConditionContext(BehaviorContext ctx)
         {
             var preCtx = new PreConditionContext

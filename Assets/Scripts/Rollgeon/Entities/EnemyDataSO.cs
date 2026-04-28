@@ -120,6 +120,7 @@ namespace Rollgeon.Entities
             attrs.SetAttribute<Speed>(new Speed(BaseSpeed));
             attrs.SetAttribute<Energy>(new Energy(MaxEnergy));
             attrs.SetAttribute<HealStrength>(new HealStrength(BaseHealStrength));
+            attrs.SetAttribute<Shield>(new Shield(0));
             return attrs;
         }
 

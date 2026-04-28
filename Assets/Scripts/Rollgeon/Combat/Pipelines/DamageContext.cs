@@ -39,5 +39,11 @@ namespace Rollgeon.Combat.Pipelines
 
         /// <summary><c>true</c> if the target's Health reached 0 or below.</summary>
         public bool WasLethal;
+
+        /// <summary>Amount of damage absorbed by Shield before applying to Health.</summary>
+        public int ShieldAbsorbed;
+
+        /// <summary><c>true</c> if all damage was fully absorbed by shield.</summary>
+        public bool BlockedByShield;
     }
 }

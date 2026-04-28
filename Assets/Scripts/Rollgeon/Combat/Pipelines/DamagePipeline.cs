@@ -88,11 +88,21 @@ namespace Rollgeon.Combat.Pipelines
             EventManager.Trigger(EventName.OnDamageIncoming,
                 ctx.SourceId, ctx.TargetId, damage);
 
-            // ── 4. Shield absorption (placeholder — Shield stat not yet defined) ─
-            // int shield = _attributes.GetAttributeModifiedValue<Shield, int>(ctx.TargetId);
-            // int absorbed = Mathf.Min(shield, damage);
-            // damage -= absorbed;
-            // if (absorbed > 0) { ... set shield, fire event }
+            // ── 4. Shield absorption ─────────────────────────────────────
+            var shieldAttr = _attributes.GetAttribute<Shield>(ctx.TargetId);
+            if (shieldAttr != null && shieldAttr.Value > 0)
+            {
+                int shield = shieldAttr.Value;
+                int absorbed = Mathf.Min(shield, damage);
+                damage -= absorbed;
+                _attributes.SetAttributeValue<Shield, int>(ctx.TargetId, shield - absorbed);
+                ctx.ShieldAbsorbed = absorbed;
+
+                if (absorbed > 0)
+                    EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, shield - absorbed);
+            }
+
+            ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
 
             // ── 5. Apply: commit to Health ────────────────────────────────────
             int finalDamage = damage;
@@ -131,6 +141,7 @@ namespace Rollgeon.Combat.Pipelines
                 FinalDamage = ctx.FinalDamage,
                 WeaknessHit = ctx.WeaknessMultiplier > 1f,
                 WasLethal = ctx.WasLethal,
+                ShieldAbsorbed = ctx.ShieldAbsorbed,
             });
 
             return ctx;

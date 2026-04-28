@@ -122,6 +122,10 @@ namespace Rollgeon.Run
             var healPipeline = new HealPipeline();
             ServiceLocator.AddService<IHealPipeline>(healPipeline, ServiceScope.Run);
 
+            // 5b. Shield reset handler
+            var shieldReset = new ShieldResetHandler(attributes);
+            ServiceLocator.AddService<ShieldResetHandler>(shieldReset, ServiceScope.Run);
+
             // 6. Enemy AI — reutiliza attributes + playerService resueltos arriba.
             Action onTurnComplete;
             if (ServiceLocator.TryGetService<ICombatSignaller>(out var signaller))
@@ -204,6 +208,7 @@ namespace Rollgeon.Run
             playerAttrs.EnsureInitialized();
             playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
+            playerAttrs.SetAttribute<Shield>(new Shield(0));
 
             registry.Register(playerService.PlayerGuid, playerAttrs);
             attributes.Register(playerService.PlayerGuid, playerAttrs);

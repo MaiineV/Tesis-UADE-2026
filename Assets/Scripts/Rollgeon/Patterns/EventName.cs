@@ -73,6 +73,12 @@ namespace Patterns
         /// <summary>args: [Guid sourceGuid, IReadOnlyList&lt;int&gt; finalFaces]. Roll finalizado y lockeado, tras rerolls.</summary>
         OnRollResolved,
 
+        // --- Chain -----------------------------------------------------------------
+        /// <summary>args: [Guid sourceGuid, int phaseIndex, int totalPhases]</summary>
+        OnChainPhaseStarted,
+        /// <summary>args: [Guid sourceGuid, int phasesCompleted, int totalPhases, bool wasPass]</summary>
+        OnChainCompleted,
+
         // --- Combat resolve -----------------------------------------------------
         // OnHealthChanged NO existe acá — vive como TypedEvent<HealthChangedPayload>.
         /// <summary>args: [Guid entityGuid, int currentShield]</summary>

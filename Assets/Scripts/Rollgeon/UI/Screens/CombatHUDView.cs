@@ -81,6 +81,14 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
+        [Tooltip("Opcional — muestra el shield actual del jugador.")]
+        [SerializeField]
+        private ShieldBarView _shieldBar;
+
+        [Tooltip("Opcional — muestra la fase actual de un EffChain.")]
+        [SerializeField]
+        private ChainPhaseIndicatorView _chainPhaseIndicator;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -118,6 +126,9 @@ namespace Rollgeon.UI.Screens
 
         /// <summary>Delegate que dispara "confirm" (generico, no solo attack).</summary>
         public Action OnConfirmRequested;
+
+        /// <summary>Delegate que dispara "chain pass" (saltear fases restantes del chain).</summary>
+        public Action OnChainPassRequested;
 
         /// <inheritdoc/>
         public override string ScreenStringId => "CombatHUD";
@@ -240,6 +251,8 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
+            if (_shieldBar != null) _shieldBar.Bind(playerGuid);
+            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
 
             _subViewsBound = true;
         }
@@ -257,6 +270,8 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
+            if (_shieldBar != null) _shieldBar.Unbind();
+            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             _subViewsBound = false;
         }
 
@@ -339,6 +354,16 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnConfirmRequested.Invoke();
+        }
+
+        private void InvokeChainPassRequested()
+        {
+            if (OnChainPassRequested == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnChainPassRequested no cableado.", this);
+                return;
+            }
+            OnChainPassRequested.Invoke();
         }
 
         private void HandleDamageResolvedForFlash(DamageResolvedPayload payload)
