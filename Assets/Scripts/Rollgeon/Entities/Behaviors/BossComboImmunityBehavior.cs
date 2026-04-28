@@ -66,6 +66,7 @@ namespace Rollgeon.Entities.Behaviors
             }
 
             blockService.Block(comboId, RefreshDurationTurns);
+            Debug.Log($"[BossComboImmunityBehavior] Block('{comboId}', {RefreshDurationTurns}) — IsBlocked now={blockService.IsBlocked(comboId)}");
         }
     }
 }

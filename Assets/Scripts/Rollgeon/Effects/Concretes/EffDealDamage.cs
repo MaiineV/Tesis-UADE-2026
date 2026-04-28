@@ -54,6 +54,10 @@ namespace Rollgeon.Effects.Concretes
             {
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                // ComboValue sin combo matched → 0 daño. Antes caía al _baseAmount,
+                // lo que defeateaba el bloqueo de combos (boss inmune a Par seguía
+                // recibiendo el _baseAmount=10 al rolear Par contra un combo bloqueado).
+                DamageSource.ComboValue => 0,
                 _ => _baseAmount,
             };
             return new DamageArgs { BaseAmount = amount };

@@ -122,7 +122,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 100
-  BaseAttack: 15
+  BaseAttack: 5
   BaseHealStrength: 3
   BaseSpeed: 5
   MaxEnergy: 3

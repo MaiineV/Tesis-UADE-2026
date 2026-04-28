@@ -128,7 +128,9 @@ namespace Rollgeon.Heroes
                 var combo = Combos[i];
                 if (combo == null) continue;
                 if (IsCrossed(combo)) continue;
-                if (blockService != null && blockService.IsBlocked(combo.ComboId)) continue; // [T103]
+                bool blocked = blockService != null && blockService.IsBlocked(combo.ComboId);
+                UnityEngine.Debug.Log($"[ContractSheet.MatchBest] checking combo='{combo.name}' id='{combo.ComboId}' blocked={blocked}");
+                if (blocked) continue;
                 if (!combo.Matches(arr)) continue;
                 if (combo.Priority > bestPriority)
                 {
@@ -136,6 +138,7 @@ namespace Rollgeon.Heroes
                     bestPriority = combo.Priority;
                 }
             }
+            UnityEngine.Debug.Log($"[ContractSheet.MatchBest] best='{best?.name ?? "null"}'");
             return best;
         }
 

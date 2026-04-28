@@ -8,6 +8,7 @@ using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 
@@ -210,7 +211,31 @@ namespace Rollgeon.Combat.Handoff
                 if (drop > 0) _goldDrops.RegisterDrop(id, drop);
             }
 
+            ApplyComboImmunities(enemyData);
+
             return id;
+        }
+
+        /// <summary>
+        /// Scanea los <c>Behaviors</c> del enemigo en busca de
+        /// <see cref="BossComboImmunityBehavior"/> y aplica el bloqueo de combo
+        /// inmediatamente. Sin un dispatcher de behaviors enemigos en runtime, esta
+        /// es la forma de garantizar que el boss bloquee el combo configurado
+        /// desde el spawn (no requiere esperar a su primer turno).
+        /// </summary>
+        private static void ApplyComboImmunities(EnemyDataSO enemyData)
+        {
+            if (enemyData?.Behaviors == null) return;
+            UnityEngine.Debug.Log($"[ApplyComboImmunities] enemy='{enemyData.name}' behaviors count={enemyData.Behaviors.Count}");
+            foreach (var b in enemyData.Behaviors)
+            {
+                UnityEngine.Debug.Log($"[ApplyComboImmunities]   behavior type={b?.GetType().Name ?? "null"}");
+                if (b is BossComboImmunityBehavior immunity)
+                {
+                    UnityEngine.Debug.Log($"[ApplyComboImmunities]     ImmuneCombo={immunity.ImmuneCombo?.name ?? "null"} ImmuneCombo.ComboId='{immunity.ImmuneCombo?.ComboId ?? "null"}'");
+                    immunity.Execute(null);
+                }
+            }
         }
 
         private Guid RegisterEnemyFromState(
