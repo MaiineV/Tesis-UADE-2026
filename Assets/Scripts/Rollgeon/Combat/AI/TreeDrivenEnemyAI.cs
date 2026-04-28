@@ -16,7 +16,8 @@ namespace Rollgeon.Combat.AI
     /// </summary>
     /// <remarks>
     /// Se suscribe a <see cref="EventName.OnTurnQueueBuilt"/> para mantener un contador
-    /// de rondas consumido por <see cref="Conditions.AICond_RoundNumber"/>. Al llamar
+    /// de rondas que se exporta al <c>PreConditionContext</c> via
+    /// <see cref="AIContextPcExtensions.BuildPcContext"/>. Al llamar
     /// <see cref="HandleEnemyTurn"/> construye un <see cref="AIContext"/> fresco.
     /// </remarks>
     public sealed class TreeDrivenEnemyAI : IEnemyAIHandler, IDisposable
