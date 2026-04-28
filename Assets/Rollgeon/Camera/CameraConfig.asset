@@ -286,7 +286,7 @@ MonoBehaviour:
   EnableWallOcclusion: 1
   WallFadeSeconds: 0.2
   EnablePixelSnap: 1
-  PixelRenderHeight: 180
+  PixelRenderHeight: 360
   EnableFloorView: 1
   FloorViewZoomThreshold: 18
   FloorViewTweenSeconds: 0.3
