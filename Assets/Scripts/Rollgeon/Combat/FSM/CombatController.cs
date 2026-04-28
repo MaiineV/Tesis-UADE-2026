@@ -257,6 +257,17 @@ namespace Rollgeon.Combat.FSM
 
         private void HandleFsmFinished(CombatOutcome outcome)
         {
+            // CombatExitState delega al caller la decisión de cerrar la FSM.
+            // Sin este teardown, _fsm.IsRunning queda en true entre combates y
+            // el próximo StartCombat aborta con "Ya hay un combate corriendo".
+            if (_fsm != null)
+            {
+                _fsm.OnFinished -= HandleFsmFinished;
+                if (_fsm.IsRunning) _fsm.Stop();
+            }
+            _fsm = null;
+            _context = null;
+
             OnCombatFinished?.Invoke(outcome);
         }
 

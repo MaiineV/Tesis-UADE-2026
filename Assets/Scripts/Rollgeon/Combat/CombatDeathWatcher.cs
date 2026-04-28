@@ -71,11 +71,13 @@ namespace Rollgeon.Combat
 
         private void OnDamageResolved(DamageResolvedPayload payload)
         {
+            UnityEngine.Debug.Log($"[CombatDeathWatcher] OnDamageResolved — target={payload.TargetGuid} wasLethal={payload.WasLethal}");
             if (!payload.WasLethal) return;
             if (!_processed.Add(payload.TargetGuid)) return;
 
             if (payload.TargetGuid == _player.PlayerGuid)
             {
+                UnityEngine.Debug.Log("[CombatDeathWatcher] Player muerto → NotifyCombatEnded(Defeat)");
                 _signaller.NotifyCombatEnded(CombatOutcome.Defeat);
                 return;
             }
@@ -88,10 +90,13 @@ namespace Rollgeon.Combat
             _grid?.Unregister(payload.TargetGuid);
 
             var room = _dungeon.CurrentRoomInstance;
+            int remaining = room?.SpawnedEnemies?.Count ?? -1;
+            UnityEngine.Debug.Log($"[CombatDeathWatcher] Enemy muerto — room.State={room?.State} SpawnedEnemies.Count={remaining}");
             if (room != null
                 && room.State == RoomState.Uncleared
                 && room.SpawnedEnemies.Count == 0)
             {
+                UnityEngine.Debug.Log("[CombatDeathWatcher] Sin enemigos → NotifyCombatEnded(Victory)");
                 _signaller.NotifyCombatEnded(CombatOutcome.Victory);
             }
         }
