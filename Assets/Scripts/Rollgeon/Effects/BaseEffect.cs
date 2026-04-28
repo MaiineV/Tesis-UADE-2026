@@ -28,7 +28,10 @@ namespace Rollgeon.Effects
         /// Settings de selección embebido. Todos los efectos tienen config de selección
         /// (puede ser Self, AutoResolve, o interactiva).
         /// </summary>
+        [ShowIf(nameof(ShowSelection))]
         public SelectionSettings Selection = new SelectionSettings();
+
+        protected virtual bool ShowSelection => true;
 
         /// <summary>Default — nombre del tipo. Concretes pueden override para UX de inspector.</summary>
         public virtual string GetEffectName() => GetType().Name;

@@ -221,6 +221,125 @@ namespace Rollgeon.Combat.Pipelines.Tests
             Assert.IsTrue(incomingFired, "OnDamageIncoming should have been triggered.");
         }
 
+        // ── Shield absorption ────────────────────────────────────────────
+
+        [Test]
+        public void Shield_PartialAbsorption_ReducesDamageAndShield()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(20));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 50,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(30, ctx.FinalDamage);
+            Assert.AreEqual(20, ctx.ShieldAbsorbed);
+            Assert.IsFalse(ctx.BlockedByShield);
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_targetId).Value);
+            Assert.AreEqual(70, _attrManager.GetAttribute<Health>(_targetId).Value);
+        }
+
+        [Test]
+        public void Shield_FullAbsorption_ZeroDamageToHealth()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(50));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 30,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(0, ctx.FinalDamage);
+            Assert.AreEqual(30, ctx.ShieldAbsorbed);
+            Assert.IsTrue(ctx.BlockedByShield);
+            Assert.AreEqual(20, _attrManager.GetAttribute<Shield>(_targetId).Value);
+            Assert.AreEqual(100, _attrManager.GetAttribute<Health>(_targetId).Value);
+        }
+
+        [Test]
+        public void Shield_Zero_NothingAbsorbed()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(0));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 25,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(25, ctx.FinalDamage);
+            Assert.AreEqual(0, ctx.ShieldAbsorbed);
+            Assert.IsFalse(ctx.BlockedByShield);
+            Assert.AreEqual(75, _attrManager.GetAttribute<Health>(_targetId).Value);
+        }
+
+        [Test]
+        public void Shield_FiresOnShieldChangedEvent()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(10));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            int capturedShield = -1;
+            EventManager.Subscribe(EventName.OnShieldChanged, args =>
+            {
+                capturedShield = (int)args[1];
+            });
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 7,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(3, capturedShield, "OnShieldChanged should fire with remaining shield.");
+        }
+
+        [Test]
+        public void Shield_PayloadCarriesShieldAbsorbed()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(15));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            DamageResolvedPayload? captured = null;
+            TypedEvent<DamageResolvedPayload>.Subscribe(p => captured = p);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 10,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.IsTrue(captured.HasValue);
+            Assert.AreEqual(10, captured.Value.ShieldAbsorbed);
+            Assert.AreEqual(0, captured.Value.FinalDamage);
+        }
+
         // ── Fake implementations ─────────────────────────────────────────
 
         private class FakeWeaknessChecker : IWeaknessChecker

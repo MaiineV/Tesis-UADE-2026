@@ -8,10 +8,15 @@ using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Dungeon;
+using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
+using Rollgeon.Entities;
+using Rollgeon.Grid;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;
+using Rollgeon.PreConditions;
 using Rollgeon.Player;
 using Rollgeon.UI;
 using Rollgeon.UI.Screens;
@@ -51,6 +56,11 @@ namespace Rollgeon.Combat.Handoff
 
         private int[] _lastFaces;
         private HeroActionBehavior _selectedBehavior;
+        private EffChain _activeChain;
+        private int _chainPhaseIndex;
+        private TargetSelectionResult _chainPhaseSelectionResult;
+        private ISelectionController _chainSelectionController;
+        private Action _pendingChainCallback;
 
         public bool IsHandoffInProgress { get; private set; }
 
@@ -178,9 +188,28 @@ namespace Rollgeon.Combat.Handoff
             var playerGuid = _player.PlayerGuid;
             _lastFaces = null;
             _selectedBehavior = null;
+            _activeChain = null;
+            _chainPhaseIndex = 0;
+            _chainPhaseSelectionResult = null;
+            _chainSelectionController = null;
+            _pendingChainCallback = null;
 
             hud.OnEndTurnRequested = () =>
             {
+                if (_activeChain != null)
+                {
+                    if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
+                        _chainSelectionController.CancelSelection();
+
+                    if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
+                        chainBudget.EndBudget();
+                    var chainResolved = _lastFaces ?? Array.Empty<int>();
+                    EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
+                    FinishChain(hud, playerGuid, true);
+                    _playerActions.EndPlayerTurn();
+                    return;
+                }
+
                 if (_selectedBehavior != null) return;
 
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
@@ -197,6 +226,27 @@ namespace Rollgeon.Combat.Handoff
             void DoConfirm()
             {
                 if (_selectedBehavior == null) return;
+
+                if (_activeChain != null)
+                {
+                    var phase = _activeChain.Phases[_chainPhaseIndex];
+                    var afterRoll = FindPhaseSelectionAt(phase, SelectionTiming.AfterRoll);
+
+                    if (afterRoll != null)
+                    {
+                        _chainPhaseSelectionResult = null;
+                        BeginChainSelection(afterRoll, playerGuid, () =>
+                        {
+                            ExecuteChainPhase(hud, firstEnemyId, playerGuid);
+                        });
+                    }
+                    else
+                    {
+                        _chainPhaseSelectionResult = null;
+                        ExecuteChainPhase(hud, firstEnemyId, playerGuid);
+                    }
+                    return;
+                }
 
                 var hero = ResolveHero();
                 BaseComboSO combo = null;
@@ -298,6 +348,54 @@ namespace Rollgeon.Combat.Handoff
                 _selectedBehavior = behavior;
                 hud.SetBehaviorForFormula(behavior);
 
+                var chain = behavior.FindChainEffect();
+                if (chain != null && chain.PhaseCount > 0)
+                {
+                    if (behavior.NeedsDiceRoll)
+                    {
+                        _activeChain = chain;
+                        _chainPhaseIndex = 0;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[CombatHandoffService] EffChain requires NeedsDiceRoll=true — falling back to linear execution.");
+                    }
+                }
+
+                if (_activeChain != null)
+                {
+                    var phase0BeforeRoll = FindPhaseSelectionAt(_activeChain.Phases[0], SelectionTiming.BeforeRoll);
+                    if (phase0BeforeRoll != null)
+                    {
+                        _chainPhaseSelectionResult = null;
+                        if (!SpendEnergyNow(behavior, playerGuid))
+                        {
+                            _selectedBehavior = null;
+                            _activeChain = null;
+                            hud.ClearBehaviorForFormula();
+                            return;
+                        }
+                        BeginChainSelection(phase0BeforeRoll, playerGuid, () =>
+                        {
+                            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var b) && b != null)
+                            {
+                                var w = BuildBudgetAction(behavior);
+                                if (w != null) b.StartBudget(w);
+                            }
+                            var selBag = ResolvePlayerBag();
+                            var selRoller = ResolveRoller();
+                            if (selBag == null || selRoller == null)
+                            {
+                                FinishChain(hud, playerGuid, false);
+                                return;
+                            }
+                            _lastFaces = selRoller.RollAll(selBag);
+                            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+                        });
+                        return;
+                    }
+                }
+
                 if (!behavior.NeedsDiceRoll)
                 {
                     if (!SpendEnergyNow(behavior, playerGuid))
@@ -340,6 +438,23 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnConfirmRequested = () => DoConfirm();
 
+            hud.OnChainPassRequested = () =>
+            {
+                if (_activeChain == null) return;
+
+                if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
+                    _chainSelectionController.CancelSelection();
+
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
+                    chainBudget.EndBudget();
+
+                var chainResolved = _lastFaces ?? Array.Empty<int>();
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
+
+                Debug.Log($"[CombatHandoff] Chain pass at phase {_chainPhaseIndex}");
+                FinishChain(hud, playerGuid, true);
+            };
+
             hud.OnEnergyRerollRequested = () =>
             {
                 if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return;
@@ -358,6 +473,221 @@ namespace Rollgeon.Combat.Handoff
                 _lastFaces = roller.Reroll(bag, _lastFaces, keep);
                 EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
+        }
+
+        // ======================================================================
+        // Chain execution
+        // ======================================================================
+
+        private void ExecuteChainPhase(CombatHUDView hud, Guid firstEnemyId, Guid playerGuid)
+        {
+            if (_activeChain == null || _chainPhaseIndex >= _activeChain.PhaseCount) return;
+
+            var phase = _activeChain.Phases[_chainPhaseIndex];
+            var hero = ResolveHero();
+
+            var effCtx = new EffectContext
+            {
+                SourceGuid = playerGuid,
+                SourceEntity = new Entity { Guid = playerGuid },
+                TargetGuid = firstEnemyId,
+                DiceResult = _lastFaces,
+                lastResult = true,
+                SourceBehavior = _selectedBehavior,
+                SelectionResult = _chainPhaseSelectionResult,
+            };
+
+            if (hero != null && _lastFaces != null)
+            {
+                var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
+                var combo = hero.Sheet?.MatchBest(keptDice);
+                if (combo != null)
+                    effCtx.ComboResult = combo.Detect(keptDice);
+            }
+
+            var preCtx = new PreConditionContext
+            {
+                OwnerGuid = playerGuid,
+                OpponentGuid = firstEnemyId,
+            };
+
+            int remainingFreeRolls = 0;
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget?.Current != null)
+                remainingFreeRolls = budget.Current.FreeRollsRemaining;
+
+            if (phase?.Effects != null)
+                phase.Effects.TryExecute(effCtx, preCtx);
+
+            budget?.EndBudget();
+
+            var resolved = _lastFaces ?? Array.Empty<int>();
+            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+            _lastFaces = null;
+
+            _chainPhaseIndex++;
+
+            if (_chainPhaseIndex >= _activeChain.PhaseCount)
+            {
+                FinishChain(hud, playerGuid, false);
+                return;
+            }
+
+            int currentEnergy = 0;
+            if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
+                currentEnergy = energy.GetCurrent(playerGuid);
+
+            if (remainingFreeRolls == 0 && currentEnergy <= 0)
+            {
+                Debug.Log($"[CombatHandoff] Chain auto-terminated at phase {_chainPhaseIndex}: " +
+                          $"freeRolls={remainingFreeRolls}, energy={currentEnergy}");
+                FinishChain(hud, playerGuid, false);
+                return;
+            }
+
+            PrepareNextChainPhase(hud, playerGuid, remainingFreeRolls + 1);
+        }
+
+        private void StartNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
+        {
+            var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
+            wrapper.ActionId = $"{_selectedBehavior.ActionName}.chain.phase{_chainPhaseIndex}";
+            wrapper.EnergyCost = 0;
+            wrapper.FreeRollCount = freeRollCount;
+            wrapper.AllowsEnergyReroll = _selectedBehavior.AllowsEnergyReroll;
+
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                budget.StartBudget(wrapper);
+
+            var bag = ResolvePlayerBag();
+            var roller = ResolveRoller();
+            if (bag == null || roller == null)
+            {
+                Debug.LogError("[CombatHandoffService] Cannot resolve bag/roller for chain phase — finishing chain.");
+                FinishChain(hud, playerGuid, false);
+                return;
+            }
+
+            _lastFaces = roller.RollAll(bag);
+            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+            EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
+        }
+
+        private void FinishChain(CombatHUDView hud, Guid playerGuid, bool wasPass)
+        {
+            int phasesCompleted = _chainPhaseIndex;
+            int totalPhases = _activeChain?.PhaseCount ?? 0;
+
+            _activeChain = null;
+            _chainPhaseIndex = 0;
+            _lastFaces = null;
+            _selectedBehavior = null;
+
+            _chainPhaseSelectionResult = null;
+            if (_chainSelectionController != null)
+            {
+                _chainSelectionController.OnSelectionCompleted -= OnChainSelectionDone;
+                _chainSelectionController = null;
+            }
+            _pendingChainCallback = null;
+
+            hud.ClearBehaviorForFormula();
+
+            EventManager.Trigger(EventName.OnChainCompleted, playerGuid, phasesCompleted, totalPhases, wasPass);
+        }
+
+        // ======================================================================
+        // Chain — per-phase selection
+        // ======================================================================
+
+        private static SelectionSettings FindPhaseSelectionAt(ChainPhase phase, SelectionTiming timing)
+        {
+            if (phase?.Effects?.Effects == null) return null;
+            foreach (var eff in phase.Effects.Effects)
+            {
+                if (eff != null && eff.RequiresSelectionAt(timing))
+                    return eff.GetSelection();
+            }
+            return null;
+        }
+
+        private void BeginChainSelection(SelectionSettings settings, Guid playerGuid, Action onComplete)
+        {
+            if (settings.SlotState == SlotState.Self)
+            {
+                if (ServiceLocator.TryGetService<IGridManager>(out var g) && g.TryGetPosition(playerGuid, out var pos))
+                {
+                    _chainPhaseSelectionResult = new TargetSelectionResult
+                    {
+                        WasCompleted = true,
+                        SelectedTargets = new List<TargetRef> { TargetRef.At(pos) },
+                    };
+                }
+                onComplete();
+                return;
+            }
+
+            GridCoord ownerPos = default;
+            if (ServiceLocator.TryGetService<IGridManager>(out var grid))
+                grid.TryGetPosition(playerGuid, out ownerPos);
+
+            if (settings.AutoResolve)
+            {
+                _chainPhaseSelectionResult = settings.AutoResolveTargets(ownerPos, playerGuid);
+                onComplete();
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<ISelectionController>(out _chainSelectionController))
+            {
+                Debug.LogWarning("[CombatHandoff] ISelectionController not registered — skipping chain selection");
+                onComplete();
+                return;
+            }
+
+            _pendingChainCallback = onComplete;
+            _chainSelectionController.OnSelectionCompleted += OnChainSelectionDone;
+
+            var validTargets = settings.ResolveValidTiles(ownerPos, playerGuid);
+            _chainSelectionController.BeginSelection(new SelectionRequest
+            {
+                Settings = settings,
+                ValidTargets = validTargets,
+                OwnerGuid = playerGuid,
+                HighlightStyle = "move",
+            });
+        }
+
+        private void OnChainSelectionDone(TargetSelectionResult result)
+        {
+            if (_chainSelectionController != null)
+            {
+                _chainSelectionController.OnSelectionCompleted -= OnChainSelectionDone;
+                _chainSelectionController = null;
+            }
+            _chainPhaseSelectionResult = result;
+            var cb = _pendingChainCallback;
+            _pendingChainCallback = null;
+            cb?.Invoke();
+        }
+
+        private void PrepareNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
+        {
+            var nextPhase = _activeChain.Phases[_chainPhaseIndex];
+            var beforeRoll = FindPhaseSelectionAt(nextPhase, SelectionTiming.BeforeRoll);
+
+            if (beforeRoll != null)
+            {
+                _chainPhaseSelectionResult = null;
+                BeginChainSelection(beforeRoll, playerGuid, () =>
+                {
+                    StartNextChainPhase(hud, playerGuid, freeRollCount);
+                });
+            }
+            else
+            {
+                _chainPhaseSelectionResult = null;
+                StartNextChainPhase(hud, playerGuid, freeRollCount);
+            }
         }
 
         // Bag del jugador con fallback al asset Resources (Fase 1 — hasta que el

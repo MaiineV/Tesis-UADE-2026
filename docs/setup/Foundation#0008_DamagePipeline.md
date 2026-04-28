@@ -54,4 +54,4 @@ stats que aun no existen. Se habilitan cuando esos stats aterricen:
 
 - **Outgoing multiplier** — requiere `OutgoingDamageMultiplier` stat (float).
 - **Incoming multiplier** — requiere `IncomingDamageMultiplier` stat (float).
-- **Shield absorption** — requiere `Shield` stat (int).
+- ~~**Shield absorption** — requiere `Shield` stat (int).~~ **ACTIVADO** — ver `System#0402_ShieldSystem.md`.
