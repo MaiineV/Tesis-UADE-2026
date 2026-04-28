@@ -36,8 +36,8 @@ MonoBehaviour:
       Data: 
   _comboId: 
   _displayName: Doble Par
-  _description: 
-  _icon: {fileID: 0}
+  _description: 2 dados del mismo valor
+  _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   _baseDamage: 18
   _valueMultipliers:
   - 0

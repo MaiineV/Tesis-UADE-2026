@@ -36,8 +36,8 @@ MonoBehaviour:
       Data: 
   _comboId: 
   _displayName: Escalera
-  _description: 
-  _icon: {fileID: 0}
+  _description: Dados en escalera
+  _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   _baseDamage: 35
   _valueMultipliers:
   - 0

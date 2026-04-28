@@ -27,7 +27,99 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Heroes.PassiveHook, Rollgeon
+    - Name: TriggerEvent
+      Entry: 3
+      Data: 7
+    - Name: Effect
+      Entry: 7
+      Data: 2|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
       Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 5|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 6|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _shieldSource
+      Entry: 3
+      Data: 0
+    - Name: _baseAmount
+      Entry: 3
+      Data: 2
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -37,7 +129,29 @@ MonoBehaviour:
   PassiveId: passive.warrior.heal_on_turn
   DisplayName: "Regeneraci\xF3n del Guerrero"
   Description: ' Al inicio de cada turno, el guerrero se cura 2 HP. '
-  Hooks: []
+  Hooks:
+  - TriggerEvent: 7
+    Effect:
+      Label: Effect Group
+      PreConditions: []
+      Effects:
+      - rid: 1893612545939341439
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1893612545939341439
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _shieldSource: 0
+        _baseAmount: 2
+        _comboMultiplier: 1

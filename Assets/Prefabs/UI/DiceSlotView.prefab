@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 1428144286056559109}
   - component: {fileID: 7272532002863875687}
   - component: {fileID: 4877394810810214232}
+  - component: {fileID: -278912816374474346}
   m_Layer: 0
   m_Name: DiceSlotView
   m_TagString: Untagged
@@ -189,6 +190,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceSlotView
   _diceLabel: {fileID: 8048459842649218551}
+  _button: {fileID: 0}
+  _background: {fileID: 0}
+  OnToggled:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!222 &7272532002863875687
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -227,3 +233,23 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &-278912816374474346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2057196803147995203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1

@@ -200,7 +200,7 @@ namespace Rollgeon.UI.Screens
 
             if (_passiveDisplay != null)
             {
-                _passiveDisplay.text = "Pasiva: TBD";
+                _passiveDisplay.text = _selectedHero.Passive.Description;
             }
 
             if (_warriorSelectionIndicator != null)
