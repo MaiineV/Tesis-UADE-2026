@@ -4,6 +4,7 @@ using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
 {

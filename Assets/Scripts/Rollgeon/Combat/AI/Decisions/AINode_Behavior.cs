@@ -2,6 +2,7 @@ using System;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
 {

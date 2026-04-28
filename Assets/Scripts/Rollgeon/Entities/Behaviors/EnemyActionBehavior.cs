@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Effects;
@@ -95,7 +96,7 @@ namespace Rollgeon.Entities.Behaviors
             // EffDealDamage already prefers SelectionResult over ctx.TargetGuid, so this keeps both
             // paths consistent without forcing the enemy to go through SelectionSettings.
             if (targetGuid != Guid.Empty
-                && Patterns.ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid)
+                && ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid)
                 && grid != null
                 && grid.TryGetPosition(targetGuid, out var coord))
             {
