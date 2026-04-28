@@ -34,7 +34,11 @@ tags: [moc, run, lifecycle]
 
 ## Notes
 
-- [[RunBootstrapper]] · [[RunController]] · [[RunContext]]
+- **Lifecycle:** [[RunBootstrapper]] · [[RunController]] ·
+  [[IRunController]] · [[RunControllerBootstrapper]] ·
+  [[GameplayBootstrapper]]
+- **Context:** [[RunContext]] · [[IRunContextService]] ·
+  [[PendingRunRequest]]
 
 ## Cross-domain edges
 

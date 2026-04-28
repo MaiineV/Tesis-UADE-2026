@@ -41,8 +41,8 @@ tags: [moc, combos]
 - **Concretes:** [[Combo_Par]] · [[Combo_DoblePar]] · [[Combo_SumaX]] ·
   [[Combo_Trio]] · [[Combo_Escalera]] · [[Combo_FullHouse]] ·
   [[Combo_Poker]] · [[Combo_Generala]]
-- **Counters:** [[ComboCountersService]] · [[ComboCountersConfig]] ·
-  [[RunComboCounterState]]
+- **Counters:** [[ComboCountersService]] · [[IComboCountersService]] ·
+  [[ComboCountersConfig]] · [[RunComboCounterState]]
 
 ## Cross-domain edges
 

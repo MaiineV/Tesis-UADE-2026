@@ -15,7 +15,6 @@ tags: [ui, hud, combat]
 ## Sub-views
 
 - [[TurnQueueView]]
-- [[EnemyPanelView]]
 - [[ComboIndicatorView]]
 - [[DiceZoneView]]
 - [[PlayerActionButtonsView]]

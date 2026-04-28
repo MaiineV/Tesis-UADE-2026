@@ -33,7 +33,7 @@ public abstract class BaseBehavior {
 
 ## Stored values
 
-Effects like [[EffDamage]] / [[EffHeal]] write per-behavior values
+Effects like [[EffDealDamage]] / [[EffHeal]] write per-behavior values
 (e.g. `FloatingDamage`, `FloatingHeal`) that the feedback layer reads
 post-resolve. `ClearBehaviorValues()` is invoked in a `finally` block
 by the dispatcher after the effect pipeline runs.
