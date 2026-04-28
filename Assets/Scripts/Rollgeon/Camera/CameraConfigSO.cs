@@ -22,6 +22,12 @@ namespace Rollgeon.GameCamera
         [Range(0f, 89f)] public float PitchDegrees = 45f;
         public CameraFacing StartingFacing = CameraFacing.NE;
 
+        [Range(-44f, 44f)]
+        [Tooltip("Offset de yaw aplicado SOLO a las diagonales (NE/SE/SW/NW). " +
+                 "Los cardinales (N/E/S/W) siempre quedan en múltiplos exactos de 90°. " +
+                 "Ejemplo: 9.7 → NW=324.7°, NE=54.7°, pero N=0°, E=90°.")]
+        public float DiagonalYawOffset = 0f;
+
         // === Rotation ========================================================
         [Title("Rotation")]
         [ToggleGroup(nameof(EnableRotation))] public bool EnableRotation = true;

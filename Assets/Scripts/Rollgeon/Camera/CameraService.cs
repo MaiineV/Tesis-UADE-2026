@@ -103,10 +103,24 @@ namespace Rollgeon.GameCamera
             }
         }
 
+        /// <summary>
+        /// Devuelve el yaw efectivo para un <see cref="CameraFacing"/> dado.
+        /// Cardinales (N/E/S/W) = múltiplo exacto de 90°; sin offset.
+        /// Diagonales (NE/SE/SW/NW) = base + <see cref="CameraConfigSO.DiagonalYawOffset"/>.
+        /// </summary>
+        private float GetYawForFacing(CameraFacing facing)
+        {
+            float baseYaw = (float)facing;
+            bool isDiagonal = ((int)facing % 90) != 0;
+            return isDiagonal && _config != null
+                ? baseYaw + _config.DiagonalYawOffset
+                : baseYaw;
+        }
+
         private void ApplyInitialPose()
         {
             if (_rig == null) return;
-            _rig.rotation = Quaternion.Euler(_config.PitchDegrees, (float)_currentFacing, 0f);
+            _rig.rotation = Quaternion.Euler(_config.PitchDegrees, GetYawForFacing(_currentFacing), 0f);
         }
 
         // ------------------------------------------------------------------ //
@@ -205,7 +219,7 @@ namespace Rollgeon.GameCamera
 
             if (_rotationTween.isAlive) _rotationTween.Stop();
 
-            var targetRot = Quaternion.Euler(_config.PitchDegrees, nextYaw, 0f);
+            var targetRot = Quaternion.Euler(_config.PitchDegrees, GetYawForFacing(_currentFacing), 0f);
 
             if (_config.RotationTweenSeconds <= 0f)
             {

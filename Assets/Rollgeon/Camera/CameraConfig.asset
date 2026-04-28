@@ -263,6 +263,7 @@ MonoBehaviour:
   DistanceFromTarget: 12
   PitchDegrees: 45
   StartingFacing: 45
+  DiagonalYawOffset: 9.7
   EnableRotation: 1
   RotationStepDegrees: 45
   DragPixelsPerStep: 50
