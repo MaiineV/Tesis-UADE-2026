@@ -22,5 +22,18 @@ namespace Rollgeon.PreConditions
 
         /// <summary>Entidad owner — acceso directo para lecturas tipadas sin re-query.</summary>
         public Entity Entity;
+
+        /// <summary>
+        /// Round actual del combate (1-based). <c>null</c> si el caller no lo provee — las
+        /// PCs que dependen de round (<c>PcRoundNumber</c>) deben tolerarlo con semántica
+        /// permisiva ("no lo sabemos → no decimos que false") y devolver true.
+        /// </summary>
+        public int? RoundIndex;
+
+        /// <summary>
+        /// HP máximo de referencia del owner. <c>null</c> si el caller no lo provee — las
+        /// PCs interesadas (<c>PcOwnerHpBelow</c>) caen al lookup del registro/AttributesManager.
+        /// </summary>
+        public int? OwnerMaxHp;
     }
 }

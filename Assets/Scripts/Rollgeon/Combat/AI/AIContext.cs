@@ -1,6 +1,7 @@
 using System;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Entities;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Player;
@@ -21,8 +22,14 @@ namespace Rollgeon.Combat.AI
         public Guid SelfGuid;
         public Guid PlayerGuid;
 
-        /// <summary>HP máximo de referencia de Self al spawn — usado por AICond_HPBelow.</summary>
+        /// <summary>HP máximo de referencia de Self al spawn — usado por PcOwnerHpBelow.</summary>
         public int SelfMaxHp;
+
+        /// <summary>
+        /// Entidad owner — opcional. Lo usa el bridge a <c>PreConditionContext.Entity</c>
+        /// para evitar re-query del registro. Puede quedar null si el caller no lo provee.
+        /// </summary>
+        public Entity Self;
 
         public AttributesManager Attributes;
         public IDamagePipeline DamagePipeline;
