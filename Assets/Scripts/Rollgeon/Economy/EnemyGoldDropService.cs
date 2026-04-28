@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.UI.HUD;
 using UnityEngine;
 
 namespace Rollgeon.Economy
@@ -38,13 +39,8 @@ namespace Rollgeon.Economy
         /// </summary>
         public void RegisterDrop(Guid entityId, int amount)
         {
-            if (entityId == Guid.Empty || amount <= 0)
-            {
-                Debug.Log($"[EnemyGoldDropService] RegisterDrop SKIP guid={entityId} amount={amount} (empty or <=0).");
-                return;
-            }
+            if (entityId == Guid.Empty || amount <= 0) return;
             _pendingDrops[entityId] = amount;
-            Debug.Log($"[EnemyGoldDropService] RegisterDrop guid={entityId} amount={amount}. Pending={_pendingDrops.Count}");
         }
 
         public void Dispose()
@@ -62,27 +58,22 @@ namespace Rollgeon.Economy
 
         private void OnEntityDestroyed(params object[] args)
         {
-            if (args == null || args.Length < 1)
-            {
-                Debug.LogWarning("[EnemyGoldDropService] OnEntityDestroyed called with empty args.");
-                return;
-            }
-            if (!(args[0] is Guid targetGuid))
-            {
-                Debug.LogWarning($"[EnemyGoldDropService] OnEntityDestroyed args[0] is not Guid (got {args[0]?.GetType().Name ?? "null"}).");
-                return;
-            }
+            if (args == null || args.Length < 1) return;
+            if (!(args[0] is Guid targetGuid)) return;
 
-            if (!_pendingDrops.TryGetValue(targetGuid, out var amount))
-            {
-                Debug.Log($"[EnemyGoldDropService] OnEntityDestroyed guid={targetGuid} — no pending drop registered. Pending={_pendingDrops.Count}");
-                return;
-            }
+            if (!_pendingDrops.TryGetValue(targetGuid, out var amount)) return;
             _pendingDrops.Remove(targetGuid);
 
-            Debug.Log($"[EnemyGoldDropService] Awarding {amount} gold for entity {targetGuid}. Economy.CurrentGold before={_economy.CurrentGold}");
             _economy.Add(amount);
-            Debug.Log($"[EnemyGoldDropService] Economy.CurrentGold after={_economy.CurrentGold}");
+
+            // Floating "+XG" sobre la última posición conocida del enemigo. El spawner
+            // resuelve la pos via cache aunque el target ya haya sido despawneado.
+            EventManager.Trigger(
+                EventName.OnFloatingNumberRequested,
+                targetGuid,
+                FloatingNumberType.Gold,
+                (float)amount,
+                Vector3.zero);
         }
     }
 }

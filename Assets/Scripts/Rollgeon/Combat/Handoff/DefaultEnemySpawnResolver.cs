@@ -207,12 +207,7 @@ namespace Rollgeon.Combat.Handoff
             if (_goldDrops != null)
             {
                 int drop = RollGoldDrop(enemyData, rng);
-                UnityEngine.Debug.Log($"[DefaultEnemySpawnResolver] Spawn enemy '{enemyData.name}' guid={id} Min={enemyData.MinGoldDrop} Max={enemyData.MaxGoldDrop} rolledDrop={drop}");
                 if (drop > 0) _goldDrops.RegisterDrop(id, drop);
-            }
-            else
-            {
-                UnityEngine.Debug.LogWarning($"[DefaultEnemySpawnResolver] _goldDrops is null at spawn of '{enemyData.name}' — no drop registered.");
             }
 
             return id;

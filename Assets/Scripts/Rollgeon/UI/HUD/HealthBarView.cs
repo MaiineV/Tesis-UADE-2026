@@ -43,9 +43,23 @@ namespace Rollgeon.UI.HUD
 
         public void Bind(Guid playerGuid)
         {
-            if (_bound) Unbind();
-
             _playerGuid = playerGuid;
+            if (!_bound) Subscribe();
+
+            ResolveMaxHp();
+            FetchInitialState();
+        }
+
+        public void Unbind()
+        {
+            // No-op: el ciclo de vida lo controla OnEnable/OnDisable. Sin esto, cuando
+            // el HUD de exploration se desactiva al pushear el de combate y se vuelve
+            // a activar, los eventos no se re-suscriben y la barra queda stale.
+        }
+
+        private void Subscribe()
+        {
+            if (_bound) return;
 
             _onDamageResolved = HandleDamageResolved;
             _onHealResolved = HandleHealResolved;
@@ -53,12 +67,9 @@ namespace Rollgeon.UI.HUD
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
             TypedEvent<HealResolvedPayload>.Subscribe(_onHealResolved);
             _bound = true;
-
-            ResolveMaxHp();
-            FetchInitialState();
         }
 
-        public void Unbind()
+        private void Unsubscribe()
         {
             if (!_bound) return;
 
@@ -75,6 +86,13 @@ namespace Rollgeon.UI.HUD
             _bound = false;
         }
 
+        private void OnEnable()
+        {
+            Subscribe();
+            ResolveMaxHp();
+            FetchInitialState();
+        }
+
         public void SetValue(int current, int max)
         {
             if (_fillImage != null)
@@ -89,7 +107,7 @@ namespace Rollgeon.UI.HUD
 
         private void OnDisable()
         {
-            if (_bound) Unbind();
+            Unsubscribe();
         }
 
         private void HandleDamageResolved(DamageResolvedPayload payload)

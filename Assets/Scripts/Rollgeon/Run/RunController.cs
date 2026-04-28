@@ -137,8 +137,12 @@ namespace Rollgeon.Run
             var damagePipeline = new DamagePipeline();
             ServiceLocator.AddService<IDamagePipeline>(damagePipeline, ServiceScope.Run);
 
-            // 5. Heal pipeline
-            var healPipeline = new HealPipeline();
+            // 5. Heal pipeline — resolver de max HP: player vía hero.BaseMaxHp,
+            //    enemigos vía EnemyDataRegistry (cuando exista) o BaseHP del SO. Para FP
+            //    el único heal en uso es la poción del player, así que sólo cubrimos ese
+            //    caso explícitamente; el fallback int.MaxValue queda para enemigos heal
+            //    upstream.
+            var healPipeline = new HealPipeline(attributes, BuildMaxHpResolver(playerService));
             ServiceLocator.AddService<IHealPipeline>(healPipeline, ServiceScope.Run);
 
             // 5b. Shield reset handler
@@ -272,6 +276,27 @@ namespace Rollgeon.Run
                         $"[RunController] No se pudo agregar StartingItem '{item.ItemId}' (¿inventario lleno?).");
                 }
             }
+        }
+
+        /// <summary>
+        /// Construye el resolver de max HP que el <see cref="HealPipeline"/> usa para
+        /// clampear el heal contra el HP máximo. Para el player, devuelve
+        /// <c>hero.BaseMaxHp</c>. Para otros guids, devuelve un cap permisivo (los
+        /// enemigos hoy no se curan en gameplay del FP).
+        /// </summary>
+        private static Func<Guid, int> BuildMaxHpResolver(IPlayerService playerService)
+        {
+            return guid =>
+            {
+                if (playerService != null
+                    && playerService.PlayerGuid == guid
+                    && playerService.CurrentHero != null
+                    && playerService.CurrentHero.BaseMaxHp > 0)
+                {
+                    return playerService.CurrentHero.BaseMaxHp;
+                }
+                return int.MaxValue;
+            };
         }
     }
 }

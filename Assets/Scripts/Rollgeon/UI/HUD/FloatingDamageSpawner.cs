@@ -58,6 +58,14 @@ namespace Rollgeon.UI.HUD
         private Color _healTint = new Color(0.35f, 1f, 0.45f, 1f);
 
         [SerializeField]
+        [Tooltip("Color del numero para drops de oro (+XG).")]
+        private Color _goldTint = new Color(1f, 0.85f, 0.2f, 1f);
+
+        [SerializeField]
+        [Tooltip("Color del numero para shields / armor ticks.")]
+        private Color _shieldTint = new Color(0.6f, 0.85f, 1f, 1f);
+
+        [SerializeField]
         [Tooltip("Offset en pixeles (screen) del punto de spawn. Suele ser un poco encima " +
                  "del sprite del target.")]
         private Vector3 _screenOffset = new Vector3(0f, 60f, 0f);
@@ -173,14 +181,33 @@ namespace Rollgeon.UI.HUD
         private void HandleFloatingNumberRequested(params object[] args)
         {
             // schema: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]
-            // No tenemos enum FloatingNumberType importado; leemos value+target y usamos
-            // un tint neutral (heal) por default.
             if (args == null || args.Length < 3) return;
             if (!(args[0] is Guid target)) return;
-            float value = args[2] is float f ? f : 0f;
 
+            var type = args[1] is FloatingNumberType ft ? ft : FloatingNumberType.Heal;
+            float value = args[2] is float f ? f : (args[2] is int i ? i : 0f);
+
+            var (text, tint) = FormatByType(type, value);
             var screenPos = ResolveScreenPos(target);
-            SpawnAt(value.ToString("0"), _healTint, screenPos);
+            SpawnAt(text, tint, screenPos);
+        }
+
+        private (string text, Color tint) FormatByType(FloatingNumberType type, float value)
+        {
+            int rounded = Mathf.RoundToInt(value);
+            switch (type)
+            {
+                case FloatingNumberType.Gold:
+                    return ($"+{rounded}G", _goldTint);
+                case FloatingNumberType.Shield:
+                    return (rounded.ToString(), _shieldTint);
+                case FloatingNumberType.Status:
+                case FloatingNumberType.Heal:
+                    return (rounded.ToString(), _healTint);
+                case FloatingNumberType.Damage:
+                default:
+                    return (rounded.ToString(), _outgoingTint);
+            }
         }
 
         private Vector3 ResolveScreenPos(Guid entityGuid)

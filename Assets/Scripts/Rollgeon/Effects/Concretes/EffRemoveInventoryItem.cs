@@ -21,6 +21,14 @@ namespace Rollgeon.Effects.Concretes
 
         public override string GetEffectName() => "Remove Item From Inventory";
 
+        // El removal va por ItemId del inventario — no necesita selección de target
+        // de tile/entidad. Override para que el flujo de combat (que checkea
+        // RequiresSelectionAt) no entre en modo selección por culpa de un Selection
+        // residual del Inspector.
+        protected override bool ShowSelection => false;
+        public override bool HasSelectionRequirement() => false;
+        public override bool RequiresSelectionAt(Selection.SelectionTiming timing) => false;
+
         public override bool ApplyEffect(EffectContext context)
         {
             if (string.IsNullOrEmpty(ItemId)) return false;

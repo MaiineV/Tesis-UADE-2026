@@ -3,6 +3,7 @@ using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -49,7 +50,26 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Tag libre para logging/telemetría — ej. 'potion', 'support.heal'.")]
         private string _sourceTag = "eff.heal";
 
+        [SerializeField]
+        [Tooltip("Si true y no hay SelectionResult, cura al SourceGuid (self-heal). Para " +
+                 "pociones / heals automáticos. Si false, requiere selección explícita y aborta " +
+                 "la cadena cuando no hay target.")]
+        private bool _selfHealOnNoTarget = true;
+
         public override string GetEffectName() => "Heal";
+
+        // Self-heal no requiere selección — el target es siempre el SourceGuid. Si el
+        // user configuró Selection interactiva en Inspector, la ignoramos cuando
+        // SelfHealOnNoTarget = true (caso típico: pociones, regen pasivo).
+        public override bool HasSelectionRequirement()
+        {
+            return !_selfHealOnNoTarget && base.HasSelectionRequirement();
+        }
+
+        public override bool RequiresSelectionAt(Selection.SelectionTiming timing)
+        {
+            return !_selfHealOnNoTarget && base.RequiresSelectionAt(timing);
+        }
 
         protected override HealArgs ResolveArgs(EffectContext context) =>
             new HealArgs { BaseAmount = ResolveBaseAmount() };
@@ -68,6 +88,16 @@ namespace Rollgeon.Effects.Concretes
             {
                 if (ServiceLocator.TryGetService<IGridManager>(out var grid))
                     grid.TryGetOccupant(coord, out targetGuid);
+            }
+
+            if (targetGuid == Guid.Empty && _selfHealOnNoTarget)
+            {
+                if (context.SourceEntity != null) targetGuid = context.SourceEntity.Guid;
+                else if (context.SourceGuid != Guid.Empty) targetGuid = context.SourceGuid;
+                // Último fallback: el flujo de combat no propaga SourceEntity al ctx,
+                // así que resolvemos el player vía IPlayerService.
+                else if (ServiceLocator.TryGetService<IPlayerService>(out var ps) && ps != null)
+                    targetGuid = ps.PlayerGuid;
             }
 
             if (targetGuid == Guid.Empty)

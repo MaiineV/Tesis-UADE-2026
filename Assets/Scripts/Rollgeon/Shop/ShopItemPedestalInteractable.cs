@@ -49,9 +49,21 @@ namespace Rollgeon.Shop
         [SerializeField]
         private Key _interactKey = Key.F;
 
+        [Tooltip("Prompt opcional que se activa cuando el jugador entra en InteractRange y " +
+                 "se desactiva al salir. Suele ser un Canvas hijo con un TMP. Si null, no " +
+                 "se muestra prompt.")]
+        [SerializeField]
+        private GameObject _promptVisual;
+
+        [Tooltip("Label TMP opcional dentro del prompt. Si está cableado, se rellena con " +
+                 "el InteractLabel ('[F] Comprar Poción (8G)') al entrar en rango.")]
+        [SerializeField]
+        private TMPro.TextMeshProUGUI _promptLabel;
+
         private Guid _roomInstanceId;
         private ShopSlot _slot;
         private IShopManagerService _service;
+        private bool _playerInRangeLastTick;
 
         /// <summary>Llamado por <see cref="ShopManagerService"/> al instanciar el pedestal.</summary>
         public void Configure(Guid roomInstanceId, ShopSlot slot, IShopManagerService service)
@@ -60,6 +72,66 @@ namespace Rollgeon.Shop
             _slot = slot;
             _service = service;
             InteractLabel = BuildLabel(slot);
+            EnsurePromptRefs();
+            UpdatePromptVisibility(false);
+        }
+
+        /// <summary>
+        /// Auto-resolve del prompt si los SerializeFields están null. Convención:
+        /// hijo llamado "Prompt" (GameObject) con un TextMeshProUGUI descendiente.
+        /// Si no existe, lo crea en runtime con un Canvas worldspace + TMP visible
+        /// arriba del pedestal — así el prefab no requiere wiring manual.
+        /// </summary>
+        private void EnsurePromptRefs()
+        {
+            if (_promptVisual == null)
+            {
+                var t = transform.Find("Prompt");
+                if (t != null) _promptVisual = t.gameObject;
+            }
+            if (_promptVisual == null)
+            {
+                _promptVisual = BuildAutoPrompt();
+            }
+            if (_promptLabel == null && _promptVisual != null)
+            {
+                _promptLabel = _promptVisual.GetComponentInChildren<TMPro.TextMeshProUGUI>(includeInactive: true);
+            }
+        }
+
+        /// <summary>
+        /// Construye un prompt minimal: GameObject "Prompt" con un Canvas worldspace
+        /// + un TMP child. Posicionado arriba del pedestal (Y=2.5 local). Se devuelve
+        /// inactivo — <see cref="UpdatePromptVisibility"/> lo activa al entrar en rango.
+        /// </summary>
+        private GameObject BuildAutoPrompt()
+        {
+            var promptGo = new GameObject("Prompt");
+            promptGo.transform.SetParent(transform, worldPositionStays: false);
+            promptGo.transform.localPosition = new Vector3(0f, 2.5f, 0f);
+            promptGo.transform.localRotation = Quaternion.identity;
+            promptGo.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+
+            var canvas = promptGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.sortingOrder = 1;
+            promptGo.AddComponent<UnityEngine.UI.CanvasScaler>();
+
+            var labelGo = new GameObject("Label");
+            labelGo.transform.SetParent(promptGo.transform, worldPositionStays: false);
+            var rt = labelGo.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(400f, 80f);
+            rt.localPosition = Vector3.zero;
+
+            var tmp = labelGo.AddComponent<TMPro.TextMeshProUGUI>();
+            tmp.fontSize = 32f;
+            tmp.alignment = TMPro.TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.text = string.Empty;
+            tmp.raycastTarget = false;
+
+            promptGo.SetActive(false);
+            return promptGo;
         }
 
         /// <summary>
@@ -180,13 +252,33 @@ namespace Rollgeon.Shop
             if (_interactRange <= 0f) return;
             if (_slot == null || _slot.Purchased) return;
 
+            bool inRange = IsPlayerInRange();
+            if (inRange != _playerInRangeLastTick)
+            {
+                _playerInRangeLastTick = inRange;
+                UpdatePromptVisibility(inRange);
+            }
+
+            if (!inRange) return;
+
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             if (!keyboard[_interactKey].wasPressedThisFrame) return;
 
-            if (!IsPlayerInRange()) return;
-
             Interact();
+        }
+
+        private void UpdatePromptVisibility(bool visible)
+        {
+            if (_promptVisual != null) _promptVisual.SetActive(visible);
+            if (_promptLabel != null && visible) _promptLabel.text = InteractLabel ?? string.Empty;
+        }
+
+        private void OnDisable()
+        {
+            // Esconde el prompt si el pedestal se desactiva (ej. compra cerró el visual).
+            _playerInRangeLastTick = false;
+            if (_promptVisual != null) _promptVisual.SetActive(false);
         }
 
         private bool IsPlayerInRange()

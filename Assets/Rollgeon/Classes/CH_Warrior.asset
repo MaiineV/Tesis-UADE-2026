@@ -1332,10 +1332,36 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 75|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 75|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
+      Data: 76|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 77|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 78|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -1345,32 +1371,6 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 76|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 77|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 78|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
     - Name: 
       Entry: 13
       Data: 
@@ -1392,7 +1392,7 @@ MonoBehaviour:
       Data: 81|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: Timing
       Entry: 3
       Data: 0
@@ -1464,22 +1464,25 @@ MonoBehaviour:
       Data: 
     - Name: _baseAmount
       Entry: 3
-      Data: 5
+      Data: 1
     - Name: _isPercentOfMax
       Entry: 5
       Data: false
     - Name: _useDiceRoll
       Entry: 5
-      Data: false
+      Data: true
     - Name: _diceCount
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: _diceFaces
       Entry: 3
-      Data: 0
+      Data: 10
     - Name: _sourceTag
       Entry: 6
       Data: 
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1494,7 +1497,7 @@ MonoBehaviour:
       Data: 0
     - Name: Timing
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: EntityFilter
       Entry: 3
       Data: 0
@@ -1725,7 +1728,7 @@ MonoBehaviour:
     AllowsEnergyReroll: 0
     ShowConditions: []
     Effects:
-    - rid: 1893612559060960219
+    - rid: 1893612562359255475
   - Trigger: 0
     AllowedPhases: -5
     ActionName: ExpMovement
@@ -1739,7 +1742,7 @@ MonoBehaviour:
     AllowsEnergyReroll: 0
     ShowConditions: []
     Effects:
-    - rid: 1893612559060960220
+    - rid: 1893612562359255476
   - Trigger: 0
     AllowedPhases: -3
     ActionName: Base Attack
@@ -1753,7 +1756,7 @@ MonoBehaviour:
     AllowsEnergyReroll: 1
     ShowConditions: []
     Effects:
-    - rid: 1893612559060960221
+    - rid: 1893612562359255477
   - Trigger: 0
     AllowedPhases: -3
     ActionName: Special Attack
@@ -1767,9 +1770,9 @@ MonoBehaviour:
     AllowsEnergyReroll: 1
     ShowConditions: []
     Effects:
-    - rid: 1893612559060960222
+    - rid: 1893612562359255478
   - Trigger: 0
-    AllowedPhases: -3
+    AllowedPhases: -1
     ActionName: Healing
     IsBaseBehavior: 1
     Slot: 3
@@ -1779,10 +1782,9 @@ MonoBehaviour:
     FreeRollCount: 1
     AllowsReroll: 0
     AllowsEnergyReroll: 0
-    ShowConditions:
-    - rid: 1893612559060960223
+    ShowConditions: []
     Effects:
-    - rid: 1893612559060960224
+    - rid: 1893612562359255480
   - Trigger: 0
     AllowedPhases: -5
     ActionName: Pass door
@@ -1795,9 +1797,9 @@ MonoBehaviour:
     AllowsReroll: 0
     AllowsEnergyReroll: 0
     ShowConditions:
-    - rid: 1893612559060960225
+    - rid: 1893612562359255481
     Effects:
-    - rid: 1893612559060960226
+    - rid: 1893612562359255482
   BaseMaxHp: 10
   BaseSpeed: 5
   Portrait: {fileID: 1206279280, guid: 37775dde736afb94a8efa715bc88760b, type: 3}
@@ -1809,66 +1811,62 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 1893612559060960219
+    - rid: 1893612562359255475
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960227
-    - rid: 1893612559060960220
+        - rid: 1893612562359255483
+    - rid: 1893612562359255476
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960228
-    - rid: 1893612559060960221
+        - rid: 1893612562359255484
+    - rid: 1893612562359255477
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960229
-        - rid: 1893612559060960230
-        - rid: 1893612559060960231
-        - rid: 1893612559060960232
-    - rid: 1893612559060960222
+        - rid: 1893612562359255485
+        - rid: 1893612562359255486
+        - rid: 1893612562359255487
+        - rid: 1893612562359255488
+    - rid: 1893612562359255478
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960233
-        - rid: 1893612559060960234
-        - rid: 1893612559060960235
-        - rid: 1893612559060960236
-    - rid: 1893612559060960223
-      type: {class: PCHasInventoryItem, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
-      data:
-        _isConstantValue: 1
-        ItemId: potion.healing
-    - rid: 1893612559060960224
+        - rid: 1893612562359255489
+        - rid: 1893612562359255490
+        - rid: 1893612562359255491
+        - rid: 1893612562359255492
+    - rid: 1893612562359255480
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
-        PreConditions: []
+        PreConditions:
+        - rid: 1893612562359255509
         Effects:
-        - rid: 1893612559060960237
-        - rid: 1893612559060960238
-        - rid: 1893612559060960239
-    - rid: 1893612559060960225
+        - rid: 1893612562359255493
+        - rid: 1893612562359255494
+        - rid: 1893612562359255495
+    - rid: 1893612562359255481
       type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
-    - rid: 1893612559060960226
+    - rid: 1893612562359255482
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960240
-    - rid: 1893612559060960227
+        - rid: 1893612562359255496
+    - rid: 1893612562359255483
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1881,7 +1879,7 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 0
           AutoAccept: 1
-    - rid: 1893612559060960228
+    - rid: 1893612562359255484
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1894,7 +1892,7 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 0
           AutoAccept: 1
-    - rid: 1893612559060960229
+    - rid: 1893612562359255485
       type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1908,9 +1906,9 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         Phases:
-        - rid: 1893612559060960241
-        - rid: 1893612559060960242
-    - rid: 1893612559060960230
+        - rid: 1893612562359255497
+        - rid: 1893612562359255498
+    - rid: 1893612562359255486
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1924,7 +1922,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.basic
-    - rid: 1893612559060960231
+    - rid: 1893612562359255487
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1938,7 +1936,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.impulse
-    - rid: 1893612559060960232
+    - rid: 1893612562359255488
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1952,7 +1950,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: sfx.hit
-    - rid: 1893612559060960233
+    - rid: 1893612562359255489
       type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1966,9 +1964,9 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         Phases:
-        - rid: 1893612559060960243
-        - rid: 1893612559060960244
-    - rid: 1893612559060960234
+        - rid: 1893612562359255499
+        - rid: 1893612562359255500
+    - rid: 1893612562359255490
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1982,7 +1980,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.basic
-    - rid: 1893612559060960235
+    - rid: 1893612562359255491
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -1996,7 +1994,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.impulse
-    - rid: 1893612559060960236
+    - rid: 1893612562359255492
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2010,11 +2008,11 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: sfx.hit
-    - rid: 1893612559060960237
+    - rid: 1893612562359255493
       type: {class: EffRemoveInventoryItem, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
-          SlotState: 1
+          SlotState: 0
           Timing: 0
           EntityFilter: 2
           IsGlobal: 0
@@ -2024,7 +2022,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         ItemId: potion.healing
-    - rid: 1893612559060960238
+    - rid: 1893612562359255494
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2037,18 +2035,19 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 0
           AutoAccept: 0
-        _baseAmount: 5
+        _baseAmount: 1
         _isPercentOfMax: 0
-        _useDiceRoll: 0
-        _diceCount: 0
-        _diceFaces: 0
+        _useDiceRoll: 1
+        _diceCount: 1
+        _diceFaces: 10
         _sourceTag: 
-    - rid: 1893612559060960239
+        _selfHealOnNoTarget: 1
+    - rid: 1893612562359255495
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
           SlotState: 0
-          Timing: 0
+          Timing: 1
           EntityFilter: 0
           IsGlobal: 0
           Range: 0
@@ -2057,7 +2056,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: heal.basic
-    - rid: 1893612559060960240
+    - rid: 1893612562359255496
       type: {class: EffPassDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2070,59 +2069,59 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 1
           AutoAccept: 1
-    - rid: 1893612559060960241
+    - rid: 1893612562359255497
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Phase
         Effects:
-          rid: 1893612559060960245
-    - rid: 1893612559060960242
+          rid: 1893612562359255501
+    - rid: 1893612562359255498
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Phase
         Effects:
-          rid: 1893612559060960246
-    - rid: 1893612559060960243
+          rid: 1893612562359255502
+    - rid: 1893612562359255499
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Phase
         Effects:
-          rid: 1893612559060960247
-    - rid: 1893612559060960244
+          rid: 1893612562359255503
+    - rid: 1893612562359255500
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Phase
         Effects:
-          rid: 1893612559060960248
-    - rid: 1893612559060960245
+          rid: 1893612562359255504
+    - rid: 1893612562359255501
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960249
-    - rid: 1893612559060960246
+        - rid: 1893612562359255505
+    - rid: 1893612562359255502
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960250
-    - rid: 1893612559060960247
+        - rid: 1893612562359255506
+    - rid: 1893612562359255503
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960251
-    - rid: 1893612559060960248
+        - rid: 1893612562359255507
+    - rid: 1893612562359255504
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 1893612559060960252
-    - rid: 1893612559060960249
+        - rid: 1893612562359255508
+    - rid: 1893612562359255505
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2139,7 +2138,7 @@ MonoBehaviour:
         _baseAmount: 10
         _comboMultiplier: 1
         _attackKind: 1
-    - rid: 1893612559060960250
+    - rid: 1893612562359255506
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2155,7 +2154,7 @@ MonoBehaviour:
         _shieldSource: 1
         _baseAmount: 5
         _comboMultiplier: 1
-    - rid: 1893612559060960251
+    - rid: 1893612562359255507
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2172,7 +2171,7 @@ MonoBehaviour:
         _baseAmount: 10
         _comboMultiplier: 0.75
         _attackKind: 1
-    - rid: 1893612559060960252
+    - rid: 1893612562359255508
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -2188,3 +2187,8 @@ MonoBehaviour:
         _shieldSource: 1
         _baseAmount: 5
         _comboMultiplier: 0.75
+    - rid: 1893612562359255509
+      type: {class: PCHasInventoryItem, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+        ItemId: potion.healing

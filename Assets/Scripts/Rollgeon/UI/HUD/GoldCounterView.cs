@@ -45,11 +45,11 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void Bind(Guid playerGuid)
         {
-            if (_bound) Unbind();
-
             _playerGuid = playerGuid;
-            EventManager.Subscribe(EventName.OnGoldChanged, HandleGoldChanged);
-            _bound = true;
+            // La subscripción real corre en OnEnable — Bind sólo guarda el guid por
+            // consistencia con las otras sub-views. Si Bind se llama antes que OnEnable
+            // o no se llama en absoluto, OnEnable sigue manejando todo.
+            if (!_bound) Subscribe();
 
             Debug.Log(LogPrefix + $"Bound. _text={(_text != null ? "set" : "NULL")} gameObject.active={gameObject.activeInHierarchy}", this);
             FetchInitialState();
@@ -57,9 +57,28 @@ namespace Rollgeon.UI.HUD
 
         public void Unbind()
         {
+            // No-op: el ciclo de vida lo controla OnEnable/OnDisable. Mantenido por la
+            // simetría del patrón Bind/Unbind del resto del HUD.
+        }
+
+        private void Subscribe()
+        {
+            if (_bound) return;
+            EventManager.Subscribe(EventName.OnGoldChanged, HandleGoldChanged);
+            _bound = true;
+        }
+
+        private void Unsubscribe()
+        {
             if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnGoldChanged, HandleGoldChanged);
             _bound = false;
+        }
+
+        private void OnEnable()
+        {
+            Subscribe();
+            FetchInitialState();
         }
 
         public void SetValue(int gold)
@@ -74,7 +93,7 @@ namespace Rollgeon.UI.HUD
 
         private void OnDisable()
         {
-            if (_bound) Unbind();
+            Unsubscribe();
         }
 
         private void HandleGoldChanged(params object[] args)

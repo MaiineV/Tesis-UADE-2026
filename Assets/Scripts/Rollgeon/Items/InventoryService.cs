@@ -60,6 +60,10 @@ namespace Rollgeon.Items
             }
 
             OnItemChanged?.Invoke(item, true);
+            // Centralizamos el OnItemObtained acá — antes solo lo disparaba EffAddItemToInventory,
+            // entonces compras del shop / starting items no notificaban al HUD y el counter
+            // quedaba stale hasta el próximo OnEnable de la sub-view.
+            EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
             return true;
         }
 
