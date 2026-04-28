@@ -19,6 +19,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 931e48afd5b2a0f4da6a8bf015e46e56, type: 2}
     - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
     - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
+    - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
     - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
     - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
@@ -42,6 +43,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 436c548f660a4d3798b22b2b35e4f7f6, type: 2}
     - {fileID: 11400000, guid: cc3c2ffc36a66b84d916275853f2d51d, type: 2}
     - {fileID: 11400000, guid: cac2ee80259c1c243b5efce0a5951c2d, type: 2}
+    - {fileID: 11400000, guid: b0eadf332ea50a541a3ddb92e5543d86, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -53,7 +55,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 3
+      Data: 4
     - Name: 
       Entry: 10
       Data: 0
@@ -63,6 +65,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
     - Name: 
       Entry: 13
       Data: 
@@ -78,10 +83,10 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 10
-      Data: 3
+      Data: 4
     - Name: 
       Entry: 10
-      Data: 4
+      Data: 5
     - Name: 
       Entry: 13
       Data: 
@@ -94,7 +99,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 23
+      Data: 24
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -103,19 +108,16 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 10
-      Data: 5
+      Data: 6
     - Name: 
       Entry: 10
-      Data: 6
+      Data: 7
     - Name: 
       Entry: 7
       Data: 4|Rollgeon.Combat.Energy.EnergyService, Rollgeon
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 10
-      Data: 7
     - Name: 
       Entry: 10
       Data: 8
@@ -171,6 +173,12 @@ MonoBehaviour:
       Entry: 10
       Data: 25
     - Name: 
+      Entry: 10
+      Data: 26
+    - Name: 
+      Entry: 10
+      Data: 27
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -180,6 +188,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 931e48afd5b2a0f4da6a8bf015e46e56, type: 2}
   - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
   - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
+  - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
   SettingsAssets:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
   - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
