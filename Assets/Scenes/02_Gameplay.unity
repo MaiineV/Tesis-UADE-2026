@@ -2171,7 +2171,6 @@ GameObject:
   m_Component:
   - component: {fileID: 315195958}
   - component: {fileID: 315195957}
-  - component: {fileID: 315195956}
   - component: {fileID: 315195955}
   m_Layer: 0
   m_Name: CameraDummy
@@ -2224,14 +2223,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &315195956
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 315195954}
-  m_Enabled: 1
 --- !u!20 &315195957
 Camera:
   m_ObjectHideFlags: 0
