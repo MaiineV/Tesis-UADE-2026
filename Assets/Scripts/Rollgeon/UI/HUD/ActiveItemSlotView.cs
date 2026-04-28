@@ -1,3 +1,4 @@
+using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +7,9 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Un slot visual de item activo (arco / pocion / etc.). No se suscribe a eventos:
-    /// <see cref="ActiveItemsView"/> lo controla via <see cref="SetState"/>.
+    /// <see cref="ActiveItemsView"/> lo controla via <see cref="SetState"/>. Si tiene un
+    /// <see cref="_button"/> cableado, expone <see cref="OnClicked"/> para que el
+    /// <c>ActiveItemsView</c> dispare la activación del ítem en el inventario.
     /// Plan §4.7.
     /// </summary>
     [AddComponentMenu("Rollgeon/UI/HUD/Active Item Slot View")]
@@ -16,6 +19,18 @@ namespace Rollgeon.UI.HUD
         [Required("Arrastrar la Image del icono principal.")]
         [SerializeField]
         private Image _icon;
+
+        [Tooltip("Button opcional para activar el ítem por click. Si null, el slot " +
+                 "es solo display (estado, no clickable).")]
+        [SerializeField]
+        private Button _button;
+
+        /// <summary>
+        /// Disparado cuando el jugador clickea el slot y el estado actual es
+        /// <see cref="ActiveItemState.Active"/>. <see cref="ActiveItemsView"/> se
+        /// suscribe para invocar <c>IInventoryService.ActivateItem</c>.
+        /// </summary>
+        public event Action<ActiveItemSlotView> OnClicked;
 
         [Tooltip("GameObject overlay para estado Inactive. Opcional (puede ser null).")]
         [SerializeField]
@@ -36,6 +51,37 @@ namespace Rollgeon.UI.HUD
 
         [ShowInInspector, ReadOnly]
         public ActiveItemState CurrentState { get; private set; } = ActiveItemState.Inactive;
+
+        private void OnEnable()
+        {
+            if (_button != null)
+            {
+                _button.onClick.AddListener(HandleClick);
+                RefreshInteractable();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_button != null)
+            {
+                _button.onClick.RemoveListener(HandleClick);
+            }
+        }
+
+        private void HandleClick()
+        {
+            if (CurrentState != ActiveItemState.Active) return;
+            OnClicked?.Invoke(this);
+        }
+
+        private void RefreshInteractable()
+        {
+            if (_button != null)
+            {
+                _button.interactable = CurrentState == ActiveItemState.Active;
+            }
+        }
 
         /// <summary>
         /// Togglea overlays y (opcional) swap de sprites segun el estado. Idempotente.
@@ -65,6 +111,8 @@ namespace Rollgeon.UI.HUD
                 }
                 // Depleted: conserva el sprite actual; el DepletedOverlay lo distingue.
             }
+
+            RefreshInteractable();
         }
     }
 }

@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.Items;
 using UnityEngine;
 
 namespace Rollgeon.Shop
@@ -236,7 +237,30 @@ namespace Rollgeon.Shop
                 pedestal.Configure(room.InstanceId, slot, this);
             }
 
+            SpawnItemVisualOnTop(go.transform, slot);
             slot.SpawnedVisual = go;
+        }
+
+        /// <summary>
+        /// Instancia el <see cref="ItemSO.WorldPrefab"/> (resolved via catálogo por
+        /// <c>ShopItemDef.ItemId</c>) como hijo del pedestal. Sin esto, el pedestal
+        /// queda con forma sola y no se ve el ítem. Posiciona el visual con el offset
+        /// configurado en <see cref="ShopConfigSO.ItemVisualLocalOffset"/> (default
+        /// Y=1.5 para quedar encima).
+        /// </summary>
+        private void SpawnItemVisualOnTop(Transform pedestalRoot, ShopSlot slot)
+        {
+            if (pedestalRoot == null || slot?.Item == null) return;
+
+            if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null) return;
+
+            var itemSo = catalog.GetById(slot.Item.ItemId);
+            if (itemSo == null || itemSo.WorldPrefab == null) return;
+
+            var visual = UnityEngine.Object.Instantiate(itemSo.WorldPrefab, pedestalRoot);
+            visual.transform.localPosition = _config != null ? _config.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
+            visual.transform.localRotation = Quaternion.identity;
+            visual.name = $"[ShopItemVisual] {itemSo.DisplayName ?? itemSo.ItemId}";
         }
 
         private List<Transform> ResolveRewardSpawnPoints(RoomInstance room)

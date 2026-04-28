@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rollgeon.Dice;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Items;
 using Rollgeon.Phase;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -104,5 +105,10 @@ namespace Rollgeon.Heroes
 
         [Tooltip("Pasiva de la clase (§4.4). Null = sin pasiva.")]
         public ClassPassiveSO Passive;
+
+        [Title("Starting Inventory")]
+        [InfoBox("Items que el jugador recibe automáticamente al arrancar la run. Ej: 1 poción de healing.")]
+        [SerializeField]
+        public List<ItemSO> StartingItems = new List<ItemSO>();
     }
 }

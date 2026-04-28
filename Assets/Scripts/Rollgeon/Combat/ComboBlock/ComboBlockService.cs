@@ -29,7 +29,13 @@ namespace Rollgeon.Combat.ComboBlock
     /// </remarks>
     public sealed class ComboBlockService : IComboBlockService, IPreloadableService, IDisposable
     {
-        private readonly Dictionary<string, int> _remainingTurns = new Dictionary<string, int>();
+        // No usamos `readonly = new()` porque cuando Odin deserializa este servicio desde
+        // `ServiceBootstrap.asset` (lista polimórfica), bypasea el ctor / field initializer
+        // y el dict queda null → NRE en Clear/TickDuration. La property garantiza la
+        // inicialización lazy idempotente.
+        private Dictionary<string, int> _remainingTurns;
+        private Dictionary<string, int> RemainingTurns
+            => _remainingTurns ??= new Dictionary<string, int>();
 
         private EventManager.EventReceiver _onTurnFinishedHandler;
         private EventManager.EventReceiver _onCombatEndHandler;
@@ -81,7 +87,7 @@ namespace Rollgeon.Combat.ComboBlock
                 EventManager.UnSubscribe(EventName.OnRunEnd, _onRunEndHandler);
                 _onRunEndHandler = null;
             }
-            _remainingTurns.Clear();
+            RemainingTurns.Clear();
         }
 
         // ======================================================================
@@ -116,13 +122,14 @@ namespace Rollgeon.Combat.ComboBlock
             if (string.IsNullOrEmpty(comboId)) return;
             if (durationTurns <= 0) return;
 
-            if (_remainingTurns.TryGetValue(comboId, out var current))
+            var map = RemainingTurns;
+            if (map.TryGetValue(comboId, out var current))
             {
-                if (durationTurns > current) _remainingTurns[comboId] = durationTurns;
+                if (durationTurns > current) map[comboId] = durationTurns;
             }
             else
             {
-                _remainingTurns[comboId] = durationTurns;
+                map[comboId] = durationTurns;
             }
 
             EventManager.Trigger(EventName.OnComboBlocked, comboId, durationTurns);
@@ -132,35 +139,36 @@ namespace Rollgeon.Combat.ComboBlock
         public bool IsBlocked(string comboId)
         {
             if (string.IsNullOrEmpty(comboId)) return false;
-            return _remainingTurns.TryGetValue(comboId, out var n) && n > 0;
+            return RemainingTurns.TryGetValue(comboId, out var n) && n > 0;
         }
 
         /// <inheritdoc />
         public int GetRemainingTurns(string comboId)
         {
             if (string.IsNullOrEmpty(comboId)) return 0;
-            return _remainingTurns.TryGetValue(comboId, out var n) ? n : 0;
+            return RemainingTurns.TryGetValue(comboId, out var n) ? n : 0;
         }
 
         /// <inheritdoc />
         public void TickDuration()
         {
-            if (_remainingTurns.Count == 0) return;
+            var map = RemainingTurns;
+            if (map.Count == 0) return;
 
             // Snapshot keys — vamos a mutar el diccionario durante el loop.
-            var keys = new List<string>(_remainingTurns.Keys);
+            var keys = new List<string>(map.Keys);
             var unblocked = new List<string>();
             foreach (var id in keys)
             {
-                int remaining = _remainingTurns[id] - 1;
+                int remaining = map[id] - 1;
                 if (remaining <= 0)
                 {
-                    _remainingTurns.Remove(id);
+                    map.Remove(id);
                     unblocked.Add(id);
                 }
                 else
                 {
-                    _remainingTurns[id] = remaining;
+                    map[id] = remaining;
                 }
             }
 
@@ -173,11 +181,11 @@ namespace Rollgeon.Combat.ComboBlock
         /// <inheritdoc />
         public void Clear()
         {
-            _remainingTurns.Clear();
+            RemainingTurns.Clear();
         }
 
         /// <inheritdoc />
-        public IReadOnlyDictionary<string, int> ActiveBlocks => _remainingTurns;
+        public IReadOnlyDictionary<string, int> ActiveBlocks => RemainingTurns;
 
         // ======================================================================
         // Event handlers

@@ -1,6 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Effects;
+using Rollgeon.Effects.Selection;
+using Rollgeon.Grid;
+using Rollgeon.Items;
+using Rollgeon.Phase;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -56,6 +62,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, HandleItemObtained);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
             EventManager.Subscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            SubscribeSlotClicks();
             _bound = true;
 
             FetchInitialState();
@@ -67,7 +74,107 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleItemObtained);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            UnsubscribeSlotClicks();
             _bound = false;
+        }
+
+        private void SubscribeSlotClicks()
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                var slot = _bindings[i].Slot;
+                if (slot != null) slot.OnClicked += HandleSlotClicked;
+            }
+        }
+
+        private void UnsubscribeSlotClicks()
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                var slot = _bindings[i].Slot;
+                if (slot != null) slot.OnClicked -= HandleSlotClicked;
+            }
+        }
+
+        private void HandleSlotClicked(ActiveItemSlotView clicked)
+        {
+            // En combate los ítems activos no se usan vía click — la lógica de combate
+            // (ej. botón de Heal) los consume desde la cadena de efectos del behavior.
+            if (ServiceLocator.TryGetService<IPhaseService>(out var phase)
+                && phase != null
+                && phase.CurrentBase != GamePhase.Exploration)
+            {
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
+            {
+                Debug.LogWarning(LogPrefix + "IInventoryService no registrado — no se puede activar el ítem.");
+                return;
+            }
+
+            string clickedItemId = ResolveItemIdForSlot(clicked);
+            if (string.IsNullOrEmpty(clickedItemId)) return;
+
+            int slotIndex = FindActiveSlotIndex(inventory, clickedItemId);
+            if (slotIndex < 0)
+            {
+                Debug.LogWarning(LogPrefix + $"No hay slot activo para ItemId='{clickedItemId}' en el inventario.");
+                return;
+            }
+
+            var ctx = BuildSelfTargetedContext();
+            inventory.ActivateItem(slotIndex, ctx);
+        }
+
+        private string ResolveItemIdForSlot(ActiveItemSlotView slot)
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                if (_bindings[i].Slot == slot) return _bindings[i].ItemId;
+            }
+            return null;
+        }
+
+        private static int FindActiveSlotIndex(IInventoryService inventory, string itemId)
+        {
+            var actives = inventory.ActiveItems;
+            for (int i = 0; i < actives.Count; i++)
+            {
+                var slot = actives[i];
+                if (slot?.Item != null
+                    && string.Equals(slot.Item.ItemId, itemId, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private EffectContext BuildSelfTargetedContext()
+        {
+            var ctx = new EffectContext
+            {
+                SourceGuid = _playerGuid,
+                TargetGuid = _playerGuid,
+                lastResult = true,
+            };
+
+            // Apunta el SelectionResult al tile del player para que efectos como
+            // EffHeal (que resuelven target via SelectionResult.FirstSelectedCoord +
+            // IGridManager.TryGetOccupant) lo encuentren self-target.
+            if (ServiceLocator.TryGetService<IGridManager>(out var grid)
+                && grid != null
+                && grid.TryGetPosition(_playerGuid, out var coord))
+            {
+                ctx.SelectionResult = new TargetSelectionResult
+                {
+                    WasCompleted = true,
+                    SelectedTargets = new List<TargetRef> { TargetRef.At(coord) },
+                };
+            }
+
+            return ctx;
         }
 
         private void OnDisable()

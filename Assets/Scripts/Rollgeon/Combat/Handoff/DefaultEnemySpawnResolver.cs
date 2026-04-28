@@ -6,6 +6,7 @@ using Rollgeon.Combat.Initiative;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
@@ -32,19 +33,22 @@ namespace Rollgeon.Combat.Handoff
         private readonly IEnemyAIRegistry _aiRegistry;
         private readonly IGridManager _grid;
         private readonly IEntityVisualService _visuals;
+        private readonly EnemyGoldDropService _goldDrops;
 
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
             AttributesManager attributes,
             IEnemyAIRegistry aiRegistry = null,
             IGridManager grid = null,
-            IEntityVisualService visuals = null)
+            IEntityVisualService visuals = null,
+            EnemyGoldDropService goldDrops = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
             _aiRegistry = aiRegistry;
             _grid = grid;
             _visuals = visuals;
+            _goldDrops = goldDrops;
         }
 
         public List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng)
@@ -68,7 +72,7 @@ namespace Rollgeon.Combat.Handoff
                     var data = LookupEnemyData(room, state.EnemyDataSOId);
                     if (data == null) continue;
 
-                    var id = RegisterEnemyFromState(data, state, layout);
+                    var id = RegisterEnemyFromState(data, state, layout, rng);
                     if (id != Guid.Empty)
                     {
                         result.Add((id, data));
@@ -85,7 +89,7 @@ namespace Rollgeon.Combat.Handoff
             {
                 if (enemyData == null) continue;
 
-                var id = RegisterEnemy(enemyData, spawnIndex, layout);
+                var id = RegisterEnemy(enemyData, spawnIndex, layout, rng);
                 if (id != Guid.Empty)
                 {
                     result.Add((id, enemyData));
@@ -180,7 +184,7 @@ namespace Rollgeon.Combat.Handoff
             return list;
         }
 
-        private Guid RegisterEnemy(EnemyDataSO enemyData, int spawnIndex, RoomLayout layout)
+        private Guid RegisterEnemy(EnemyDataSO enemyData, int spawnIndex, RoomLayout layout, System.Random rng)
         {
             var id = Guid.NewGuid();
             var attrs = enemyData.CreateRuntimeStats();
@@ -200,13 +204,24 @@ namespace Rollgeon.Combat.Handoff
             if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
                 pawn.HealthBar.Initialize(id, enemyData.BaseHP, enemyData.BaseHP);
 
+            if (_goldDrops != null)
+            {
+                int drop = RollGoldDrop(enemyData, rng);
+                UnityEngine.Debug.Log($"[DefaultEnemySpawnResolver] Spawn enemy '{enemyData.name}' guid={id} Min={enemyData.MinGoldDrop} Max={enemyData.MaxGoldDrop} rolledDrop={drop}");
+                if (drop > 0) _goldDrops.RegisterDrop(id, drop);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning($"[DefaultEnemySpawnResolver] _goldDrops is null at spawn of '{enemyData.name}' — no drop registered.");
+            }
+
             return id;
         }
 
         private Guid RegisterEnemyFromState(
-            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout)
+            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng)
         {
-            var id = RegisterEnemy(enemyData, state.SpawnPointIndex, layout);
+            var id = RegisterEnemy(enemyData, state.SpawnPointIndex, layout, rng);
             if (id == Guid.Empty) return id;
 
             var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(id);
@@ -274,5 +289,16 @@ namespace Rollgeon.Combat.Handoff
         }
 
         private static string EnemyStateKey(int index) => $"enemy_{index}";
+
+        private static int RollGoldDrop(EnemyDataSO data, System.Random rng)
+        {
+            if (data == null) return 0;
+            int min = data.MinGoldDrop;
+            int max = data.MaxGoldDrop;
+            if (max <= min) return Math.Max(0, min);
+            return rng != null
+                ? rng.Next(min, max + 1)
+                : UnityEngine.Random.Range(min, max + 1);
+        }
     }
 }

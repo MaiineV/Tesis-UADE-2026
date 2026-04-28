@@ -15,7 +15,8 @@ MonoBehaviour:
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
-    ReferencedUnityObjects: []
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -27,7 +28,25 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Entities.Behaviors.BossComboImmunityBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 1
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ImmuneCombo
+      Entry: 10
       Data: 0
+    - Name: RefreshDurationTurns
+      Entry: 3
+      Data: 99
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -36,10 +55,10 @@ MonoBehaviour:
       Data: 
     - Name: AIRoot
       Entry: 7
-      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 2|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: Condition
       Entry: 7
-      Data: 2|Rollgeon.Combat.AI.Conditions.AICond_RoundNumber, Rollgeon
+      Data: 3|Rollgeon.Combat.AI.Conditions.AICond_RoundNumber, Rollgeon
     - Name: Mode
       Entry: 3
       Data: 3
@@ -51,16 +70,16 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 3|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 4|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
       Entry: 7
-      Data: 4|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: Condition
       Entry: 7
-      Data: 5|Rollgeon.Combat.AI.Conditions.AICond_PlayerInRange, Rollgeon
+      Data: 6|Rollgeon.Combat.AI.Conditions.AICond_PlayerInRange, Rollgeon
     - Name: Range
       Entry: 3
       Data: 1
@@ -72,7 +91,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 6|Rollgeon.Combat.AI.Decisions.AINode_Attack, Rollgeon
+      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_Attack, Rollgeon
     - Name: DamageMultiplier
       Entry: 4
       Data: 2
@@ -81,7 +100,7 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 8|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
     - Name: MaxSteps
       Entry: 3
       Data: 2
@@ -107,3 +126,5 @@ MonoBehaviour:
   BaseHealStrength: 3
   BaseSpeed: 5
   MaxEnergy: 3
+  MinGoldDrop: 3
+  MaxGoldDrop: 5

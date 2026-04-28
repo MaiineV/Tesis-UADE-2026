@@ -32,15 +32,29 @@ namespace Rollgeon.Effects.Concretes
         private bool _isPercentOfMax;
 
         [SerializeField]
+        [Tooltip("Si true, ignora BaseAmount y rolea DiceCount × dDiceFaces. Ej: 1d10 = aleatorio entre 1 y 10.")]
+        private bool _useDiceRoll;
+
+        [SerializeField, MinValue(1)]
+        [ShowIf(nameof(_useDiceRoll))]
+        [Tooltip("Cantidad de dados a rolear cuando UseDiceRoll está activo.")]
+        private int _diceCount = 1;
+
+        [SerializeField, MinValue(2)]
+        [ShowIf(nameof(_useDiceRoll))]
+        [Tooltip("Caras del dado (ej. 10 = d10, rango [1, 10] inclusive).")]
+        private int _diceFaces = 10;
+
+        [SerializeField]
         [Tooltip("Tag libre para logging/telemetría — ej. 'potion', 'support.heal'.")]
         private string _sourceTag = "eff.heal";
 
         public override string GetEffectName() => "Heal";
 
         protected override HealArgs ResolveArgs(EffectContext context) =>
-            new HealArgs { BaseAmount = _baseAmount };
+            new HealArgs { BaseAmount = ResolveBaseAmount() };
 
-        protected override int ResolveValue(EffectContext context) => _baseAmount;
+        protected override int ResolveValue(EffectContext context) => ResolveBaseAmount();
 
         public override bool ApplyEffect(EffectContext context)
         {
@@ -103,6 +117,20 @@ namespace Rollgeon.Effects.Concretes
                 && occupant != Guid.Empty)
                 return occupant;
             return context.SourceGuid;
+        }
+
+        private int ResolveBaseAmount()
+        {
+            if (!_useDiceRoll) return _baseAmount;
+
+            int faces = Mathf.Max(2, _diceFaces);
+            int count = Mathf.Max(1, _diceCount);
+            int sum = 0;
+            for (int i = 0; i < count; i++)
+            {
+                sum += UnityEngine.Random.Range(1, faces + 1);
+            }
+            return sum;
         }
     }
 }

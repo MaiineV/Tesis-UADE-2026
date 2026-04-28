@@ -1,7 +1,11 @@
 using System;
 using Patterns;
 using Rollgeon.Economy;
+using Rollgeon.Grid;
+using Rollgeon.Items;
+using Rollgeon.Player;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Rollgeon.Shop
 {
@@ -33,6 +37,17 @@ namespace Rollgeon.Shop
 
         [Tooltip("Label mostrado en el prompt. Se rellena desde Configure — NO editar en prefab.")]
         public string InteractLabel;
+
+        [Tooltip("Distancia (en world units) a la que el jugador puede comprar este pedestal " +
+                 "presionando la tecla configurada. Default 1.5 = aprox 1 tile. " +
+                 "0 = desactiva la interacción.")]
+        [SerializeField]
+        private float _interactRange = 1.5f;
+
+        [Tooltip("Tecla del Input System que dispara la compra cuando el jugador está dentro " +
+                 "de InteractRange. Default Key.F.")]
+        [SerializeField]
+        private Key _interactKey = Key.F;
 
         private Guid _roomInstanceId;
         private ShopSlot _slot;
@@ -77,11 +92,49 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            // TODO (§18): EffAddItemToInventory(slot.Item.ItemId). Hoy sin
-            // IInventoryService, el ítem se descarta — el oro se cobró igual.
-            // El evento OnItemObtained queda para cuando el inventario exista.
+            TryDeliverItemToInventory(_slot.Item != null ? _slot.Item.ItemId : null);
 
             _service.NotifyItemPurchased(_roomInstanceId, _slot.SpawnPointId, _slot.Price);
+        }
+
+        /// <summary>
+        /// Resuelve el <see cref="ItemSO"/> en el catálogo por <paramref name="shopItemId"/>
+        /// (debe matchear el <c>ItemSO.ItemId</c>) y lo agrega al inventario. Si el catálogo
+        /// o el inventario no están registrados, sólo loggea — el oro ya se cobró y el
+        /// pedestal queda como purchased.
+        /// </summary>
+        private static void TryDeliverItemToInventory(string shopItemId)
+        {
+            if (string.IsNullOrEmpty(shopItemId))
+            {
+                Debug.LogWarning(LogPrefix + "ShopItemDef sin ItemId — no se puede entregar al inventario.");
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null)
+            {
+                Debug.LogWarning(LogPrefix + "ItemCatalogSO no registrado — el ítem comprado no se entrega.");
+                return;
+            }
+
+            var itemSo = catalog.GetById(shopItemId);
+            if (itemSo == null)
+            {
+                Debug.LogWarning(LogPrefix + $"ItemSO con ItemId='{shopItemId}' no existe en ItemCatalog. " +
+                                              "Verificá que el ShopItemDef.ItemId matchee el ItemSO.ItemId del catálogo.");
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
+            {
+                Debug.LogWarning(LogPrefix + "IInventoryService no registrado — el ítem comprado no se entrega.");
+                return;
+            }
+
+            if (!inventory.AddItem(itemSo))
+            {
+                Debug.LogWarning(LogPrefix + $"AddItem('{shopItemId}') rechazado (inventario lleno?).");
+            }
         }
 
         /// <summary>
@@ -115,6 +168,39 @@ namespace Rollgeon.Shop
         {
             if (slot == null || slot.Item == null) return "[F] Comprar";
             return $"[F] Comprar {slot.Item.DisplayName} ({slot.Price}G)";
+        }
+
+        // -----------------------------------------------------------------
+        // MVP de input: cuando el jugador está dentro de InteractRange y presiona
+        // InteractKey (F por default), se dispara la compra. El sistema canónico
+        // (§7.7 IInteractionService) no aterrizó; este es el bridge interino.
+        // -----------------------------------------------------------------
+        private void Update()
+        {
+            if (_interactRange <= 0f) return;
+            if (_slot == null || _slot.Purchased) return;
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+            if (!keyboard[_interactKey].wasPressedThisFrame) return;
+
+            if (!IsPlayerInRange()) return;
+
+            Interact();
+        }
+
+        private bool IsPlayerInRange()
+        {
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null) return false;
+            var playerGuid = playerService.PlayerGuid;
+            if (playerGuid == Guid.Empty) return false;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
+            if (!grid.TryGetPosition(playerGuid, out var playerCoord)) return false;
+
+            var playerWorld = grid.GridToWorld(playerCoord);
+            float distSq = (playerWorld - transform.position).sqrMagnitude;
+            return distSq <= _interactRange * _interactRange;
         }
     }
 }

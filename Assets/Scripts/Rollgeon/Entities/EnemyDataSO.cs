@@ -85,6 +85,15 @@ namespace Rollgeon.Entities
         [Tooltip("Energia maxima por turno. El Support gasta energia cuando el action economy esta activo (T100b).")]
         public int MaxEnergy = 3;
 
+        [Title("Rewards")]
+        [MinValue(0)]
+        [Tooltip("Cantidad minima de oro que dropea al morir. 0 = no dropea oro.")]
+        public int MinGoldDrop = 3;
+
+        [MinValue(0)]
+        [Tooltip("Cantidad maxima de oro que dropea al morir. Inclusive. Si <= MinGoldDrop, dropea exactamente MinGoldDrop.")]
+        public int MaxGoldDrop = 5;
+
         // -----------------------------------------------------------------
         // Behaviors — Content#0099.
         // -----------------------------------------------------------------

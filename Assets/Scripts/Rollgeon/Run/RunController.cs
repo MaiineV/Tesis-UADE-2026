@@ -9,8 +9,10 @@ using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dungeon;
+using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Exploration;
+using Rollgeon.Items;
 using Rollgeon.Player;
 using UnityEngine;
 
@@ -99,7 +101,22 @@ namespace Rollgeon.Run
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
             ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid);
             ServiceLocator.TryGetService<Rollgeon.Entities.Visuals.IEntityVisualService>(out var visuals);
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals);
+
+            // 2a. Gold drops — escucha OnEntityDestroyed y suma al IEconomyService.
+            //     El resolver le reporta el drop rolled al spawnear cada enemigo.
+            EnemyGoldDropService goldDrops = null;
+            if (ServiceLocator.TryGetService<IEconomyService>(out var economy) && economy != null)
+            {
+                goldDrops = new EnemyGoldDropService(economy);
+                ServiceLocator.AddService<EnemyGoldDropService>(goldDrops, ServiceScope.Run);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[RunController] IEconomyService no registrado — los enemigos no van a dropear oro este run.");
+            }
+
+            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals, goldDrops);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
@@ -230,6 +247,30 @@ namespace Rollgeon.Run
             if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
             {
                 energy.InitializeForEntity(playerService.PlayerGuid);
+            }
+
+            GrantStartingItems(hero);
+        }
+
+        private static void GrantStartingItems(Rollgeon.Heroes.ClassHeroSO hero)
+        {
+            if (hero?.StartingItems == null || hero.StartingItems.Count == 0) return;
+
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
+            {
+                Debug.LogWarning(
+                    "[RunController] IInventoryService no registrado — los StartingItems del hero no se entregan.");
+                return;
+            }
+
+            foreach (var item in hero.StartingItems)
+            {
+                if (item == null) continue;
+                if (!inventory.AddItem(item))
+                {
+                    Debug.LogWarning(
+                        $"[RunController] No se pudo agregar StartingItem '{item.ItemId}' (¿inventario lleno?).");
+                }
             }
         }
     }

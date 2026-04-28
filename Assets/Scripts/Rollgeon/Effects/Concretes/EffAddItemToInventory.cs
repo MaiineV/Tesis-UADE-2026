@@ -49,12 +49,7 @@ namespace Rollgeon.Effects.Concretes
         }
 
 #if UNITY_EDITOR
-        private static IEnumerable<string> GetItemIds()
-        {
-            return ServiceLocator.TryGetService<ItemCatalogSO>(out var cat)
-                ? cat.AllIds
-                : Array.Empty<string>();
-        }
+        private static IEnumerable<string> GetItemIds() => ItemCatalogSO.GetEditorAllIds();
 #endif
     }
 }
