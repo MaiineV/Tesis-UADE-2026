@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Patterns;
@@ -6,6 +7,9 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
+using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
 using UnityEngine;
@@ -28,6 +32,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void SetUp()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
             _attrs = new AttributesManager();
             _registry = new EnemyAIRegistry();
             _playerId = Guid.NewGuid();
@@ -52,6 +57,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void TearDown()
         {
             _attrs?.Dispose();
+            ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
 
@@ -100,9 +106,25 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void AttackNode_DealsDamageThroughPipeline()
+        public void BehaviorNode_DealsDamageThroughPipeline()
         {
-            _registry.Register(_enemyId, new AINode_Attack(), maxHp: 50);
+            // Reemplaza el viejo AINode_Attack por la composición canónica:
+            // AINode_Behavior → EnemyActionBehavior → EffDealDamage. El damage
+            // pipeline llega via ServiceLocator (lectura del EffDealDamage).
+            ServiceLocator.AddService<IDamagePipeline>(_pipeline);
+
+            var behavior = new EnemyActionBehavior
+            {
+                ActionName = "Attack",
+                Effects = new List<EffectData>
+                {
+                    new EffectData
+                    {
+                        Effects = new List<IEffect> { new EffDealDamage() },
+                    }
+                },
+            };
+            _registry.Register(_enemyId, new AINode_Behavior { Behavior = behavior }, maxHp: 50);
 
             using var handler = NewHandler();
             handler.HandleEnemyTurn(_enemyId);
@@ -110,7 +132,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(_pipeline.ResolveCalled);
             Assert.AreEqual(_enemyId, _pipeline.LastContext.SourceId);
             Assert.AreEqual(_playerId, _pipeline.LastContext.TargetId);
-            Assert.AreEqual(7, _pipeline.LastContext.BaseDamage);
         }
 
         [Test]

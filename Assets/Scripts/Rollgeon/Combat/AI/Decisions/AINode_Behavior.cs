@@ -23,23 +23,15 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (context == null || Behavior == null) return AIResult.Failed;
 
+            // Las excepciones del behavior burbujean al outer try/catch de
+            // TreeDrivenEnemyAI; este nodo no las traga.
             var bctx = new EnemyAIBehaviorContext
             {
                 AI = context,
                 SourceEntity = context.Self,
             };
-
-            try
-            {
-                Behavior.Execute(bctx);
-                return AIResult.Succeeded;
-            }
-            catch (Exception)
-            {
-                // Le cuelga al outer try/catch de TreeDrivenEnemyAI loguear; acá
-                // sólo marcamos que la acción no se completó.
-                throw;
-            }
+            Behavior.Execute(bctx);
+            return AIResult.Succeeded;
         }
     }
 }
