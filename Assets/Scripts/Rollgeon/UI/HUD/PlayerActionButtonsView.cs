@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat;
+using Rollgeon.Grid;
 using Rollgeon.Heroes;
+using Rollgeon.Movement;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
@@ -106,6 +109,10 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _bound;
 
+        // Cacheado en Bind() para poder unsuscribir el C# event en Unbind() incluso si el
+        // ServiceLocator reemplaza el servicio entre medio.
+        private IMovementService _movementService;
+
         // Tracking de acciones usadas en el turno actual. Resetea al disparar
         // OnTurnStarted (jugador) — no usamos TurnManager.WasUsedThisTurn directo
         // porque indexa por ActionName y queremos clave por slot 0-3.
@@ -180,6 +187,17 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
+            EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+
+            // Recalcula availability cuando alguien se mueve — habilita el Attack si te
+            // acercaste al enemigo, o lo deshabilita si el enemigo se alejó. Sin esta
+            // suscripción, el botón quedaba con el estado computado al inicio del turno.
+            if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
+            {
+                _movementService = movement;
+                _movementService.OnEntityMoved += HandleEntityMoved;
+            }
+
             _bound = true;
 
             RefreshCostLabels();
@@ -207,6 +225,14 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
+            EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+
+            if (_movementService != null)
+            {
+                _movementService.OnEntityMoved -= HandleEntityMoved;
+                _movementService = null;
+            }
+
             _bound = false;
             _phase = ButtonPhase.Idle;
             RefreshInteractable();
@@ -215,6 +241,25 @@ namespace Rollgeon.UI.HUD
         private void HandleInventoryChanged(params object[] args)
         {
             // Recalcula availability — el Heal queda gris si te quedaste sin pociones.
+            RefreshInteractable();
+        }
+
+        private void HandlePlayerEnergyChanged(params object[] args)
+        {
+            // Schema: [Guid entityId, int current, int max]. Recalcula gating por EnergyCost
+            // (ej: gastaste energía con un Attack y ahora el Heal ya no alcanza).
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
+            RefreshInteractable();
+        }
+
+        private void HandleEntityMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
+        {
+            // Cualquier movimiento puede cambiar la disponibilidad de los botones del player:
+            // - Si el player se mueve, sus selections (range-based) se recalculan.
+            // - Si un enemigo se mueve, ahora puede estar en/fuera de rango del Attack.
+            // El gate de _phase dentro de RefreshInteractable evita que esto habilite botones
+            // fuera del turno del player.
             RefreshInteractable();
         }
 

@@ -10,8 +10,9 @@ namespace Rollgeon.Dungeon
     /// <summary>
     /// Reposiciona al player en el tile correcto al entrar a una sala.
     /// Si <see cref="IDungeonService.LastEntryDirection"/> tiene valor, lo ubica
-    /// en el <see cref="DoorSlotRef.Anchor"/> de esa dirección; si no (sala
-    /// inicial o teleport), usa <see cref="RoomLayout.PlayerSpawnPoint"/>.
+    /// en la primera tile interior frente al <see cref="DoorSlotRef.Anchor"/> de
+    /// esa dirección (un paso adentro, como si hubiera cruzado la puerta); si no
+    /// (sala inicial o teleport), usa <see cref="RoomLayout.PlayerSpawnPoint"/>.
     /// </summary>
     /// <remarks>
     /// Run-scope. Priority 82 — corre después de <see cref="RoomGridLoader"/> (80)
@@ -68,7 +69,15 @@ namespace Rollgeon.Dungeon
             {
                 var slot = layout.GetDoorSlot(entryDirection.Value);
                 if (slot?.Anchor != null)
-                    return _grid.WorldToGrid(slot.Anchor.position);
+                {
+                    // El anchor está en el borde de la sala (sobre la pared/puerta). El
+                    // player debe quedar un paso adentro — primera tile interior — para
+                    // que se vea como si recién hubiera cruzado. Si el tile interior no
+                    // es walkable (layout raro), caemos al anchor para no spawnear afuera.
+                    var anchorCoord = _grid.WorldToGrid(slot.Anchor.position);
+                    var interior = anchorCoord + entryDirection.Value.InwardOffset();
+                    return _grid.IsWalkable(interior) ? interior : anchorCoord;
+                }
             }
 
             if (layout.PlayerSpawnPoint != null)

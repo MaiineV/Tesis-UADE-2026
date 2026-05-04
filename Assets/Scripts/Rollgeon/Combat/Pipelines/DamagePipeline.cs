@@ -89,17 +89,24 @@ namespace Rollgeon.Combat.Pipelines
                 ctx.SourceId, ctx.TargetId, damage);
 
             // ── 4. Shield absorption ─────────────────────────────────────
+            bool shieldBroken = false;
             var shieldAttr = _attributes.GetAttribute<Shield>(ctx.TargetId);
             if (shieldAttr != null && shieldAttr.Value > 0)
             {
                 int shield = shieldAttr.Value;
                 int absorbed = Mathf.Min(shield, damage);
                 damage -= absorbed;
-                _attributes.SetAttributeValue<Shield, int>(ctx.TargetId, shield - absorbed);
+                int newShield = shield - absorbed;
+                _attributes.SetAttributeValue<Shield, int>(ctx.TargetId, newShield);
                 ctx.ShieldAbsorbed = absorbed;
 
+                // Shield "broken" = estaba arriba (>0) y quedó en 0 tras absorber. Lo
+                // exponemos en el payload para que la UI pueda spawnear un "Broken Shield"
+                // junto con el número de daño residual (si hay).
+                shieldBroken = absorbed > 0 && newShield == 0;
+
                 if (absorbed > 0)
-                    EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, shield - absorbed);
+                    EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, newShield);
             }
 
             ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
@@ -142,6 +149,8 @@ namespace Rollgeon.Combat.Pipelines
                 WeaknessHit = ctx.WeaknessMultiplier > 1f,
                 WasLethal = ctx.WasLethal,
                 ShieldAbsorbed = ctx.ShieldAbsorbed,
+                BlockedByShield = ctx.BlockedByShield,
+                ShieldBroken = shieldBroken,
             });
 
             return ctx;

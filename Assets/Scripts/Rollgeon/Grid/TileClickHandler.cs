@@ -1,3 +1,4 @@
+using System;
 using Patterns;
 using Rollgeon.Effects.Selection;
 using Rollgeon.GameCamera;
@@ -17,6 +18,11 @@ namespace Rollgeon.Grid
         private InputActionMap _map;
         private InputAction _clickAction;
         private InputAction _positionAction;
+
+        // Cache del último coord hovered. Polling en Update evita pegar al SelectionController
+        // por frame con coords idénticos — solo notifica cuando el cursor cruza un tile.
+        // Tipo nullable: null = "el mouse no está sobre ningún tile válido".
+        private GridCoord? _lastHoveredCoord;
 
         private void OnEnable()
         {
@@ -56,6 +62,52 @@ namespace Rollgeon.Grid
                 _clickAction.performed -= OnClick;
 
             _map?.Disable();
+            _lastHoveredCoord = null;
+        }
+
+        private void Update()
+        {
+            // Polling de hover: solo cuando hay una selección activa, para no quemar
+            // raycasts cada frame en exploration libre. El raycast usa el mismo path
+            // que OnClick (escalado RT→Screen incluido).
+            if (!ServiceLocator.TryGetService<ISelectionController>(out var controller)) return;
+            if (!controller.IsSelecting)
+            {
+                if (_lastHoveredCoord != null)
+                {
+                    _lastHoveredCoord = null;
+                    controller.OnTargetHovered(null);
+                }
+                return;
+            }
+            if (_positionAction == null) return;
+
+            var cam = _camera != null ? _camera : Camera.main;
+            if (cam == null) return;
+
+            var screenPos = _positionAction.ReadValue<Vector2>();
+            var rtPos = new Vector2(
+                screenPos.x / Screen.width  * cam.pixelWidth,
+                screenPos.y / Screen.height * cam.pixelHeight);
+
+            var ray = cam.ScreenPointToRay(rtPos);
+            GridCoord? hovered = null;
+            if (Physics.Raycast(ray, out var hit, 100f, _tileLayer))
+            {
+                var marker = hit.collider.GetComponentInParent<TileMarker>();
+                if (marker != null)
+                {
+                    hovered = marker.Coord;
+                }
+                else if (ServiceLocator.TryGetService<IGridManager>(out var grid))
+                {
+                    hovered = grid.WorldToGrid(hit.point);
+                }
+            }
+
+            if (Nullable.Equals(hovered, _lastHoveredCoord)) return;
+            _lastHoveredCoord = hovered;
+            controller.OnTargetHovered(hovered.HasValue ? TargetRef.At(hovered.Value) : null);
         }
 
         private void OnClick(InputAction.CallbackContext ctx)

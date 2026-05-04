@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Audio;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.UI.HUD;
 using UnityEngine;
 
 namespace Rollgeon.Feedback
@@ -234,16 +235,24 @@ namespace Rollgeon.Feedback
         {
             if (fn.Delay > 0f) yield return new WaitForSeconds(fn.Delay);
 
-            var prefab = GetFloatingNumberPrefab();
-            if (prefab == null) yield break;
-
+            // Delegamos al spawner moderno (FloatingDamageSpawner) via el evento legacy.
+            // Why: el path antiguo (Resources/FloatingNumber world-space + IPawnRegistry)
+            // perdía el ancla cuando el target no estaba en el PawnRegistry, y aún cuando
+            // anclaba bien renderizaba con coords del RT del pixel-art pipeline. El spawner
+            // moderno ya tiene el fix RT→Screen y resuelve por IEntityPositionResolver +
+            // IPawnRegistry como fallback. Misma estética en damage / heal / shield.
             var targetGuid = fn.TargetEntityGuid != Guid.Empty ? fn.TargetEntityGuid : request.TargetGuid;
-            var anchor = FeedbackPositionResolver.ResolvePawnTransform(targetGuid);
-            var basePos = anchor != null ? anchor.position : request.WorldPosition;
-
-            var instance = Instantiate(prefab, basePos + fn.Offset, Quaternion.identity);
-            instance.Initialize(fn.Value.ToString("0"), KeyToNumberType(key), basePos + fn.Offset);
+            var type = KeyToFloatingNumberType(key);
+            EventManager.Trigger(EventName.OnFloatingNumberRequested, targetGuid, type, fn.Value, fn.Offset);
         }
+
+        private static FloatingNumberType KeyToFloatingNumberType(BehaviorValueKey key) => key switch
+        {
+            BehaviorValueKey.FloatingDamage => FloatingNumberType.Damage,
+            BehaviorValueKey.FloatingHeal   => FloatingNumberType.Heal,
+            BehaviorValueKey.FloatingShield => FloatingNumberType.Shield,
+            _                               => FloatingNumberType.Damage,
+        };
 
         // ===================================================================
         // Animator floats — §10.10

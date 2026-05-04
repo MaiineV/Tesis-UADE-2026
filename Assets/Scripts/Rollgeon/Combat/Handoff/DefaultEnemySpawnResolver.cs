@@ -67,13 +67,23 @@ namespace Rollgeon.Combat.Handoff
             var existingStates = CollectEnemyStates(instance);
             if (existingStates.Count > 0)
             {
+                // En re-entry, los enemigos vivos reaparecen en posiciones aleatorias —
+                // no en sus spawn points originales — para que la sala no se sienta
+                // estática al volver. Excluimos tiles de puerta (no caer encima) y los
+                // ya ocupados (player + otros enemigos del batch). Si no hay grid (tests
+                // sin layout) o no hay candidatos válidos, caemos al spawn point legacy.
+                var forbidden = CollectDoorCoords(layout);
                 foreach (var state in existingStates)
                 {
                     if (state.IsDead) continue;
                     var data = LookupEnemyData(room, state.EnemyDataSOId);
                     if (data == null) continue;
 
-                    var id = RegisterEnemyFromState(data, state, layout, rng);
+                    var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
+                    var id = randomCoord.HasValue
+                        ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state)
+                        : RegisterEnemyFromState(data, state, layout, rng);
+
                     if (id != Guid.Empty)
                     {
                         result.Add((id, data));
@@ -187,6 +197,18 @@ namespace Rollgeon.Combat.Handoff
 
         private Guid RegisterEnemy(EnemyDataSO enemyData, int spawnIndex, RoomLayout layout, System.Random rng)
         {
+            var coord = ResolveSpawnCoord(layout, spawnIndex);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state: null);
+        }
+
+        /// <summary>
+        /// Path "core" de registro: dado un <paramref name="coord"/> ya resuelto, registra
+        /// la entidad en todos los servicios (registry, attributes, AI, grid, visuals,
+        /// gold drops). Si <paramref name="state"/> no es null, restaura el HP del state.
+        /// </summary>
+        private Guid RegisterEnemyAtCoord(
+            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state)
+        {
             var id = Guid.NewGuid();
             var attrs = enemyData.CreateRuntimeStats();
             _registry.Register(id, attrs);
@@ -198,12 +220,18 @@ namespace Rollgeon.Combat.Handoff
                 _aiRegistry.Register(id, aiRoot, enemyData.BaseHP);
             }
 
-            var coord = ResolveSpawnCoord(layout, spawnIndex);
             if (_grid != null) _grid.Register(id, coord);
             if (_visuals != null) _visuals.SpawnEnemy(id, enemyData, coord);
 
+            int hp = state != null ? Math.Max(0, state.CurrentHP) : enemyData.BaseHP;
+            if (state != null)
+            {
+                var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(id);
+                if (health != null) health.Value = hp;
+            }
+
             if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
-                pawn.HealthBar.Initialize(id, enemyData.BaseHP, enemyData.BaseHP);
+                pawn.HealthBar.Initialize(id, hp, enemyData.BaseHP);
 
             if (_goldDrops != null)
             {
@@ -241,19 +269,50 @@ namespace Rollgeon.Combat.Handoff
         private Guid RegisterEnemyFromState(
             EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng)
         {
-            var id = RegisterEnemy(enemyData, state.SpawnPointIndex, layout, rng);
-            if (id == Guid.Empty) return id;
+            var coord = ResolveSpawnCoord(layout, state.SpawnPointIndex);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state);
+        }
 
-            var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(id);
-            if (health != null)
+        /// <summary>
+        /// Tiles "no spawneables" derivados del layout: anchors de las 4 puertas.
+        /// El player ocupa su propio tile y se filtra automáticamente via
+        /// <see cref="IGridManager.IsOccupied"/> en el random pick.
+        /// </summary>
+        private HashSet<GridCoord> CollectDoorCoords(RoomLayout layout)
+        {
+            var set = new HashSet<GridCoord>();
+            if (layout == null || _grid == null) return set;
+            if (layout.DoorSlots == null) return set;
+            foreach (var slot in layout.DoorSlots)
             {
-                health.Value = System.Math.Max(0, state.CurrentHP);
+                if (slot?.Anchor == null) continue;
+                set.Add(_grid.WorldToGrid(slot.Anchor.position));
+            }
+            return set;
+        }
+
+        /// <summary>
+        /// Elige un tile aleatorio walkable, no en <paramref name="forbidden"/> y no
+        /// ocupado por otra entidad. Devuelve <c>null</c> si no hay candidatos válidos
+        /// (grid ausente, NavGraph vacío, o todos los tiles excluidos) — el caller debe
+        /// caer al path determinístico.
+        /// </summary>
+        private GridCoord? TryPickRandomSpawnCoord(HashSet<GridCoord> forbidden, System.Random rng)
+        {
+            if (_grid == null || _grid.Graph == null) return null;
+
+            var candidates = new List<GridCoord>();
+            foreach (var coord in _grid.Graph.AllCoords())
+            {
+                if (forbidden.Contains(coord)) continue;
+                if (_grid.IsOccupied(coord)) continue;
+                if (!_grid.IsWalkable(coord)) continue;
+                candidates.Add(coord);
             }
 
-            if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
-                pawn.HealthBar.Initialize(id, System.Math.Max(0, state.CurrentHP), enemyData.BaseHP);
-
-            return id;
+            if (candidates.Count == 0) return null;
+            int pick = rng != null ? rng.Next(candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
+            return candidates[pick];
         }
 
         private static List<EnemySpawnState> CollectEnemyStates(RoomInstance instance)
