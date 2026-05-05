@@ -8,7 +8,7 @@ tags: [effects, concrete, heal]
 
 # EffHeal
 
-> Heal counterpart of [[EffDamage]]. Pushes a base amount through
+> Heal counterpart of [[EffDealDamage]]. Pushes a base amount through
 > [[HealPipeline]] and writes a `FloatingHeal` behavior value for the
 > feedback layer.
 

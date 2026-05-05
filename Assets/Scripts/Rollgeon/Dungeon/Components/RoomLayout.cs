@@ -61,10 +61,67 @@ namespace Rollgeon.Dungeon.Components
         }
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Recalcula <see cref="LocalBounds"/> desde los <see cref="Renderer"/>s children.
-        /// Corre en editor; los consumidores (shells, camera pan) leen el valor cacheado.
-        /// </summary>
+        public void AutoPopulateDoorSlots()
+        {
+            UnityEditor.Undo.RecordObject(this, "Auto-Populate Door Slots");
+
+            DoorSlots.Clear();
+
+            var controllers = GetComponentsInChildren<DoorController>(includeInactive: true);
+            var usedDirections = new HashSet<DoorDirection>();
+            var wallPlugField = typeof(DoorController).GetField(
+                "_wallPlug",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            foreach (var controller in controllers)
+            {
+                var localPos = transform.InverseTransformPoint(controller.transform.position);
+                DoorDirection dir;
+                if (Mathf.Abs(localPos.z) >= Mathf.Abs(localPos.x))
+                    dir = localPos.z >= 0 ? DoorDirection.North : DoorDirection.South;
+                else
+                    dir = localPos.x >= 0 ? DoorDirection.East : DoorDirection.West;
+
+                if (!usedDirections.Add(dir))
+                {
+                    Debug.LogWarning(
+                        $"[RoomLayout] '{name}': dirección {dir} duplicada en " +
+                        $"DoorController '{controller.gameObject.name}'. Revisar posiciones.");
+                    continue;
+                }
+
+                UnityEditor.Undo.RecordObject(controller, "Auto-Populate Door Slots");
+                controller.Direction = dir;
+                UnityEditor.EditorUtility.SetDirty(controller);
+
+                var doorGroup = FindDoorGroup(controller.transform);
+                var anchor = doorGroup != null ? doorGroup : controller.transform;
+
+                GameObject wallPlug = null;
+                if (wallPlugField != null)
+                    wallPlug = wallPlugField.GetValue(controller) as GameObject;
+
+                DoorSlots.Add(new DoorSlotRef
+                {
+                    Direction = dir,
+                    Anchor = anchor,
+                    WallPlug = wallPlug,
+                    DoorRoot = controller.gameObject,
+                });
+            }
+
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log($"[RoomLayout] '{name}': auto-populated {DoorSlots.Count} door slots.");
+        }
+
+        private Transform FindDoorGroup(Transform child)
+        {
+            var current = child;
+            while (current != null && current != transform && current.parent != transform)
+                current = current.parent;
+            return current != transform ? current : null;
+        }
+
         private void OnValidate()
         {
             var renderers = GetComponentsInChildren<Renderer>(includeInactive: true);

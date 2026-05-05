@@ -21,12 +21,18 @@ tags: [moc, ui]
  BaseScreen (abstract)
   ├─ MainMenuScreen → ClassSelectionScreen → BuildSelectionScreen
   ├─ ExplorationHUDView  (+ HealthBarView, EnergyBarView, GoldCounterView,
-  │                         ActiveItemsView, MinimapView,
-  │                         RoomNavigationView)
-  ├─ CombatHUDView       (+ TurnQueueView, EnemyPanelView,
-  │                         ComboIndicatorView, DiceZoneView,
-  │                         PlayerActionButtonsView, RerollCountView,
-  │                         FloatingDamageSpawner, ContractDisplayView)
+  │                         ActiveItemsView, ActiveItemSlotView,
+  │                         MinimapView, RoomNavigationView,
+  │                         ExplorationActionButtonsView)
+  ├─ CombatHUDView       (+ TurnQueueView, TurnSlotView,
+  │                         ComboIndicatorView, ComboRowView (ComboRow),
+  │                         DamageFormulaView, DiceZoneView, DiceSlotView,
+  │                         PlayerActionButtonsView, ActionButtonsView,
+  │                         EndTurnButtonView, ButtonPhase,
+  │                         ChainPhaseIndicatorView, RerollCountView,
+  │                         ShieldBarView,
+  │                         FloatingDamageSpawner, FloatingDamageInstance,
+  │                         FloatingNumberType, ContractDisplayView)
   ├─ FloorTransitionScreen
   ├─ VictoryScreen / DefeatScreen
   └─ PauseMenuOverlay (pushes PhaseOverlay.Pause)
@@ -39,17 +45,30 @@ tags: [moc, ui]
   [[BuildSelectionScreen]] · [[ExplorationHUDView]] ·
   [[CombatHUDView]] · [[FloorTransitionScreen]] · [[VictoryScreen]] ·
   [[DefeatScreen]] · [[PauseMenuOverlay]]
+- **Screen payloads:** [[BuildSelectionPayload]] ·
+  [[ClassSelectionPayload]] · [[CombatHUDPayload]] ·
+  [[FloorTransitionPayload]] · [[PoolOfferingRow]]
 - **Exploration HUD views:** [[HealthBarView]] · [[EnergyBarView]] ·
-  [[GoldCounterView]] · [[ActiveItemsView]] · [[MinimapView]] ·
+  [[GoldCounterView]] · [[ActiveItemsView]] · [[ActiveItemSlotView]] ·
+  [[ActiveItemState]] · [[ItemSlotBinding]] ·
+  [[ExplorationActionButtonsView]] · [[MinimapView]] ·
   [[RoomNavigationView]]
-- **Combat HUD views:** [[TurnQueueView]] · [[EnemyPanelView]] ·
-  [[ComboIndicatorView]] · [[DiceZoneView]] ·
-  [[PlayerActionButtonsView]] · [[RerollCountView]] ·
-  [[FloatingDamageSpawner]] · [[ContractDisplayView]]
+- **Combat HUD views:** [[TurnQueueView]] · [[TurnSlotView]] ·
+  [[ComboIndicatorView]] · [[ComboRow]] · [[ComboRowView]] ·
+  [[DamageFormulaView]] · [[DiceZoneView]] · [[DiceSlotView]] ·
+  [[PlayerActionButtonsView]] · [[ActionButtonsView]] ·
+  [[EndTurnButtonView]] · [[ButtonPhase]] ·
+  [[ChainPhaseIndicatorView]] · [[RerollCountView]] ·
+  [[ShieldBarView]] · [[FloatingDamageSpawner]] ·
+  [[FloatingDamageInstance]] · [[FloatingNumberType]] ·
+  [[ContractDisplayView]]
 
 ## Cross-domain edges
 
 - Views subscribe to events from [[Attributes-MOC]], [[Combat-MOC]],
-  [[Combos-MOC]], [[Dungeon-MOC]], [[Dice-MOC]].
+  [[Combos-MOC]], [[Dungeon-MOC]], [[Dice-MOC]],
+  [[Economy-MOC|Economy]] (gold), [[Items-MOC|Items]] (active item
+  slot), [[Shop-MOC|Shop]] (offerings).
+- Floating damage / hit pulses are driven by [[Feedback-MOC|Feedback]].
 - [[CombatHandoffService]] pushes [[CombatHUDView]]; [[CombatReturnService]]
   replaces with [[VictoryScreen]] / [[DefeatScreen]].

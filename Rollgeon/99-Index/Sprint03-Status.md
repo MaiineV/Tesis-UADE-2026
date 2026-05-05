@@ -95,3 +95,85 @@ Each TBD lives in its own atomic note tagged `#tbd` when we reach it.
 - `Sprint03_Tareas_AgustinMartinez.md`
 - `docs/setup/_SETUP_ROUND2_STATUS.md`
 - `docs/setup/_SPRINT03_VERIFICATION_GUIDE.md`
+
+---
+
+## Update — 2026-04-28
+
+Eight days of progress since the 2026-04-20 snapshot. Several
+TBD/post-Sprint-03 systems graduated to working code, and the vault
+itself was re-synced to mirror the new code shape.
+
+### Commits since 2026-04-20
+
+- `0a0c856` feat(ui): add Hero Class Editor window with 3-column layout
+- `dd9e093` fix: boss run completa, fix de las salas que no llevan a nada, shells vacias
+- `a9e8570` feat(shader): increase pixel render resolution for sharper output
+- `2e9f697` feat: potion system y shop con economy
+- `bd1a083` feat: heal and potion system
+- `23e162a` fix: boss ignores combos
+- `3495466` feat(model): add temporal boss mesh
+- `ad91a1f` Clean up old docs
+
+### Systems that shipped
+
+- **Economy / Wallet** — `EconomyService` + `IEconomyService` (gold as a
+  first-class run resource) and `EnemyGoldDropService` for combat drops.
+- **Shop** — `ShopManagerService`, `ShopConfigSO`, `ShopPoolSO`,
+  `WeightedShopItem`, `ShopItemPedestalInteractable`, `ShopRollResult`,
+  `ShopSlot`. Real shop rooms now spawn wares against an economy budget.
+- **Heal pipeline + potion system** — `HealPipeline` / `HealContext`
+  consumers, potion items wired through `IInventoryService`.
+- **Boss combo immunity** — `BossComboImmunityBehavior`: bosses can now
+  ignore the combo-effect side of an attack entirely (fixes the bug
+  where bosses treated combos as normal hits).
+- **Grid + Movement subsystems** (`17-Grid`, `18-Movement`) — promoted
+  out of `16-Crosscutting`. `GridManager` owns the live grid, `NavGraph`
+  / `NavNode` / `NavEdge` describe pathing topology, `NavGraphBaker`
+  bakes layouts at room load, `ITileHighlightService` + `TileMarker`
+  drive selection feedback.
+- **Audio / Feedback / Camera** as dedicated sections (`21-Audio`,
+  `22-Feedback`, `23-Camera`) — `IAudioService` / `AudioManager` with
+  `AudioChannel` (Music/SFX/UI/Voice), full `FeedbackManager` +
+  `FeedbackDBSO` + `FeedbackRequest` pipeline replacing the
+  Sprint-03-only `FloatingDamageSpawner` stub, `ICameraService` with
+  wall-aware framing (`WallOccluder`, `WallDirection`).
+- **Items / Inventory** (`24-Items`) — `IInventoryService` +
+  `InventoryService` with `InventorySnapshot` for save/load,
+  `ItemCatalogSO`, `PassiveItemHook`, `PersistentModifierDef`.
+- **Exploration as its own section** (`25-Exploration`) — promoted out
+  of `07-Dungeon`. `IExplorationController` + `ExplorationController`
+  own room transitions, while `IExplorationBehaviorService` runs
+  exploration-phase entity behaviors.
+- **PreConditions promoted** (`26-PreConditions`) — `BasePreCondition`
+  + concretes (`PCComboAvailable`, `PCFirstRollOfCombat`,
+  `PCComposite`, `PCEntityInRange`, `PCHasInventoryItem`,
+  `PCHasModifier`, `PCAdjacentToDoor`, …) split out of `04-Effects` so
+  the predicate vocabulary is browsable on its own.
+
+### Vault changes
+
+- **10 new vault sections** added (`17-Grid`, `18-Movement`,
+  `19-Economy`, `20-Shop`, `21-Audio`, `22-Feedback`, `23-Camera`,
+  `24-Items`, `25-Exploration`, `26-PreConditions`).
+- **~270 atomic pages** now total (up from ~170 in the 2026-04-20
+  snapshot).
+- **Vault re-synced with code** — orphan pages removed
+  (`EnemyPanelView` deleted; replaced by `WorldSpaceHealthBar` on each
+  pawn), `BaseTargetQuery` references swept in favour of
+  `SelectionSettings` + `ISelectionController`.
+- New MOCs created for `Grid`, `Movement`, `Economy`, `Shop`, `Audio`.
+  MOCs for `Feedback`, `Camera`, `Items`, `Exploration`,
+  `PreConditions` still pending — pages are reachable via the folder
+  for now.
+
+### Still pending
+
+- Round 3 manual Unity setup (organise prefabs/SOs, configure SO values,
+  wire Inspector references) — see [[Round3-Checklist]].
+- Strike combos (§5.6) still TBD.
+- Save / persistence pipeline (§15) still stubbed; `InventorySnapshot`
+  is ready to plug in once `SaveSystem` lands.
+- Quests / Tutorial / Settings / Object pooling / Analytics still
+  TBD (§21–§25).
+

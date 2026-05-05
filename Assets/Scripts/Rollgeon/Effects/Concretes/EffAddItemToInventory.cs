@@ -15,6 +15,11 @@ namespace Rollgeon.Effects.Concretes
 
         public override string GetEffectName() => "Add Item To Inventory";
 
+        // El add va por ItemId — no requiere selección de tile/entidad.
+        protected override bool ShowSelection => false;
+        public override bool HasSelectionRequirement() => false;
+        public override bool RequiresSelectionAt(Selection.SelectionTiming timing) => false;
+
         public override bool ApplyEffect(EffectContext context)
         {
             if (string.IsNullOrEmpty(ItemId)) return false;
@@ -44,17 +49,21 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
-            EventManager.Trigger(EventName.OnItemObtained, context.SourceGuid, ItemId);
+            // OnItemObtained lo dispara InventoryService.AddItem centralmente — no
+            // re-disparar acá para evitar doble fire.
             return true;
         }
 
-#if UNITY_EDITOR
+        // Método siempre compilado (player build incluido) porque [ValueDropdown(nameof(...))]
+        // resuelve el nombre en compile-time. La lógica de scan vive dentro de
+        // ItemCatalogSO.GetEditorAllIds que ya tiene su propio #if UNITY_EDITOR.
         private static IEnumerable<string> GetItemIds()
         {
-            return ServiceLocator.TryGetService<ItemCatalogSO>(out var cat)
-                ? cat.AllIds
-                : Array.Empty<string>();
-        }
+#if UNITY_EDITOR
+            return ItemCatalogSO.GetEditorAllIds();
+#else
+            return Array.Empty<string>();
 #endif
+        }
     }
 }

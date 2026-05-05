@@ -35,8 +35,8 @@ public class SelectionSettings {
 
 ## Dependencies
 
-- **Uses:** [[BaseTargetQuery]], [[TargetQueries]], [[ReadInfo]],
-  `SelectionTiming`, [[TargetSelectionResult]].
+- **Uses:** [[SlotState]], [[EntityFilterMask]], [[SelectionTiming]],
+  [[TargetSelectionResult]], `IGridManager`.
 - **Used by:** [[BaseEffect]], [[EffectData]].
 
 ## Code

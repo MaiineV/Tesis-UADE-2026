@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using Patterns;
 using Rollgeon.Effects;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -12,7 +10,6 @@ namespace Rollgeon.Items
     public class ItemSO : SerializedScriptableObject
     {
         [Title("Identity")]
-        [ValueDropdown(nameof(GetItemIds))]
         public string ItemId;
         public string DisplayName;
         [TextArea] public string Description;
@@ -41,6 +38,10 @@ namespace Rollgeon.Items
         [MinValue(0)]
         public int Cooldown = 0;
 
+        [ShowIf("@Type == ItemType.Active")]
+        [InfoBox("Si true, el slot se remueve del inventario tras un uso exitoso (consumibles tipo poción).")]
+        public bool ConsumedOnUse = false;
+
         [Title("Action economy")]
         [ShowIf("@Type == ItemType.Active")]
         [InfoBox("Si true, usar este item activo consume un slot del turno.")]
@@ -55,10 +56,5 @@ namespace Rollgeon.Items
         [Title("Visual")]
         [InfoBox("Prefab opcional para la representacion 3D del item en el mundo (pedestal, drop).")]
         public GameObject WorldPrefab;
-
-#if UNITY_EDITOR
-        private static IEnumerable<string> GetItemIds() =>
-            ServiceLocator.TryGetService<ItemCatalogSO>(out var cat) ? cat.AllIds : Array.Empty<string>();
-#endif
     }
 }

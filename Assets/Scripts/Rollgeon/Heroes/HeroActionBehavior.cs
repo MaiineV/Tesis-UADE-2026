@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Energy;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
@@ -112,6 +113,21 @@ namespace Rollgeon.Heroes
         {
             reason = null;
             if (Effects == null || Effects.Count == 0) return true;
+
+            // Gate por EnergyCost — independiente de los preconditions del inspector.
+            // Why: el campo EnergyCost ya declara el costo canónico del behavior; obligar
+            // al data setup a duplicarlo via PCHasIntAttribute era frágil (se olvidaba) y
+            // dejaba botones habilitados sin energía. Si IEnergyService no está registrado
+            // (ej. EditMode tests), no gateamos — defensive default.
+            if (EnergyCost > 0
+                && ownerGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IEnergyService>(out var energySvc)
+                && energySvc != null
+                && energySvc.GetCurrent(ownerGuid) < EnergyCost)
+            {
+                reason = $"Not enough energy ({energySvc.GetCurrent(ownerGuid)} < {EnergyCost}).";
+                return false;
+            }
 
             var preCtx = new PreConditionContext
             {

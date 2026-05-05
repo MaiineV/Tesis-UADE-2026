@@ -25,6 +25,16 @@ namespace Patterns
 
         /// <summary>Daño absorbido por Shield antes de aplicar a Health.</summary>
         public int ShieldAbsorbed;
+
+        /// <summary><c>true</c> si todo el daño fue absorbido por shield (FinalDamage == 0
+        /// y ShieldAbsorbed &gt; 0). Útil para feedback visual: en este caso no mostramos
+        /// "0" rojo sino "0" en color shield.</summary>
+        public bool BlockedByShield;
+
+        /// <summary><c>true</c> si el shield del target estaba activo (&gt; 0) antes de
+        /// este hit y quedó en 0 después. Útil para spawnear un "Broken Shield" además
+        /// del número de daño residual.</summary>
+        public bool ShieldBroken;
     }
 
     /// <summary>

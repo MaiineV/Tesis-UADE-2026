@@ -25,7 +25,7 @@ tags: [moc, player]
 
 ## Notes
 
-- [[PlayerService]]
+- [[PlayerService]] · [[IPlayerService]]
 
 ## Cross-domain edges
 

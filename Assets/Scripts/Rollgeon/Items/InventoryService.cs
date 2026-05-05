@@ -60,6 +60,10 @@ namespace Rollgeon.Items
             }
 
             OnItemChanged?.Invoke(item, true);
+            // Centralizamos el OnItemObtained acá — antes solo lo disparaba EffAddItemToInventory,
+            // entonces compras del shop / starting items no notificaban al HUD y el counter
+            // quedaba stale hasta el próximo OnEnable de la sub-view.
+            EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
             return true;
         }
 
@@ -153,6 +157,15 @@ namespace Rollgeon.Items
 
             slot.CurrentCooldown = item.Cooldown;
             EventManager.Trigger(EventName.OnActiveItemUsed, ctx?.SourceGuid ?? GetPlayerGuid(), item.ItemId);
+
+            if (item.ConsumedOnUse)
+            {
+                // Remove by index so multiple charges del mismo item se descuentan
+                // de a uno (RemoveItem(itemId) borraría el primer slot que matchee).
+                _activeItems.RemoveAt(activeSlotIndex);
+                OnItemChanged?.Invoke(item, false);
+                EventManager.Trigger(EventName.OnItemRemoved, ctx?.SourceGuid ?? GetPlayerGuid(), item.ItemId);
+            }
             return true;
         }
 

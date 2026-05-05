@@ -19,4 +19,4 @@ MonoBehaviour:
   RestockCost: 5
   MaxRestocks: 1
   FirstPurchaseDiscountPercent: 0
-  PedestalPrefab: {fileID: 2189185042564396352, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
+  PedestalPrefab: {fileID: 8567412772713499246, guid: bc3caaa25b1ee5245b825f86ced5039c, type: 3}

@@ -45,7 +45,7 @@ its return to `ctx.lastResult`. Subsequent effects in an
 
 - **Uses:** [[IEffect]], [[EffectContext]], [[SelectionSettings]],
   [[TargetSelectionResult]].
-- **Used by:** every concrete effect ([[EffDamage]], [[EffHeal]], …),
+- **Used by:** every concrete effect ([[EffDealDamage]], [[EffHeal]], …),
   [[EffectData]].
 
 ## Code

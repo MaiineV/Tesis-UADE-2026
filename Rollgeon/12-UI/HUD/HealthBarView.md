@@ -22,8 +22,7 @@ tags: [ui, hud, view, exploration]
 
 - **Uses:** [[Health]], [[AttributesManager]], [[IPlayerService]],
   [[EventManager]], Unity `Slider` + `TMP_Text`.
-- **Used by:** [[ExplorationHUDView]], [[CombatHUDView]]
-  (as the player row inside [[EnemyPanelView]] counterpart).
+- **Used by:** [[ExplorationHUDView]], [[CombatHUDView]].
 
 ## Code
 

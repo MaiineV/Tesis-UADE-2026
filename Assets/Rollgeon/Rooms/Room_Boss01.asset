@@ -23,7 +23,7 @@ MonoBehaviour:
     SerializationNodes: []
   RoomId: CombatBoss
   DisplayName: Boss
-  Type: 1
+  Type: 2
   RoomPrefab: {fileID: 3358072774779011347, guid: 3e164b1162992d248b8e3d0f123b02f7, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []

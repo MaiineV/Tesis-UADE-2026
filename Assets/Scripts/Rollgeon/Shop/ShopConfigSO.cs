@@ -49,6 +49,10 @@ namespace Rollgeon.Shop
         [Required, Tooltip("Prefab instanciado por cada slot no comprado. Debe tener un ShopItemPedestalInteractable.")]
         public GameObject PedestalPrefab;
 
+        [Tooltip("Offset (en local space del pedestal) al que se instancia el ItemSO.WorldPrefab. " +
+                 "Default Y=1.5 para que el ítem quede arriba del pedestal en lugar de dentro.")]
+        public Vector3 ItemVisualLocalOffset = new Vector3(0f, 1.5f, 0f);
+
         /// <summary>Resuelve el precio final con multiplicador y varianza.</summary>
         public int ResolvePrice(int basePrice, System.Random rng)
         {

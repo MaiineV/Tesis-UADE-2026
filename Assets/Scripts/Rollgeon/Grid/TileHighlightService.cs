@@ -20,6 +20,9 @@ namespace Rollgeon.Grid
                 { "move", new Color(0.3f, 0.8f, 1f, 0.6f) },
                 { "attack", new Color(1f, 0.3f, 0.3f, 0.6f) },
                 { "selected", new Color(1f, 0.9f, 0.2f, 0.7f) },
+                // Verde brillante para el camino A* previewado durante hover. Se pinta
+                // sobre el rango "move" así que tiene que distinguirse claramente.
+                { "path", new Color(0.45f, 1f, 0.55f, 0.85f) },
             };
         }
 

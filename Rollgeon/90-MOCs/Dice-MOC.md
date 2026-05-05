@@ -27,11 +27,14 @@ tags: [moc, dice, reroll]
 
 ## Notes
 
-- [[RerollBudgetService]] · [[RerollBudget]] · [[RerollQueryResult]]
+- **Reroll:** [[RerollBudgetService]] · [[IRerollBudgetService]] ·
+  [[RerollBudget]] · [[RerollQueryResult]]
+- **Roller:** [[DiceRoller]] · [[IDiceRoller]]
+- **Bags & types:** [[DiceBagSO]] · [[DiceBagPoolSO]] ·
+  [[DicePoolEntry]] · [[DiceType]] · [[DiceTypeExt]]
 
 ## Cross-domain edges
 
 - Consumes [[EnergyService]] for paid rerolls (see [[Combat-MOC]]).
 - Read by [[RerollCountView]] in [[UI-MOC]].
-- **TBD:** `DiceBagSO`, `DiceType`, `DiceEnchantmentSO` — see
-  [[Crosscutting-Overview]].
+- **TBD:** `DiceEnchantmentSO` — see [[Crosscutting-Overview]].

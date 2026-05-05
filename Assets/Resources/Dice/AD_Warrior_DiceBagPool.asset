@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.DiceBagPoolSO
   RequiredBagSize: 5
   Offerings:
+  - Type: 0
+    MaxInBag: 5
   - Type: 1
     MaxInBag: 5
   - Type: 2
     MaxInBag: 2
   - Type: 3
+    MaxInBag: 2
+  - Type: 4
+    MaxInBag: 2
+  - Type: 5
     MaxInBag: 1

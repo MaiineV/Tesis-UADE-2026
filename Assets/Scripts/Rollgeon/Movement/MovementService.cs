@@ -6,7 +6,9 @@ using UnityEngine;
 namespace Rollgeon.Movement
 {
     /// <summary>
-    /// Implementación default de <see cref="IMovementService"/> — BFS 4-neighborhood.
+    /// Implementación default de <see cref="IMovementService"/>.
+    /// <see cref="GetReachableTiles"/> usa BFS (range query); <see cref="FindPath"/> usa
+    /// A* con heurística Manhattan (point-to-point en 4-neighborhood, costo uniforme).
     /// TECHNICAL.md §17.§B.
     /// </summary>
     public sealed class MovementService : IMovementService
@@ -56,47 +58,65 @@ namespace Rollgeon.Movement
         {
             if (from == to) return new List<GridCoord> { from };
             if (!_grid.IsWalkable(to)) return new List<GridCoord>();
-            if (_grid.IsOccupied(to) && !(_grid.TryGetOccupant(to, out _)))
-            {
-                // ocupado pero el grid manager no puede resolver occupant — conservador, falla
-                return new List<GridCoord>();
-            }
+            if (_grid.IsOccupied(to)) return new List<GridCoord>();
 
-            var cameFrom = new Dictionary<GridCoord, GridCoord> { [from] = from };
-            var queue = new Queue<GridCoord>();
-            queue.Enqueue(from);
-            bool reached = false;
+            // A* con heurística Manhattan. Costo de step = 1 (uniforme, 4-neighborhood).
+            // En FP las salas son chicas (<100 nodos) así que un open-set como List con
+            // búsqueda lineal del mínimo es más simple que una priority queue y
+            // suficientemente rápido. Si crece el grid hay que migrar a heap binario.
+            var cameFrom = new Dictionary<GridCoord, GridCoord>();
+            var gScore = new Dictionary<GridCoord, int> { [from] = 0 };
+            var fScore = new Dictionary<GridCoord, int> { [from] = from.Manhattan(to) };
+            var open = new List<GridCoord> { from };
+            var openSet = new HashSet<GridCoord> { from };
 
-            while (queue.Count > 0)
+            while (open.Count > 0)
             {
-                var current = queue.Dequeue();
-                if (current == to) { reached = true; break; }
+                // Pop el de menor f. O(n) en open — aceptable para FP scale.
+                int bestIdx = 0;
+                int bestF = fScore[open[0]];
+                for (int i = 1; i < open.Count; i++)
+                {
+                    int f = fScore[open[i]];
+                    if (f < bestF) { bestF = f; bestIdx = i; }
+                }
+                var current = open[bestIdx];
+                open.RemoveAt(bestIdx);
+                openSet.Remove(current);
+
+                if (current == to) return ReconstructPath(cameFrom, current, from);
 
                 foreach (var edge in _grid.Graph.GetNeighbors(current))
                 {
                     var n = edge.To;
-                    if (cameFrom.ContainsKey(n)) continue;
                     if (!_grid.IsWalkable(n)) continue;
-
-                    // Permitir paso por tile destino aunque esté ocupado por sí mismo; otros ocupantes bloquean
+                    // Tile ocupado bloquea el paso, salvo el destino (chequeado al inicio,
+                    // así que llegar acá implica destino libre).
                     if (_grid.IsOccupied(n) && n != to) continue;
-                    if (_grid.IsOccupied(n) && n == to) continue;
+
+                    int tentativeG = gScore[current] + 1;
+                    if (gScore.TryGetValue(n, out var existingG) && tentativeG >= existingG) continue;
 
                     cameFrom[n] = current;
-                    queue.Enqueue(n);
+                    gScore[n] = tentativeG;
+                    fScore[n] = tentativeG + n.Manhattan(to);
+                    if (openSet.Add(n)) open.Add(n);
                 }
             }
 
-            if (!reached) return new List<GridCoord>();
+            return new List<GridCoord>();
+        }
 
-            var path = new List<GridCoord>();
-            var cursor = to;
-            while (cursor != from)
+        private static List<GridCoord> ReconstructPath(
+            Dictionary<GridCoord, GridCoord> cameFrom, GridCoord goal, GridCoord start)
+        {
+            var path = new List<GridCoord> { goal };
+            var cursor = goal;
+            while (cursor != start)
             {
-                path.Add(cursor);
                 cursor = cameFrom[cursor];
+                path.Add(cursor);
             }
-            path.Add(from);
             path.Reverse();
             return path;
         }

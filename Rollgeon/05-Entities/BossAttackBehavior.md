@@ -17,7 +17,7 @@ tags: [entities, behavior, boss, attack]
 Bosses are not "just enemies with bigger numbers". They can:
 
 - Ignore weakness multipliers.
-- Hit multiple targets via a [[BaseTargetQuery]].
+- Hit multiple targets via [[SelectionSettings]] / [[ISelectionController]].
 - Trigger their own `ExtraEffects` (status, movement, etc.).
 - Branch on phase / hp threshold via overridden `CanExecute`.
 
@@ -27,7 +27,7 @@ decision tree.
 ## Dependencies
 
 - **Uses:** [[BaseBehavior]], [[DamagePipeline]], [[DamageContext]],
-  [[AttackKind]], [[BaseTargetQuery]].
+  [[AttackKind]], [[ISelectionController]].
 - **Used by:** the floor-1 boss `EnemyDataSO` (Content#0103).
 
 ## Code

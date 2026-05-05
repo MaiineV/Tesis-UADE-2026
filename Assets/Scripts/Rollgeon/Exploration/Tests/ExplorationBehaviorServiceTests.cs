@@ -210,6 +210,8 @@ namespace Rollgeon.Exploration.Tests
 
             public void OnTargetClicked(TargetRef target) { }
 
+            public void OnTargetHovered(TargetRef target) { }
+
             public void CancelSelection()
             {
                 CancelCalled = true;

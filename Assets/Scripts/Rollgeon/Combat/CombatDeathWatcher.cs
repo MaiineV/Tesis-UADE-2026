@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.AI;
@@ -6,12 +7,20 @@ using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
+using Rollgeon.Patterns;
 using Rollgeon.Player;
+using UnityEngine;
 
 namespace Rollgeon.Combat
 {
     public sealed class CombatDeathWatcher : ICombatDeathWatcher
     {
+        // Tiempo que esperamos antes de despawnear visualmente al enemigo + notificar
+        // Victory. Le da chance a los floating numbers (damage + gold drop, con stagger
+        // 0.4s) de aparecer antes de que el HUD se desmonte y mate las coroutines del
+        // FloatingDamageSpawner. Si el stagger se aumenta, este valor también debería.
+        private const float DeathAnimationDelaySeconds = 1.5f;
+
         private readonly IPlayerService _player;
         private readonly ICombatSignaller _signaller;
         private readonly TurnOrderService _turnOrder;
@@ -80,20 +89,45 @@ namespace Rollgeon.Combat
                 return;
             }
 
+            // OnEntityDestroyed se dispara YA — los listeners deben saberlo de inmediato
+            // (gold drop, achievements). DungeonManager también lo escucha y remueve al
+            // enemigo de room.SpawnedEnemies, que es lo que chequeamos abajo para Victory.
             EventManager.Trigger(EventName.OnEntityDestroyed,
                 payload.TargetGuid, payload.SourceGuid);
 
             _turnOrder.Remove(payload.TargetGuid);
-            _visuals?.Despawn(payload.TargetGuid);
-            _grid?.Unregister(payload.TargetGuid);
 
+            var deadGuid = payload.TargetGuid;
             var room = _dungeon.CurrentRoomInstance;
-            if (room != null
+            bool isFinalKill = room != null
                 && room.State == RoomState.Uncleared
-                && room.SpawnedEnemies.Count == 0)
+                && room.SpawnedEnemies.Count == 0;
+
+            if (isFinalKill && Application.isPlaying)
             {
-                _signaller.NotifyCombatEnded(CombatOutcome.Victory);
+                // Solo delayamos el despawn + Victory en el kill FINAL. Es ahí donde el
+                // HUD transiciona (Combat → Exploration) y mata las coroutines del
+                // FloatingDamageSpawner — sin delay, los floating numbers no alcanzan a
+                // aparecer. Mid-combat kills van inmediato para que los enemigos vivos
+                // no vean un "fantasma" ocupando el tile durante 1.5s.
+                CoroutineHost.Run(DelayedFinishCombat(deadGuid));
             }
+            else
+            {
+                _visuals?.Despawn(deadGuid);
+                _grid?.Unregister(deadGuid);
+
+                if (isFinalKill)
+                    _signaller.NotifyCombatEnded(CombatOutcome.Victory);
+            }
+        }
+
+        private IEnumerator DelayedFinishCombat(Guid deadGuid)
+        {
+            yield return new WaitForSeconds(DeathAnimationDelaySeconds);
+            _visuals?.Despawn(deadGuid);
+            _grid?.Unregister(deadGuid);
+            _signaller.NotifyCombatEnded(CombatOutcome.Victory);
         }
     }
 }

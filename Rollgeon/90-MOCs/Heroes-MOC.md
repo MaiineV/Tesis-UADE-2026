@@ -27,7 +27,10 @@ tags: [moc, heroes]
 
 ## Notes
 
-- [[ClassHeroSO]] · [[ContractSheet]] · [[ContractWarriorFactory]]
+- **Class data:** [[ClassHeroSO]] · [[ClassPassiveSO]] ·
+  [[ContractSheet]] · [[ContractWarriorFactory]]
+- **Hero behaviors:** [[HeroActionBehavior]] · [[HeroBehaviorContext]] ·
+  [[HeroBehaviorSlot]] · [[PassiveHook]]
 
 ## Cross-domain edges
 

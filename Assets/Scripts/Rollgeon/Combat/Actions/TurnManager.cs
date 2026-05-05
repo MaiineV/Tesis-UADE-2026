@@ -233,6 +233,14 @@ namespace Rollgeon.Combat.Actions
                 return false;
             }
 
+            // Las preconditions del behavior se evalúan antes del energy check para no
+            // cobrar energía cuando la cadena va a abortar igual (ej. Heal sin poción).
+            if (!behavior.HasUsableEffectGroup(playerGuid, Guid.Empty, out var pcReason))
+            {
+                reason = pcReason ?? $"Behavior '{behavior.ActionName}' has no usable effect group.";
+                return false;
+            }
+
             int available = _energy.GetCurrent(playerGuid);
             if (available < behavior.EnergyCost)
             {

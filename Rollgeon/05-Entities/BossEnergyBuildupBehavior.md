@@ -17,7 +17,7 @@ tags: [entities, behavior, boss, energy]
 - Spends no energy; instead increments the boss's own `Energy` stat via
   [[AttributesManager]]`.Modify<Energy,int>`.
 - On reaching `Threshold`, swaps into a burst phase: fires an
-  [[EffDamage]]-style effect, then resets the counter.
+  [[EffDealDamage]]-style effect, then resets the counter.
 
 This is a common boss rhythm pattern — visible telegraph, punishable
 charge window, predictable burst.
@@ -25,7 +25,7 @@ charge window, predictable burst.
 ## Dependencies
 
 - **Uses:** [[BaseBehavior]], [[AttributesManager]], [[Energy]],
-  [[EffDamage]] (or equivalent `ExtraEffects`).
+  [[EffDealDamage]] (or equivalent `ExtraEffects`).
 - **Used by:** the floor-1 boss `EnemyDataSO`.
 
 ## Code

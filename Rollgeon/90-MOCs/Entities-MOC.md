@@ -9,7 +9,7 @@ tags: [moc, entities]
 # 05-Entities — Map of Content
 
 > Entity data assets + behavior templates used by enemies, bosses, and
-> future props / NPCs.
+> future props / NPCs. Plus the visual layer (pawns, world-space HUD).
 
 ## Relationships
 
@@ -22,29 +22,47 @@ tags: [moc, entities]
                           ├─ SupportHealBehavior (Auditor)
                           ├─ BossAttackBehavior  (floor-1 boss)
                           ├─ BossEnergyBuildupBehavior
-                          └─ BossComboBlockBehavior
+                          ├─ BossComboBlockBehavior
+                          └─ BossComboImmunityBehavior
 
  BaseBehavior → Trigger (BehaviorTrigger) ∧ AllowedPhases (GamePhaseMask)
-              ─ StoredValues API (§9.3)
+              ─ BehaviorContext + BaseBehaviorStoredValue (§9.3)
+                   └─ FloatBehaviorValue, FloatingNumberBehaviorValue,
+                      ImpulseBehaviorValue (keyed by BehaviorValueKey)
 
  BehaviorLibrarySO  ─ optional pool of named templates
 
  EnemyCatalogSO     ─ catalog of all EnemyDataSO
  BossFloorManagerSO ─ packs boss room + boss enemy + rewards (stub)
+
+ EntityVisualService (IEntityVisualService)
+     └─ EntityPawn (PawnKind) → WorldSpaceHealthBar
 ```
 
 ## Notes
 
 - **Data:** [[BaseEntitySO]] · [[EnemyDataSO]] · [[EnemyCatalogSO]]
 - **Behaviors:** [[BaseBehavior]] · [[BehaviorTrigger]] ·
-  [[GamePhaseMask]] · [[HealStrength]] · [[BehaviorLibrarySO]]
+  [[BehaviorContext]] · [[GamePhaseMask]] ·
+  [[GamePhaseMaskExtensions]] · [[HealStrength]] ·
+  [[BehaviorLibrarySO]]
+- **Stored values:** [[BaseBehaviorStoredValue]] ·
+  [[BehaviorValueKey]] · [[FloatBehaviorValue]] ·
+  [[FloatingNumberBehaviorValue]] · [[ImpulseBehaviorValue]]
 - **Concretes:** [[SupportHealBehavior]] · [[BossAttackBehavior]] ·
-  [[BossEnergyBuildupBehavior]] · [[BossComboBlockBehavior]]
+  [[BossEnergyBuildupBehavior]] · [[BossComboBlockBehavior]] ·
+  [[BossComboImmunityBehavior]]
 - **Boss meta:** [[BossFloorManagerSO]]
+- **Visuals:** [[EntityPawn]] · [[EntityVisualService]] ·
+  [[IEntityVisualService]] · [[PawnKind]] · [[WorldSpaceHealthBar]]
 
 ## Cross-domain edges
 
 - Consumed by [[DefaultEnemySpawnResolver]] (see [[Combat-MOC]]).
 - Writes to [[WeaknessRegistry]] on spawn.
-- Behaviors often fire [[EffDamage]] / [[EffHeal]] from
+- Behaviors often fire [[EffDealDamage]] / [[EffHeal]] from
   [[Effects-MOC]].
+- [[EntityPawn]] positions integrate with [[Movement-MOC|Movement]] and
+  trigger pulses through [[Feedback-MOC|Feedback]].
+- Death events drive gold drops via [[Economy-MOC|Economy]]
+  ([[EnemyGoldDropService]]).

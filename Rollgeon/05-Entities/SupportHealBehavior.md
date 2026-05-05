@@ -16,7 +16,7 @@ tags: [entities, behavior, heal, support]
 
 - `Trigger = OnTurnStart`, `AllowedPhases = Combat`.
 - On `Execute(ctx)`:
-  1. Resolve target via [[BaseTargetQuery]] (typically allies excluding
+  1. Resolve target via [[ISelectionController]] (typically allies excluding
      self).
   2. Compute heal amount = `BaseHealAmount + HealStrength.ModifiedValue`.
   3. Push through [[HealPipeline]] clamped to `EnemyDataSO.BaseHP`.
@@ -24,7 +24,7 @@ tags: [entities, behavior, heal, support]
 ## Dependencies
 
 - **Uses:** [[BaseBehavior]], [[HealStrength]], [[HealPipeline]],
-  [[BaseTargetQuery]], `BehaviorContext`.
+  [[ISelectionController]], `BehaviorContext`.
 - **Used by:** the Auditor enemy data asset, any other support that
   shares this recipe.
 

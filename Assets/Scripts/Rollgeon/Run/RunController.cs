@@ -9,8 +9,10 @@ using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dungeon;
+using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Exploration;
+using Rollgeon.Items;
 using Rollgeon.Player;
 using UnityEngine;
 
@@ -99,7 +101,22 @@ namespace Rollgeon.Run
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
             ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid);
             ServiceLocator.TryGetService<Rollgeon.Entities.Visuals.IEntityVisualService>(out var visuals);
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals);
+
+            // 2a. Gold drops — escucha OnEntityDestroyed y suma al IEconomyService.
+            //     El resolver le reporta el drop rolled al spawnear cada enemigo.
+            EnemyGoldDropService goldDrops = null;
+            if (ServiceLocator.TryGetService<IEconomyService>(out var economy) && economy != null)
+            {
+                goldDrops = new EnemyGoldDropService(economy);
+                ServiceLocator.AddService<EnemyGoldDropService>(goldDrops, ServiceScope.Run);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[RunController] IEconomyService no registrado — los enemigos no van a dropear oro este run.");
+            }
+
+            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals, goldDrops);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
@@ -120,8 +137,12 @@ namespace Rollgeon.Run
             var damagePipeline = new DamagePipeline();
             ServiceLocator.AddService<IDamagePipeline>(damagePipeline, ServiceScope.Run);
 
-            // 5. Heal pipeline
-            var healPipeline = new HealPipeline();
+            // 5. Heal pipeline — resolver de max HP: player vía hero.BaseMaxHp,
+            //    enemigos vía EnemyDataRegistry (cuando exista) o BaseHP del SO. Para FP
+            //    el único heal en uso es la poción del player, así que sólo cubrimos ese
+            //    caso explícitamente; el fallback int.MaxValue queda para enemigos heal
+            //    upstream.
+            var healPipeline = new HealPipeline(attributes, BuildMaxHpResolver(playerService));
             ServiceLocator.AddService<IHealPipeline>(healPipeline, ServiceScope.Run);
 
             // 5b. Shield reset handler
@@ -231,6 +252,51 @@ namespace Rollgeon.Run
             {
                 energy.InitializeForEntity(playerService.PlayerGuid);
             }
+
+            GrantStartingItems(hero);
+        }
+
+        private static void GrantStartingItems(Rollgeon.Heroes.ClassHeroSO hero)
+        {
+            if (hero?.StartingItems == null || hero.StartingItems.Count == 0) return;
+
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
+            {
+                Debug.LogWarning(
+                    "[RunController] IInventoryService no registrado — los StartingItems del hero no se entregan.");
+                return;
+            }
+
+            foreach (var item in hero.StartingItems)
+            {
+                if (item == null) continue;
+                if (!inventory.AddItem(item))
+                {
+                    Debug.LogWarning(
+                        $"[RunController] No se pudo agregar StartingItem '{item.ItemId}' (¿inventario lleno?).");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Construye el resolver de max HP que el <see cref="HealPipeline"/> usa para
+        /// clampear el heal contra el HP máximo. Para el player, devuelve
+        /// <c>hero.BaseMaxHp</c>. Para otros guids, devuelve un cap permisivo (los
+        /// enemigos hoy no se curan en gameplay del FP).
+        /// </summary>
+        private static Func<Guid, int> BuildMaxHpResolver(IPlayerService playerService)
+        {
+            return guid =>
+            {
+                if (playerService != null
+                    && playerService.PlayerGuid == guid
+                    && playerService.CurrentHero != null
+                    && playerService.CurrentHero.BaseMaxHp > 0)
+                {
+                    return playerService.CurrentHero.BaseMaxHp;
+                }
+                return int.MaxValue;
+            };
         }
     }
 }

@@ -28,7 +28,8 @@ tags: [moc, phase]
 ## Notes
 
 - [[GamePhase]] · [[PhaseOverlay]] · [[IPhaseService]] ·
-  [[PhaseService]] · [[PhaseTransitionMatrixSO]]
+  [[PhaseService]] · [[PhaseTransitionMatrixSO]] ·
+  [[PhaseStackEntry]] · [[InvalidPhaseTransitionException]]
 
 ## Cross-domain edges
 

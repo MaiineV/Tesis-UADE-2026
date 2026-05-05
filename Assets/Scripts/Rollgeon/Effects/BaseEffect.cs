@@ -38,7 +38,7 @@ namespace Rollgeon.Effects
 
         public SelectionSettings GetSelection() => Selection;
 
-        public bool HasSelectionRequirement()
+        public virtual bool HasSelectionRequirement()
         {
             return Selection != null && Selection.NeedsPlayerInteraction();
         }
@@ -59,7 +59,7 @@ namespace Rollgeon.Effects
         /// <summary>Donde el concrete hace su trabajo. Debe devolver <c>false</c> para abortar la cadena.</summary>
         public abstract bool ApplyEffect(EffectContext context);
 
-        public bool RequiresSelectionAt(SelectionTiming timing)
+        public virtual bool RequiresSelectionAt(SelectionTiming timing)
         {
             return Selection != null && Selection.NeedsSelectionAt(timing);
         }

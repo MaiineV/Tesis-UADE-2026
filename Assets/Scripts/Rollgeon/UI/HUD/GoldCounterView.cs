@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Rollgeon.Economy;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -44,37 +45,57 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void Bind(Guid playerGuid)
         {
-            if (_bound) Unbind();
-
             _playerGuid = playerGuid;
-            EventManager.Subscribe(EventName.OnGoldChanged, HandleGoldChanged);
-            _bound = true;
+            // La subscripción real corre en OnEnable — Bind sólo guarda el guid por
+            // consistencia con las otras sub-views. Si Bind se llama antes que OnEnable
+            // o no se llama en absoluto, OnEnable sigue manejando todo.
+            if (!_bound) Subscribe();
 
+            Debug.Log(LogPrefix + $"Bound. _text={(_text != null ? "set" : "NULL")} gameObject.active={gameObject.activeInHierarchy}", this);
             FetchInitialState();
         }
 
         public void Unbind()
+        {
+            // No-op: el ciclo de vida lo controla OnEnable/OnDisable. Mantenido por la
+            // simetría del patrón Bind/Unbind del resto del HUD.
+        }
+
+        private void Subscribe()
+        {
+            if (_bound) return;
+            EventManager.Subscribe(EventName.OnGoldChanged, HandleGoldChanged);
+            _bound = true;
+        }
+
+        private void Unsubscribe()
         {
             if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnGoldChanged, HandleGoldChanged);
             _bound = false;
         }
 
+        private void OnEnable()
+        {
+            Subscribe();
+            FetchInitialState();
+        }
+
         public void SetValue(int gold)
         {
-            if (_text != null)
+            if (_text == null)
             {
-                _text.text = string.Format(_textFormat, gold);
+                Debug.LogWarning(LogPrefix + $"SetValue({gold}) — _text es NULL (no cableado en Inspector). UI no actualiza.", this);
+                return;
             }
+            _text.text = string.Format(_textFormat, gold);
         }
 
         private void OnDisable()
         {
-            if (_bound) Unbind();
+            Unsubscribe();
         }
 
-        // [STUB] Payload OnGoldChanged — verified against EventName.cs: [int current, int delta].
-        //        Si en el futuro se agrega un Guid al payload (ej: multi-run), ajustar filtro.
         private void HandleGoldChanged(params object[] args)
         {
             if (args == null || args.Length < 1)
@@ -88,19 +109,22 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            Debug.Log(LogPrefix + $"OnGoldChanged received current={current}", this);
             SetValue(current);
         }
 
         /// <summary>
-        /// [SEED] Lectura one-shot del oro inicial (plan §2.4). No existe todavia un
-        /// <c>IEconomyService</c> / <c>AttributesManager.GetGold</c> registrado — la
-        /// UI queda en default ('0G') hasta el primer evento.
+        /// Pulla el oro actual del <see cref="IEconomyService"/> al bindear, para que
+        /// la UI muestre el valor correcto sin depender de que el primer
+        /// <c>OnGoldChanged</c> haya disparado antes (ej. cuando el HUD se pushea
+        /// después del registro del servicio).
         /// </summary>
-        // [STUB] OnPlayerStatsSnapshot — remove FetchInitialState when snapshot event exists.
         private void FetchInitialState()
         {
-            // No hay IEconomyService upstream todavia. La UI se rellena con el primer
-            // OnGoldChanged que dispare el publisher canonico.
+            if (ServiceLocator.TryGetService<IEconomyService>(out var economy) && economy != null)
+            {
+                SetValue(economy.CurrentGold);
+            }
         }
     }
 }

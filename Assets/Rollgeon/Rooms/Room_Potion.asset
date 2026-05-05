@@ -24,4 +24,7 @@ MonoBehaviour:
   RoomId: Potion01
   DisplayName: Potion
   Type: 4
+  RoomPrefab: {fileID: 3358072774779011347, guid: a780c2fdeb96b63458826136a0d04695, type: 3}
+  GridSize: {x: 1, y: 1}
+  PossibleSetups: []
   EnemyPool: {fileID: 0}

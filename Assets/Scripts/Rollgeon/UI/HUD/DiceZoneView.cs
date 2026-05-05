@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -182,19 +184,37 @@ namespace Rollgeon.UI.HUD
 
         private void RunComboDetection()
         {
-            if (_currentFaces == null)
-            {
-                Debug.Log("[DiceZoneView] RunComboDetection — aborted: _currentFaces is null");
-                return;
-            }
-            if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null)
-            {
-                Debug.Log("[DiceZoneView] RunComboDetection — aborted: ComboCatalogSO not in ServiceLocator");
-                return;
-            }
+            if (_currentFaces == null) return;
 
             var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, _heldStates);
-            Debug.Log($"[DiceZoneView] RunComboDetection — keptDice.Length={keptDice.Length} values=[{string.Join(",", keptDice)}] catalogEntries={catalog.Entries?.Count}");
+
+            // Preferimos el ContractSheet del hero (respeta priorities y el set
+            // específico de combos que ese hero puede usar). Fallback: catálogo
+            // global si el hero/contract no está disponible.
+            var sheet = ResolvePlayerContractSheet();
+            BaseComboSO best = sheet != null
+                ? sheet.MatchBest(keptDice)
+                : MatchBestFromCatalog(keptDice);
+
+            TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
+            {
+                SourceGuid = _playerGuid,
+                ComboId = best?.ComboId ?? string.Empty,
+                DisplayName = best?.DisplayName ?? string.Empty,
+                BaseDamage = best?.BaseDamage ?? 0
+            });
+        }
+
+        private static ContractSheet ResolvePlayerContractSheet()
+        {
+            return ServiceLocator.TryGetService<IPlayerService>(out var ps) && ps?.CurrentHero != null
+                ? ps.CurrentHero.Sheet
+                : null;
+        }
+
+        private static BaseComboSO MatchBestFromCatalog(int[] keptDice)
+        {
+            if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null) return null;
 
             BaseComboSO best = null;
             int bestPriority = -1;
@@ -207,16 +227,7 @@ namespace Rollgeon.UI.HUD
                     bestPriority = combo.Priority;
                 }
             }
-
-            Debug.Log($"[DiceZoneView] RunComboDetection — best={best?.ComboId ?? "null"} displayName={best?.DisplayName ?? "null"} baseDmg={best?.BaseDamage ?? 0}");
-
-            TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
-            {
-                SourceGuid = _playerGuid,
-                ComboId = best?.ComboId ?? string.Empty,
-                DisplayName = best?.DisplayName ?? string.Empty,
-                BaseDamage = best?.BaseDamage ?? 0
-            });
+            return best;
         }
     }
 }

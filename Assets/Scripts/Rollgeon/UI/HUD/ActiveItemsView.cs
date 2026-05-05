@@ -1,6 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Effects;
+using Rollgeon.Effects.Selection;
+using Rollgeon.Grid;
+using Rollgeon.Items;
+using Rollgeon.Phase;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -50,29 +56,146 @@ namespace Rollgeon.UI.HUD
 
         public void Bind(Guid playerGuid)
         {
-            if (_bound) Unbind();
-
             _playerGuid = playerGuid;
-            EventManager.Subscribe(EventName.OnItemObtained, HandleItemObtained);
-            EventManager.Subscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
-            EventManager.Subscribe(EventName.OnItemRemoved, HandleItemRemoved);
-            _bound = true;
-
+            if (!_bound) Subscribe();
             FetchInitialState();
         }
 
         public void Unbind()
         {
+            // No-op: el ciclo de vida lo controla OnEnable/OnDisable. Sin esto, cuando
+            // el HUD de exploration se desactiva al pushear el de combate y vuelve a
+            // activarse, los handlers de eventos y los counts quedan stale.
+        }
+
+        private void Subscribe()
+        {
+            if (_bound) return;
+            EventManager.Subscribe(EventName.OnItemObtained, HandleItemObtained);
+            EventManager.Subscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
+            EventManager.Subscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            SubscribeSlotClicks();
+            _bound = true;
+        }
+
+        private void Unsubscribe()
+        {
             if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleItemObtained);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            UnsubscribeSlotClicks();
             _bound = false;
+        }
+
+        private void OnEnable()
+        {
+            Subscribe();
+            FetchInitialState();
+        }
+
+        private void SubscribeSlotClicks()
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                var slot = _bindings[i].Slot;
+                if (slot != null) slot.OnClicked += HandleSlotClicked;
+            }
+        }
+
+        private void UnsubscribeSlotClicks()
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                var slot = _bindings[i].Slot;
+                if (slot != null) slot.OnClicked -= HandleSlotClicked;
+            }
+        }
+
+        private void HandleSlotClicked(ActiveItemSlotView clicked)
+        {
+            // En combate los ítems activos no se usan vía click — la lógica de combate
+            // (ej. botón de Heal) los consume desde la cadena de efectos del behavior.
+            if (ServiceLocator.TryGetService<IPhaseService>(out var phase)
+                && phase != null
+                && phase.CurrentBase != GamePhase.Exploration)
+            {
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
+            {
+                Debug.LogWarning(LogPrefix + "IInventoryService no registrado — no se puede activar el ítem.");
+                return;
+            }
+
+            string clickedItemId = ResolveItemIdForSlot(clicked);
+            if (string.IsNullOrEmpty(clickedItemId)) return;
+
+            int slotIndex = FindActiveSlotIndex(inventory, clickedItemId);
+            if (slotIndex < 0)
+            {
+                Debug.LogWarning(LogPrefix + $"No hay slot activo para ItemId='{clickedItemId}' en el inventario.");
+                return;
+            }
+
+            var ctx = BuildSelfTargetedContext();
+            inventory.ActivateItem(slotIndex, ctx);
+        }
+
+        private string ResolveItemIdForSlot(ActiveItemSlotView slot)
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                if (_bindings[i].Slot == slot) return _bindings[i].ItemId;
+            }
+            return null;
+        }
+
+        private static int FindActiveSlotIndex(IInventoryService inventory, string itemId)
+        {
+            var actives = inventory.ActiveItems;
+            for (int i = 0; i < actives.Count; i++)
+            {
+                var slot = actives[i];
+                if (slot?.Item != null
+                    && string.Equals(slot.Item.ItemId, itemId, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private EffectContext BuildSelfTargetedContext()
+        {
+            var ctx = new EffectContext
+            {
+                SourceGuid = _playerGuid,
+                TargetGuid = _playerGuid,
+                lastResult = true,
+            };
+
+            // Apunta el SelectionResult al tile del player para que efectos como
+            // EffHeal (que resuelven target via SelectionResult.FirstSelectedCoord +
+            // IGridManager.TryGetOccupant) lo encuentren self-target.
+            if (ServiceLocator.TryGetService<IGridManager>(out var grid)
+                && grid != null
+                && grid.TryGetPosition(_playerGuid, out var coord))
+            {
+                ctx.SelectionResult = new TargetSelectionResult
+                {
+                    WasCompleted = true,
+                    SelectedTargets = new List<TargetRef> { TargetRef.At(coord) },
+                };
+            }
+
+            return ctx;
         }
 
         private void OnDisable()
         {
-            if (_bound) Unbind();
+            Unsubscribe();
         }
 
         private void HandleItemObtained(params object[] args)
@@ -83,6 +206,7 @@ namespace Rollgeon.UI.HUD
             if (TryFindSlot(itemId, out var slot))
             {
                 slot.SetState(ActiveItemState.Active);
+                slot.SetCount(CountInInventory(itemId));
             }
             // else: item legitimo no-active / sin slot HUD — se ignora sin warning.
         }
@@ -94,7 +218,16 @@ namespace Rollgeon.UI.HUD
 
             if (TryFindSlot(itemId, out var slot))
             {
-                slot.SetState(ActiveItemState.Depleted);
+                int remaining = CountInInventory(itemId);
+                if (remaining <= 0)
+                {
+                    slot.SetState(ActiveItemState.Depleted);
+                }
+                else
+                {
+                    slot.SetState(ActiveItemState.Active);
+                }
+                slot.SetCount(remaining);
             }
         }
 
@@ -105,8 +238,27 @@ namespace Rollgeon.UI.HUD
 
             if (TryFindSlot(itemId, out var slot))
             {
-                slot.SetState(ActiveItemState.Inactive);
+                int remaining = CountInInventory(itemId);
+                slot.SetState(remaining > 0 ? ActiveItemState.Active : ActiveItemState.Inactive);
+                slot.SetCount(remaining);
             }
+        }
+
+        private static int CountInInventory(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId)) return 0;
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inv) || inv == null) return 0;
+
+            int count = 0;
+            foreach (var slot in inv.ActiveItems)
+            {
+                if (slot?.Item != null && slot.Item.ItemId == itemId) count++;
+            }
+            foreach (var slot in inv.PassiveItems)
+            {
+                if (slot?.Item != null && slot.Item.ItemId == itemId) count++;
+            }
+            return count;
         }
 
         private static bool TryReadGuidAndItemId(object[] args, out Guid guid, out string itemId)
@@ -151,23 +303,20 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// [SEED] Lectura one-shot del inventario inicial (plan §2.4). No existe todavia
-        /// <c>IInventoryService.GetActiveItems</c>; los slots arrancan en Inactive y se
-        /// rellenan con los eventos que dispare el publisher canonico.
+        /// Lee el inventario actual y refresca cada slot con su estado y count.
+        /// Cubre el caso del HUD bindeado tras AddItem (ej. starting items entregados
+        /// por <c>RunController.GrantStartingItems</c>).
         /// </summary>
-        // [STUB] Item catalog — replace hardcoded item IDs with ItemSO refs when F#0010 available.
-        // [STUB] OnPlayerStatsSnapshot — remove FetchInitialState when snapshot event exists.
         private void FetchInitialState()
         {
-            // Default: todos los slots a Inactive. El diseñador define el estado en prefab;
-            // al bindear lo reseteamos para no mostrar estados stale de un run anterior.
             for (int i = 0; i < _bindings.Count; i++)
             {
-                var slot = _bindings[i].Slot;
-                if (slot != null)
-                {
-                    slot.SetState(ActiveItemState.Inactive);
-                }
+                var binding = _bindings[i];
+                if (binding.Slot == null) continue;
+
+                int count = CountInInventory(binding.ItemId);
+                binding.Slot.SetState(count > 0 ? ActiveItemState.Active : ActiveItemState.Inactive);
+                binding.Slot.SetCount(count);
             }
         }
     }

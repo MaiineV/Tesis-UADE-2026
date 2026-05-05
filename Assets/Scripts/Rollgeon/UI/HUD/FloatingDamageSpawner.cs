@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -57,9 +60,23 @@ namespace Rollgeon.UI.HUD
         private Color _healTint = new Color(0.35f, 1f, 0.45f, 1f);
 
         [SerializeField]
+        [Tooltip("Color del numero para drops de oro (+XG).")]
+        private Color _goldTint = new Color(1f, 0.85f, 0.2f, 1f);
+
+        [SerializeField]
+        [Tooltip("Color del numero para shields / armor ticks.")]
+        private Color _shieldTint = new Color(0.6f, 0.85f, 1f, 1f);
+
+        [SerializeField]
         [Tooltip("Offset en pixeles (screen) del punto de spawn. Suele ser un poco encima " +
                  "del sprite del target.")]
         private Vector3 _screenOffset = new Vector3(0f, 60f, 0f);
+
+        [SerializeField, MinValue(0f), MaxValue(1f)]
+        [Tooltip("Mínimo entre el spawn de un floating y el siguiente (segundos). Si dos eventos " +
+                 "pegan en el mismo frame (ej. damage + gold drop al matar enemigo), el segundo " +
+                 "se posterga este tiempo para que sean legibles.")]
+        private float _staggerSeconds = 0.4f;
 
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
@@ -69,10 +86,27 @@ namespace Rollgeon.UI.HUD
 
         private Action<DamageResolvedPayload> _onDamageResolved;
 
+        // Cache de la última worldPos conocida por GUID. Cuando un damage es lethal,
+        // el CombatDeathWatcher despawnea al target antes de que este handler corra
+        // — sin cache, el último hit caería al centro. Con cache, lo mostramos sobre
+        // la última posición conocida del target.
+        private readonly Dictionary<Guid, Vector3> _lastKnownWorldPos = new Dictionary<Guid, Vector3>();
+
+        // Tiempo (Time.time) hasta el cual el siguiente spawn debe esperar antes de aparecer.
+        // Cada spawn lo avanza por _staggerSeconds — así eventos que llegan al mismo frame
+        // (damage + oro) se distribuyen en el tiempo y no se solapan visualmente.
+        private float _nextSpawnTime;
+
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
             _playerGuid = playerGuid;
+
+            // Si el combate anterior se cerró con animaciones en curso, las coroutines
+            // quedaron suspendidas en GOs residuales del container — al reactivar el HUD
+            // aparecen visibles. Limpiamos antes de bindear para garantizar estado limpio.
+            ClearActiveInstances();
+            _lastKnownWorldPos.Clear();
 
             _onDamageResolved = HandleDamageResolved;
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
@@ -92,7 +126,18 @@ namespace Rollgeon.UI.HUD
             }
 
             EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            ClearActiveInstances();
             _bound = false;
+        }
+
+        private void ClearActiveInstances()
+        {
+            if (_overlayContainer == null) return;
+            var instances = _overlayContainer.GetComponentsInChildren<FloatingDamageInstance>(includeInactive: true);
+            for (int i = 0; i < instances.Length; i++)
+            {
+                if (instances[i] != null) Destroy(instances[i].gameObject);
+            }
         }
 
         private void OnDisable()
@@ -121,6 +166,36 @@ namespace Rollgeon.UI.HUD
                 return null;
             }
 
+            // Auto-stagger: si todavía hay un spawn programado en el futuro, postergamos
+            // este. Así dos eventos disparados en el mismo frame se ven secuencialmente.
+            float now = Time.time;
+            float scheduled = Mathf.Max(now, _nextSpawnTime);
+            _nextSpawnTime = scheduled + _staggerSeconds;
+            float delay = scheduled - now;
+
+            // StartCoroutine requiere que el GO esté activo. Si la jerarquía no está
+            // activa (ej. HUD transicionando), spawneamos sincrónicamente en el frame —
+            // perdemos el stagger pero evitamos el error de Unity y al menos intentamos
+            // mostrar el número. Si el container también está inactive, no se va a ver,
+            // pero eso es un problema de estructura de escena, no del spawner.
+            if (delay > 0f && Application.isPlaying && isActiveAndEnabled && gameObject.activeInHierarchy)
+            {
+                StartCoroutine(SpawnAfterDelay(text, tint, screenPos, delay));
+                return null; // el caller debe tolerar null cuando hay stagger
+            }
+
+            return SpawnNow(text, tint, screenPos);
+        }
+
+        private IEnumerator SpawnAfterDelay(string text, Color tint, Vector3 screenPos, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            SpawnNow(text, tint, screenPos);
+        }
+
+        private FloatingDamageInstance SpawnNow(string text, Color tint, Vector3 screenPos)
+        {
+            if (_instancePrefab == null || _overlayContainer == null) return null;
             var instance = Instantiate(_instancePrefab, _overlayContainer);
             instance.Play(text, tint, screenPos + _screenOffset);
             return instance;
@@ -132,51 +207,112 @@ namespace Rollgeon.UI.HUD
 
         private void HandleDamageResolved(DamageResolvedPayload payload)
         {
-            // Tint: si el player fue source -> outgoing; si fue target -> incoming;
-            // otro caso (enemy vs enemy) -> outgoing default (amarillo).
-            Color tint = _outgoingTint;
-            if (payload.TargetGuid == _playerGuid) tint = _incomingTint;
-            else if (payload.SourceGuid == _playerGuid) tint = _outgoingTint;
-
-            // Posicion: resolver world pos del target; si no, fallback center.
             var screenPos = ResolveScreenPos(payload.TargetGuid);
+
+            // Shield bloqueó todo: spawneamos un "0" en color shield (en vez del rojo
+            // de incoming, que confunde porque parece que recibiste daño cuando no).
+            if (payload.BlockedByShield)
+            {
+                SpawnAt("0", _shieldTint, screenPos);
+                return;
+            }
+
+            // Tint base por owner del damage flow.
+            Color damageTint = _outgoingTint;
+            if (payload.TargetGuid == _playerGuid) damageTint = _incomingTint;
+            else if (payload.SourceGuid == _playerGuid) damageTint = _outgoingTint;
+
+            // Shield rompió en este hit Y queda daño residual: primero el "Broken Shield"
+            // en color shield, después el daño residual. El auto-stagger del SpawnAt
+            // los separa en el tiempo automáticamente.
+            if (payload.ShieldBroken && payload.FinalDamage > 0)
+            {
+                SpawnAt("Broken Shield", _shieldTint, screenPos);
+            }
 
             string text = payload.FinalDamage.ToString();
             if (payload.WeaknessHit) text += "!";
-            SpawnAt(text, tint, screenPos);
+            SpawnAt(text, damageTint, screenPos);
         }
 
         private void HandleFloatingNumberRequested(params object[] args)
         {
             // schema: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]
-            // No tenemos enum FloatingNumberType importado; leemos value+target y usamos
-            // un tint neutral (heal) por default.
             if (args == null || args.Length < 3) return;
             if (!(args[0] is Guid target)) return;
-            float value = args[2] is float f ? f : 0f;
 
+            var type = args[1] is FloatingNumberType ft ? ft : FloatingNumberType.Heal;
+            float value = args[2] is float f ? f : (args[2] is int i ? i : 0f);
+
+            var (text, tint) = FormatByType(type, value);
             var screenPos = ResolveScreenPos(target);
-            SpawnAt(value.ToString("0"), _healTint, screenPos);
+            SpawnAt(text, tint, screenPos);
+        }
+
+        private (string text, Color tint) FormatByType(FloatingNumberType type, float value)
+        {
+            int rounded = Mathf.RoundToInt(value);
+            switch (type)
+            {
+                case FloatingNumberType.Gold:
+                    return ($"+{rounded}G", _goldTint);
+                case FloatingNumberType.Shield:
+                    // "+N" para indicar que el shield se está sumando (path apply via
+                    // EffAddShield). El path absorb tiene su propio SpawnAt directo con
+                    // el texto "0" / "Broken Shield" — no pasa por FormatByType.
+                    return ($"+{rounded}", _shieldTint);
+                case FloatingNumberType.Status:
+                case FloatingNumberType.Heal:
+                    // "+N" en heal por la misma razón visual: indica ganancia de HP.
+                    return ($"+{rounded}", _healTint);
+                case FloatingNumberType.Damage:
+                default:
+                    return (rounded.ToString(), _outgoingTint);
+            }
         }
 
         private Vector3 ResolveScreenPos(Guid entityGuid)
         {
-            // Servicio opcional — plan §3.8. Fallback: centro de la pantalla.
+            Vector3? worldPos = null;
             if (ServiceLocator.TryGetService<IEntityPositionResolver>(out var resolver) && resolver != null)
             {
-                var worldPos = resolver.TryGetWorldPosition(entityGuid);
+                worldPos = resolver.TryGetWorldPosition(entityGuid);
                 if (worldPos.HasValue)
+                    _lastKnownWorldPos[entityGuid] = worldPos.Value;
+            }
+
+            // Fallback al PawnRegistry: el player suele estar en uno de los dos registries
+            // (depende de qué prefab/sistema lo spawneó). Si EntityPositionResolver no lo
+            // tiene, el PawnRegistry sí. Ambos apuntan al mismo Transform en runtime sano.
+            if (!worldPos.HasValue
+                && ServiceLocator.TryGetService<IPawnRegistry>(out var pawnReg) && pawnReg != null
+                && pawnReg.TryGetTransform(entityGuid, out var pawnTransform) && pawnTransform != null)
+            {
+                worldPos = pawnTransform.position;
+                _lastKnownWorldPos[entityGuid] = worldPos.Value;
+            }
+
+            // Fallback al cache: si el target ya fue despawneado (lethal hit), usamos
+            // la última posición conocida en vez del centro de pantalla.
+            if (!worldPos.HasValue && _lastKnownWorldPos.TryGetValue(entityGuid, out var cached))
+                worldPos = cached;
+
+            if (worldPos.HasValue)
+            {
+                var cam = _uiCamera != null ? _uiCamera : Camera.main;
+                if (cam != null)
                 {
-                    var cam = _uiCamera != null ? _uiCamera : Camera.main;
-                    if (cam != null)
-                    {
-                        return cam.WorldToScreenPoint(worldPos.Value);
-                    }
-                    // Sin camara no podemos convertir — caemos al center.
+                    // Cámara renderiza al RT del pipeline pixel-art: WorldToScreenPoint
+                    // devuelve coords en el espacio del RT (cam.pixelWidth/Height), no
+                    // en Screen space. El canvas overlay del HUD usa Screen — escalamos.
+                    var rtPos = cam.WorldToScreenPoint(worldPos.Value);
+                    float sx = cam.pixelWidth > 0 ? rtPos.x / cam.pixelWidth * Screen.width : rtPos.x;
+                    float sy = cam.pixelHeight > 0 ? rtPos.y / cam.pixelHeight * Screen.height : rtPos.y;
+                    return new Vector3(sx, sy, rtPos.z);
                 }
             }
 
-            // Fallback: centro de la pantalla.
+            // Fallback final: centro de la pantalla.
             return new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
         }
     }

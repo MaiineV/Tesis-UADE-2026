@@ -35,6 +35,7 @@ namespace Rollgeon.PreConditions.Concretes
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
                 if (door.CurrentState == DoorVisualState.Tapiada) continue;
+                if (!room.Connections.ContainsKey(door.Direction)) continue;
                 var doorCoord = grid.WorldToGrid(door.transform.position);
                 if (playerCoord.Chebyshev(doorCoord) <= 1) return true;
             }

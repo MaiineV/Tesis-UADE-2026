@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
@@ -25,6 +26,7 @@ namespace Rollgeon.Entities.Visuals
         private readonly GameObject _bossPrefab;
         private readonly Transform _parent;
         private bool _subscribed;
+        private Action<DamageResolvedPayload> _onDamageResolved;
 
         public EntityVisualService(
             IGridManager grid,
@@ -46,6 +48,12 @@ namespace Rollgeon.Entities.Visuals
                 _movement.OnEntityMoved += OnEntityMoved;
                 _subscribed = true;
             }
+
+            // Facing al atacar: el source rota hacia el target en el frame en que el daño
+            // se resuelve. Suscribimos al TypedEvent porque DamagePipeline lo dispara
+            // siempre, sin importar quién originó el ataque.
+            _onDamageResolved = OnDamageResolved;
+            TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
         }
 
         public void Dispose()
@@ -54,6 +62,11 @@ namespace Rollgeon.Entities.Visuals
             {
                 _movement.OnEntityMoved -= OnEntityMoved;
                 _subscribed = false;
+            }
+            if (_onDamageResolved != null)
+            {
+                TypedEvent<DamageResolvedPayload>.Unsubscribe(_onDamageResolved);
+                _onDamageResolved = null;
             }
             DespawnAll();
         }
@@ -143,9 +156,43 @@ namespace Rollgeon.Entities.Visuals
 
         private void OnEntityMoved(Guid guid, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
-            if (_byGuid.TryGetValue(guid, out var pawn) && pawn != null)
+            if (!_byGuid.TryGetValue(guid, out var pawn) || pawn == null) return;
+
+            // Si tenemos path detallado (≥2 nodos) animamos casilla-a-casilla — el FaceCoord
+            // por step lo hace AnimatePath internamente. Pasamos también el movement service
+            // para que la corutina pueda recalcular el path si otra entidad bloquea un tile
+            // mientras animamos. Si no hay path, fallback al snap+facing directo.
+            if (path != null && path.Count >= 2)
             {
+                pawn.AnimatePath(_grid, path, movement: _movement);
+            }
+            else
+            {
+                pawn.FaceCoord(from, to);
                 pawn.SnapToGrid(_grid, to);
+            }
+        }
+
+        private void OnDamageResolved(DamageResolvedPayload payload)
+        {
+            // El atacante rota hacia el target. Si alguno no tiene pawn registrado o no
+            // tienen posición en grid, no hacemos nada — el facing por movimiento ya
+            // suele dejar al atacante mirando bien si vino caminando hacia el target.
+            // Wrappeamos en try/catch para que una excepción del facing no rompa la
+            // cadena de TypedEvent (otros subscribers como FloatingDamageSpawner deben
+            // seguir recibiendo el payload aunque acá fallemos).
+            try
+            {
+                if (payload.SourceGuid == Guid.Empty || payload.TargetGuid == Guid.Empty) return;
+                if (!_byGuid.TryGetValue(payload.SourceGuid, out var sourcePawn) || sourcePawn == null) return;
+                if (_grid == null) return;
+                if (!_grid.TryGetPosition(payload.SourceGuid, out var sourceCoord)) return;
+                if (!_grid.TryGetPosition(payload.TargetGuid, out var targetCoord)) return;
+                sourcePawn.FaceCoord(sourceCoord, targetCoord);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[EntityVisualService] OnDamageResolved facing failed: {ex}");
             }
         }
     }
