@@ -1,0 +1,28 @@
+{
+    "Entries": [
+        {
+            "Index": 0,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 398.0,
+                "y": 320.0
+            }
+        },
+        {
+            "Index": 1,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 708.0,
+                "y": 251.0
+            }
+        },
+        {
+            "Index": 2,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 708.0,
+                "y": 423.0
+            }
+        }
+    ]
+}
