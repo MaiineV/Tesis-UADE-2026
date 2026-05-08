@@ -33,6 +33,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         PropertyTree _soTree;
         AIDecisionNode _selected;
         string _selectedPath;
+        Vector2 _bodyScroll;
 
         Label _header;
         Label _emptyHint;
@@ -130,6 +131,10 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             _soTree.UpdateTree();
 
+            // Refactor a if/else (en vez de early-return en el warning) para mantener balanceados
+            // los pares Begin/EndScrollView en el mismo frame IMGUI.
+            _bodyScroll = EditorGUILayout.BeginScrollView(_bodyScroll);
+
             // Descripción del tipo del nodo — siempre visible, incluso cuando el nodo es
             // huérfano (los docs siguen explicando qué hace).
             var doc = AINodeDocumentation.Get(_selected.GetType());
@@ -154,40 +159,43 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     "Solución: arrastrá una conexión desde un output port (de un nodo conectado al árbol) " +
                     "hacia el input port de este nodo. O borralo si no lo necesitás más.",
                     MessageType.Warning);
-                return;
             }
-
-            EditorGUI.BeginChangeCheck();
-
-            switch (_selected)
+            else
             {
-                case AINode_If ifNode:
-                    DrawIfNode(ifNode);
-                    break;
-                case AINode_While whileNode:
-                    DrawWhileNode(whileNode);
-                    break;
-                case AINode_Behavior behaviorNode:
-                    DrawBehaviorNode(behaviorNode);
-                    break;
-                case AINode_Move moveNode:
-                    DrawMoveNode(moveNode);
-                    break;
-                case AINode_KeepDistance keepDistNode:
-                    DrawKeepDistanceNode(keepDistNode);
-                    break;
-                default:
-                    DrawDefault();
-                    break;
+                EditorGUI.BeginChangeCheck();
+
+                switch (_selected)
+                {
+                    case AINode_If ifNode:
+                        DrawIfNode(ifNode);
+                        break;
+                    case AINode_While whileNode:
+                        DrawWhileNode(whileNode);
+                        break;
+                    case AINode_Behavior behaviorNode:
+                        DrawBehaviorNode(behaviorNode);
+                        break;
+                    case AINode_Move moveNode:
+                        DrawMoveNode(moveNode);
+                        break;
+                    case AINode_KeepDistance keepDistNode:
+                        DrawKeepDistanceNode(keepDistNode);
+                        break;
+                    default:
+                        DrawDefault();
+                        break;
+                }
+
+                _soTree.ApplyChanges();
+
+                if (EditorGUI.EndChangeCheck() || GUI.changed)
+                {
+                    EditorUtility.SetDirty(_enemy);
+                    _onChanged?.Invoke();
+                }
             }
 
-            _soTree.ApplyChanges();
-
-            if (EditorGUI.EndChangeCheck() || GUI.changed)
-            {
-                EditorUtility.SetDirty(_enemy);
-                _onChanged?.Invoke();
-            }
+            EditorGUILayout.EndScrollView();
         }
 
         // ---- per-subtype drawers -----------------------------------------

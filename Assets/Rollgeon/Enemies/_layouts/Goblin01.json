@@ -4,8 +4,8 @@
             "Index": 0,
             "TypeName": "AINode_Sequence",
             "Position": {
-                "x": 279.0,
-                "y": 231.0
+                "x": 271.0,
+                "y": 227.0
             }
         },
         {
@@ -13,7 +13,7 @@
             "TypeName": "AINode_Behavior",
             "Position": {
                 "x": 597.0,
-                "y": 52.0
+                "y": 51.0
             }
         },
         {
