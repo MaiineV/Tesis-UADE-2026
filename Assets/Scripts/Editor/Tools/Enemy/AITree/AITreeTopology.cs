@@ -25,6 +25,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_Sequence _:  return _dynamicChildren;
                 case AINode_If _:        return _ifSlots;
                 case AINode_Random _:    return _randomOptions;
+                case AINode_While _:     return _whileSlots;
                 default:                 return Array.Empty<Slot>(); // leaves
             }
         }
@@ -48,6 +49,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_Random r:
                     if (r.Options != null) foreach (var o in r.Options) { children.Add(o.Node); slots.Add(0); }
                     break;
+                case AINode_While w:
+                    children.Add(w.Body); slots.Add(0);
+                    break;
             }
             slotIndices = slots;
             return children;
@@ -61,6 +65,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_Sequence s: s.Children = new List<AIDecisionNode>(); break;
                 case AINode_If i: i.Then = null; i.Else = null; break;
                 case AINode_Random r: r.Options = new List<AINode_Random.Option>(); break;
+                case AINode_While w: w.Body = null; break;
             }
         }
 
@@ -82,6 +87,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_Random r:
                     r.Options.Add(new AINode_Random.Option { Node = child, Weight = 1f });
                     break;
+                case AINode_While w:
+                    w.Body = child;
+                    break;
             }
         }
 
@@ -93,5 +101,6 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static readonly Slot[] _dynamicChildren = { new Slot("Children", true) };
         static readonly Slot[] _ifSlots = { new Slot("Then", false), new Slot("Else", false) };
         static readonly Slot[] _randomOptions = { new Slot("Options", true) };
+        static readonly Slot[] _whileSlots = { new Slot("Body", false) };
     }
 }

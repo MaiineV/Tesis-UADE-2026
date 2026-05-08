@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -54,6 +55,33 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // Edge: floating-point jitter — ejecutar el último.
             return Options[Options.Count - 1].Node?.Tick(context) ?? AIResult.Failed;
+        }
+
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (Options == null || Options.Count == 0) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            float total = 0f;
+            foreach (var o in Options) total += Mathf.Max(0f, o.Weight);
+            if (total <= 0f) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            double roll = context?.Rng != null
+                ? context.Rng.NextDouble() * total
+                : UnityEngine.Random.Range(0f, total);
+
+            AIDecisionNode selected = null;
+            double cursor = 0;
+            foreach (var o in Options)
+            {
+                cursor += Mathf.Max(0f, o.Weight);
+                if (roll <= cursor) { selected = o.Node; break; }
+            }
+            selected ??= Options[Options.Count - 1].Node;
+
+            if (selected == null) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            var co = selected.TickCoroutine(context, onResult);
+            while (co.MoveNext()) yield return co.Current;
         }
     }
 }

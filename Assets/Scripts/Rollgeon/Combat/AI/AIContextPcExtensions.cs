@@ -25,6 +25,7 @@ namespace Rollgeon.Combat.AI
                 Entity = ctx.Self,
                 RoundIndex = ctx.RoundIndex,
                 OwnerMaxHp = ctx.SelfMaxHp > 0 ? (int?)ctx.SelfMaxHp : null,
+                Attributes = ctx.Attributes,
             };
         }
     }

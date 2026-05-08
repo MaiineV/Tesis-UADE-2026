@@ -1,9 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.PreConditions;
@@ -126,13 +130,29 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             _soTree.UpdateTree();
 
+            // Descripción del tipo del nodo — siempre visible, incluso cuando el nodo es
+            // huérfano (los docs siguen explicando qué hace).
+            var doc = AINodeDocumentation.Get(_selected.GetType());
+            if (!string.IsNullOrEmpty(doc))
+            {
+                EditorGUILayout.HelpBox(doc, MessageType.Info);
+                EditorGUILayout.Space(4);
+            }
+
             // Path cache may go stale across topology edits — re-resolve and verify.
             if (string.IsNullOrEmpty(_selectedPath) || !PathStillPointsToSelection())
                 _selectedPath = FindPathTo(_selected);
             if (string.IsNullOrEmpty(_selectedPath))
             {
                 EditorGUILayout.HelpBox(
-                    "Selected node is no longer reachable from AIRoot — connect it to the tree to edit its parameters.",
+                    "Este nodo no es alcanzable desde el AIRoot — no tiene un input port conectado a " +
+                    "un nodo que descienda del root, así que no se va a ejecutar en runtime.\n\n" +
+                    "Causas típicas:\n" +
+                    "• El nodo padre fue borrado y este quedó suelto.\n" +
+                    "• Re-rooteaste el árbol (Set as Root) y este quedó fuera del subárbol del nuevo root.\n" +
+                    "• Lo creaste pero todavía no lo conectaste.\n\n" +
+                    "Solución: arrastrá una conexión desde un output port (de un nodo conectado al árbol) " +
+                    "hacia el input port de este nodo. O borralo si no lo necesitás más.",
                     MessageType.Warning);
                 return;
             }
@@ -144,8 +164,17 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_If ifNode:
                     DrawIfNode(ifNode);
                     break;
+                case AINode_While whileNode:
+                    DrawWhileNode(whileNode);
+                    break;
                 case AINode_Behavior behaviorNode:
                     DrawBehaviorNode(behaviorNode);
+                    break;
+                case AINode_Move moveNode:
+                    DrawMoveNode(moveNode);
+                    break;
+                case AINode_KeepDistance keepDistNode:
+                    DrawKeepDistanceNode(keepDistNode);
                     break;
                 default:
                     DrawDefault();
@@ -215,6 +244,51 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     EditorUtility.SetDirty(_enemy);
                     NotifyChanged();
                 });
+        }
+
+        /// <summary>
+        /// AINode_While mirrors AINode_If's condition+target authoring (same picker pattern),
+        /// pero con un único <c>Body</c> child y un campo <c>MaxIterations</c> safeguard.
+        /// </summary>
+        void DrawWhileNode(AINode_While node)
+        {
+            // Target Selector (mismo patrón que DrawIfNode)
+            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            PolymorphicPicker.DrawSingle(
+                "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                newInstance =>
+                {
+                    Undo.RecordObject(_enemy, "Change Target Selector");
+                    node.TargetSelector = (BaseEnemyTargetSelector)newInstance;
+                    EditorUtility.SetDirty(_enemy);
+                    NotifyChanged();
+                });
+            if (node.TargetSelector != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("TargetSelector");
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(8);
+
+            // Conditions list (AND-evaluated, looped each iteration)
+            EditorGUILayout.LabelField("Conditions (AND, looped)", EditorStyles.boldLabel);
+            if (node.Conditions == null) node.Conditions = new List<BasePreCondition>();
+            DrawPolymorphicListItems(node.Conditions, "Conditions", "Condition");
+            PolymorphicPicker.DrawAddButton(
+                "Condition", typeof(BasePreCondition), node.Conditions,
+                () =>
+                {
+                    EditorUtility.SetDirty(_enemy);
+                    NotifyChanged();
+                });
+
+            EditorGUILayout.Space(8);
+
+            // MaxIterations safeguard
+            EditorGUILayout.LabelField("Safeguard", EditorStyles.boldLabel);
+            DrawOdinProp("MaxIterations");
         }
 
         /// <summary>
@@ -320,6 +394,60 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 });
         }
 
+        void DrawMoveNode(AINode_Move node)
+        {
+            EditorGUILayout.LabelField("Max Steps", EditorStyles.boldLabel);
+            DrawIntReaderField("MaxSteps", node.MaxSteps,
+                r => { node.MaxSteps = r; });
+            if (node.MaxSteps != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("MaxSteps");
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(6);
+            DrawOdinProp("StopAdjacent");
+        }
+
+        void DrawKeepDistanceNode(AINode_KeepDistance node)
+        {
+            EditorGUILayout.LabelField("Max Steps", EditorStyles.boldLabel);
+            DrawIntReaderField("MaxSteps", node.MaxSteps,
+                r => { node.MaxSteps = r; });
+            if (node.MaxSteps != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("MaxSteps");
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(6);
+
+            EditorGUILayout.LabelField("Ideal Distance", EditorStyles.boldLabel);
+            DrawIntReaderField("IdealDistance", node.IdealDistance,
+                r => { node.IdealDistance = r; });
+            if (node.IdealDistance != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("IdealDistance");
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        void DrawIntReaderField(string label, AIIntReader current, Action<AIIntReader> setter)
+        {
+            PolymorphicPicker.DrawSingle(
+                label, typeof(AIIntReader), current,
+                newInstance =>
+                {
+                    Undo.RecordObject(_enemy, "Change " + label);
+                    setter((AIIntReader)newInstance);
+                    EditorUtility.SetDirty(_enemy);
+                    NotifyChanged();
+                });
+        }
+
         void DrawEffectsList(List<EffectData> list)
         {
             for (int i = 0; i < list.Count; i++)
@@ -375,7 +503,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             // Effects (List<IEffect>)
             EditorGUILayout.LabelField("Effects", EditorStyles.miniBoldLabel);
             if (item.Effects == null) item.Effects = new List<IEffect>();
-            DrawPolymorphicListItems(item.Effects, basePath + ".Effects", "Effect");
+            DrawEffectListItems(item.Effects, basePath + ".Effects");
             PolymorphicPicker.DrawAddButton(
                 "Effect", typeof(IEffect), item.Effects,
                 () => { EditorUtility.SetDirty(_enemy); NotifyChanged(); });
@@ -398,6 +526,73 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 EditorGUI.indentLevel++;
                 DrawOdinProp(basePath + ".TargetSelector");
                 EditorGUI.indentLevel--;
+            }
+        }
+
+        void DrawEffectListItems(IList list, string listRelativePath)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        var item = list[i];
+                        EditorGUILayout.LabelField(
+                            item != null ? item.GetType().Name : "(null)",
+                            EditorStyles.miniBoldLabel);
+                        GUILayout.FlexibleSpace();
+                        if (PolymorphicPicker.DrawClearButton())
+                        {
+                            Undo.RecordObject(_enemy, "Remove Effect");
+                            list.RemoveAt(i);
+                            EditorUtility.SetDirty(_enemy);
+                            NotifyChanged();
+                            return;
+                        }
+                    }
+
+                    if (list[i] != null)
+                    {
+                        var effectPath = listRelativePath + ".$" + i;
+                        DrawOdinProp(effectPath);
+                        DrawReaderPickersForEffect(list[i], effectPath);
+                    }
+                }
+            }
+        }
+
+        void DrawReaderPickersForEffect(object effect, string effectOdinPath)
+        {
+            var type = effect.GetType();
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+
+            bool hasFromReader = false;
+            foreach (var f in fields)
+            {
+                if (f.FieldType == typeof(DamageSource)
+                    && (DamageSource)f.GetValue(effect) == DamageSource.FromReader)
+                {
+                    hasFromReader = true;
+                    break;
+                }
+            }
+            if (!hasFromReader) return;
+
+            foreach (var f in fields)
+            {
+                if (f.FieldType != typeof(EffectIntReader)) continue;
+                var current = (EffectIntReader)f.GetValue(effect);
+
+                PolymorphicPicker.DrawSingle(
+                    "Reader Type", typeof(EffectIntReader), current,
+                    newInstance =>
+                    {
+                        Undo.RecordObject(_enemy, "Change Effect Reader");
+                        f.SetValue(effect, newInstance);
+                        EditorUtility.SetDirty(_enemy);
+                        NotifyChanged();
+                    });
             }
         }
 

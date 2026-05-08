@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;

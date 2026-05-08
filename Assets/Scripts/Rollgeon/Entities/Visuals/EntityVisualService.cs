@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Grid;
@@ -113,6 +114,13 @@ namespace Rollgeon.Entities.Visuals
 
         public bool TryGetPawn(Guid guid, out EntityPawn pawn) =>
             _byGuid.TryGetValue(guid, out pawn);
+
+        public IEnumerator WaitForMoveComplete(Guid entityId)
+        {
+            if (!_byGuid.TryGetValue(entityId, out var pawn) || pawn == null) return null;
+            if (!pawn.IsMoving) return null;
+            return pawn.WaitUntilMoveComplete();
+        }
 
         public Vector3? TryGetWorldPosition(Guid entityId)
         {

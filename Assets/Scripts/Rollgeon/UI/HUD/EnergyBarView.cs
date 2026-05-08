@@ -1,6 +1,6 @@
 using System;
 using Patterns;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;

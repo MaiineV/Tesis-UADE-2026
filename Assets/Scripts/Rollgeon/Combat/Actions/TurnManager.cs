@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Balance;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;

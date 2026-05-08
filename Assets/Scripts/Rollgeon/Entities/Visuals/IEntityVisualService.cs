@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 
@@ -19,5 +20,6 @@ namespace Rollgeon.Entities.Visuals
         void Despawn(Guid guid);
         void DespawnAll();
         bool TryGetPawn(Guid guid, out EntityPawn pawn);
+        IEnumerator WaitForMoveComplete(Guid entityId);
     }
 }

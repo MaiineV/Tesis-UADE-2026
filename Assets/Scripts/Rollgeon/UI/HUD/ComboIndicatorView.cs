@@ -213,6 +213,14 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            if (dmgEff.Source == DamageSource.FromReader)
+            {
+                var text = $"{_selectedBehavior.ActionName} (stat)";
+                Debug.Log($"{LogPrefix}UpdateFormula — FromReader → \"{text}\"");
+                SetFormulaText(text);
+                return;
+            }
+
             if (payload.BaseDamage <= 0)
             {
                 var text = $"{_selectedBehavior.ActionName} (sin combo)";

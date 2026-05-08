@@ -65,8 +65,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static AINodeCategory CategoryFor(Type t)
         {
             if (typeof(AIActionNode).IsAssignableFrom(t)) return AINodeCategory.Leaf;
-            // Branching: nodes that don't expose a uniform Children list — If / Random.
-            if (t == typeof(AINode_If) || t == typeof(AINode_Random)) return AINodeCategory.Branching;
+            // Branching: nodes that don't expose a uniform Children list — If / Random / While.
+            if (t == typeof(AINode_If) || t == typeof(AINode_Random) || t == typeof(AINode_While))
+                return AINodeCategory.Branching;
             return AINodeCategory.Composite;
         }
     }

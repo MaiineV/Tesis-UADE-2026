@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -24,8 +25,6 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (context == null || Behavior == null) return AIResult.Failed;
 
-            // Las excepciones del behavior burbujean al outer try/catch de
-            // TreeDrivenEnemyAI; este nodo no las traga.
             var bctx = new EnemyAIBehaviorContext
             {
                 AI = context,
@@ -33,6 +32,22 @@ namespace Rollgeon.Combat.AI.Decisions
             };
             Behavior.Execute(bctx);
             return AIResult.Succeeded;
+        }
+
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (context == null || Behavior == null) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            var bctx = new EnemyAIBehaviorContext
+            {
+                AI = context,
+                SourceEntity = context.Self,
+            };
+
+            var co = Behavior.ExecuteCoroutine(bctx);
+            while (co.MoveNext()) yield return co.Current;
+
+            onResult?.Invoke(AIResult.Succeeded);
         }
     }
 }

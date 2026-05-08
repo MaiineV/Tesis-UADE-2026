@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.AI;
@@ -76,6 +77,34 @@ namespace Rollgeon.Entities.Behaviors
 
                 var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
                 ed.Execute(effCtx);
+            }
+        }
+
+        public IEnumerator ExecuteCoroutine(BehaviorContext ctx)
+        {
+            ClearBehaviorValues();
+
+            var enemyCtx = ctx as EnemyAIBehaviorContext;
+            if (enemyCtx == null || enemyCtx.AI == null) yield break;
+            if (Effects == null || Effects.Count == 0) yield break;
+
+            var aiCtx = enemyCtx.AI;
+            var ownerGuid = aiCtx.SelfGuid;
+            var behaviorTarget = EnemyTargetResolver.Resolve(TargetSelector, aiCtx, ownerGuid);
+
+            foreach (var ed in Effects)
+            {
+                if (ed == null) continue;
+                var setTarget = ed.TargetSelector != null
+                    ? EnemyTargetResolver.Resolve(ed.TargetSelector, aiCtx, ownerGuid)
+                    : behaviorTarget;
+
+                var preCtx = aiCtx.BuildPcContext(setTarget);
+                if (!ed.CanBeExecuted(preCtx)) continue;
+
+                var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
+                var co = ed.ExecuteCoroutine(effCtx);
+                while (co.MoveNext()) yield return co.Current;
             }
         }
 

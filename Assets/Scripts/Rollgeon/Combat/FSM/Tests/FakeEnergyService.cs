@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 
 namespace Rollgeon.Combat.FSM.Tests
 {

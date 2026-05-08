@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Rollgeon.Entities;
 
 namespace Rollgeon.PreConditions
@@ -35,5 +36,13 @@ namespace Rollgeon.PreConditions
         /// PCs interesadas (<c>PcOwnerHpBelow</c>) caen al lookup del registro/AttributesManager.
         /// </summary>
         public int? OwnerMaxHp;
+
+        /// <summary>
+        /// AttributesManager para lectura directa de stats del owner. Lo popula el bridge
+        /// AI (<c>AIContextPcExtensions.BuildPcContext</c>); <c>null</c> en otros callers
+        /// (hero UI, effects pipeline). Las PCs interesadas (<c>PcOwnerStatCompare</c>)
+        /// deben tolerar null permisivamente — semántica "sin servicio → no veta".
+        /// </summary>
+        public AttributesManager Attributes;
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.PreConditions;
@@ -43,6 +44,21 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var branch = pass ? Then : Else;
             return branch?.Tick(context) ?? AIResult.Failed;
+        }
+
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (context == null) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            var target = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
+            var pcCtx = context.BuildPcContext(target);
+            bool pass = BasePreCondition.EvaluateAll(Conditions, pcCtx);
+
+            var branch = pass ? Then : Else;
+            if (branch == null) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            var co = branch.TickCoroutine(context, onResult);
+            while (co.MoveNext()) yield return co.Current;
         }
     }
 }

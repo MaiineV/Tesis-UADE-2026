@@ -1,6 +1,9 @@
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.PreConditions;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.AI.Tests
 {
@@ -191,6 +194,138 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(AIResult.Failed, node.Tick(new AIContext()));
         }
 
+        // ---- While -------------------------------------------------------
+
+        [Test]
+        public void While_ConditionFalseInitially_ReturnsSucceededWithZeroTicks()
+        {
+            // Arrange
+            var body = new CountingNode { ResultToReturn = AIResult.Succeeded };
+            var node = new AINode_While
+            {
+                Conditions = { new ConstPC { Value = false } },
+                Body = body,
+                MaxIterations = 16,
+            };
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(0, body.TickCount);
+        }
+
+        [Test]
+        public void While_RunsBodyUntilConditionFlipsFalse()
+        {
+            // Arrange — condition pasa 3 veces y luego falla
+            var body = new CountingNode { ResultToReturn = AIResult.Succeeded };
+            var stateful = new StatefulPC { TrueForFirstNCalls = 3 };
+            var node = new AINode_While
+            {
+                Conditions = { stateful },
+                Body = body,
+                MaxIterations = 16,
+            };
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(3, body.TickCount);
+        }
+
+        [Test]
+        public void While_ConditionStaysTrue_HitsCapAndReturnsFailed()
+        {
+            // Arrange
+            var body = new CountingNode { ResultToReturn = AIResult.Succeeded };
+            var node = new AINode_While
+            {
+                Conditions = { new ConstPC { Value = true } },
+                Body = body,
+                MaxIterations = 5,
+            };
+            LogAssert.Expect(LogType.Warning, new Regex(".*MaxIterations.*"));
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert — cap señala bug de configuración → Failed (regression guard)
+            Assert.AreEqual(AIResult.Failed, result);
+            Assert.AreEqual(5, body.TickCount);
+        }
+
+        [Test]
+        public void While_BodyFailsMidLoop_ReturnsFailed()
+        {
+            // Arrange
+            var body = new CountingNode { ResultToReturn = AIResult.Failed };
+            var node = new AINode_While
+            {
+                Conditions = { new ConstPC { Value = true } },
+                Body = body,
+                MaxIterations = 16,
+            };
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert
+            Assert.AreEqual(AIResult.Failed, result);
+            Assert.AreEqual(1, body.TickCount, "Loop debe cortar inmediatamente cuando el body falla.");
+        }
+
+        [Test]
+        public void While_NullContext_ReturnsFailed()
+        {
+            // Arrange
+            var node = new AINode_While { Body = new CountingNode() };
+
+            // Act + Assert
+            Assert.AreEqual(AIResult.Failed, node.Tick(null));
+        }
+
+        [Test]
+        public void While_EmptyConditions_IteratesUntilCapAndReturnsFailed()
+        {
+            // Arrange — lista vacía = AND-empty = true (semántica permisiva). Cap es el único safeguard.
+            var body = new CountingNode { ResultToReturn = AIResult.Succeeded };
+            var node = new AINode_While
+            {
+                Body = body,
+                MaxIterations = 3,
+            };
+            LogAssert.Expect(LogType.Warning, new Regex(".*MaxIterations.*"));
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert
+            Assert.AreEqual(AIResult.Failed, result);
+            Assert.AreEqual(3, body.TickCount);
+        }
+
+        [Test]
+        public void While_NullBody_ReturnsSucceededWithoutLooping()
+        {
+            // Arrange
+            var node = new AINode_While
+            {
+                Conditions = { new ConstPC { Value = true } },
+                Body = null,
+                MaxIterations = 5,
+            };
+
+            // Act
+            var result = node.Tick(new AIContext());
+
+            // Assert — sin body el loop no tiene nada que ejecutar; sale limpio
+            Assert.AreEqual(AIResult.Succeeded, result);
+        }
+
         // ---- Fakes -------------------------------------------------------
 
         private sealed class CountingNode : AIDecisionNode
@@ -209,6 +344,15 @@ namespace Rollgeon.Combat.AI.Tests
             public bool Value;
             public override string ConditionName => $"Const({Value})";
             public override bool Evaluate(PreConditionContext context) => Value;
+        }
+
+        /// <summary>Returns true for the first N Evaluate calls, then false. Used by While tests.</summary>
+        private sealed class StatefulPC : BasePreCondition
+        {
+            public int TrueForFirstNCalls;
+            private int _calls;
+            public override string ConditionName => $"StatefulPC({TrueForFirstNCalls})";
+            public override bool Evaluate(PreConditionContext context) => _calls++ < TrueForFirstNCalls;
         }
     }
 }

@@ -1,10 +1,12 @@
 using System;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Concretes
@@ -24,9 +26,29 @@ namespace Rollgeon.Effects.Concretes
         IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
     {
         [Title("Heal")]
-        [SerializeField, MinValue(0), MaxValue(999)]
+        [SerializeField]
+        [Tooltip("Fuente del heal: Constant usa _baseAmount, ComboValue usa el combo, FromReader usa el reader configurado.")]
+        private DamageSource _healSource = DamageSource.Constant;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.Constant)]
+        [MinValue(0), MaxValue(999)]
         [Tooltip("Curación base antes de pipeline (overheal, shields).")]
         private int _baseAmount = 10;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.ComboValue)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al BaseDamage del combo resuelto.")]
+        private float _comboMultiplier = 1f;
+
+        [OdinSerialize, SerializeReference]
+        [ShowIf("_healSource", DamageSource.FromReader)]
+        [Tooltip("Reader polimórfico que resuelve el heal desde stats de entidad en runtime.")]
+        private EffectIntReader _reader;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.FromReader)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al resultado del reader.")]
+        private float _readerMultiplier = 1f;
 
         [SerializeField]
         [Tooltip("Si true, BaseAmount es porcentaje del max HP del target.")]
@@ -72,9 +94,9 @@ namespace Rollgeon.Effects.Concretes
         }
 
         protected override HealArgs ResolveArgs(EffectContext context) =>
-            new HealArgs { BaseAmount = ResolveBaseAmount() };
+            new HealArgs { BaseAmount = ResolveBaseAmount(context) };
 
-        protected override int ResolveValue(EffectContext context) => ResolveBaseAmount();
+        protected override int ResolveValue(EffectContext context) => ResolveBaseAmount(context);
 
         public override bool ApplyEffect(EffectContext context)
         {
@@ -149,9 +171,20 @@ namespace Rollgeon.Effects.Concretes
             return context.SourceGuid;
         }
 
-        private int ResolveBaseAmount()
+        private int ResolveBaseAmount(EffectContext context = null)
         {
-            if (!_useDiceRoll) return _baseAmount;
+            int rawAmount = _healSource switch
+            {
+                DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
+                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                DamageSource.ComboValue => 0,
+                DamageSource.FromReader when _reader != null && context != null
+                    => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
+                DamageSource.FromReader => 0,
+                _ => _baseAmount,
+            };
+
+            if (!_useDiceRoll) return rawAmount;
 
             int faces = Mathf.Max(2, _diceFaces);
             int count = Mathf.Max(1, _diceCount);

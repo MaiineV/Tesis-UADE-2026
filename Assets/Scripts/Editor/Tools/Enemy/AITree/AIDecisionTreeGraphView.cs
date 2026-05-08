@@ -38,6 +38,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             this.AddManipulator(new ContentDragger());
             this.AddManipulator(new SelectionDragger());
             this.AddManipulator(new RectangleSelector());
+            this.AddManipulator(new RightClickPanManipulator());
 
             var grid = new GridBackground();
             Insert(0, grid);
@@ -118,6 +119,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             }
 
             EnsureFreeDynamicPorts();
+            RefreshRootIndicators();
         }
 
         void EnsureFreeDynamicPorts()
@@ -208,6 +210,58 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             foreach (var view in _views.Values) view.RefreshSummary();
         }
 
+        // ---- root selection ---------------------------------------------
+
+        /// <summary>
+        /// Right-click context menu — adds "Set as Root" for the targeted node, on top of
+        /// the default Cut/Copy/Paste/Delete entries provided by the base GraphView.
+        /// </summary>
+        /// <remarks>
+        /// Three layers of target resolution because <c>evt.target</c> can be the node itself
+        /// (right-click on the frame), a child element (click on title/port/label) — and Unity's
+        /// <c>GetFirstAncestorOfType&lt;T&gt;()</c> starts at <c>parent</c>, not <c>self</c>.
+        /// Selection fallback covers the rare case where the click bubble misses entirely.
+        /// </remarks>
+        public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+        {
+            var nv = ResolveTargetNodeView(evt.target as VisualElement);
+            if (nv != null && _snap != null)
+            {
+                bool alreadyRoot = (nv.Data == _snap.Root);
+                evt.menu.AppendAction(
+                    "Set as Root",
+                    _ => SetRoot(nv.Data),
+                    alreadyRoot ? DropdownMenuAction.AlwaysDisabled : DropdownMenuAction.AlwaysEnabled);
+                evt.menu.AppendSeparator();
+            }
+            base.BuildContextualMenu(evt);
+        }
+
+        AIDecisionNodeView ResolveTargetNodeView(VisualElement target)
+        {
+            if (target is AIDecisionNodeView direct) return direct;
+            var ancestor = target?.GetFirstAncestorOfType<AIDecisionNodeView>();
+            if (ancestor != null) return ancestor;
+            // Fallback: Unity GraphView typically auto-selects the right-clicked node.
+            foreach (var s in selection)
+                if (s is AIDecisionNodeView sel) return sel;
+            return null;
+        }
+
+        void SetRoot(AIDecisionNode node)
+        {
+            if (_snap == null || node == null || _snap.Root == node) return;
+            _snap.Root = node;
+            RefreshRootIndicators();
+            MarkDirty();
+        }
+
+        void RefreshRootIndicators()
+        {
+            if (_snap == null) return;
+            foreach (var kv in _views) kv.Value.SetIsRoot(kv.Key == _snap.Root);
+        }
+
         // ---- changes -----------------------------------------------------
 
         GraphViewChange OnGraphViewChanged(GraphViewChange change)
@@ -223,8 +277,10 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     {
                         _snap.Nodes.Remove(nv.Data);
                         _snap.Edges.RemoveAll(e => e.Parent == nv.Data || e.Child == nv.Data);
-                        if (_snap.Root == nv.Data) _snap.Root = _snap.Nodes.Count > 0 ? _snap.Nodes[0] : null;
+                        bool wasRoot = (_snap.Root == nv.Data);
+                        if (wasRoot) _snap.Root = _snap.Nodes.Count > 0 ? _snap.Nodes[0] : null;
                         _views.Remove(nv.Data);
+                        if (wasRoot) RefreshRootIndicators();
                         topologyChanged = true;
                     }
                     else if (el is Edge edge)
@@ -331,6 +387,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             AddElement(view);
             _views[node] = view;
 
+            RefreshRootIndicators();
             MarkDirty();
         }
 

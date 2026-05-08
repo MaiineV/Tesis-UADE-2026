@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Player;
@@ -41,5 +43,14 @@ namespace Rollgeon.Combat.AI
 
         /// <summary>RNG inyectado — tests pueden proveer un System.Random con seed fijo.</summary>
         public System.Random Rng;
+
+        /// <summary>Servicio visual — null en tests EditMode. Permite a action nodes esperar animaciones.</summary>
+        public IEntityVisualService VisualService;
+
+        /// <summary>
+        /// Wait handle que un action node popula cuando retorna <see cref="AIResult.Running"/>.
+        /// El consumer (TickCoroutine) lo drena y luego lo resetea a null.
+        /// </summary>
+        [NonSerialized] public IEnumerator PendingWait;
     }
 }

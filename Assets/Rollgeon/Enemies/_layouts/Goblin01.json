@@ -2,26 +2,66 @@
     "Entries": [
         {
             "Index": 0,
-            "TypeName": "AINode_If",
+            "TypeName": "AINode_Sequence",
             "Position": {
-                "x": 398.0,
-                "y": 320.0
+                "x": 279.0,
+                "y": 231.0
             }
         },
         {
             "Index": 1,
             "TypeName": "AINode_Behavior",
             "Position": {
-                "x": 708.0,
-                "y": 251.0
+                "x": 597.0,
+                "y": 52.0
             }
         },
         {
             "Index": 2,
+            "TypeName": "AINode_While",
+            "Position": {
+                "x": 597.0,
+                "y": 370.0
+            }
+        },
+        {
+            "Index": 3,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 882.0,
+                "y": 370.0
+            }
+        },
+        {
+            "Index": 4,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1102.0,
+                "y": 271.0
+            }
+        },
+        {
+            "Index": 5,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1102.0,
+                "y": 434.0
+            }
+        },
+        {
+            "Index": 6,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1401.0,
+                "y": 335.0
+            }
+        },
+        {
+            "Index": 7,
             "TypeName": "AINode_Move",
             "Position": {
-                "x": 708.0,
-                "y": 423.0
+                "x": 1394.0,
+                "y": 495.0
             }
         }
     ]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,6 +16,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         readonly List<Port> _outputPorts = new List<Port>();
         Label _summary;
+        Label _rootChip;
 
         public AIDecisionNodeView(AIDecisionNode data)
         {
@@ -33,6 +35,36 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             title = Data.NodeName;
             if (_summary != null) _summary.text = SummaryFor(Data);
+        }
+
+        /// <summary>
+        /// Toggle the ROOT indicator chip. Owned by the GraphView — call from
+        /// <c>RefreshRootIndicators()</c> whenever <c>GraphSnapshot.Root</c> changes.
+        /// </summary>
+        public void SetIsRoot(bool isRoot)
+        {
+            if (_rootChip == null && isRoot) BuildRootChip();
+            if (_rootChip != null) _rootChip.style.display = isRoot ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        void BuildRootChip()
+        {
+            _rootChip = new Label("ROOT")
+            {
+                style =
+                {
+                    fontSize = 9,
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                    color = new Color(0.10f, 0.10f, 0.10f),
+                    backgroundColor = new Color(1f, 0.85f, 0.30f),
+                    paddingLeft = 4, paddingRight = 4, paddingTop = 1, paddingBottom = 1,
+                    marginLeft = 4, marginRight = 4, marginTop = 2,
+                    borderTopLeftRadius = 3, borderTopRightRadius = 3,
+                    borderBottomLeftRadius = 3, borderBottomRightRadius = 3,
+                },
+            };
+            // Insert after the category chip (which lives at index 0) so it sits next to it.
+            titleContainer.Insert(1, _rootChip);
         }
 
         // ---- header (category chip + colour) ------------------------------
@@ -118,18 +150,31 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             switch (node)
             {
                 case AINode_Move m:
-                    return $"max {m.MaxSteps} steps · stop adj {m.StopAdjacent}";
+                    return $"max {Describe(m.MaxSteps)} steps · stop adj {m.StopAdjacent}";
                 case AINode_KeepDistance k:
-                    return $"max {k.MaxSteps} steps · ideal {k.IdealDistance}";
+                    return $"max {Describe(k.MaxSteps)} steps · ideal {Describe(k.IdealDistance)}";
                 case AINode_If i:
                     int conds = i.Conditions != null ? i.Conditions.Count : 0;
                     string sel = i.TargetSelector != null ? i.TargetSelector.GetType().Name : "default target";
                     return $"{conds} condition(s) · {sel}";
+                case AINode_While w:
+                    int wconds = w.Conditions != null ? w.Conditions.Count : 0;
+                    string wsel = w.TargetSelector != null ? w.TargetSelector.GetType().Name : "default target";
+                    return $"while {wconds} cond(s) · max {w.MaxIterations} · {wsel}";
                 case AINode_Behavior b:
                     return b.Behavior != null ? b.Behavior.BehaviorName : "(no behavior)";
                 default:
                     return null;
             }
+        }
+
+        static string Describe(AIIntReader reader)
+        {
+            if (reader == null) return "?";
+            if (reader is AIConstantInt c) return c.Value.ToString();
+            if (reader is AIReadSelfStat self) return $"Self.{self.Stat}";
+            if (reader is AIReadPlayerStat player) return $"Player.{player.Stat}";
+            return reader.GetType().Name;
         }
 
         // ---- per-subtype field lists (used by the side inspector) ---------
@@ -139,6 +184,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             switch (node)
             {
                 case AINode_If _:           return _ifFields;
+                case AINode_While _:        return _whileFields;
                 case AINode_Behavior _:     return _behaviorFields;
                 case AINode_Move _:         return _moveFields;
                 case AINode_KeepDistance _: return _keepDistanceFields;
@@ -147,6 +193,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         }
 
         static readonly string[] _ifFields = { "TargetSelector", "Conditions" };
+        static readonly string[] _whileFields = { "TargetSelector", "Conditions", "MaxIterations" };
         static readonly string[] _behaviorFields = { "Behavior" };
         static readonly string[] _moveFields = { "MaxSteps", "StopAdjacent" };
         static readonly string[] _keepDistanceFields = { "MaxSteps", "IdealDistance" };

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 
 namespace Rollgeon.Combat.FSM
 {

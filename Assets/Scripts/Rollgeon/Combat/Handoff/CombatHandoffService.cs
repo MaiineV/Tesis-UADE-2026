@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;

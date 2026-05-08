@@ -1,4 +1,4 @@
-namespace Rollgeon.Combat.Energy
+namespace Rollgeon.Combat.EnergyLib
 {
     /// <summary>
     /// Funcion pura que encapsula la regla de regeneracion de energia al

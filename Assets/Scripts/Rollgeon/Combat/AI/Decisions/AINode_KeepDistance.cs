@@ -1,6 +1,8 @@
 using System;
+using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
@@ -11,22 +13,17 @@ namespace Rollgeon.Combat.AI.Decisions
     /// hasta <see cref="IdealDistance"/>. Si ya está a distancia ideal o más, no se mueve.
     /// TECHNICAL.md §17.§B (kiting).
     /// </summary>
-    /// <remarks>
-    /// Hermano de <see cref="AINode_Move"/>: aquel persigue, este "kitea". Pensado para
-    /// arqueros / casters en el FP. Usa pathfinding (A*) para asegurar que el destino
-    /// elegido sea alcanzable; ignora tiles sin ruta válida desde la posición actual.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_KeepDistance : AIActionNode
     {
-        [MinValue(1)]
+        [OdinSerialize]
         [Tooltip("Cantidad máxima de tiles a recorrer en un turno.")]
-        public int MaxSteps = 3;
+        public AIIntReader MaxSteps;
 
-        [MinValue(1)]
+        [OdinSerialize]
         [Tooltip("Distancia Manhattan al player que el enemigo intenta mantener. Si la actual " +
                  "ya es >= ideal, no se mueve.")]
-        public int IdealDistance = 4;
+        public AIIntReader IdealDistance;
 
         public override string NodeName => "Keep Distance From Player";
 
@@ -41,36 +38,36 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
                 return AIResult.Failed;
 
+            int idealDist = IdealDistance?.Read(context) ?? 4;
             int currentDist = selfCoord.Manhattan(playerCoord);
-            if (currentDist >= IdealDistance) return AIResult.Failed; // already at distance — no-op
+            if (currentDist >= idealDist) return AIResult.Failed;
 
-            // Tiles alcanzables en MaxSteps. Elegimos el que más se acerca a IdealDistance
-            // del player (capeado, no premiamos overshoot). Empate: el más cerca de Self
-            // (menos pasos gastados).
-            var reachable = context.Movement.GetReachableTiles(selfCoord, MaxSteps, includeOrigin: false);
+            int maxSteps = MaxSteps?.Read(context) ?? 3;
+            var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
             if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
             var best = selfCoord;
             int bestScore = currentDist;
             foreach (var candidate in reachable)
             {
-                int dist = Mathf.Min(candidate.Manhattan(playerCoord), IdealDistance);
+                int dist = Mathf.Min(candidate.Manhattan(playerCoord), idealDist);
                 if (dist <= bestScore) continue;
-
-                // GetReachableTiles ya considera walkable + ocupados via BFS, así que
-                // los candidatos son alcanzables por construcción — no hace falta un
-                // FindPath extra acá. Confiamos en el subsistema.
                 bestScore = dist;
                 best = candidate;
             }
 
             if (best == selfCoord) return AIResult.Failed;
 
-            // Move dispara OnEntityMoved con el path completo (A* via FindPath internamente);
-            // la capa visual lo anima casilla-a-casilla.
-            return context.Movement.Move(context.SelfGuid, best)
-                ? AIResult.Succeeded
-                : AIResult.Failed;
+            if (!context.Movement.Move(context.SelfGuid, best))
+                return AIResult.Failed;
+
+            var wait = context.VisualService?.WaitForMoveComplete(context.SelfGuid);
+            if (wait != null)
+            {
+                context.PendingWait = wait;
+                return AIResult.Running;
+            }
+            return AIResult.Succeeded;
         }
     }
 }

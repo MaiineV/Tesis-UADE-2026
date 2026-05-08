@@ -4,7 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;

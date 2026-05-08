@@ -1,7 +1,8 @@
 using System;
-using System.Collections.Generic;
+using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
@@ -10,18 +11,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Mueve al enemigo un máximo de <see cref="MaxSteps"/> tiles hacia el player.
     /// TECHNICAL.md §7.5 + §17.§B.
     /// </summary>
-    /// <remarks>
-    /// Pide <see cref="Rollgeon.Movement.IMovementService.FindPath"/> al tile adyacente
-    /// al player más cercano al Self. Avanza hasta <c>MaxSteps</c>. Si no hay ruta, o Self
-    /// ya está adyacente (y <see cref="StopAdjacent"/>), retorna <see cref="AIResult.Failed"/>
-    /// para que el árbol ramifique (ej. "si no puedo moverme, espero").
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Move : AIActionNode
     {
-        [MinValue(1)]
+        [OdinSerialize]
         [Tooltip("Cantidad máxima de tiles a recorrer en un turno.")]
-        public int MaxSteps = 3;
+        public AIIntReader MaxSteps;
 
         [Tooltip("Si true, frena al estar adyacente al player (no pisa el tile del player).")]
         public bool StopAdjacent = true;
@@ -48,12 +43,20 @@ namespace Rollgeon.Combat.AI.Decisions
             var path = context.Movement.FindPath(selfCoord, target);
             if (path == null || path.Count < 2) return AIResult.Failed;
 
-            int steps = Mathf.Min(MaxSteps, path.Count - 1);
+            int maxSteps = MaxSteps?.Read(context) ?? 3;
+            int steps = Mathf.Min(maxSteps, path.Count - 1);
             var destination = path[steps];
 
-            return context.Movement.Move(context.SelfGuid, destination)
-                ? AIResult.Succeeded
-                : AIResult.Failed;
+            if (!context.Movement.Move(context.SelfGuid, destination))
+                return AIResult.Failed;
+
+            var wait = context.VisualService?.WaitForMoveComplete(context.SelfGuid);
+            if (wait != null)
+            {
+                context.PendingWait = wait;
+                return AIResult.Running;
+            }
+            return AIResult.Succeeded;
         }
 
         private static GridCoord ChooseTargetTile(AIContext context, GridCoord selfCoord, GridCoord playerCoord)

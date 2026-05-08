@@ -5,10 +5,10 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Balance;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using UnityEngine;
 
-namespace Rollgeon.Combat.Energy.Tests
+namespace Rollgeon.Combat.EnergyLib.Tests
 {
     [TestFixture]
     public class EnergyServiceTests

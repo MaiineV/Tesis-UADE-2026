@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using Patterns;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;

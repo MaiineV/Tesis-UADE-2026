@@ -1,6 +1,6 @@
 using System;
 
-namespace Rollgeon.Combat.Energy
+namespace Rollgeon.Combat.EnergyLib
 {
     /// <summary>
     /// API publica del servicio de energia. Consumida por:
