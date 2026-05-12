@@ -10,10 +10,10 @@ namespace Rollgeon.Phase
         private PhaseService _instance;
 
         public int Priority => 10;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             _instance = new PhaseService();
             ServiceLocator.AddService<IPhaseService>(_instance, ServiceScope.Run);
         }

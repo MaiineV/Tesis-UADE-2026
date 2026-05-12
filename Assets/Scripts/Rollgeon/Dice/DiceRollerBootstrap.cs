@@ -28,10 +28,10 @@ namespace Rollgeon.Dice
         private DiceRoller _instance;
 
         public int Priority => 72;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             _instance = new DiceRoller();
             ServiceLocator.AddService<IDiceRoller>(_instance, ServiceScope.Run);
         }

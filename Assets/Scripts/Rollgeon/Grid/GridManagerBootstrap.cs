@@ -20,10 +20,10 @@ namespace Rollgeon.Grid
         private GridManager _instance;
 
         public int Priority => 75;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             _instance = new GridManager();
             ServiceLocator.AddService<IGridManager>(_instance, ServiceScope.Run);
         }

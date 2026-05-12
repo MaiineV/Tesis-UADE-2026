@@ -1,3 +1,5 @@
+using Patterns;
+
 namespace Rollgeon.Patterns.Bootstrap
 {
     /// <summary>
@@ -28,5 +30,14 @@ namespace Rollgeon.Patterns.Bootstrap
         /// Prioridad de registro entre ExtraServices. Menor = antes.
         /// </summary>
         int Priority => 0;
+
+        /// <summary>
+        /// Scope de vida del servicio registrado. Default <see cref="ServiceScope.Global"/>.
+        /// Bootstraps que registran con <see cref="ServiceScope.Run"/> deben overridear
+        /// para que <c>ServiceBootstrapSO.RegisterRunScoped()</c> los reinvoque al
+        /// inicio de cada nueva run (los servicios Run son borrados por
+        /// <c>ServiceLocator.ClearScope(Run)</c> en <c>RunBootstrapper.EndRun</c>).
+        /// </summary>
+        ServiceScope Scope => ServiceScope.Global;
     }
 }

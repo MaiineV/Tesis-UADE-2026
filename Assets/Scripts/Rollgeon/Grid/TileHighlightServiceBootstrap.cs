@@ -9,6 +9,7 @@ namespace Rollgeon.Grid
     public sealed class TileHighlightServiceBootstrap : ScriptableObject, IPreloadableService
     {
         public int Priority => 76;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {

@@ -21,10 +21,10 @@ namespace Rollgeon.Dungeon
         private RoomGridLoader _instance;
 
         public int Priority => 80;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
             {
                 Debug.LogError("[RoomGridLoaderBootstrap] IGridManager no registrado.");

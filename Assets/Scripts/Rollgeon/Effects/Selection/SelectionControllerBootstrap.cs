@@ -11,10 +11,10 @@ namespace Rollgeon.Effects.Selection
         private SelectionController _instance;
 
         public int Priority => 79;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             _instance = new SelectionController();
             ServiceLocator.AddService<ISelectionController>(_instance, ServiceScope.Run);
         }
