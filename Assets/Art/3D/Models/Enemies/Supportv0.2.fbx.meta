@@ -1,9 +1,34 @@
 fileFormatVersion: 2
-guid: 88d1e03c8151281418e92068e394d634
+guid: 3299454aac1d32b45bbdc333606c8705
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black
+    second: {fileID: 2100000, guid: 6d93331fa16eb554cb8e5d22047d8647, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bone
+    second: {fileID: 2100000, guid: 27d43947f42f5bc4b8ec5ca998a41552, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Darkyellow
+    second: {fileID: 2100000, guid: d138fe77097e72640b01d31f50827fa1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LightYellow
+    second: {fileID: 2100000, guid: 87b1723872728184e9f504be4662950c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yellow
+    second: {fileID: 2100000, guid: 1f0a232f5b988d84984e61d919c499f3, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
