@@ -23,8 +23,10 @@ Shader "Rollgeon/PaletteCelLit"
         _LightWrap       ("Light Wrap",       Range(-1, 1))  = 0.1
 
         [Header(Dither)]
-        [Toggle] _UseDither    ("Use Dither",    Float) = 0
-        _DitherStrength        ("Dither Strength", Range(0, 1)) = 0.15
+        [Toggle] _UseDither       ("Border Dither",          Float) = 0
+        _DitherStrength           ("Border Dither Strength",  Range(0, 1)) = 0.15
+        [Toggle] _UseShadowDither ("Shadow Dither",           Float) = 0
+        _ShadowDitherDensity      ("Shadow Dither Density",   Range(0, 1)) = 0.3
 
         [Header(Crease)]
         [Toggle] _EnableCrease  ("Enable Crease",  Float) = 0
@@ -79,6 +81,8 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightWrap;
                 float  _UseDither;
                 float  _DitherStrength;
+                float  _UseShadowDither;
+                float  _ShadowDitherDensity;
                 float  _EnableCrease;
                 float4 _CreaseColor;
                 float  _CreaseThreshold;
@@ -185,6 +189,17 @@ Shader "Rollgeon/PaletteCelLit"
                 float3 color = lerp(_ShadowColor.rgb, _MidColor.rgb, celShadow);
                 color        = lerp(color,            _LightColor.rgb, celLight);
 
+                // Shadow Dither: puntea el interior de la zona de sombra con el patrón Bayer.
+                // Píxeles donde bayer < density "saltan" al color mid, creando un efecto
+                // de sombra granulada / halftone. Solo actúa donde celShadow < 1 (zona oscura).
+                if (_UseShadowDither > 0.5)
+                {
+                    float bayer    = BayerDither(IN.positionCS.xy);
+                    float inShadow = 1.0 - celShadow;
+                    float dot      = step(bayer, _ShadowDitherDensity) * inShadow;
+                    color          = lerp(color, _MidColor.rgb, dot);
+                }
+
                 // Crease (NdotV): highlights silhouette edges per-object
                 if (_EnableCrease > 0.5)
                 {
@@ -237,6 +252,8 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightWrap;
                 float  _UseDither;
                 float  _DitherStrength;
+                float  _UseShadowDither;
+                float  _ShadowDitherDensity;
                 float  _EnableCrease;
                 float4 _CreaseColor;
                 float  _CreaseThreshold;
@@ -303,6 +320,8 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightWrap;
                 float  _UseDither;
                 float  _DitherStrength;
+                float  _UseShadowDither;
+                float  _ShadowDitherDensity;
                 float  _EnableCrease;
                 float4 _CreaseColor;
                 float  _CreaseThreshold;
@@ -353,6 +372,8 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightWrap;
                 float  _UseDither;
                 float  _DitherStrength;
+                float  _UseShadowDither;
+                float  _ShadowDitherDensity;
                 float  _EnableCrease;
                 float4 _CreaseColor;
                 float  _CreaseThreshold;
