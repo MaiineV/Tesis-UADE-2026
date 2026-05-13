@@ -1,8 +1,10 @@
 using System;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Concretes
@@ -38,6 +40,16 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Multiplicador aplicado al BaseDamage del combo resuelto.")]
         private float _comboMultiplier = 1f;
 
+        [OdinSerialize, SerializeReference]
+        [ShowIf("_damageSource", DamageSource.FromReader)]
+        [Tooltip("Reader polimórfico que resuelve el daño desde stats de entidad en runtime.")]
+        private EffectIntReader _reader;
+
+        [SerializeField, ShowIf("_damageSource", DamageSource.FromReader)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al resultado del reader.")]
+        private float _readerMultiplier = 1f;
+
         [SerializeField]
         [Tooltip("Tipo de ataque usado al construir el DamageContext.")]
         private AttackKind _attackKind = AttackKind.BasicAttack;
@@ -54,10 +66,10 @@ namespace Rollgeon.Effects.Concretes
             {
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
-                // ComboValue sin combo matched → 0 daño. Antes caía al _baseAmount,
-                // lo que defeateaba el bloqueo de combos (boss inmune a Par seguía
-                // recibiendo el _baseAmount=10 al rolear Par contra un combo bloqueado).
                 DamageSource.ComboValue => 0,
+                DamageSource.FromReader when _reader != null
+                    => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
+                DamageSource.FromReader => 0,
                 _ => _baseAmount,
             };
             return new DamageArgs { BaseAmount = amount };

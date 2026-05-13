@@ -2,9 +2,11 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Concretes
@@ -27,6 +29,16 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Multiplier applied to the combo's BaseDamage.")]
         private float _comboMultiplier = 1f;
 
+        [OdinSerialize, SerializeReference]
+        [ShowIf("_shieldSource", DamageSource.FromReader)]
+        [Tooltip("Reader polimórfico que resuelve el shield desde stats de entidad en runtime.")]
+        private EffectIntReader _reader;
+
+        [SerializeField, ShowIf("_shieldSource", DamageSource.FromReader)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al resultado del reader.")]
+        private float _readerMultiplier = 1f;
+
         public DamageSource ShieldSource => _shieldSource;
         public int BaseAmount => _baseAmount;
         public float ComboMultiplier => _comboMultiplier;
@@ -39,6 +51,10 @@ namespace Rollgeon.Effects.Concretes
             {
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                DamageSource.ComboValue => 0,
+                DamageSource.FromReader when _reader != null
+                    => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
+                DamageSource.FromReader => 0,
                 _ => _baseAmount,
             };
             return new ShieldArgs { BaseAmount = amount };

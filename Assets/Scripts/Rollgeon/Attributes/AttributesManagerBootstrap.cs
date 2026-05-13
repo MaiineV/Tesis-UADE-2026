@@ -11,7 +11,7 @@ namespace Rollgeon.Attributes
     /// <see cref="ServiceLocator"/> bajo <see cref="ServiceScope.Global"/>.
     /// Debe correr antes que cualquier service que resuelva
     /// <c>AttributesManager</c> en su propio <c>Register()</c> —
-    /// <see cref="Rollgeon.Combat.Energy.EnergyService"/> (Priority 50),
+    /// <see cref="Rollgeon.Combat.EnergyLib.EnergyService"/> (Priority 50),
     /// <see cref="Rollgeon.Combat.Pipelines.DamagePipeline"/>,
     /// <see cref="Rollgeon.Combat.Pipelines.HealPipeline"/>, etc.
     /// <para>
@@ -26,7 +26,7 @@ namespace Rollgeon.Attributes
     public sealed class AttributesManagerBootstrap : IPreloadableService, IDisposable
     {
         /// <summary>
-        /// Corre temprano: antes de <see cref="Rollgeon.Combat.Energy.EnergyService"/> (50)
+        /// Corre temprano: antes de <see cref="Rollgeon.Combat.EnergyLib.EnergyService"/> (50)
         /// y cualquier otro dependiente.
         /// </summary>
         public int Priority => 5;

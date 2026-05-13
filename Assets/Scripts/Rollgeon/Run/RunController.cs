@@ -4,7 +4,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;

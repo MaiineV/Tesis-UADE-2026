@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Exploration;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;

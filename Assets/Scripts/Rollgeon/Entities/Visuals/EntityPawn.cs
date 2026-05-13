@@ -42,6 +42,8 @@ namespace Rollgeon.Entities.Visuals
         /// jugador en cámara iso).</summary>
         public Cardinal Facing { get; private set; } = Cardinal.South;
 
+        public bool IsMoving => _moveAnim != null;
+
         public void Bind(Guid guid, PawnKind kind)
         {
             EntityGuid = guid;
@@ -189,6 +191,13 @@ namespace Rollgeon.Entities.Visuals
             if (!grid.IsOccupied(coord)) return false;
             if (!grid.TryGetOccupant(coord, out var occupant)) return true;
             return occupant != EntityGuid;
+        }
+
+        public IEnumerator WaitUntilMoveComplete(float timeout = 10f)
+        {
+            float deadline = Time.time + timeout;
+            while (_moveAnim != null && Time.time < deadline)
+                yield return null;
         }
 
         public enum PawnKind { Hero, Enemy, Boss }

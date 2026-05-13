@@ -2,7 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Balance;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;
 

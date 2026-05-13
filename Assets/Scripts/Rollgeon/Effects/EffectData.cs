@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Effects.Selection;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
@@ -35,6 +36,15 @@ namespace Rollgeon.Effects
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
         [OdinSerialize, SerializeReference]
         public List<IEffect> Effects = new List<IEffect>();
+
+        /// <summary>
+        /// Override opcional del selector de target — sólo lo lee el flujo enemigo
+        /// (<c>EnemyActionBehavior</c>); el héroe usa <see cref="SelectionSettings"/> y
+        /// lo ignora. <c>null</c> = hereda el selector del padre (behavior, nodo).
+        /// </summary>
+        [Title("Enemy Target Override", "Optional. Only consumed by enemy behaviors.")]
+        [OdinSerialize, SerializeReference]
+        public BaseEnemyTargetSelector TargetSelector;
 
         /// <summary>
         /// Evalúa todas las precondiciones con AND semántico. TECHNICAL.md §8.1.

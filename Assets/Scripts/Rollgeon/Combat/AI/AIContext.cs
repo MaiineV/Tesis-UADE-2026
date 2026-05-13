@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Player;
@@ -21,8 +24,14 @@ namespace Rollgeon.Combat.AI
         public Guid SelfGuid;
         public Guid PlayerGuid;
 
-        /// <summary>HP máximo de referencia de Self al spawn — usado por AICond_HPBelow.</summary>
+        /// <summary>HP máximo de referencia de Self al spawn — usado por PcOwnerHpBelow.</summary>
         public int SelfMaxHp;
+
+        /// <summary>
+        /// Entidad owner — opcional. Lo usa el bridge a <c>PreConditionContext.Entity</c>
+        /// para evitar re-query del registro. Puede quedar null si el caller no lo provee.
+        /// </summary>
+        public Entity Self;
 
         public AttributesManager Attributes;
         public IDamagePipeline DamagePipeline;
@@ -34,5 +43,14 @@ namespace Rollgeon.Combat.AI
 
         /// <summary>RNG inyectado — tests pueden proveer un System.Random con seed fijo.</summary>
         public System.Random Rng;
+
+        /// <summary>Servicio visual — null en tests EditMode. Permite a action nodes esperar animaciones.</summary>
+        public IEntityVisualService VisualService;
+
+        /// <summary>
+        /// Wait handle que un action node popula cuando retorna <see cref="AIResult.Running"/>.
+        /// El consumer (TickCoroutine) lo drena y luego lo resetea a null.
+        /// </summary>
+        [NonSerialized] public IEnumerator PendingWait;
     }
 }

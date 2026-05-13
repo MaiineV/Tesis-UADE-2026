@@ -134,6 +134,13 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            if (dmgEff.Source == DamageSource.FromReader)
+            {
+                _formulaLabel.text = $"{_currentBehavior.ActionName} (stat)";
+                Debug.Log($"[DamageFormulaView] UpdateFormula — FromReader → \"{_formulaLabel.text}\"");
+                return;
+            }
+
             if (_lastComboBaseDamage <= 0)
             {
                 _formulaLabel.text = $"{_currentBehavior.ActionName} (sin combo)";

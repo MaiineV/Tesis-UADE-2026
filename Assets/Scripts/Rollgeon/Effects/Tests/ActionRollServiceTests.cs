@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.ActionRolls;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Dice;

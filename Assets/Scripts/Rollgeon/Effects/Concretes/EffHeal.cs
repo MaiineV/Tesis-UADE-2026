@@ -2,12 +2,14 @@ using System;
 using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -38,9 +40,30 @@ namespace Rollgeon.Effects.Concretes
         IActionRollEffect, IHasTooltipInfo
     {
         [Title("Heal")]
-        [SerializeField, MinValue(0), MaxValue(999)]
-        [Tooltip("Curación base. Es el piso del heal cuando se usa build dice.")]
+        [SerializeField]
+        [Tooltip("Fuente del heal: Constant usa _baseAmount, ComboValue usa el combo, FromReader usa el reader configurado.")]
+        private DamageSource _healSource = DamageSource.Constant;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.Constant)]
+        [MinValue(0), MaxValue(999)]
+        [Tooltip("Curación base antes de pipeline (overheal, shields). " +
+                 "Es el piso del heal cuando se usa build dice.")]
         private int _baseAmount = 10;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.ComboValue)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al BaseDamage del combo resuelto.")]
+        private float _comboMultiplier = 1f;
+
+        [OdinSerialize, SerializeReference]
+        [ShowIf("_healSource", DamageSource.FromReader)]
+        [Tooltip("Reader polimórfico que resuelve el heal desde stats de entidad en runtime.")]
+        private EffectIntReader _reader;
+
+        [SerializeField, ShowIf("_healSource", DamageSource.FromReader)]
+        [MinValue(0.01f)]
+        [Tooltip("Multiplicador aplicado al resultado del reader.")]
+        private float _readerMultiplier = 1f;
 
         [SerializeField]
         [Tooltip("Si true, BaseAmount es porcentaje del max HP del target. " +
@@ -236,14 +259,29 @@ namespace Rollgeon.Effects.Concretes
             return true;
         }
 
-        private int ResolveBaseAmount(EffectContext context)
+        private int ResolveBaseAmount(EffectContext context = null)
         {
+            // Build dice (poción) tiene prioridad sobre _healSource: la fórmula con
+            // threshold/factor/cap es semánticamente distinta y consume el roll del
+            // IActionRollService.
             if (_useBuildDice)
             {
                 return ResolveBuildDiceAmount(context);
             }
 
-            if (!_useDiceRoll) return _baseAmount;
+            // Resolución estándar por fuente: Constant / ComboValue / FromReader.
+            int rawAmount = _healSource switch
+            {
+                DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
+                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                DamageSource.ComboValue => 0,
+                DamageSource.FromReader when _reader != null && context != null
+                    => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
+                DamageSource.FromReader => 0,
+                _ => _baseAmount,
+            };
+
+            if (!_useDiceRoll) return rawAmount;
 
             int faces = Mathf.Max(2, _diceFaces);
             int count = Mathf.Max(1, _diceCount);

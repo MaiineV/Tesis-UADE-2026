@@ -54,67 +54,7 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: AIRoot
-      Entry: 7
-      Data: 2|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
-    - Name: Condition
-      Entry: 7
-      Data: 3|Rollgeon.Combat.AI.Conditions.AICond_RoundNumber, Rollgeon
-    - Name: Mode
-      Entry: 3
-      Data: 3
-    - Name: Value
-      Entry: 3
-      Data: 3
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Then
-      Entry: 7
-      Data: 4|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Else
-      Entry: 7
-      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
-    - Name: Condition
-      Entry: 7
-      Data: 6|Rollgeon.Combat.AI.Conditions.AICond_PlayerInRange, Rollgeon
-    - Name: Range
-      Entry: 3
-      Data: 1
-    - Name: Metric
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Then
-      Entry: 7
-      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_Attack, Rollgeon
-    - Name: DamageMultiplier
-      Entry: 4
-      Data: 2
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Else
-      Entry: 7
-      Data: 8|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
-    - Name: MaxSteps
-      Entry: 3
-      Data: 2
-    - Name: StopAdjacent
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
+      Entry: 6
       Data: 
   EntityId: Boss01
   DisplayName: Boss Test

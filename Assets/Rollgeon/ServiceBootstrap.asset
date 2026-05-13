@@ -116,7 +116,7 @@ MonoBehaviour:
       Data: 7
     - Name: 
       Entry: 7
-      Data: 4|Rollgeon.Combat.Energy.EnergyService, Rollgeon
+      Data: 4|Rollgeon.Combat.EnergyLib.EnergyService, Rollgeon
     - Name: 
       Entry: 8
       Data: 

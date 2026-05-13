@@ -283,6 +283,7 @@ namespace Rollgeon.Combat.Tests
             public void DespawnAll() { }
             public bool TryGetPawn(Guid guid, out EntityPawn pawn) { pawn = null; return false; }
             public Vector3? TryGetWorldPosition(Guid entityId) => null;
+            public System.Collections.IEnumerator WaitForMoveComplete(Guid entityId) => null;
         }
 
         private class StubDungeon : IDungeonService

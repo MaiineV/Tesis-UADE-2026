@@ -3,7 +3,7 @@ using System.Collections.Generic;  // IReadOnlyList<Guid>
 using Patterns;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Patterns.Bootstrap;
 using Sirenix.OdinInspector;

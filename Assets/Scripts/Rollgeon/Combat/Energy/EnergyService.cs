@@ -7,7 +7,7 @@ using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;
 using EnergyStat = Rollgeon.Attributes.Stats.Energy;
 
-namespace Rollgeon.Combat.Energy
+namespace Rollgeon.Combat.EnergyLib
 {
     /// <summary>
     /// Servicio runtime (clase plana, NO <c>MonoBehaviour</c>) que administra la

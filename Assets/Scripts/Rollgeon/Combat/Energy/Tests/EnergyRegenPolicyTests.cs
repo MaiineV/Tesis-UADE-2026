@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 
-namespace Rollgeon.Combat.Energy.Tests
+namespace Rollgeon.Combat.EnergyLib.Tests
 {
     [TestFixture]
     public class EnergyRegenPolicyTests

@@ -2,7 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Bosses;
 using Sirenix.OdinInspector;

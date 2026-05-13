@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Patterns;
 using Rollgeon.ActionRolls;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
