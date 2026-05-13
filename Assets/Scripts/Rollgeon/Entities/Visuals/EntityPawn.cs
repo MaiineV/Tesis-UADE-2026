@@ -22,7 +22,7 @@ namespace Rollgeon.Entities.Visuals
     {
         // El hero queda elevado sobre el tile para que el modelo no clipée con
         // el piso/grid — los enemies se quedan al ras (Y=0).
-        private const float HeroYOffset = 1.4f;
+        private const float HeroYOffset = 0.1f;
 
         // Default por step — corto para que el movimiento se vea fluido sin frenar
         // el ritmo (≈8 tiles/s a 0.12). Override por arg si querés tunear.
