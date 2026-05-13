@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
@@ -34,6 +35,9 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField]
         private Button _healButton;
+        
+        [SerializeField]
+        private Button _forceDoorButton;
 
         [Title("Energy Cost Labels")]
         [InfoBox("Labels TMP opcionales que muestran cuánta energía consume cada acción. " +
@@ -50,8 +54,11 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private TextMeshProUGUI _healCostLabel;
 
+        [SerializeField] 
+        private TextMeshProUGUI _forceDoorCostLabel;
+
         [SerializeField]
-        [Tooltip("Formato del label de costo. Default '{0}'. Ej: '{0}E', '-{0}', '⚡{0}'.")]
+        [Tooltip("Formato del label de costo. Default '{0}'. Ej: '{0}E', '-{0}', 'E{0}'.")]
         private string _costLabelFormat = "{0}";
 
         [SerializeField]
@@ -72,6 +79,9 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField]
         private Color _healColor = new Color(0.32f, 0.82f, 0.45f, 1f);       // verde
+        
+        [SerializeField]
+        private Color _forceDoorColor = new Color(0.32f, 0.82f, 0.45f, 1f);
 
         // ======================================================================
         // Serialized fields — confirm button
@@ -116,7 +126,7 @@ namespace Rollgeon.UI.HUD
         // Tracking de acciones usadas en el turno actual. Resetea al disparar
         // OnTurnStarted (jugador) — no usamos TurnManager.WasUsedThisTurn directo
         // porque indexa por ActionName y queremos clave por slot 0-3.
-        private readonly bool[] _usedInTurn = new bool[4];
+        private readonly bool[] _usedInTurn = new bool[5];
 
         // ======================================================================
         // Lifecycle
@@ -128,6 +138,7 @@ namespace Rollgeon.UI.HUD
             if (_attackButton != null) _attackButton.onClick.AddListener(() => HandleBehaviorClick(1));
             if (_specialButton != null) _specialButton.onClick.AddListener(() => HandleBehaviorClick(2));
             if (_healButton != null) _healButton.onClick.AddListener(() => HandleBehaviorClick(3));
+            if (_forceDoorButton != null) _forceDoorButton.onClick.AddListener(() => HandleBehaviorClick(4));
 
             if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClick);
 
@@ -145,6 +156,7 @@ namespace Rollgeon.UI.HUD
             ApplyColor(_attackButton, _attackColor);
             ApplyColor(_specialButton, _specialColor);
             ApplyColor(_healButton, _healColor);
+            ApplyColor(_forceDoorButton, _forceDoorColor);
         }
 
         private static void ApplyColor(Button button, Color color)
@@ -162,6 +174,7 @@ namespace Rollgeon.UI.HUD
             if (_attackButton != null) _attackButton.onClick.RemoveAllListeners();
             if (_specialButton != null) _specialButton.onClick.RemoveAllListeners();
             if (_healButton != null) _healButton.onClick.RemoveAllListeners();
+            if (_forceDoorButton != null) _forceDoorButton.onClick.RemoveAllListeners();
 
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClick);
         }
@@ -290,16 +303,36 @@ namespace Rollgeon.UI.HUD
                 _specialButton.interactable = behaviors && !_usedInTurn[2] && IsBehaviorAvailable(HeroBehaviorSlot.SpecialAttack);
             if (_healButton != null)
                 _healButton.interactable = behaviors && !_usedInTurn[3] && IsBehaviorAvailable(HeroBehaviorSlot.Healing);
+            if (_forceDoorButton != null)
+                _forceDoorButton.interactable = behaviors && !_usedInTurn[4] && IsBehaviorAvailable(HeroBehaviorSlot.ForceDoor);
 
             if (_confirmButton != null) _confirmButton.interactable = confirm;
         }
 
         private bool IsBehaviorAvailable(HeroBehaviorSlot slot)
         {
+            // Forzar Puerta no aplica en salas de Boss — el boss debe vencerse, no se escapa.
+            if (slot == HeroBehaviorSlot.ForceDoor && IsCurrentRoomBoss()) return false;
+
+            // Forzar Puerta requiere estar adyacente (Manhattan ≤ 1, ortogonal) a alguna
+            // puerta de la sala. Refrescamos la disponibilidad en OnEntityMoved.
+            if (slot == HeroBehaviorSlot.ForceDoor
+                && !Rollgeon.Effects.Concretes.EffForceDoor.IsPlayerAdjacentToAnyDoor(_playerGuid))
+            {
+                return false;
+            }
+
             if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps?.CurrentHero == null) return true;
             var behavior = ps.CurrentHero.ResolveBaseBehavior(slot, GamePhase.Combat);
             if (behavior == null) return false;
             return behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _);
+        }
+
+        private static bool IsCurrentRoomBoss()
+        {
+            return ServiceLocator.TryGetService<Rollgeon.Dungeon.IDungeonService>(out var dungeon)
+                   && dungeon?.CurrentRoom != null
+                   && dungeon.CurrentRoom.Type == Rollgeon.Dungeon.RoomType.Boss;
         }
 
         // ======================================================================
@@ -362,6 +395,15 @@ namespace Rollgeon.UI.HUD
 
         private void HandleConfirmClick()
         {
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Confirm = resolver la
+            // tirada actual via el service. NO disparar el flow normal de combate
+            // (CombatHandoffService.OnConfirmRequested) — eso ejecutaría el behavior dos veces.
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+            {
+                rs.DeclineReroll();
+                return;
+            }
             _onConfirmPressed?.Invoke();
         }
 
@@ -382,6 +424,7 @@ namespace Rollgeon.UI.HUD
                 ApplyCostText(_attackCostLabel, null);
                 ApplyCostText(_specialCostLabel, null);
                 ApplyCostText(_healCostLabel, null);
+                ApplyCostText(_forceDoorCostLabel, null);
                 return;
             }
 
@@ -394,6 +437,8 @@ namespace Rollgeon.UI.HUD
                 hero.ResolveBaseBehavior(HeroBehaviorSlot.SpecialAttack, GamePhase.Combat));
             ApplyCostText(_healCostLabel,
                 hero.ResolveBaseBehavior(HeroBehaviorSlot.Healing, GamePhase.Combat));
+            ApplyCostText(_forceDoorCostLabel,
+                hero.ResolveBaseBehavior(HeroBehaviorSlot.ForceDoor, GamePhase.Combat));
         }
 
         private void ApplyCostText(TextMeshProUGUI label, HeroActionBehavior behavior)
@@ -405,9 +450,41 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            label.text = behavior.EnergyCost <= 0
+            int cost = ResolveDisplayCost(behavior);
+            label.text = cost <= 0
                 ? _zeroCostText
-                : string.Format(_costLabelFormat, behavior.EnergyCost);
+                : string.Format(_costLabelFormat, cost);
+        }
+
+        // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
+        // IActionRollService con el cost del spec — el behavior.EnergyCost queda
+        // engañoso (los wirings legacy lo ponen en 2 cuando el real es 1). Para
+        // que el label refleje lo que efectivamente se va a cobrar, priorizamos
+        // el spec del effect.
+        private int ResolveDisplayCost(HeroActionBehavior behavior)
+        {
+            if (TryFindActionRollSpec(behavior, out var spec))
+                return spec.EnergyCost;
+            return behavior.EnergyCost;
+        }
+
+        private bool TryFindActionRollSpec(HeroActionBehavior behavior, out ActionRollSpec spec)
+        {
+            spec = default;
+            if (behavior?.Effects == null) return false;
+            foreach (var group in behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is IActionRollEffect rollEffect
+                        && rollEffect.TryGetRollSpec(_playerGuid, out spec))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

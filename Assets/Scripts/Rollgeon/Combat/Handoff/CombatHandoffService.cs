@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Energy;
 using Rollgeon.Combat.FSM;
@@ -52,6 +53,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly IPlayerCombatActions _playerActions;
 
         private EventManager.EventReceiver _onCombatTriggeredHandler;
+        private EventManager.EventReceiver _onCombatEndedHandler;
         private bool _disposed;
 
         private int[] _lastFaces;
@@ -83,6 +85,9 @@ namespace Rollgeon.Combat.Handoff
 
             _onCombatTriggeredHandler = OnCombatTriggered;
             EventManager.Subscribe(EventName.OnCombatTriggered, _onCombatTriggeredHandler);
+
+            _onCombatEndedHandler = OnCombatEndedExternal;
+            EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndedHandler);
         }
 
         /// <summary>
@@ -116,6 +121,39 @@ namespace Rollgeon.Combat.Handoff
             {
                 EventManager.UnSubscribe(EventName.OnCombatTriggered, _onCombatTriggeredHandler);
                 _onCombatTriggeredHandler = null;
+            }
+            if (_onCombatEndedHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatEnd, _onCombatEndedHandler);
+                _onCombatEndedHandler = null;
+            }
+        }
+
+        /// <summary>
+        /// Cleanup defensivo cuando el combat termina (Victory / Defeat / Aborted).
+        /// Reseteamos TODO el state interno + cancelamos cualquier ActionRoll en vuelo —
+        /// sin esto, después de Force Door (Aborted) los flags <c>_selectedBehavior</c>,
+        /// <c>_activeChain</c> y la sesión del action roll quedaban colgados y bloqueaban
+        /// el próximo click de cualquier acción en la nueva sala.
+        /// </summary>
+        private void OnCombatEndedExternal(params object[] args)
+        {
+            _lastFaces = null;
+            _selectedBehavior = null;
+            _activeChain = null;
+            _chainPhaseIndex = 0;
+            _chainPhaseSelectionResult = null;
+            _pendingChainCallback = null;
+            if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
+                _chainSelectionController.CancelSelection();
+            _chainSelectionController = null;
+
+            // Si quedó un ActionRoll abierto (ej. user nunca apretó Confirm pero el combat
+            // termina por otra vía), cancelarlo para que el panel se cierre.
+            if (ServiceLocator.TryGetService<ActionRolls.IActionRollService>(out var roll)
+                && roll != null && roll.IsActive)
+            {
+                roll.Cancel();
             }
         }
 
@@ -342,6 +380,56 @@ namespace Rollgeon.Combat.Handoff
                 if (!behavior.HasUsableEffectGroup(playerGuid, firstEnemyId, out var effectReason))
                 {
                     Debug.Log($"[CombatHandoffService] No usable effect group for '{behavior.ActionName}': {effectReason}");
+                    return;
+                }
+
+                // Acciones secundarias con IActionRollEffect (Forzar Puerta, Curarse) usan el
+                // flow especifico: ActionRollPanelView con confirm/holds/reroll por energia.
+                // El cost lo cobra IActionRollService via el spec — saltamos el flow normal de
+                // Generala de combate y ejecutamos el behavior con TryExecuteEnergyPrepaid tras
+                // el outcome (igual semantica que ExplorationBehaviorService).
+                if (TryFindActionRollEffect(behavior, out var rollEffect)
+                    && rollEffect.TryGetRollSpec(playerGuid, out var rollSpec)
+                    && ServiceLocator.TryGetService<IActionRollService>(out var actionRollService)
+                    && actionRollService != null)
+                {
+                    var rollBag = ResolvePlayerBag();
+                    if (rollBag == null)
+                    {
+                        Debug.LogError("[CombatHandoffService] No se pudo resolver bag para ActionRoll — abortado.");
+                        return;
+                    }
+
+                    _selectedBehavior = behavior;
+                    hud.SetBehaviorForFormula(behavior);
+
+                    actionRollService.StartFlow(rollSpec, playerGuid, rollBag, outcome =>
+                    {
+                        var resolvedBehavior = _selectedBehavior;
+                        _selectedBehavior = null;
+                        hud.ClearBehaviorForFormula();
+
+                        if (outcome.Cancelled || resolvedBehavior == null) return;
+
+                        Combos.ComboDetectionResult? combo = outcome.HasCombo
+                            ? Combos.ComboDetectionResult.Match(outcome.EffectiveTotal,
+                                outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
+                            : (Combos.ComboDetectionResult?)null;
+
+                        var behaviorCtx = new HeroBehaviorContext
+                        {
+                            SourceEntity = new Entity { Guid = playerGuid },
+                            SelectionResult = null,
+                            DiceResult = outcome.FinalRoll,
+                            MatchedComboResult = combo,
+                            ActionRollEffectiveTotal = outcome.EffectiveTotal,
+                        };
+
+                        // Energia ya cobrada por IActionRollService — TryExecuteEnergyPrepaid
+                        // solo ejecuta + trackea repeticion.
+                        if (ServiceLocator.TryGetService<TurnManager>(out var tmgr) && tmgr != null)
+                            tmgr.TryExecuteEnergyPrepaid(resolvedBehavior, playerGuid, behaviorCtx);
+                    });
                     return;
                 }
 
@@ -781,6 +869,28 @@ namespace Rollgeon.Combat.Handoff
                 return false;
             }
             return true;
+        }
+
+        // Recorre los effects del behavior buscando el primer IActionRollEffect.
+        // Mismo patron que ExplorationBehaviorService.TryFindActionRollEffect.
+        private static bool TryFindActionRollEffect(HeroActionBehavior behavior,
+            out IActionRollEffect rollEffect)
+        {
+            rollEffect = null;
+            if (behavior?.Effects == null) return false;
+            foreach (var group in behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is IActionRollEffect candidate)
+                    {
+                        rollEffect = candidate;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

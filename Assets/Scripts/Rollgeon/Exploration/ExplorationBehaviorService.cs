@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Energy;
+using Rollgeon.Combos;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
@@ -16,7 +19,7 @@ namespace Rollgeon.Exploration
 {
     public sealed class ExplorationBehaviorService : IExplorationBehaviorService, IDisposable
     {
-        private enum State { Inactive, Idle, Selecting }
+        private enum State { Inactive, Idle, Selecting, Rolling }
 
         private State _state = State.Inactive;
         private HeroActionBehavior _pendingBehavior;
@@ -42,10 +45,24 @@ namespace Rollgeon.Exploration
             return service;
         }
 
-        public void OnBehaviorSelected(int index)
+        public void OnBehaviorSelected(int slot)
         {
-            Debug.Log($"[ExplorationBehaviorService] OnBehaviorSelected({index}) — _state={_state}");
-            if (_state != State.Idle) return;
+            Debug.LogWarning($"[ExplorationBehaviorService] OnBehaviorSelected(slot={slot}) — _state={_state}");
+
+            // Si hay un flow anterior colgado (Selecting / Rolling sin terminar), lo
+            // cancelamos automaticamente antes de procesar el nuevo click. Asi el user
+            // puede clickear otro boton para "abandonar" la accion en curso.
+            if (_state != State.Idle)
+            {
+                Debug.LogWarning($"[ExplorationBehaviorService] _state={_state} → cancelando flow anterior y procesando click nuevo.");
+                ForceCancelInProgress();
+            }
+
+            if (_state != State.Idle)
+            {
+                Debug.LogWarning($"[ExplorationBehaviorService] No pude resetear _state a Idle (queda {_state}) — abortando click.");
+                return;
+            }
 
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService))
             {
@@ -59,14 +76,25 @@ namespace Rollgeon.Exploration
             var playerGuid = playerService.PlayerGuid;
             var behaviors = hero.GetBehaviorsForPhase(GamePhase.Exploration);
 
-            if (index < 0 || index >= behaviors.Count)
+            // Buscar por slot (no por list index) — la lista de exploration filtra
+            // los slots que no aplican (ej. BaseAttack, SpecialAttack), por lo que
+            // los índices no se alinean con HeroBehaviorSlot. Buscar por slot
+            // garantiza que el botón de Pass Door no termine disparando Healing.
+            HeroActionBehavior behavior = null;
+            for (int i = 0; i < behaviors.Count; i++)
             {
-                Debug.LogWarning($"[ExplorationBehaviorService] Index {index} out of range ({behaviors.Count} behaviors).");
-                return;
+                if (behaviors[i] != null && (int)behaviors[i].Slot == slot)
+                {
+                    behavior = behaviors[i];
+                    break;
+                }
             }
 
-            var behavior = behaviors[index];
-            if (behavior == null) return;
+            if (behavior == null)
+            {
+                Debug.LogWarning($"[ExplorationBehaviorService] No behavior at slot {slot} for Exploration.");
+                return;
+            }
 
             var preCtx = new PreConditionContext
             {
@@ -81,7 +109,18 @@ namespace Rollgeon.Exploration
                 return;
             }
 
-            if (behavior.EnergyCost > 0)
+            // Si algun effect del behavior implementa IActionRollEffect, este "owns" el cost
+            // (lo cobra el IActionRollService al confirmar el roll, o no se cobra nada en el
+            // path instantaneo). Skipeamos el static charge para evitar double-billing.
+            bool ownsCostViaActionRoll = TryFindActionRollEffect(behavior, out var rollEffect);
+
+            if (ownsCostViaActionRoll && rollEffect.TryGetRollSpec(playerGuid, out var rollSpec))
+            {
+                StartActionRoll(behavior, playerGuid, playerService, rollSpec);
+                return;
+            }
+
+            if (!ownsCostViaActionRoll && behavior.EnergyCost > 0)
             {
                 if (!ServiceLocator.TryGetService<IEnergyService>(out var energy)
                     || !energy.SpendEnergy(playerGuid, behavior.EnergyCost))
@@ -97,7 +136,7 @@ namespace Rollgeon.Exploration
                 return;
             }
 
-            ExecuteBehavior(behavior, playerGuid, null);
+            ExecuteBehavior(behavior, playerGuid, null, null);
         }
 
         public void CancelSelection()
@@ -112,6 +151,35 @@ namespace Rollgeon.Exploration
 
             _pendingBehavior = null;
             _state = State.Idle;
+        }
+
+        // Cancela cualquier flow en curso y deja _state en Idle. Llamado cuando el
+        // user clickea otra accion mientras hay una en progreso — comportamiento
+        // tipico de UX: el ultimo click "manda" y abandona lo anterior.
+        private void ForceCancelInProgress()
+        {
+            switch (_state)
+            {
+                case State.Selecting:
+                    Debug.LogWarning("[ExplorationBehaviorService] ForceCancel: cancelando Selecting.");
+                    CancelSelection();
+                    break;
+                case State.Rolling:
+                    Debug.LogWarning("[ExplorationBehaviorService] ForceCancel: cancelando Rolling (action roll).");
+                    if (ServiceLocator.TryGetService<IActionRollService>(out var rs)
+                        && rs != null && rs.IsActive)
+                    {
+                        rs.Cancel(); // el callback resuelve outcome.Cancelled=true → _state=Idle
+                    }
+                    // Safety: si el cancel del roll service no logro resetear (callback
+                    // no se invoco), forzamos Idle directamente.
+                    if (_state == State.Rolling)
+                    {
+                        _pendingBehavior = null;
+                        _state = State.Idle;
+                    }
+                    break;
+            }
         }
 
         public void Dispose()
@@ -132,6 +200,72 @@ namespace Rollgeon.Exploration
             _state = State.Inactive;
         }
 
+        private static bool TryFindActionRollEffect(HeroActionBehavior behavior,
+            out IActionRollEffect rollEffect)
+        {
+            rollEffect = null;
+            if (behavior?.Effects == null) return false;
+            foreach (var group in behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is IActionRollEffect candidate)
+                    {
+                        rollEffect = candidate;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void StartActionRoll(HeroActionBehavior behavior, Guid playerGuid,
+            IPlayerService playerService, ActionRollSpec spec)
+        {
+            if (!ServiceLocator.TryGetService<IActionRollService>(out var rollService)
+                || rollService == null)
+            {
+                Debug.LogError("[ExplorationBehaviorService] IActionRollService no registrado — " +
+                               "no se puede ejecutar la accion con tirada.");
+                return;
+            }
+
+            var bag = playerService.DiceBag;
+            if (bag == null || bag.Dice == null || bag.Dice.Count == 0)
+            {
+                Debug.LogError("[ExplorationBehaviorService] PlayerService.DiceBag null o vacio — " +
+                               "no se puede tirar para la accion.");
+                return;
+            }
+
+            _pendingBehavior = behavior;
+            _state = State.Rolling;
+            Debug.LogWarning($"[ExplorationBehaviorService] StartActionRoll → behavior='{behavior.ActionName}' _state=Rolling");
+
+            rollService.StartFlow(spec, playerGuid, bag, outcome =>
+            {
+                Debug.LogWarning($"[ExplorationBehaviorService] outcome callback: cancelled={outcome.Cancelled} " +
+                                 $"passed={outcome.PassedThreshold} effective={outcome.EffectiveTotal} " +
+                                 $"hasCombo={outcome.HasCombo} _state→Idle");
+                var resolvedBehavior = _pendingBehavior;
+                _pendingBehavior = null;
+                _state = State.Idle;
+
+                if (outcome.Cancelled || resolvedBehavior == null) return;
+
+                // Reconstruir el ComboDetectionResult del outcome para que los effects
+                // (EffForceDoor, EffHeal) puedan leer EffectiveTotal via ComboResult.
+                ComboDetectionResult? combo = outcome.HasCombo
+                    ? ComboDetectionResult.Match(outcome.EffectiveTotal,
+                        outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
+                    : (ComboDetectionResult?)null;
+
+                ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll, combo,
+                    outcome.EffectiveTotal);
+            });
+        }
+
         private void BeginSelection(HeroActionBehavior behavior, Guid playerGuid)
         {
             var targetSettings = behavior.Effects?
@@ -143,7 +277,7 @@ namespace Rollgeon.Exploration
             if (targetSettings == null)
             {
                 Debug.LogWarning("[ExplorationBehaviorService] No SelectionSettings found — executing directly.");
-                ExecuteBehavior(behavior, playerGuid, null);
+                ExecuteBehavior(behavior, playerGuid, null, null);
                 return;
             }
 
@@ -162,14 +296,14 @@ namespace Rollgeon.Exploration
                     SelectedTargets = new System.Collections.Generic.List<TargetRef>
                         { TargetRef.At(ownerPos) },
                 };
-                ExecuteBehavior(behavior, playerGuid, selfResult);
+                ExecuteBehavior(behavior, playerGuid, selfResult, null);
                 return;
             }
 
             if (targetSettings.AutoResolve)
             {
                 var autoResult = targetSettings.AutoResolveTargets(ownerPos, playerGuid);
-                ExecuteBehavior(behavior, playerGuid, autoResult);
+                ExecuteBehavior(behavior, playerGuid, autoResult, null);
                 return;
             }
 
@@ -188,6 +322,8 @@ namespace Rollgeon.Exploration
 
             _pendingBehavior = behavior;
             _state = State.Selecting;
+            Debug.LogWarning($"[ExplorationBehaviorService] BeginSelection: behavior='{behavior.ActionName}' " +
+                             $"validTargets={validTargets.Count} → _state=Selecting (esperando click del user).");
 
             controller.OnSelectionCompleted += OnSelectionCompleted;
             controller.BeginSelection(new SelectionRequest
@@ -211,16 +347,21 @@ namespace Rollgeon.Exploration
             if (behavior == null || !result.WasCompleted) return;
 
             if (ServiceLocator.TryGetService<IPlayerService>(out var playerService))
-                ExecuteBehavior(behavior, playerService.PlayerGuid, result);
+                ExecuteBehavior(behavior, playerService.PlayerGuid, result, null);
         }
 
         private void ExecuteBehavior(HeroActionBehavior behavior, Guid playerGuid,
-            TargetSelectionResult selectionResult)
+            TargetSelectionResult selectionResult, IReadOnlyList<int> diceResult,
+            ComboDetectionResult? matchedCombo = null,
+            int? actionRollEffectiveTotal = null)
         {
             var ctx = new HeroBehaviorContext
             {
                 SourceEntity = new Entity { Guid = playerGuid },
                 SelectionResult = selectionResult,
+                DiceResult = diceResult,
+                MatchedComboResult = matchedCombo,
+                ActionRollEffectiveTotal = actionRollEffectiveTotal,
             };
 
             behavior.Execute(ctx);
@@ -242,6 +383,14 @@ namespace Rollgeon.Exploration
             if ((GamePhase)args[0] == GamePhase.Exploration)
             {
                 CancelSelection();
+                if (_state == State.Rolling
+                    && ServiceLocator.TryGetService<IActionRollService>(out var rollService)
+                    && rollService != null
+                    && rollService.IsActive)
+                {
+                    rollService.Cancel();
+                }
+                _pendingBehavior = null;
                 _state = State.Inactive;
             }
         }

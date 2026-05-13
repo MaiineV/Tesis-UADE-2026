@@ -1,11 +1,15 @@
 using System;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Phase;
 using Rollgeon.Player;
+using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Rollgeon.Effects.Concretes
 {
@@ -15,52 +19,143 @@ namespace Rollgeon.Effects.Concretes
     /// feedback downstream. TECHNICAL.md §8.7, §9.5, §17.M.
     /// </summary>
     /// <remarks>
-    /// Atómico: resuelve el target desde <see cref="EffectContext.SelectionResult"/>
-    /// o <see cref="EffectContext.SourceGuid"/> como fallback (heal self). Si
-    /// <see cref="IHealPipeline"/> no está registrado, aborta la cadena (§8.8).
+    /// <para>
+    /// <b>Modos de cálculo del heal</b> (en orden de prioridad):
+    /// </para>
+    /// <list type="number">
+    ///   <item><b>Build dice</b> (<see cref="_useBuildDice"/>): tira los 5 dados de la build
+    ///   vía <see cref="IActionRollService"/>. Si <c>sum &gt;= </c><see cref="_healThreshold"/>
+    ///   → heal = <see cref="_baseAmount"/> + (sum - threshold). Si no → heal = base.</item>
+    ///   <item><b>Dice roll genérico</b> (<see cref="_useDiceRoll"/>): NdM con
+    ///   <see cref="UnityEngine.Random"/>.</item>
+    ///   <item><b>Constante</b>: <see cref="_baseAmount"/> tal cual (o como % del max si
+    ///   <see cref="_isPercentOfMax"/>).</item>
+    /// </list>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffHeal : BaseEffect<HealArgs, int>,
-        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior,
+        IActionRollEffect, IHasTooltipInfo
     {
         [Title("Heal")]
         [SerializeField, MinValue(0), MaxValue(999)]
-        [Tooltip("Curación base antes de pipeline (overheal, shields).")]
+        [Tooltip("Curación base. Es el piso del heal cuando se usa build dice.")]
         private int _baseAmount = 10;
 
         [SerializeField]
-        [Tooltip("Si true, BaseAmount es porcentaje del max HP del target.")]
+        [Tooltip("Si true, BaseAmount es porcentaje del max HP del target. " +
+                 "Ignorado cuando UseBuildDice está activo.")]
         private bool _isPercentOfMax;
 
+        [Title("Build Dice (poción)")]
         [SerializeField]
-        [Tooltip("Si true, ignora BaseAmount y rolea DiceCount × dDiceFaces. Ej: 1d10 = aleatorio entre 1 y 10.")]
+        [Tooltip("Si true, el heal usa los 5 dados de la build del player y aplica la fórmula " +
+                 "de umbral (heal = base + max(0, sum - threshold)). Ruta el flujo a través " +
+                 "de IActionRollService cuando se invoca como acción de hero.")]
+        private bool _useBuildDice;
+
+        [SerializeField, MinValue(0)]
+        [ShowIf(nameof(_useBuildDice))]
+        [Tooltip("Threshold del 'effective total' de la tirada (formula B: combo.BaseDamage " +
+                 "si hay combo, sino suma cruda). Si lo alcanza, el excedente se suma al heal " +
+                 "base. Default 30 — alineado con Force Door para que requiera al menos un Trio.")]
+        private int _healThreshold = 30;
+
+        [SerializeField, MinValue(0f)]
+        [ShowIf(nameof(_useBuildDice))]
+        [Tooltip("Factor de escala: HP ganados por cada punto del puntaje por encima del " +
+                 "umbral. Referencias por fase: Early 0.8, Mid 0.3, Late 0.08, Endgame 0.02. " +
+                 "Default 1.0 mantiene la fórmula lineal simple.")]
+        private float _healScaleFactor = 1f;
+
+        [SerializeField, MinValue(0)]
+        [ShowIf(nameof(_useBuildDice))]
+        [Tooltip("Tope máximo absoluto de curación (red de seguridad ante puntajes altos). " +
+                 "0 = sin cap. El designer convierte el % HP máx (Early 25, Mid 40, Late 55, " +
+                 "Endgame 65) a valor absoluto según el HP esperado del jugador en esa fase.")]
+        private int _healMaxCap = 0;
+
+        [SerializeField, MinValue(0)]
+        [FormerlySerializedAs("_energyCost")]
+        [ShowIf(nameof(_useBuildDice))]
+        [Tooltip("Energía que cuesta intentar curarse DENTRO de combate. Fuera de " +
+                 "combate es 0 (la poción no cuesta energía explorando). Cobrado por " +
+                 "IActionRollService al iniciar la tirada. Default 2.")]
+        private int _energyCostInCombat = 2;
+
+        [Title("Generic Dice (legacy / alt)")]
+        [SerializeField]
+        [Tooltip("Si true (y UseBuildDice false), tira DiceCount × dDiceFaces vía Random. " +
+                 "Mantenido para heals NPC / scripted que no van por la build del player.")]
         private bool _useDiceRoll;
 
         [SerializeField, MinValue(1)]
         [ShowIf(nameof(_useDiceRoll))]
-        [Tooltip("Cantidad de dados a rolear cuando UseDiceRoll está activo.")]
         private int _diceCount = 1;
 
         [SerializeField, MinValue(2)]
         [ShowIf(nameof(_useDiceRoll))]
-        [Tooltip("Caras del dado (ej. 10 = d10, rango [1, 10] inclusive).")]
         private int _diceFaces = 10;
 
         [SerializeField]
-        [Tooltip("Tag libre para logging/telemetría — ej. 'potion', 'support.heal'.")]
         private string _sourceTag = "eff.heal";
 
         [SerializeField]
-        [Tooltip("Si true y no hay SelectionResult, cura al SourceGuid (self-heal). Para " +
-                 "pociones / heals automáticos. Si false, requiere selección explícita y aborta " +
-                 "la cadena cuando no hay target.")]
+        [Tooltip("Si true y no hay SelectionResult, cura al SourceGuid (self-heal).")]
         private bool _selfHealOnNoTarget = true;
 
         public override string GetEffectName() => "Heal";
 
-        // Self-heal no requiere selección — el target es siempre el SourceGuid. Si el
-        // user configuró Selection interactiva en Inspector, la ignoramos cuando
-        // SelfHealOnNoTarget = true (caso típico: pociones, regen pasivo).
+        public bool TryGetRollSpec(Guid playerGuid, out ActionRollSpec spec)
+        {
+            spec = default;
+            if (!_useBuildDice) return false;
+
+            // En combate cuesta _energyCostInCombat. Fuera de combate la poción no
+            // gasta energía (igual que EffForceDoor con su EnergyCostInCombat).
+            int cost = IsInCombat() ? _energyCostInCombat : 0;
+
+            spec = new ActionRollSpec
+            {
+                EnergyCost = cost,
+                Threshold = _healThreshold,
+                RequireConfirm = false,
+                ActionLabel = "Curarse",
+                AllowReroll = true,
+                RerollEnergyCost = 1,
+                AlwaysSucceeds = true,
+            };
+            return true;
+        }
+
+        private static bool IsInCombat()
+        {
+            return ServiceLocator.TryGetService<IPhaseService>(out var phase)
+                   && phase != null
+                   && phase.CurrentBase == GamePhase.Combat;
+        }
+
+        // IHasTooltipInfo — el binder de la pocion consume esto. Solo emite texto
+        // cuando _useBuildDice esta on: en modo constante / generic dice no hay
+        // umbral ni tope relevantes para mostrar al jugador.
+        public string BuildTooltip()
+        {
+            if (!_useBuildDice) return null;
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("<b>Poción de Curación</b>");
+            sb.Append("HP Base: ").Append(_baseAmount);
+            sb.AppendLine();
+            sb.Append("Umbral Mínimo: ").Append(_healThreshold);
+            if (_healMaxCap > 0)
+            {
+                sb.AppendLine();
+                sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
+            }
+            return sb.ToString();
+        }
+
+        // Self-heal no requiere selección.
         public override bool HasSelectionRequirement()
         {
             return !_selfHealOnNoTarget && base.HasSelectionRequirement();
@@ -72,9 +167,9 @@ namespace Rollgeon.Effects.Concretes
         }
 
         protected override HealArgs ResolveArgs(EffectContext context) =>
-            new HealArgs { BaseAmount = ResolveBaseAmount() };
+            new HealArgs { BaseAmount = ResolveBaseAmount(context) };
 
-        protected override int ResolveValue(EffectContext context) => ResolveBaseAmount();
+        protected override int ResolveValue(EffectContext context) => ResolveBaseAmount(context);
 
         public override bool ApplyEffect(EffectContext context)
         {
@@ -94,18 +189,20 @@ namespace Rollgeon.Effects.Concretes
             {
                 if (context.SourceEntity != null) targetGuid = context.SourceEntity.Guid;
                 else if (context.SourceGuid != Guid.Empty) targetGuid = context.SourceGuid;
-                // Último fallback: el flujo de combat no propaga SourceEntity al ctx,
-                // así que resolvemos el player vía IPlayerService.
                 else if (ServiceLocator.TryGetService<IPlayerService>(out var ps) && ps != null)
                     targetGuid = ps.PlayerGuid;
             }
 
             if (targetGuid == Guid.Empty)
             {
-                Debug.LogWarning("[EffHeal] No target resuelto — aborta cadena.");
+                Debug.LogWarning("[EffHeal] No target resuelto aborta cadena.");
                 return false;
             }
-            
+
+            // Build dice mode: ya pasamos por el threshold en ResolveBaseAmount, así que
+            // IsPercentOfMax queda forzado a false (estamos en HP absoluto).
+            bool isPercent = !_useBuildDice && _isPercentOfMax;
+
             int resolvedHeal = amount;
             if (ServiceLocator.TryGetService<IHealPipeline>(out var pipeline) && pipeline != null)
             {
@@ -114,7 +211,7 @@ namespace Rollgeon.Effects.Concretes
                     SourceId = context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid,
                     TargetId = targetGuid,
                     BaseHeal = amount,
-                    IsPercentOfMax = _isPercentOfMax,
+                    IsPercentOfMax = isPercent,
                     SourceTag = _sourceTag,
                 };
                 pipeline.Resolve(healCtx);
@@ -122,7 +219,7 @@ namespace Rollgeon.Effects.Concretes
             }
             else
             {
-                Debug.LogWarning("[EffHeal] IHealPipeline no registrado — usando amount crudo.");
+                Debug.LogWarning("[EffHeal] IHealPipeline no registrado usando amount crudo.");
             }
 
             if (context.SourceBehavior != null)
@@ -139,18 +236,13 @@ namespace Rollgeon.Effects.Concretes
             return true;
         }
 
-        private static Guid ResolveTargetGuid(EffectContext context)
+        private int ResolveBaseAmount(EffectContext context)
         {
-            if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord
-                && ServiceLocator.TryGetService<IGridManager>(out var grid)
-                && grid.TryGetOccupant(coord, out var occupant)
-                && occupant != Guid.Empty)
-                return occupant;
-            return context.SourceGuid;
-        }
+            if (_useBuildDice)
+            {
+                return ResolveBuildDiceAmount(context);
+            }
 
-        private int ResolveBaseAmount()
-        {
             if (!_useDiceRoll) return _baseAmount;
 
             int faces = Mathf.Max(2, _diceFaces);
@@ -161,6 +253,55 @@ namespace Rollgeon.Effects.Concretes
                 sum += UnityEngine.Random.Range(1, faces + 1);
             }
             return sum;
+        }
+
+        // Build dice: lee context.DiceResult (populado por IActionRollService antes de
+        // ejecutar el effect chain). Si no hay DiceResult, fallback al base — log
+        // warning porque indica wiring roto.
+        private int ResolveBuildDiceAmount(EffectContext context)
+        {
+            if (context?.DiceResult == null || context.DiceResult.Count == 0)
+            {
+                Debug.LogWarning("[EffHeal] UseBuildDice activo pero DiceResult vacío — " +
+                                 "fallback a BaseAmount. Verificar que el behavior pase por IActionRollService.");
+                return _baseAmount;
+            }
+
+            // Prioridad: el ActionRollService ya computó el effective sobre los held dice.
+            // Si viene pre-computado, usarlo — sino caemos al cálculo legacy (combo o suma
+            // cruda de los 5), que sobrestima el heal cuando el user holdeó pocos dados.
+            int effectiveTotal = context.ActionRollEffectiveTotal
+                ?? ActionRollTotals.ResolveEffectiveTotal(context.DiceResult, context.ComboResult);
+
+            return ComputeBuildDiceHeal(_baseAmount, _healThreshold, effectiveTotal,
+                _healScaleFactor, _healMaxCap);
+        }
+
+        /// <summary>
+        /// Fórmula expuesta para tests:
+        /// <list type="bullet">
+        ///   <item><c>score &lt; healThreshold</c> → <c>heal = base</c> (sin escalado).</item>
+        ///   <item><c>score &gt;= healThreshold</c> → <c>heal = base + floor((score - threshold) × scaleFactor)</c>.</item>
+        ///   <item>Si <paramref name="maxCap"/> &gt; 0, el resultado se clampea a <paramref name="maxCap"/>.</item>
+        /// </list>
+        /// Spec: HP = HP_Base + ((Puntaje - Umbral_Mínimo) × Factor_de_Escala), floor abajo, cap por Tope_Máximo.
+        /// </summary>
+        public static int ComputeBuildDiceHeal(int baseAmount, int healThreshold, int score,
+            float scaleFactor, int maxCap)
+        {
+            int heal;
+            if (score < healThreshold)
+            {
+                heal = baseAmount;
+            }
+            else
+            {
+                int bonus = Mathf.FloorToInt((score - healThreshold) * Mathf.Max(0f, scaleFactor));
+                heal = baseAmount + bonus;
+            }
+
+            if (maxCap > 0 && heal > maxCap) heal = maxCap;
+            return heal;
         }
     }
 }

@@ -153,6 +153,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5142958218789693794}
   - component: {fileID: 4160127387937232356}
+  - component: {fileID: 9039400246614140391}
+  - component: {fileID: 5270134854222608696}
   m_Layer: 0
   m_Name: Door_N
   m_TagString: Untagged
@@ -195,6 +197,36 @@ MonoBehaviour:
   _meshOpen: {fileID: 6239412490211918483}
   _meshClosed: {fileID: 7885622908541821795}
   _wallPlug: {fileID: 8148556867672521699}
+--- !u!114 &9039400246614140391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1598296719709538394}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
+  _slot: 4
+  _resolvePhase: 2
+  _onlyDuringCombat: 1
+--- !u!114 &5270134854222608696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1598296719709538394}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae2df9ab3a16c547b41073a59a00681, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
+  _mode: 0
+  _camera: {fileID: 0}
+  _raycastDistance: 100
 --- !u!1 &1832780176720489718
 GameObject:
   m_ObjectHideFlags: 0
@@ -205,6 +237,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1861789218857891522}
   - component: {fileID: 5737398169103645413}
+  - component: {fileID: 2204056999710583314}
+  - component: {fileID: 4534470052101667580}
   m_Layer: 0
   m_Name: Door_E
   m_TagString: Untagged
@@ -247,6 +281,36 @@ MonoBehaviour:
   _meshOpen: {fileID: 3900630819890260016}
   _meshClosed: {fileID: 6062442928660360250}
   _wallPlug: {fileID: 1142551355444977634}
+--- !u!114 &2204056999710583314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1832780176720489718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
+  _slot: 4
+  _resolvePhase: 2
+  _onlyDuringCombat: 1
+--- !u!114 &4534470052101667580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1832780176720489718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae2df9ab3a16c547b41073a59a00681, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
+  _mode: 0
+  _camera: {fileID: 0}
+  _raycastDistance: 100
 --- !u!1 &2222674966285541325
 GameObject:
   m_ObjectHideFlags: 0
@@ -4832,6 +4896,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8719648427237489199}
   - component: {fileID: 9119574278181664772}
+  - component: {fileID: 1967008115271362748}
+  - component: {fileID: 1971109327607217405}
   m_Layer: 0
   m_Name: Door_S
   m_TagString: Untagged
@@ -4874,6 +4940,36 @@ MonoBehaviour:
   _meshOpen: {fileID: 7203183267797077655}
   _meshClosed: {fileID: 6994646405425380519}
   _wallPlug: {fileID: 4718426743259561937}
+--- !u!114 &1967008115271362748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4233233274997704069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
+  _slot: 4
+  _resolvePhase: 2
+  _onlyDuringCombat: 1
+--- !u!114 &1971109327607217405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4233233274997704069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae2df9ab3a16c547b41073a59a00681, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
+  _mode: 0
+  _camera: {fileID: 0}
+  _raycastDistance: 100
 --- !u!1 &4718426743259561937
 GameObject:
   m_ObjectHideFlags: 0
@@ -5367,6 +5463,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4367037321060065154}
   - component: {fileID: 3538359225505942640}
+  - component: {fileID: 898363860243239353}
+  - component: {fileID: 6946633244762609365}
   m_Layer: 0
   m_Name: Door_W
   m_TagString: Untagged
@@ -5409,6 +5507,36 @@ MonoBehaviour:
   _meshOpen: {fileID: 2222674966285541325}
   _meshClosed: {fileID: 3181487908822914695}
   _wallPlug: {fileID: 8149385025995213684}
+--- !u!114 &898363860243239353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7187764946280950053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
+  _slot: 4
+  _resolvePhase: 2
+  _onlyDuringCombat: 1
+--- !u!114 &6946633244762609365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7187764946280950053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae2df9ab3a16c547b41073a59a00681, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
+  _mode: 0
+  _camera: {fileID: 0}
+  _raycastDistance: 100
 --- !u!1 &7203183267797077655
 GameObject:
   m_ObjectHideFlags: 0

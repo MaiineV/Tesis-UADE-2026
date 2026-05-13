@@ -25,7 +25,7 @@ namespace Rollgeon.Balance
 
         [MinValue(1)]
         [PropertyRange(1, 20)]
-        [Tooltip("Cara máxima del die de initiative. Debe ser ≥ SpeedDieMin. GDD default: 6.")]
+        [Tooltip("Cara máxima del die de initiative. Debe ser >= SpeedDieMin. GDD default: 6.")]
         public int SpeedDieMax;
 
         [Tooltip("Valor de initiative usado cuando una entidad participante no tiene stat Speed " +

@@ -16,10 +16,18 @@ namespace Rollgeon.UI.HUD
     public class ExplorationActionButtonsView : MonoBehaviour
     {
         [Title("Action Buttons")]
-        [InfoBox("Botones de accion para exploracion. Cada boton mapea por indice " +
-                 "a los behaviors retornados por GetBehaviorsForPhase(Exploration).")]
+        [InfoBox("Botones de accion para exploracion. Cada boton se mapea a un " +
+                 "HeroBehaviorSlot via la lista paralela _slots — el contrato es " +
+                 "por SLOT, no por list index. Eso evita que el orden de los " +
+                 "buttons en la jerarquia desemboque en disparar el behavior " +
+                 "equivocado (ej. button 'Pass Door' ejecutando 'Healing').")]
         [SerializeField]
         private List<Button> _buttons = new List<Button>();
+
+        [InfoBox("Slot asignado a cada button (mismo index que _buttons). " +
+                 "Movement=0, BaseAttack=1, SpecialAttack=2, Healing=3, ForceDoor/PassDoor=4.")]
+        [SerializeField]
+        private List<HeroBehaviorSlot> _slots = new List<HeroBehaviorSlot>();
 
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
@@ -31,6 +39,7 @@ namespace Rollgeon.UI.HUD
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
         private EventManager.EventReceiver _onEnergyChanged;
+        private EventManager.EventReceiver _onInventoryChanged;
 
         private void Awake()
         {
@@ -59,10 +68,16 @@ namespace Rollgeon.UI.HUD
             _onPhaseEnter = OnPhaseEnter;
             _onPhaseExit = OnPhaseExit;
             _onEnergyChanged = OnEnergyChanged;
+            _onInventoryChanged = OnInventoryChanged;
 
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
             EventManager.Subscribe(EventName.OnEnergyChanged, _onEnergyChanged);
+            // Heal depende de PCHasInventoryItem(potion.healing). Si la pocion se
+            // consume, el button tiene que pasar a no-interactable inmediatamente.
+            EventManager.Subscribe(EventName.OnItemObtained, _onInventoryChanged);
+            EventManager.Subscribe(EventName.OnItemRemoved, _onInventoryChanged);
+            EventManager.Subscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
 
             _bound = true;
 
@@ -85,6 +100,9 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.UnSubscribe(EventName.OnPhaseExit, _onPhaseExit);
             EventManager.UnSubscribe(EventName.OnEnergyChanged, _onEnergyChanged);
+            EventManager.UnSubscribe(EventName.OnItemObtained, _onInventoryChanged);
+            EventManager.UnSubscribe(EventName.OnItemRemoved, _onInventoryChanged);
+            EventManager.UnSubscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
 
             _bound = false;
             _activeBehaviors = null;
@@ -104,11 +122,12 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < _buttons.Count; i++)
             {
                 if (_buttons[i] == null) continue;
-                bool hasEntry = i < _activeBehaviors.Count;
+                var behavior = ResolveBehaviorForButton(i);
+                bool hasEntry = behavior != null;
                 _buttons[i].gameObject.SetActive(hasEntry);
 
                 if (hasEntry)
-                    _buttons[i].interactable = HasEnoughEnergy(_activeBehaviors[i]);
+                    _buttons[i].interactable = IsBehaviorAvailable(behavior);
             }
         }
 
@@ -116,18 +135,44 @@ namespace Rollgeon.UI.HUD
         {
             if (_activeBehaviors == null) return;
 
-            for (int i = 0; i < _buttons.Count && i < _activeBehaviors.Count; i++)
+            for (int i = 0; i < _buttons.Count; i++)
             {
-                if (_buttons[i] != null)
-                    _buttons[i].interactable = HasEnoughEnergy(_activeBehaviors[i]);
+                if (_buttons[i] == null) continue;
+                var behavior = ResolveBehaviorForButton(i);
+                if (behavior != null)
+                    _buttons[i].interactable = IsBehaviorAvailable(behavior);
             }
         }
 
-        private bool HasEnoughEnergy(HeroActionBehavior behavior)
+        // Mapea button[i] al behavior cuyo Slot == _slots[i]. Si el user no
+        // wireo _slots (lista vacia o mas corta), fallback a tomar el behavior
+        // por list-index (legacy) — emite warning para que sea visible.
+        private HeroActionBehavior ResolveBehaviorForButton(int i)
         {
-            if (behavior.EnergyCost <= 0) return true;
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy)) return true;
-            return energy.GetCurrent(_playerGuid) >= behavior.EnergyCost;
+            if (_activeBehaviors == null) return null;
+
+            if (_slots != null && i < _slots.Count)
+            {
+                var slot = _slots[i];
+                for (int j = 0; j < _activeBehaviors.Count; j++)
+                {
+                    if (_activeBehaviors[j] != null && _activeBehaviors[j].Slot == slot)
+                        return _activeBehaviors[j];
+                }
+                return null;
+            }
+
+            Debug.LogWarning("[ExplorationActionButtonsView] _slots no esta wireado — " +
+                             "fallback a list-index (puede disparar el behavior equivocado).");
+            return i < _activeBehaviors.Count ? _activeBehaviors[i] : null;
+        }
+
+        private bool IsBehaviorAvailable(HeroActionBehavior behavior)
+        {
+            // Combina dos chequeos: energia suficiente Y preconditions del behavior
+            // (ej. Heal requiere PCHasInventoryItem(potion.healing)). Sin esto el
+            // boton de Heal queda interactable despues de consumir la pocion.
+            return behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _);
         }
 
         private void SetVisible(bool visible)
@@ -135,10 +180,25 @@ namespace Rollgeon.UI.HUD
             gameObject.SetActive(visible);
         }
 
-        private void HandleClick(int index)
+        private void HandleClick(int buttonIndex)
         {
             if (!ServiceLocator.TryGetService<IExplorationBehaviorService>(out var service)) return;
-            service.OnBehaviorSelected(index);
+
+            // Mapeo button → slot via _slots[buttonIndex]. El service interpreta
+            // el int como HeroBehaviorSlot, no como list-index.
+            int slot;
+            if (_slots != null && buttonIndex < _slots.Count)
+            {
+                slot = (int)_slots[buttonIndex];
+            }
+            else
+            {
+                Debug.LogWarning("[ExplorationActionButtonsView] _slots no esta wireado — " +
+                                 "usando buttonIndex como slot (legacy).");
+                slot = buttonIndex;
+            }
+
+            service.OnBehaviorSelected(slot);
         }
 
         private void OnPhaseEnter(params object[] args)
@@ -162,6 +222,12 @@ namespace Rollgeon.UI.HUD
         }
 
         private void OnEnergyChanged(params object[] args)
+        {
+            if (!_bound) return;
+            RefreshInteractable();
+        }
+
+        private void OnInventoryChanged(params object[] args)
         {
             if (!_bound) return;
             RefreshInteractable();

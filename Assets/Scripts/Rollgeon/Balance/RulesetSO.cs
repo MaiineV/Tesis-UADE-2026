@@ -47,10 +47,10 @@ namespace Rollgeon.Balance
 
         // ----------------------------------------------------------------
         // [Merge hook] — otros worktrees agregan sub-structs tipados acá.
-        // T100a: EnergyConfig Energy.           ✔ implementado abajo
-        // T100c: TurnOrderConfig TurnOrder.     ✔ implementado abajo
-        // T97b:  WeaknessConfig Weakness.       ✔ implementado abajo
-        // T97c:  ComboCountersConfig Counters.  ✔ implementado abajo
+        // T100a: EnergyConfig Energy.           [OK] implementado abajo
+        // T100c: TurnOrderConfig TurnOrder.     [OK] implementado abajo
+        // T97b:  WeaknessConfig Weakness.       [OK] implementado abajo
+        // T97c:  ComboCountersConfig Counters.  [OK] implementado abajo
         // T100b: RollConfig Rolls.              pendiente
         // T99:   ScalingConfig Scaling.         pendiente
         // Balance#0101 (§14.7 completo) extiende con el resto (CritConfig,

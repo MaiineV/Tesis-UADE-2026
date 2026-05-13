@@ -68,6 +68,21 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ExplorationActionButtonsView _explorationActions;
 
+        [Tooltip("DiceZoneView compartido (vive en el Canvas raíz). Bind para que las ActionRolls " +
+                 "en exploración (heal con poción) muestren los dados.")]
+        [SerializeField]
+        private DiceZoneView _diceZone;
+
+        [Tooltip("DamageFormulaView compartido. Bind para mostrar threshold + combo seleccionado " +
+                 "durante ActionRolls en exploración.")]
+        [SerializeField]
+        private DamageFormulaView _damageFormula;
+
+        [Tooltip("RerollCountView compartido. Bind para que el botón de Reroll respete " +
+                 "CanAffordReroll del IActionRollService durante ActionRolls en exploración.")]
+        [SerializeField]
+        private RerollCountView _rerollCount;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "ExplorationHUD";
 
@@ -170,12 +185,28 @@ namespace Rollgeon.UI.Screens
 
             if (_explorationActions != null) _explorationActions.Bind(playerGuid);
 
+            // DiceZone + DamageFormula + RerollCount viven en el Canvas raíz (compartidos
+            // con CombatHUD). Auto-resolve si no están cableados — son singletons en escena.
+            if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
+            if (_damageFormula == null) _damageFormula = UnityEngine.Object.FindFirstObjectByType<DamageFormulaView>();
+            if (_rerollCount == null) _rerollCount = UnityEngine.Object.FindFirstObjectByType<RerollCountView>();
+
+            // Bind idempotente: si CombatHUD también está activo o ya bindeó al mismo guid,
+            // no-op. La poción en exploración usa estos componentes para mostrar dados,
+            // threshold, y el botón Reroll respeta CanAffordReroll por energía.
+            if (_diceZone != null) _diceZone.Bind(playerGuid);
+            if (_damageFormula != null) _damageFormula.Bind(playerGuid);
+            if (_rerollCount != null) _rerollCount.Bind(playerGuid);
+
             _subViewsBound = true;
         }
 
         /// <summary>Llama <c>Unbind</c> en cada sub-view presente. Idempotente.</summary>
         public void UnbindAll()
         {
+            if (_diceZone != null) _diceZone.Unbind();
+            if (_damageFormula != null) _damageFormula.Unbind();
+            if (_rerollCount != null) _rerollCount.Unbind();
             if (_healthBar != null) _healthBar.Unbind();
             if (_energyBar != null) _energyBar.Unbind();
             if (_goldCounter != null) _goldCounter.Unbind();

@@ -1,4 +1,7 @@
 using System;
+using Rollgeon.Heroes;
+using Rollgeon.Phase;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 
 namespace Rollgeon.Dungeon.Components
@@ -37,6 +40,35 @@ namespace Rollgeon.Dungeon.Components
         [SerializeField] private GameObject _wallPlug;
 
         public DoorVisualState CurrentState { get; private set; } = DoorVisualState.Open;
+
+        private void Awake()
+        {
+            EnsureTooltipComponents();
+        }
+
+        // Auto-attach del tooltip de "Forzar Puerta": un solo WorldTooltipTrigger en el
+        // root del DoorController (siempre active). El trigger usa Physics.Raycast manual
+        // que acepta hits en cualquier descendant — cubre los meshes hijos sin necesidad
+        // de un trigger por cada uno. El binder vive en el mismo GO.
+        private void EnsureTooltipComponents()
+        {
+            if (GetComponent<WorldTooltipTrigger>() == null)
+                gameObject.AddComponent<WorldTooltipTrigger>();
+
+            var binder = GetComponent<HeroActionTooltipBinder>();
+            if (binder == null)
+            {
+                binder = gameObject.AddComponent<HeroActionTooltipBinder>();
+                // AddComponent disparó Awake con defaults (Healing). Configure los pisa
+                // a la semántica de Forzar Puerta antes de que se invoque BuildText.
+                binder.Configure(HeroBehaviorSlot.ForceDoor, GamePhase.Combat, onlyDuringCombat: true);
+            }
+
+            // El trigger del root ya quedó configurado por el Awake del binder.
+            // ConfigureExternalTriggers es no-op acá pero queda como hook por si en el
+            // futuro hay triggers en hijos (caso de prefabs custom).
+            binder.ConfigureExternalTriggers();
+        }
 
         public void SetState(DoorVisualState state)
         {
