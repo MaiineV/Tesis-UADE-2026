@@ -1,5 +1,5 @@
 using Patterns;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Patterns.Bootstrap;

@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.Energy;
+using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
-using Rollgeon.Heroes;
 using Rollgeon.Player;
 using UnityEngine;
 
