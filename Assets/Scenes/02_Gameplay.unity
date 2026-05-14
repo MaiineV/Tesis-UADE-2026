@@ -306,20 +306,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 447358fec2267184fb4b2f276cf48076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.PlayerActionButtonsView
-  _movementButton: {fileID: 967079629}
-  _attackButton: {fileID: 255876027}
-  _specialButton: {fileID: 1684246181}
-  _healButton: {fileID: 253029736}
-  _movementCostLabel: {fileID: 623392797}
-  _attackCostLabel: {fileID: 619550389}
-  _specialCostLabel: {fileID: 664889172}
-  _healCostLabel: {fileID: 487299529}
-  _costLabelFormat: '{0}'
-  _zeroCostText: 
-  _movementColor: {r: 0.27, g: 0.55, b: 0.95, a: 1}
-  _attackColor: {r: 0.93, g: 0.3, b: 0.3, a: 1}
-  _specialColor: {r: 0.69, g: 0.34, b: 0.93, a: 1}
-  _healColor: {r: 0.32, g: 0.82, b: 0.45, a: 1}
+  _buttons:
+  - {fileID: 967079632}
+  - {fileID: 255876030}
+  - {fileID: 1684246184}
+  - {fileID: 253029739}
   _confirmButton: {fileID: 1467953704}
   _onConfirmPressed:
     m_PersistentCalls:
@@ -1781,6 +1772,7 @@ GameObject:
   - component: {fileID: 253029738}
   - component: {fileID: 253029737}
   - component: {fileID: 253029736}
+  - component: {fileID: 253029739}
   m_Layer: 0
   m_Name: Heal
   m_TagString: Untagged
@@ -1891,6 +1883,30 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 253029734}
   m_CullTransparentMesh: 1
+--- !u!114 &253029739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253029734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e7de21e509686d42ba0bccfc6d84690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
+  _button: {fileID: 253029736}
+  _slot: 3
+  _costLabel: {fileID: 487299529}
+  _costLabelFormat: '{0}'
+  _zeroCostText: 
+  _baseColor: {r: 0.14387254, g: 0.8207547, b: 0.112273075, a: 1}
+  _selectedScale: 1.08
+  _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  _glowSpeed: 3
+  _glowAlphaRange: {x: 0.35, y: 1}
+  _outlineDistance: {x: 3, y: -3}
+  _usedColorMultiplier: 0.45
 --- !u!1 &255876025
 GameObject:
   m_ObjectHideFlags: 0
@@ -1903,6 +1919,7 @@ GameObject:
   - component: {fileID: 255876029}
   - component: {fileID: 255876028}
   - component: {fileID: 255876027}
+  - component: {fileID: 255876030}
   m_Layer: 0
   m_Name: BaseAttackButton
   m_TagString: Untagged
@@ -2013,6 +2030,30 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 255876025}
   m_CullTransparentMesh: 1
+--- !u!114 &255876030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255876025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e7de21e509686d42ba0bccfc6d84690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
+  _button: {fileID: 255876027}
+  _slot: 1
+  _costLabel: {fileID: 619550389}
+  _costLabelFormat: '{0}'
+  _zeroCostText: 
+  _baseColor: {r: 0.8679245, g: 0.118725546, b: 0.118725546, a: 1}
+  _selectedScale: 1.08
+  _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  _glowSpeed: 3
+  _glowAlphaRange: {x: 0.35, y: 1}
+  _outlineDistance: {x: 3, y: -3}
+  _usedColorMultiplier: 0.45
 --- !u!1 &260393546
 GameObject:
   m_ObjectHideFlags: 0
@@ -5990,7 +6031,7 @@ MonoBehaviour:
   _extraRollButton: {fileID: 971990009}
   _countFormat: '{0}/{1}'
   _fallbackText: -/-
-  _costLabel: {fileID: 712859947}
+  _costLabel: {fileID: 0}
   _buttonLabel: {fileID: 1314682714}
   _firstRollText: Roll
   _rerollFreeText: Reroll (Free)
@@ -6560,6 +6601,7 @@ GameObject:
   - component: {fileID: 967079631}
   - component: {fileID: 967079630}
   - component: {fileID: 967079629}
+  - component: {fileID: 967079632}
   m_Layer: 0
   m_Name: MoveButton
   m_TagString: Untagged
@@ -6670,6 +6712,30 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 967079627}
   m_CullTransparentMesh: 1
+--- !u!114 &967079632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967079627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e7de21e509686d42ba0bccfc6d84690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
+  _button: {fileID: 967079629}
+  _slot: 0
+  _costLabel: {fileID: 623392797}
+  _costLabelFormat: '{0}'
+  _zeroCostText: 
+  _baseColor: {r: 0.082858644, g: 0.370028, b: 0.9245283, a: 1}
+  _selectedScale: 1.08
+  _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  _glowSpeed: 3
+  _glowAlphaRange: {x: 0.35, y: 1}
+  _outlineDistance: {x: 3, y: -3}
+  _usedColorMultiplier: 0.45
 --- !u!1 &969696351
 GameObject:
   m_ObjectHideFlags: 0
@@ -12081,6 +12147,7 @@ GameObject:
   - component: {fileID: 1684246183}
   - component: {fileID: 1684246182}
   - component: {fileID: 1684246181}
+  - component: {fileID: 1684246184}
   m_Layer: 0
   m_Name: SpecialAttackButton
   m_TagString: Untagged
@@ -12191,6 +12258,30 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1684246179}
   m_CullTransparentMesh: 1
+--- !u!114 &1684246184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684246179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e7de21e509686d42ba0bccfc6d84690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
+  _button: {fileID: 1684246181}
+  _slot: 2
+  _costLabel: {fileID: 664889172}
+  _costLabelFormat: '{0}'
+  _zeroCostText: 
+  _baseColor: {r: 0.5782254, g: 0.08317016, b: 0.8396226, a: 1}
+  _selectedScale: 1.08
+  _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  _glowSpeed: 3
+  _glowAlphaRange: {x: 0.35, y: 1}
+  _outlineDistance: {x: 3, y: -3}
+  _usedColorMultiplier: 0.45
 --- !u!1 &1690433637
 GameObject:
   m_ObjectHideFlags: 0
