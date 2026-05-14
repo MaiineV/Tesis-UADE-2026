@@ -273,6 +273,11 @@ namespace Rollgeon.Combat.Handoff
                 bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
                 Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeRoll={hasBeforeRoll}");
 
+                // Capturamos info del behavior antes de nullarlo, para emitir el evento
+                // OnBehaviorExecuted con payload consistente en todos los paths.
+                var executedActionName = _selectedBehavior.ActionName;
+                var executedBlockOnRepeat = _selectedBehavior.BlockOnRepeat;
+
                 if (hasBeforeRoll
                     && ServiceLocator.TryGetService<ICombatStarter>(out var starter))
                 {
@@ -292,6 +297,8 @@ namespace Rollgeon.Combat.Handoff
                         Debug.Log("[CombatHandoff] → RequestAction on PlayerTurnState");
                         playerState.RequestAction(_selectedBehavior, behaviorCtx);
 
+                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+
                         _lastFaces = null;
                         _selectedBehavior = null;
                         hud.ClearBehaviorForFormula();
@@ -308,6 +315,7 @@ namespace Rollgeon.Combat.Handoff
 
                 var resolved = _lastFaces ?? Array.Empty<int>();
                 EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
 
                 _lastFaces = null;
                 _selectedBehavior = null;
@@ -365,6 +373,10 @@ namespace Rollgeon.Combat.Handoff
                     {
                         _activeChain = chain;
                         _chainPhaseIndex = 0;
+                        // OnChainStarted se emite recien cuando arranca el primer roll
+                        // del chain (no aca). Si lo emitieramos al seleccionar, los
+                        // demas botones quedarian lockeados antes de que el jugador
+                        // pueda usar cancel-by-reselection.
                     }
                     else
                     {
@@ -406,6 +418,10 @@ namespace Rollgeon.Combat.Handoff
                                 FinishChain(hud, playerGuid, false);
                                 return;
                             }
+                            // Path chain con BeforeRoll: emitimos OnChainStarted recien
+                            // ahora (no al seleccionar) para que la UI mantenga los demas
+                            // slots Available durante la fase de target selection.
+                            EventManager.Trigger(EventName.OnChainStarted, playerGuid);
                             _lastFaces = selRoller.RollAll(selBag);
                             EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
                         });
@@ -462,6 +478,12 @@ namespace Rollgeon.Combat.Handoff
                     rb.TryExtraRoll(playerGuid);
 
                 _awaitingFirstRoll = false;
+                // Path chain sin BeforeRoll: el chain quedo activo en OnBehaviorSelected
+                // pero recien ahora arranca su primer roll. Emitimos OnChainStarted aqui
+                // para preservar cancel-by-reselection (mientras _awaitingFirstRoll era
+                // true, los demas slots quedaron Available).
+                if (_activeChain != null)
+                    EventManager.Trigger(EventName.OnChainStarted, playerGuid);
                 _lastFaces = roller.RollAll(bag);
                 EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
@@ -614,6 +636,12 @@ namespace Rollgeon.Combat.Handoff
             int phasesCompleted = _chainPhaseIndex;
             int totalPhases = _activeChain?.PhaseCount ?? 0;
 
+            // Capturamos antes de nullar para poder emitir OnBehaviorExecuted con payload
+            // valido. Si fue un pass total (wasPass && phasesCompleted==0) la accion no se
+            // considera ejecutada — la UI debe poder rehabilitar el slot.
+            string executedActionName = _selectedBehavior?.ActionName;
+            bool executedBlockOnRepeat = _selectedBehavior?.BlockOnRepeat ?? false;
+
             _activeChain = null;
             _chainPhaseIndex = 0;
             _lastFaces = null;
@@ -630,6 +658,11 @@ namespace Rollgeon.Combat.Handoff
             hud.ClearBehaviorForFormula();
 
             EventManager.Trigger(EventName.OnChainCompleted, playerGuid, phasesCompleted, totalPhases, wasPass);
+
+            if (!string.IsNullOrEmpty(executedActionName) && phasesCompleted > 0)
+            {
+                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+            }
         }
 
         // ======================================================================

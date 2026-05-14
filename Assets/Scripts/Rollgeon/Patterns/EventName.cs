@@ -74,10 +74,19 @@ namespace Patterns
         OnRollResolved,
 
         // --- Chain -----------------------------------------------------------------
+        /// <summary>args: [Guid sourceGuid]. Una accion con EffChain fue seleccionada
+        /// y el chain quedo activo (antes del primer roll). La UI lo usa para mantener
+        /// los botones de behavior lockeados entre fases del chain.</summary>
+        OnChainStarted,
         /// <summary>args: [Guid sourceGuid, int phaseIndex, int totalPhases]</summary>
         OnChainPhaseStarted,
         /// <summary>args: [Guid sourceGuid, int phasesCompleted, int totalPhases, bool wasPass]</summary>
         OnChainCompleted,
+        /// <summary>args: [Guid sourceGuid, string actionName, bool blockOnRepeat].
+        /// El behavior termino de ejecutarse en el turno (sea simple o chain). La UI
+        /// lo usa para transicionar el boton del slot a Used/Available segun
+        /// blockOnRepeat.</summary>
+        OnBehaviorExecuted,
 
         // --- Combat resolve -----------------------------------------------------
         // OnHealthChanged NO existe acá — vive como TypedEvent<HealthChangedPayload>.
