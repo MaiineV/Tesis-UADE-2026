@@ -56,6 +56,7 @@ namespace Rollgeon.Combat.Handoff
 
         private int[] _lastFaces;
         private HeroActionBehavior _selectedBehavior;
+        private bool _awaitingFirstRoll;
         private EffChain _activeChain;
         private int _chainPhaseIndex;
         private TargetSelectionResult _chainPhaseSelectionResult;
@@ -188,6 +189,7 @@ namespace Rollgeon.Combat.Handoff
             var playerGuid = _player.PlayerGuid;
             _lastFaces = null;
             _selectedBehavior = null;
+            _awaitingFirstRoll = false;
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
@@ -314,7 +316,15 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnBehaviorSelected = (int index) =>
             {
-                if (_selectedBehavior != null) return;
+                // Cancel-by-reselection: si hay una accion seleccionada pero el primer
+                // roll todavia no se ejecuto, dejamos que el user cambie de opinion sin
+                // perder energia (la energia aun no se cobro). Si ya rolaron, la accion
+                // queda comprometida hasta Confirm/EndTurn.
+                if (_selectedBehavior != null)
+                {
+                    if (!_awaitingFirstRoll) return;
+                    CancelAwaitingSelection(hud);
+                }
 
                 var hero = ResolveHero();
                 if (hero == null) return;
@@ -380,7 +390,14 @@ namespace Rollgeon.Combat.Handoff
                             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var b) && b != null)
                             {
                                 var w = BuildBudgetAction(behavior);
-                                if (w != null) b.StartBudget(w);
+                                if (w != null)
+                                {
+                                    b.StartBudget(w);
+                                    // El chain rola automaticamente tras la seleccion;
+                                    // consumimos el primer roll del budget para preservar
+                                    // la cuenta "rerolls disponibles" igual que antes.
+                                    b.TryExtraRoll(playerGuid);
+                                }
                             }
                             var selBag = ResolvePlayerBag();
                             var selRoller = ResolveRoller();
@@ -415,23 +432,36 @@ namespace Rollgeon.Combat.Handoff
                         budget.StartBudget(wrapper);
                 }
 
+                // Flow manual: no se rola ni se cobra energia aca. El usuario debe
+                // apretar el boton Roll del HUD (-> hud.OnRollRequested). La energia
+                // se cobra en ese momento, dentro del handler de Roll. Si el user
+                // re-selecciona otra accion antes, CancelAwaitingSelection limpia
+                // budget y selected behavior — la energia no se perdio.
+                _awaitingFirstRoll = true;
+            };
+
+            hud.OnRollRequested = () =>
+            {
+                if (!_awaitingFirstRoll || _selectedBehavior == null) return;
+
                 var bag = ResolvePlayerBag();
                 var roller = ResolveRoller();
                 if (bag == null || roller == null)
                 {
                     Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Roll abortado.");
-                    _selectedBehavior = null;
-                    hud.ClearBehaviorForFormula();
                     return;
                 }
 
-                if (!SpendEnergyNow(behavior, playerGuid))
+                if (!SpendEnergyNow(_selectedBehavior, playerGuid))
                 {
-                    _selectedBehavior = null;
-                    hud.ClearBehaviorForFormula();
+                    CancelAwaitingSelection(hud);
                     return;
                 }
 
+                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var rb) && rb != null)
+                    rb.TryExtraRoll(playerGuid);
+
+                _awaitingFirstRoll = false;
                 _lastFaces = roller.RollAll(bag);
                 EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
@@ -556,7 +586,14 @@ namespace Rollgeon.Combat.Handoff
             wrapper.AllowsEnergyReroll = _selectedBehavior.AllowsEnergyReroll;
 
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+            {
                 budget.StartBudget(wrapper);
+                // El budget cuenta TODOS los rolls incl. el primero. En el flow de
+                // chain el primer roll dispara automaticamente (no hay boton Roll
+                // entre fases), asi que consumimos una unidad para preservar la
+                // semantica "FreeRollsRemaining = rerolls disponibles tras el roll".
+                budget.TryExtraRoll(playerGuid);
+            }
 
             var bag = ResolvePlayerBag();
             var roller = ResolveRoller();
@@ -768,6 +805,21 @@ namespace Rollgeon.Combat.Handoff
             for (int i = 0; i < len; i++)
                 if (keep[i]) result[idx++] = faces[i];
             return result;
+        }
+
+        /// <summary>
+        /// Limpia el state interno cuando el usuario cancela la accion seleccionada
+        /// antes del primer roll (eligiendo otra accion). No hay refund de energia
+        /// porque <c>SpendEnergyNow</c> se difirio al boton Roll.
+        /// </summary>
+        private void CancelAwaitingSelection(CombatHUDView hud)
+        {
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                budget.EndBudget();
+
+            _selectedBehavior = null;
+            _awaitingFirstRoll = false;
+            hud.ClearBehaviorForFormula();
         }
 
         private static bool SpendEnergyNow(HeroActionBehavior behavior, Guid playerGuid)

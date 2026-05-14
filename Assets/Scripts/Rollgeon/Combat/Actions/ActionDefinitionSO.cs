@@ -59,9 +59,9 @@ namespace Rollgeon.Combat.Actions
 
         [Title("Reroll")]
         [MinValue(0)]
-        [Tooltip("Tiradas TOTALES incluidas gratis (incluye la inicial). Ej: ataque Generala = 3 " +
-                 "(1 roll + 2 rerolls); skill-check heal/force-door = 1. El RerollBudgetService " +
-                 "(Feature#0104) convierte a rerolls gratis como max(0, FreeRollCount - 1).")]
+        [Tooltip("Tiradas TOTALES gratis (incluye el primer roll). Ej: ataque Generala = 3 " +
+                 "(primer roll + 2 rerolls); skill-check heal/force-door = 1. El RerollBudgetService " +
+                 "inicializa FreeRollsRemaining = FreeRollCount y descuenta uno por cada Roll/Reroll.")]
         public int FreeRollCount = 1;
 
         [ToggleLeft]

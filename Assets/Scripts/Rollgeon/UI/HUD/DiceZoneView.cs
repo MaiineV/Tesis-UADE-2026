@@ -122,6 +122,7 @@ namespace Rollgeon.UI.HUD
             {
                 if (_heldStates != null && i < _heldStates.Length && _heldStates[i]) continue;
                 _currentFaces[i] = i < faces.Count ? faces[i] : 0;
+                if (_resolvedSlots[i] != null) _resolvedSlots[i].gameObject.SetActive(true);
                 _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
                 _resolvedSlots[i]?.SetHeld(false);
             }
@@ -160,7 +161,13 @@ namespace Rollgeon.UI.HUD
             if (_resolvedSlots != null)
             {
                 foreach (var s in _resolvedSlots)
+                {
                     s?.Clear();
+                    // Flow manual: los slots se ocultan hasta el primer roll. Apenas
+                    // OnDiceRolled dispara HandleDiceRolled, cada slot se vuelve a
+                    // activar antes de pintar su cara.
+                    if (s != null) s.gameObject.SetActive(false);
+                }
             }
             RunComboDetection();
         }

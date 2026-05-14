@@ -316,6 +316,10 @@ MonoBehaviour:
   _healCostLabel: {fileID: 487299529}
   _costLabelFormat: '{0}'
   _zeroCostText: 
+  _movementColor: {r: 0.27, g: 0.55, b: 0.95, a: 1}
+  _attackColor: {r: 0.93, g: 0.3, b: 0.3, a: 1}
+  _specialColor: {r: 0.69, g: 0.34, b: 0.93, a: 1}
+  _healColor: {r: 0.32, g: 0.82, b: 0.45, a: 1}
   _confirmButton: {fileID: 1467953704}
   _onConfirmPressed:
     m_PersistentCalls:
@@ -3055,6 +3059,9 @@ MonoBehaviour:
   _depletedOverlay: {fileID: 313718720}
   _iconActive: {fileID: 21300000, guid: 3cf8ae89579fd29479f4269d09600e16, type: 3}
   _iconInactive: {fileID: 21300000, guid: ca9343b72095cb846be99d76d069dfc0, type: 3}
+  _countLabel: {fileID: 0}
+  _countLabelFormat: x{0}
+  _hideCountAtOrBelow: 0
 --- !u!224 &423292701
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3751,6 +3758,9 @@ MonoBehaviour:
   _depletedOverlay: {fileID: 689482540}
   _iconActive: {fileID: 0}
   _iconInactive: {fileID: 0}
+  _countLabel: {fileID: 0}
+  _countLabelFormat: x{0}
+  _hideCountAtOrBelow: 0
 --- !u!1 &529724461
 GameObject:
   m_ObjectHideFlags: 0
@@ -4938,6 +4948,9 @@ MonoBehaviour:
   _depletedOverlay: {fileID: 1828112256}
   _iconActive: {fileID: 0}
   _iconInactive: {fileID: 0}
+  _countLabel: {fileID: 0}
+  _countLabelFormat: x{0}
+  _hideCountAtOrBelow: 0
 --- !u!222 &632461616
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5977,7 +5990,11 @@ MonoBehaviour:
   _extraRollButton: {fileID: 971990009}
   _countFormat: '{0}/{1}'
   _fallbackText: -/-
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 712859947}
+  _buttonLabel: {fileID: 1314682714}
+  _firstRollText: Roll
+  _rerollFreeText: Reroll (Free)
+  _rerollPaidText: Reroll (1E)
   _onExtraRollPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -7917,6 +7934,9 @@ MonoBehaviour:
   _depletedOverlay: {fileID: 1449106488}
   _iconActive: {fileID: 21300000, guid: 3cf8ae89579fd29479f4269d09600e16, type: 3}
   _iconInactive: {fileID: 21300000, guid: ca9343b72095cb846be99d76d069dfc0, type: 3}
+  _countLabel: {fileID: 0}
+  _countLabelFormat: x{0}
+  _hideCountAtOrBelow: 0
 --- !u!222 &1180839211
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11806,7 +11826,10 @@ MonoBehaviour:
   _outgoingTint: {r: 1, g: 0.94, b: 0.27, a: 1}
   _incomingTint: {r: 1, g: 0.25, b: 0.25, a: 1}
   _healTint: {r: 0.35, g: 1, b: 0.45, a: 1}
+  _goldTint: {r: 1, g: 0.85, b: 0.2, a: 1}
+  _shieldTint: {r: 0.6, g: 0.85, b: 1, a: 1}
   _screenOffset: {x: 0, y: 60, z: 0}
+  _staggerSeconds: 0.4
 --- !u!222 &1666915682
 CanvasRenderer:
   m_ObjectHideFlags: 0
