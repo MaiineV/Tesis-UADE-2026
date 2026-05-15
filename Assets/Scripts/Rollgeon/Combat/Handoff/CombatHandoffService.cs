@@ -52,6 +52,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly IPlayerCombatActions _playerActions;
 
         private EventManager.EventReceiver _onCombatTriggeredHandler;
+        private EventManager.EventReceiver _onCombatEndHandler;
         private bool _disposed;
 
         private int[] _lastFaces;
@@ -84,6 +85,9 @@ namespace Rollgeon.Combat.Handoff
 
             _onCombatTriggeredHandler = OnCombatTriggered;
             EventManager.Subscribe(EventName.OnCombatTriggered, _onCombatTriggeredHandler);
+
+            _onCombatEndHandler = OnCombatEnd;
+            EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
         }
 
         /// <summary>
@@ -117,6 +121,11 @@ namespace Rollgeon.Combat.Handoff
             {
                 EventManager.UnSubscribe(EventName.OnCombatTriggered, _onCombatTriggeredHandler);
                 _onCombatTriggeredHandler = null;
+            }
+            if (_onCombatEndHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatEnd, _onCombatEndHandler);
+                _onCombatEndHandler = null;
             }
         }
 
@@ -182,19 +191,46 @@ namespace Rollgeon.Combat.Handoff
             }
         }
 
-        private void WireCombatHUDDelegates(Guid firstEnemyId)
+        // Limpia todo el estado de fase de combate. Lo invocan tanto el wiring del
+        // proximo combate como el handler de OnCombatEnd — el chain puede haber
+        // quedado abierto si el enemigo muere antes de que el player consuma todas
+        // las fases (ej. ataque de 1 phase mata al enemy, sobran phases del chain;
+        // sin este reset, _activeChain queda non-null y el RerollBudgetService
+        // global preserva _current, asi que el primer StartBudget del proximo
+        // combate tira InvalidOperationException).
+        private void ResetCombatPhaseState()
         {
-            if (_screenManager.Current is not CombatHUDView hud) return;
+            if (_chainSelectionController != null)
+            {
+                if (_chainSelectionController.IsSelecting)
+                    _chainSelectionController.CancelSelection();
+                _chainSelectionController.OnSelectionCompleted -= OnChainSelectionDone;
+                _chainSelectionController = null;
+            }
+            _pendingChainCallback = null;
 
-            var playerGuid = _player.PlayerGuid;
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
+                budget.EndBudget();
+
             _lastFaces = null;
             _selectedBehavior = null;
             _awaitingFirstRoll = false;
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
-            _chainSelectionController = null;
-            _pendingChainCallback = null;
+        }
+
+        private void OnCombatEnd(params object[] args)
+        {
+            ResetCombatPhaseState();
+        }
+
+        private void WireCombatHUDDelegates(Guid firstEnemyId)
+        {
+            if (_screenManager.Current is not CombatHUDView hud) return;
+
+            var playerGuid = _player.PlayerGuid;
+            ResetCombatPhaseState();
 
             hud.OnEndTurnRequested = () =>
             {
