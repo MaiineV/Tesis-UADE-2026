@@ -26,6 +26,13 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private Button _button;
 
+        [Tooltip("Si true, el slot se renderiza pero NO responde a clicks ni se " +
+                 "auto-cablea un Button — display-only. Usado en Exploration HUD " +
+                 "donde la pocion se consume via el boton Heal del ActionButtons, " +
+                 "no via click directo en el slot.")]
+        [SerializeField]
+        private bool _displayOnly;
+
         /// <summary>
         /// Disparado cuando el jugador clickea el slot y el estado actual es
         /// <see cref="ActiveItemState.Active"/>. <see cref="ActiveItemsView"/> se
@@ -129,6 +136,10 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         private void EnsureClickable()
         {
+            // En modo display-only, el slot no debe ser clickeable — saltamos
+            // tanto la auto-resolucion del Button como el AddComponent.
+            if (_displayOnly) return;
+
             if (_button == null) _button = GetComponent<Button>();
             if (_button != null) return;
 
@@ -147,6 +158,10 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
+            // Display-only: no resolvemos ni atamos eventos. El slot queda como
+            // panel pasivo (icono + count + overlays).
+            if (_displayOnly) return;
+
             if (_button == null) _button = GetComponent<Button>();
             if (_button != null)
             {

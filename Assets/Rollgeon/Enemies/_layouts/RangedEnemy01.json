@@ -1,0 +1,132 @@
+{
+    "Entries": [
+        {
+            "Index": 0,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 16.0,
+                "y": 258.0
+            }
+        },
+        {
+            "Index": 1,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 303.0,
+                "y": 22.0
+            }
+        },
+        {
+            "Index": 2,
+            "TypeName": "AINode_While",
+            "Position": {
+                "x": 303.0,
+                "y": 258.0
+            }
+        },
+        {
+            "Index": 3,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 567.0,
+                "y": 258.0
+            }
+        },
+        {
+            "Index": 4,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 812.0,
+                "y": 159.0
+            }
+        },
+        {
+            "Index": 5,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 812.0,
+                "y": 322.0
+            }
+        },
+        {
+            "Index": 6,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 1061.0,
+                "y": 214.0
+            }
+        },
+        {
+            "Index": 7,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1277.0,
+                "y": 60.0
+            }
+        },
+        {
+            "Index": 8,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1277.0,
+                "y": 189.0
+            }
+        },
+        {
+            "Index": 9,
+            "TypeName": "AINode_KeepDistance",
+            "Position": {
+                "x": 1277.0,
+                "y": 322.0
+            }
+        },
+        {
+            "Index": 10,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 1061.0,
+                "y": 646.0
+            }
+        },
+        {
+            "Index": 11,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 1277.0,
+                "y": 567.0
+            }
+        },
+        {
+            "Index": 12,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1277.0,
+                "y": 760.0
+            }
+        },
+        {
+            "Index": 13,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 1523.0,
+                "y": 720.0
+            }
+        },
+        {
+            "Index": 14,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1736.0,
+                "y": 617.0
+            }
+        },
+        {
+            "Index": 15,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1736.0,
+                "y": 821.0
+            }
+        }
+    ]
+}

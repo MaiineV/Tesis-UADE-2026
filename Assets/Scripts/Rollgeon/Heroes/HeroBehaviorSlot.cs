@@ -6,5 +6,6 @@ namespace Rollgeon.Heroes
         BaseAttack = 1,
         SpecialAttack = 2,
         Healing = 3,
+        ForceDoor = 4
     }
 }

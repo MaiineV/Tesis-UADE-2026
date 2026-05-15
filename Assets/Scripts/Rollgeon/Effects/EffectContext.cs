@@ -46,6 +46,14 @@ namespace Rollgeon.Effects
         /// <summary>Resultado del combo matching via ContractSheet.MatchBest. Null si no hubo match.</summary>
         public ComboDetectionResult? ComboResult;
 
+        /// <summary>
+        /// Total efectivo pre-computado por <c>IActionRollService</c> sobre el subset de
+        /// dados que el user holdeó. Si tiene valor, tiene prioridad sobre el cálculo
+        /// derivado de <see cref="DiceResult"/> + <see cref="ComboResult"/>. Null = sin
+        /// override (usar cálculo legacy: combo.BaseDamage o suma cruda).
+        /// </summary>
+        public int? ActionRollEffectiveTotal;
+
         /// <summary>Behavior que armó este contexto — expone <c>SetBehaviorValue</c> (§9.3).</summary>
         public BaseBehavior SourceBehavior;
 

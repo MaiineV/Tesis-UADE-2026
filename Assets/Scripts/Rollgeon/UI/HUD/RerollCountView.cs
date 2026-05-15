@@ -83,6 +83,8 @@ namespace Rollgeon.UI.HUD
         private IRerollBudgetService _budget;
         private Action<RerollStartedPayload> _onRerollStartedTyped;
         private Action<RerollBudget> _onBudgetStartedTyped;
+        private Rollgeon.ActionRolls.IActionRollService _actionRoll;
+        private Action<Rollgeon.ActionRolls.ActionRollPhase> _onActionRollPhase;
 
         private void Awake()
         {
@@ -96,7 +98,13 @@ namespace Rollgeon.UI.HUD
 
         public void Bind(Guid playerGuid)
         {
-            if (_bound) Unbind();
+            // Idempotente para soporte multi-HUD (CombatHUD + ExplorationHUD ambos bindean
+            // ahora que vive en el Canvas raíz). Skip si ya estoy bindeado al mismo guid.
+            if (_bound)
+            {
+                if (_playerGuid == playerGuid) return;
+                Unbind();
+            }
             _playerGuid = playerGuid;
 
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
@@ -114,6 +122,16 @@ namespace Rollgeon.UI.HUD
             {
                 Debug.Log(LogPrefix + "IRerollBudgetService no registrado — label en fallback.", this);
                 _budget = null;
+            }
+
+            // Suscripción al ActionRollService: OnDiceRolled se dispara mientras la phase
+            // todavía es Rolling — necesitamos refrescar también cuando entra a
+            // AwaitingRerollDecision para que el botón se habilite si hay energía.
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out _actionRoll)
+                && _actionRoll != null)
+            {
+                _onActionRollPhase = _ => RefreshButtonInteractable();
+                _actionRoll.OnPhaseChanged += _onActionRollPhase;
             }
 
             _bound = true;
@@ -139,6 +157,12 @@ namespace Rollgeon.UI.HUD
             {
                 _budget.OnBudgetStarted -= _onBudgetStartedTyped;
                 _onBudgetStartedTyped = null;
+            }
+            if (_actionRoll != null && _onActionRollPhase != null)
+            {
+                _actionRoll.OnPhaseChanged -= _onActionRollPhase;
+                _onActionRollPhase = null;
+                _actionRoll = null;
             }
             _budget = null;
             _bound = false;
@@ -173,6 +197,15 @@ namespace Rollgeon.UI.HUD
 
         private void HandleExtraRollClick()
         {
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Reroll = pagar 1 energía
+            // y rerollear via service. El service usa _currentHolds (seteado por
+            // DiceZoneView.ToggleHold → SetHolds) como keep mask.
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+            {
+                rs.RequestReroll();
+                return;
+            }
             _onExtraRollPressed?.Invoke();
         }
 
@@ -255,6 +288,15 @@ namespace Rollgeon.UI.HUD
         private void RefreshButtonInteractable()
         {
             if (_extraRollButton == null) return;
+
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), el budget de Generala
+            // no aplica — el gating es por energía vía CanAffordReroll del service.
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+            {
+                _extraRollButton.interactable = rs.CanAffordReroll;
+                return;
+            }
 
             if (_budget == null)
             {

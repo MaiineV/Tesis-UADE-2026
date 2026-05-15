@@ -209,6 +209,7 @@ namespace Rollgeon.Heroes
                 effCtx.ComboResult = heroCtx.MatchedComboResult;
                 effCtx.TargetGuid = heroCtx.TargetGuid;
                 effCtx.SelectionResult = heroCtx.SelectionResult;
+                effCtx.ActionRollEffectiveTotal = heroCtx.ActionRollEffectiveTotal;
             }
 
             return effCtx;

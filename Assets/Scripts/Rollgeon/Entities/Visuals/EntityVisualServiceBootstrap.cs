@@ -24,7 +24,7 @@ namespace Rollgeon.Entities.Visuals
         [Tooltip("Prefab default de enemigos. Null = primitive Capsule red.")]
         [SerializeField] private GameObject _enemyPrefab;
 
-        [Tooltip("Prefab de bosses (BaseHP ≥ 80). Null = cae al _enemyPrefab o Cube magenta.")]
+        [Tooltip("Prefab de bosses (BaseHP >= 80). Null = cae al _enemyPrefab o Cube magenta.")]
         [SerializeField] private GameObject _bossPrefab;
 
         private EntityVisualService _instance;

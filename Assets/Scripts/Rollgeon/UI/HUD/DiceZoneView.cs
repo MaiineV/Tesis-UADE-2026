@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
 using Rollgeon.Heroes;
@@ -67,13 +68,26 @@ namespace Rollgeon.UI.HUD
 
         // ---- Bind / Unbind ---------------------------------------------------
 
+        private bool _bound;
+
         public void Bind(Guid playerGuid)
         {
+            // Idempotente: ambos HUDs (combat + exploration) bindean a este componente
+            // ahora que vive en el Canvas raíz. Doble Bind sin Unbind generaría doble
+            // subscripción a eventos. Si ya estoy bindeado al mismo guid, no-op; si es
+            // otro guid (transición de jugador), Unbind primero.
+            if (_bound)
+            {
+                if (_playerGuid == playerGuid) return;
+                Unbind();
+            }
+
             _playerGuid = playerGuid;
             int count = _diceSlots.Count;
             _resolvedSlots = new DiceSlotView[count];
             _currentFaces = new int[count];
             _heldStates = new bool[count];
+            _bound = true;
 
             for (int i = 0; i < count; i++)
             {
@@ -99,6 +113,7 @@ namespace Rollgeon.UI.HUD
 
         public void Unbind()
         {
+            if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
@@ -108,6 +123,7 @@ namespace Rollgeon.UI.HUD
             _resolvedSlots = null;
             _currentFaces = null;
             _heldStates = null;
+            _bound = false;
         }
 
         // ---- Event handler ---------------------------------------------------
@@ -183,8 +199,22 @@ namespace Rollgeon.UI.HUD
             }
             _heldStates[i] = !_heldStates[i];
             _resolvedSlots[i]?.SetHeld(_heldStates[i]);
-            Debug.Log($"[DiceZoneView] ToggleHold({i}) — held={_heldStates[i]}, calling RunComboDetection");
+            PropagateHoldsToActionRoll();
             RunComboDetection();
+        }
+
+        // Si hay un ActionRollService activo (Heal / Forzar Puerta), propagamos los
+        // holds. El service usa esos holds para computar el effective total contra el
+        // threshold — sin esta llamada, el service mantiene un _currentHolds vacío y
+        // el outcome falla aunque el user vea el combo en pantalla.
+        private void PropagateHoldsToActionRoll()
+        {
+            if (_heldStates == null) return;
+            if (ServiceLocator.TryGetService<IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+            {
+                rs.SetHolds(_heldStates);
+            }
         }
 
         // ---- Combo detection -------------------------------------------------
