@@ -207,10 +207,15 @@ namespace Rollgeon.UI.HUD
         {
             if (_costLabel == null) return;
             if (behavior == null) { _costLabel.text = string.Empty; return; }
+            RefreshCostLabel(behavior.EnergyCost);
+        }
 
-            _costLabel.text = behavior.EnergyCost <= 0
+        public void RefreshCostLabel(int cost)
+        {
+            if (_costLabel == null) return;
+            _costLabel.text = cost <= 0
                 ? _zeroCostText
-                : string.Format(_costLabelFormat, behavior.EnergyCost);
+                : string.Format(_costLabelFormat, cost);
         }
 
         // ======================================================================

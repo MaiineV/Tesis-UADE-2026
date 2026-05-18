@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.ActionRolls;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.EnergyLib;
@@ -154,6 +155,7 @@ namespace Rollgeon.UI.HUD
             RefreshCostLabels();
 
             if (ServiceLocator.TryGetService<TurnOrderService>(out var turnOrder)
+                && turnOrder != null
                 && turnOrder.ParticipantCount > 0
                 && turnOrder.Current == _playerGuid)
             {
@@ -312,6 +314,15 @@ namespace Rollgeon.UI.HUD
 
         private void HandleConfirmClick()
         {
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Confirm = resolver la
+            // tirada actual via el service. NO disparar el flow normal de combate
+            // (CombatHandoffService.OnConfirmRequested) — eso ejecutaria el behavior dos veces.
+            if (ServiceLocator.TryGetService<IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+            {
+                rs.DeclineReroll();
+                return;
+            }
             _onConfirmPressed?.Invoke();
         }
 
@@ -336,14 +347,16 @@ namespace Rollgeon.UI.HUD
 
         private ActionButtonState ComputeStateForSlot(int slotIndex)
         {
-            if (!_isPlayerTurn) return ActionButtonState.Locked;
+            if (!_isPlayerTurn)
+                return ActionButtonState.Locked;
 
             // El slot seleccionado mantiene visual Selected aunque estemos en chain
             // o rolled — el jugador ve "esta es la accion que estoy ejecutando".
             if (_selectedSlot == slotIndex) return ActionButtonState.Selected;
 
             var behavior = ResolveBehaviorForSlot(slotIndex);
-            if (behavior == null) return ActionButtonState.Locked;
+            if (behavior == null)
+                return ActionButtonState.Locked;
 
             // Used: ejecutada con exito y BlockOnRepeat=true. TurnManager es la
             // fuente de verdad — respeta el flag de cada ActionDefinition.
@@ -352,8 +365,10 @@ namespace Rollgeon.UI.HUD
 
             // Chain o roll en curso de OTRO slot: los demas estan lockeados para no
             // dejar al jugador iniciar una accion en paralelo.
-            if (_inChain) return ActionButtonState.Locked;
-            if (_rolled) return ActionButtonState.Locked;
+            if (_inChain)
+                return ActionButtonState.Locked;
+            if (_rolled)
+                return ActionButtonState.Locked;
 
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _))
                 return ActionButtonState.Locked;
@@ -414,8 +429,42 @@ namespace Rollgeon.UI.HUD
             {
                 if (_buttons[i] == null) continue;
                 var behavior = hero.ResolveBaseBehavior(_buttons[i].Slot, GamePhase.Combat);
-                _buttons[i].RefreshCostLabel(behavior);
+                if (behavior == null)
+                    _buttons[i].RefreshCostLabel(behavior);
+                else
+                    _buttons[i].RefreshCostLabel(ResolveDisplayCost(behavior));
             }
+        }
+
+        // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
+        // IActionRollService con el cost del spec — el behavior.EnergyCost queda
+        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Para
+        // que el label refleje lo que efectivamente se va a cobrar, priorizamos
+        // el spec del effect.
+        private int ResolveDisplayCost(HeroActionBehavior behavior)
+        {
+            if (TryFindActionRollSpec(behavior, out var spec))
+                return spec.EnergyCost;
+            return behavior.EnergyCost;
+        }
+
+        private bool TryFindActionRollSpec(HeroActionBehavior behavior, out ActionRollSpec spec)
+        {
+            spec = default;
+            if (behavior?.Effects == null) return false;
+            foreach (var group in behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    if (eff is IActionRollEffect rollEffect
+                        && rollEffect.TryGetRollSpec(_playerGuid, out spec))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }
