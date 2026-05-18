@@ -16,10 +16,10 @@ namespace Rollgeon.Dice
     /// </para>
     /// <para>
     /// <b>Semantica de <see cref="FreeRollsRemaining"/>.</b> Cuenta las tiradas
-    /// libres que todavia quedan despues del roll inicial (es decir, son
-    /// <i>re-</i>rolls gratis). El servicio convierte desde <c>FreeRollCount</c>
-    /// (total de rolls incluyendo el primero) via <c>max(0, FreeRollCount - 1)</c>
-    /// al llamar <c>StartBudget</c>. Ver plan §5.1 y §6.1.
+    /// gratis que todavia quedan disponibles, <b>incluyendo el primer roll</b>.
+    /// El primer click de "Roll" consume una unidad igual que un reroll. El
+    /// servicio inicializa con <c>FreeRollsRemaining = action.FreeRollCount</c>
+    /// al llamar <c>StartBudget</c> — el contador HUD muestra "rolls disponibles".
     /// </para>
     /// </remarks>
     public sealed class RerollBudget

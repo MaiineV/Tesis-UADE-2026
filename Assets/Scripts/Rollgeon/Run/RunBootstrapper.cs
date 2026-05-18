@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Balance;
 using Rollgeon.Heroes;
+using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
 
 namespace Rollgeon.Run
@@ -36,6 +37,12 @@ namespace Rollgeon.Run
 
             var playerService = ServiceLocator.GetService<IPlayerService>();
             playerService.SetPlayer(selected, runId);
+
+            // EndRun de la run previa hizo ClearScope(Run) y borro los IPreloadableService
+            // run-scoped (Inventory, Phase, Grid, EnemyAIRegistry, ...). Recrearlos aca
+            // antes del Trigger asegura que los handlers de OnRunStart puedan resolverlos.
+            // Null en tests que llaman StartRun sin pasar por BootstrapRunner.
+            ServiceBootstrapSO.Active?.RegisterRunScoped();
 
             EventManager.Trigger(EventName.OnRunStart, runId, ruleset != null ? ruleset.RulesetId : null);
         }

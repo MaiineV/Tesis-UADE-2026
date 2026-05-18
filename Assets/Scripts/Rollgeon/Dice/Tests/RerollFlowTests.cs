@@ -65,7 +65,7 @@ namespace Rollgeon.Dice.Tests
             def.ActionId = "attack.basic";
             def.Type = ActionType.Attack;
             def.EnergyCost = 0;
-            def.FreeRollCount = 3; // 1 roll + 2 rerolls gratis.
+            def.FreeRollCount = 3; // 3 rolls gratis (primer roll + 2 rerolls).
             def.AllowsEnergyReroll = true;
             def.Effect = new EffectData();
             _createdDefs.Add(def);
@@ -73,16 +73,16 @@ namespace Rollgeon.Dice.Tests
         }
 
         /// <summary>
-        /// Flow canonical (§5.1): start → 2 free rerolls → 1 paid reroll → blocked.
-        /// Verifica que:
+        /// Flow canonical: start → 3 free rolls (primer roll + 2 rerolls) → 1 paid
+        /// reroll → blocked. Verifica que:
         /// <list type="bullet">
         ///   <item>Energia se debita <b>exactamente 1 vez</b> (solo en el paid).</item>
-        ///   <item><c>OnRerollStarted</c> dispara 3 veces (una por reroll concedido).</item>
-        ///   <item>El 4to intento falla sin mutar energia.</item>
+        ///   <item><c>OnRerollStarted</c> dispara 4 veces (una por roll concedido).</item>
+        ///   <item>El 5to intento falla sin mutar energia.</item>
         /// </list>
         /// </summary>
         [Test]
-        public void CanonicalFlow_TwoFreeRerolls_OnePaid_ThenBlocked()
+        public void CanonicalFlow_ThreeFreeRolls_OnePaid_ThenBlocked()
         {
             var action = MakeAttack();
             int initialEnergy = _energy.Current[_player];
@@ -92,55 +92,62 @@ namespace Rollgeon.Dice.Tests
 
             // 1) Combat controller abre el budget.
             _svc.StartBudget(action);
-            Assert.AreEqual(2, _svc.Current.FreeRollsRemaining);
+            Assert.AreEqual(3, _svc.Current.FreeRollsRemaining);
 
-            // 2) Primer reroll — gratis.
+            // 2) Primer roll — gratis.
             var q1 = _svc.QueryExtraRoll(_player);
             Assert.IsTrue(q1.IsFreeRoll);
             Assert.IsTrue(_svc.TryExtraRoll(_player));
 
-            // 3) Segundo reroll — gratis.
+            // 3) Primer reroll — gratis.
             var q2 = _svc.QueryExtraRoll(_player);
             Assert.IsTrue(q2.IsFreeRoll);
             Assert.IsTrue(_svc.TryExtraRoll(_player));
 
-            // 4) Tercer reroll — paid.
+            // 4) Segundo reroll — gratis.
             var q3 = _svc.QueryExtraRoll(_player);
-            Assert.IsTrue(q3.CostsEnergy);
-            Assert.IsFalse(q3.IsFreeRoll);
+            Assert.IsTrue(q3.IsFreeRoll);
+            Assert.IsTrue(_svc.TryExtraRoll(_player));
+
+            // 5) Tercer reroll — paid.
+            var q4 = _svc.QueryExtraRoll(_player);
+            Assert.IsTrue(q4.CostsEnergy);
+            Assert.IsFalse(q4.IsFreeRoll);
             Assert.IsTrue(_svc.TryExtraRoll(_player));
 
             // Gasto exacto: 1 llamada a SpendEnergy con cost=1.
             Assert.AreEqual(1, _energy.SpendCallCount);
             Assert.AreEqual(initialEnergy - 1, _energy.Current[_player]);
 
-            // Tres eventos — el primero gratis, el segundo gratis, el tercero pago.
-            Assert.AreEqual(3, events.Count);
+            // Cuatro eventos — tres gratis, el cuarto pago.
+            Assert.AreEqual(4, events.Count);
             Assert.IsTrue(events[0].IsFree);
             Assert.IsTrue(events[1].IsFree);
-            Assert.IsFalse(events[2].IsFree);
-            // Snapshot post-consumo del tercer evento: free=0, paid=1.
-            Assert.AreEqual(0, events[2].FreeRollsRemaining);
-            Assert.AreEqual(1, events[2].PaidRollsUsed);
+            Assert.IsTrue(events[2].IsFree);
+            Assert.IsFalse(events[3].IsFree);
+            // Snapshot post-consumo del cuarto evento: free=0, paid=1.
+            Assert.AreEqual(0, events[3].FreeRollsRemaining);
+            Assert.AreEqual(1, events[3].PaidRollsUsed);
 
-            // 5) Agotamos energia hasta 0; 4to intento debe fallar por no-energy.
+            // 6) Agotamos energia hasta 0; 5to intento debe fallar por no-energy.
             _energy.Current[_player] = 0;
-            var q4 = _svc.QueryExtraRoll(_player);
-            Assert.IsFalse(q4.IsAvailable);
-            Assert.AreEqual(RerollBudgetService.BlockedReasonNoEnergy, q4.BlockedReason);
+            var q5 = _svc.QueryExtraRoll(_player);
+            Assert.IsFalse(q5.IsAvailable);
+            Assert.AreEqual(RerollBudgetService.BlockedReasonNoEnergy, q5.BlockedReason);
             Assert.IsFalse(_svc.TryExtraRoll(_player));
 
-            // 6) EndBudget limpia estado.
+            // 7) EndBudget limpia estado.
             _svc.EndBudget();
             Assert.IsNull(_svc.Current);
         }
 
         /// <summary>
-        /// Secondary action (heal / force-door, <c>FreeRollCount=1</c>): el 1er reroll
-        /// ya es paid. Con <c>AllowsEnergyReroll=false</c> el reroll esta bloqueado.
+        /// Secondary action (heal / force-door, <c>FreeRollCount=1</c> y
+        /// <c>AllowsEnergyReroll=false</c>): hay UN free roll (el primero, gatillado
+        /// por el boton Roll), despues no se permite reroll alguno.
         /// </summary>
         [Test]
-        public void SecondaryAction_OneShotNoEnergyReroll_BlockedImmediately()
+        public void SecondaryAction_OneShotNoEnergyReroll_AfterFirstRoll_BlocksRerolls()
         {
             var def = ScriptableObject.CreateInstance<ActionDefinitionSO>();
             def.ActionId = "skill.cutscene";
@@ -153,9 +160,15 @@ namespace Rollgeon.Dice.Tests
 
             _svc.StartBudget(def);
 
-            var q = _svc.QueryExtraRoll(_player);
-            Assert.IsFalse(q.IsAvailable);
-            Assert.AreEqual(RerollBudgetService.BlockedReasonActionForbidsEnergyReroll, q.BlockedReason);
+            // 1) Primer roll — gratis.
+            var q1 = _svc.QueryExtraRoll(_player);
+            Assert.IsTrue(q1.IsFreeRoll);
+            Assert.IsTrue(_svc.TryExtraRoll(_player));
+
+            // 2) Cualquier intento posterior — bloqueado (action prohibe paid).
+            var q2 = _svc.QueryExtraRoll(_player);
+            Assert.IsFalse(q2.IsAvailable);
+            Assert.AreEqual(RerollBudgetService.BlockedReasonActionForbidsEnergyReroll, q2.BlockedReason);
             Assert.IsFalse(_svc.TryExtraRoll(_player));
             Assert.AreEqual(0, _energy.SpendCallCount);
         }

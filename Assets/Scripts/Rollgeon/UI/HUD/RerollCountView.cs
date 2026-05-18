@@ -50,6 +50,24 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Label opcional de costo del proximo reroll (ej. 'Free', '1E'). Null = skip.")]
         private TextMeshProUGUI _costLabel;
 
+        [SerializeField]
+        [Tooltip("Label opcional del boton — cambia entre 'Roll', 'Reroll (Free)' y " +
+                 "'Reroll (1E)' segun el estado del budget. Null = skip.")]
+        private TextMeshProUGUI _buttonLabel;
+
+        [Title("Reroll Count — Button Texts")]
+        [SerializeField]
+        [Tooltip("Texto del boton para el primer roll (antes de gastar ningun roll).")]
+        private string _firstRollText = "Roll";
+
+        [SerializeField]
+        [Tooltip("Texto del boton para un reroll gratis.")]
+        private string _rerollFreeText = "Reroll (Free)";
+
+        [SerializeField]
+        [Tooltip("Texto del boton para un reroll pago con energia.")]
+        private string _rerollPaidText = "Reroll (1E)";
+
         [Title("Reroll Count — Events")]
         [SerializeField]
         private UnityEvent _onExtraRollPressed = new UnityEvent();
@@ -64,6 +82,7 @@ namespace Rollgeon.UI.HUD
 
         private IRerollBudgetService _budget;
         private Action<RerollStartedPayload> _onRerollStartedTyped;
+        private Action<RerollBudget> _onBudgetStartedTyped;
         private Rollgeon.ActionRolls.IActionRollService _actionRoll;
         private Action<Rollgeon.ActionRolls.ActionRollPhase> _onActionRollPhase;
 
@@ -95,6 +114,9 @@ namespace Rollgeon.UI.HUD
             {
                 _onRerollStartedTyped = HandleRerollStartedTyped;
                 _budget.OnRerollStarted += _onRerollStartedTyped;
+
+                _onBudgetStartedTyped = HandleBudgetStartedTyped;
+                _budget.OnBudgetStarted += _onBudgetStartedTyped;
             }
             else
             {
@@ -116,6 +138,7 @@ namespace Rollgeon.UI.HUD
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshCostLabel();
+            RefreshButtonText();
         }
 
         public void Unbind()
@@ -129,6 +152,11 @@ namespace Rollgeon.UI.HUD
             {
                 _budget.OnRerollStarted -= _onRerollStartedTyped;
                 _onRerollStartedTyped = null;
+            }
+            if (_budget != null && _onBudgetStartedTyped != null)
+            {
+                _budget.OnBudgetStarted -= _onBudgetStartedTyped;
+                _onBudgetStartedTyped = null;
             }
             if (_actionRoll != null && _onActionRollPhase != null)
             {
@@ -190,6 +218,7 @@ namespace Rollgeon.UI.HUD
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshCostLabel();
+            RefreshButtonText();
         }
 
         private void HandleRollResolved(params object[] args)
@@ -198,6 +227,7 @@ namespace Rollgeon.UI.HUD
             if (guid != _playerGuid) return;
             SetFallback();
             RefreshCostLabel();
+            if (_buttonLabel != null) _buttonLabel.text = _firstRollText;
             if (_extraRollButton != null) _extraRollButton.interactable = false;
         }
 
@@ -207,6 +237,18 @@ namespace Rollgeon.UI.HUD
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshCostLabel();
+            RefreshButtonText();
+        }
+
+        private void HandleBudgetStartedTyped(RerollBudget budget)
+        {
+            // Repinta el contador apenas se abre el budget (al seleccionar accion),
+            // sin esperar al primer OnDiceRolled. Hace que el "3/3" sea visible
+            // desde la seleccion como pide el flow manual de roll.
+            RefreshLabel();
+            RefreshButtonInteractable();
+            RefreshCostLabel();
+            RefreshButtonText();
         }
 
         // ======================================================================
@@ -215,17 +257,15 @@ namespace Rollgeon.UI.HUD
 
         private void RefreshLabel()
         {
-            if (_budget == null || _budget.Current == null)
+            if (_budget == null || _budget.Current == null || _budget.Current.Action == null)
             {
                 SetFallback();
                 return;
             }
-            var action = _budget.Current.Action;
-            int initialFree = action != null ? Math.Max(0, action.FreeRollCount - 1) : 0;
-            int freeConsumed = initialFree - _budget.Current.FreeRollsRemaining;
-            if (freeConsumed < 0) freeConsumed = 0;
-            int consumed = freeConsumed + _budget.Current.PaidRollsUsed;
-            SetCount(consumed, initialFree);
+            int total = _budget.Current.Action.FreeRollCount;
+            int remaining = _budget.Current.FreeRollsRemaining;
+            if (remaining < 0) remaining = 0;
+            SetCount(remaining, total);
         }
 
         private void RefreshCostLabel()
@@ -266,6 +306,33 @@ namespace Rollgeon.UI.HUD
 
             var query = _budget.QueryExtraRoll(_playerGuid);
             _extraRollButton.interactable = query.IsAvailable;
+        }
+
+        private void RefreshButtonText()
+        {
+            if (_buttonLabel == null) return;
+
+            // Si el budget arranco pero no se rolo nada → primer roll
+            // (mismo criterio que CombatHUDView.InvokeRollOrReroll para dispatch).
+            if (_budget != null && _budget.Current != null && _budget.Current.Action != null
+                && _budget.Current.FreeRollsRemaining == _budget.Current.Action.FreeRollCount
+                && _budget.Current.PaidRollsUsed == 0)
+            {
+                _buttonLabel.text = _firstRollText;
+                return;
+            }
+
+            if (_budget == null)
+            {
+                _buttonLabel.text = _firstRollText;
+                return;
+            }
+
+            // Sino, es reroll — gratis si quedan free, paid si toca energia.
+            var query = _budget.QueryExtraRoll(_playerGuid);
+            if (query.IsFreeRoll) _buttonLabel.text = _rerollFreeText;
+            else if (query.CostsEnergy) _buttonLabel.text = _rerollPaidText;
+            else _buttonLabel.text = _rerollFreeText;
         }
     }
 }

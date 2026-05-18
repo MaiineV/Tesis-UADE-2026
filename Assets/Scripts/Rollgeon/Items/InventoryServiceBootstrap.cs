@@ -18,11 +18,10 @@ namespace Rollgeon.Items
         private InventoryService _instance;
 
         public int Priority => 60;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
-
             if (_catalog == null)
             {
                 Debug.LogError("[InventoryServiceBootstrap] ItemCatalogSO not assigned.");

@@ -45,10 +45,18 @@ namespace Rollgeon.Dice
         event Action<RerollStartedPayload> OnRerollStarted;
 
         /// <summary>
+        /// Evento que levanta el servicio al abrir un presupuesto via
+        /// <see cref="StartBudget"/>. La UI lo usa para repintar el contador
+        /// "rolls disponibles" desde el momento de seleccion (antes del primer roll).
+        /// Se dispara despues de inicializar <c>FreeRollsRemaining</c>.
+        /// </summary>
+        event Action<RerollBudget> OnBudgetStarted;
+
+        /// <summary>
         /// Abre un presupuesto nuevo para <paramref name="action"/>. Inicializa
-        /// <c>FreeRollsRemaining = max(0, action.FreeRollCount - 1)</c> (convention:
-        /// <c>FreeRollCount</c> cuenta el total de tiradas incluyendo la inicial —
-        /// el budget cuenta <b>re-rolls</b>, por eso restamos 1). Plan §5.1 y §6.1.
+        /// <c>FreeRollsRemaining = action.FreeRollCount</c> — el budget cuenta el
+        /// total de rolls incluyendo el primero, que ahora tambien se consume del
+        /// budget cuando el usuario aprieta Roll. Plan dice-roll-manual.
         /// </summary>
         /// <exception cref="InvalidOperationException">Si ya hay un presupuesto activo.
         /// El caller debe invocar <see cref="EndBudget"/> antes.</exception>

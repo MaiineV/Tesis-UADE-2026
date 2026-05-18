@@ -17,10 +17,10 @@ namespace Rollgeon.Combat.AI
         private EnemyAIRegistry _instance;
 
         public int Priority => 77;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             _instance = new EnemyAIRegistry();
             ServiceLocator.AddService<IEnemyAIRegistry>(_instance, ServiceScope.Run);
         }

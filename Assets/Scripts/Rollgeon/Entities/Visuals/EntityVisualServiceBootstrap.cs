@@ -30,11 +30,10 @@ namespace Rollgeon.Entities.Visuals
         private EntityVisualService _instance;
 
         public int Priority => 85;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
-
             ServiceLocator.TryGetService<IGridManager>(out var grid);
             ServiceLocator.TryGetService<IMovementService>(out var movement);
 

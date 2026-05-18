@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.FSM;
+using Rollgeon.Dice;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities;
 using Rollgeon.Heroes;
@@ -143,6 +146,38 @@ namespace Rollgeon.Combat.Handoff.Tests
         {
             public void SendPlayerAction() { }
             public void EndPlayerTurn() { }
+        }
+
+        private class SpyRerollBudgetService : IRerollBudgetService
+        {
+            public RerollBudget Current { get; private set; }
+            public int StartBudgetCallCount { get; private set; }
+            public int EndBudgetCallCount { get; private set; }
+
+#pragma warning disable 67 // event declared by interface; spy never raises it
+            public event Action<RerollStartedPayload> OnRerollStarted;
+#pragma warning restore 67
+            public event Action<RerollBudget> OnBudgetStarted;
+
+            public void StartBudget(ActionDefinitionSO action)
+            {
+                StartBudgetCallCount++;
+                if (Current != null)
+                    throw new InvalidOperationException("budget already active");
+                // RerollBudget setters are internal to the main assembly; the spy
+                // only needs Current to be non-null for the regression test.
+                Current = new RerollBudget();
+                OnBudgetStarted?.Invoke(Current);
+            }
+
+            public void EndBudget()
+            {
+                EndBudgetCallCount++;
+                Current = null;
+            }
+
+            public RerollQueryResult QueryExtraRoll(Guid playerGuid) => RerollQueryResult.Free();
+            public bool TryExtraRoll(Guid playerGuid) => false;
         }
 
         // -------------------------------------------------------------------
@@ -368,6 +403,76 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             Assert.AreEqual(0, _spyCombat.StartCombatCallCount,
                 "StartCombat should not be called when current room is null");
+        }
+
+        // -------------------------------------------------------------------
+        // Regression: combat-end cleanup (bug Fix#0001 — enemy dies mid-chain,
+        // leftover reroll budget breaks the next combat with InvalidOperationException
+        // on StartBudget).
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void OnCombatEnd_WithActiveRerollBudget_EndsTheBudget()
+        {
+            // Arrange: simulate the state at the moment the enemy dies mid-chain —
+            // an active budget is open from the action that landed the killing blow.
+            var spyBudget = new SpyRerollBudgetService();
+            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
+
+            var wrapper = ScriptableObject.CreateInstance<ActionDefinitionSO>();
+            wrapper.ActionId = "test.action";
+            wrapper.FreeRollCount = 3;
+            _createdObjects.Add(wrapper);
+            spyBudget.StartBudget(wrapper);
+
+            Assert.IsNotNull(spyBudget.Current, "pre-condition: budget must be open");
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
+
+            // Assert
+            Assert.AreEqual(1, spyBudget.EndBudgetCallCount,
+                "Combat end must end the active reroll budget so the next combat's " +
+                "StartBudget does not throw InvalidOperationException.");
+            Assert.IsNull(spyBudget.Current, "Current budget must be null after combat end");
+        }
+
+        [Test]
+        public void OnCombatEnd_WithNoActiveBudget_DoesNotThrow()
+        {
+            var spyBudget = new SpyRerollBudgetService();
+            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
+
+            Assert.DoesNotThrow(() =>
+                EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
+        }
+
+        [Test]
+        public void OnCombatEnd_NoBudgetServiceRegistered_DoesNotThrow()
+        {
+            // ServiceLocator stays empty for this service. Reset must tolerate that.
+            Assert.DoesNotThrow(() =>
+                EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
+        }
+
+        [Test]
+        public void Dispose_UnsubscribesFromCombatEnd()
+        {
+            var spyBudget = new SpyRerollBudgetService();
+            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
+
+            var wrapper = ScriptableObject.CreateInstance<ActionDefinitionSO>();
+            wrapper.ActionId = "test.action";
+            wrapper.FreeRollCount = 1;
+            _createdObjects.Add(wrapper);
+            spyBudget.StartBudget(wrapper);
+
+            _service.Dispose();
+
+            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
+
+            Assert.AreEqual(0, spyBudget.EndBudgetCallCount,
+                "After Dispose the OnCombatEnd handler must be unsubscribed.");
         }
     }
 }

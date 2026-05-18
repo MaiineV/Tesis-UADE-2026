@@ -102,27 +102,28 @@ namespace Rollgeon.Dice.Tests
         // ==================================================================
 
         [Test]
-        public void StartBudget_SetsCurrentAndConvertsFreeRollCount()
+        public void StartBudget_SetsCurrentAndMirrorsFreeRollCount()
         {
-            // FreeRollCount = 3 (total) → FreeRollsRemaining = 2 (rerolls gratis).
+            // FreeRollCount=3 (total) → FreeRollsRemaining=3. El primer roll
+            // tambien consume del budget en el flow manual.
             var action = MakeAction(freeRollCount: 3);
 
             _svc.StartBudget(action);
 
             Assert.IsNotNull(_svc.Current);
             Assert.AreSame(action, _svc.Current.Action);
-            Assert.AreEqual(2, _svc.Current.FreeRollsRemaining);
+            Assert.AreEqual(3, _svc.Current.FreeRollsRemaining);
             Assert.AreEqual(0, _svc.Current.PaidRollsUsed);
         }
 
         [Test]
-        public void StartBudget_WithFreeRollCount1_GivesZeroFreeRerolls()
+        public void StartBudget_WithFreeRollCount1_GivesOneFreeRoll()
         {
             var action = MakeAction(freeRollCount: 1);
 
             _svc.StartBudget(action);
 
-            Assert.AreEqual(0, _svc.Current.FreeRollsRemaining);
+            Assert.AreEqual(1, _svc.Current.FreeRollsRemaining);
         }
 
         [Test]
@@ -133,6 +134,21 @@ namespace Rollgeon.Dice.Tests
             _svc.StartBudget(action);
 
             Assert.AreEqual(0, _svc.Current.FreeRollsRemaining);
+        }
+
+        [Test]
+        public void StartBudget_FiresOnBudgetStartedWithCurrentBudget()
+        {
+            var action = MakeAction(freeRollCount: 3);
+            RerollBudget captured = null;
+            _svc.OnBudgetStarted += b => captured = b;
+
+            _svc.StartBudget(action);
+
+            Assert.IsNotNull(captured);
+            Assert.AreSame(_svc.Current, captured);
+            Assert.AreEqual(3, captured.FreeRollsRemaining);
+            Assert.AreSame(action, captured.Action);
         }
 
         [Test]
@@ -174,13 +190,13 @@ namespace Rollgeon.Dice.Tests
         {
             var first = MakeAction(freeRollCount: 3);
             _svc.StartBudget(first);
-            _svc.TryExtraRoll(_player); // consume uno gratis → 1 left
+            _svc.TryExtraRoll(_player); // consume uno gratis → 2 left
             _svc.EndBudget();
 
             var second = MakeAction(freeRollCount: 3, id: "test.other");
             _svc.StartBudget(second);
 
-            Assert.AreEqual(2, _svc.Current.FreeRollsRemaining);
+            Assert.AreEqual(3, _svc.Current.FreeRollsRemaining);
             Assert.AreEqual(0, _svc.Current.PaidRollsUsed);
             Assert.AreSame(second, _svc.Current.Action);
         }
@@ -214,7 +230,8 @@ namespace Rollgeon.Dice.Tests
         [Test]
         public void Query_NoFreeButEnergyAvailable_ReturnsPaid()
         {
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: true));
+            // freeRollCount=0 → FreeRollsRemaining=0 desde el inicio. Primer query es paid.
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: true));
 
             var result = _svc.QueryExtraRoll(_player);
 
@@ -226,7 +243,7 @@ namespace Rollgeon.Dice.Tests
         [Test]
         public void Query_NoFreeAndActionForbids_ReturnsBlockedActionForbids()
         {
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: false));
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: false));
 
             var result = _svc.QueryExtraRoll(_player);
 
@@ -238,7 +255,7 @@ namespace Rollgeon.Dice.Tests
         public void Query_NoFreeAndNoEnergy_ReturnsBlockedNoEnergy()
         {
             _energy.Current[_player] = 0;
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: true));
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: true));
 
             var result = _svc.QueryExtraRoll(_player);
 
@@ -259,7 +276,7 @@ namespace Rollgeon.Dice.Tests
             bool ok = _svc.TryExtraRoll(_player);
 
             Assert.IsTrue(ok);
-            Assert.AreEqual(1, _svc.Current.FreeRollsRemaining); // de 2 → 1
+            Assert.AreEqual(2, _svc.Current.FreeRollsRemaining); // 3 → 2
             Assert.AreEqual(0, _svc.Current.PaidRollsUsed);
             Assert.AreEqual(0, _energy.SpendCallCount);
             Assert.AreEqual(energyBefore, _energy.Current[_player]);
@@ -270,13 +287,14 @@ namespace Rollgeon.Dice.Tests
         {
             _svc.StartBudget(MakeAction(freeRollCount: 3, allowsEnergyReroll: true));
 
-            // 2 free rerolls.
+            // 3 free rolls (incluye el primer roll).
+            Assert.IsTrue(_svc.TryExtraRoll(_player));
             Assert.IsTrue(_svc.TryExtraRoll(_player));
             Assert.IsTrue(_svc.TryExtraRoll(_player));
             Assert.AreEqual(0, _svc.Current.FreeRollsRemaining);
             Assert.AreEqual(0, _energy.SpendCallCount);
 
-            // 3er try → paid.
+            // 4to try → paid.
             Assert.IsTrue(_svc.TryExtraRoll(_player));
             Assert.AreEqual(1, _svc.Current.PaidRollsUsed);
             Assert.AreEqual(1, _energy.SpendCallCount);
@@ -290,8 +308,8 @@ namespace Rollgeon.Dice.Tests
         [Test]
         public void TryExtra_PaidPath_SpendsOneEnergy()
         {
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: true));
-            // FreeRollsRemaining = 0 → primer try es paid.
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: true));
+            // FreeRollsRemaining=0 → primer try es paid.
 
             bool ok = _svc.TryExtraRoll(_player);
 
@@ -306,7 +324,7 @@ namespace Rollgeon.Dice.Tests
         public void TryExtra_PaidWithNoEnergy_ReturnsFalseAndDoesNotMutate()
         {
             _energy.Current[_player] = 0;
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: true));
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: true));
 
             bool ok = _svc.TryExtraRoll(_player);
 
@@ -320,7 +338,7 @@ namespace Rollgeon.Dice.Tests
         [Test]
         public void TryExtra_ActionForbidsEnergyReroll_BlocksPaidEvenWithEnergy()
         {
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: false));
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: false));
             // Hay 4 de energia pero la accion prohibe paid rerolls.
 
             bool ok = _svc.TryExtraRoll(_player);
@@ -365,14 +383,14 @@ namespace Rollgeon.Dice.Tests
             Assert.AreEqual(_player, p.PlayerGuid);
             Assert.AreSame(action, p.Action);
             Assert.IsTrue(p.IsFree);
-            Assert.AreEqual(1, p.FreeRollsRemaining); // post-consume: 2-1=1
+            Assert.AreEqual(2, p.FreeRollsRemaining); // post-consume: 3-1=2
             Assert.AreEqual(0, p.PaidRollsUsed);
         }
 
         [Test]
         public void TryExtra_Paid_FiresOnRerollStartedWithIsFreeFalse()
         {
-            var action = MakeAction(freeRollCount: 1, allowsEnergyReroll: true);
+            var action = MakeAction(freeRollCount: 0, allowsEnergyReroll: true);
             _svc.StartBudget(action);
 
             RerollStartedPayload? captured = null;
@@ -392,7 +410,7 @@ namespace Rollgeon.Dice.Tests
         public void TryExtra_BlockedPaid_DoesNotFireOnRerollStarted()
         {
             _energy.Current[_player] = 0;
-            _svc.StartBudget(MakeAction(freeRollCount: 1, allowsEnergyReroll: true));
+            _svc.StartBudget(MakeAction(freeRollCount: 0, allowsEnergyReroll: true));
 
             int fireCount = 0;
             _svc.OnRerollStarted += _ => fireCount++;

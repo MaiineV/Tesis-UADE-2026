@@ -67,17 +67,28 @@ namespace Rollgeon.Patterns.Bootstrap
         /// <summary>Nombre de la escena a cargar despues de <c>RegisterAll</c>/<c>PreloadAllCatalogsAsync</c>.</summary>
         public string NextSceneName => _nextSceneName;
 
+        /// <summary>
+        /// Cache del SO activo. Lo setea <see cref="RegisterAll"/> al correr en
+        /// <c>BootstrapRunner.Awake</c>. Lo consume <c>RunBootstrapper.StartRun</c>
+        /// para reinvocar <see cref="RegisterRunScoped"/> en cada nueva run.
+        /// </summary>
+        public static ServiceBootstrapSO Active { get; internal set; }
+
         // ======================================================================
         // API publica
         // ======================================================================
 
         /// <summary>
         /// Registra todos los catalogos y settings al <see cref="ServiceLocator"/> en
-        /// <see cref="ServiceScope.Global"/>, y luego invoca <see cref="IPreloadableService.Register"/>
-        /// en cada extra service ordenado por <c>Priority</c>. Plan §5.1.
+        /// <see cref="ServiceScope.Global"/>, e invoca <see cref="IPreloadableService.Register"/>
+        /// en los extras con <c>Scope == Global</c>. Los extras Run-scope se
+        /// difieren a <see cref="RegisterRunScoped"/>, que <c>RunBootstrapper.StartRun</c>
+        /// llama al inicio de cada run (asi cada run obtiene instancias frescas y
+        /// no duplicamos suscripciones a eventos hechas en sus ctors). Plan §5.1.
         /// </summary>
         public void RegisterAll()
         {
+            Active = this;
             BootstrapLog.Info("RegisterAll() invoked");
 
             int catalogsRegistered = 0;
@@ -110,29 +121,52 @@ namespace Rollgeon.Patterns.Bootstrap
                 }
             }
 
-            int extrasRegistered = 0;
-            if (ExtraServices != null)
-            {
-                var ordered = ExtraServices
-                    .Where(s => s != null)
-                    .OrderBy(s => s.Priority)
-                    .ToList();
+            int extrasRegistered = InvokeExtras(s => s.Scope == ServiceScope.Global);
 
-                foreach (var svc in ordered)
+            BootstrapLog.Info($"Registered {catalogsRegistered} catalogs, {settingsRegistered} settings, {extrasRegistered} global extra services");
+        }
+
+        /// <summary>
+        /// Reinvoca <see cref="IPreloadableService.Register"/> sólo en los extras
+        /// con <c>Scope == ServiceScope.Run</c>, ordenados por <c>Priority</c>.
+        /// <para>
+        /// <c>RunBootstrapper.EndRun</c> llama <c>ServiceLocator.ClearScope(Run)</c>
+        /// y descarta todas las instancias Run-scoped — este metodo las
+        /// recrea antes del proximo <c>OnRunStart</c> para que los listeners
+        /// (RunController, ExplorationController, registrars de tiles) puedan
+        /// resolverlas. Globals quedan filtrados afuera para no duplicar
+        /// suscripciones a eventos hechas en sus ctors.
+        /// </para>
+        /// </summary>
+        public void RegisterRunScoped()
+        {
+            int reregistered = InvokeExtras(s => s.Scope == ServiceScope.Run);
+            BootstrapLog.Info($"RegisterRunScoped re-registered {reregistered} run-scoped services");
+        }
+
+        private int InvokeExtras(Func<IPreloadableService, bool> predicate)
+        {
+            if (ExtraServices == null) return 0;
+
+            var ordered = ExtraServices
+                .Where(s => s != null && predicate(s))
+                .OrderBy(s => s.Priority)
+                .ToList();
+
+            int count = 0;
+            foreach (var svc in ordered)
+            {
+                try
                 {
-                    try
-                    {
-                        svc.Register();
-                        extrasRegistered++;
-                    }
-                    catch (Exception ex)
-                    {
-                        BootstrapLog.Error($"IPreloadableService '{svc.GetType().Name}' threw in Register(): {ex}");
-                    }
+                    svc.Register();
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    BootstrapLog.Error($"IPreloadableService '{svc.GetType().Name}' threw in Register(): {ex}");
                 }
             }
-
-            BootstrapLog.Info($"Registered {catalogsRegistered} catalogs, {settingsRegistered} settings, {extrasRegistered} extra services");
+            return count;
         }
 
         /// <summary>

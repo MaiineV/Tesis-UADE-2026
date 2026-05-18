@@ -20,10 +20,10 @@ namespace Rollgeon.Movement
         private MovementService _instance;
 
         public int Priority => 78;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
             {
                 Debug.LogError("[MovementServiceBootstrap] IGridManager no registrado — " +

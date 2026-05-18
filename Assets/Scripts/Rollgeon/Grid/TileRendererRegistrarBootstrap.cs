@@ -1,3 +1,4 @@
+using Patterns;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;
 
@@ -7,14 +8,17 @@ namespace Rollgeon.Grid
         fileName = "TileRendererRegistrarBootstrap")]
     public sealed class TileRendererRegistrarBootstrap : ScriptableObject, IPreloadableService
     {
-        private TileRendererRegistrar _instance;
-
         public int Priority => 81;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
-            _instance = new TileRendererRegistrar();
+            // Registrar en ServiceLocator con scope Run para que ClearScope(Run) en
+            // EndRun lo disponga (TileRendererRegistrar implementa IDisposable y
+            // desuscribe del OnRoomEntered ahi). Sin esto, el old registrar sigue
+            // suscripto y duplicariamos handlers en cada nueva run.
+            var instance = new TileRendererRegistrar();
+            ServiceLocator.AddService<TileRendererRegistrar>(instance, ServiceScope.Run);
         }
     }
 }

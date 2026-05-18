@@ -20,10 +20,10 @@ namespace Rollgeon.Dungeon
         private PlayerRoomTransitioner _instance;
 
         public int Priority => 82;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
             {
                 Debug.LogError("[PlayerRoomTransitionerBootstrap] IGridManager no registrado.");

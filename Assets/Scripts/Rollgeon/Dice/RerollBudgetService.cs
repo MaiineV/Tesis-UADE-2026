@@ -68,6 +68,9 @@ namespace Rollgeon.Dice
         /// <inheritdoc />
         public event Action<RerollStartedPayload> OnRerollStarted;
 
+        /// <inheritdoc />
+        public event Action<RerollBudget> OnBudgetStarted;
+
         /// <summary>Despues de EnergyService (50) y TurnManager (60).</summary>
         public int Priority => 70;
 
@@ -93,6 +96,7 @@ namespace Rollgeon.Dice
         public void Dispose()
         {
             OnRerollStarted = null;
+            OnBudgetStarted = null;
             _current = null;
             _energy = null;
             _ruleset = null;
@@ -127,17 +131,20 @@ namespace Rollgeon.Dice
                     $"(Action='{_current.Action?.ActionId}'). Call EndBudget first.");
             }
 
-            // Convention: FreeRollCount cuenta total rolls incl. primero.
-            // El budget cuenta RE-rolls, de ahi el "-1".
-            int freeRerolls = action.FreeRollCount - 1;
-            if (freeRerolls < 0) freeRerolls = 0;
+            // El primer roll tambien consume del budget (flow manual: el usuario
+            // aprieta Roll para gatillar la primera tirada). Por eso el budget
+            // cuenta el total — el contador de UI muestra "rolls disponibles".
+            int freeRolls = action.FreeRollCount;
+            if (freeRolls < 0) freeRolls = 0;
 
             _current = new RerollBudget
             {
                 Action = action,
-                FreeRollsRemaining = freeRerolls,
+                FreeRollsRemaining = freeRolls,
                 PaidRollsUsed = 0,
             };
+
+            OnBudgetStarted?.Invoke(_current);
         }
 
         /// <inheritdoc />
@@ -242,19 +249,16 @@ namespace Rollgeon.Dice
         }
 
         /// <summary>
-        /// 1-based index del reroll recien consumido = free consumidos + paid consumidos.
-        /// Asume que esta funcion se llama <b>despues</b> de <c>ConsumeFree</c>/<c>ConsumePaid</c>.
+        /// 1-based index del roll recien consumido = (free consumidos + paid consumidos).
+        /// El primer roll = 1, el primer reroll = 2, etc. Asume que esta funcion se
+        /// llama <b>despues</b> de <c>ConsumeFree</c>/<c>ConsumePaid</c>.
         /// </summary>
         private int ComputeRerollIndex()
         {
             if (_current == null) return 0;
-            int initialFree = 0;
-            if (_current.Action != null)
-            {
-                int v = _current.Action.FreeRollCount - 1;
-                initialFree = v < 0 ? 0 : v;
-            }
-            int freeConsumed = initialFree - _current.FreeRollsRemaining;
+            int total = _current.Action != null ? _current.Action.FreeRollCount : 0;
+            if (total < 0) total = 0;
+            int freeConsumed = total - _current.FreeRollsRemaining;
             if (freeConsumed < 0) freeConsumed = 0;
             return freeConsumed + _current.PaidRollsUsed;
         }

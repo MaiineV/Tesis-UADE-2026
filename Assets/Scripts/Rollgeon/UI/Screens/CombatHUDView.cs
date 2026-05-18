@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
@@ -135,6 +136,13 @@ namespace Rollgeon.UI.Screens
         /// <summary>Delegate que dispara "chain pass" (saltear fases restantes del chain).</summary>
         public Action OnChainPassRequested;
 
+        /// <summary>
+        /// Delegate que dispara el primer roll de la accion seleccionada. El HUD
+        /// decide entre este y <see cref="OnEnergyRerollRequested"/> via
+        /// <c>InvokeRollOrReroll</c> segun el estado del budget.
+        /// </summary>
+        public Action OnRollRequested;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "CombatHUD";
 
@@ -150,7 +158,7 @@ namespace Rollgeon.UI.Screens
         private void Awake()
         {
             if (_rerollCount != null)
-                _rerollCount.OnExtraRollPressed.AddListener(InvokeEnergyRerollRequested);
+                _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -165,7 +173,7 @@ namespace Rollgeon.UI.Screens
         private void OnDestroy()
         {
             if (_rerollCount != null)
-                _rerollCount.OnExtraRollPressed.RemoveListener(InvokeEnergyRerollRequested);
+                _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -331,6 +339,30 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnEnergyRerollRequested.Invoke();
+        }
+
+        /// <summary>
+        /// Dispatch del boton compartido "Roll / Reroll" en el HUD. Si el budget
+        /// esta abierto y todavia no se rolo (FreeRollsRemaining == FreeRollCount,
+        /// PaidRollsUsed == 0) es el primer roll; sino es reroll.
+        /// </summary>
+        private void InvokeRollOrReroll()
+        {
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget)
+                && budget?.Current != null
+                && budget.Current.Action != null
+                && budget.Current.FreeRollsRemaining == budget.Current.Action.FreeRollCount
+                && budget.Current.PaidRollsUsed == 0)
+            {
+                if (OnRollRequested == null)
+                {
+                    Debug.LogWarning(LogPrefix + "OnRollRequested no cableado.", this);
+                    return;
+                }
+                OnRollRequested.Invoke();
+                return;
+            }
+            InvokeEnergyRerollRequested();
         }
 
         private void InvokeEndTurnRequested()

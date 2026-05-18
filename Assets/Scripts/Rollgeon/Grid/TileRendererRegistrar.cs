@@ -1,3 +1,4 @@
+using System;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
@@ -5,7 +6,7 @@ using UnityEngine;
 
 namespace Rollgeon.Grid
 {
-    public sealed class TileRendererRegistrar
+    public sealed class TileRendererRegistrar : IDisposable
     {
         public TileRendererRegistrar()
         {

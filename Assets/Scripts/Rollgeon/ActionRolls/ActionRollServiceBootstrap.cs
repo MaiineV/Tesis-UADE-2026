@@ -29,6 +29,7 @@ namespace Rollgeon.ActionRolls
         private ActionRollService _instance;
 
         public int Priority => 74;
+        public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
