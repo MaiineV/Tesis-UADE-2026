@@ -25,7 +25,8 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USEPALETTE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -119,13 +120,16 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _LightTintStrength: 0.4
     - _LightWrap: 0.1
     - _Metallic: 0
     - _MidThreshold: 0.65
     - _OcclusionStrength: 1
+    - _PaletteSlot: 4
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _ShadowDitherDensity: 0.3
     - _ShadowSmooth: 0.02
     - _ShadowThreshold: 0.35
     - _Smoothness: 0.5
@@ -135,6 +139,8 @@ Material:
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _UseDither: 0
+    - _UsePalette: 1
+    - _UseShadowDither: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1

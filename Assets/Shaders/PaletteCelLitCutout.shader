@@ -33,6 +33,9 @@ Shader "Rollgeon/PaletteCelLitCutout"
         [Toggle] _UseDither    ("Use Dither",    Float) = 0
         _DitherStrength        ("Dither Strength", Range(0, 1)) = 0.15
 
+        [Header(Additional Lights)]
+        _LightTintStrength        ("Spotlight Tint",          Range(0,1))  = 0.4
+
         [Header(Crease)]
         [Toggle] _EnableCrease  ("Enable Crease",  Float) = 0
         _CreaseColor            ("Crease Color",   Color) = (0.15, 0.15, 0.2, 1)
@@ -71,6 +74,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_instancing
+            #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -96,6 +100,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
 
             struct Attributes
@@ -185,12 +190,21 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 Light mainLight  = GetMainLight(IN.shadowCoord);
                 float lightValue = CelLight(normalWS, mainLight, _LightWrap);
 
-                #if defined(_ADDITIONAL_LIGHTS)
-                uint addCount = GetAdditionalLightsCount();
-                for (uint li = 0; li < addCount; li++)
+                float3 addTint = float3(0, 0, 0);
+                #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
                 {
-                    Light addLight = GetAdditionalLight(li, IN.positionWS);
-                    lightValue = max(lightValue, CelLight(normalWS, addLight, _LightWrap));
+                    InputData inputData = (InputData)0;
+                    inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
+                    inputData.positionWS  = IN.positionWS;
+                    inputData.shadowCoord = IN.shadowCoord;
+                    float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
+                    float3 positionWS = IN.positionWS;
+                    LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
+                        float addVal = CelLight(normalWS, addLt, _LightWrap);
+                        lightValue   = max(lightValue, addVal);
+                        addTint     += addLt.color * addVal;
+                    LIGHT_LOOP_END
                 }
                 #endif
 
@@ -225,6 +239,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                     color = lerp(color, _CreaseColor.rgb, creaseVal * _CreaseAlpha);
                 }
 
+                color = saturate(color + addTint * _LightTintStrength);
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -273,6 +288,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -361,6 +377,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
 
             struct DOAttr { float4 posOS : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -432,6 +449,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };

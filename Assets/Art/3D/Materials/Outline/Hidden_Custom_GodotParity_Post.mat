@@ -27,20 +27,20 @@ Material:
     m_Floats:
     - _AngleZCutoff: 0.5
     - _AngleZScale: 2
-    - _ConcaveCutoff: 0.01
+    - _ConcaveCutoff: 5.72
     - _ConcaveZCutoff: 0.5
     - _ConvexCutoff: 0.1
-    - _CreaseAlpha: 1
+    - _CreaseAlpha: 0.03
     - _CreaseFeather: 0.5
-    - _CreaseOverlay: 1
+    - _CreaseOverlay: 0.34
     - _FlipPalettes: 0
     - _KernelRadius: 3
-    - _LineAlpha: 0.344
+    - _LineAlpha: 0.367
     - _LineOverlay: 1
     - _PixelSize: 4
-    - _ZDeltaCutoff: 1
+    - _ZDeltaCutoff: 0.038
     m_Colors:
-    - _CreaseTint: {r: 0.833, g: 0.833, b: 0.833, a: 1}
+    - _CreaseTint: {r: 0.6132076, g: 0.6132076, b: 0.6132076, a: 1}
     - _LineTint: {r: 0, g: 0, b: 0, a: 1}
     - _PixelationScreenSize: {r: 1920, g: 1080, b: 0.00052, a: 0.00093}
     - _TexelOffset: {r: 0, g: 0, b: 0, a: 0}

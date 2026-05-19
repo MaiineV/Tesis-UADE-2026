@@ -11,6 +11,10 @@ Shader "Rollgeon/PaletteCelLit"
 {
     Properties
     {
+        [Header(Palette)]
+        [Toggle] _UsePalette ("Use Global Palette", Float) = 0
+        [PaletteSlot] _PaletteSlot ("Palette Slot", Float) = 0
+
         [Header(Palette Colors)]
         _LightColor  ("Light Color",  Color) = (1.0, 1.0, 1.0, 1)
         _MidColor    ("Mid Color",    Color) = (0.6, 0.6, 0.65, 1)
@@ -27,6 +31,9 @@ Shader "Rollgeon/PaletteCelLit"
         _DitherStrength           ("Border Dither Strength",  Range(0, 1)) = 0.15
         [Toggle] _UseShadowDither ("Shadow Dither",           Float) = 0
         _ShadowDitherDensity      ("Shadow Dither Density",   Range(0, 1)) = 0.3
+
+        [Header(Additional Lights)]
+        _LightTintStrength        ("Spotlight Tint",          Range(0,1))  = 0.4
 
         [Header(Crease)]
         [Toggle] _EnableCrease  ("Enable Crease",  Float) = 0
@@ -67,11 +74,23 @@ Shader "Rollgeon/PaletteCelLit"
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_instancing
+            #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
+            // ── DEBUG ─────────────────────────────────────────────────────────────
+            // Cambiá el 0 por 1 para activar el diagnóstico de luces adicionales:
+            //   AZUL   → _ADDITIONAL_LIGHTS no está definido (URP Asset issue)
+            //   ROJO   → keyword definido pero GetAdditionalLightsCount() == 0
+            //   VERDE  → count > 0 pero addTint es casi 0 (atenuación o ángulo)
+            //   Color  → addTint amplificado 5× (el spotlight SÍ llega al shader)
+            #define DEBUG_ADDITIONAL_LIGHTS 0
+            // ─────────────────────────────────────────────────────────────────────
+
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _PaletteSlot;
                 float4 _LightColor;
                 float4 _MidColor;
                 float4 _ShadowColor;
@@ -89,7 +108,13 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteLightColors[32];
+            float4 _PaletteMidColors[32];
+            float4 _PaletteShadowColors[32];
 
             struct Attributes
             {
@@ -158,13 +183,26 @@ Shader "Rollgeon/PaletteCelLit"
                 Light mainLight  = GetMainLight(IN.shadowCoord);
                 float lightValue = CelLight(normalWS, mainLight, _LightWrap);
 
-                // Luces adicionales (acumuladas como max, no suma, para mantener look cel)
-                #if defined(_ADDITIONAL_LIGHTS)
-                uint addCount = GetAdditionalLightsCount();
-                for (uint li = 0; li < addCount; li++)
+                // Luces adicionales: actualiza lightValue + acumula tinte de color
+                // LIGHT_LOOP_BEGIN maneja Forward (usa _ADDITIONAL_LIGHTS) y
+                // Forward+ (usa tile clustering — requiere normalizedScreenSpaceUV).
+                float3 addTint = float3(0, 0, 0);
+                #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
                 {
-                    Light addLight = GetAdditionalLight(li, IN.positionWS);
-                    lightValue = max(lightValue, CelLight(normalWS, addLight, _LightWrap));
+                    // URP 17 Forward+ requiere 'inputData' en scope internamente.
+                    InputData inputData = (InputData)0;
+                    inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
+                    inputData.positionWS  = IN.positionWS;
+                    inputData.shadowCoord = IN.shadowCoord;
+                    // LIGHT_LOOP_BEGIN necesita estas variables locales con estos nombres exactos.
+                    float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
+                    float3 positionWS = IN.positionWS;
+                    LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
+                        float addVal = CelLight(normalWS, addLt, _LightWrap);
+                        lightValue   = max(lightValue, addVal);
+                        addTint     += addLt.color * addVal;
+                    LIGHT_LOOP_END
                 }
                 #endif
 
@@ -185,9 +223,15 @@ Shader "Rollgeon/PaletteCelLit"
                     _MidThreshold + _ShadowSmooth + ditherOffset,
                     lightValue);
 
+                // Selección de colores: paleta global o colores del material
+                int    slot      = int(_PaletteSlot);
+                float3 lightCol  = _UsePalette > 0.5 ? _PaletteLightColors[slot].rgb  : _LightColor.rgb;
+                float3 midCol    = _UsePalette > 0.5 ? _PaletteMidColors[slot].rgb    : _MidColor.rgb;
+                float3 shadowCol = _UsePalette > 0.5 ? _PaletteShadowColors[slot].rgb : _ShadowColor.rgb;
+
                 // Shadow → Mid → Light
-                float3 color = lerp(_ShadowColor.rgb, _MidColor.rgb, celShadow);
-                color        = lerp(color,            _LightColor.rgb, celLight);
+                float3 color = lerp(shadowCol, midCol,    celShadow);
+                color        = lerp(color,     lightCol,  celLight);
 
                 // Shadow Dither: puntea el interior de la zona de sombra con el patrón Bayer.
                 // Píxeles donde bayer < density "saltan" al color mid, creando un efecto
@@ -216,6 +260,37 @@ Shader "Rollgeon/PaletteCelLit"
                     color = lerp(color, _CreaseColor.rgb, creaseVal * _CreaseAlpha);
                 }
 
+                color = saturate(color + addTint * _LightTintStrength);
+
+                // ── DEBUG (activar con #define DEBUG_ADDITIONAL_LIGHTS 1) ────────
+                // NARANJA → renderer Forward+, luces 0 o sin atenuación
+                // AZUL    → ni Forward ni Forward+ activos (URP Asset issue)
+                // VERDE   → luces detectadas pero addTint≈0 (ángulo / rango / sombra)
+                // COLOR   → addTint amplificado 5× — iluminación llegando correctamente
+                #if DEBUG_ADDITIONAL_LIGHTS
+                #if defined(_FORWARD_PLUS)
+                {
+                    float _dbgMag = dot(addTint, addTint);
+                    if (_dbgMag < 0.0001)
+                        return half4(1, 0.5, 0, 1);            // NARANJA → Forward+ pero tint≈0
+                    return half4(addTint * 5.0, 1.0);          // COLOR   → Forward+ OK
+                }
+                #elif defined(_ADDITIONAL_LIGHTS)
+                {
+                    uint _dbgCount = GetAdditionalLightsCount();
+                    if (_dbgCount == 0)
+                        return half4(1, 0, 0, 1);              // ROJO  → count==0
+                    float _dbgMag = dot(addTint, addTint);
+                    if (_dbgMag < 0.0001)
+                        return half4(0, 1, 0, 1);              // VERDE → tint≈0
+                    return half4(addTint * 5.0, 1.0);          // COLOR → Forward OK
+                }
+                #else
+                    return half4(0, 0, 1, 1);                  // AZUL → sin keyword
+                #endif
+                #endif
+                // ─────────────────────────────────────────────────────────────────
+
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -243,6 +318,8 @@ Shader "Rollgeon/PaletteCelLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _PaletteSlot;
                 float4 _LightColor;
                 float4 _MidColor;
                 float4 _ShadowColor;
@@ -260,7 +337,13 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteLightColors[32];
+            float4 _PaletteMidColors[32];
+            float4 _PaletteShadowColors[32];
 
             float3 _LightDirection;
             float3 _LightPosition;
@@ -311,6 +394,8 @@ Shader "Rollgeon/PaletteCelLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _PaletteSlot;
                 float4 _LightColor;
                 float4 _MidColor;
                 float4 _ShadowColor;
@@ -328,7 +413,13 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteLightColors[32];
+            float4 _PaletteMidColors[32];
+            float4 _PaletteShadowColors[32];
 
             struct DOAttr { float4 posOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DOVary { float4 posCS : SV_POSITION; };
@@ -363,6 +454,8 @@ Shader "Rollgeon/PaletteCelLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _PaletteSlot;
                 float4 _LightColor;
                 float4 _MidColor;
                 float4 _ShadowColor;
@@ -380,7 +473,13 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _CreaseSmooth;
                 float  _CreaseAlpha;
                 float  _CreaseDither;
+                float  _LightTintStrength;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteLightColors[32];
+            float4 _PaletteMidColors[32];
+            float4 _PaletteShadowColors[32];
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DNVary { float4 posCS : SV_POSITION; float3 normalWS : TEXCOORD0; };
