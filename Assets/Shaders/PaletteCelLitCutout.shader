@@ -43,6 +43,12 @@ Shader "Rollgeon/PaletteCelLitCutout"
         _CreaseSmooth           ("Crease Smooth",    Range(0, 0.3)) = 0.05
         _CreaseAlpha            ("Crease Alpha",     Range(0, 1))   = 0.8
         [Toggle] _CreaseDither  ("Crease Dither",    Float) = 0
+
+        [Header(Alpha Cutoff)]
+        // 1 = totalmente visible, 0 = totalmente oculto.
+        // Independiente del _Cutoff de la máscara — combinable con ella.
+        _AlphaCutoff ("Alpha Cutoff (1=visible, 0=hidden)", Range(0,1)) = 1
+        _DitherScale ("Dither Scale (pixel chunkiness)", Range(1,32)) = 1
     }
 
     SubShader
@@ -101,6 +107,8 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseAlpha;
                 float  _CreaseDither;
                 float  _LightTintStrength;
+                float  _AlphaCutoff;
+                float  _DitherScale;
             CBUFFER_END
 
             struct Attributes
@@ -183,6 +191,10 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float mask = dot(SAMPLE_TEXTURE2D(_MaskTex, sampler_MaskTex, IN.uv).rgb,
                                  float3(0.333, 0.333, 0.333));
                 clip(mask - _Cutoff);
+
+                // ── Alpha cutoff dithered (fade in/out runtime) ──────────────────
+                // +1/16 garantiza apagado total en cutoff=0; _DitherScale agranda celdas.
+                clip(_AlphaCutoff - (BayerDither(IN.positionCS.xy / _DitherScale) + 1.0/16.0));
 
                 // ── Cel shading (idéntico a PaletteCelLit) ───────────────────────
                 float3 normalWS = normalize(IN.normalWS);
@@ -289,6 +301,8 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseAlpha;
                 float  _CreaseDither;
                 float  _LightTintStrength;
+                float  _AlphaCutoff;
+                float  _DitherScale;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -296,6 +310,19 @@ Shader "Rollgeon/PaletteCelLitCutout"
 
             struct SCAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct SCVary { float4 posCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             float2 RotateUV(float2 uv, float degrees)
             {
@@ -333,6 +360,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float mask = dot(SAMPLE_TEXTURE2D(_MaskTex, sampler_MaskTex, IN.uv).rgb,
                                  float3(0.333, 0.333, 0.333));
                 clip(mask - _Cutoff);
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
                 return 0;
             }
             ENDHLSL
@@ -378,10 +406,25 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseAlpha;
                 float  _CreaseDither;
                 float  _LightTintStrength;
+                float  _AlphaCutoff;
+                float  _DitherScale;
             CBUFFER_END
 
             struct DOAttr { float4 posOS : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DOVary { float4 posCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             float2 RotateUV(float2 uv, float degrees)
             {
@@ -406,6 +449,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float mask = dot(SAMPLE_TEXTURE2D(_MaskTex, sampler_MaskTex, IN.uv).rgb,
                                  float3(0.333, 0.333, 0.333));
                 clip(mask - _Cutoff);
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
                 return 0;
             }
             ENDHLSL
@@ -450,10 +494,25 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float  _CreaseAlpha;
                 float  _CreaseDither;
                 float  _LightTintStrength;
+                float  _AlphaCutoff;
+                float  _DitherScale;
             CBUFFER_END
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DNVary { float4 posCS : SV_POSITION; float3 normalWS : TEXCOORD0; float2 uv : TEXCOORD1; };
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             float2 RotateUV(float2 uv, float degrees)
             {
@@ -479,6 +538,7 @@ Shader "Rollgeon/PaletteCelLitCutout"
                 float mask = dot(SAMPLE_TEXTURE2D(_MaskTex, sampler_MaskTex, IN.uv).rgb,
                                  float3(0.333, 0.333, 0.333));
                 clip(mask - _Cutoff);
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
                 float3 normalWS = normalize(IN.normalWS);
                 float2 encoded  = PackNormalOctRectEncode(TransformWorldToViewDir(normalWS, true));
                 return float4(encoded, 0, 0);

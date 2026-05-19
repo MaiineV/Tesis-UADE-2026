@@ -67,6 +67,11 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
         _CrackDensity           ("Crack Density    (0=todo 1=nada)", Range(0,1))   = 0.45
         _CrackDensityScale      ("Crack Density Scale",              Float)        = 0.7
         _CrackSeed              ("Crack Seed",                       Float)        = 0.0
+
+        [Header(Alpha Cutoff)]
+        // 1 = totalmente visible, 0 = totalmente oculto.
+        _AlphaCutoff ("Alpha Cutoff (1=visible, 0=hidden)", Range(0,1)) = 1
+        _DitherScale ("Dither Scale (pixel chunkiness)", Range(1,32)) = 1
     }
 
     SubShader
@@ -141,6 +146,8 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float  _CrackDensityScale;
                 float  _CrackSeed;
                 float  _LightTintStrength;
+                float  _AlphaCutoff;
+                float  _DitherScale;
             CBUFFER_END
 
             struct Attributes
@@ -344,6 +351,11 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
             half4 Frag(Varyings IN) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+
+                // Alpha cutoff dithered — usado por WallOccluder/runtime via MPB.
+                // +1/16 garantiza apagado total en cutoff=0; _DitherScale agranda celdas.
+                clip(_AlphaCutoff - (BayerDither(IN.positionCS.xy / _DitherScale) + 1.0/16.0));
+
                 float3 normalWS = normalize(IN.normalWS);
 
                 // ── Patrón procedural ────────────────────────────────────────────
@@ -495,10 +507,25 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength;
+                float _AlphaCutoff;
+                float _DitherScale;
             CBUFFER_END
 
             float3 _LightDirection;
             float3 _LightPosition;
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             struct SCAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct SCVary { float4 posCS : SV_POSITION; };
@@ -523,7 +550,11 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 OUT.posCS = posCS;
                 return OUT;
             }
-            half4 ShadowFrag(SCVary IN) : SV_Target { return 0; }
+            half4 ShadowFrag(SCVary IN) : SV_Target
+            {
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
+                return 0;
+            }
             ENDHLSL
         }
 
@@ -557,12 +588,31 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength;
+                float _AlphaCutoff;
+                float _DitherScale;
             CBUFFER_END
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             struct DOAttr { float4 posOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DOVary { float4 posCS : SV_POSITION; };
             DOVary DepthVert(DOAttr IN) { UNITY_SETUP_INSTANCE_ID(IN); DOVary OUT; OUT.posCS = TransformObjectToHClip(IN.posOS.xyz); return OUT; }
-            half4  DepthFrag(DOVary IN) : SV_Target { return 0; }
+            half4  DepthFrag(DOVary IN) : SV_Target
+            {
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
+                return 0;
+            }
             ENDHLSL
         }
 
@@ -595,7 +645,22 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength;
+                float _AlphaCutoff;
+                float _DitherScale;
             CBUFFER_END
+
+            float BayerDither(float2 screenPos)
+            {
+                int2 p = int2(floor(screenPos)) & 3;
+                int  i = p.y * 4 + p.x;
+                const float bayer[16] = {
+                     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+                    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+                     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+                    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+                };
+                return bayer[i];
+            }
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct DNVary { float4 posCS : SV_POSITION; float3 normalWS : TEXCOORD0; };
@@ -610,6 +675,7 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
             }
             float4 DNFrag(DNVary IN) : SV_Target
             {
+                clip(_AlphaCutoff - (BayerDither(IN.posCS.xy / _DitherScale) + 1.0/16.0));
                 float3 normalWS = normalize(IN.normalWS);
                 float2 encoded  = PackNormalOctRectEncode(TransformWorldToViewDir(normalWS, true));
                 return float4(encoded, 0, 0);

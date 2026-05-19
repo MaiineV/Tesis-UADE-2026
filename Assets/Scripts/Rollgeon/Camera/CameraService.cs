@@ -34,6 +34,8 @@ namespace Rollgeon.GameCamera
         private Tween _recenterTween;
         private Tween _shakeTween;
 
+        private EventManager.EventReceiver _onRoomEnteredHandler;
+
         static readonly int s_PixelPanOffset = Shader.PropertyToID("_PixelPanOffset");
 
         public CameraFacing CurrentFacing => _currentFacing;
@@ -69,7 +71,20 @@ namespace Rollgeon.GameCamera
 
             ApplyInitialPose();
             ApplyZoomImmediate(_currentZoom);
+
+            // Suscripción a OnRoomEntered: cuando aparece una room nueva, sus walls
+            // recién entonces existen — hay que aplicarles el facing actual o quedan
+            // todas visibles hasta que el usuario rote la cámara.
+            if (_onRoomEnteredHandler == null)
+            {
+                _onRoomEnteredHandler = HandleRoomEntered;
+                EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEnteredHandler);
+            }
+
+            RefreshWallOcclusion();
         }
+
+        private void HandleRoomEntered(params object[] args) => RefreshWallOcclusion();
 
         /// <summary>
         /// Autowire para uso en la scene de gameplay: resuelve el
@@ -96,6 +111,12 @@ namespace Rollgeon.GameCamera
 
         private void OnDestroy()
         {
+            if (_onRoomEnteredHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnRoomEntered, _onRoomEnteredHandler);
+                _onRoomEnteredHandler = null;
+            }
+
             if (ServiceLocator.TryGetService<ICameraService>(out var current)
                 && ReferenceEquals(current, this))
             {

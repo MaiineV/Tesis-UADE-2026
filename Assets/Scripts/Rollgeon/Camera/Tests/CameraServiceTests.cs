@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using UnityEngine;
 
 namespace Rollgeon.GameCamera.Tests
@@ -11,7 +14,7 @@ namespace Rollgeon.GameCamera.Tests
         private GameObject _cameraGO;
         private CameraService _service;
         private CameraConfigSO _config;
-        private readonly List<Object> _created = new List<Object>();
+        private readonly List<UnityEngine.Object> _created = new List<UnityEngine.Object>();
 
         [SetUp]
         public void SetUp()
@@ -31,7 +34,7 @@ namespace Rollgeon.GameCamera.Tests
         {
             foreach (var obj in _created)
             {
-                if (obj != null) Object.DestroyImmediate(obj);
+                if (obj != null) UnityEngine.Object.DestroyImmediate(obj);
             }
             _created.Clear();
             ServiceLocator.Clear();
@@ -238,6 +241,107 @@ namespace Rollgeon.GameCamera.Tests
         }
 
         // ------------------------------------------------------------------ //
+        // Wall occlusion                                                      //
+        // ------------------------------------------------------------------ //
+
+        [Test]
+        public void Initialize_WithRegisteredDungeon_HidesWallsForStartingFacing()
+        {
+            // Arrange — default StartingFacing = NE ⇒ OcclusionMap[NE] = { S, W }.
+            // En este test el service ya fue Initialize'd por [SetUp] ANTES de que
+            // exista el fake dungeon (igual que en runtime cuando el dungeon no está
+            // listo todavía). El refresh debe disparar al re-inicializar.
+            RegisterFakeDungeonWithOccluders(
+                out var nWall, out var eWall, out var sWall, out var wWall);
+
+            // Act — re-Initialize fuerza un RefreshWallOcclusion ahora que el dungeon existe.
+            _service.Initialize(_config);
+
+            // Assert
+            Assert.AreEqual(CameraFacing.NE, _service.CurrentFacing);
+            Assert.IsFalse(nWall.IsHidden, "N wall must remain visible when facing NE.");
+            Assert.IsFalse(eWall.IsHidden, "E wall must remain visible when facing NE.");
+            Assert.IsTrue (sWall.IsHidden, "S wall must hide when facing NE (OcclusionMap[NE]).");
+            Assert.IsTrue (wWall.IsHidden, "W wall must hide when facing NE (OcclusionMap[NE]).");
+        }
+
+        [Test]
+        public void OnRoomEntered_RefreshesOccluderState()
+        {
+            // Arrange — el service se inicializó sin dungeon en [SetUp]; ahora aparece
+            // una room nueva y dispara OnRoomEntered. El service debe reaccionar.
+            RegisterFakeDungeonWithOccluders(
+                out var nWall, out var eWall, out var sWall, out var wWall);
+
+            // Act
+            EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "test_room");
+
+            // Assert — StartingFacing = NE ⇒ ocultar S y W.
+            Assert.IsFalse(nWall.IsHidden);
+            Assert.IsFalse(eWall.IsHidden);
+            Assert.IsTrue (sWall.IsHidden);
+            Assert.IsTrue (wWall.IsHidden);
+        }
+
+        [Test]
+        public void RotateBy45_FromN_HidesOnlySouthWall()
+        {
+            // Arrange — forzar facing a N para cubrir el caso del usuario:
+            // "si estoy en 0 grados, la pared S debería esconderse".
+            RegisterFakeDungeonWithOccluders(
+                out var nWall, out var eWall, out var sWall, out var wWall);
+            while (_service.CurrentFacing != CameraFacing.N) _service.RotateBy45(clockwise: true);
+
+            // Sanity: rotar a N debió aplicar el occlusion map de N (= { S }).
+            // Act — assertion directa: walls reflect facing == N.
+            // Assert
+            Assert.AreEqual(CameraFacing.N, _service.CurrentFacing);
+            Assert.IsFalse(nWall.IsHidden, "N wall visible when facing N.");
+            Assert.IsFalse(eWall.IsHidden, "E wall visible when facing N.");
+            Assert.IsTrue (sWall.IsHidden, "S wall hidden when facing N.");
+            Assert.IsFalse(wWall.IsHidden, "W wall visible when facing N.");
+        }
+
+        [Test]
+        public void RotateBy45_FromSeToS_SwitchesHiddenWallFromWestNorthToNorth()
+        {
+            // Arrange — facing SE ⇒ OcclusionMap[SE] = { W, N }.
+            RegisterFakeDungeonWithOccluders(
+                out var nWall, out var eWall, out var sWall, out var wWall);
+            while (_service.CurrentFacing != CameraFacing.SE) _service.RotateBy45(clockwise: true);
+
+            Assert.IsTrue(nWall.IsHidden && wWall.IsHidden, "Pre-condition: N+W hidden at SE.");
+
+            // Act — rotate clockwise once → S.
+            _service.RotateBy45(clockwise: true);
+
+            // Assert — OcclusionMap[S] = { N } only.
+            Assert.AreEqual(CameraFacing.S, _service.CurrentFacing);
+            Assert.IsTrue (nWall.IsHidden, "N wall stays hidden when facing S.");
+            Assert.IsFalse(eWall.IsHidden);
+            Assert.IsFalse(sWall.IsHidden);
+            Assert.IsFalse(wWall.IsHidden, "W wall should reveal after rotating SE → S.");
+        }
+
+        [Test]
+        public void RefreshWallOcclusion_WhenDisabled_DoesNotMutateOccluders()
+        {
+            // Arrange
+            _config.EnableWallOcclusion = false;
+            RegisterFakeDungeonWithOccluders(
+                out var nWall, out var eWall, out var sWall, out var wWall);
+
+            // Act
+            _service.Initialize(_config);
+
+            // Assert — todos siguen visibles aunque el facing default (NE) querría ocultar S/W.
+            Assert.IsFalse(nWall.IsHidden);
+            Assert.IsFalse(eWall.IsHidden);
+            Assert.IsFalse(sWall.IsHidden);
+            Assert.IsFalse(wWall.IsHidden);
+        }
+
+        // ------------------------------------------------------------------ //
         // Helpers                                                             //
         // ------------------------------------------------------------------ //
 
@@ -245,6 +349,60 @@ namespace Rollgeon.GameCamera.Tests
         {
             int d = ((degrees % 360) + 360) % 360;
             return (CameraFacing)d;
+        }
+
+        private FakeDungeonService RegisterFakeDungeonWithOccluders(
+            out WallOccluder n, out WallOccluder e, out WallOccluder s, out WallOccluder w)
+        {
+            n = CreateOccluder(WallDirection.N);
+            e = CreateOccluder(WallDirection.E);
+            s = CreateOccluder(WallDirection.S);
+            w = CreateOccluder(WallDirection.W);
+
+            var fake = new FakeDungeonService
+            {
+                Occluders = new[] { n, e, s, w }
+            };
+            ServiceLocator.AddService<IDungeonService>(fake, ServiceScope.Run);
+            return fake;
+        }
+
+        private WallOccluder CreateOccluder(WallDirection dir)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _created.Add(go);
+            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            var occ = go.AddComponent<WallOccluder>();
+            occ.Direction = dir;
+            return occ;
+        }
+
+        // -----------------------------------------------------------------
+        // Stubs
+        // -----------------------------------------------------------------
+
+        private sealed class FakeDungeonService : IDungeonService
+        {
+            public WallOccluder[] Occluders = Array.Empty<WallOccluder>();
+
+            public RoomSO CurrentRoom => null;
+            public RoomInstance CurrentRoomInstance => null;
+            public DoorDirection? LastEntryDirection => null;
+
+            public void GenerateFloor(FloorLayoutSO layout, int seed) { }
+            public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() =>
+                new Dictionary<Guid, RoomInstance>();
+            public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() =>
+                new Dictionary<Guid, FloorShell>();
+            public bool CanEnterRoomByDoor(DoorDirection dir, out Guid id)
+            {
+                id = Guid.Empty;
+                return false;
+            }
+            public bool EnterRoomByDoor(DoorDirection dir) => false;
+            public bool EnterRoomByInstanceId(Guid id) => false;
+            public Bounds GetFloorBounds() => default;
+            public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Occluders;
         }
     }
 }
