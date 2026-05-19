@@ -6,5 +6,6 @@ namespace Rollgeon.Grid
     public sealed class TileMarker : MonoBehaviour
     {
         [HideInInspector] public GridCoord Coord;
+        [HideInInspector] public int Layer;
     }
 }
