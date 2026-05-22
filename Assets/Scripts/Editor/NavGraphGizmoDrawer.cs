@@ -19,8 +19,7 @@ namespace Rollgeon.EditorTools
             Gizmos.color = Color.green;
             foreach (var node in graph.Nodes)
             {
-                Vector3 worldPos = origin + new Vector3(
-                    node.Coord.X * tileSize, node.Height, node.Coord.Y * tileSize);
+                Vector3 worldPos = NodeWorld(node, origin, tileSize);
                 Gizmos.DrawSphere(worldPos, tileSize * 0.15f);
                 Handles.Label(worldPos + Vector3.up * 0.3f, $"h={node.Height:F1}");
             }
@@ -31,13 +30,20 @@ namespace Rollgeon.EditorTools
                 if (!graph.TryGetNode(edge.From, out var fromNode)) continue;
                 if (!graph.TryGetNode(edge.To, out var toNode)) continue;
 
-                Vector3 fromWorld = origin + new Vector3(
-                    fromNode.Coord.X * tileSize, fromNode.Height, fromNode.Coord.Y * tileSize);
-                Vector3 toWorld = origin + new Vector3(
-                    toNode.Coord.X * tileSize, toNode.Height, toNode.Coord.Y * tileSize);
-
-                Gizmos.DrawLine(fromWorld, toWorld);
+                Gizmos.DrawLine(
+                    NodeWorld(fromNode, origin, tileSize),
+                    NodeWorld(toNode, origin, tileSize));
             }
+        }
+
+        // Cells are corner-anchored: coord (x,y) spans [x, x+1] in tile units,
+        // so the cell centre sits at +0.5 on each planar axis.
+        private static Vector3 NodeWorld(NavNode node, Vector3 origin, float tileSize)
+        {
+            return origin + new Vector3(
+                (node.Coord.X + 0.5f) * tileSize,
+                node.Height,
+                (node.Coord.Y + 0.5f) * tileSize);
         }
     }
 }
