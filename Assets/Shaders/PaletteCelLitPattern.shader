@@ -343,17 +343,71 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
                 float3 normalWS = normalize(IN.normalWS);
 
-                // ── Patrón procedural ────────────────────────────────────────────
-                float2 cellID;
-                float2 p    = GetCellUV(WorldUV(IN.positionWS, normalWS), cellID);
-                // Escala no uniforme: divide p por scaleX/Y antes del SDF
-                // → >1 estira, <1 achata; independiente en cada eje
-                float2 pSc  = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
-                float  sdf  = GetSDF(pSc);
-                float3 patternColor = PatternColor(pSc, cellID, sdf);
-                // Opacidad: pixels dentro de la forma se mezclan hacia BGColor
-                patternColor = lerp(patternColor, _BGColor.rgb,
-                                    step(0.0, -sdf) * (1.0 - _ShapeOpacity));
+                // ── Patrón procedural — multi-celda (bordes se intersectan) ─────
+                // Evalúa la celda propia + 8 vecinas en loop 3×3.
+                // Prioridad: borde de cualquier celda > relleno > fondo.
+                float2 wUV = WorldUV(IN.positionWS, normalWS);
+                float2 s   = wUV * _TileScale;
+                if (_PatternType >= 1.5 && _PatternType < 2.5)
+                    s.x += fmod(floor(s.y), 2.0) * 0.5;
+
+                float2 cBase = floor(s);
+                float2 pBase = frac(s) - 0.5;
+
+                bool   onAnyBorder = false;
+                bool   inAnyFill   = false;
+                float3 fillColor   = _BGColor.rgb;
+
+                for (int ndy = -1; ndy <= 1; ndy++)
+                for (int ndx = -1; ndx <= 1; ndx++)
+                {
+                    float2 nCell = cBase + float2(ndx, ndy);
+                    float2 p     = pBase - float2(ndx, ndy);
+                    float2 pSc   = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
+                    float  sdf   = GetSDF(pSc);
+
+                    bool isBorder = (sdf >= -_BorderWidth) && (sdf < 0.0);
+                    bool isFill   = (sdf < -_BorderWidth);
+                    bool isInside = (sdf < 0.0);
+
+                    float altIdx = 0.0;
+                    if      (_PatternType < 0.5)  altIdx = 0.0;
+                    else if (_PatternType < 2.5)  altIdx = fmod(abs(nCell.x) + abs(nCell.y), 2.0);
+                    else if (_PatternType < 3.5)  altIdx = fmod(abs(nCell.y), 2.0);
+                    else                          altIdx = fmod(abs(nCell.x), 2.0);
+                    if (nCell.y < _SolidRows) altIdx = 0.0;
+
+                    float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
+
+                    if (_DetailType < 0.5) // Flat
+                    {
+                        if (isInside && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                    }
+                    else if (_DetailType < 1.5) // Border Only
+                    {
+                        if (isBorder) onAnyBorder = true;
+                    }
+                    else if (_DetailType < 2.5) // Fill + Border
+                    {
+                        if      (isBorder)             onAnyBorder = true;
+                        else if (isFill && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                    }
+                    else // Radial
+                    {
+                        if (isBorder) onAnyBorder = true;
+                        else if (isFill && !inAnyFill)
+                        {
+                            inAnyFill = true;
+                            float t = saturate(length(pSc) / (_ShapeSize * 0.47));
+                            fillColor = lerp(_DetailColor.rgb, baseCol, t);
+                        }
+                    }
+                }
+
+                float3 patternColor;
+                if      (onAnyBorder) patternColor = _DetailColor.rgb;
+                else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
+                else                  patternColor = _BGColor.rgb;
 
                 // ── Luz ──────────────────────────────────────────────────────────
                 Light mainLight  = GetMainLight(IN.shadowCoord);
