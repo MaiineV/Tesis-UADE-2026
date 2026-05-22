@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Rollgeon.Grid;
 
-namespace Rollgeon.Editor.Tools.RoomTilePainter
+namespace Rollgeon.Editor.Tools.RoomEditor
 {
     [CreateAssetMenu(
         fileName = "TilePainterPalette",
@@ -23,5 +24,6 @@ namespace Rollgeon.Editor.Tools.RoomTilePainter
         public string Label;
         public GameObject Prefab;
         public Texture2D Icon;
+        public TileType Type = TileType.Floor;
     }
 }
