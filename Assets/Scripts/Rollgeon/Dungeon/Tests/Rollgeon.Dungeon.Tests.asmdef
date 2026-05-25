@@ -3,6 +3,7 @@
     "rootNamespace": "Rollgeon.Dungeon.Tests",
     "references": [
         "Rollgeon",
+        "Rollgeon.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

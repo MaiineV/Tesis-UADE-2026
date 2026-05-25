@@ -11,7 +11,7 @@ using Rollgeon.Grid;
 
 namespace Rollgeon.Editor.Tools.RoomEditor
 {
-    public sealed class RoomEditorWindow : OdinEditorWindow
+    public sealed partial class RoomEditorWindow : OdinEditorWindow
     {
         // ============================ Tab paths ============================
 
@@ -19,6 +19,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string TabTool = "Tool & Shortcuts";
         private const string TabRoom = "Room & Info";
         private const string TabPalette = "Palette & Settings";
+        private const string TabDoors = "Doors";
 
         private const string GTool = Tabs + "/" + TabTool + "/Tool";
         private const string GShortcuts = Tabs + "/" + TabTool + "/Shortcuts";
@@ -26,6 +27,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string GInfo = Tabs + "/" + TabRoom + "/Info";
         private const string GPalette = Tabs + "/" + TabPalette + "/Palette";
         private const string GSettings = Tabs + "/" + TabPalette + "/Settings";
+        private const string GDoors = Tabs + "/" + TabDoors + "/Doors";
 
         // ============================ Section tints (used by header drawers) ============================
 
@@ -68,6 +70,16 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             EditorGUI.DrawRect(new Rect(r.x, r.y, thickness, r.height), color);
             EditorGUI.DrawRect(new Rect(r.xMax - thickness, r.y, thickness, r.height), color);
         }
+
+        // ============================ Tab order sentinel ============================
+        // Odin registers tabs in the order it first encounters them. Declaring all four tabs
+        // on a hidden field here pins the order Tool → Room → Palette → Doors regardless of
+        // partial-class file scan order.
+        [TabGroup(Tabs, TabTool)]
+        [TabGroup(Tabs, TabRoom)]
+        [TabGroup(Tabs, TabPalette)]
+        [TabGroup(Tabs, TabDoors)]
+        [HideInInspector, SerializeField] private bool _tabOrderSentinel;
 
         // ============================ Tab 1 — Tool ============================
 
@@ -589,6 +601,11 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 RoomEditorGizmos.DrawGridPlane(_target.GetOrigin(), _gridStep, _currentLayer, _gridExtent);
             }
 
+            if (e.type == EventType.Repaint)
+            {
+                RoomEditorGizmos.DrawDoorSlotArrows(_target);
+            }
+
             HandleKeyboard(e);
             UpdateHover(e);
             HandleMouse(e, controlId);
@@ -795,6 +812,14 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             marker.IsBlocker = entry.IsBlocker;
 
             Undo.RegisterCreatedObjectUndo(instance, "Paint Tile");
+
+            if (entry.Type == TileType.Door)
+            {
+                var controller = instance.GetComponentInChildren<DoorController>(true);
+                if (controller != null)
+                    RoomEditorDoorBinder.BindOnPlace(_target, controller, instance.transform.position);
+            }
+
             EditorUtility.SetDirty(_target);
         }
 
@@ -802,6 +827,14 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         {
             var m = FindTileAt(cell);
             if (m == null) return;
+
+            if (m.Type == TileType.Door)
+            {
+                var controller = m.GetComponentInChildren<DoorController>(true);
+                if (controller != null)
+                    RoomEditorDoorBinder.RemoveSlot(_target, controller.Direction);
+            }
+
             Undo.DestroyObjectImmediate(m.gameObject);
             EditorUtility.SetDirty(_target);
         }

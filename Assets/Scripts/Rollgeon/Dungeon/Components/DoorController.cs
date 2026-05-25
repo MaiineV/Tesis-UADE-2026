@@ -41,6 +41,17 @@ namespace Rollgeon.Dungeon.Components
 
         public DoorVisualState CurrentState { get; private set; } = DoorVisualState.Open;
 
+#if UNITY_EDITOR
+        /// <summary>Editor-only: nombre del campo serializado de meshOpen (para SerializedObject).</summary>
+        public const string EditorMeshOpenField  = nameof(_meshOpen);
+        public const string EditorMeshClosedField = nameof(_meshClosed);
+        public const string EditorWallPlugField   = nameof(_wallPlug);
+
+        public GameObject EditorMeshOpen   => _meshOpen;
+        public GameObject EditorMeshClosed => _meshClosed;
+        public GameObject EditorWallPlug   => _wallPlug;
+#endif
+
         private void Awake()
         {
             EnsureTooltipComponents();
