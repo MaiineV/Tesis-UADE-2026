@@ -20,6 +20,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string TabRoom = "Room & Info";
         private const string TabPalette = "Palette & Settings";
         private const string TabDoors = "Doors";
+        private const string TabSpawn = "Spawn Points";
 
         private const string GTool = Tabs + "/" + TabTool + "/Tool";
         private const string GShortcuts = Tabs + "/" + TabTool + "/Shortcuts";
@@ -28,6 +29,10 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string GPalette = Tabs + "/" + TabPalette + "/Palette";
         private const string GSettings = Tabs + "/" + TabPalette + "/Settings";
         private const string GDoors = Tabs + "/" + TabDoors + "/Doors";
+        private const string GSpawnTool = Tabs + "/" + TabSpawn + "/Tool";
+        private const string GSpawnSets = Tabs + "/" + TabSpawn + "/Sets";
+        private const string GSpawnList = Tabs + "/" + TabSpawn + "/List";
+        private const string GSpawnValidation = Tabs + "/" + TabSpawn + "/Validation";
 
         // ============================ Section tints (used by header drawers) ============================
 
@@ -71,15 +76,9 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             EditorGUI.DrawRect(new Rect(r.xMax - thickness, r.y, thickness, r.height), color);
         }
 
-        // ============================ Tab order sentinel ============================
-        // Odin registers tabs in the order it first encounters them. Declaring all four tabs
-        // on a hidden field here pins the order Tool → Room → Palette → Doors regardless of
-        // partial-class file scan order.
-        [TabGroup(Tabs, TabTool)]
-        [TabGroup(Tabs, TabRoom)]
-        [TabGroup(Tabs, TabPalette)]
-        [TabGroup(Tabs, TabDoors)]
-        [HideInInspector, SerializeField] private bool _tabOrderSentinel;
+        // Tab order sentinel moved to RoomEditorWindow.0Tabs.cs — that filename is
+        // enumerated first alphabetically, which is the only way to guarantee Odin
+        // encounters the tab declarations before any partial-class tab-specific field.
 
         // ============================ Tab 1 — Tool ============================
 
@@ -107,6 +106,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             if (GUILayout.Button(label, style))
             {
                 _toolActive = !_toolActive;
+                if (_toolActive) _spawnToolActive = false; // mutually exclusive with spawn paint
                 Repaint();
                 SceneView.RepaintAll();
             }
@@ -592,7 +592,45 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 NavGraphGizmoDrawer.DrawWithHandles(_target);
             }
 
-            if (!_toolActive || _target == null) return;
+            if (_target == null) return;
+
+            // Spawn point gizmos render regardless of which tool is active (unless mode = Hide).
+            if (e.type == EventType.Repaint)
+            {
+                RoomEditorSpawnGizmos.Draw(_target, _previewSetIndex, _spawnGizmoMode, _selectedSpawnPoint);
+            }
+
+            // Spawn tool short-circuits tile painting.
+            if (_spawnToolActive)
+            {
+                int spControlId = GUIUtility.GetControlID(FocusType.Passive);
+                if (_showGrid)
+                    RoomEditorGizmos.DrawGridPlane(_target.GetOrigin(), _gridStep, _currentLayer, _gridExtent);
+                if (e.type == EventType.Repaint)
+                    RoomEditorGizmos.DrawDoorSlotArrows(_target);
+
+                HandleLayerKeys(e);
+                UpdateHover(e);
+                HandleSpawnSceneInput(e, spControlId);
+
+                if (_hoverCell.HasValue)
+                {
+                    var center = SpawnCellCenter(_hoverCell.Value);
+                    var existing = FindSpawnAtCell(_hoverCell.Value);
+                    var color = existing != null
+                        ? new Color(1f, 0.55f, 0.55f, 0.9f)
+                        : new Color(0.4f, 1f, 0.5f, 0.9f);
+                    RoomEditorGizmos.DrawCellWire(center, _gridStep, Quaternion.identity, color);
+                }
+
+                if (e.type == EventType.Layout)
+                    HandleUtility.AddDefaultControl(spControlId);
+
+                sv.Repaint();
+                return;
+            }
+
+            if (!_toolActive) return;
 
             int controlId = GUIUtility.GetControlID(FocusType.Passive);
 
@@ -717,6 +755,29 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             }
             point = default;
             return false;
+        }
+
+        private void HandleLayerKeys(Event e)
+        {
+            if (e.type != EventType.KeyDown) return;
+            switch (e.keyCode)
+            {
+                case KeyCode.Q:
+                    _currentLayer -= 1;
+                    e.Use();
+                    Repaint();
+                    break;
+                case KeyCode.E:
+                    _currentLayer += 1;
+                    e.Use();
+                    Repaint();
+                    break;
+                case KeyCode.Escape:
+                    _selectedSpawnPoint = null;
+                    e.Use();
+                    Repaint();
+                    break;
+            }
         }
 
         private void HandleKeyboard(Event e)
