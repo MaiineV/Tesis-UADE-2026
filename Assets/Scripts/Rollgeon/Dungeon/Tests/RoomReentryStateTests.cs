@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
-using Rollgeon.Entities;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -42,18 +41,39 @@ namespace Rollgeon.Dungeon.Tests
         {
             var layout = ScriptableObject.CreateInstance<FloorLayoutSO>();
             _createdObjects.Add(layout);
-            layout.RoomCountMin = 5;
-            layout.RoomCountMax = 5;
-            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
-            layout.CombatRooms = new List<RoomSO>
+            layout.Slots = new List<RoomTypeSlot>
             {
-                CreateRoom("combat_0", RoomType.Combat),
-                CreateRoom("combat_1", RoomType.Combat),
-                CreateRoom("combat_2", RoomType.Combat),
+                new RoomTypeSlot {
+                    Type = RoomType.Start,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("start_0", RoomType.Start) }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Combat,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 2 },
+                    Pool = new List<RoomSO>
+                    {
+                        CreateRoom("combat_0", RoomType.Combat),
+                        CreateRoom("combat_1", RoomType.Combat),
+                        CreateRoom("combat_2", RoomType.Combat),
+                    }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Shop,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("shop_0", RoomType.Shop) }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Potion,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("potion_0", RoomType.Potion) }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Boss,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("boss_0", RoomType.Boss) }
+                },
             };
-            layout.ShopRooms = new List<RoomSO> { CreateRoom("shop_0", RoomType.Shop) };
-            layout.PotionRooms = new List<RoomSO> { CreateRoom("potion_0", RoomType.Potion) };
-            layout.BossCandidates = new List<EnemyDataSO> { CreateEnemy("boss_0") };
             return layout;
         }
 
@@ -65,14 +85,6 @@ namespace Rollgeon.Dungeon.Tests
             room.Type = type;
             _createdObjects.Add(room);
             return room;
-        }
-
-        private EnemyDataSO CreateEnemy(string name)
-        {
-            var enemy = ScriptableObject.CreateInstance<EnemyDataSO>();
-            enemy.name = name;
-            _createdObjects.Add(enemy);
-            return enemy;
         }
 
         [Test]
