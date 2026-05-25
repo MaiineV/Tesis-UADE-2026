@@ -16,31 +16,28 @@ namespace Rollgeon.Grid
             var renderers = roomRoot.GetComponentsInChildren<Renderer>(includeInactive: false);
             var markers = roomRoot.GetComponentsInChildren<TileMarker>(includeInactive: false);
 
-            // World-space AABB of every tile. Any tile can obstruct another:
-            // a tile is walkable only when nothing is stacked on its surface.
             var tiles = new List<(TileMarker marker, Bounds bounds)>();
             foreach (var m in markers)
                 if (TryComputeBounds(m.gameObject, out var b))
                     tiles.Add((m, b));
 
-            // Tiles that yield no walkable node (walls, or anything with a tile
-            // stacked on top). Their AABBs block edges passing through them.
+            // IsBlocker is the only source of truth. Stacking is allowed for
+            // non-blockers and never auto-promotes them to obstacles.
             var blockerBounds = new List<Bounds>();
-            var walkable = new HashSet<TileMarker>();
             foreach (var (m, b) in tiles)
-            {
-                if (m.Type == TileType.Wall || IsSurfaceBlocked(tiles, m, b))
-                    blockerBounds.Add(b);
-                else
-                    walkable.Add(m);
-            }
+                if (m.IsBlocker) blockerBounds.Add(b);
 
             var nodeWorldPos = new Dictionary<GridCoord, Vector3>();
 
-            // Walkable markers become nodes at their geometric centre.
+            // Walkable nodes come from Floor tiles that aren't blockers and
+            // aren't swallowed by an overlapping blocker. Decorations, doors
+            // and interactables ride atop the floor below and add no node.
             foreach (var (m, b) in tiles)
             {
-                if (!walkable.Contains(m)) continue;
+                if (m.IsBlocker) continue;
+                if (m.Type != TileType.Floor) continue;
+                if (IntersectsAnyBlocker(b, blockerBounds)) continue;
+
                 var worldPos = b.center;
                 float height = roomRoot.transform.InverseTransformPoint(worldPos).y;
                 graph.AddNode(new NavNode(m.Coord, height));
@@ -48,11 +45,14 @@ namespace Rollgeon.Grid
                     nodeWorldPos[m.Coord] = worldPos;
             }
 
-            // Legacy meshes without a TileMarker: infer the cell from position.
+            // Legacy meshes without a TileMarker: infer the cell from position
+            // and treat them as walkable surfaces. They never block, and they
+            // are ignored if their centre falls inside a blocker volume.
             foreach (var r in renderers)
             {
                 if (r.GetComponentInParent<TileMarker>() != null) continue;
                 var worldPos = r.bounds.center;
+                if (IsInsideAnyBlocker(worldPos, blockerBounds)) continue;
                 var lp = roomRoot.transform.InverseTransformPoint(worldPos);
                 var coord = new GridCoord(
                     Mathf.FloorToInt(lp.x / tileSize),
@@ -81,26 +81,35 @@ namespace Rollgeon.Grid
             return graph;
         }
 
-        // True when another tile rests on top of 'self': its AABB centre sits
-        // above self's and overlaps at least half of the smaller tile's
-        // horizontal area. Rotation/footprint agnostic — pure world geometry.
-        private static bool IsSurfaceBlocked(
-            List<(TileMarker marker, Bounds bounds)> tiles, TileMarker self, Bounds selfBounds)
+        private const float BlockerOverlapEpsilon = 0.01f;
+
+        // Headroom above a floor that a character is assumed to occupy. Any
+        // blocker reaching into that band kills the floor's walkable node,
+        // even when the blocker just sits on top of the floor (shared face,
+        // zero volumetric overlap).
+        private const float WalkClearance = 0.5f;
+
+        private static bool IntersectsAnyBlocker(Bounds floorBounds, List<Bounds> blockers)
         {
-            for (int i = 0; i < tiles.Count; i++)
+            float topY = floorBounds.max.y;
+            float walkTopY = topY + WalkClearance;
+            for (int i = 0; i < blockers.Count; i++)
             {
-                var (m, b) = tiles[i];
-                if (m == self) continue;
-                if (b.center.y <= selfBounds.center.y) continue;
-
-                float ox = Mathf.Min(b.max.x, selfBounds.max.x) - Mathf.Max(b.min.x, selfBounds.min.x);
-                float oz = Mathf.Min(b.max.z, selfBounds.max.z) - Mathf.Max(b.min.z, selfBounds.min.z);
-                if (ox <= 0f || oz <= 0f) continue;
-
-                float overlap = ox * oz;
-                float smaller = Mathf.Min(b.size.x * b.size.z, selfBounds.size.x * selfBounds.size.z);
-                if (smaller > 0f && overlap >= smaller * 0.5f) return true;
+                var wb = blockers[i];
+                float ox = Mathf.Min(floorBounds.max.x, wb.max.x) - Mathf.Max(floorBounds.min.x, wb.min.x);
+                float oz = Mathf.Min(floorBounds.max.z, wb.max.z) - Mathf.Max(floorBounds.min.z, wb.min.z);
+                if (ox <= BlockerOverlapEpsilon || oz <= BlockerOverlapEpsilon) continue;
+                if (wb.max.y <= topY + BlockerOverlapEpsilon) continue;   // blocker entirely below floor top
+                if (wb.min.y >= walkTopY) continue;                       // blocker entirely above walk volume
+                return true;
             }
+            return false;
+        }
+
+        private static bool IsInsideAnyBlocker(Vector3 point, List<Bounds> blockers)
+        {
+            for (int i = 0; i < blockers.Count; i++)
+                if (blockers[i].Contains(point)) return true;
             return false;
         }
 

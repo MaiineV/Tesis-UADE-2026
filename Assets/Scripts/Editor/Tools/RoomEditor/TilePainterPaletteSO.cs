@@ -25,5 +25,8 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         public GameObject Prefab;
         public Texture2D Icon;
         public TileType Type = TileType.Floor;
+
+        [Tooltip("Blocker entries obstruct NavGraph edges and prevent placing another blocker on the same cell. Leave off for floors, decorations and other stackable tiles.")]
+        public bool IsBlocker;
     }
 }

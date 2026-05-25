@@ -19,7 +19,9 @@ MonoBehaviour:
     Prefab: {fileID: 2189185042564396352, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
     Icon: {fileID: 0}
     Type: 0
+    IsBlocker: 0
   - Label: BaseWall
     Prefab: {fileID: 2189185042564396352, guid: 8780a362dbcd7014d81aa5aa4ed42417, type: 3}
     Icon: {fileID: 0}
     Type: 1
+    IsBlocker: 1

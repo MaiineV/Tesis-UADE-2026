@@ -6,12 +6,27 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Rollgeon.Dungeon.Components;
+using Rollgeon.EditorTools;
 using Rollgeon.Grid;
 
 namespace Rollgeon.Editor.Tools.RoomEditor
 {
     public sealed class RoomEditorWindow : OdinEditorWindow
     {
+        // ============================ Tab paths ============================
+
+        private const string Tabs = "Tabs";
+        private const string TabTool = "Tool & Shortcuts";
+        private const string TabRoom = "Room & Info";
+        private const string TabPalette = "Palette & Settings";
+
+        private const string GTool = Tabs + "/" + TabTool + "/Tool";
+        private const string GShortcuts = Tabs + "/" + TabTool + "/Shortcuts";
+        private const string GRoom = Tabs + "/" + TabRoom + "/Room";
+        private const string GInfo = Tabs + "/" + TabRoom + "/Info";
+        private const string GPalette = Tabs + "/" + TabPalette + "/Palette";
+        private const string GSettings = Tabs + "/" + TabPalette + "/Settings";
+
         // ============================ Section tints (used by header drawers) ============================
 
         private const float RoomR = 0.45f, RoomG = 0.70f, RoomB = 0.95f;
@@ -46,29 +61,136 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             GUI.Label(rect, title, SectionHeaderStyle);
         }
 
-        // ============================ Room ============================
+        private static void DrawRectBorder(Rect r, Color color, float thickness)
+        {
+            EditorGUI.DrawRect(new Rect(r.x, r.y, r.width, thickness), color);
+            EditorGUI.DrawRect(new Rect(r.x, r.yMax - thickness, r.width, thickness), color);
+            EditorGUI.DrawRect(new Rect(r.x, r.y, thickness, r.height), color);
+            EditorGUI.DrawRect(new Rect(r.xMax - thickness, r.y, thickness, r.height), color);
+        }
 
-        [BoxGroup("Room", false), PropertyOrder(-100), OnInspectorGUI]
+        // ============================ Tab 1 — Tool ============================
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(-100), OnInspectorGUI]
+        private void DrawToolSectionHeader() => DrawSectionHeader("Tool", new Color(ToolR, ToolG, ToolB));
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(0), OnInspectorGUI]
+        private void DrawToolActiveBigToggle()
+        {
+            EditorGUILayout.Space(6);
+            var prev = GUI.backgroundColor;
+            GUI.backgroundColor = _toolActive
+                ? new Color(0.45f, 0.95f, 0.55f)
+                : new Color(0.72f, 0.72f, 0.72f);
+            var style = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 13,
+                fontStyle = FontStyle.Bold,
+                fixedHeight = 34f,
+                alignment = TextAnchor.MiddleCenter,
+            };
+            var label = _toolActive
+                ? "● TOOL ACTIVE  —  click to deactivate"
+                : "○ TOOL INACTIVE  —  click to activate";
+            if (GUILayout.Button(label, style))
+            {
+                _toolActive = !_toolActive;
+                Repaint();
+                SceneView.RepaintAll();
+            }
+            GUI.backgroundColor = prev;
+            EditorGUILayout.Space(4);
+        }
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(1), EnableIf("_toolActive")]
+        [Title("Editing", bold: true, horizontalLine: true)]
+        [LabelText("Erase Mode (Shift+click also erases)")]
+        [SerializeField] private bool _eraseMode;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(2), EnableIf("_toolActive")]
+        [LabelText("Multi-Paint (drag to paint many)")]
+        [SerializeField] private bool _multiPaint;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(3), EnableIf("_toolActive")]
+        [LabelText("Scale Tile To Tile Size")]
+        [SerializeField] private bool _scaleToTileSize;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(4), EnableIf("_toolActive")]
+        [Title("Visuals", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
+        [LabelText("Show Grid Plane")]
+        [SerializeField] private bool _showGrid = true;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(5), EnableIf("_toolActive")]
+        [LabelText("Show Ghost Preview")]
+        [SerializeField] private bool _showGhost = true;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(6), EnableIf("_toolActive"), MinValue(1)]
+        [LabelText("Grid Extent (cells)")]
+        [SerializeField] private int _gridExtent = 12;
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GTool, false), PropertyOrder(7)]
+        [Title("NavGraph", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
+        [LabelText("Show NavGraph Overlay (hold G to peek)")]
+        [OnValueChanged(nameof(SyncNavGraphOverlay))]
+        [SerializeField] private bool _showNavGraphOverlay;
+
+        // ============================ Tab 1 — Shortcuts ============================
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GShortcuts, false), PropertyOrder(-100), OnInspectorGUI]
+        private void DrawShortcutsSectionHeader() => DrawSectionHeader("Shortcuts", new Color(ShortcutsR, ShortcutsG, ShortcutsB));
+
+        [TabGroup(Tabs, TabTool), BoxGroup(GShortcuts, false), PropertyOrder(0), OnInspectorGUI]
+        private void DrawShortcuts()
+        {
+            EditorGUILayout.Space(4);
+            EditorGUILayout.HelpBox(
+                "ROTATION\n" +
+                "    R           Rotate Y\n" +
+                "    Shift + R   Rotate X\n" +
+                "    Ctrl + R    Rotate Z\n" +
+                "\n" +
+                "LAYER\n" +
+                "    Q / E       Layer  -1 / +1\n" +
+                "\n" +
+                "PAINT\n" +
+                "    LMB         Place\n" +
+                "    Shift+LMB   Erase\n" +
+                "    Esc         Deselect\n" +
+                "\n" +
+                "VIEW\n" +
+                "    G (hold)    Peek NavGraph overlay",
+                MessageType.None);
+            EditorGUILayout.Space(2);
+        }
+
+        // ============================ Tab 2 — Room ============================
+
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(-100), OnInspectorGUI]
         private void DrawRoomSectionHeader() => DrawSectionHeader("Room", new Color(RoomR, RoomG, RoomB));
 
-        [BoxGroup("Room", false), PropertyOrder(0)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(0)]
+        [Title("Load Room", bold: true, horizontalLine: true)]
         [LabelText("Existing Room"), ValueDropdown(nameof(GetRoomPrefabs))]
         [OnValueChanged(nameof(OpenSelectedRoom))]
         [SerializeField] private GameObject _selectedRoomPrefab;
 
-        [BoxGroup("Room", false), PropertyOrder(1)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(1)]
         [ShowInInspector, ReadOnly, LabelText("Active Target")]
         private string ActiveTargetName => _target != null ? _target.gameObject.name : "(none)";
 
-        [BoxGroup("Room", false), PropertyOrder(2)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(2)]
+        [Title("Create Room", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
         [LabelText("Rooms Folder")]
         [SerializeField] private string _roomsFolder = "Assets/Prefabs/Rooms";
 
-        [BoxGroup("Room", false), PropertyOrder(3)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(3)]
         [LabelText("New Room Name")]
         [SerializeField] private string _newRoomName = "NewRoom";
 
-        [BoxGroup("Room", false), PropertyOrder(4)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(4)]
         [Button("Create Room", ButtonSizes.Medium), GUIColor(0.55f, 1f, 0.55f)]
         private void CreateRoom()
         {
@@ -95,11 +217,13 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             }
         }
 
-        [BoxGroup("Room", false), PropertyOrder(5)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(5)]
+        [Title("Rename Room", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
         [LabelText("Rename To")]
         [SerializeField] private string _renameTo;
 
-        [BoxGroup("Room", false), PropertyOrder(6)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(6)]
         [Button("Rename Selected Room"), EnableIf("@_selectedRoomPrefab != null && !string.IsNullOrWhiteSpace(_renameTo)")]
         private void RenameSelectedRoom()
         {
@@ -117,7 +241,9 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             Repaint();
         }
 
-        [BoxGroup("Room", false), PropertyOrder(7)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(7)]
+        [Title("Bake Room", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
         [Button("Auto-Populate Door Slots", ButtonSizes.Medium), EnableIf("@_target != null")]
         private void AutoPopulateDoorSlots()
         {
@@ -125,7 +251,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             _target.AutoPopulateDoorSlots();
         }
 
-        [BoxGroup("Room", false), PropertyOrder(8)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(8)]
         [Button("Bake NavGraph", ButtonSizes.Medium), EnableIf("@_target != null")]
         private void BakeNavGraph()
         {
@@ -136,10 +262,21 @@ namespace Rollgeon.Editor.Tools.RoomEditor
 
             int nodeCount = _target.NavGraph.NodeCount;
             int edgeCount = _target.NavGraph.Edges?.Count ?? 0;
-            Debug.Log($"[NavGraphBaker] Baked {nodeCount} nodes, {edgeCount} edges.");
+
+            var allMarkers = _target.GetComponentsInChildren<TileMarker>(true);
+            int total = allMarkers.Length;
+            int blockerMarkers = 0;
+            int floorMarkers = 0;
+            foreach (var m in allMarkers)
+            {
+                if (m.IsBlocker) blockerMarkers++;
+                if (m.Type == TileType.Floor) floorMarkers++;
+            }
+
+            Debug.Log($"[NavGraphBaker] Baked {nodeCount} nodes, {edgeCount} edges from {total} tiles ({floorMarkers} floors, {blockerMarkers} blockers).");
         }
 
-        [BoxGroup("Room", false), PropertyOrder(9)]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(9)]
         [ShowInInspector, ReadOnly, LabelText("NavGraph")]
         [ShowIf("@_target != null && _target.NavGraph != null && !_target.NavGraph.IsEmpty")]
         private string NavGraphInfo =>
@@ -147,23 +284,55 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 ? $"{_target.NavGraph.NodeCount} nodes, {_target.NavGraph.Edges.Count} edges"
                 : "—";
 
-        // ============================ Palette ============================
+        // ============================ Tab 2 — Info ============================
 
-        [BoxGroup("Palette", false), PropertyOrder(-100), OnInspectorGUI]
+        [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(-100), OnInspectorGUI]
+        private void DrawInfoSectionHeader() => DrawSectionHeader("Info", new Color(InfoR, InfoG, InfoB));
+
+        [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(0)]
+        [ShowInInspector, ReadOnly, LabelText("Tiles in target")]
+        private string TileCount => _target != null
+            ? _target.GetComponentsInChildren<TileMarker>(true).Length.ToString()
+            : "—";
+
+        [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(1)]
+        [ShowInInspector, ReadOnly, LabelText("Origin")]
+        private string OriginText => _target != null ? _target.GetOrigin().ToString("F2") : "—";
+
+        [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(2)]
+        [ShowInInspector, ReadOnly, LabelText("Selected")]
+        private string SelectedTileLabel => SelectedEntry() is { } e
+            ? $"{e.Label ?? e.Prefab?.name ?? "?"}  ({e.Type}{(e.IsBlocker ? ", blocker" : "")})"
+            : "—";
+
+        [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(3)]
+        [Button("Frame Target"), EnableIf("@_target != null")]
+        private void FrameTarget()
+        {
+            Selection.activeObject = _target.gameObject;
+            SceneView.FrameLastActiveSceneView();
+        }
+
+        // ============================ Tab 3 — Palette ============================
+
+        [TabGroup(Tabs, TabPalette), BoxGroup(GPalette, false), PropertyOrder(-100), OnInspectorGUI]
         private void DrawPaletteSectionHeader() => DrawSectionHeader("Palette", new Color(PaletteR, PaletteG, PaletteB));
 
-        [BoxGroup("Palette", false), PropertyOrder(10)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GPalette, false), PropertyOrder(0)]
+        [Title("Asset", bold: true, horizontalLine: true)]
         [LabelText("Palette Asset")]
         [SerializeField] private TilePainterPaletteSO _palette;
 
-        [BoxGroup("Palette", false), PropertyOrder(11), EnableIf("@_palette != null")]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GPalette, false), PropertyOrder(1), EnableIf("@_palette != null")]
         [Button("Use Palette Default Tile Size")]
         private void UsePaletteDefaultTileSize()
         {
             if (_palette != null) _tileSize = _palette.DefaultTileSize;
         }
 
-        [BoxGroup("Palette", false), PropertyOrder(12)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GPalette, false), PropertyOrder(2)]
+        [Title("Tiles", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
         [OnInspectorGUI]
         private void DrawPaletteGrid()
         {
@@ -204,37 +373,45 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                     _selectedEntryIndex = i;
                 }
                 GUI.backgroundColor = prev;
+
+                if (entry.IsBlocker && Event.current.type == EventType.Repaint)
+                {
+                    DrawRectBorder(GUILayoutUtility.GetLastRect(), new Color(0.95f, 0.25f, 0.25f), 2f);
+                }
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndScrollView();
         }
 
-        // ============================ Settings ============================
+        // ============================ Tab 3 — Settings ============================
 
-        [BoxGroup("Settings", false), PropertyOrder(-100), OnInspectorGUI]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(-100), OnInspectorGUI]
         private void DrawSettingsSectionHeader() => DrawSectionHeader("Settings", new Color(SettingsR, SettingsG, SettingsB));
 
-        [BoxGroup("Settings", false), PropertyOrder(20)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(0)]
+        [Title("Grid", bold: true, horizontalLine: true)]
         [LabelText("Tile Size")]
         [SerializeField] private Vector3 _tileSize = Vector3.one;
 
-        [BoxGroup("Settings", false), PropertyOrder(21)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(1)]
         [LabelText("Grid Step")]
         [SerializeField] private Vector3 _gridStep = Vector3.one;
 
-        [BoxGroup("Settings", false), PropertyOrder(22)]
-        [LabelText("Rotation Step (deg)"), ValueDropdown(nameof(GetRotationStepOptions))]
-        [SerializeField] private float _rotationStep = 90f;
-
-        [BoxGroup("Settings", false), PropertyOrder(23)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(2)]
         [LabelText("Current Layer (Y)")]
         [SerializeField] private int _currentLayer;
 
-        [BoxGroup("Settings", false), PropertyOrder(24)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(3)]
+        [Title("Rotation", bold: true, horizontalLine: true)]
+        [PropertySpace(SpaceBefore = 4)]
+        [LabelText("Rotation Step (deg)"), ValueDropdown(nameof(GetRotationStepOptions))]
+        [SerializeField] private float _rotationStep = 90f;
+
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(4)]
         [LabelText("Rotation (deg)"), OnValueChanged(nameof(OnRotationChanged))]
         [SerializeField] private Vector3 _rotationEuler;
 
-        [BoxGroup("Settings", false), PropertyOrder(25)]
+        [TabGroup(Tabs, TabPalette), BoxGroup(GSettings, false), PropertyOrder(5)]
         [Button("Reset Rotation")]
         private void ResetRotation()
         {
@@ -242,95 +419,18 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             SceneView.RepaintAll();
         }
 
-        // ============================ Tool ============================
-
-        [BoxGroup("Tool", false), PropertyOrder(-100), OnInspectorGUI]
-        private void DrawToolSectionHeader() => DrawSectionHeader("Tool", new Color(ToolR, ToolG, ToolB));
-
-        [BoxGroup("Tool", false), PropertyOrder(30)]
-        [LabelText("Tool Active (intercept SceneView)")]
-        [SerializeField] private bool _toolActive;
-
-        [BoxGroup("Tool", false), PropertyOrder(31), EnableIf("_toolActive")]
-        [LabelText("Erase Mode (Shift+click also erases)")]
-        [SerializeField] private bool _eraseMode;
-
-        [BoxGroup("Tool", false), PropertyOrder(32), EnableIf("_toolActive")]
-        [LabelText("Multi-Paint (drag to paint many)")]
-        [SerializeField] private bool _multiPaint;
-
-        [BoxGroup("Tool", false), PropertyOrder(33), EnableIf("_toolActive")]
-        [LabelText("Scale Tile To Tile Size")]
-        [SerializeField] private bool _scaleToTileSize;
-
-        [BoxGroup("Tool", false), PropertyOrder(34), EnableIf("_toolActive")]
-        [LabelText("Show Grid Plane")]
-        [SerializeField] private bool _showGrid = true;
-
-        [BoxGroup("Tool", false), PropertyOrder(35), EnableIf("_toolActive")]
-        [LabelText("Show Ghost Preview")]
-        [SerializeField] private bool _showGhost = true;
-
-        [BoxGroup("Tool", false), PropertyOrder(36), EnableIf("_toolActive"), MinValue(1)]
-        [LabelText("Grid Extent (cells)")]
-        [SerializeField] private int _gridExtent = 12;
-
-        // ============================ Info ============================
-
-        [BoxGroup("Info", false), PropertyOrder(-100), OnInspectorGUI]
-        private void DrawInfoSectionHeader() => DrawSectionHeader("Info", new Color(InfoR, InfoG, InfoB));
-
-        [BoxGroup("Info", false), PropertyOrder(40)]
-        [ShowInInspector, ReadOnly, LabelText("Tiles in target")]
-        private string TileCount => _target != null
-            ? _target.GetComponentsInChildren<TileMarker>(true).Length.ToString()
-            : "—";
-
-        [BoxGroup("Info", false), PropertyOrder(41)]
-        [ShowInInspector, ReadOnly, LabelText("Origin")]
-        private string OriginText => _target != null ? _target.GetOrigin().ToString("F2") : "—";
-
-        [BoxGroup("Info", false), PropertyOrder(42)]
-        [ShowInInspector, ReadOnly, LabelText("Selected")]
-        private string SelectedTileLabel => SelectedEntry() is { } e
-            ? $"{e.Label ?? e.Prefab?.name ?? "?"}  ({e.Type})"
-            : "—";
-
-        [BoxGroup("Info", false), PropertyOrder(43)]
-        [Button("Frame Target"), EnableIf("@_target != null")]
-        private void FrameTarget()
-        {
-            Selection.activeObject = _target.gameObject;
-            SceneView.FrameLastActiveSceneView();
-        }
-
-        [BoxGroup("Shortcuts", false), PropertyOrder(-100), OnInspectorGUI]
-        private void DrawShortcutsSectionHeader() => DrawSectionHeader("Shortcuts", new Color(ShortcutsR, ShortcutsG, ShortcutsB));
-
-        [BoxGroup("Shortcuts", false), PropertyOrder(50)]
-        [OnInspectorGUI]
-        private void DrawShortcuts()
-        {
-            EditorGUILayout.HelpBox(
-                "R         Rotate Y\n" +
-                "Shift+R   Rotate X\n" +
-                "Ctrl+R    Rotate Z\n" +
-                "Q / E     Layer -1 / +1\n" +
-                "LMB       Place (Shift = erase)\n" +
-                "Esc       Deselect",
-                MessageType.None);
-        }
-
         // ============================ Hidden state ============================
 
         [HideInInspector, SerializeField] private RoomLayout _target;
         [HideInInspector, SerializeField] private int _selectedEntryIndex = -1;
+        [HideInInspector, SerializeField] private bool _toolActive;
 
         [System.NonSerialized] private RoomEditorGhost _ghost;
         [System.NonSerialized] private Vector2 _paletteScroll;
         [System.NonSerialized] private Vector3Int? _hoverCell;
         [System.NonSerialized] private Vector3Int? _lastPaintedCell;
         [System.NonSerialized] private bool _hoverValid;
+        [System.NonSerialized] private bool _navKeyHeld;
 
         // ============================ Lifecycle ============================
 
@@ -352,6 +452,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             PrefabStage.prefabStageClosing += OnPrefabStageClosing;
             _ghost = new RoomEditorGhost();
             SyncFromActivePrefabStage();
+            SyncNavGraphOverlay();
         }
 
         protected override void OnDisable()
@@ -363,6 +464,8 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
             _ghost?.Dispose();
             _ghost = null;
+            _navKeyHeld = false;
+            SceneView.RepaintAll();
         }
 
         // ============================ Helpers ============================
@@ -404,6 +507,28 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         }
 
         private void OnRotationChanged() => SceneView.RepaintAll();
+
+        private void SyncNavGraphOverlay() => SceneView.RepaintAll();
+
+        private void UpdateNavGraphPeek(Event e)
+        {
+            if (e == null) return;
+            bool changed = false;
+            bool hasModifier = e.alt || e.shift || e.control || e.command;
+
+            if (e.type == EventType.KeyDown && e.keyCode == KeyCode.G && !hasModifier)
+            {
+                if (!_navKeyHeld) { _navKeyHeld = true; changed = true; }
+                e.Use();
+            }
+            else if (e.type == EventType.KeyUp && e.keyCode == KeyCode.G)
+            {
+                if (_navKeyHeld) { _navKeyHeld = false; changed = true; }
+                e.Use();
+            }
+
+            if (changed) SyncNavGraphOverlay();
+        }
 
         private static void EnsureFolderExists(string folder)
         {
@@ -447,9 +572,16 @@ namespace Rollgeon.Editor.Tools.RoomEditor
 
         private void OnSceneGUI(SceneView sv)
         {
+            var e = Event.current;
+            UpdateNavGraphPeek(e);
+
+            if ((_showNavGraphOverlay || _navKeyHeld) && _target != null && e.type == EventType.Repaint)
+            {
+                NavGraphGizmoDrawer.DrawWithHandles(_target);
+            }
+
             if (!_toolActive || _target == null) return;
 
-            var e = Event.current;
             int controlId = GUIUtility.GetControlID(FocusType.Passive);
 
             if (_showGrid)
@@ -543,8 +675,16 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             }
             else
             {
-                CurrentFootprintAndOffset(out var fp, out var off);
-                _hoverValid = !IsOccupied(cell, fp, off);
+                var entry = SelectedEntry();
+                if (entry == null || !entry.IsBlocker)
+                {
+                    _hoverValid = true;
+                }
+                else
+                {
+                    CurrentFootprintAndOffset(out var fp, out var off);
+                    _hoverValid = !HasBlockerOverlap(cell, fp, off);
+                }
             }
         }
 
@@ -637,7 +777,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private void PlaceAt(TilePainterPaletteEntry entry, Vector3Int cell)
         {
             CurrentFootprintAndOffset(out var footprint, out var footprintOffset);
-            if (IsOccupied(cell, footprint, footprintOffset)) return;
+            if (entry.IsBlocker && HasBlockerOverlap(cell, footprint, footprintOffset)) return;
 
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(entry.Prefab, _target.transform);
             if (instance == null) return;
@@ -652,6 +792,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             marker.Footprint = footprint;
             marker.FootprintOffset = footprintOffset;
             marker.Type = entry.Type;
+            marker.IsBlocker = entry.IsBlocker;
 
             Undo.RegisterCreatedObjectUndo(instance, "Paint Tile");
             EditorUtility.SetDirty(_target);
@@ -665,7 +806,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             EditorUtility.SetDirty(_target);
         }
 
-        private bool IsOccupied(Vector3Int anchor, Vector3Int footprint, Vector3Int offset)
+        private bool HasBlockerOverlap(Vector3Int anchor, Vector3Int footprint, Vector3Int offset)
         {
             var newMin = anchor + offset;
             var newMax = newMin + footprint;
@@ -673,6 +814,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             for (int i = 0; i < markers.Length; i++)
             {
                 var m = markers[i];
+                if (!m.IsBlocker) continue;
                 var mAnchor = new Vector3Int(m.Coord.X, m.Layer, m.Coord.Y);
                 var mFp = SafeFootprint(m.Footprint);
                 var mMin = mAnchor + m.FootprintOffset;
