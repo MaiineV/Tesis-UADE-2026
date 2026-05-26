@@ -28,6 +28,15 @@ namespace Rollgeon.UI
             string.IsNullOrEmpty(_screenStringIdOverride) ? GetType().Name : _screenStringIdOverride;
 
         /// <summary>
+        /// Llamado por el <see cref="ScreenHost"/> al registrar la screen, ANTES de
+        /// desactivarla. Las screens que se suscriben a eventos deben hacerlo acá (además
+        /// de —o en vez de— Awake): el host desactiva las screens en su Awake, y desactivar
+        /// un GameObject antes de su primer Awake saltea ese Awake, perdiendo la suscripción.
+        /// Default vacío.
+        /// </summary>
+        public virtual void OnRegisteredByHost() { }
+
+        /// <summary>
         /// Hook: se invoca cuando la screen entra al stack. Default vacio.
         /// </summary>
         protected virtual void OnPushed(IScreenPayload payload) { }

@@ -40,11 +40,18 @@ namespace Rollgeon.UI.Screens
 
         public override string ScreenStringId => ScreenId;
 
-        private void Awake()
+        private void Awake() => EnsureSubscribed();
+
+        // El ScreenHost desactiva las screens en su Awake; si el nuestro no corrió antes,
+        // se saltea. Por eso el host nos llama explícitamente acá para garantizar la suscripción.
+        public override void OnRegisteredByHost() => EnsureSubscribed();
+
+        private void EnsureSubscribed()
         {
-            // Idempotencia: si ya hay handler (Awake doble-fired por tests /
-            // lifecycle quirks), salir sin re-suscribir.
+            // Idempotencia: Awake (tests) y OnRegisteredByHost (runtime) llaman acá; uno suscribe,
+            // el resto es no-op.
             if (_onPlayerDefeatedHandler != null) return;
+            Debug.Log("[DIAG-victory] DefeatScreen — suscribiendo a OnPlayerDefeated");
             _onPlayerDefeatedHandler = HandlePlayerDefeated;
             EventManager.Subscribe(EventName.OnPlayerDefeated, _onPlayerDefeatedHandler);
         }
@@ -58,12 +65,14 @@ namespace Rollgeon.UI.Screens
 
         private void HandlePlayerDefeated(params object[] args)
         {
+            Debug.Log($"[DIAG-victory] DefeatScreen.HandlePlayerDefeated — pushed={_pushed}");
             if (_pushed) return;
 
             if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 _pushed = true;
                 screens.PushByStringId(ScreenId);
+                Debug.Log("[DIAG-victory] DefeatScreen.PushByStringId llamado");
             }
             else
             {
