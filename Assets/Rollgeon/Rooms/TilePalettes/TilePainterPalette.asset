@@ -20,7 +20,7 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 0
     IsBlocker: 0
-  - Label: BaseWall
+  - Label: UpWall
     Prefab: {fileID: 2189185042564396352, guid: 8780a362dbcd7014d81aa5aa4ed42417, type: 3}
     Icon: {fileID: 0}
     Type: 1
@@ -30,3 +30,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 4
     IsBlocker: 0
+  - Label: DownWall
+    Prefab: {fileID: 2189185042564396352, guid: 0e5a917e382118f4cb8da558471272aa, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 1

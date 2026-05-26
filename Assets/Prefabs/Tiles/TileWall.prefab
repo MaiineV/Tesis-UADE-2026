@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ef403016dd658eb40847743f9279d689, type: 2}
+  - {fileID: 2100000, guid: 2c425b611307ae843a5f6c8cf348063b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -132,3 +132,4 @@ MonoBehaviour:
   Footprint: {x: 1, y: 1, z: 1}
   FootprintOffset: {x: 0, y: 0, z: 0}
   Type: 0
+  IsBlocker: 0
