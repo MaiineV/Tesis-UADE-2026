@@ -1,0 +1,25 @@
+{
+    "name": "Rollgeon.Combat.ComboBlock.Tests",
+    "rootNamespace": "Rollgeon.Combat.ComboBlock.Tests",
+    "references": [
+        "Rollgeon",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Rollgeon.Combos.Tests"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,29 @@
+{
+    "name": "Rollgeon.UI.Tests",
+    "rootNamespace": "Rollgeon.UI.Tests",
+    "references": [
+        "Rollgeon",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Rollgeon.Combos.Tests",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Sirenix.OdinInspector.Attributes.dll",
+        "Sirenix.Serialization.dll",
+        "Sirenix.Utilities.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

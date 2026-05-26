@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c825fa99edb5ca4ea04666a68beeb99, type: 3}
+  m_Name: ActionCatalog
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.Actions.ActionCatalogSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 2cfb9128bf0d0ca478be11ae27dce695, type: 2}
+    - {fileID: 11400000, guid: cc30bad06612bed46851331e58065af2, type: 2}
+    - {fileID: 11400000, guid: 6500edf3ba361784ea41b673c2e9999e, type: 2}
+    - {fileID: 11400000, guid: ecba0b261d0282a4cab6d3163de13e56, type: 2}
+    - {fileID: 11400000, guid: c4a1d03ac9bf1bf4c8950a197aa6415a, type: 2}
+    - {fileID: 11400000, guid: 9bb06e50ef70bd4419c786590ad5f7d4, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _entries
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Combat.Actions.ActionDefinitionSO,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 6
+    - Name: 
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 

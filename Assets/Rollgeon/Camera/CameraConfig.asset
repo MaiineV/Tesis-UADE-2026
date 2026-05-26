@@ -1,0 +1,294 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1d33e6fddc33954b9aee4f466a86907, type: 3}
+  m_Name: CameraConfig
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.CameraConfigSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: OcclusionMap
+      Entry: 7
+      Data: 0|System.Collections.Generic.Dictionary`2[[Rollgeon.GameCamera.CameraFacing,
+        Rollgeon],[System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib]], mscorlib
+    - Name: comparer
+      Entry: 7
+      Data: 1|System.Collections.Generic.EnumEqualityComparer`1[[Rollgeon.GameCamera.CameraFacing,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 12
+      Data: 8
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 0
+    - Name: $v
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 3
+      Data: 4
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 45
+    - Name: $v
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 3
+      Data: 4
+    - Name: 
+      Entry: 3
+      Data: 6
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 90
+    - Name: $v
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 3
+      Data: 6
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 135
+    - Name: $v
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 3
+      Data: 6
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 180
+    - Name: $v
+      Entry: 7
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 225
+    - Name: $v
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 270
+    - Name: $v
+      Entry: 7
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 3
+      Data: 315
+    - Name: $v
+      Entry: 7
+      Data: 9|System.Collections.Generic.List`1[[Rollgeon.GameCamera.WallDirection,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 3
+      Data: 4
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  DistanceFromTarget: 12
+  PitchDegrees: 45
+  StartingFacing: 45
+  DiagonalYawOffset: 9.7
+  EnableRotation: 1
+  RotationStepDegrees: 45
+  DragPixelsPerStep: 50
+  RotationTweenSeconds: 0.25
+  RotationEase: 6
+  EnablePan: 1
+  PanSpeed: 18
+  PanClampToFloorBounds: 1
+  PanLerpSeconds: 0.08
+  EnableZoom: 1
+  ZoomMin: 6
+  ZoomMax: 22
+  ZoomStep: 1.5
+  ZoomTweenSeconds: 0.18
+  ZoomEase: 6
+  IsOrthographic: 1
+  EnableRecenterInput: 1
+  RecenterTweenSeconds: 0.4
+  RecenterEase: 7
+  EnableWallOcclusion: 1
+  WallFadeSeconds: 0.2
+  EnablePixelSnap: 1
+  PixelRenderHeight: 360
+  EnableFloorView: 1
+  FloorViewZoomThreshold: 18
+  FloorViewTweenSeconds: 0.3
+  ShellColor: {r: 0.1, g: 0.1, b: 0.15, a: 0.85}
+  ShellMaterial: {fileID: 2100000, guid: bcdf48e9f2104bd4092a7f9c7ef98717, type: 2}

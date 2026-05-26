@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Boss
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Behaviors
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Entities.Behaviors.BossComboImmunityBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 1
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ImmuneCombo
+      Entry: 10
+      Data: 0
+    - Name: RefreshDurationTurns
+      Entry: 3
+      Data: 99
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIRoot
+      Entry: 6
+      Data: 
+  EntityId: Boss01
+  DisplayName: Boss Test
+  Description: 
+  WeaknessComboId: 
+  WeaknessMultiplierOverride: 0
+  BaseHP: 100
+  BaseAttack: 2
+  BaseHealStrength: 3
+  BaseSpeed: 4
+  MaxEnergy: 3
+  MinGoldDrop: 3
+  MaxGoldDrop: 5

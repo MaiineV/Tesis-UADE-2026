@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f812531a0cb35e43b06c0c65ecc79b8, type: 3}
+  m_Name: CameraServiceBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.CameraServiceBootstrap
+  _config: {fileID: 11400000, guid: e90af3b43ab1aea47b5a420f313f86b6, type: 2}
+  _inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _mapName: Camera

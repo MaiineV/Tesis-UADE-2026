@@ -1,0 +1,2580 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4319ec96e0078cc4b99e90f69a9ccc75, type: 3}
+  m_Name: CH_Warrior
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Heroes.ClassHeroSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    - {fileID: 11400000, guid: 814ee3cb46fe989429e05b0495db4a30, type: 2}
+    - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
+    - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Sheet
+      Entry: 7
+      Data: 0|Rollgeon.Heroes.ContractSheet, Rollgeon
+    - Name: Combos
+      Entry: 7
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Combos.BaseComboSO, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 8
+    - Name: 
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
+      Entry: 10
+      Data: 7
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _displayLabel
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PhaseBehaviors
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 7
+    - Name: 
+      Entry: 7
+      Data: 3|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Movement
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 0
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 6|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 9|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 10|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 11|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551611
+    - Name: ActionName
+      Entry: 1
+      Data: ExpMovement
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 0
+    - Name: EnergyCost
+      Entry: 3
+      Data: 0
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 14|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 17|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 18|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 20
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 19|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Base Attack
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 1
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: ShowConditions
+      Entry: 7
+      Data: 20|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 22|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 4
+    - Name: 
+      Entry: 7
+      Data: 25|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 26|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Phases
+      Entry: 7
+      Data: 27|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 28|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Phase
+    - Name: Effects
+      Entry: 7
+      Data: 29|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 31|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 32|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 33|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _damageSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _attackKind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 34|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Phase
+    - Name: Effects
+      Entry: 7
+      Data: 35|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 36|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 37|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 38|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 39|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _shieldSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 5
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 40|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 41|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: shield.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 42|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 43|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 44|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 45|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.impulse
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 46|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 47|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: sfx.hit
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 48|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Special Attack
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 2
+    - Name: EnergyCost
+      Entry: 3
+      Data: 2
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: ShowConditions
+      Entry: 7
+      Data: 49|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 50|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 51|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 52|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 53|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 4
+    - Name: 
+      Entry: 7
+      Data: 54|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 55|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Phases
+      Entry: 7
+      Data: 56|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 57|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Phase
+    - Name: Effects
+      Entry: 7
+      Data: 58|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 59|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 60|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 61|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 62|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _damageSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 0.75
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _attackKind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 63|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Phase
+    - Name: Effects
+      Entry: 7
+      Data: 64|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 65|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 67|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 68|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _shieldSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 5
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 0.75
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 69|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 70|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 71|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 72|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.impulse
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 73|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 74|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: sfx.hit
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 75|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ActionName
+      Entry: 1
+      Data: Healing
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 3
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 76|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 77|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 78|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 79|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 80|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: ItemId
+      Entry: 1
+      Data: potion.healing
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 81|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 82|Rollgeon.Effects.Concretes.EffRemoveInventoryItem, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 83|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ItemId
+      Entry: 1
+      Data: potion.healing
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 84|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 85|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _healSource
+      Entry: 3
+      Data: 0
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _isPercentOfMax
+      Entry: 5
+      Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: true
+    - Name: _healThreshold
+      Entry: 3
+      Data: 25
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 0
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _energyCostInCombat
+      Entry: 3
+      Data: 2
+    - Name: _useDiceRoll
+      Entry: 5
+      Data: true
+    - Name: _diceCount
+      Entry: 3
+      Data: 1
+    - Name: _diceFaces
+      Entry: 3
+      Data: 10
+    - Name: _sourceTag
+      Entry: 6
+      Data: 
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 86|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 87|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: heal.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 88|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551611
+    - Name: ActionName
+      Entry: 1
+      Data: Pass door
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: false
+    - Name: Slot
+      Entry: 3
+      Data: 4
+    - Name: EnergyCost
+      Entry: 3
+      Data: 0
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 89|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 90|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 91|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 92|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 93|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 94|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 95|Rollgeon.Effects.Concretes.EffPassDoor, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 96|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: true
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 97|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Force Door
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 4
+    - Name: EnergyCost
+      Entry: 3
+      Data: 2
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: ShowConditions
+      Entry: 7
+      Data: 98|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 99|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 100|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 101|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 102|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 103|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 104|Rollgeon.Effects.Concretes.EffForceDoor, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 105|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: RequiredValue
+      Entry: 3
+      Data: 25
+    - Name: EnergyCostInCombat
+      Entry: 3
+      Data: 2
+    - Name: EnemyHealPercentOnSuccess
+      Entry: 3
+      Data: 25
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: Warrior
+  DisplayName: Warrior
+  Description: 
+  Sheet:
+    Combos:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    - {fileID: 11400000, guid: 814ee3cb46fe989429e05b0495db4a30, type: 2}
+    - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
+    - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    _displayLabel: 
+  PhaseBehaviors:
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Movement
+    IsBaseBehavior: 1
+    Slot: 0
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    ShowConditions: []
+    Effects:
+    - rid: 2879776571780498303
+  - Trigger: 0
+    AllowedPhases: -5
+    ActionName: ExpMovement
+    IsBaseBehavior: 1
+    Slot: 0
+    EnergyCost: 0
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    ShowConditions: []
+    Effects:
+    - rid: 2879776571780498304
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Base Attack
+    IsBaseBehavior: 1
+    Slot: 1
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 3
+    AllowsReroll: 1
+    AllowsEnergyReroll: 1
+    ShowConditions: []
+    Effects:
+    - rid: 2879776571780498305
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Special Attack
+    IsBaseBehavior: 1
+    Slot: 2
+    EnergyCost: 2
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 3
+    AllowsReroll: 1
+    AllowsEnergyReroll: 1
+    ShowConditions: []
+    Effects:
+    - rid: 2879776571780498306
+  - Trigger: 0
+    AllowedPhases: -1
+    ActionName: Healing
+    IsBaseBehavior: 1
+    Slot: 3
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    ShowConditions: []
+    Effects:
+    - rid: 2879776571780498307
+  - Trigger: 0
+    AllowedPhases: -5
+    ActionName: Pass door
+    IsBaseBehavior: 0
+    Slot: 4
+    EnergyCost: 0
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    ShowConditions:
+    - rid: 2879776571780498308
+    Effects:
+    - rid: 2879776571780498309
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Force Door
+    IsBaseBehavior: 1
+    Slot: 4
+    EnergyCost: 2
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 1
+    FreeRollCount: 1
+    AllowsReroll: 1
+    AllowsEnergyReroll: 0
+    ShowConditions:
+    - rid: 2879776571780498310
+    Effects:
+    - rid: 2879776571780498311
+  BaseMaxHp: 10
+  BaseSpeed: 5
+  Portrait: {fileID: 1206279280, guid: 37775dde736afb94a8efa715bc88760b, type: 3}
+  StartingDiceBagRef: {fileID: 11400000, guid: 6988ff59247d8b7408e5172395b98872, type: 2}
+  DiceBagPool: {fileID: 11400000, guid: b9b9a7f2c39c8a74e8a246de66f32b32, type: 2}
+  Passive: {fileID: 11400000, guid: 0c1101a7c04f1784baf9a552f617256d, type: 2}
+  StartingItems:
+  - {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 2879776571780498303
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498312
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498304
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498313
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498305
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498314
+        - rid: 2879776571780498315
+        - rid: 2879776571780498316
+        - rid: 2879776571780498317
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498306
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498318
+        - rid: 2879776571780498319
+        - rid: 2879776571780498320
+        - rid: 2879776571780498321
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498307
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions:
+        - rid: 2879776571780498322
+        Effects:
+        - rid: 2879776571780498323
+        - rid: 2879776571780498324
+        - rid: 2879776571780498325
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498308
+      type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+    - rid: 2879776571780498309
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498326
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498310
+      type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+    - rid: 2879776571780498311
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498327
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498312
+      type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 4
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+    - rid: 2879776571780498313
+      type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 20
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+    - rid: 2879776571780498314
+      type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        Phases:
+        - rid: 2879776571780498328
+        - rid: 2879776571780498329
+    - rid: 2879776571780498315
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.basic
+    - rid: 2879776571780498316
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.impulse
+    - rid: 2879776571780498317
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: sfx.hit
+    - rid: 2879776571780498318
+      type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        Phases:
+        - rid: 2879776571780498330
+        - rid: 2879776571780498331
+    - rid: 2879776571780498319
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.basic
+    - rid: 2879776571780498320
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.impulse
+    - rid: 2879776571780498321
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: sfx.hit
+    - rid: 2879776571780498322
+      type: {class: PCHasInventoryItem, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+        ItemId: potion.healing
+    - rid: 2879776571780498323
+      type: {class: EffRemoveInventoryItem, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        ItemId: potion.healing
+    - rid: 2879776571780498324
+      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 1
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _healSource: 0
+        _baseAmount: 10
+        _comboMultiplier: 0
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _isPercentOfMax: 0
+        _useBuildDice: 1
+        _healThreshold: 25
+        _healScaleFactor: 0
+        _healMaxCap: 0
+        _energyCostInCombat: 2
+        _useDiceRoll: 1
+        _diceCount: 1
+        _diceFaces: 10
+        _sourceTag: 
+        _selfHealOnNoTarget: 1
+    - rid: 2879776571780498325
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 1
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: heal.basic
+    - rid: 2879776571780498326
+      type: {class: EffPassDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 1
+          AutoAccept: 1
+    - rid: 2879776571780498327
+      type: {class: EffForceDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        RequiredValue: 25
+        EnergyCostInCombat: 2
+        EnemyHealPercentOnSuccess: 25
+    - rid: 2879776571780498328
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Phase
+        Effects:
+          rid: 2879776571780498332
+    - rid: 2879776571780498329
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Phase
+        Effects:
+          rid: 2879776571780498333
+    - rid: 2879776571780498330
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Phase
+        Effects:
+          rid: 2879776571780498334
+    - rid: 2879776571780498331
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Phase
+        Effects:
+          rid: 2879776571780498335
+    - rid: 2879776571780498332
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498336
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498333
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498337
+        - rid: 2879776571780498338
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498334
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498339
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498335
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 2879776571780498340
+        TargetSelector:
+          rid: -2
+    - rid: 2879776571780498336
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 1
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _damageSource: 1
+        _baseAmount: 10
+        _comboMultiplier: 1
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _attackKind: 1
+    - rid: 2879776571780498337
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _shieldSource: 1
+        _baseAmount: 5
+        _comboMultiplier: 1
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+    - rid: 2879776571780498338
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _feedbackId: shield.basic
+    - rid: 2879776571780498339
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 1
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _damageSource: 1
+        _baseAmount: 10
+        _comboMultiplier: 0.75
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _attackKind: 1
+    - rid: 2879776571780498340
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          AutoResolve: 0
+          AutoAccept: 1
+        _shieldSource: 1
+        _baseAmount: 5
+        _comboMultiplier: 0.75
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
