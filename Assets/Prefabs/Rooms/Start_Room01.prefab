@@ -3618,8 +3618,8 @@ MonoBehaviour:
     WallPlug: {fileID: 3764514437598026365}
     DoorRoot: {fileID: 5982199526266055108}
   LocalBounds:
-    m_Center: {x: 0, y: 1.2004067, z: 0.49999952}
-    m_Extent: {x: 6.00375, y: 1.4004066, z: 6.5037503}
+    m_Center: {x: 0, y: 1.3004067, z: 0.49999952}
+    m_Extent: {x: 6.00375, y: 1.3004067, z: 6.5037503}
 --- !u!1 &4060596727768410111
 GameObject:
   m_ObjectHideFlags: 0

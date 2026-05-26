@@ -35,3 +35,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 1
     IsBlocker: 1
+  - Label: Corner
+    Prefab: {fileID: 2189185042564396352, guid: 1e3529fd4d7668f4ba3f39b7c0dfcbe8, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 0
