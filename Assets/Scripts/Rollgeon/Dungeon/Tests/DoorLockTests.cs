@@ -6,7 +6,6 @@ using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
-using Rollgeon.Entities;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -45,22 +44,37 @@ namespace Rollgeon.Dungeon.Tests
             var layout = ScriptableObject.CreateInstance<FloorLayoutSO>();
             _createdObjects.Add(layout);
 
-            layout.RoomCountMin = 5;
-            layout.RoomCountMax = 5;
-
             var start = CreateRoom("start_0", RoomType.Start);
-            layout.StartRoom = start;
+            var combatPool = new List<RoomSO>();
+            for (int i = 0; i < 3; i++) combatPool.Add(CreateRoom($"combat_{i}", RoomType.Combat));
 
-            layout.CombatRooms = new List<RoomSO>();
-            for (int i = 0; i < 3; i++)
-                layout.CombatRooms.Add(CreateRoom($"combat_{i}", RoomType.Combat));
-
-            layout.ShopRooms = new List<RoomSO> { CreateRoom("shop_0", RoomType.Shop) };
-            layout.PotionRooms = new List<RoomSO> { CreateRoom("potion_0", RoomType.Potion) };
-
-            layout.BossCandidates = new List<EnemyDataSO>
+            layout.Slots = new List<RoomTypeSlot>
             {
-                CreateEnemy("boss_0")
+                new RoomTypeSlot {
+                    Type = RoomType.Start,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { start }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Combat,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 2 },
+                    Pool = combatPool
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Shop,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("shop_0", RoomType.Shop) }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Potion,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("potion_0", RoomType.Potion) }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Boss,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { CreateRoom("boss_0", RoomType.Boss) }
+                },
             };
 
             return layout;
@@ -74,14 +88,6 @@ namespace Rollgeon.Dungeon.Tests
             room.Type = type;
             _createdObjects.Add(room);
             return room;
-        }
-
-        private EnemyDataSO CreateEnemy(string name)
-        {
-            var enemy = ScriptableObject.CreateInstance<EnemyDataSO>();
-            enemy.name = name;
-            _createdObjects.Add(enemy);
-            return enemy;
         }
 
         private RoomInstance EnterFirstConnectedCombatRoom()

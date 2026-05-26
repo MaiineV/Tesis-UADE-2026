@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Floor Editor — Plan & Mockup</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --panel: #2a2a2a;
+    --panel-2: #333;
+    --border: #444;
+    --text: #e6e6e6;
+    --text-dim: #9aa0a6;
+    --accent: #5aa9ff;
+    --accent-soft: rgba(90,169,255,0.15);
+    --warn: #f0b85f;
+    --danger: #ff6b6b;
+    --good: #8bd17c;
+    --combat: #d9534f;
+    --shop: #f0ad4e;
+    --potion: #5bc0de;
+    --boss: #b85cff;
+    --start: #5cb85c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #141414;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #1f2a44, #2a1f44);
+    padding: 24px 32px;
+    border-bottom: 2px solid var(--accent);
+  }
+  header h1 { margin: 0; font-size: 26px; }
+  header p { margin: 6px 0 0; color: var(--text-dim); }
+  main { padding: 24px 32px; max-width: 1280px; margin: 0 auto; }
+  section { margin-bottom: 40px; }
+  h2 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    color: var(--accent);
+    font-size: 20px;
+  }
+  h3 { color: #d6c9ff; margin-top: 24px; }
+  code {
+    background: #111;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: #c8e1ff;
+  }
+  pre {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 12.5px;
+    overflow-x: auto;
+  }
+  .muted { color: var(--text-dim); }
+  ul { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+
+  /* ── Unity-style window mockup ──────────────────────── */
+  .unity-window {
+    border: 1px solid #000;
+    background: var(--bg);
+    border-radius: 4px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    overflow: hidden;
+    margin: 16px 0 24px;
+  }
+  .unity-tabbar {
+    background: #2b2b2b;
+    border-bottom: 1px solid #000;
+    padding: 4px 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .unity-tabbar .tab {
+    background: var(--bg);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 3px 3px 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .unity-body {
+    display: grid;
+    grid-template-columns: 240px 1fr 360px;
+    height: 640px;
+  }
+  .pane {
+    border-right: 1px solid #000;
+    background: var(--panel);
+    overflow: auto;
+    padding: 8px;
+  }
+  .pane:last-child { border-right: none; }
+  .pane h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #ffd56b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+  .floor-row {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    background: #383838;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+  }
+  .floor-row.selected {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+  .floor-row .sub { font-size: 11px; color: var(--text-dim); display: block; }
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .btn {
+    background: #444;
+    border: 1px solid #1a1a1a;
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #555; }
+  .btn.primary { background: var(--accent); color: #001f3f; font-weight: 600; }
+  .btn.danger { background: #6b2222; color: #ffd5d5; }
+  .btn.ghost { background: transparent; border-color: var(--border); }
+
+  /* ── Field rows ─────────────────────────────────────── */
+  .field {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .field label { color: var(--text-dim); }
+  .field input, .field .input-mock {
+    background: #1a1a1a;
+    border: 1px solid #0a0a0a;
+    padding: 3px 6px;
+    color: var(--text);
+    font-size: 12.5px;
+    border-radius: 2px;
+  }
+  .input-mock { min-height: 22px; display:flex; align-items:center; }
+
+  /* ── Room type accordion ────────────────────────────── */
+  .type-card {
+    background: #262626;
+    border: 1px solid #111;
+    border-left: 4px solid var(--combat);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .type-card.type-shop   { border-left-color: var(--shop); }
+  .type-card.type-potion { border-left-color: var(--potion); }
+  .type-card.type-boss   { border-left-color: var(--boss); }
+  .type-card.type-start  { border-left-color: var(--start); }
+
+  .type-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #2f2f2f;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .type-header .left { display: flex; align-items: center; gap: 10px; }
+  .type-header .left .swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--combat);
+  }
+  .type-shop .swatch   { background: var(--shop); }
+  .type-potion .swatch { background: var(--potion); }
+  .type-boss .swatch   { background: var(--boss); }
+  .type-start .swatch  { background: var(--start); }
+
+  .type-header .count-pill {
+    background: #1a1a1a;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .type-body { padding: 12px; }
+  .stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #0a0a0a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stepper button {
+    background: #444; border: none; color: var(--text);
+    width: 22px; height: 22px; cursor: pointer; font-weight: bold;
+  }
+  .stepper input {
+    width: 44px; text-align: center; border: none;
+    background: #1a1a1a; color: var(--text); height: 22px;
+    font-size: 12.5px;
+  }
+  .mode-toggle {
+    display: inline-flex;
+    background: #1a1a1a;
+    border: 1px solid #0a0a0a;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-right: 6px;
+  }
+  .mode-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 2px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    height: 22px;
+  }
+  .mode-toggle button.active {
+    background: var(--accent);
+    color: #001f3f;
+    font-weight: 600;
+  }
+  .range-inputs { display: inline-flex; align-items: center; gap: 4px; }
+  .range-inputs input {
+    width: 38px; text-align: center;
+    background: #1a1a1a; color: var(--text);
+    border: 1px solid #0a0a0a; border-radius: 2px;
+    height: 22px; font-size: 12.5px;
+  }
+  .range-inputs span { color: var(--text-dim); font-size: 11px; }
+
+  /* ── Pool list ──────────────────────────────────────── */
+  .pool {
+    background: #1f1f1f;
+    border: 1px solid #0c0c0c;
+    border-radius: 3px;
+    padding: 6px;
+    margin-top: 8px;
+  }
+  .pool-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 2px;
+    font-size: 12.5px;
+  }
+  .pool-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
+  .pool-row .room-icon {
+    width: 18px; height: 18px;
+    background: #555; border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .pool-row .room-name { flex: 1; }
+  .pool-row .room-meta { color: var(--text-dim); font-size: 11px; }
+  .pool-row .x-btn {
+    color: var(--danger); cursor: pointer; font-weight: bold;
+    background: none; border: none;
+  }
+
+  /* ── Search dropdown ────────────────────────────────── */
+  .search-dropdown {
+    background: #1a1a1a;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 8px;
+    margin-top: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  }
+  .search-input {
+    width: 100%;
+    background: #0e0e0e;
+    border: 1px solid #000;
+    padding: 5px 8px;
+    color: var(--text);
+    font-size: 12.5px;
+    border-radius: 2px;
+    margin-bottom: 6px;
+  }
+  .search-results {
+    max-height: 160px;
+    overflow-y: auto;
+    border-top: 1px solid #2a2a2a;
+  }
+  .search-result {
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 12.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .search-result:hover { background: var(--accent-soft); }
+  .search-result.disabled { color: var(--text-dim); cursor: not-allowed; }
+  .search-result.disabled:hover { background: transparent; }
+  .tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--combat);
+    color: #fff;
+    text-transform: uppercase;
+  }
+  .tag.shop   { background: var(--shop); color: #2a1a00; }
+  .tag.potion { background: var(--potion); color: #002233; }
+  .tag.boss   { background: var(--boss); }
+  .tag.start  { background: var(--start); color: #002a00; }
+
+  /* ── Status bar ─────────────────────────────────────── */
+  .statusbar {
+    background: #181818;
+    border-top: 1px solid #000;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-dim);
+  }
+  .stat-good { color: var(--good); }
+  .stat-warn { color: var(--warn); }
+  .stat-bad  { color: var(--danger); }
+
+  /* ── Layout helpers ─────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .callout {
+    background: #20272f;
+    border-left: 4px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .callout.warn { border-left-color: var(--warn); background: #2a2418; }
+  .callout.danger { border-left-color: var(--danger); background: #2a1818; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--panel-2); color: #ffd56b; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Floor Editor — Plan & Visual Mockup</h1>
+  <p>Herramienta de Editor para autorear <code>FloorLayoutSO</code>s sin min/max y con pool por tipo de sala con búsqueda.</p>
+</header>
+
+<main>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>1. Objetivo</h2>
+  <p>
+    Reemplazar la edición actual de <code>FloorLayoutSO</code> (vía Inspector + Odin) por una ventana
+    dedicada <b>Floor Editor</b> que permita:
+  </p>
+  <ul>
+    <li>Definir <b>cuántas salas</b> tiene un piso y de <b>qué tipo</b> exacto.</li>
+    <li>Por cada <b>RoomType</b> (Combat, Shop, Potion, Boss, Start), un contador que puede ser <b>Fixed</b> (valor exacto, ej. 3) o <b>Random</b> (rango Min..Max, ej. 2..5 — se rerollea al generar el piso).</li>
+    <li>Por cada RoomType, una <b>pool de candidates</b> (lista de <code>RoomSO</code>) configurable con <b>dropdown + búsqueda</b> sobre todas las <code>RoomSO</code> del proyecto, filtrada por tipo.</li>
+    <li>Vista previa de <b>topología sintética</b> (mini-grilla) que muestre cómo quedaría el piso resultante.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>2. Cambios de Data (FloorLayoutSO)</h2>
+  <p>
+    El SO se <b>reescribe completamente</b>. Se eliminan todos los campos viejos
+    (<code>RoomCountMin/Max</code>, <code>CombatRooms</code>, <code>ShopRooms</code>, <code>PotionRooms</code>,
+    <code>DefaultBossRoomTemplate</code>, <code>BossCandidates</code>, <code>StartRoom</code>) y el asset existente
+    se rearma a mano una sola vez. <b>Sin migrator, sin código de compatibilidad, sin atributos
+    <code>[Obsolete]</code>.</b>
+  </p>
+
+  <pre>// Modelo final — único formato soportado
+public enum RoomCountMode { Fixed, Random }
+
+[Serializable]
+public class RoomCountSpec {
+    public RoomCountMode Mode;      // Fixed o Random
+    public int Fixed;               // usado si Mode == Fixed
+    public int Min;                 // usado si Mode == Random
+    public int Max;                 // usado si Mode == Random
+
+    public int Resolve(System.Random rng) =&gt;
+        Mode == RoomCountMode.Fixed ? Fixed : rng.Next(Min, Max + 1);
+}
+
+[Serializable]
+public class RoomTypeSlot {
+    public RoomType Type;           // Combat / Shop / Potion / Boss / Start
+    public RoomCountSpec Count;     // Fixed o Random
+    public List&lt;RoomSO&gt; Pool;      // pool de candidates para este tipo
+}
+
+public class FloorLayoutSO : SerializedScriptableObject {
+    public string FloorId;
+    public string DisplayName;
+    public List&lt;RoomTypeSlot&gt; Slots; // 1 entry por RoomType usado
+}</pre>
+
+  <div class="callout danger">
+    <b>Breaking changes — sin red de seguridad:</b>
+    <ul style="margin:6px 0 0;">
+      <li><code>FloorLayoutSO</code> queda <b>incompatible</b> con el asset actual. Hay que reabrir
+      <code>Assets/Rollgeon/Floor/FloorLayout.asset</code>, completar los nuevos Slots a mano y commitear.</li>
+      <li><code>DungeonManager.AssignTemplates</code> se reescribe contra el nuevo modelo —
+      ya no hay path de "cell aleatoria para shop/potion" basado en listas separadas.</li>
+      <li>El invariante §17.F (1 shop por piso) deja de ser hard-coded; queda como
+      <b>warning de validación</b> en el editor si el usuario configura el Slot Shop con count=0.</li>
+      <li><code>SampleFloorFactory</code>, tests legacy y cualquier otro consumer de los campos
+      viejos se actualizan o se borran.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>3. Mockup Visual — Ventana Floor Editor</h2>
+
+  <div class="unity-window">
+    <div class="unity-tabbar">
+      <span class="tab">Floor Editor</span>
+      <span>Tools ▸ Floor Editor</span>
+    </div>
+
+    <div class="unity-body">
+
+      <!-- ── LEFT: Floor list ─────────────────────────── -->
+      <div class="pane">
+        <h4>Floor Layouts</h4>
+        <div class="toolbar">
+          <button class="btn primary">+ New</button>
+          <button class="btn ghost">⟳</button>
+        </div>
+        <div class="floor-row selected">
+          FloorLayout
+          <span class="sub">5 slots · 12 rooms total</span>
+        </div>
+        <div class="floor-row">
+          FloorLayout_Hard
+          <span class="sub">4 slots · 18 rooms total</span>
+        </div>
+        <div class="floor-row">
+          FloorLayout_Tutorial
+          <span class="sub">3 slots · 5 rooms total</span>
+        </div>
+      </div>
+
+      <!-- ── MIDDLE: Slot configuration ──────────────── -->
+      <div class="pane" style="background:#262626;">
+        <h4>Floor: FloorLayout</h4>
+
+        <!-- Identity -->
+        <div class="field">
+          <label>FloorId</label>
+          <input value="floor_01" />
+        </div>
+        <div class="field">
+          <label>Display Name</label>
+          <input value="Forest Approach" />
+        </div>
+
+        <div style="margin: 14px 0 8px; display:flex; justify-content: space-between; align-items:center;">
+          <h4 style="margin:0;">Room Slots</h4>
+          <div>
+            <span class="muted" style="font-size: 11.5px; margin-right: 8px;">Total: <b style="color:#fff;">9–14</b> rooms</span>
+            <button class="btn">+ Add Slot</button>
+          </div>
+        </div>
+
+        <!-- Slot: Start (Fixed=1) -->
+        <div class="type-card type-start">
+          <div class="type-header">
+            <div class="left">
+              <span class="swatch"></span>
+              <b>Start</b>
+              <span class="muted" style="font-size:11px;">(spawn obligatorio)</span>
+            </div>
+            <div>
+              <span class="mode-toggle">
+                <button class="active">Fixed</button>
+                <button>Random</button>
+              </span>
+              <span class="stepper">
+                <button>−</button>
+                <input value="1" />
+                <button>+</button>
+              </span>
+              <button class="btn ghost" style="margin-left:6px;">▾</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot: Combat (Random 5..8, expanded) -->
+        <div class="type-card type-combat">
+          <div class="type-header">
+            <div class="left">
+              <span class="swatch"></span>
+              <b>Combat</b>
+              <span class="muted" style="font-size:11px;">(random rerolled per floor)</span>
+            </div>
+            <div>
+              <span class="mode-toggle">
+                <button>Fixed</button>
+                <button class="active">Random</button>
+              </span>
+              <span class="range-inputs">
+                <input value="5" />
+                <span>..</span>
+                <input value="8" />
+              </span>
+              <button class="btn ghost" style="margin-left:6px;">▾</button>
+            </div>
+          </div>
+          <div class="type-body">
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">
+              Pool de candidates (random pick por cell). 3 entries:
+            </div>
+            <div class="pool">
+              <div class="pool-row">
+                <span class="room-icon" style="background:#a33;"></span>
+                <span class="room-name">Room_01</span>
+                <span class="room-meta">1×1 · 2 setups</span>
+                <button class="x-btn">×</button>
+              </div>
+              <div class="pool-row">
+                <span class="room-icon" style="background:#a33;"></span>
+                <span class="room-name">Room_02</span>
+                <span class="room-meta">1×1 · 3 setups</span>
+                <button class="x-btn">×</button>
+              </div>
+              <div class="pool-row">
+                <span class="room-icon" style="background:#a33;"></span>
+                <span class="room-name">Room_Wide</span>
+                <span class="room-meta">2×1 · pool</span>
+                <button class="x-btn">×</button>
+              </div>
+            </div>
+            <button class="btn primary" style="margin-top:8px;">+ Add Room…</button>
+
+            <!-- Search dropdown abierto -->
+            <div class="search-dropdown">
+              <input class="search-input" placeholder="🔍 Search rooms…" value="" />
+              <div class="search-results">
+                <div class="search-result">
+                  <span>Room_01 <span class="muted">— Forest combat A</span></span>
+                  <span class="tag">combat</span>
+                </div>
+                <div class="search-result">
+                  <span>Room_02 <span class="muted">— Forest combat B</span></span>
+                  <span class="tag">combat</span>
+                </div>
+                <div class="search-result">
+                  <span>Room_Wide <span class="muted">— Open arena</span></span>
+                  <span class="tag">combat</span>
+                </div>
+                <div class="search-result disabled">
+                  <span>Room_Shop <span class="muted">— filtered by Type ≠ Combat</span></span>
+                  <span class="tag shop">shop</span>
+                </div>
+                <div class="search-result disabled">
+                  <span>Room_Boss01 <span class="muted">— filtered by Type ≠ Combat</span></span>
+                  <span class="tag boss">boss</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot: Shop (Fixed=2) -->
+        <div class="type-card type-shop">
+          <div class="type-header">
+            <div class="left">
+              <span class="swatch"></span>
+              <b>Shop</b>
+            </div>
+            <div>
+              <span class="mode-toggle">
+                <button class="active">Fixed</button>
+                <button>Random</button>
+              </span>
+              <span class="stepper">
+                <button>−</button>
+                <input value="2" />
+                <button>+</button>
+              </span>
+              <button class="btn ghost" style="margin-left:6px;">▾</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot: Potion (Random 0..2) -->
+        <div class="type-card type-potion">
+          <div class="type-header">
+            <div class="left">
+              <span class="swatch"></span>
+              <b>Potion</b>
+              <span class="muted" style="font-size:11px;">(0..2 — puede no aparecer)</span>
+            </div>
+            <div>
+              <span class="mode-toggle">
+                <button>Fixed</button>
+                <button class="active">Random</button>
+              </span>
+              <span class="range-inputs">
+                <input value="0" />
+                <span>..</span>
+                <input value="2" />
+              </span>
+              <button class="btn ghost" style="margin-left:6px;">▾</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot: Boss (Fixed=1) -->
+        <div class="type-card type-boss">
+          <div class="type-header">
+            <div class="left">
+              <span class="swatch"></span>
+              <b>Boss</b>
+            </div>
+            <div>
+              <span class="mode-toggle">
+                <button class="active">Fixed</button>
+                <button>Random</button>
+              </span>
+              <span class="stepper">
+                <button>−</button>
+                <input value="1" />
+                <button>+</button>
+              </span>
+              <button class="btn ghost" style="margin-left:6px;">▾</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── RIGHT: Preview + validation ──────────────── -->
+      <div class="pane">
+        <h4>Preview</h4>
+        <div style="background:#1a1a1a; border:1px solid #000; padding:12px; border-radius:3px; text-align:center; min-height: 200px;">
+          <div style="display:inline-grid; grid-template-columns: repeat(4, 28px); gap: 4px; margin-top: 10px;">
+            <div></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--boss); width:28px; height:28px; border-radius:3px;"></div>
+            <div></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--shop); width:28px; height:28px; border-radius:3px;"></div>
+            <div></div>
+            <div style="background:var(--start); width:28px; height:28px; border-radius:3px; outline:2px solid #fff;"></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--shop); width:28px; height:28px; border-radius:3px;"></div>
+            <div></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+            <div style="background:var(--combat); width:28px; height:28px; border-radius:3px;"></div>
+          </div>
+          <div class="muted" style="margin-top:10px; font-size: 11px;">
+            Seed: 12345 · <button class="btn ghost" style="font-size:10px; padding: 1px 6px;">⟳ Reroll</button>
+          </div>
+        </div>
+
+        <h4 style="margin-top:16px;">Composition</h4>
+        <table style="font-size:12px;">
+          <tr><td>● Start</td><td style="text-align:right;">1 <span class="muted">(fixed)</span></td></tr>
+          <tr><td>● Combat</td><td style="text-align:right;">5–8 <span class="muted">(random)</span></td></tr>
+          <tr><td>● Shop</td><td style="text-align:right;">2 <span class="muted">(fixed)</span></td></tr>
+          <tr><td>● Potion</td><td style="text-align:right;">0–2 <span class="muted">(random)</span></td></tr>
+          <tr><td>● Boss</td><td style="text-align:right;">1 <span class="muted">(fixed)</span></td></tr>
+          <tr style="font-weight:bold; background:#2a2a2a;">
+            <td>Total</td><td style="text-align:right;">9–14</td>
+          </tr>
+          <tr><td colspan="2" class="muted" style="font-size:11px;">Preview muestra un roll concreto (seed 12345 → 12 rooms)</td></tr>
+        </table>
+
+        <h4 style="margin-top:16px;">Validation</h4>
+        <div style="font-size: 12px;">
+          <div class="stat-good">✓ Start: fixed=1</div>
+          <div class="stat-good">✓ Combat: pool no vacío, range 5..8 válido</div>
+          <div class="stat-good">✓ Shop: pool no vacío</div>
+          <div class="stat-warn">⚠ Potion: min=0 — el piso puede no tener pociones</div>
+          <div class="stat-good">✓ Boss: fixed=1</div>
+        </div>
+
+        <div style="margin-top: 14px; display:flex; gap:6px;">
+          <button class="btn primary" style="flex:1;">Save</button>
+          <button class="btn">Duplicate</button>
+          <button class="btn danger">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span>Asset: <code>Assets/Rollgeon/Floor/FloorLayout.asset</code></span>
+      <span class="stat-good">● Valid — 1 warning</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Notas de UX:</b>
+    <ul style="margin:6px 0 0;">
+      <li>Cada <b>Slot</b> es una tarjeta colapsable color-coded por tipo.</li>
+      <li>El header del slot tiene un <b>toggle Fixed/Random</b>. Fixed muestra un stepper de 1 valor; Random muestra dos inputs <code>Min..Max</code> (el editor fuerza Min ≤ Max).</li>
+      <li>Tanto Fixed como Min/Max admiten 0 — el slot queda "tipo posiblemente ausente" pero conserva su pool guardada.</li>
+      <li>El botón <b>+ Add Room…</b> abre un <b>search dropdown</b> que lista <i>todas</i> las RoomSO del proyecto, con el tipo correcto resaltado y los demás disabled (filter visual, no hard block — el usuario puede insistir).</li>
+      <li>El preview de la derecha corre el algoritmo de topología contra un seed configurable, resolviendo cada <code>RoomCountSpec</code> con ese seed. Sólo visualización — no se persiste.</li>
+      <li>El status bar valida en vivo: pool vacío + count&gt;0 es <span class="stat-bad">error</span>; Min=Max=0 con pool poblada es <span class="stat-warn">warn</span>; Min&gt;Max es <span class="stat-bad">error</span>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>4. Lógica del Editor</h2>
+
+  <h3>4.1 Estructura de archivos</h3>
+  <pre>Assets/Scripts/Editor/Tools/FloorEditor/
+├── FloorEditorWindow.cs        — EditorWindow, 3 paneles
+├── FloorEditorState.cs         — selected floor, dropdown state, seed
+├── RoomSearchDropdown.cs       — popup search reutilizable
+└── FloorTopologyPreview.cs     — mini-graph render con el algoritmo del DungeonManager</pre>
+
+  <h3>4.2 Flujo principal (OnGUI)</h3>
+  <table>
+    <tr><th>Panel</th><th>Responsabilidad</th><th>Análogo en repo</th></tr>
+    <tr>
+      <td>Left</td>
+      <td>Lista de <code>FloorLayoutSO</code>s del proyecto (<code>AssetDatabase.FindAssets</code>). Botón "+ New" crea y selecciona.</td>
+      <td><code>HeroClassEditorWindow.DrawLeft</code></td>
+    </tr>
+    <tr>
+      <td>Middle</td>
+      <td>Identity + lista colapsable de <code>RoomTypeSlot</code>s. Cada slot dibuja el toggle Fixed/Random + (stepper o range-inputs según mode) + botón Add → abre <code>RoomSearchDropdown</code>. Cada pool row tiene × para remove.</td>
+      <td><code>HeroClassEditorWindow.DrawMiddle</code> (estilo) + <code>EnemyEditorWindow</code> (panel-driven)</td>
+    </tr>
+    <tr>
+      <td>Right</td>
+      <td>Preview topológico + validation panel + save/duplicate/delete.</td>
+      <td>Nuevo</td>
+    </tr>
+  </table>
+
+  <h3>4.3 RoomSearchDropdown — algoritmo</h3>
+  <ol>
+    <li>Al abrir: cargar todos los <code>RoomSO</code> con <code>AssetDatabase.FindAssets("t:RoomSO")</code> (cacheado por sesión, invalidado en <code>OnProjectChange</code>).</li>
+    <li>Render con <code>EditorGUILayout.TextField</code> para búsqueda en tiempo real (matching case-insensitive sobre <code>RoomId</code> + <code>DisplayName</code>).</li>
+    <li>Filtrado visual por <code>RoomType</code>: matching = enabled & ordenado primero; non-matching = disabled & atenuado al final.</li>
+    <li>Click en row → <code>Undo.RecordObject(floor, "Add Room to Pool")</code> + <code>slot.Pool.Add(room)</code> + <code>EditorUtility.SetDirty</code> + close dropdown.</li>
+    <li>No permite duplicados (el room ya presente en la pool aparece tachado o ausente).</li>
+  </ol>
+
+  <h3>4.4 Cambios en DungeonManager (reescritura completa de <code>AssignTemplates</code>)</h3>
+  <p>
+    Se borran los campos legacy y los paths que los leen. El método nuevo:
+  </p>
+  <ol>
+    <li>Resuelve cada <code>slot.Count</code> con <code>RoomCountSpec.Resolve(rng)</code> (Fixed devuelve <code>Fixed</code>, Random devuelve <code>rng.Next(Min, Max+1)</code>).</li>
+    <li>Calcula <code>targetCount = Σ resolvedCounts</code>. Esto reemplaza al viejo
+    <code>RoomCountMin/Max</code> — la topología random walk genera exactamente esa cantidad de cells.</li>
+    <li>Asigna templates por cell con esta prioridad:
+      <ul>
+        <li><b>Start</b> → <code>Vector2Int.zero</code>, template random de la pool.</li>
+        <li><b>Boss</b> → las N cells más lejanas en Manhattan distance.</li>
+        <li><b>Shop / Potion / otros tipos especiales</b> → cells intermedias random hasta llenar su resolvedCount.</li>
+        <li><b>Combat</b> → cells restantes.</li>
+      </ul>
+    </li>
+    <li>Si la topología no logra <code>targetCount</code> cells (frontera bloqueada), se loggea warning
+    y los slots de menor prioridad se truncan (Combat primero).</li>
+  </ol>
+
+  <div class="callout danger">
+    <b>Archivos a tocar / borrar:</b>
+    <ul style="margin:6px 0 0;">
+      <li><code>FloorLayoutSO.cs</code> — reescribir completo (sin <code>[Obsolete]</code>).</li>
+      <li><code>DungeonManager.cs</code> — borrar <code>BuildRuntimeBossRoom</code>, el path de
+      <code>BossCandidates</code>, los logs sobre §17.F hard-coded, etc.</li>
+      <li><code>SampleFloorFactory.cs</code> — adaptar al nuevo modelo o borrar si quedó muerto.</li>
+      <li>Tests en <code>Rollgeon.Dungeon.Tests/</code> — los que construyan <code>FloorLayoutSO</code>
+      a mano dejan de compilar; reescribir con Slots.</li>
+      <li><code>Assets/Rollgeon/Floor/FloorLayout.asset</code> — el asset se rearma a mano una vez.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>5. Plan de Implementación</h2>
+  <table>
+    <tr><th>#</th><th>Tarea</th><th>Archivos</th><th>Notas</th></tr>
+    <tr><td>1</td><td>Reescribir <code>FloorLayoutSO</code> con <code>RoomCountMode</code> + <code>RoomCountSpec</code> + <code>RoomTypeSlot</code> + <code>Slots</code>. <b>Borrar</b> todos los campos viejos.</td><td><code>FloorLayoutSO.cs</code></td><td>Sin <code>[Obsolete]</code>, sin red de seguridad</td></tr>
+    <tr><td>2</td><td>Reescribir <code>DungeonManager.AssignTemplates</code> contra el nuevo modelo. Borrar <code>BuildRuntimeBossRoom</code>, <code>BossCandidates</code>, logs §17.F hard-coded.</td><td><code>DungeonManager.cs</code></td><td>Sin fallback a campos legacy</td></tr>
+    <tr><td>3</td><td>Crear <code>FloorEditorWindow</code> (estructura 3 paneles)</td><td>nuevo</td><td>Copiar shell de <code>HeroClassEditorWindow</code></td></tr>
+    <tr><td>4</td><td>Implementar <code>RoomSearchDropdown</code></td><td>nuevo</td><td>Standalone, reutilizable</td></tr>
+    <tr><td>5</td><td>Implementar preview topológico (read-only)</td><td>nuevo</td><td>Llama al algoritmo del DungeonManager en seed configurable y resuelve los <code>RoomCountSpec</code> con ese seed</td></tr>
+    <tr><td>6</td><td>Rearmar <code>Assets/Rollgeon/Floor/FloorLayout.asset</code> a mano con la nueva tool</td><td>asset</td><td>El asset viejo no se puede deserializar — se sobreescribe</td></tr>
+    <tr><td>7</td><td>Adaptar <code>SampleFloorFactory</code> y todos los tests que construyan <code>FloorLayoutSO</code> a mano</td><td>varios</td><td>Lo que no compile, se reescribe</td></tr>
+    <tr><td>8</td><td>Tests EditMode: <code>RoomCountSpec.Resolve</code> + DungeonManager con Slots Fixed y Random</td><td><code>Rollgeon.Dungeon.Tests/</code></td><td>Cubrir Min=Max=0, Min&gt;0..Max, Fixed=0</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>6. Preguntas Abiertas — Confirmar antes de codear</h2>
+  <ul>
+    <li><b>¿Múltiples Boss por piso permitidos?</b> Hoy hay 1 fijo. El stepper/range permite N — si se mantiene "1 boss = final del piso", el evento <code>OnFloorCleared</code> debe esperar a que <i>todas</i> las bosses estén cleared. Sugiero permitirlo y que el evento dispare al matar la última.</li>
+    <li><b>¿Slot con count=0 / Min=Max=0</b> se conserva o se elimina al guardar? Sugiero conservar — útil para alternar tipos sin perder la pool autoreada.</li>
+    <li><b>¿La pool admite duplicados?</b> Hoy el mismo RoomSO puede aparecer 2× en <code>CombatRooms</code>. Recomiendo bloquear duplicados en el dropdown — para "más probabilidad" usar un <code>WeightedEntry</code> en el futuro.</li>
+    <li><b>¿Preview topológico es read-only o editable?</b> Read-only es más simple — usa el seed configurable para mostrar un roll concreto del <code>RoomCountSpec</code>. Editable (drag rooms) implica capa de manual placement — out of scope.</li>
+    <li><b>¿El seed del preview es persistente</b> (campo del SO) o sólo de la ventana? Sugiero sólo de la ventana — el seed real en runtime lo elige el Run.</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>

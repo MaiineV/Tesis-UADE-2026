@@ -23,6 +23,9 @@ namespace Rollgeon.Dungeon.Tests
             _result = null;
         }
 
+        private RoomTypeSlot SlotOf(RoomType type) =>
+            _result.Layout.Slots.FirstOrDefault(s => s.Type == type);
+
         [Test]
         public void Create_ReturnsNonNullResult()
         {
@@ -32,43 +35,68 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void Create_LayoutHasExpectedRoomCounts()
+        public void Create_HasSlotsForCombatShopPotionBoss()
         {
-            Assert.AreEqual(8,  _result.Layout.RoomCountMin);
-            Assert.AreEqual(12, _result.Layout.RoomCountMax);
+            Assert.IsNotNull(SlotOf(RoomType.Combat));
+            Assert.IsNotNull(SlotOf(RoomType.Shop));
+            Assert.IsNotNull(SlotOf(RoomType.Potion));
+            Assert.IsNotNull(SlotOf(RoomType.Boss));
         }
 
         [Test]
-        public void Create_HasThreeCombatRooms()
+        public void Create_CombatSlotIsRandomBetween5And9()
         {
-            Assert.AreEqual(3, _result.Layout.CombatRooms.Count);
-            Assert.IsTrue(_result.Layout.CombatRooms.All(r => r.Type == RoomType.Combat));
+            var slot = SlotOf(RoomType.Combat);
+            Assert.AreEqual(RoomCountMode.Random, slot.Count.Mode);
+            Assert.AreEqual(5, slot.Count.Min);
+            Assert.AreEqual(9, slot.Count.Max);
         }
 
         [Test]
-        public void Create_HasOneShopRoom()
+        public void Create_ShopAndPotionAndBossAreFixedOne()
         {
-            Assert.AreEqual(1, _result.Layout.ShopRooms.Count);
-            Assert.AreEqual(RoomType.Shop, _result.Layout.ShopRooms[0].Type);
+            Assert.AreEqual(RoomCountMode.Fixed, SlotOf(RoomType.Shop).Count.Mode);
+            Assert.AreEqual(1, SlotOf(RoomType.Shop).Count.Fixed);
+            Assert.AreEqual(1, SlotOf(RoomType.Potion).Count.Fixed);
+            Assert.AreEqual(1, SlotOf(RoomType.Boss).Count.Fixed);
         }
 
         [Test]
-        public void Create_HasOnePotionRoom()
+        public void Create_CombatPoolHasThreeRoomsAllTypeCombat()
         {
-            Assert.AreEqual(1, _result.Layout.PotionRooms.Count);
-            Assert.AreEqual(RoomType.Potion, _result.Layout.PotionRooms[0].Type);
+            var pool = SlotOf(RoomType.Combat).Pool;
+            Assert.AreEqual(3, pool.Count);
+            Assert.IsTrue(pool.All(r => r.Type == RoomType.Combat));
         }
 
         [Test]
-        public void Create_HasTwoBossCandidates()
+        public void Create_ShopPoolHasOneRoomTypeShop()
         {
-            Assert.AreEqual(2, _result.Layout.BossCandidates.Count);
+            var pool = SlotOf(RoomType.Shop).Pool;
+            Assert.AreEqual(1, pool.Count);
+            Assert.AreEqual(RoomType.Shop, pool[0].Type);
+        }
+
+        [Test]
+        public void Create_PotionPoolHasOneRoomTypePotion()
+        {
+            var pool = SlotOf(RoomType.Potion).Pool;
+            Assert.AreEqual(1, pool.Count);
+            Assert.AreEqual(RoomType.Potion, pool[0].Type);
+        }
+
+        [Test]
+        public void Create_BossPoolHasOneRoomTypeBoss()
+        {
+            var pool = SlotOf(RoomType.Boss).Pool;
+            Assert.AreEqual(1, pool.Count);
+            Assert.AreEqual(RoomType.Boss, pool[0].Type);
         }
 
         [Test]
         public void Create_CombatRoomsHaveEnemyPools()
         {
-            foreach (var room in _result.Layout.CombatRooms)
+            foreach (var room in SlotOf(RoomType.Combat).Pool)
             {
                 Assert.IsNotNull(room.EnemyPool,
                     $"Combat room '{room.RoomId}' should have an EnemyPool");
@@ -78,14 +106,22 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void Create_SpecialRoomsHaveNullPools()
+        public void Create_BossRoomHasEnemyPool()
         {
-            foreach (var room in _result.Layout.ShopRooms)
+            var boss = SlotOf(RoomType.Boss).Pool[0];
+            Assert.IsNotNull(boss.EnemyPool);
+            Assert.IsTrue(boss.EnemyPool.Entries.Count > 0);
+        }
+
+        [Test]
+        public void Create_SpecialNonCombatRoomsHaveNullPools()
+        {
+            foreach (var room in SlotOf(RoomType.Shop).Pool)
             {
                 Assert.IsNull(room.EnemyPool,
                     $"Shop room '{room.RoomId}' should have null EnemyPool");
             }
-            foreach (var room in _result.Layout.PotionRooms)
+            foreach (var room in SlotOf(RoomType.Potion).Pool)
             {
                 Assert.IsNull(room.EnemyPool,
                     $"Potion room '{room.RoomId}' should have null EnemyPool");
@@ -95,11 +131,7 @@ namespace Rollgeon.Dungeon.Tests
         [Test]
         public void Create_AllRoomIdsAreUnique()
         {
-            var allRooms = _result.Layout.CombatRooms
-                .Concat(_result.Layout.ShopRooms)
-                .Concat(_result.Layout.PotionRooms)
-                .ToList();
-
+            var allRooms = _result.Layout.Slots.SelectMany(s => s.Pool).ToList();
             var ids = allRooms.Select(r => r.RoomId).ToList();
             Assert.AreEqual(ids.Count, ids.Distinct().Count(),
                 "All room ids must be unique");
@@ -118,10 +150,10 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void Create_AllCreatedListContainsAllInstances()
+        public void Create_AllCreatedListIsNonNullAndPopulated()
         {
-            // 8 enemies + 3 pools + 5 rooms + 1 layout = 17
-            Assert.AreEqual(17, _result.AllCreated.Count);
+            // 8 enemies + 4 pools + 6 rooms + 1 layout = 19
+            Assert.AreEqual(19, _result.AllCreated.Count);
             Assert.IsTrue(_result.AllCreated.All(o => o != null));
         }
 
@@ -133,9 +165,6 @@ namespace Rollgeon.Dungeon.Tests
 
             second.Dispose();
 
-            // Unity null check — destroyed objects compare == null (fake-null).
-            // Nota: NO usar obj?.name en el mensaje — `?.` usa CLR null y dispara
-            // MissingReferenceException sobre objetos destruidos.
             foreach (var obj in refs)
             {
                 Assert.IsTrue(obj == null,
@@ -144,20 +173,10 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void Create_BossCandidatesHaveHighHP()
-        {
-            foreach (var boss in _result.Layout.BossCandidates)
-            {
-                Assert.GreaterOrEqual(boss.BaseHP, 50,
-                    $"Boss '{boss.EntityId}' should have high HP (got {boss.BaseHP})");
-            }
-        }
-
-        [Test]
         public void Create_EnemyPoolsCanRoll()
         {
             var rng = new System.Random(42);
-            foreach (var room in _result.Layout.CombatRooms)
+            foreach (var room in SlotOf(RoomType.Combat).Pool)
             {
                 var spawns = room.EnemyPool.RollForSpawns(3, rng);
                 Assert.AreEqual(3, spawns.Count,

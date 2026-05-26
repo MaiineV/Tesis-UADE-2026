@@ -76,11 +76,7 @@ namespace Rollgeon.Dungeon.Components
             foreach (var controller in controllers)
             {
                 var localPos = transform.InverseTransformPoint(controller.transform.position);
-                DoorDirection dir;
-                if (Mathf.Abs(localPos.z) >= Mathf.Abs(localPos.x))
-                    dir = localPos.z >= 0 ? DoorDirection.North : DoorDirection.South;
-                else
-                    dir = localPos.x >= 0 ? DoorDirection.East : DoorDirection.West;
+                var dir = DoorDirectionExtensions.FromLocalPosition(localPos);
 
                 if (!usedDirections.Add(dir))
                 {

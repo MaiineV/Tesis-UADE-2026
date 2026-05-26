@@ -64,6 +64,12 @@ namespace Rollgeon.Dungeon
                 new WeightedEntry<EnemyDataSO>(spider, 30f),
                 new WeightedEntry<EnemyDataSO>(slime,  20f));
 
+            // --- Boss enemy pools ------------------------------------------
+
+            var poolBoss = CreatePool(all, "Pool_Boss",
+                new WeightedEntry<EnemyDataSO>(dragon, 50f),
+                new WeightedEntry<EnemyDataSO>(lich,   50f));
+
             // --- Rooms -----------------------------------------------------
 
             var cellar   = CreateRoom(all, "room.combat.cellar",    "Damp Cellar",        RoomType.Combat, poolCellar);
@@ -71,17 +77,37 @@ namespace Rollgeon.Dungeon
             var cave     = CreateRoom(all, "room.combat.cave",      "Dark Cave",          RoomType.Combat, poolCave);
             var merchant = CreateRoom(all, "room.shop.merchant",    "Wandering Merchant", RoomType.Shop,   null);
             var fountain = CreateRoom(all, "room.potion.fountain",  "Healing Fountain",   RoomType.Potion, null);
+            var bossRoom = CreateRoom(all, "room.boss.lair",        "Boss Lair",          RoomType.Boss,   poolBoss);
 
             // --- Floor Layout ----------------------------------------------
 
             var layout = ScriptableObject.CreateInstance<FloorLayoutSO>();
             layout.name = "SampleFloor";
-            layout.RoomCountMin   = 8;
-            layout.RoomCountMax   = 12;
-            layout.CombatRooms    = new List<RoomSO> { cellar, crypt, cave };
-            layout.ShopRooms      = new List<RoomSO> { merchant };
-            layout.PotionRooms    = new List<RoomSO> { fountain };
-            layout.BossCandidates = new List<EnemyDataSO> { dragon, lich };
+            layout.FloorId = "sample";
+            layout.DisplayName = "Sample Floor";
+            layout.Slots = new List<RoomTypeSlot>
+            {
+                new RoomTypeSlot {
+                    Type = RoomType.Combat,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Random, Min = 5, Max = 9 },
+                    Pool = new List<RoomSO> { cellar, crypt, cave }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Shop,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { merchant }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Potion,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { fountain }
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Boss,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                    Pool = new List<RoomSO> { bossRoom }
+                },
+            };
             all.Add(layout);
 
             return new Result(layout, all);
