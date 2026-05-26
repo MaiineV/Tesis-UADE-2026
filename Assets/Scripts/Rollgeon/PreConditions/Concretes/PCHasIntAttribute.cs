@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Patterns;
 using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
@@ -21,6 +23,7 @@ namespace Rollgeon.PreConditions.Concretes
     public class PCHasIntAttribute : BasePreCondition
     {
         [OdinSerialize]
+        [ValueDropdown(nameof(GetAttributeTypeChoices))]
         [Tooltip("Tipo concreto del stat (debe extender BaseAttribute<int>: Energy, Health, …).")]
         public Type AttributeType;
 
@@ -81,5 +84,55 @@ namespace Rollgeon.PreConditions.Concretes
             IntComparison.GreaterOrEqual  => ">=",
             _                             => "?",
         };
+
+        // El dropdown lista solo subtipos concretos de BaseAttribute<int> declarados
+        // fuera de assemblies de test (los TestEnergy/TestHealth contaminan el picker
+        // y son fuente clásica de errores al armar behaviors).
+        private static IEnumerable<ValueDropdownItem<Type>> GetAttributeTypeChoices()
+        {
+#if UNITY_EDITOR
+            if (_attributeTypeChoicesCache != null) return _attributeTypeChoicesCache;
+
+            var baseType = typeof(BaseAttribute<int>);
+            var items = new List<ValueDropdownItem<Type>>();
+
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (IsTestAssembly(asm)) continue;
+
+                Type[] types;
+                try { types = asm.GetTypes(); }
+                catch (System.Reflection.ReflectionTypeLoadException ex)
+                {
+                    types = ex.Types.Where(t => t != null).ToArray();
+                }
+
+                foreach (var t in types)
+                {
+                    if (t == null || t.IsAbstract || t.IsGenericTypeDefinition) continue;
+                    if (!baseType.IsAssignableFrom(t)) continue;
+                    if (t.Namespace != null && t.Namespace.Contains(".Tests")) continue;
+
+                    items.Add(new ValueDropdownItem<Type>(t.Name, t));
+                }
+            }
+
+            items.Sort((a, b) => string.CompareOrdinal(a.Text, b.Text));
+            _attributeTypeChoicesCache = items;
+            return _attributeTypeChoicesCache;
+#else
+            return System.Array.Empty<ValueDropdownItem<Type>>();
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static List<ValueDropdownItem<Type>> _attributeTypeChoicesCache;
+
+        private static bool IsTestAssembly(System.Reflection.Assembly asm)
+        {
+            var name = asm.GetName().Name;
+            return name != null && (name.EndsWith(".Tests") || name.Contains(".Tests."));
+        }
+#endif
     }
 }
