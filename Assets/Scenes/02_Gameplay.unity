@@ -13827,7 +13827,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 515274735881666803}
   _slot: 3
-  _costLabel: {fileID: 5658104266899090903}
+  _costLabel: {fileID: 2287605182999383515}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
