@@ -3,6 +3,8 @@ using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Upgrades.Combos;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -72,6 +74,19 @@ namespace Rollgeon.Effects.Concretes
                 DamageSource.FromReader => 0,
                 _ => _baseAmount,
             };
+
+            // Consumimos los bonuses de combo passives (tienda) y dice enchantments
+            // que se acumulan en LastComboScratch.BonusComboDamage durante OnComboMatched.
+            // Solo aplica cuando hay combo matcheado — sin combo, no hay bonus que sumar.
+            if (_damageSource == DamageSource.ComboValue
+                && context?.ComboResult is { IsMatch: true })
+            {
+                if (ServiceLocator.TryGetService<IComboPassiveService>(out var passives) && passives?.LastComboScratch != null)
+                    amount += passives.LastComboScratch.BonusComboDamage;
+                if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) && enchants?.LastComboScratch != null)
+                    amount += enchants.LastComboScratch.BonusComboDamage;
+            }
+
             return new DamageArgs { BaseAmount = amount };
         }
 

@@ -147,23 +147,71 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
+            TrySubscribeToService();
+        }
+
+        // Retry de subscripcion: si OnEnable corrio antes de que ActionRollServiceBootstrap
+        // registrara el service (race comun: la scene se carga antes que arranque el Run),
+        // pollear hasta lograr suscribirse. Una vez subscripto, es no-op por frame.
+        private void Update()
+        {
+            if (_service != null) return;
+            TrySubscribeToService();
+        }
+
+        private void TrySubscribeToService()
+        {
+            if (_service != null) return;
             if (!ServiceLocator.TryGetService<IActionRollService>(out _service) || _service == null)
             {
-                Debug.LogWarning("[ActionRollPanelView] IActionRollService no registrado todavia. " +
-                                 "El panel se autosuscribira cuando este disponible.");
+                // No spammeamos el warning una vez por frame — solo el primer OnEnable lo loggea
+                // (controlado via _subscribeWarningLogged). Si el service nunca aparece, hay un
+                // bug de bootstrap (no algo que el retry resuelva).
+                if (!_subscribeWarningLogged)
+                {
+                    Debug.LogWarning("[ActionRollPanelView] IActionRollService no registrado todavia. " +
+                                     "El panel se autosuscribira cuando este disponible.");
+                    _subscribeWarningLogged = true;
+                }
                 return;
             }
+
             _service.OnPhaseChanged += HandlePhaseChanged;
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            // DiceZoneView (HUD compartido) dispara TypedEvent<ComboMatchedPayload>
+            // cada vez que el user togglea un hold via su ToggleHold. El service
+            // SetHolds recomputa combo+total pero NO dispara evento — escuchamos
+            // este como proxy para refrescar el SummaryLabel del panel con el
+            // combo/total actualizados.
+            TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboRefresh);
 
-            // Por si entramos a una fase ya en curso (ej. domain reload / re-enable):
+            // Por si entramos a una fase ya en curso (ej. domain reload / re-enable o
+            // suscripcion tardia tras el race de bootstrap):
             HandlePhaseChanged(_service.Phase);
         }
+
+        private void HandleComboRefresh(ComboMatchedPayload payload)
+        {
+            if (_service == null || !_service.IsActive) return;
+            if (_service.Phase != ActionRollPhase.AwaitingRerollDecision) return;
+            // Re-render: lee _service.CurrentCombo / CurrentEffectiveTotal frescos
+            // (ya actualizados por SetHolds → RecomputeComboAndTotal).
+            ShowRerollPrompt();
+        }
+
+        private bool _subscribeWarningLogged;
 
         private void OnDisable()
         {
             if (_service != null) _service.OnPhaseChanged -= HandlePhaseChanged;
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboRefresh);
+
+            // Clearear _service para que el proximo OnEnable / Update vuelva a
+            // intentar la subscripcion. Sin esto, re-enable encontraria _service
+            // != null y haria skip del subscribe (que recien acabamos de undo).
+            _service = null;
+            _subscribeWarningLogged = false;
 
             if (_autoHideRoutine != null)
             {
@@ -186,14 +234,25 @@ namespace Rollgeon.UI.HUD
 
         private void HandlePhaseChanged(ActionRollPhase phase)
         {
-            // Simplificado: el panel modal con confirm dialog + dice display + resolved
-            // se reemplazó por DamageFormulaView (threshold + combo) y DiceZoneView (dados
-            // y holds). Este view ahora solo muestra los BOTONES de reroll/confirm cuando
-            // hay que decidir.
+            // El display de dados es responsabilidad del DiceZoneView compartido
+            // (Canvas/DiceZoneView). Este panel solo muestra los CONTROLES (combo+
+            // threshold summary + botones reroll/confirm). El DiceRow interno
+            // queda permanentemente oculto — sus _diceSlots no se renderean, pero
+            // el subscribe a OnDiceRolled lo mantenemos para no romper el contrato
+            // del componente.
             switch (phase)
             {
+                case ActionRollPhase.Rolling:
+                    // Sin botones — todavia no hay decision. DiceZoneView se encarga
+                    // de mostrar los dados; el panel queda invisible hasta AwaitingReroll.
+                    SetRootVisible(false);
+                    HideAllPanels();
+                    break;
                 case ActionRollPhase.AwaitingRerollDecision:
                     ShowRerollPrompt();
+                    break;
+                case ActionRollPhase.Resolved:
+                    ShowResolved();
                     break;
                 default:
                     HideAllPanels();
@@ -230,10 +289,10 @@ namespace Rollgeon.UI.HUD
 
         private void ShowRerollPrompt()
         {
-            // Root visible (alpha=1) para que el RerollPanel hijo se renderice. Si el root
-            // tiene una Image background, el user la debería desactivar/transparentar para
-            // no tapar pantalla — el modal grande ya no aplica.
+            // Root visible + RerollPanel activo. El DiceRow interno queda OCULTO —
+            // los dados los muestra DiceZoneView (HUD compartido con combat).
             SetRootVisible(true);
+            SetDiceRowVisible(false);
             if (_rerollPanel != null) _rerollPanel.SetActive(true);
             if (_confirmPanel != null) _confirmPanel.SetActive(false);
             if (_resolvedPanel != null) _resolvedPanel.SetActive(false);
@@ -241,32 +300,40 @@ namespace Rollgeon.UI.HUD
             var spec = _service.CurrentSpec;
             int threshold = spec.Threshold;
             int cost = spec.RerollEnergyCost;
+            int currentTotal = _service.CurrentEffectiveTotal;
+            var combo = _service.CurrentCombo;
             // Multi-shot: el reroll se puede repetir mientras haya energía. El service
             // expone CanAffordReroll que combina "fase correcta" + "energía suficiente".
             bool rerollAvailable = _service.CanAffordReroll;
-
             bool canConfirm = _service.CanConfirm;
 
+            // Summary con dos "secciones" visuales tipo combat HUD: combo arriba,
+            // threshold debajo. TMP rich text — ambos en el mismo label porque
+            // el panel no tiene labels separados (legacy del merge). El designer
+            // puede splittear esto en dos GO con TMP en el inspector si quiere.
             if (_rerollSummaryLabel != null)
             {
+                string comboName = combo != null ? combo.DisplayName : "Sin combo";
+                string thresholdColor = currentTotal >= threshold ? "#88ff88" : "#ffcc66";
                 string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
-                string prompt;
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"<size=130%><b>{comboName}</b></size>");
+                sb.AppendLine($"<color={thresholdColor}>Total: {currentTotal} / Umbral: {threshold}</color>");
+                sb.AppendLine();
                 if (!canConfirm)
                 {
-                    prompt = $"{actionTag} — necesitás >= {threshold}\n" +
-                             $"Seleccioná los dados de tu combo (clickealos).";
+                    sb.Append($"<size=85%>{actionTag} — clickeá los dados para armar tu combo</size>");
                 }
                 else if (rerollAvailable)
                 {
-                    prompt = $"{actionTag} — necesitás >= {threshold}\n" +
-                             $"Click los dados que querés conservar.\n" +
-                             $"Reroll cuesta {cost} de energía, o Confirmar.";
+                    sb.Append($"<size=85%>Reroll: {cost} energía. O confirmá la tirada.</size>");
                 }
                 else
                 {
-                    prompt = $"{actionTag} - sin energía para reroll. Confirmá la tirada.";
+                    sb.Append($"<size=85%>Sin energía para reroll — confirmá.</size>");
                 }
-                _rerollSummaryLabel.text = prompt;
+                _rerollSummaryLabel.text = sb.ToString();
             }
 
             if (_rerollAcceptButton != null) _rerollAcceptButton.interactable = rerollAvailable;
@@ -278,7 +345,8 @@ namespace Rollgeon.UI.HUD
         private void ShowResolved()
         {
             SetRootVisible(true);
-            SetDiceRowVisible(true);
+            // DiceRow oculto — DiceZoneView (HUD compartido) ya muestra los dados.
+            SetDiceRowVisible(false);
             if (_confirmPanel != null) _confirmPanel.SetActive(false);
             if (_rerollPanel != null) _rerollPanel.SetActive(false);
             if (_resolvedPanel != null) _resolvedPanel.SetActive(true);

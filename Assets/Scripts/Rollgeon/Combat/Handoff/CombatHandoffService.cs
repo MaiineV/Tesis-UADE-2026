@@ -683,10 +683,14 @@ namespace Rollgeon.Combat.Handoff
             if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
                 currentEnergy = energy.GetCurrent(playerGuid);
 
+            // [CHAIN-DIAG] bug "fase de escudo no sucede".
+            Debug.Log($"[CHAIN-DIAG] ExecuteChainPhase done — index now={_chainPhaseIndex}/{_activeChain.PhaseCount} " +
+                      $"remainingFreeRolls={remainingFreeRolls} energy={currentEnergy}");
+
             if (remainingFreeRolls == 0 && currentEnergy <= 0)
             {
-                Debug.Log($"[CombatHandoff] Chain auto-terminated at phase {_chainPhaseIndex}: " +
-                          $"freeRolls={remainingFreeRolls}, energy={currentEnergy}");
+                Debug.Log($"[CHAIN-DIAG] Chain auto-terminated at phase {_chainPhaseIndex}: " +
+                          $"freeRolls={remainingFreeRolls}, energy={currentEnergy} → NO sale escudo");
                 FinishChain(hud, playerGuid, false);
                 return;
             }
@@ -696,6 +700,10 @@ namespace Rollgeon.Combat.Handoff
 
         private void StartNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
         {
+            // [CHAIN-DIAG]
+            Debug.Log($"[CHAIN-DIAG] StartNextChainPhase phase={_chainPhaseIndex} freeRollCount={freeRollCount} " +
+                      $"behavior={(_selectedBehavior != null ? _selectedBehavior.ActionName : "NULL")}");
+
             var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
             wrapper.ActionId = $"{_selectedBehavior.ActionName}.chain.phase{_chainPhaseIndex}";
             wrapper.EnergyCost = 0;
@@ -754,8 +762,22 @@ namespace Rollgeon.Combat.Handoff
 
             EventManager.Trigger(EventName.OnChainCompleted, playerGuid, phasesCompleted, totalPhases, wasPass);
 
+            // [DIAG temporal] bug "botón sigue activo tras usar".
+            Debug.Log($"[CombatHandoff-DIAG] FinishChain — action='{executedActionName ?? "null"}' " +
+                      $"blockOnRepeat={executedBlockOnRepeat} phasesCompleted={phasesCompleted} " +
+                      $"→ marcaUsado={(!string.IsNullOrEmpty(executedActionName) && phasesCompleted > 0 && executedBlockOnRepeat)}");
+
             if (!string.IsNullOrEmpty(executedActionName) && phasesCompleted > 0)
             {
+                // El chain path ejecuta effects via phase.Effects.TryExecute (línea ~666)
+                // sin pasar por TurnManager.TryExecuteEnergyPrepaid → BlockOnRepeat nunca
+                // se trackeaba para attacks. Lo marcamos acá para que el slot bloquee.
+                if (executedBlockOnRepeat
+                    && ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
+                {
+                    tm.MarkBehaviorUsed(executedActionName);
+                }
+
                 EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
             }
         }
@@ -777,6 +799,10 @@ namespace Rollgeon.Combat.Handoff
 
         private void BeginChainSelection(SelectionSettings settings, Guid playerGuid, Action onComplete)
         {
+            // [CHAIN-DIAG]
+            Debug.Log($"[CHAIN-DIAG] BeginChainSelection slotState={settings.SlotState} " +
+                      $"autoResolve={settings.AutoResolve} entityFilter={settings.EntityFilter}");
+
             if (settings.SlotState == SlotState.Self)
             {
                 if (ServiceLocator.TryGetService<IGridManager>(out var g) && g.TryGetPosition(playerGuid, out var pos))
@@ -802,6 +828,22 @@ namespace Rollgeon.Combat.Handoff
                 return;
             }
 
+            var validTargets = settings.ResolveValidTiles(ownerPos, playerGuid);
+
+            // Si no hay targets válidos (ej. el único enemigo murió en la fase de daño del
+            // chain), NO abrimos una selección que el jugador no puede completar — eso
+            // colgaba el chain: la fase siguiente (escudo) nunca arrancaba, nunca se llamaba
+            // FinishChain, _selectedSlot quedaba pegado y el botón seguía habilitado.
+            // Proseguimos sin target: la parte self-cast (escudo) igual aplica y el chain cierra.
+            if (validTargets == null || validTargets.Count == 0)
+            {
+                Debug.LogWarning("[CombatHandoff] Chain phase sin targets válidos — proceeding sin selección " +
+                                 "para no colgar el chain (enemigo muerto / fuera de rango).");
+                _chainPhaseSelectionResult = null;
+                onComplete();
+                return;
+            }
+
             if (!ServiceLocator.TryGetService<ISelectionController>(out _chainSelectionController))
             {
                 Debug.LogWarning("[CombatHandoff] ISelectionController not registered — skipping chain selection");
@@ -811,8 +853,6 @@ namespace Rollgeon.Combat.Handoff
 
             _pendingChainCallback = onComplete;
             _chainSelectionController.OnSelectionCompleted += OnChainSelectionDone;
-
-            var validTargets = settings.ResolveValidTiles(ownerPos, playerGuid);
             _chainSelectionController.BeginSelection(new SelectionRequest
             {
                 Settings = settings,
@@ -839,6 +879,10 @@ namespace Rollgeon.Combat.Handoff
         {
             var nextPhase = _activeChain.Phases[_chainPhaseIndex];
             var beforeRoll = FindPhaseSelectionAt(nextPhase, SelectionTiming.BeforeRoll);
+
+            // [CHAIN-DIAG]
+            Debug.Log($"[CHAIN-DIAG] PrepareNextChainPhase phase={_chainPhaseIndex} " +
+                      $"beforeRollSel={(beforeRoll != null ? beforeRoll.SlotState.ToString() : "null")} freeRollCount={freeRollCount}");
 
             if (beforeRoll != null)
             {

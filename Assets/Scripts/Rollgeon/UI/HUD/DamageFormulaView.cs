@@ -3,6 +3,8 @@ using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
+using Rollgeon.Upgrades.Combos;
+using Rollgeon.Upgrades.Dice;
 using TMPro;
 using UnityEngine;
 
@@ -29,6 +31,7 @@ namespace Rollgeon.UI.HUD
         private Guid _playerGuid;
         private HeroActionBehavior _currentBehavior;
         private string _lastComboDisplayName;
+        private string _lastComboId;
         private int _lastComboBaseDamage;
         private Action<ComboMatchedPayload> _onComboMatched;
         private IActionRollService _actionRollService;
@@ -46,14 +49,24 @@ namespace Rollgeon.UI.HUD
 
         private bool _bound;
 
+        // La view es un singleton de escena compartido por CombatHUDView y
+        // ExplorationHUDView; cada HUD hace Bind/Unbind en su push/pop. Sin contar
+        // owners, el Unbind de un HUD desuscribía la view mientras el otro seguía
+        // activo (ej. exploración popea DESPUÉS de que combate pushea) → la fórmula
+        // dejaba de actualizarse en combate. Ref-count: solo desuscribimos al último.
+        private int _bindCount;
+
         public void Bind(Guid playerGuid)
         {
-            if (_bound)
-            {
-                if (_playerGuid == playerGuid) return;
-                Unbind();
-            }
+            // Player distinto = reset total antes de re-suscribir (no debería pasar en
+            // single-player, pero deja la view consistente si cambia el target).
+            if (_bound && _playerGuid != playerGuid)
+                ForceUnbind();
+
             _playerGuid = playerGuid;
+            _bindCount++;
+            if (_bound) return; // ya suscripto por otro owner al mismo guid
+
             _onComboMatched = OnComboMatched;
             TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
 
@@ -74,6 +87,14 @@ namespace Rollgeon.UI.HUD
         public void Unbind()
         {
             if (!_bound) return;
+            _bindCount--;
+            if (_bindCount > 0) return; // otro HUD sigue usando la view
+            ForceUnbind();
+        }
+
+        private void ForceUnbind()
+        {
+            if (!_bound) { _bindCount = 0; return; }
             if (_onComboMatched != null)
             {
                 TypedEvent<ComboMatchedPayload>.Unsubscribe(_onComboMatched);
@@ -86,7 +107,11 @@ namespace Rollgeon.UI.HUD
                 _actionRollService = null;
             }
             _currentBehavior = null;
+            _lastComboDisplayName = null;
+            _lastComboId = null;
+            _lastComboBaseDamage = 0;
             _bound = false;
+            _bindCount = 0;
             ClearFormula();
             HideThreshold();
         }
@@ -101,6 +126,7 @@ namespace Rollgeon.UI.HUD
         {
             _currentBehavior = null;
             _lastComboDisplayName = null;
+            _lastComboId = null;
             _lastComboBaseDamage = 0;
             ClearFormula();
             HideThreshold();
@@ -110,6 +136,7 @@ namespace Rollgeon.UI.HUD
         {
             if (payload.SourceGuid != _playerGuid) return;
             _lastComboDisplayName = payload.DisplayName;
+            _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
             UpdateFormula();
         }
@@ -148,9 +175,43 @@ namespace Rollgeon.UI.HUD
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
-            int total = Mathf.RoundToInt(_lastComboBaseDamage * dmgEff.ComboMultiplier);
-            _formulaLabel.text =
-                $"{comboName} ({_lastComboBaseDamage}) * {_currentBehavior.ActionName} ({dmgEff.ComboMultiplier}) = {total}";
+            int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * dmgEff.ComboMultiplier);
+            int bonus = ResolveComboBonusDamage(_lastComboId);
+            int total = comboPart + bonus;
+
+            // Resumen completo en el formula label: combo + daño base, multiplicador (si
+            // ≠ 1), agregados de mejoras (si los hay) y el total final. Mismo cálculo que
+            // EffDealDamage.ResolveArgs (pre-mitigación). Ejemplos:
+            //   "Par: 50"                  (sin multiplicador ni mejoras)
+            //   "Par: 50 + 60 = 110"       (mejora de +60)
+            //   "Par: 50 × 2 = 100"        (multiplicador 2)
+            //   "Par: 50 × 2 + 60 = 160"   (ambos)
+            bool hasMultiplier = !Mathf.Approximately(dmgEff.ComboMultiplier, 1f);
+            string formula = $"{comboName}: {_lastComboBaseDamage}";
+            if (hasMultiplier) formula += $" × {dmgEff.ComboMultiplier}";
+            if (bonus > 0) formula += $" + {bonus}";
+            if (hasMultiplier || bonus > 0) formula += $" = {total}";
+            _formulaLabel.text = formula;
+        }
+
+        // Suma los bonuses de combo passives (tienda) y dice enchantments igual que
+        // EffDealDamage.ResolveArgs — así el total mostrado coincide con el golpe real
+        // (antes de mitigación del pipeline, que depende del target). GetBonusDamage es
+        // una query sin side-effects; el scratch de enchantments ya quedó computado por
+        // su service al procesar el mismo ComboMatchedPayload.
+        private int ResolveComboBonusDamage(string comboId)
+        {
+            int bonus = 0;
+            if (!string.IsNullOrEmpty(comboId)
+                && ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
+                && passives != null)
+                bonus += passives.GetBonusDamage(comboId);
+
+            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                && enchants?.LastComboScratch != null)
+                bonus += enchants.LastComboScratch.BonusComboDamage;
+
+            return bonus;
         }
 
         private bool TryShowActionRollMode()

@@ -90,8 +90,8 @@ namespace Rollgeon.Shop
                 slot.SpawnedVisual = null;
             }
 
-            var itemId = slot.Item != null ? slot.Item.ItemId : string.Empty;
-            EventManager.Trigger(EventName.OnShopItemPurchased, spawnPointId, itemId, pricePaid);
+            var entryId = slot.Item != null ? slot.Item.EntryId : string.Empty;
+            EventManager.Trigger(EventName.OnShopItemPurchased, spawnPointId, entryId, pricePaid);
         }
 
         public bool CanRestock(Guid roomInstanceId) => _config != null && _config.AllowRestock;
@@ -147,17 +147,21 @@ namespace Rollgeon.Shop
             int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, _config.MaxItemSlots));
             var rng = new System.Random(room.InstanceId.GetHashCode());
             var slots = new List<ShopSlot>(slotCount);
+            // Tracks entries ya rolleadas en esta tienda — pasadas como exclude a Roll()
+            // para que cada slot tenga un ítem distinto (mientras el pool tenga variedad).
+            var rolledInThisShop = new HashSet<IShopRewardEntry>();
 
             for (int i = 0; i < slotCount; i++)
             {
                 string spawnPointId = SpawnPointKey(i);
-                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth);
+                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop);
                 if (slot == null) continue;
 
                 if (!slot.Purchased)
                 {
                     SpawnPedestalVisual(slot, room, spawnPoints[i]);
                 }
+                if (slot.Item != null) rolledInThisShop.Add(slot.Item);
 
                 slots.Add(slot);
             }
@@ -166,13 +170,15 @@ namespace Rollgeon.Shop
             _initialized.Add(room.InstanceId);
         }
 
-        private ShopSlot BuildOrHydrateSlot(RoomInstance room, string spawnPointId, System.Random rng, int floorDepth)
+        private ShopSlot BuildOrHydrateSlot(
+            RoomInstance room, string spawnPointId, System.Random rng, int floorDepth,
+            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop)
         {
             if (room.ObjectStates.TryGet<ShopItemState>(spawnPointId, out var state))
             {
                 // Re-entry: hidratamos desde el state persistido. No re-rolear.
-                var def = ResolveItemDefFromPool(state.ReservedItemId);
-                if (def == null)
+                var entry = ResolveEntryFromPool(state.ReservedItemId);
+                if (entry == null)
                 {
                     Debug.LogWarning(LogPrefix + $"ReservedItemId '{state.ReservedItemId}' no encontrado en el pool — slot se omite.");
                     return null;
@@ -180,14 +186,15 @@ namespace Rollgeon.Shop
                 return new ShopSlot
                 {
                     SpawnPointId = spawnPointId,
-                    Item = def,
+                    Item = entry,
                     Price = state.ReservedPrice,
                     Purchased = state.Purchased,
                 };
             }
 
-            // Primera visita: rolear + persistir.
-            var rolled = _pool.Roll(rng, floorDepth);
+            // Primera visita: rolear + persistir. Pasamos los rolled previos como
+            // exclude para evitar duplicados dentro del mismo shop.
+            var rolled = _pool.Roll(rng, floorDepth, rolledInThisShop);
             if (rolled.Item == null)
             {
                 Debug.LogWarning(LogPrefix + "Pool vacío o sin entries eligibles — slot se omite.");
@@ -198,7 +205,7 @@ namespace Rollgeon.Shop
             var newState = new ShopItemState
             {
                 SpawnPointId = spawnPointId,
-                ReservedItemId = rolled.Item.ItemId,
+                ReservedItemId = rolled.Item.EntryId,
                 ReservedPrice = price,
                 Purchased = false,
                 Consumed = false,
@@ -225,7 +232,7 @@ namespace Rollgeon.Shop
 
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
             var go = UnityEngine.Object.Instantiate(_config.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
-            go.name = $"[ShopPedestal] {slot.Item?.DisplayName ?? slot.Item?.ItemId ?? "?"}";
+            go.name = $"[ShopPedestal] {slot.Item?.DisplayName ?? slot.Item?.EntryId ?? "?"}";
 
             var pedestal = go.GetComponent<ShopItemPedestalInteractable>();
             if (pedestal == null)
@@ -242,25 +249,43 @@ namespace Rollgeon.Shop
         }
 
         /// <summary>
-        /// Instancia el <see cref="ItemSO.WorldPrefab"/> (resolved via catálogo por
-        /// <c>ShopItemDef.ItemId</c>) como hijo del pedestal. Sin esto, el pedestal
-        /// queda con forma sola y no se ve el ítem. Posiciona el visual con el offset
-        /// configurado en <see cref="ShopConfigSO.ItemVisualLocalOffset"/> (default
-        /// Y=1.5 para quedar encima).
+        /// Instancia el visual 3D del reward como hijo del pedestal. Dispatch por
+        /// tipo: <see cref="ShopItemDef"/> usa el <see cref="ItemSO.WorldPrefab"/>
+        /// resolved via catálogo; <see cref="Upgrades.Combos.ComboPassiveSO"/> usa
+        /// su propio <c>WorldPrefab</c>. Posiciona via
+        /// <see cref="ShopConfigSO.ItemVisualLocalOffset"/> (default Y=1.5).
         /// </summary>
         private void SpawnItemVisualOnTop(Transform pedestalRoot, ShopSlot slot)
         {
             if (pedestalRoot == null || slot?.Item == null) return;
 
-            if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null) return;
+            var prefab = ResolveWorldPrefab(slot.Item);
+            if (prefab == null) return;
 
-            var itemSo = catalog.GetById(slot.Item.ItemId);
-            if (itemSo == null || itemSo.WorldPrefab == null) return;
-
-            var visual = UnityEngine.Object.Instantiate(itemSo.WorldPrefab, pedestalRoot);
+            var visual = UnityEngine.Object.Instantiate(prefab, pedestalRoot);
             visual.transform.localPosition = _config != null ? _config.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
             visual.transform.localRotation = Quaternion.identity;
-            visual.name = $"[ShopItemVisual] {itemSo.DisplayName ?? itemSo.ItemId}";
+            string displayName = slot.Item.DisplayName ?? slot.Item.EntryId ?? "?";
+            visual.name = $"[ShopItemVisual] {displayName}";
+        }
+
+        /// <summary>
+        /// Dispatch polimórfico del WorldPrefab. Cuando se agregue un nuevo tipo
+        /// de <see cref="IShopRewardEntry"/>, sumar el case.
+        /// </summary>
+        private static GameObject ResolveWorldPrefab(IShopRewardEntry entry)
+        {
+            switch (entry)
+            {
+                case ShopItemDef itemDef:
+                    if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null) return null;
+                    var itemSo = catalog.GetById(itemDef.ItemId);
+                    return itemSo != null ? itemSo.WorldPrefab : null;
+                case Rollgeon.Upgrades.Combos.ComboPassiveSO passive:
+                    return passive.WorldPrefab;
+                default:
+                    return null;
+            }
         }
 
         private List<Transform> ResolveRewardSpawnPoints(RoomInstance room)
@@ -278,12 +303,14 @@ namespace Rollgeon.Shop
             return list;
         }
 
-        private ShopItemDef ResolveItemDefFromPool(string itemId)
+        private IShopRewardEntry ResolveEntryFromPool(string entryId)
         {
-            if (_pool == null || string.IsNullOrEmpty(itemId)) return null;
-            foreach (var entry in _pool.Items)
+            if (_pool == null || string.IsNullOrEmpty(entryId)) return null;
+            foreach (var weighted in _pool.Items)
             {
-                if (entry.Item != null && entry.Item.ItemId == itemId) return entry.Item;
+                var entry = weighted.GetEntry();
+                if (entry == null) continue;
+                if (entry.EntryId == entryId) return entry;
             }
             return null;
         }

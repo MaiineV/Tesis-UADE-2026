@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Shop.ShopConfigSO
   PriceMultiplier: 1
   PriceVariance: 0.1
-  MaxItemSlots: 4
+  MaxItemSlots: 3
   AllowRestock: 0
   RestockCost: 5
   MaxRestocks: 1
   FirstPurchaseDiscountPercent: 0
   PedestalPrefab: {fileID: 8567412772713499246, guid: bc3caaa25b1ee5245b825f86ced5039c, type: 3}
+  ItemVisualLocalOffset: {x: 0, y: 1.5, z: 0}

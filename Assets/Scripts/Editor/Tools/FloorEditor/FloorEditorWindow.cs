@@ -20,7 +20,7 @@ namespace Rollgeon.Editor.Tools
 
         static readonly RoomType[] AllTypes =
         {
-            RoomType.Start, RoomType.Combat, RoomType.Shop, RoomType.Potion, RoomType.Boss
+            RoomType.Start, RoomType.Combat, RoomType.Shop, RoomType.Potion, RoomType.Boss, RoomType.Enchantment
         };
 
         readonly List<FloorLayoutSO> _floors = new List<FloorLayoutSO>();
@@ -733,6 +733,7 @@ namespace Rollgeon.Editor.Tools
             RoomType.Shop   => new Color(0.94f, 0.68f, 0.31f),
             RoomType.Potion => new Color(0.36f, 0.75f, 0.87f),
             RoomType.Boss   => new Color(0.72f, 0.36f, 1.00f),
+            RoomType.Enchantment   => new Color(0.12f, 0.36f, 1.00f),
             _               => Color.gray,
         };
 

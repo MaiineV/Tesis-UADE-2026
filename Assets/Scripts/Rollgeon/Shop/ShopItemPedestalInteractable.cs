@@ -4,6 +4,7 @@ using Rollgeon.Economy;
 using Rollgeon.Grid;
 using Rollgeon.Items;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Combos;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -164,9 +165,44 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            TryDeliverItemToInventory(_slot.Item != null ? _slot.Item.ItemId : null);
+            DeliverEntry(_slot.Item);
 
             _service.NotifyItemPurchased(_roomInstanceId, _slot.SpawnPointId, _slot.Price);
+        }
+
+        /// <summary>
+        /// Dispatch polimórfico de la entrega — ítems activos van al inventory,
+        /// pasivas de combo van al <see cref="IComboPassiveService"/>. Cuando se
+        /// agreguen otros tipos de <see cref="IShopRewardEntry"/>, sumar el case acá.
+        /// </summary>
+        private static void DeliverEntry(IShopRewardEntry entry)
+        {
+            switch (entry)
+            {
+                case ShopItemDef itemDef:
+                    TryDeliverItemToInventory(itemDef.ItemId);
+                    break;
+                case ComboPassiveSO passive:
+                    TryApplyComboPassive(passive);
+                    break;
+                case null:
+                    Debug.LogWarning(LogPrefix + "Entry null — no se entrega nada.");
+                    break;
+                default:
+                    Debug.LogWarning(LogPrefix + $"Tipo de reward no soportado: {entry.GetType().Name}.");
+                    break;
+            }
+        }
+
+        private static void TryApplyComboPassive(ComboPassiveSO passive)
+        {
+            if (passive == null) return;
+            if (!ServiceLocator.TryGetService<IComboPassiveService>(out var svc) || svc == null)
+            {
+                Debug.LogWarning(LogPrefix + "IComboPassiveService no registrado — la pasiva comprada no se aplica.");
+                return;
+            }
+            svc.Apply(passive);
         }
 
         /// <summary>
@@ -239,7 +275,10 @@ namespace Rollgeon.Shop
         private static string BuildLabel(ShopSlot slot)
         {
             if (slot == null || slot.Item == null) return "[F] Comprar";
-            return $"[F] Comprar {slot.Item.DisplayName} ({slot.Price}G)";
+            string name = !string.IsNullOrEmpty(slot.Item.DisplayName)
+                ? slot.Item.DisplayName
+                : slot.Item.EntryId;
+            return $"[F] Comprar {name} ({slot.Price}G)";
         }
 
         // -----------------------------------------------------------------

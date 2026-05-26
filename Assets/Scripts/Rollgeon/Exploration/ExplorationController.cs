@@ -82,10 +82,13 @@ namespace Rollgeon.Exploration
             if (instance?.Template == null) return;
             var room = instance.Template;
 
-            // Salas ya cleareadas (Start, Shop, Potion, o combat re-visitada)
-            // no vuelven a disparar combate al entrar.
+            // Salas ya cleareadas (Start, Shop, Potion, Enchantment, o combat
+            // re-visitada) no vuelven a disparar combate al entrar. La Enchantment
+            // room sigue procesando re-entry porque su altar es re-usable mientras
+            // haya oro.
             if (instance.State == RoomState.Cleared && room.Type != RoomType.Shop
-                && room.Type != RoomType.Potion)
+                && room.Type != RoomType.Potion
+                && room.Type != RoomType.Enchantment)
             {
                 return;
             }

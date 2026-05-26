@@ -47,18 +47,10 @@ namespace Rollgeon.Grid
                 return;
             }
 
-            var grid = ServiceLocator.TryGetService<IGridManager>(out var g) ? g : null;
-            if (grid == null)
-            {
-                UnityEngine.Debug.LogWarning("[TileRendererRegistrar] IGridManager not registered");
-                return;
-            }
-
             var markers = instance.SpawnedPrefab.GetComponentsInChildren<TileMarker>(true);
             int registered = 0;
             foreach (var marker in markers)
             {
-                marker.Coord = grid.WorldToGrid(marker.transform.position);
                 var renderer = marker.GetComponent<Renderer>();
                 if (renderer != null)
                 {

@@ -629,6 +629,6 @@ MonoBehaviour:
   BaseAttack: 2
   BaseHealStrength: 5
   BaseSpeed: 4
-  MaxEnergy: 3
+  MaxEnergy: 1
   MinGoldDrop: 3
   MaxGoldDrop: 5
