@@ -296,6 +296,37 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 ? $"{_target.NavGraph.NodeCount} nodes, {_target.NavGraph.Edges.Count} edges"
                 : "—";
 
+        [TabGroup(Tabs, TabRoom), BoxGroup(GRoom, false), PropertyOrder(10)]
+        [Button("Bake Wall Occluders", ButtonSizes.Medium), EnableIf("@_target != null")]
+        private void BakeWallOccluders()
+        {
+            if (_target == null) return;
+
+            // Collapse every EnsureOccluder Undo into one named group so Ctrl+Z
+            // reverts the whole bake in a single step.
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(WallOccluderOps.UndoLabel);
+
+            int added = 0, updated = 0, skipped = 0;
+            var markers = _target.GetComponentsInChildren<TileMarker>(includeInactive: true);
+            foreach (var m in markers)
+            {
+                if (m == null || m.Type != TileType.Wall) continue;
+                var cell = new Vector3Int(m.Coord.X, m.Layer, m.Coord.Y);
+                var result = WallOccluderOps.EnsureOccluder(m.gameObject, _target, cell);
+                switch (result)
+                {
+                    case WallOccluderOps.BakeResult.Added: added++; break;
+                    case WallOccluderOps.BakeResult.Updated: updated++; break;
+                    case WallOccluderOps.BakeResult.Skipped: skipped++; break;
+                }
+            }
+
+            Undo.CollapseUndoOperations(undoGroup);
+            EditorUtility.SetDirty(_target);
+            Debug.Log($"[WallOccluder] Baked: {added} added, {updated} updated, {skipped} ok.");
+        }
+
         // ============================ Tab 2 — Info ============================
 
         [TabGroup(Tabs, TabRoom), BoxGroup(GInfo, false), PropertyOrder(-100), OnInspectorGUI]
@@ -879,6 +910,10 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 var controller = instance.GetComponentInChildren<DoorController>(true);
                 if (controller != null)
                     RoomEditorDoorBinder.BindOnPlace(_target, controller, instance.transform.position);
+            }
+            else if (entry.Type == TileType.Wall)
+            {
+                WallOccluderOps.EnsureOccluder(instance, _target, cell);
             }
 
             EditorUtility.SetDirty(_target);

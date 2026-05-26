@@ -19,6 +19,10 @@ namespace Rollgeon.GameCamera
 
         [EnumToggleButtons] public WallDirection Direction;
 
+        [Tooltip("Cuando está activo, el Room Editor no pisa Direction al re-bakear. " +
+                 "Útil para pillars internos o paredes con orientación corregida a mano.")]
+        public bool ManualOverride;
+
         [SerializeField] private Renderer[] _renderers;
 
         private MaterialPropertyBlock _mpb;

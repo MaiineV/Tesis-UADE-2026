@@ -6649,6 +6649,8 @@ public class WallOccluder : MonoBehaviour
 
 **Placement de `WallOccluder`s.** El diseñador los mete en las paredes (o grupos de paredes) del `RoomPrefab` durante la autoría del prefab. Una pared = un `WallOccluder`. Si un prefab de sala tiene 4 paredes cardinales, tiene 4 `WallOccluder`s con `Direction` = N/E/S/W. Para formas más complejas (L‑shape, salas diagonales), el diseñador decide qué `WallDirection` corresponde y el `OcclusionMap` del config define el comportamiento.
 
+**Auto-bake desde el Room Editor.** Cuando una sala se construye con `Tools/Rollgeon/Room Editor`, no hace falta arrastrar componentes a mano. Cada tile pintado con `TileType.Wall` recibe automáticamente un `WallOccluder` y su `Direction` se infiere desde la celda relativa al centro semántico de la sala (centroide de los `TileType.Floor`). El botón **"Bake Wall Occluders"** en la pestaña *Room* re-evalúa todas las paredes en una pasada (mismo patrón que *Bake NavGraph*). Paredes con `WallOccluder.ManualOverride = true` quedan exentas — pensado para pillars interiores o casos donde la inferencia por posición no acierta. Implementación: `Rollgeon.Editor.Tools.RoomEditor.WallOccluderOps`.
+
 **`OcclusionMap` es editable.** El default del config es simétrico (ver §E.3), pero el diseñador puede cambiarlo si el feel pide otra cosa (ej: ocultar 3 paredes en ángulos diagonales).
 
 #### E.9 Floor view — shells procedurales
