@@ -54,7 +54,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
         _ShadowDitherDensity      ("Shadow Dither Density",  Range(0,1)) = 0.3
 
         [Header(Additional Lights)]
-        _LightTintStrength        ("Spotlight Tint",         Range(0,1)) = 0.4
+        _LightTintStrength        ("Spotlight Tint Color",                Range(0,1)) = 0.4
+        _SpotDither               ("Edge Dither",            Range(0,1)) = 0.0
 
         [Header(Crease)]
         [Toggle] _EnableCrease ("Enable Crease",   Float)      = 0
@@ -98,12 +99,16 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
             #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            // Per-light quantization data uploaded by LightDataRendererFeature every frame.
+            // x = preQuantizeIntensity, y = falloff, z = falloffSteps, w = unused
+            float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
                 float  _ShapeType;
@@ -139,6 +144,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             struct Attributes
@@ -159,6 +165,18 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float3 viewDirWS   : TEXCOORD4;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
+
+            // ════════════════════════════════════════════════════════════════════
+            // PROYECCIÓN POR NORMAL DOMINANTE — world-space seamless tiling
+            // ════════════════════════════════════════════════════════════════════
+
+            float2 WorldUV(float3 posWS, float3 normalWS)
+            {
+                float3 absN = abs(normalWS);
+                if (absN.y > absN.x && absN.y > absN.z) return posWS.xz; // suelo/techo
+                if (absN.z > absN.x)                    return posWS.xy;  // pared Z
+                return posWS.zy;                                           // pared X
+            }
 
             // ════════════════════════════════════════════════════════════════════
             // BAYER 4×4
@@ -325,17 +343,71 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
                 float3 normalWS = normalize(IN.normalWS);
 
-                // ── Patrón procedural ────────────────────────────────────────────
-                float2 cellID;
-                float2 p    = GetCellUV(IN.uv, cellID);
-                // Escala no uniforme: divide p por scaleX/Y antes del SDF
-                // → >1 estira, <1 achata; independiente en cada eje
-                float2 pSc  = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
-                float  sdf  = GetSDF(pSc);
-                float3 patternColor = PatternColor(pSc, cellID, sdf);
-                // Opacidad: pixels dentro de la forma se mezclan hacia BGColor
-                patternColor = lerp(patternColor, _BGColor.rgb,
-                                    step(0.0, -sdf) * (1.0 - _ShapeOpacity));
+                // ── Patrón procedural — multi-celda (bordes se intersectan) ─────
+                // Evalúa la celda propia + 8 vecinas en loop 3×3.
+                // Prioridad: borde de cualquier celda > relleno > fondo.
+                float2 wUV = WorldUV(IN.positionWS, normalWS);
+                float2 s   = wUV * _TileScale;
+                if (_PatternType >= 1.5 && _PatternType < 2.5)
+                    s.x += fmod(floor(s.y), 2.0) * 0.5;
+
+                float2 cBase = floor(s);
+                float2 pBase = frac(s) - 0.5;
+
+                bool   onAnyBorder = false;
+                bool   inAnyFill   = false;
+                float3 fillColor   = _BGColor.rgb;
+
+                for (int ndy = -1; ndy <= 1; ndy++)
+                for (int ndx = -1; ndx <= 1; ndx++)
+                {
+                    float2 nCell = cBase + float2(ndx, ndy);
+                    float2 p     = pBase - float2(ndx, ndy);
+                    float2 pSc   = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
+                    float  sdf   = GetSDF(pSc);
+
+                    bool isBorder = (sdf >= -_BorderWidth) && (sdf < 0.0);
+                    bool isFill   = (sdf < -_BorderWidth);
+                    bool isInside = (sdf < 0.0);
+
+                    float altIdx = 0.0;
+                    if      (_PatternType < 0.5)  altIdx = 0.0;
+                    else if (_PatternType < 2.5)  altIdx = fmod(abs(nCell.x) + abs(nCell.y), 2.0);
+                    else if (_PatternType < 3.5)  altIdx = fmod(abs(nCell.y), 2.0);
+                    else                          altIdx = fmod(abs(nCell.x), 2.0);
+                    if (nCell.y < _SolidRows) altIdx = 0.0;
+
+                    float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
+
+                    if (_DetailType < 0.5) // Flat
+                    {
+                        if (isInside && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                    }
+                    else if (_DetailType < 1.5) // Border Only
+                    {
+                        if (isBorder) onAnyBorder = true;
+                    }
+                    else if (_DetailType < 2.5) // Fill + Border
+                    {
+                        if      (isBorder)             onAnyBorder = true;
+                        else if (isFill && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                    }
+                    else // Radial
+                    {
+                        if (isBorder) onAnyBorder = true;
+                        else if (isFill && !inAnyFill)
+                        {
+                            inAnyFill = true;
+                            float t = saturate(length(pSc) / (_ShapeSize * 0.47));
+                            fillColor = lerp(_DetailColor.rgb, baseCol, t);
+                        }
+                    }
+                }
+
+                float3 patternColor;
+                if      (onAnyBorder) patternColor = _DetailColor.rgb;
+                else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
+                else                  patternColor = _BGColor.rgb;
 
                 // ── Luz ──────────────────────────────────────────────────────────
                 Light mainLight  = GetMainLight(IN.shadowCoord);
@@ -345,16 +417,30 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
                 {
                     InputData inputData = (InputData)0;
+                    inputData.positionWS              = IN.positionWS;
+                    inputData.normalWS                = normalWS;
+                    inputData.viewDirectionWS         = normalize(GetWorldSpaceViewDir(IN.positionWS));
+                    inputData.shadowCoord             = IN.shadowCoord;
+                    inputData.shadowMask              = unity_ProbesOcclusion;
                     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
-                    inputData.positionWS  = IN.positionWS;
-                    inputData.shadowCoord = IN.shadowCoord;
+                    // Required local variable names for LIGHT_LOOP_BEGIN in Forward+
                     float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
                     float3 positionWS = IN.positionWS;
+                    float spotBayer = BayerDither(IN.positionCS.xy);
                     LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
-                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
-                        float addVal = CelLightVal(normalWS, addLt, _LightWrap);
-                        lightValue   = max(lightValue, addVal);
-                        addTint     += addLt.color * addVal;
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS, inputData.shadowMask);
+                        // Distance only for range — shadow multiplied in AFTER quantization
+                        float addVal = addLt.distanceAttenuation;
+                        float4 ld       = _RollgeonLightData[lightIndex];
+                        float ldSteps   = max(floor(ld.z), 1.0);
+                        float shaped    = pow(saturate(addVal * ld.x), lerp(1.0, 8.0, ld.y));
+                        float quantStep = (ldSteps > 1.5) ? (1.0 / (ldSteps - 1.0)) : 1.0;
+                        float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
+                        float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
+                        // Shadow attenuation applied after quantization (0=shadowed, 1=lit)
+                        spotVal        *= addLt.shadowAttenuation;
+                        lightValue      = max(lightValue, spotVal);
+                        addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END
                 }
                 #endif
@@ -448,9 +534,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _UseShadowDither; float _ShadowDitherDensity;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -528,9 +612,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _UseShadowDither; float _ShadowDitherDensity;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -583,9 +665,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _UseShadowDither; float _ShadowDitherDensity;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)

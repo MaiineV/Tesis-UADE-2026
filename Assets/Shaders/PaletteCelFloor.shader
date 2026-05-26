@@ -42,7 +42,8 @@ Shader "Rollgeon/PaletteCelFloor"
         _ShadowDitherDensity      ("Shadow Dither Density",  Range(0,1)) = 0.3
 
         [Header(Additional Lights)]
-        _LightTintStrength        ("Spotlight Tint",         Range(0,1)) = 0.4
+        _LightTintStrength        ("Spotlight Tint Color",                Range(0,1)) = 0.4
+        _SpotDither               ("Edge Dither",                         Range(0,1)) = 0.0
 
         [Header(Crease)]
         [Toggle] _EnableCrease ("Enable Crease",    Float)        = 0
@@ -88,12 +89,16 @@ Shader "Rollgeon/PaletteCelFloor"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
             #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            // Per-light quantization data uploaded by LightDataRendererFeature every frame.
+            // x = preQuantizeIntensity, y = falloff, z = falloffSteps, w = unused
+            float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -127,6 +132,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float  _CrackDensityScale;
                 float  _CrackSeed;
                 float  _LightTintStrength;
+                float  _SpotDither;
             CBUFFER_END
 
             struct Attributes
@@ -309,16 +315,30 @@ Shader "Rollgeon/PaletteCelFloor"
                 #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
                 {
                     InputData inputData = (InputData)0;
+                    inputData.positionWS              = IN.positionWS;
+                    inputData.normalWS                = normalWS;
+                    inputData.viewDirectionWS         = normalize(GetWorldSpaceViewDir(IN.positionWS));
+                    inputData.shadowCoord             = IN.shadowCoord;
+                    inputData.shadowMask              = unity_ProbesOcclusion;
                     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
-                    inputData.positionWS  = IN.positionWS;
-                    inputData.shadowCoord = IN.shadowCoord;
+                    // Required local variable names for LIGHT_LOOP_BEGIN in Forward+
                     float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
                     float3 positionWS = IN.positionWS;
+                    float spotBayer = BayerDither(IN.positionCS.xy);
                     LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
-                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
-                        float addVal = CelLightVal(normalWS, addLt, _LightWrap);
-                        lightValue   = max(lightValue, addVal);
-                        addTint     += addLt.color * addVal;
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS, inputData.shadowMask);
+                        // Distance only for range — shadow multiplied in AFTER quantization
+                        float addVal = addLt.distanceAttenuation;
+                        float4 ld       = _RollgeonLightData[lightIndex];
+                        float ldSteps   = max(floor(ld.z), 1.0);
+                        float shaped    = pow(saturate(addVal * ld.x), lerp(1.0, 8.0, ld.y));
+                        float quantStep = (ldSteps > 1.5) ? (1.0 / (ldSteps - 1.0)) : 1.0;
+                        float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
+                        float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
+                        // Shadow attenuation applied after quantization (0=shadowed, 1=lit)
+                        spotVal        *= addLt.shadowAttenuation;
+                        lightValue      = max(lightValue, spotVal);
+                        addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END
                 }
                 #endif
@@ -411,7 +431,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
+                float _LightTintStrength; float _SpotDither;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -472,7 +492,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
+                float _LightTintStrength; float _SpotDither;
             CBUFFER_END
 
             struct DOAttr { float4 posOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -509,7 +529,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
+                float _LightTintStrength; float _SpotDither;
             CBUFFER_END
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };

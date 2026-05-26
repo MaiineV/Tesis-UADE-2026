@@ -49,7 +49,8 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
         _ShadowDitherDensity      ("Shadow Dither Density",  Range(0,1)) = 0.3
 
         [Header(Additional Lights)]
-        _LightTintStrength        ("Spotlight Tint",         Range(0,1)) = 0.4
+        _LightTintStrength        ("Spotlight Tint Color",                Range(0,1)) = 0.4
+        _SpotDither               ("Edge Dither",            Range(0,1)) = 0.0
 
         [Header(Crease)]
         [Toggle] _EnableCrease ("Enable Crease",    Float)       = 0
@@ -100,12 +101,16 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
             #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            // Per-light quantization data uploaded by LightDataRendererFeature every frame.
+            // x = preQuantizeIntensity, y = falloff, z = falloffSteps, w = unused
+            float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
                 float  _ShapeType;
@@ -148,6 +153,7 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             struct Attributes
@@ -359,8 +365,9 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float3 normalWS = normalize(IN.normalWS);
 
                 // ── Patrón procedural ────────────────────────────────────────────
+                float2 wUV = WorldUV(IN.positionWS, normalWS);
                 float2 cellID;
-                float2 p   = GetCellUV(IN.uv, cellID);
+                float2 p   = GetCellUV(wUV, cellID);
                 float2 pSc = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
                 float  sdf = GetSDF(pSc);
                 float3 patternColor = PatternColor(pSc, cellID, sdf);
@@ -370,7 +377,6 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 // ── Grietas Voronoi (world-space) ────────────────────────────────
                 if (_EnableCracks > 0.5)
                 {
-                    float2 wUV = WorldUV(IN.positionWS, normalWS);
 
                     // F1, F2 Voronoi para las grietas
                     float F1, F2;
@@ -403,16 +409,30 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
                 {
                     InputData inputData = (InputData)0;
+                    inputData.positionWS              = IN.positionWS;
+                    inputData.normalWS                = normalWS;
+                    inputData.viewDirectionWS         = normalize(GetWorldSpaceViewDir(IN.positionWS));
+                    inputData.shadowCoord             = IN.shadowCoord;
+                    inputData.shadowMask              = unity_ProbesOcclusion;
                     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
-                    inputData.positionWS  = IN.positionWS;
-                    inputData.shadowCoord = IN.shadowCoord;
+                    // Required local variable names for LIGHT_LOOP_BEGIN in Forward+
                     float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
                     float3 positionWS = IN.positionWS;
+                    float spotBayer = BayerDither(IN.positionCS.xy);
                     LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
-                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
-                        float addVal = CelLightVal(normalWS, addLt, _LightWrap);
-                        lightValue   = max(lightValue, addVal);
-                        addTint     += addLt.color * addVal;
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS, inputData.shadowMask);
+                        // Distance only for range — shadow multiplied in AFTER quantization
+                        float addVal = addLt.distanceAttenuation;
+                        float4 ld       = _RollgeonLightData[lightIndex];
+                        float ldSteps   = max(floor(ld.z), 1.0);
+                        float shaped    = pow(saturate(addVal * ld.x), lerp(1.0, 8.0, ld.y));
+                        float quantStep = (ldSteps > 1.5) ? (1.0 / (ldSteps - 1.0)) : 1.0;
+                        float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
+                        float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
+                        // Shadow attenuation applied after quantization (0=shadowed, 1=lit)
+                        spotVal        *= addLt.shadowAttenuation;
+                        lightValue      = max(lightValue, spotVal);
+                        addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END
                 }
                 #endif
@@ -506,9 +526,7 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -587,9 +605,7 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -644,9 +660,7 @@ Shader "Rollgeon/PaletteCelLitPatternCrack"
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
-                float _LightTintStrength;
-                float _AlphaCutoff;
-                float _DitherScale;
+                float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)

@@ -33,7 +33,8 @@ Shader "Rollgeon/PaletteCelLit"
         _ShadowDitherDensity      ("Shadow Dither Density",   Range(0, 1)) = 0.3
 
         [Header(Additional Lights)]
-        _LightTintStrength        ("Spotlight Tint",          Range(0,1))  = 0.4
+        _LightTintStrength        ("Spotlight Tint Color",                Range(0,1)) = 0.4
+        _SpotDither               ("Edge Dither",             Range(0,1))  = 0.0
 
         [Header(Crease)]
         [Toggle] _EnableCrease  ("Enable Crease",  Float) = 0
@@ -78,12 +79,16 @@ Shader "Rollgeon/PaletteCelLit"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
             #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            // Per-light quantization data uploaded by LightDataRendererFeature every frame.
+            // x = preQuantizeIntensity, y = falloff, z = falloffSteps, w = unused
+            float4 _RollgeonLightData[128];
 
             // ── DEBUG ─────────────────────────────────────────────────────────────
             // Cambiá el 0 por 1 para activar el diagnóstico de luces adicionales:
@@ -117,6 +122,7 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -205,17 +211,30 @@ Shader "Rollgeon/PaletteCelLit"
                 {
                     // URP 17 Forward+ requiere 'inputData' en scope internamente.
                     InputData inputData = (InputData)0;
+                    inputData.positionWS              = IN.positionWS;
+                    inputData.normalWS                = normalWS;
+                    inputData.viewDirectionWS         = normalize(GetWorldSpaceViewDir(IN.positionWS));
+                    inputData.shadowCoord             = IN.shadowCoord;
+                    inputData.shadowMask              = unity_ProbesOcclusion;
                     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
-                    inputData.positionWS  = IN.positionWS;
-                    inputData.shadowCoord = IN.shadowCoord;
-                    // LIGHT_LOOP_BEGIN necesita estas variables locales con estos nombres exactos.
+                    // Required local variable names for LIGHT_LOOP_BEGIN in Forward+
                     float2 normalizedScreenSpaceUV = inputData.normalizedScreenSpaceUV;
                     float3 positionWS = IN.positionWS;
+                    float spotBayer = BayerDither(IN.positionCS.xy);
                     LIGHT_LOOP_BEGIN(GetAdditionalLightsCount())
-                        Light addLt  = GetAdditionalLight(lightIndex, positionWS);
-                        float addVal = CelLight(normalWS, addLt, _LightWrap);
-                        lightValue   = max(lightValue, addVal);
-                        addTint     += addLt.color * addVal;
+                        Light addLt  = GetAdditionalLight(lightIndex, positionWS, inputData.shadowMask);
+                        // Distance only for range — shadow multiplied in AFTER quantization
+                        float addVal = addLt.distanceAttenuation;
+                        float4 ld       = _RollgeonLightData[lightIndex];
+                        float ldSteps   = max(floor(ld.z), 1.0);
+                        float shaped    = pow(saturate(addVal * ld.x), lerp(1.0, 8.0, ld.y));
+                        float quantStep = (ldSteps > 1.5) ? (1.0 / (ldSteps - 1.0)) : 1.0;
+                        float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
+                        float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
+                        // Shadow attenuation applied after quantization (0=shadowed, 1=lit)
+                        spotVal        *= addLt.shadowAttenuation;
+                        lightValue      = max(lightValue, spotVal);
+                        addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END
                 }
                 #endif
@@ -354,6 +373,7 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -450,6 +470,7 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -529,6 +550,7 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _LightTintStrength;
                 float  _AlphaCutoff;
                 float  _DitherScale;
+                float  _SpotDither;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
