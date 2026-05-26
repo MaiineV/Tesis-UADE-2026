@@ -40,17 +40,38 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
-            if (ServiceLocator.TryGetService<IActionRollService>(out _actionRoll) && _actionRoll != null)
-            {
-                _onPhase = _ => Refresh();
-                _actionRoll.OnPhaseChanged += _onPhase;
-            }
-
+            // Phase events siempre se subscriben en OnEnable — el EventManager
+            // legacy esta disponible desde antes del Run scope.
             _onPhaseEnter = _ => Refresh();
             _onPhaseExit = _ => Refresh();
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
 
+            // El IActionRollService es Run-scoped (registered cuando arranca el Run).
+            // Si OnEnable corre antes del bootstrap, _actionRoll queda null. Update()
+            // retrieva hasta conseguirlo y se subscribe ahi.
+            TrySubscribeToActionRollService();
+            Refresh();
+        }
+
+        private void Update()
+        {
+            if (_actionRoll != null) return; // ya subscripto, no-op
+            TrySubscribeToActionRollService();
+        }
+
+        private void TrySubscribeToActionRollService()
+        {
+            if (_actionRoll != null) return;
+            if (!ServiceLocator.TryGetService<IActionRollService>(out _actionRoll) || _actionRoll == null)
+            {
+                _actionRoll = null;
+                return;
+            }
+            _onPhase = _ => Refresh();
+            _actionRoll.OnPhaseChanged += _onPhase;
+            // Recien ahora podemos evaluar si el action roll esta activo — refresh
+            // para reflejar el estado actual del service.
             Refresh();
         }
 

@@ -38,6 +38,7 @@ namespace Rollgeon.Combat.EnergyLib
 
         private EventManager.EventReceiver _onTurnFinishedHandler;
         private EventManager.EventReceiver _onRunStartHandler;
+        private EventManager.EventReceiver _onCombatStartHandler;
 
         /// <summary>
         /// Guid del jugador activo, cacheado en <see cref="InitializeForEntity"/>.
@@ -75,8 +76,10 @@ namespace Rollgeon.Combat.EnergyLib
 
             _onTurnFinishedHandler = OnTurnFinishedExternal;
             _onRunStartHandler = OnRunStartExternal;
+            _onCombatStartHandler = OnCombatStartExternal;
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnRunStart, _onRunStartHandler);
+            EventManager.Subscribe(EventName.OnCombatStart, _onCombatStartHandler);
         }
 
         public void Dispose()
@@ -90,6 +93,11 @@ namespace Rollgeon.Combat.EnergyLib
             {
                 EventManager.UnSubscribe(EventName.OnRunStart, _onRunStartHandler);
                 _onRunStartHandler = null;
+            }
+            if (_onCombatStartHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatStart, _onCombatStartHandler);
+                _onCombatStartHandler = null;
             }
         }
 
@@ -110,8 +118,10 @@ namespace Rollgeon.Combat.EnergyLib
 
             _onTurnFinishedHandler = OnTurnFinishedExternal;
             _onRunStartHandler = OnRunStartExternal;
+            _onCombatStartHandler = OnCombatStartExternal;
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnRunStart, _onRunStartHandler);
+            EventManager.Subscribe(EventName.OnCombatStart, _onCombatStartHandler);
         }
 
         // ======================================================================
@@ -238,6 +248,30 @@ namespace Rollgeon.Combat.EnergyLib
             if (!(args[0] is Guid entityId)) return;
             if (_playerId == Guid.Empty || entityId != _playerId) return;
             RegenerateAtTurnEnd(entityId);
+        }
+
+        /// <summary>
+        /// <c>OnCombatStart</c> schema: <c>[Guid roomInstanceId]</c>. No trae player
+        /// guid — usamos el <see cref="_playerId"/> cacheado por <c>InitializeForEntity</c>.
+        /// <para>
+        /// <b>Por qué.</b> Sin esto, el player entra a un combate con la energía que
+        /// le quedó del combate anterior. Si terminó al 0, el primer turno queda sin
+        /// acciones disponibles (solo end turn). Política JRPG: cada combate arranca
+        /// con energía al máximo.
+        /// </para>
+        /// </summary>
+        private void OnCombatStartExternal(params object[] args)
+        {
+            if (_playerId == Guid.Empty) return;
+            if (_attributes == null || _ruleset == null) return;
+            if (!_attributes.IsRegistered(_playerId)) return;
+
+            var attrs = _attributes.GetAttributes(_playerId);
+            if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
+
+            int max = _ruleset.Energy.EnergyMax;
+            _attributes.SetAttributeValue<EnergyStat, int>(_playerId, max);
+            TriggerEnergyChanged(_playerId, max, max);
         }
 
         // ======================================================================

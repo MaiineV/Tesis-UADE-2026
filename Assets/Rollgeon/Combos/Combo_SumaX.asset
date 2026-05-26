@@ -34,7 +34,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  _comboId: 
+  _comboId: combo.higher_number
   _displayName: Higher Number
   _description: Dado mas alto
   _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}

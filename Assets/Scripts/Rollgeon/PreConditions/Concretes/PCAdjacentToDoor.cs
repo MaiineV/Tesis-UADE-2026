@@ -32,12 +32,21 @@ namespace Rollgeon.PreConditions.Concretes
                 return false;
             }
 
+            // [DIAG temporal] bug "puerta no me deja pasar". Lista el estado de cada puerta.
+            UnityEngine.Debug.Log($"[PCAdjacentToDoor-DIAG] Player en {playerCoord}. Connections=[{string.Join(",", room.Connections.Keys)}]");
+
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
-                if (door.CurrentState == DoorVisualState.Tapiada) continue;
-                if (!room.Connections.ContainsKey(door.Direction)) continue;
                 var doorCoord = grid.WorldToGrid(door.transform.position);
-                if (playerCoord.Chebyshev(doorCoord) <= 1) return true;
+                bool tapiada = door.CurrentState == DoorVisualState.Tapiada;
+                bool inConn = room.Connections.ContainsKey(door.Direction);
+                int cheb = playerCoord.Chebyshev(doorCoord);
+                UnityEngine.Debug.Log($"[PCAdjacentToDoor-DIAG] dir={door.Direction} state={door.CurrentState} " +
+                    $"worldPos={door.transform.position} coord={doorCoord} inConnections={inConn} chebyshev={cheb}");
+
+                if (tapiada) continue;
+                if (!inConn) continue;
+                if (cheb <= 1) return true;
             }
 
             UnityEngine.Debug.LogWarning($"[PCAdjacentToDoor] Player en {playerCoord} — ninguna puerta no-tapiada está a Chebyshev≤1.");

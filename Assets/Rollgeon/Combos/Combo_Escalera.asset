@@ -34,7 +34,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  _comboId: 
+  _comboId: combo.ladder
   _displayName: Escalera
   _description: Dados en escalera
   _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}

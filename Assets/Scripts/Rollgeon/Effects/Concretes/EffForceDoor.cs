@@ -271,6 +271,18 @@ namespace Rollgeon.Effects.Concretes
             return false;
         }
 
+        /// <summary>
+        /// Gate de UI del botón "Forzar Puerta" en combate: requiere estar pegado
+        /// (Manhattan ≤ 1, ortogonal) a una puerta no-tapiada Y NO estar en sala de
+        /// Boss — el Boss no tiene escape, se vence o se muere. Mismo criterio de
+        /// Boss que <see cref="TryGetRollSpec"/> (que ya devuelve false ahí), así el
+        /// botón y la acción quedan consistentes.
+        /// </summary>
+        public static bool CanAttemptForceDoor(Guid playerGuid)
+        {
+            return !IsBossRoom() && IsPlayerAdjacentToAnyDoor(playerGuid);
+        }
+
         // Heal +X% del max HP a cada enemigo vivo de la sala. El max HP viene del
         // EnemyDataSO referenciado por el EnemySpawnState. Snapshotteamos el HP
         // resultante a state.CurrentHP para que la próxima entrada respawnee con

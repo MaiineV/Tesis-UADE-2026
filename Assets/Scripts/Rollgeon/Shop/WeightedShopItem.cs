@@ -13,7 +13,12 @@ namespace Rollgeon.Shop
     public struct WeightedShopItem
     {
         [Required]
-        public ShopItemDef Item;
+        [InfoBox("Debe implementar IShopRewardEntry — ShopItemDef (consumibles) " +
+                 "o ComboPassiveSO (pasivas de combo). Otros tipos se ignoran al rolear.")]
+        [Tooltip("Asset del reward elegible. Polimórfico: ShopItemDef o ComboPassiveSO.")]
+        [ValidateInput(nameof(ValidateImplementsRewardEntry),
+                       "El asset asignado no implementa IShopRewardEntry — la entry se ignora al rolear.")]
+        public ScriptableObject Item;
 
         [MinValue(0f)]
         [Tooltip("Peso relativo. 0 = deshabilitado. Los pesos son relativos al total del pool.")]
@@ -27,5 +32,14 @@ namespace Rollgeon.Shop
         [InfoBox("Si > 0, sólo rolea en pisos con depth >= este valor. 0 = siempre eligible.")]
         [MinValue(0)]
         public int MinFloorDepth;
+
+        /// <summary>
+        /// Cast tipado del <see cref="Item"/> a <see cref="IShopRewardEntry"/>.
+        /// Devuelve null si el asset no implementa la interface.
+        /// </summary>
+        public IShopRewardEntry GetEntry() => Item as IShopRewardEntry;
+
+        private static bool ValidateImplementsRewardEntry(ScriptableObject so)
+            => so == null || so is IShopRewardEntry;
     }
 }

@@ -20,9 +20,11 @@ namespace Rollgeon.Entities.Visuals
     [AddComponentMenu("Rollgeon/Entities/Entity Pawn")]
     public sealed class EntityPawn : MonoBehaviour
     {
-        // El hero queda elevado sobre el tile para que el modelo no clipée con
-        // el piso/grid — los enemies se quedan al ras (Y=0).
-        private const float HeroYOffset = 0.1f;
+        // Offset Y aplicado a TODOS los pawns (hero + enemies) para que ninguno
+        // clipée con el piso/grid. Antes solo el hero se elevaba — los enemigos
+        // quedaban a Y=0 y aparecían "muy encima" visualmente por diferencia de
+        // pivot en el modelo del enemigo vs el del hero.
+        private const float PawnYOffset = 0.1f;
 
         // Default por step — corto para que el movimiento se vea fluido sin frenar
         // el ritmo (≈8 tiles/s a 0.12). Override por arg si querés tunear.
@@ -60,7 +62,7 @@ namespace Rollgeon.Entities.Visuals
         {
             if (grid == null) return;
             var pos = grid.GridToWorld(coord);
-            if (Kind == PawnKind.Hero) pos.y += HeroYOffset;
+            pos.y += PawnYOffset;
             transform.position = pos;
         }
 
@@ -165,7 +167,7 @@ namespace Rollgeon.Entities.Visuals
 
                 Vector3 startPos = transform.position;
                 Vector3 endPos = grid.GridToWorld(next);
-                if (Kind == PawnKind.Hero) endPos.y += HeroYOffset;
+                endPos.y += PawnYOffset;
 
                 float elapsed = 0f;
                 while (elapsed < secondsPerStep)

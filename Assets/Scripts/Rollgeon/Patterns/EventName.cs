@@ -210,6 +210,14 @@ namespace Patterns
         /// <summary>args: [string sceneName]. Scene aditiva terminó de descargarse.</summary>
         OnSceneUnloaded,
 
+        // --- Upgrades / Enchantments -------------------------------------------
+        /// <summary>args: [Guid playerGuid, string enchantmentId, int bagIndex, int enchSlotIndex]. Encantamiento aplicado a un cupo del dado.</summary>
+        OnEnchantmentApplied,
+        /// <summary>args: [Guid playerGuid, string enchantmentId, int bagIndex, int enchSlotIndex]. Encantamiento removido (manual o por trigger self-destruct).</summary>
+        OnEnchantmentRemoved,
+        /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int baseCost]. El player presionó interact sobre el altar — la UI debe abrir la pantalla de selección de dado/slot.</summary>
+        OnEnchantmentAltarActivated,
+
         // --- Camera (§17.E) ----------------------------------------------------
         /// <summary>args: [Rollgeon.Camera.CameraFacing newFacing]. Yaw discreto cambió tras un RotateBy45 (§17.E.5).</summary>
         OnCameraFacingChanged,

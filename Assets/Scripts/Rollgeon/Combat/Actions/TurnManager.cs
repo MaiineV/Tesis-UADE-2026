@@ -345,6 +345,18 @@ namespace Rollgeon.Combat.Actions
         /// </summary>
         public bool WasUsedThisTurn(string actionId) => _actionsUsedThisTurn.Contains(actionId);
 
+        /// <summary>
+        /// Marca el behavior como usado este turno sin re-ejecutarlo. Lo usa el chain
+        /// path de <see cref="Combat.Handoff.CombatHandoffService"/> que ejecuta los
+        /// effects directamente (sin pasar por <see cref="TryExecuteEnergyPrepaid"/>)
+        /// y necesita registrar la repetición para que BlockOnRepeat aplique.
+        /// </summary>
+        public void MarkBehaviorUsed(string actionName)
+        {
+            if (string.IsNullOrEmpty(actionName)) return;
+            _actionsUsedThisTurn.Add(actionName);
+        }
+
         /// <summary>Cantidad de acciones unicas marcadas usadas en el turno actual.</summary>
         public int UsedActionsCount => _actionsUsedThisTurn.Count;
 

@@ -172,7 +172,16 @@ namespace Rollgeon.UI.HUD
             // Combina dos chequeos: energia suficiente Y preconditions del behavior
             // (ej. Heal requiere PCHasInventoryItem(potion.healing)). Sin esto el
             // boton de Heal queda interactable despues de consumir la pocion.
-            return behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _);
+            bool ok = behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var reason);
+            if (behavior.ActionName == "Force Door")
+            {
+                int energy = 0;
+                if (ServiceLocator.TryGetService<IEnergyService>(out var es) && es != null)
+                    energy = es.GetCurrent(_playerGuid);
+                Debug.Log($"[ExplorationActionButtonsView] Force Door interactable={ok} reason='{reason}' " +
+                          $"playerGuid={_playerGuid} energy={energy} EnergyCost={behavior.EnergyCost}");
+            }
+            return ok;
         }
 
         private void SetVisible(bool visible)

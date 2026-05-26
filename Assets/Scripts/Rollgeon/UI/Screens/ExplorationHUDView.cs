@@ -125,8 +125,19 @@ namespace Rollgeon.UI.Screens
             _onRunStartHandler = null;
         }
 
-        // OnGainFocus / OnLoseFocus: no-op. El HUD sigue consumiendo eventos aunque
-        // otra screen se apile encima — plan §5.3.
+        /// <inheritdoc/>
+        /// <remarks>
+        /// OnLoseFocus queda no-op (plan §5.3): el HUD sigue consumiendo eventos aunque
+        /// otra screen se apile encima. OnGainFocus en cambio rebindea las sub-views
+        /// compartidas porque CombatHUD.UnbindAll las desuscribe al popearse — sin esto,
+        /// la heal en exploración post-combate queda con DiceZone/RerollCount muertos
+        /// (slots no clickeables, reroll deshabilitado). BindAll es idempotente.
+        /// </remarks>
+        protected override void OnGainFocus()
+        {
+            if (_playerGuid == Guid.Empty) return;
+            BindAll(_playerGuid);
+        }
 
         private void ResolvePlayer()
         {
