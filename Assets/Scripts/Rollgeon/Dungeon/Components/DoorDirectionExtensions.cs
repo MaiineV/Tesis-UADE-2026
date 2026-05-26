@@ -1,9 +1,23 @@
 using Rollgeon.Grid;
+using UnityEngine;
 
 namespace Rollgeon.Dungeon.Components
 {
     public static class DoorDirectionExtensions
     {
+        /// <summary>
+        /// Infiere la dirección cardinal de una puerta a partir de su posición local
+        /// relativa al centro de la sala. Convención: +Z = North, +X = East. El eje
+        /// dominante (|x| vs |z|) gana — empate va al eje Z.
+        /// </summary>
+        public static DoorDirection FromLocalPosition(Vector3 localPos)
+        {
+            if (Mathf.Abs(localPos.z) >= Mathf.Abs(localPos.x))
+                return localPos.z >= 0f ? DoorDirection.North : DoorDirection.South;
+            return localPos.x >= 0f ? DoorDirection.East : DoorDirection.West;
+        }
+
+
         public static DoorDirection Opposite(this DoorDirection dir) => dir switch
         {
             DoorDirection.North => DoorDirection.South,

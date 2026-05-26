@@ -6,7 +6,6 @@ using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
-using Rollgeon.Entities;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -26,26 +25,68 @@ namespace Rollgeon.Dungeon.Tests
             var layout = ScriptableObject.CreateInstance<FloorLayoutSO>();
             _createdObjects.Add(layout);
 
-            layout.RoomCountMin = minRooms;
-            layout.RoomCountMax = maxRooms;
+            // El test helper usaba minRooms/maxRooms para fijar el target count
+            // de la topología. Con el modelo nuevo, eso es la suma de slots.
+            // Repartimos: combat (variable), +shop, +potion, +boss → el resto
+            // del rango lo absorbe combat con un Random spec.
+            int specialBudget = shopCount + potionCount + bossCount;
+            int combatMin = Mathf.Max(combatCount, minRooms - specialBudget);
+            int combatMax = Mathf.Max(combatMin, maxRooms - specialBudget);
 
-            layout.CombatRooms = new List<RoomSO>();
+            var combatPool = new List<RoomSO>();
             for (int i = 0; i < combatCount; i++)
-                layout.CombatRooms.Add(CreateRoom($"combat_{i}", RoomType.Combat));
+                combatPool.Add(CreateRoom($"combat_{i}", RoomType.Combat));
 
-            layout.ShopRooms = new List<RoomSO>();
+            var shopPool = new List<RoomSO>();
             for (int i = 0; i < shopCount; i++)
-                layout.ShopRooms.Add(CreateRoom($"shop_{i}", RoomType.Shop));
+                shopPool.Add(CreateRoom($"shop_{i}", RoomType.Shop));
 
-            layout.PotionRooms = new List<RoomSO>();
+            var potionPool = new List<RoomSO>();
             for (int i = 0; i < potionCount; i++)
-                layout.PotionRooms.Add(CreateRoom($"potion_{i}", RoomType.Potion));
+                potionPool.Add(CreateRoom($"potion_{i}", RoomType.Potion));
 
-            layout.BossCandidates = new List<EnemyDataSO>();
+            var bossPool = new List<RoomSO>();
             for (int i = 0; i < bossCount; i++)
-                layout.BossCandidates.Add(CreateEnemy($"boss_{i}"));
+                bossPool.Add(CreateRoom($"boss_{i}", RoomType.Boss));
+
+            layout.Slots = new List<RoomTypeSlot>
+            {
+                new RoomTypeSlot {
+                    Type = RoomType.Combat,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Random, Min = combatMin, Max = combatMax },
+                    Pool = combatPool
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Shop,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = shopCount },
+                    Pool = shopPool
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Potion,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = potionCount },
+                    Pool = potionPool
+                },
+                new RoomTypeSlot {
+                    Type = RoomType.Boss,
+                    Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = bossCount },
+                    Pool = bossPool
+                },
+            };
 
             return layout;
+        }
+
+        /// <summary>
+        /// Inserta o reemplaza el Slot Start con count=1 y la pool {room}.
+        /// </summary>
+        private static void SetStartRoom(FloorLayoutSO layout, RoomSO room)
+        {
+            layout.Slots.RemoveAll(s => s.Type == RoomType.Start);
+            layout.Slots.Insert(0, new RoomTypeSlot {
+                Type = RoomType.Start,
+                Count = new RoomCountSpec { Mode = RoomCountMode.Fixed, Fixed = 1 },
+                Pool = new List<RoomSO> { room }
+            });
         }
 
         private RoomSO CreateRoom(string id, RoomType type)
@@ -56,14 +97,6 @@ namespace Rollgeon.Dungeon.Tests
             room.Type = type;
             _createdObjects.Add(room);
             return room;
-        }
-
-        private EnemyDataSO CreateEnemy(string name)
-        {
-            var enemy = ScriptableObject.CreateInstance<EnemyDataSO>();
-            enemy.name = name;
-            _createdObjects.Add(enemy);
-            return enemy;
         }
 
         [SetUp]
@@ -103,7 +136,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
 
             _manager.GenerateFloor(layout, 42);
 
@@ -216,7 +249,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
 
             _manager.GenerateFloor(layout, 42);
 
@@ -278,7 +311,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
             _manager.GenerateFloor(layout, 42);
 
             // Elegí una dirección que sabemos no tiene vecino (la start solo
@@ -302,7 +335,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
             _manager.GenerateFloor(layout, 42);
 
             Assume.That(_manager.CurrentRoomInstance.State, Is.EqualTo(RoomState.Cleared));
@@ -321,7 +354,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
             _manager.GenerateFloor(layout, 42);
 
             // Entrar a la primera conexión (start → combat típico)
@@ -357,7 +390,7 @@ namespace Rollgeon.Dungeon.Tests
         {
             var start = CreateRoom("start_0", RoomType.Start);
             var layout = CreateLayout();
-            layout.StartRoom = start;
+            SetStartRoom(layout, start);
             _manager.GenerateFloor(layout, 42);
 
             var firstDir = _manager.CurrentRoomInstance.Connections.Keys.First();
@@ -441,7 +474,7 @@ namespace Rollgeon.Dungeon.Tests
         public void GenerateFloor_LastEntryDirection_IsNull()
         {
             var layout = CreateLayout();
-            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            SetStartRoom(layout, CreateRoom("start_0", RoomType.Start));
             _manager.GenerateFloor(layout, 42);
 
             Assert.IsNull(_manager.LastEntryDirection);
@@ -451,7 +484,7 @@ namespace Rollgeon.Dungeon.Tests
         public void EnterRoomByDoor_SetsLastEntryDirectionToOpposite()
         {
             var layout = CreateLayout();
-            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            SetStartRoom(layout, CreateRoom("start_0", RoomType.Start));
             _manager.GenerateFloor(layout, 42);
 
             var firstDir = _manager.CurrentRoomInstance.Connections.Keys.First();
@@ -464,7 +497,7 @@ namespace Rollgeon.Dungeon.Tests
         public void EnterRoomByInstanceId_SetsLastEntryDirectionToNull()
         {
             var layout = CreateLayout();
-            layout.StartRoom = CreateRoom("start_0", RoomType.Start);
+            SetStartRoom(layout, CreateRoom("start_0", RoomType.Start));
             _manager.GenerateFloor(layout, 42);
 
             var firstDir = _manager.CurrentRoomInstance.Connections.Keys.First();

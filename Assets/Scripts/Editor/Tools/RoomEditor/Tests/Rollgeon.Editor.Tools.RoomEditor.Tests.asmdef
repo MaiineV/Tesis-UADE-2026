@@ -1,6 +1,6 @@
 {
-    "name": "Rollgeon.Dungeon.Tests",
-    "rootNamespace": "Rollgeon.Dungeon.Tests",
+    "name": "Rollgeon.Editor.Tools.RoomEditor.Tests",
+    "rootNamespace": "Rollgeon.Editor.Tools.RoomEditor.Tests",
     "references": [
         "Rollgeon",
         "Rollgeon.Editor",

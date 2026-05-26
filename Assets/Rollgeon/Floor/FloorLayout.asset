@@ -21,15 +21,47 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  RoomCountMin: 6
-  RoomCountMax: 8
-  CombatRooms:
-  - {fileID: 11400000, guid: fcb05630f717bf84596fd4047d8c2a68, type: 2}
-  ShopRooms:
-  - {fileID: 11400000, guid: 007e05491eeab154fb09793b3b421981, type: 2}
-  PotionRooms:
-  - {fileID: 11400000, guid: cd4941296f0148442ac86ad8ac19485f, type: 2}
-  DefaultBossRoomTemplate: {fileID: 11400000, guid: 32d4f3001b74d8d4d9a76f74a12b45f4, type: 2}
-  BossCandidates:
-  - {fileID: 11400000, guid: 26b17a40c970e71448add075e202a9b0, type: 2}
-  StartRoom: {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}
+  FloorId: floor_01
+  DisplayName: Default Floor
+  Slots:
+  - Type: 1
+    Count:
+      Mode: 1
+      Fixed: 4
+      Min: 4
+      Max: 6
+    Pool:
+    - {fileID: 11400000, guid: fcb05630f717bf84596fd4047d8c2a68, type: 2}
+    - {fileID: 11400000, guid: af8c2a0bcb3f7ad4b8c3c1c32064ea01, type: 2}
+  - Type: 3
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: 007e05491eeab154fb09793b3b421981, type: 2}
+  - Type: 4
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: cd4941296f0148442ac86ad8ac19485f, type: 2}
+  - Type: 2
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: 32d4f3001b74d8d4d9a76f74a12b45f4, type: 2}
+  - Type: 0
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}

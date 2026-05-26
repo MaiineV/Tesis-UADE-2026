@@ -22,18 +22,9 @@ namespace Rollgeon.Dungeon
     /// </summary>
     public sealed class DungeonManager : IDungeonService, IDisposable
     {
-        private const int MinRoomCount = 3;
         private const float DefaultTileSize = 1f;
         private const float MinShellSize = 6f;
         private const float CellSpacing = 0f;
-
-        private static readonly Vector2Int[] CardinalSteps =
-        {
-            new Vector2Int(0, 1),   // N
-            new Vector2Int(0, -1),  // S
-            new Vector2Int(1, 0),   // E
-            new Vector2Int(-1, 0),  // W
-        };
 
         private readonly Dictionary<Guid, RoomInstance> _instances = new();
         private readonly Dictionary<Guid, FloorShell> _shells = new();
@@ -41,7 +32,6 @@ namespace Rollgeon.Dungeon
 
         private Guid _currentId = Guid.Empty;
         private DoorDirection? _lastEntryDirection;
-        private RoomSO _runtimeBossRoom;
         private Vector3 _stepSize = new(10f, 0f, 10f);
 
         private EventManager.EventReceiver _onCombatEndHandler;
@@ -69,16 +59,13 @@ namespace Rollgeon.Dungeon
             ClearState();
             _lastEntryDirection = null;
 
-            var rng = new System.Random(seed);
-            int targetCount = rng.Next(
-                Math.Max(layout.RoomCountMin, MinRoomCount),
-                Math.Max(layout.RoomCountMax, MinRoomCount) + 1);
+            // 1+2. Plan puro: cells + asignaciones (sin side effects).
+            var plan = FloorTopologyPlanner.Generate(layout, seed);
+            foreach (var w in plan.Warnings)
+                Debug.LogWarning($"[DungeonManager] {w}");
 
-            // 1. Topología: random walk en Vector2Int hasta placement de N cells.
-            var cells = GenerateTopology(targetCount, rng);
-
-            // 2. Asignar templates por cell.
-            var assignments = AssignTemplates(cells, layout, rng);
+            var cells = plan.Cells;
+            var assignments = plan.Assignments;
 
             // 3. Computar stepSize del piso en world-space.
             _stepSize = ComputeStepSize(assignments);
@@ -155,7 +142,7 @@ namespace Rollgeon.Dungeon
             AuditDoorSlotReciprocity();
 
             // 8. Seed _currentId con la start room.
-            var startId = FindStartInstanceId(cells);
+            var startId = FindStartInstanceId();
             _currentId = startId;
 
             // 8b. Fog of war — solo la sala actual queda visible.
@@ -566,12 +553,6 @@ namespace Rollgeon.Dungeon
                 instance.SpawnedEnemies.Clear();
             }
 
-            if (_runtimeBossRoom != null)
-            {
-                UnityEngine.Object.DestroyImmediate(_runtimeBossRoom);
-                _runtimeBossRoom = null;
-            }
-
             _instances.Clear();
             _shells.Clear();
             _cellIndex.Clear();
@@ -580,184 +561,13 @@ namespace Rollgeon.Dungeon
         }
 
         // -----------------------------------------------------------------
-        // Topology generation
+        // Helpers
         // -----------------------------------------------------------------
 
-        private List<Vector2Int> GenerateTopology(int targetCount, System.Random rng)
+        private Guid FindStartInstanceId()
         {
-            var cells = new List<Vector2Int> { Vector2Int.zero };
-            var frontier = new HashSet<Vector2Int> { Vector2Int.zero };
-            var used = new HashSet<Vector2Int> { Vector2Int.zero };
-
-            while (cells.Count < targetCount && frontier.Count > 0)
-            {
-                // Pick una cell de la frontera al azar; extender a un vecino libre.
-                Vector2Int seed;
-                {
-                    int pick = rng.Next(frontier.Count);
-                    int idx = 0;
-                    seed = Vector2Int.zero;
-                    foreach (var f in frontier)
-                    {
-                        if (idx++ == pick) { seed = f; break; }
-                    }
-                }
-
-                var candidates = new List<Vector2Int>(4);
-                foreach (var step in CardinalSteps)
-                {
-                    var c = seed + step;
-                    if (!used.Contains(c)) candidates.Add(c);
-                }
-
-                if (candidates.Count == 0)
-                {
-                    frontier.Remove(seed);
-                    continue;
-                }
-
-                var next = candidates[rng.Next(candidates.Count)];
-                cells.Add(next);
-                used.Add(next);
-                frontier.Add(next);
-            }
-
-            return cells;
-        }
-
-        private Dictionary<Vector2Int, RoomSO> AssignTemplates(
-            List<Vector2Int> cells, FloorLayoutSO layout, System.Random rng)
-        {
-            var assignments = new Dictionary<Vector2Int, RoomSO>(cells.Count);
-
-            // Start en (0,0) — template explícito si existe.
-            var startCell = Vector2Int.zero;
-
-            // Boss en la cell de mayor Manhattan distance.
-            Vector2Int bossCell = startCell;
-            int bossDist = -1;
-            foreach (var c in cells)
-            {
-                int d = Math.Abs(c.x - startCell.x) + Math.Abs(c.y - startCell.y);
-                if (d > bossDist)
-                {
-                    bossDist = d;
-                    bossCell = c;
-                }
-            }
-
-            // Shop + potion en cells intermedias elegidas al azar.
-            var intermediate = new List<Vector2Int>(cells.Count);
-            foreach (var c in cells)
-            {
-                if (c == startCell || c == bossCell) continue;
-                intermediate.Add(c);
-            }
-
-            Vector2Int? shopCell = null;
-            Vector2Int? potionCell = null;
-            
-            // §17.F invariante: 1 shop por piso obligatorio. Si la lista viene
-            // vacía es error de data — no-op runtime (el piso sale sin shop) +
-            // log para que el review lo atrape. Si hay entries pero no quedan
-            // cells intermedias, forzamos la cell más lejana no-start/no-boss.
-            bool shopRequested = layout.ShopRooms != null && layout.ShopRooms.Count > 0;
-            if (!shopRequested)
-            {
-                Debug.LogError(
-                    "[DungeonManager] FloorLayoutSO.ShopRooms está vacío — §17.F exige " +
-                    "1 shop por piso. Asignar al menos un RoomSO de tipo Shop.");
-            }
-            else if (intermediate.Count > 0)
-            {
-                int idx = rng.Next(intermediate.Count);
-                shopCell = intermediate[idx];
-                intermediate.RemoveAt(idx);
-            }
-            else
-            {
-                // Edge: piso mínimo sin cell intermedia. Reclasificamos la cell
-                // boss como shop y relocamos el boss al siguiente candidato más
-                // lejano — invariante shop pesa más que ubicación óptima del boss.
-                Debug.LogWarning(
-                    "[DungeonManager] Piso sin cells intermedias — reclasificando boss cell como shop. " +
-                    "Considerar subir FloorLayoutSO.RoomCountMin.");
-                shopCell = bossCell;
-                Vector2Int newBoss = startCell;
-                int newBossDist = -1;
-                foreach (var c in cells)
-                {
-                    if (c == startCell || c == bossCell) continue;
-                    int d = Math.Abs(c.x - startCell.x) + Math.Abs(c.y - startCell.y);
-                    if (d > newBossDist) { newBossDist = d; newBoss = c; }
-                }
-                bossCell = newBoss;
-            }
-
-            if (layout.PotionRooms != null && layout.PotionRooms.Count > 0 && intermediate.Count > 0)
-            {
-                int idx = rng.Next(intermediate.Count);
-                potionCell = intermediate[idx];
-                intermediate.RemoveAt(idx);
-            }
-
-            foreach (var cell in cells)
-            {
-                RoomSO template;
-                if (cell == startCell)
-                {
-                    template = layout.StartRoom
-                               ?? PickRandom(layout.CombatRooms, rng);
-                }
-                else if (cell == bossCell)
-                {
-                    template = layout.DefaultBossRoomTemplate ?? BuildRuntimeBossRoom(layout, rng);
-                }
-                else if (shopCell.HasValue && cell == shopCell.Value)
-                {
-                    template = PickRandom(layout.ShopRooms, rng);
-                }
-                else if (potionCell.HasValue && cell == potionCell.Value)
-                {
-                    template = PickRandom(layout.PotionRooms, rng);
-                }
-                else
-                {
-                    template = PickRandom(layout.CombatRooms, rng);
-                }
-
-                assignments[cell] = template;
-            }
-
-            return assignments;
-        }
-
-        private Guid FindStartInstanceId(List<Vector2Int> cells)
-        {
-            // El start siempre es Vector2Int.zero (ver AssignTemplates).
+            // El start siempre es Vector2Int.zero (ver FloorTopologyPlanner).
             return _cellIndex[Vector2Int.zero];
-        }
-
-        private static T PickRandom<T>(IList<T> list, System.Random rng) where T : class
-        {
-            if (list == null || list.Count == 0) return null;
-            return list[rng.Next(list.Count)];
-        }
-
-        private RoomSO BuildRuntimeBossRoom(FloorLayoutSO layout, System.Random rng)
-        {
-            // LEGACY path: si no hay DefaultBossRoomTemplate, se arma uno runtime
-            // a partir del primer BossCandidate. Se elimina cuando todos los
-            // FloorLayouts migren a DefaultBossRoomTemplate.
-            if (layout.BossCandidates == null || layout.BossCandidates.Count == 0) return null;
-
-            var bossEnemy = layout.BossCandidates[rng.Next(layout.BossCandidates.Count)];
-            var bossRoom = ScriptableObject.CreateInstance<RoomSO>();
-            bossRoom.RoomId = $"boss_{bossEnemy.name}";
-            bossRoom.DisplayName = bossEnemy.name;
-            bossRoom.Type = RoomType.Boss;
-            _runtimeBossRoom = bossRoom;
-            return bossRoom;
         }
 
         private static RoomState InitialStateFor(RoomType type)
@@ -774,7 +584,7 @@ namespace Rollgeon.Dungeon
         // Geometry helpers
         // -----------------------------------------------------------------
 
-        private Vector3 ComputeStepSize(Dictionary<Vector2Int, RoomSO> assignments)
+        private Vector3 ComputeStepSize(IReadOnlyDictionary<Vector2Int, RoomSO> assignments)
         {
             float maxX = MinShellSize;
             float maxZ = MinShellSize;
