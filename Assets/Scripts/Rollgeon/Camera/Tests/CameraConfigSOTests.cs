@@ -18,30 +18,62 @@ namespace Rollgeon.GameCamera.Tests
         }
 
         [Test]
-        public void DefaultOcclusionMap_CardinalFacings_HideOneWall()
+        public void DefaultOcclusionMap_AllFacings_HideThreeWalls()
         {
+            // Each facing should hide a 90° arc: the same-name wall + its two
+            // compass-adjacent neighbors. Single-wall hides leave corners
+            // visible blocking the player from view.
             var map = CameraConfigSO.DefaultOcclusionMap();
-            Assert.AreEqual(1, map[CameraFacing.N].Count);
-            Assert.AreEqual(WallDirection.S, map[CameraFacing.N][0]);
-
-            Assert.AreEqual(1, map[CameraFacing.E].Count);
-            Assert.AreEqual(WallDirection.W, map[CameraFacing.E][0]);
-
-            Assert.AreEqual(1, map[CameraFacing.S].Count);
-            Assert.AreEqual(WallDirection.N, map[CameraFacing.S][0]);
-
-            Assert.AreEqual(1, map[CameraFacing.W].Count);
-            Assert.AreEqual(WallDirection.E, map[CameraFacing.W][0]);
+            foreach (CameraFacing facing in System.Enum.GetValues(typeof(CameraFacing)))
+            {
+                Assert.AreEqual(3, map[facing].Count, $"facing {facing} should hide 3 walls");
+            }
         }
 
         [Test]
-        public void DefaultOcclusionMap_DiagonalFacings_HideTwoWalls()
+        public void DefaultOcclusionMap_CardinalFacings_HideOppositePlusTwoDiagonals()
+        {
+            // Each cardinal facing hides the OPPOSITE cardinal + its two flanking
+            // diagonals (the walls on the camera's side = closest to camera).
+            var map = CameraConfigSO.DefaultOcclusionMap();
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.SW, WallDirection.S, WallDirection.SE },
+                map[CameraFacing.N]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.SW, WallDirection.W, WallDirection.NW },
+                map[CameraFacing.E]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.NW, WallDirection.N, WallDirection.NE },
+                map[CameraFacing.S]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.NE, WallDirection.E, WallDirection.SE },
+                map[CameraFacing.W]);
+        }
+
+        [Test]
+        public void DefaultOcclusionMap_DiagonalFacings_HideOppositePlusTwoCardinals()
         {
             var map = CameraConfigSO.DefaultOcclusionMap();
-            Assert.AreEqual(2, map[CameraFacing.NE].Count);
-            Assert.AreEqual(2, map[CameraFacing.SE].Count);
-            Assert.AreEqual(2, map[CameraFacing.SW].Count);
-            Assert.AreEqual(2, map[CameraFacing.NW].Count);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.W, WallDirection.SW, WallDirection.S },
+                map[CameraFacing.NE]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.W, WallDirection.NW, WallDirection.N },
+                map[CameraFacing.SE]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.N, WallDirection.NE, WallDirection.E },
+                map[CameraFacing.SW]);
+
+            CollectionAssert.AreEquivalent(
+                new[] { WallDirection.E, WallDirection.SE, WallDirection.S },
+                map[CameraFacing.NW]);
         }
 
         [Test]

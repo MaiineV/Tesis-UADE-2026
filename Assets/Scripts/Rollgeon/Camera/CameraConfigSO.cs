@@ -91,20 +91,38 @@ namespace Rollgeon.GameCamera
         [InfoBox("Material para los shells del floor view. Si es null se crea uno con URP/Unlit + ShellColor.")]
         public Material ShellMaterial;
 
+        [ToggleGroup(nameof(EnableWallOcclusion))]
+        [Button("Reset OcclusionMap to Default", ButtonSizes.Medium)]
+        private void ResetOcclusionMapToDefault()
+        {
+            OcclusionMap = DefaultOcclusionMap();
+#if UNITY_EDITOR
+            // SaveAssetIfDirty fuerza el flush a disco: si el usuario clickea el
+            // botón y entra a Play sin Ctrl+S, Unity recargaría el asset desde
+            // disco con el OcclusionMap viejo (Odin lo serializa en SerializationData).
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
+#endif
+        }
+
         /// <summary>
-        /// Mapa simétrico por default (§17.E.3). Ocluye 1 pared en cardinales
-        /// y 2 en diagonales.
+        /// Mapa simétrico por default (§17.E.3). Por facing oculta 3 paredes:
+        /// la dirección OPUESTA al facing + sus dos vecinas en el compás
+        /// (= las paredes más cercanas a la cámara, las que tapan al jugador).
+        /// Con iso 45° y CameraFacing = dirección de mirada, la cámara queda
+        /// en el lado opuesto al facing → las paredes a ocultar son las del
+        /// lado de la cámara.
         /// </summary>
         public static Dictionary<CameraFacing, List<WallDirection>> DefaultOcclusionMap() => new()
         {
-            { CameraFacing.N, new List<WallDirection> { WallDirection.S } },
-            { CameraFacing.NE, new List<WallDirection> { WallDirection.S, WallDirection.W } },
-            { CameraFacing.E, new List<WallDirection> { WallDirection.W } },
-            { CameraFacing.SE, new List<WallDirection> { WallDirection.W, WallDirection.N } },
-            { CameraFacing.S, new List<WallDirection> { WallDirection.N } },
-            { CameraFacing.SW, new List<WallDirection> { WallDirection.N, WallDirection.E } },
-            { CameraFacing.W, new List<WallDirection> { WallDirection.E } },
-            { CameraFacing.NW, new List<WallDirection> { WallDirection.E, WallDirection.S } },
+            { CameraFacing.N,  new List<WallDirection> { WallDirection.SW, WallDirection.S,  WallDirection.SE } },
+            { CameraFacing.NE, new List<WallDirection> { WallDirection.W,  WallDirection.SW, WallDirection.S  } },
+            { CameraFacing.E,  new List<WallDirection> { WallDirection.SW, WallDirection.W,  WallDirection.NW } },
+            { CameraFacing.SE, new List<WallDirection> { WallDirection.W,  WallDirection.NW, WallDirection.N  } },
+            { CameraFacing.S,  new List<WallDirection> { WallDirection.NW, WallDirection.N,  WallDirection.NE } },
+            { CameraFacing.SW, new List<WallDirection> { WallDirection.N,  WallDirection.NE, WallDirection.E  } },
+            { CameraFacing.W,  new List<WallDirection> { WallDirection.NE, WallDirection.E,  WallDirection.SE } },
+            { CameraFacing.NW, new List<WallDirection> { WallDirection.E,  WallDirection.SE, WallDirection.S  } },
         };
     }
 }

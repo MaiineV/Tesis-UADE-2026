@@ -247,10 +247,10 @@ namespace Rollgeon.GameCamera.Tests
         [Test]
         public void Initialize_WithRegisteredDungeon_HidesWallsForStartingFacing()
         {
-            // Arrange — default StartingFacing = NE ⇒ OcclusionMap[NE] = { S, W }.
-            // En este test el service ya fue Initialize'd por [SetUp] ANTES de que
-            // exista el fake dungeon (igual que en runtime cuando el dungeon no está
-            // listo todavía). El refresh debe disparar al re-inicializar.
+            // Arrange — default StartingFacing = NE ⇒ OcclusionMap[NE] = { W, SW, S }
+            // (opuesto al facing + diagonales: walls del lado de la cámara).
+            // El fixture sólo tiene N/E/S/W walls, así que W y S deben ocultarse,
+            // N y E quedan visibles.
             RegisterFakeDungeonWithOccluders(
                 out var nWall, out var eWall, out var sWall, out var wWall);
 
@@ -276,7 +276,7 @@ namespace Rollgeon.GameCamera.Tests
             // Act
             EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "test_room");
 
-            // Assert — StartingFacing = NE ⇒ ocultar S y W.
+            // Assert — StartingFacing = NE ⇒ ocultar S y W (lado opuesto al facing).
             Assert.IsFalse(nWall.IsHidden);
             Assert.IsFalse(eWall.IsHidden);
             Assert.IsTrue (sWall.IsHidden);
@@ -284,16 +284,14 @@ namespace Rollgeon.GameCamera.Tests
         }
 
         [Test]
-        public void RotateBy45_FromN_HidesOnlySouthWall()
+        public void RotateBy45_FromN_HidesSouthWall()
         {
-            // Arrange — forzar facing a N para cubrir el caso del usuario:
-            // "si estoy en 0 grados, la pared S debería esconderse".
+            // Arrange — facing N ⇒ OcclusionMap[N] = { SW, S, SE }. En el fixture
+            // sólo hay N/E/S/W, así que sólo la S wall queda oculta.
             RegisterFakeDungeonWithOccluders(
                 out var nWall, out var eWall, out var sWall, out var wWall);
             while (_service.CurrentFacing != CameraFacing.N) _service.RotateBy45(clockwise: true);
 
-            // Sanity: rotar a N debió aplicar el occlusion map de N (= { S }).
-            // Act — assertion directa: walls reflect facing == N.
             // Assert
             Assert.AreEqual(CameraFacing.N, _service.CurrentFacing);
             Assert.IsFalse(nWall.IsHidden, "N wall visible when facing N.");
@@ -303,9 +301,9 @@ namespace Rollgeon.GameCamera.Tests
         }
 
         [Test]
-        public void RotateBy45_FromSeToS_SwitchesHiddenWallFromWestNorthToNorth()
+        public void RotateBy45_FromSeToS_SwitchesHiddenWallFromWestNorthToNorthOnly()
         {
-            // Arrange — facing SE ⇒ OcclusionMap[SE] = { W, N }.
+            // Arrange — facing SE ⇒ OcclusionMap[SE] = { W, NW, N }.
             RegisterFakeDungeonWithOccluders(
                 out var nWall, out var eWall, out var sWall, out var wWall);
             while (_service.CurrentFacing != CameraFacing.SE) _service.RotateBy45(clockwise: true);
@@ -315,7 +313,7 @@ namespace Rollgeon.GameCamera.Tests
             // Act — rotate clockwise once → S.
             _service.RotateBy45(clockwise: true);
 
-            // Assert — OcclusionMap[S] = { N } only.
+            // Assert — OcclusionMap[S] = { NW, N, NE }. Del fixture sólo N aplica.
             Assert.AreEqual(CameraFacing.S, _service.CurrentFacing);
             Assert.IsTrue (nWall.IsHidden, "N wall stays hidden when facing S.");
             Assert.IsFalse(eWall.IsHidden);

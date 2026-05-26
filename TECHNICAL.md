@@ -6651,7 +6651,7 @@ public class WallOccluder : MonoBehaviour
 
 **Auto-bake desde el Room Editor.** Cuando una sala se construye con `Tools/Rollgeon/Room Editor`, no hace falta arrastrar componentes a mano. Cada tile pintado con `TileType.Wall` recibe automáticamente un `WallOccluder` y su `Direction` se infiere desde la celda relativa al centro semántico de la sala (centroide de los `TileType.Floor`). El botón **"Bake Wall Occluders"** en la pestaña *Room* re-evalúa todas las paredes en una pasada (mismo patrón que *Bake NavGraph*). Paredes con `WallOccluder.ManualOverride = true` quedan exentas — pensado para pillars interiores o casos donde la inferencia por posición no acierta. Implementación: `Rollgeon.Editor.Tools.RoomEditor.WallOccluderOps`.
 
-**`OcclusionMap` es editable.** El default del config es simétrico (ver §E.3), pero el diseñador puede cambiarlo si el feel pide otra cosa (ej: ocultar 3 paredes en ángulos diagonales).
+**`OcclusionMap` es editable.** El default del config es simétrico: cada `CameraFacing` oculta 3 paredes — la dirección **opuesta** al facing + sus dos vecinas en el compás (cubre un arco de 90° del lado de la cámara). Como `CameraFacing` representa la dirección de mirada, la cámara queda en el lado opuesto al focus, así que las paredes del lado opuesto al facing son las más cercanas a la cámara — las que ocluyen al jugador. Una sola pared deja los corners visibles, por eso el default elige 3. El diseñador puede ajustar el mapa si el feel pide otra cosa, y `CameraConfigSO` expone un botón **"Reset OcclusionMap to Default"** para volver al baseline.
 
 #### E.9 Floor view — shells procedurales
 
