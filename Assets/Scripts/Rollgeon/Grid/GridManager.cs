@@ -91,14 +91,19 @@ namespace Rollgeon.Grid
             return true;
         }
 
+        // Las entities se ubican en el CENTRO de la casilla (+0.5 tile en X/Z), no en
+        // su esquina: con los tiles nuevos el pivot de cada tile quedó en la esquina,
+        // así que sin el medio-tile los pawns aparecen corridos respecto de la grilla.
         public Vector3 GridToWorld(GridCoord c) =>
-            GridOrigin + new Vector3(c.X * TileSize, 0f, c.Y * TileSize);
+            GridOrigin + new Vector3((c.X + 0.5f) * TileSize, 0f, (c.Y + 0.5f) * TileSize);
 
         public GridCoord WorldToGrid(Vector3 world)
         {
+            // FloorToInt (no RoundToInt) para ser la inversa exacta del centro de casilla:
+            // un punto en cualquier parte de la celda [c, c+1) mapea a c.
             var local = world - GridOrigin;
-            int x = Mathf.RoundToInt(local.x / TileSize);
-            int y = Mathf.RoundToInt(local.z / TileSize);
+            int x = Mathf.FloorToInt(local.x / TileSize);
+            int y = Mathf.FloorToInt(local.z / TileSize);
             return new GridCoord(x, y);
         }
 

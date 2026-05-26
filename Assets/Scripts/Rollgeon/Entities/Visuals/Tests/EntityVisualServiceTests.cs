@@ -64,7 +64,11 @@ namespace Rollgeon.Entities.Visuals.Tests
             Assert.AreEqual(EntityPawn.PawnKind.Hero, pawn.Kind);
             Assert.IsTrue(_service.TryGetPawn(guid, out var same));
             Assert.AreSame(pawn, same);
-            Assert.AreEqual(_grid.GridToWorld(new GridCoord(1, 2)), pawn.transform.position);
+            // La colocación en grilla es un asunto XZ; el pawn además se eleva PawnYOffset
+            // en Y (lift visual sobre el piso), así que comparamos solo el plano.
+            var expected = _grid.GridToWorld(new GridCoord(1, 2));
+            Assert.AreEqual(expected.x, pawn.transform.position.x, 1e-4f);
+            Assert.AreEqual(expected.z, pawn.transform.position.z, 1e-4f);
         }
 
         [Test]
@@ -116,7 +120,10 @@ namespace Rollgeon.Entities.Visuals.Tests
 
             _movement.Move(guid, new GridCoord(3, 0));
 
-            Assert.AreEqual(_grid.GridToWorld(new GridCoord(3, 0)), pawn.transform.position);
+            // Solo XZ: el PawnYOffset eleva el pawn en Y (lift visual), no afecta la celda.
+            var expected = _grid.GridToWorld(new GridCoord(3, 0));
+            Assert.AreEqual(expected.x, pawn.transform.position.x, 1e-4f);
+            Assert.AreEqual(expected.z, pawn.transform.position.z, 1e-4f);
         }
 
         [Test]

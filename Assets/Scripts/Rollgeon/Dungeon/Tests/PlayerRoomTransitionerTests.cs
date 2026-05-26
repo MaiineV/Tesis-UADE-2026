@@ -41,7 +41,7 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void WithEntryDirection_RegistersPlayerAtDoorAnchor()
+        public void WithEntryDirection_RegistersPlayerAtInteriorCellInFrontOfDoor()
         {
             var (layout, _) = CreateRoomWithDoors(NavGraph.Rect(6, 6));
             _dungeon.EntryDirection = DoorDirection.South;
@@ -53,7 +53,9 @@ namespace Rollgeon.Dungeon.Tests
 
             Assert.IsTrue(_grid.TryGetPosition(_player.PlayerGuid, out var coord));
             var southAnchor = layout.GetDoorSlot(DoorDirection.South).Anchor;
-            var expected = _grid.WorldToGrid(southAnchor.position);
+            // El player spawnea en la primera celda interior frente a la puerta, no en el
+            // anchor mismo (spec de spawn al cambiar de sala).
+            var expected = _grid.WorldToGrid(southAnchor.position) + DoorDirection.South.InwardOffset();
             Assert.AreEqual(expected, coord);
         }
 
