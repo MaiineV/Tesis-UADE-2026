@@ -51,7 +51,6 @@ namespace Rollgeon.UI.Screens
             // Idempotencia: Awake (tests) y OnRegisteredByHost (runtime) llaman acá; uno suscribe,
             // el resto es no-op.
             if (_onFloorClearedHandler != null) return;
-            Debug.Log("[DIAG-victory] VictoryScreen — suscribiendo a OnFloorCleared");
             _onFloorClearedHandler = HandleFloorCleared;
             EventManager.Subscribe(EventName.OnFloorCleared, _onFloorClearedHandler);
         }
@@ -65,14 +64,12 @@ namespace Rollgeon.UI.Screens
 
         private void HandleFloorCleared(params object[] args)
         {
-            Debug.Log($"[DIAG-victory] VictoryScreen.HandleFloorCleared — pushed={_pushed}");
             if (_pushed) return;
 
             if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 _pushed = true;
                 screens.PushByStringId(ScreenId);
-                Debug.Log("[DIAG-victory] VictoryScreen.PushByStringId llamado");
             }
             else
             {

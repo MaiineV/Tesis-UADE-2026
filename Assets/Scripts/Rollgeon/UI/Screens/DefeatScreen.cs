@@ -51,7 +51,6 @@ namespace Rollgeon.UI.Screens
             // Idempotencia: Awake (tests) y OnRegisteredByHost (runtime) llaman acá; uno suscribe,
             // el resto es no-op.
             if (_onPlayerDefeatedHandler != null) return;
-            Debug.Log("[DIAG-victory] DefeatScreen — suscribiendo a OnPlayerDefeated");
             _onPlayerDefeatedHandler = HandlePlayerDefeated;
             EventManager.Subscribe(EventName.OnPlayerDefeated, _onPlayerDefeatedHandler);
         }
@@ -65,14 +64,12 @@ namespace Rollgeon.UI.Screens
 
         private void HandlePlayerDefeated(params object[] args)
         {
-            Debug.Log($"[DIAG-victory] DefeatScreen.HandlePlayerDefeated — pushed={_pushed}");
             if (_pushed) return;
 
             if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 _pushed = true;
                 screens.PushByStringId(ScreenId);
-                Debug.Log("[DIAG-victory] DefeatScreen.PushByStringId llamado");
             }
             else
             {

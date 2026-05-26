@@ -153,9 +153,8 @@ namespace Rollgeon.Upgrades.Character
 
         public void NotifyPedestalClaimed(Guid roomInstanceId, string spawnPointId)
         {
-            Debug.Log($"[DIAG-victory] NotifyPedestalClaimed room={roomInstanceId} slot={spawnPointId}");
-            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null) { Debug.LogWarning("[DIAG-victory] return: IDungeonService no registrado"); return; }
-            if (!dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var room)) { Debug.LogWarning("[DIAG-victory] return: room no encontrada"); return; }
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null) return;
+            if (!dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var room)) return;
 
             // Resolver el reward del slot reclamado.
             if (!room.ObjectStates.TryGet<CharacterRewardState>(spawnPointId, out var claimedState))
@@ -166,7 +165,6 @@ namespace Rollgeon.Upgrades.Character
             if (claimedState.Claimed)
             {
                 // Idempotente — alguien ya hizo claim, ignoramos.
-                Debug.LogWarning("[DIAG-victory] return: slot ya estaba Claimed");
                 return;
             }
 
@@ -177,12 +175,10 @@ namespace Rollgeon.Upgrades.Character
                 return;
             }
 
-            if (!Apply(reward)) { Debug.LogWarning("[DIAG-victory] return: Apply(reward) devolvió false"); return; }
+            if (!Apply(reward)) return;
 
             // Marcar TODOS los slots de la room como claimed + destruir pedestales hermanos.
             MarkAllSlotsClaimedAndDespawn(room);
-
-            Debug.Log("[DIAG-victory] disparando OnFloorCleared desde NotifyPedestalClaimed");
 
             // Reward elegida tras el boss → floor completo. Disparamos OnFloorCleared para
             // que reaccione la VictoryScreen. En esta versión es el fin de la run; a futuro
