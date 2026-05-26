@@ -36,7 +36,12 @@ MonoBehaviour:
     Type: 1
     IsBlocker: 1
   - Label: Corner
-    Prefab: {fileID: 2189185042564396352, guid: 1e3529fd4d7668f4ba3f39b7c0dfcbe8, type: 3}
+    Prefab: {fileID: 2189185042564396352, guid: 6c82398a4c54706458281cc3c10ab34b, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 1
+  - Label: CornerUP
+    Prefab: {fileID: 2189185042564396352, guid: c38a4a5745898f44d8e2585e0ceae507, type: 3}
     Icon: {fileID: 0}
     Type: 0
     IsBlocker: 1
