@@ -19,6 +19,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         Vector2 _scroll;
 
         // Foldout state
+        bool _visualOpen = true;
         bool _statsOpen = true;
         bool _weaknessOpen = true;
         bool _rewardsOpen = false;
@@ -58,6 +59,8 @@ namespace Rollgeon.Editor.Tools.Enemy
 
             DrawIdentity();
             EditorGUILayout.Space(8);
+            DrawVisual();
+            EditorGUILayout.Space(8);
             DrawStats();
             EditorGUILayout.Space(8);
             DrawWeakness();
@@ -79,6 +82,31 @@ namespace Rollgeon.Editor.Tools.Enemy
             Prop("EntityId");
             Prop("DisplayName");
             Prop("Description");
+        }
+
+        void DrawVisual()
+        {
+            _visualOpen = EditorGUILayout.Foldout(_visualOpen, "Visual", toggleOnLabelClick: true);
+            if (!_visualOpen) return;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                // ObjectField directo (no via PropertyTree) — Odin pierde el
+                // drag-drop de UnityEngine.Object cuando vive dentro de un
+                // IMGUIContainer (UIToolkit), así que escribimos al SO a mano.
+                EditorGUI.BeginChangeCheck();
+                var newPrefab = (GameObject)EditorGUILayout.ObjectField(
+                    new GUIContent("Visual Prefab",
+                        "Prefab que se instancia como pawn visual del enemigo."),
+                    _so.VisualPrefab,
+                    typeof(GameObject),
+                    allowSceneObjects: false);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(_so, "Set Visual Prefab");
+                    _so.VisualPrefab = newPrefab;
+                    EditorUtility.SetDirty(_so);
+                }
+            }
         }
 
         void DrawStats()

@@ -1,6 +1,8 @@
 using System;
+using Rollgeon.Attributes;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +22,8 @@ namespace Rollgeon.Editor.Tools.Enemy
             var menu = new GenericMenu();
             menu.AddItem(new GUIContent("Action — Empty (EnemyActionBehavior)"), false, () => onPick(BuildEmptyAction()));
             menu.AddItem(new GUIContent("Action — Always-target Player (EnemyActionBehavior)"), false, () => onPick(BuildPlayerAction()));
+            menu.AddItem(new GUIContent("Action — Target Lowest-HP Ally (EnemyActionBehavior)"), false, () => onPick(BuildLowestHpAllyAction()));
+            menu.AddItem(new GUIContent("Action — Target Highest-Attack Enemy (EnemyActionBehavior)"), false, () => onPick(BuildHighestAttackEnemyAction()));
             menu.AddSeparator(string.Empty);
             menu.AddItem(new GUIContent("Support — Heal Lowest-HP Ally"), false, () => onPick(new SupportHealBehavior()));
             menu.AddSeparator(string.Empty);
@@ -46,6 +50,32 @@ namespace Rollgeon.Editor.Tools.Enemy
             var behavior = (EnemyActionBehavior)BuildEmptyAction();
             behavior.ActionName = "Attack Player";
             behavior.TargetSelector = new TargetSelector_AlwaysPlayer();
+            return behavior;
+        }
+
+        static BaseBehavior BuildLowestHpAllyAction()
+        {
+            var behavior = (EnemyActionBehavior)BuildEmptyAction();
+            behavior.ActionName = "Support Lowest-HP Ally";
+            behavior.TargetSelector = new TargetSelector_ByAttribute
+            {
+                Relation = EntityFilterMask.Allies,
+                Stat = StatType.Health,
+                Mode = ExtremumMode.Lowest,
+            };
+            return behavior;
+        }
+
+        static BaseBehavior BuildHighestAttackEnemyAction()
+        {
+            var behavior = (EnemyActionBehavior)BuildEmptyAction();
+            behavior.ActionName = "Focus Highest-Attack Enemy";
+            behavior.TargetSelector = new TargetSelector_ByAttribute
+            {
+                Relation = EntityFilterMask.Enemies,
+                Stat = StatType.Attack,
+                Mode = ExtremumMode.Highest,
+            };
             return behavior;
         }
     }
