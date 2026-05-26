@@ -5,6 +5,7 @@ using Rollgeon.ActionRolls;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
@@ -44,6 +45,11 @@ namespace Rollgeon.UI.HUD
         [Required("Arrastrar el boton de Confirm.")]
         [SerializeField]
         private Button _confirmButton;
+
+        [Tooltip("DiceZoneView del HUD compartido. Se usa para chequear si hay al menos " +
+                 "un dado holdeado antes de habilitar Confirm. Auto-resolve si null en Bind.")]
+        [SerializeField]
+        private DiceZoneView _diceZone;
 
         // ======================================================================
         // Events
@@ -139,6 +145,9 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
+
+            if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
             {
@@ -179,6 +188,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
 
             if (_movementService != null)
             {
@@ -297,6 +307,15 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        // DiceZoneView dispara TypedEvent<ComboMatchedPayload> en cada toggle de hold.
+        // Lo usamos como hook para recomputar el Confirm — gate del Confirm requiere
+        // que haya al menos un dado holdeado, así que cada cambio de holds dispara
+        // un recompute para reflejar el estado.
+        private void HandleComboMatchedForConfirm(ComboMatchedPayload _)
+        {
+            RecomputeButtonStates();
+        }
+
         // ======================================================================
         // Click handler
         // ======================================================================
@@ -338,17 +357,33 @@ namespace Rollgeon.UI.HUD
                 _buttons[i].SetState(ComputeStateForSlot(i));
             }
 
-            // Confirm se habilita solo cuando hay dados rollados pendientes de confirm
-            // y NO estamos en chain (durante chain el confirm pasa a la siguiente fase
-            // y los dados de chain se manejan por el chain pass / end turn).
+            // Confirm se habilita cuando hay dados rolleados AND el jugador holdeó
+            // al menos un dado. Sin holds confirmar no tiene sentido (no hay combo
+            // posible), y el botón quedaría engañando al usuario.
             if (_confirmButton != null)
-                _confirmButton.interactable = _isPlayerTurn && _rolled;
+                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld();
+        }
+
+        private bool AnyDieHeld()
+        {
+            if (_diceZone == null) return false;
+            var holds = _diceZone.GetHeldStates();
+            if (holds == null) return false;
+            for (int i = 0; i < holds.Length; i++)
+                if (holds[i]) return true;
+            return false;
         }
 
         private ActionButtonState ComputeStateForSlot(int slotIndex)
         {
+            // [DIAG temporal] Logueamos el motivo de cada Locked/Used para pinpointear
+            // el bug de "botón sigue activo tras usar" y "boss: botones grises con energía".
+            // Quitar estos Debug.Log una vez diagnosticado.
             if (!_isPlayerTurn)
+            {
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (no es turno del player)");
                 return ActionButtonState.Locked;
+            }
 
             // El slot seleccionado mantiene visual Selected aunque estemos en chain
             // o rolled — el jugador ve "esta es la accion que estoy ejecutando".
@@ -356,12 +391,20 @@ namespace Rollgeon.UI.HUD
 
             var behavior = ResolveBehaviorForSlot(slotIndex);
             if (behavior == null)
+            {
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (behavior null — no resuelve en Combat)");
                 return ActionButtonState.Locked;
+            }
 
             // Used: ejecutada con exito y BlockOnRepeat=true. TurnManager es la
             // fuente de verdad — respeta el flag de cada ActionDefinition.
             if (behavior.BlockOnRepeat && WasUsedThisTurn(behavior.ActionName))
+            {
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Used");
                 return ActionButtonState.Used;
+            }
+            if (behavior.BlockOnRepeat)
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) BlockOnRepeat=true pero WasUsedThisTurn=false");
 
             // Chain o roll en curso de OTRO slot: los demas estan lockeados para no
             // dejar al jugador iniciar una accion en paralelo.
@@ -370,11 +413,28 @@ namespace Rollgeon.UI.HUD
             if (_rolled)
                 return ActionButtonState.Locked;
 
-            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _))
+            // Force Door es contextual: solo habilita pegado (Manhattan ≤ 1, ortogonal)
+            // a una puerta no-tapiada y FUERA de la sala de Boss (sin escape). PCAdjacentToDoor
+            // vive en ShowConditions, que HasUsableEffectGroup NO evalúa — sin este gate el
+            // botón quedaría Available en cualquier lado de la sala con energía suficiente.
+            // HandleEntityMoved → RecomputeButtonStates ya reactiva esto al moverse.
+            if (behavior.Slot == HeroBehaviorSlot.ForceDoor
+                && !EffForceDoor.CanAttemptForceDoor(_playerGuid))
                 return ActionButtonState.Locked;
 
-            if (!HasEnoughEnergy(behavior))
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
+            {
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HasUsableEffectGroup=false: {usableReason})");
                 return ActionButtonState.Locked;
+            }
+
+            if (!HasEnoughEnergy(behavior))
+            {
+                int cur = ServiceLocator.TryGetService<IEnergyService>(out var es) && es != null
+                    ? es.GetCurrent(_playerGuid) : -1;
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (energía: current={cur} < cost={behavior.EnergyCost}, playerGuid={_playerGuid})");
+                return ActionButtonState.Locked;
+            }
 
             return ActionButtonState.Available;
         }

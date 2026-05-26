@@ -34,7 +34,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  _comboId: 
+  _comboId: combo.trio
   _displayName: Trio
   _description: 3 dados del mismo valor
   _icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}

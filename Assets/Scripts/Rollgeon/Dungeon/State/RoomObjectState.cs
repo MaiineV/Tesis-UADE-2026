@@ -71,4 +71,33 @@ namespace Rollgeon.Dungeon.State
         public string ReservedItemId;
         public int ReservedPrice;
     }
+
+    /// <summary>
+    /// Estado del altar de la Sala de Encantamiento (Sistema de Mejoras In-Run).
+    /// El altar es re-usable mientras alcance el oro — solo trackeamos
+    /// <see cref="TotalUses"/> para analytics/UI. La persistencia real de
+    /// los encantamientos aplicados vive en el <c>RuntimeDiceBag</c> (run-scope global).
+    /// </summary>
+    [Serializable]
+    public class EnchantmentAltarState : RoomObjectState
+    {
+        /// <summary>Cantidad de veces que el altar fue usado en esta room.</summary>
+        public int TotalUses;
+    }
+
+    /// <summary>
+    /// Estado de un pedestal de Character Reward — Canal Personaje. Cada pedestal
+    /// es un slot que persiste su rolled reward + flag de claim. Cuando el player
+    /// toma uno, el service marca TODOS los slots de la room como
+    /// <see cref="Claimed"/> (las opciones son mutuamente exclusivas — uno de los 3).
+    /// </summary>
+    [Serializable]
+    public class CharacterRewardState : RoomObjectState
+    {
+        /// <summary><c>UpgradeId</c> del <c>CharacterRewardSO</c> rolleado.</summary>
+        public string ReservedRewardId;
+
+        /// <summary><c>true</c> si el reward del slot (o cualquiera del grupo) ya fue claimed.</summary>
+        public bool Claimed;
+    }
 }

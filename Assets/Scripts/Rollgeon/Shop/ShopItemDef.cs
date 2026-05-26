@@ -16,7 +16,7 @@ namespace Rollgeon.Shop
     [CreateAssetMenu(
         menuName = "Rollgeon/Shop/Shop Item Def",
         fileName = "ShopItem")]
-    public sealed class ShopItemDef : ScriptableObject
+    public sealed class ShopItemDef : ScriptableObject, IShopRewardEntry
     {
         [Title("Identity")]
         [Tooltip("String-id estable del ítem. Se persiste como ReservedItemId en ShopItemState (§13.6).")]
@@ -31,5 +31,11 @@ namespace Rollgeon.Shop
 
         [PreviewField(48, ObjectFieldAlignment.Left)]
         public Sprite Icon;
+
+        // ---- IShopRewardEntry (explicit impl — los fields publicos no satisfacen properties de interface) -----
+        string IShopRewardEntry.EntryId => ItemId;
+        string IShopRewardEntry.DisplayName => DisplayName;
+        string IShopRewardEntry.Description => Description;
+        Sprite IShopRewardEntry.Icon => Icon;
     }
 }

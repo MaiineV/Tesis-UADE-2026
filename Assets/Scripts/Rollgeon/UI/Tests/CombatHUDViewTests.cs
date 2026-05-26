@@ -36,7 +36,6 @@ namespace Rollgeon.UI.Tests
         private GameObject _hudGO;
         private CombatHUDView _hud;
         private TurnQueueView _turnQueue;
-        private ComboIndicatorView _comboIndicator;
         private DiceZoneView _diceZone;
         private RerollCountView _rerollCount;
         private FloatingDamageSpawner _floatingDamage;
@@ -55,7 +54,6 @@ namespace Rollgeon.UI.Tests
             _hud = _hudGO.AddComponent<CombatHUDView>();
 
             _turnQueue = AttachChild<TurnQueueView>("TurnQueue", _hudGO);
-            _comboIndicator = AttachChild<ComboIndicatorView>("ComboIndicator", _hudGO);
             _diceZone = AttachChild<DiceZoneView>("DiceZone", _hudGO);
             _rerollCount = AttachChild<RerollCountView>("RerollCount", _hudGO);
             _floatingDamage = AttachChild<FloatingDamageSpawner>("FloatingDamage", _hudGO);
@@ -63,7 +61,6 @@ namespace Rollgeon.UI.Tests
             _endTurnButtonView = AttachChild<EndTurnButtonView>("EndTurnButton", _hudGO);
 
             AssignPrivate(_hud, "_turnQueue", _turnQueue);
-            AssignPrivate(_hud, "_comboIndicator", _comboIndicator);
             AssignPrivate(_hud, "_diceZone", _diceZone);
             AssignPrivate(_hud, "_rerollCount", _rerollCount);
             AssignPrivate(_hud, "_floatingDamage", _floatingDamage);

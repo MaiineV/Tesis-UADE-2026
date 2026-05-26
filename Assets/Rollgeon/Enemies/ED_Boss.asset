@@ -62,9 +62,9 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 100
-  BaseAttack: 5
+  BaseAttack: 2
   BaseHealStrength: 3
-  BaseSpeed: 5
+  BaseSpeed: 4
   MaxEnergy: 3
   MinGoldDrop: 3
   MaxGoldDrop: 5

@@ -46,10 +46,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private TurnQueueView _turnQueue;
 
-        [Required("Arrastrar ComboIndicatorView.")]
-        [SerializeField]
-        private ComboIndicatorView _comboIndicator;
-
         [Required("Arrastrar DiceZoneView.")]
         [SerializeField]
         private DiceZoneView _diceZone;
@@ -239,9 +235,6 @@ namespace Rollgeon.UI.Screens
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
 
-            if (_comboIndicator != null) _comboIndicator.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_comboIndicator no cableado.", this);
-
             if (_rerollCount != null) _rerollCount.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_rerollCount no cableado.", this);
 
@@ -275,7 +268,6 @@ namespace Rollgeon.UI.Screens
         public void UnbindAll()
         {
             if (_turnQueue != null) _turnQueue.Unbind();
-            if (_comboIndicator != null) _comboIndicator.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
@@ -299,16 +291,14 @@ namespace Rollgeon.UI.Screens
 
         public void SetBehaviorForFormula(HeroActionBehavior behavior)
         {
-            Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")} _comboIndicator={(_comboIndicator != null ? "set" : "null")}");
+            Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
-            if (_comboIndicator != null) _comboIndicator.SetSelectedBehavior(behavior);
         }
 
         public void ClearBehaviorForFormula()
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
-            if (_comboIndicator != null) _comboIndicator.ClearSelectedBehavior();
         }
 
         // ======================================================================

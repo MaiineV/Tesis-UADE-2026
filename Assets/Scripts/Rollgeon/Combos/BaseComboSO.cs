@@ -32,8 +32,10 @@ namespace Rollgeon.Combos
     public abstract class BaseComboSO : SerializedScriptableObject
     {
         [Title("Identity")]
-        [ValueDropdown(nameof(GetComboIds))]
-        [Tooltip("ID canonico del combo. Formato 'combo.<snake_case>' per TECHNICAL.md §12.6.")]
+        [ValueDropdown(nameof(GetComboIds), AppendNextDrawer = true)]
+        [Tooltip("ID canonico del combo. Formato 'combo.<snake_case>' per TECHNICAL.md §12.6. " +
+                 "El dropdown muestra IDs ya autorados en el proyecto (asegurate de no duplicar); " +
+                 "el field debajo te permite tipear un id nuevo.")]
         [SerializeField]
         protected string _comboId;
 
@@ -158,17 +160,41 @@ namespace Rollgeon.Combos
         // ---- Odin dropdown source ---------------------------------------
 
         /// <summary>
-        /// Alimenta el <see cref="ValueDropdownAttribute"/> del <c>_comboId</c> con el
-        /// <see cref="ComboCatalogSO"/> registrado en <c>ServiceLocator</c>. Fallback a empty
-        /// si el catalogo no esta registrado (plan §10.10).
+        /// Alimenta el <see cref="ValueDropdownAttribute"/> del <c>_comboId</c>.
+        /// <para>
+        /// <b>Runtime:</b> usa el <see cref="ComboCatalogSO"/> registrado en
+        /// <c>ServiceLocator</c>.
+        /// </para>
+        /// <para>
+        /// <b>Edit mode:</b> el <c>ServiceLocator</c> esta vacio (los bootstraps
+        /// solo corren al Play). Escaneamos <c>BaseComboSO</c> assets del proyecto
+        /// via <c>AssetDatabase</c> para que el Inspector muestre los IDs
+        /// disponibles incluso sin un catalogo populado (plan §10.10).
+        /// </para>
         /// </summary>
         private static IEnumerable<string> GetComboIds()
         {
-            if (ServiceLocator.TryGetService<ComboCatalogSO>(out var cat) && cat != null)
+            if (Application.isPlaying)
             {
-                return cat.AllIds;
+                if (ServiceLocator.TryGetService<ComboCatalogSO>(out var cat) && cat != null)
+                    return cat.AllIds;
+                return Array.Empty<string>();
             }
+
+#if UNITY_EDITOR
+            var ids = new SortedSet<string>();
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:BaseComboSO");
+            foreach (var guid in guids)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<BaseComboSO>(path);
+                if (asset != null && !string.IsNullOrEmpty(asset.ComboId))
+                    ids.Add(asset.ComboId);
+            }
+            return ids;
+#else
             return Array.Empty<string>();
+#endif
         }
 
         // ---- Odin validators --------------------------------------------
