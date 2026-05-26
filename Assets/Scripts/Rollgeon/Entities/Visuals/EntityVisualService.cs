@@ -22,9 +22,6 @@ namespace Rollgeon.Entities.Visuals
         private readonly Dictionary<Guid, EntityPawn> _byGuid = new Dictionary<Guid, EntityPawn>();
         private readonly IGridManager _grid;
         private readonly IMovementService _movement;
-        private readonly GameObject _heroPrefab;
-        private readonly GameObject _enemyPrefab;
-        private readonly GameObject _bossPrefab;
         private readonly Transform _parent;
         private bool _subscribed;
         private Action<DamageResolvedPayload> _onDamageResolved;
@@ -32,16 +29,10 @@ namespace Rollgeon.Entities.Visuals
         public EntityVisualService(
             IGridManager grid,
             IMovementService movement,
-            GameObject heroPrefab,
-            GameObject enemyPrefab,
-            GameObject bossPrefab,
             Transform parent = null)
         {
             _grid = grid ?? throw new ArgumentNullException(nameof(grid));
             _movement = movement;
-            _heroPrefab = heroPrefab;
-            _enemyPrefab = enemyPrefab;
-            _bossPrefab = bossPrefab;
             _parent = parent;
 
             if (_movement != null)
@@ -74,18 +65,24 @@ namespace Rollgeon.Entities.Visuals
 
         public EntityPawn SpawnHero(Guid guid, ClassHeroSO hero, GridCoord coord)
         {
-            var prefab = _heroPrefab ?? CreatePrimitiveFallback(PrimitiveType.Capsule, Color.cyan);
-            return SpawnInternal(guid, prefab, coord, EntityPawn.PawnKind.Hero);
+            if (hero == null) throw new ArgumentNullException(nameof(hero));
+            if (hero.VisualPrefab == null)
+            {
+                Debug.LogError($"[EntityVisualService] ClassHeroSO '{hero.name}' no tiene VisualPrefab asignado.");
+                return null;
+            }
+            return SpawnInternal(guid, hero.VisualPrefab, coord, EntityPawn.PawnKind.Hero);
         }
 
         public EntityPawn SpawnEnemy(Guid guid, EnemyDataSO data, GridCoord coord)
         {
-            var isBoss = data != null && data.BaseHP >= 80; // heurística simple para FP
-            var prefab = isBoss
-                ? (_bossPrefab ?? _enemyPrefab ?? CreatePrimitiveFallback(PrimitiveType.Cube, Color.magenta))
-                : (_enemyPrefab ?? CreatePrimitiveFallback(PrimitiveType.Capsule, Color.red));
-            var kind = isBoss ? EntityPawn.PawnKind.Boss : EntityPawn.PawnKind.Enemy;
-            return SpawnInternal(guid, prefab, coord, kind);
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data.VisualPrefab == null)
+            {
+                Debug.LogError($"[EntityVisualService] EnemyDataSO '{data.name}' no tiene VisualPrefab asignado.");
+                return null;
+            }
+            return SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy);
         }
 
         public void Despawn(Guid guid)
@@ -149,17 +146,6 @@ namespace Rollgeon.Entities.Visuals
 
             _byGuid[guid] = pawn;
             return pawn;
-        }
-
-        private GameObject CreatePrimitiveFallback(PrimitiveType type, Color color)
-        {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = $"{type}_Placeholder";
-            go.hideFlags = HideFlags.DontSave;
-            var renderer = go.GetComponent<Renderer>();
-            if (renderer != null) renderer.sharedMaterial.color = color;
-            go.SetActive(false); // used only as a prefab source — instantiate activates
-            return go;
         }
 
         private void OnEntityMoved(Guid guid, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)

@@ -85,6 +85,11 @@ namespace Rollgeon.Entities
         [Tooltip("Energia maxima por turno. El Support gasta energia cuando el action economy esta activo (T100b).")]
         public int MaxEnergy = 3;
 
+        [Title("Visual")]
+        [Tooltip("Prefab que se instancia como pawn visual de este enemigo. " +
+                 "Debe tener un EntityPawn (se agrega en runtime si falta).")]
+        public GameObject VisualPrefab;
+
         [Title("Rewards")]
         [MinValue(0)]
         [Tooltip("Cantidad minima de oro que dropea al morir. 0 = no dropea oro.")]
@@ -165,11 +170,27 @@ namespace Rollgeon.Entities
 
         private static IEnumerable<string> GetComboIds()
         {
-            if (ServiceLocator.TryGetService<ComboCatalogSO>(out var cat) && cat != null)
+            if (Application.isPlaying)
             {
-                return cat.AllIds;
+                if (ServiceLocator.TryGetService<ComboCatalogSO>(out var cat) && cat != null)
+                    return cat.AllIds;
+                return Array.Empty<string>();
             }
+
+#if UNITY_EDITOR
+            var ids = new SortedSet<string>();
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:BaseComboSO");
+            foreach (var guid in guids)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<BaseComboSO>(path);
+                if (asset != null && !string.IsNullOrEmpty(asset.ComboId))
+                    ids.Add(asset.ComboId);
+            }
+            return ids;
+#else
             return Array.Empty<string>();
+#endif
         }
     }
 }

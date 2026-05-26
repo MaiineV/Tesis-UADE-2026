@@ -2,7 +2,6 @@ using Patterns;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Patterns.Bootstrap;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Rollgeon.Entities.Visuals
@@ -13,20 +12,16 @@ namespace Rollgeon.Entities.Visuals
     /// en el <see cref="ServiceLocator"/>. Priority 85 — después de
     /// <see cref="GridManagerBootstrap"/> (75) y <see cref="MovementServiceBootstrap"/> (78).
     /// </summary>
+    /// <remarks>
+    /// El prefab visual de cada entidad vive en su propio SO
+    /// (<see cref="Heroes.ClassHeroSO.VisualPrefab"/> /
+    /// <see cref="Entities.EnemyDataSO.VisualPrefab"/>), por lo que el bootstrap
+    /// no necesita slots centralizados.
+    /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Entities/Visuals/Entity Visual Service Bootstrap",
         fileName = "EntityVisualServiceBootstrap")]
     public sealed class EntityVisualServiceBootstrap : ScriptableObject, IPreloadableService
     {
-        [Title("Placeholder prefabs (opcionales)")]
-        [Tooltip("Prefab del hero. Null = primitive Capsule cyan generado en runtime.")]
-        [SerializeField] private GameObject _heroPrefab;
-
-        [Tooltip("Prefab default de enemigos. Null = primitive Capsule red.")]
-        [SerializeField] private GameObject _enemyPrefab;
-
-        [Tooltip("Prefab de bosses (BaseHP >= 80). Null = cae al _enemyPrefab o Cube magenta.")]
-        [SerializeField] private GameObject _bossPrefab;
-
         private EntityVisualService _instance;
 
         public int Priority => 85;
@@ -44,7 +39,7 @@ namespace Rollgeon.Entities.Visuals
                 return;
             }
 
-            _instance = new EntityVisualService(grid, movement, _heroPrefab, _enemyPrefab, _bossPrefab);
+            _instance = new EntityVisualService(grid, movement);
             ServiceLocator.AddService<IEntityVisualService>(_instance, ServiceScope.Run);
             ServiceLocator.AddService<IEntityPositionResolver>(_instance, ServiceScope.Run);
         }

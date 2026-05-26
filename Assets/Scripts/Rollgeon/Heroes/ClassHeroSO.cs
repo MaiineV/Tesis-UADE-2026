@@ -44,6 +44,11 @@ namespace Rollgeon.Heroes
         [Required]
         public ContractSheet Sheet = new ContractSheet();
 
+        [Title("Visual")]
+        [Tooltip("Prefab que se instancia como pawn visual del hero. " +
+                 "Debe tener un EntityPawn (se agrega en runtime si falta).")]
+        public GameObject VisualPrefab;
+
         [Title("Phase Behaviors")]
         [InfoBox("Behaviors por fase. IsBaseBehavior + Slot para mapear a un slot base. " +
                  "IsBaseBehavior=false define una accion custom. " +

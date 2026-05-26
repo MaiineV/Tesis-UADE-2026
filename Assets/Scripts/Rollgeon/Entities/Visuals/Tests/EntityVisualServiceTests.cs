@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
 using Rollgeon.Movement;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Rollgeon.Entities.Visuals.Tests
 {
@@ -12,9 +15,6 @@ namespace Rollgeon.Entities.Visuals.Tests
     {
         private GridManager _grid;
         private MovementService _movement;
-        private GameObject _heroPrefab;
-        private GameObject _enemyPrefab;
-        private GameObject _bossPrefab;
         private EntityVisualService _service;
         private readonly List<UnityEngine.Object> _created = new List<UnityEngine.Object>();
 
@@ -25,11 +25,7 @@ namespace Rollgeon.Entities.Visuals.Tests
             _grid.LoadRoom(NavGraph.Rect(5, 5));
             _movement = new MovementService(_grid);
 
-            _heroPrefab = MakePrefab("HeroPrefab");
-            _enemyPrefab = MakePrefab("EnemyPrefab");
-            _bossPrefab = MakePrefab("BossPrefab");
-
-            _service = new EntityVisualService(_grid, _movement, _heroPrefab, _enemyPrefab, _bossPrefab);
+            _service = new EntityVisualService(_grid, _movement);
         }
 
         [TearDown]
@@ -52,13 +48,34 @@ namespace Rollgeon.Entities.Visuals.Tests
             return go;
         }
 
+        private ClassHeroSO MakeHero(string prefabName)
+        {
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            hero.VisualPrefab = MakePrefab(prefabName);
+            _created.Add(hero);
+            return hero;
+        }
+
+        private EnemyDataSO MakeEnemy(string prefabName)
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.VisualPrefab = MakePrefab(prefabName);
+            _created.Add(data);
+            return data;
+        }
+
         [Test]
         public void SpawnHero_RegistersPawnAtCoord()
         {
+            // Arrange
+            var hero = MakeHero("HeroPrefab");
             var guid = Guid.NewGuid();
-            var pawn = _service.SpawnHero(guid, null, new GridCoord(1, 2));
+
+            // Act
+            var pawn = _service.SpawnHero(guid, hero, new GridCoord(1, 2));
             _created.Add(pawn.gameObject);
 
+            // Assert
             Assert.IsNotNull(pawn);
             Assert.AreEqual(guid, pawn.EntityGuid);
             Assert.AreEqual(EntityPawn.PawnKind.Hero, pawn.Kind);
@@ -72,38 +89,83 @@ namespace Rollgeon.Entities.Visuals.Tests
         }
 
         [Test]
-        public void SpawnEnemy_UsesBossPrefab_WhenBaseHPHigh()
+        public void SpawnHero_UsesVisualPrefabFromClassHeroSO()
         {
-            var guid = Guid.NewGuid();
-            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
-            data.BaseHP = 100;
-            _created.Add(data);
+            // Arrange
+            var hero = MakeHero("WarriorVisual");
 
-            var pawn = _service.SpawnEnemy(guid, data, new GridCoord(0, 0));
+            // Act
+            var pawn = _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
             _created.Add(pawn.gameObject);
 
-            Assert.AreEqual(EntityPawn.PawnKind.Boss, pawn.Kind);
+            // Assert
+            Assert.IsNotNull(pawn);
+            Assert.AreEqual(EntityPawn.PawnKind.Hero, pawn.Kind);
         }
 
         [Test]
-        public void SpawnEnemy_UsesEnemyPrefab_WhenBaseHPLow()
+        public void SpawnHero_LogsErrorAndReturnsNull_WhenVisualPrefabMissing()
         {
-            var guid = Guid.NewGuid();
-            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
-            data.BaseHP = 20;
-            _created.Add(data);
+            // Arrange
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            hero.VisualPrefab = null;
+            _created.Add(hero);
 
-            var pawn = _service.SpawnEnemy(guid, data, new GridCoord(0, 0));
+            // Act + Assert
+            LogAssert.Expect(LogType.Error, new Regex("no tiene VisualPrefab"));
+            var pawn = _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
+            Assert.IsNull(pawn);
+        }
+
+        [Test]
+        public void SpawnHero_Throws_WhenHeroIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(
+                () => _service.SpawnHero(Guid.NewGuid(), null, GridCoord.Zero));
+        }
+
+        [Test]
+        public void SpawnEnemy_UsesVisualPrefabFromData()
+        {
+            // Arrange
+            var data = MakeEnemy("CustomEnemyVisual");
+
+            // Act
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
             _created.Add(pawn.gameObject);
 
+            // Assert
+            Assert.IsNotNull(pawn);
             Assert.AreEqual(EntityPawn.PawnKind.Enemy, pawn.Kind);
+        }
+
+        [Test]
+        public void SpawnEnemy_LogsErrorAndReturnsNull_WhenVisualPrefabMissing()
+        {
+            // Arrange
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.VisualPrefab = null;
+            _created.Add(data);
+
+            // Act + Assert
+            LogAssert.Expect(LogType.Error, new Regex("no tiene VisualPrefab"));
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+            Assert.IsNull(pawn);
+        }
+
+        [Test]
+        public void SpawnEnemy_Throws_WhenDataIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(
+                () => _service.SpawnEnemy(Guid.NewGuid(), null, GridCoord.Zero));
         }
 
         [Test]
         public void Despawn_RemovesFromLookup_AndDestroysGO()
         {
+            var hero = MakeHero("HeroPrefab");
             var guid = Guid.NewGuid();
-            var pawn = _service.SpawnHero(guid, null, GridCoord.Zero);
+            _service.SpawnHero(guid, hero, GridCoord.Zero);
 
             _service.Despawn(guid);
 
@@ -113,9 +175,10 @@ namespace Rollgeon.Entities.Visuals.Tests
         [Test]
         public void OnEntityMoved_UpdatesPawnPosition()
         {
+            var hero = MakeHero("HeroPrefab");
             var guid = Guid.NewGuid();
             _grid.Register(guid, new GridCoord(0, 0));
-            var pawn = _service.SpawnHero(guid, null, new GridCoord(0, 0));
+            var pawn = _service.SpawnHero(guid, hero, new GridCoord(0, 0));
             _created.Add(pawn.gameObject);
 
             _movement.Move(guid, new GridCoord(3, 0));
@@ -129,8 +192,9 @@ namespace Rollgeon.Entities.Visuals.Tests
         [Test]
         public void TryGetWorldPosition_ReturnsPawnPosition()
         {
+            var hero = MakeHero("HeroPrefab");
             var guid = Guid.NewGuid();
-            var pawn = _service.SpawnHero(guid, null, new GridCoord(2, 2));
+            var pawn = _service.SpawnHero(guid, hero, new GridCoord(2, 2));
             _created.Add(pawn.gameObject);
 
             var pos = _service.TryGetWorldPosition(guid);
@@ -147,9 +211,10 @@ namespace Rollgeon.Entities.Visuals.Tests
         [Test]
         public void SpawnHero_Twice_DespawnsPrevious()
         {
+            var hero = MakeHero("HeroPrefab");
             var guid = Guid.NewGuid();
-            var first = _service.SpawnHero(guid, null, new GridCoord(0, 0));
-            var second = _service.SpawnHero(guid, null, new GridCoord(1, 0));
+            var first = _service.SpawnHero(guid, hero, new GridCoord(0, 0));
+            var second = _service.SpawnHero(guid, hero, new GridCoord(1, 0));
 
             Assert.AreNotSame(first, second);
             Assert.IsTrue(_service.TryGetPawn(guid, out var current));
@@ -159,15 +224,19 @@ namespace Rollgeon.Entities.Visuals.Tests
         [Test]
         public void SpawnHero_EmptyGuid_Throws()
         {
-            Assert.Throws<ArgumentException>(() => _service.SpawnHero(Guid.Empty, null, GridCoord.Zero));
+            var hero = MakeHero("HeroPrefab");
+            Assert.Throws<ArgumentException>(
+                () => _service.SpawnHero(Guid.Empty, hero, GridCoord.Zero));
         }
 
         [Test]
         public void DespawnAll_ClearsLookup()
         {
-            _service.SpawnHero(Guid.NewGuid(), null, GridCoord.Zero);
-            _service.SpawnEnemy(Guid.NewGuid(),
-                ScriptableObject.CreateInstance<EnemyDataSO>(), new GridCoord(1, 0));
+            var hero = MakeHero("HeroPrefab");
+            var enemy = MakeEnemy("EnemyVisual");
+
+            _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
+            _service.SpawnEnemy(Guid.NewGuid(), enemy, new GridCoord(1, 0));
 
             _service.DespawnAll();
             Assert.IsFalse(_service.TryGetPawn(Guid.NewGuid(), out _));
