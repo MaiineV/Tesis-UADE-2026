@@ -186,6 +186,9 @@ namespace Rollgeon.Dungeon.Tests
         [Test]
         public void OnCombatEnd_BossRoom_TriggersOnFloorCleared()
         {
+            // Sin ICharacterRewardService registrado, el DungeonManager dispara OnFloorCleared
+            // directo al clearear el boss (camino de fallback). Con el canal de Character
+            // Rewards activo, la victoria se difiere hasta que el player elige una reward.
             _manager.GenerateFloor(CreateLayout(), seed: 42);
 
             var boss = _manager.GetAllRoomInstances().Values

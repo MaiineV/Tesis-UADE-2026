@@ -5,6 +5,7 @@ using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
 using Rollgeon.GameCamera;
+using Rollgeon.Upgrades.Character;
 using UnityEngine;
 
 namespace Rollgeon.Dungeon
@@ -499,10 +500,15 @@ namespace Rollgeon.Dungeon
 
             EventManager.Trigger(EventName.OnRoomCleared, roomInstanceId);
 
-            // Piso completo = boss clareada. Trigger OnFloorCleared para que
-            // la VictoryScreen (§UI) reaccione. floorIndex=0 placeholder hasta
-            // que exista piso multi-floor.
-            if (instance.Template != null && instance.Template.Type == RoomType.Boss)
+            // Boss clareada. La victoria del floor ya NO se dispara acá de una: el canal
+            // Personaje (Upgrades.Character) reacciona al OnRoomCleared de arriba, spawnea
+            // los pedestales de reward, y dispara OnFloorCleared recién cuando el player
+            // elige una mejora (o de inmediato si no hay rewards para ofrecer). Solo lo
+            // disparamos nosotros como fallback si ese canal no está activo (builds/tests
+            // sin el bootstrap), para no dejar el floor sin cerrar. floorIndex=0 placeholder
+            // hasta multi-floor.
+            if (instance.Template != null && instance.Template.Type == RoomType.Boss
+                && (!ServiceLocator.TryGetService<ICharacterRewardService>(out var rewards) || rewards == null))
             {
                 EventManager.Trigger(EventName.OnFloorCleared, roomInstanceId, 0);
             }

@@ -33,9 +33,20 @@ namespace Rollgeon.Combat.Handoff.Tests
             public void ResumeAfterCombat() => ResumeAfterCombatCallCount++;
         }
 
+        private class StubScreen : IBaseScreen
+        {
+            public StubScreen(string id) => ScreenStringId = id;
+            public string ScreenStringId { get; }
+            public void _Internal_OnPushed(IScreenPayload payload) { }
+            public void _Internal_OnPopped() { }
+            public void _Internal_OnGainFocus() { }
+            public void _Internal_OnLoseFocus() { }
+            public void _Internal_SetVisible(bool visible) { }
+        }
+
         private class SpyScreenManager : IScreenManager
         {
-            public IBaseScreen Current { get; private set; }
+            public IBaseScreen Current { get; set; }
             public int PopCurrentCallCount { get; private set; }
             public int PushByStringIdCallCount { get; private set; }
             public string LastScreenId { get; private set; }
@@ -121,6 +132,21 @@ namespace Rollgeon.Combat.Handoff.Tests
             TriggerCombatEnd(Guid.NewGuid(), CombatOutcome.Victory);
 
             Assert.AreEqual(1, _stubExploration.ResumeAfterCombatCallCount);
+        }
+
+        [Test]
+        public void OnCombatEnd_Victory_WhenVictoryScreenAlreadyOnTop_DoesNotPopOrResume()
+        {
+            // Arrange: simula el floor-clear inmediato — la VictoryScreen ya quedó al top
+            // (boss sin rewards, o build sin el canal de Character Rewards).
+            _spyScreen.Current = new StubScreen("VictoryScreen");
+
+            // Act
+            TriggerCombatEnd(Guid.NewGuid(), CombatOutcome.Victory);
+
+            // Assert: no la popeamos ni volvemos a exploración — el player debe ver la victoria.
+            Assert.AreEqual(0, _spyScreen.PopCurrentCallCount);
+            Assert.AreEqual(0, _stubExploration.ResumeAfterCombatCallCount);
         }
 
         [Test]

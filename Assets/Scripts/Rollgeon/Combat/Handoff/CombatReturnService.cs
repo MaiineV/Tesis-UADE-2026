@@ -1,7 +1,6 @@
 using System;
 using Patterns;
 using Rollgeon.Combat.FSM;
-using Rollgeon.Dungeon;
 using Rollgeon.Exploration;
 using Rollgeon.Player;
 using Rollgeon.UI;
@@ -14,6 +13,11 @@ namespace Rollgeon.Combat.Handoff
     /// </summary>
     public sealed class CombatReturnService : ICombatReturnService
     {
+        // String id de la VictoryScreen (ver VictoryScreen.ScreenStringId). Lo consultamos
+        // para no popear la pantalla de victoria si ya quedó al top del stack durante el
+        // mismo OnCombatEnd (floor cerrado de inmediato).
+        private const string VictoryScreenId = "VictoryScreen";
+
         private readonly IExplorationController _exploration;
         private readonly IScreenManager _screenManager;
         private readonly IPlayerService _player;
@@ -85,25 +89,19 @@ namespace Rollgeon.Combat.Handoff
 
         private void HandleVictory(Guid roomInstanceId)
         {
-            // Si la sala es Boss, el DungeonManager ya disparó OnFloorCleared antes
-            // que este handler corra (mismo bus de eventos), y la VictoryScreen ya
-            // se pusheó al top del stack. Si hiciéramos PopCurrent + ResumeAfterCombat,
-            // popearíamos la VictoryScreen recién pusheada y volveríamos a Exploration —
-            // el jugador no vería la pantalla de victoria. Para Boss, salimos sin tocar.
-            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon)
-                && dungeon != null
-                && dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var instance)
-                && instance?.Template != null
-                && instance.Template.Type == RoomType.Boss)
-            {
-                return;
-            }
+            // Si durante este mismo OnCombatEnd ya se pusheó la VictoryScreen (el floor se
+            // cerró de inmediato: boss sin rewards para ofrecer, o build sin el canal de
+            // Character Rewards), NO la popeamos: PopCurrent la sacaría del top y el jugador
+            // no la vería.
+            //
+            // En el flujo normal post-boss, la victoria se DIFIERE hasta que el player elige
+            // una reward en los pedestales, así que acá el top sigue siendo el CombatHUD: lo
+            // popeamos y volvemos a exploración para que pueda caminar a los pedestales —
+            // igual que en cualquier sala clareada (las puertas quedan abiertas).
+            var top = _screenManager.Current;
+            if (top != null && top.ScreenStringId == VictoryScreenId) return;
 
             _screenManager.PopCurrent();
-            // OnRoomCleared lo dispara el DungeonManager cuando recibe
-            // OnCombatEnd(Victory) — acá solo cerramos el overlay y volvemos
-            // a la fase de exploración. El player queda en la sala con las
-            // puertas abiertas hasta que decida cruzar una.
             _exploration.ResumeAfterCombat();
         }
 

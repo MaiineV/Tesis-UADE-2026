@@ -179,6 +179,11 @@ namespace Rollgeon.Upgrades.Character
 
             // Marcar TODOS los slots de la room como claimed + destruir pedestales hermanos.
             MarkAllSlotsClaimedAndDespawn(room);
+
+            // Reward elegida tras el boss → floor completo. Disparamos OnFloorCleared para
+            // que reaccione la VictoryScreen. En esta versión es el fin de la run; a futuro
+            // será el handoff al próximo floor. floorIndex=0 placeholder hasta multi-floor.
+            EventManager.Trigger(EventName.OnFloorCleared, roomInstanceId, 0);
         }
 
         // ====================================================================
@@ -219,17 +224,26 @@ namespace Rollgeon.Upgrades.Character
                 return;
             }
 
-            InitializeOrHydrate(room);
+            int spawned = InitializeOrHydrate(room);
             _spawnedInRoom.Add(roomId);
+
+            // Boss clareada pero sin rewards para ofrecer (pool vacío, sin RewardSpawnPoints,
+            // o prefab faltante): no hay nada que elegir, así que cerramos el floor de una.
+            // Sin esto el player quedaría atascado — el DungeonManager nos delega la victoria
+            // cuando este canal está activo.
+            if (spawned == 0)
+            {
+                EventManager.Trigger(EventName.OnFloorCleared, roomId, 0);
+            }
         }
 
-        private void InitializeOrHydrate(RoomInstance room)
+        private int InitializeOrHydrate(RoomInstance room)
         {
             var spawnPoints = ResolveRewardSpawnPoints(room);
             if (spawnPoints.Count == 0)
             {
                 Debug.LogWarning(LogPrefix + $"Boss room '{room.Template?.RoomId}' sin RewardSpawnPoints — no spawn.");
-                return;
+                return 0;
             }
 
             int slotCount = Mathf.Min(spawnPoints.Count, _slotsPerBoss);
@@ -239,6 +253,7 @@ namespace Rollgeon.Upgrades.Character
             var rolledRewards = new List<CharacterRewardSO>(slotCount);
             var exclude = new HashSet<CharacterRewardSO>();
 
+            int spawned = 0;
             int floorDepth = 0; // placeholder hasta multi-floor wiring
             for (int i = 0; i < slotCount; i++)
             {
@@ -259,7 +274,7 @@ namespace Rollgeon.Upgrades.Character
                     if (_pool == null)
                     {
                         Debug.LogWarning(LogPrefix + "CharacterRewardPoolSO no asignado — no se spawnea.");
-                        return;
+                        return spawned;
                     }
                     reward = _pool.Roll(_rng, floorDepth, exclude);
                     if (reward == null) continue;
@@ -272,18 +287,22 @@ namespace Rollgeon.Upgrades.Character
                 }
                 exclude.Add(reward);
                 rolledRewards.Add(reward);
-                SpawnPedestal(room, key, spawnPoints[i], reward);
+                if (SpawnPedestal(room, key, spawnPoints[i], reward)) spawned++;
             }
+            return spawned;
         }
 
-        private void SpawnPedestal(RoomInstance room, string spawnPointKey, Transform spawnPoint, CharacterRewardSO reward)
+        /// <summary>Instancia un pedestal interactuable. Devuelve <c>true</c> si quedó un
+        /// pedestal con el que el player puede interactuar; <c>false</c> si faltó prefab,
+        /// spawn point o el componente requerido.</summary>
+        private bool SpawnPedestal(RoomInstance room, string spawnPointKey, Transform spawnPoint, CharacterRewardSO reward)
         {
             if (_pedestalPrefab == null)
             {
                 Debug.LogWarning(LogPrefix + "PedestalPrefab no asignado — no se instancia visual.");
-                return;
+                return false;
             }
-            if (spawnPoint == null) return;
+            if (spawnPoint == null) return false;
 
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
             var go = UnityEngine.Object.Instantiate(_pedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
@@ -293,11 +312,12 @@ namespace Rollgeon.Upgrades.Character
             if (pedestal == null)
             {
                 Debug.LogError(LogPrefix + "PedestalPrefab no tiene CharacterRewardPedestalInteractable.");
-                return;
+                return false;
             }
             pedestal.Configure(room.InstanceId, spawnPointKey, this, reward);
 
             SpawnRewardVisualOnTop(go.transform, reward);
+            return true;
         }
 
         /// <summary>
