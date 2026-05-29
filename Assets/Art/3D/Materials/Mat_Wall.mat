@@ -102,7 +102,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BorderWidth: 0.042
+    - _BorderWidth: 0.055
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -115,7 +115,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailType: 2.44
+    - _DetailType: 1.95
     - _DitherScale: 1
     - _DitherStrength: 0.15
     - _DstBlend: 0
@@ -132,18 +132,18 @@ Material:
     - _MidThreshold: 0.36
     - _OcclusionStrength: 1
     - _Parallax: 0.005
-    - _PatternType: 1.97
+    - _PatternType: 1.9
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ShadowDarken: 0.5
     - _ShadowDitherDensity: 0.307
     - _ShadowSmooth: 0
     - _ShadowThreshold: 0.228
-    - _ShapeOpacity: 0.302
-    - _ShapeScaleX: 1.99
-    - _ShapeScaleY: 1.19
-    - _ShapeSize: 0.76
-    - _ShapeType: 0.68
+    - _ShapeOpacity: 0.494
+    - _ShapeScaleX: 0.83
+    - _ShapeScaleY: 1.24
+    - _ShapeSize: 0.84
+    - _ShapeType: 0.69
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SolidRows: 0
@@ -166,7 +166,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _ColorA: {r: 0.37999994, g: 0.09999997, b: 0.09999997, a: 1}
     - _ColorB: {r: 0.25999996, g: 0.059999965, b: 0.059999965, a: 1}
-    - _DetailColor: {r: 0.54999995, g: 0.41999996, b: 0.049999982, a: 1}
+    - _DetailColor: {r: 0.4433962, g: 0.26087466, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
