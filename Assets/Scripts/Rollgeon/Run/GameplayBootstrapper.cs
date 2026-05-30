@@ -58,19 +58,17 @@ namespace Rollgeon.Run
             // 2. Ahora sí: arrancar la run. El chain
             //    (RunController.OnRunStart → ExplorationController.BeginExploration →
             //    ProcessRoom) puede pushear CombatHUD con seguridad.
-            RunBootstrapper.StartRun(hero, ruleset, runId);
-            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}", this);
-
-            // 3. Bag construido en BuildSelectionScreen (Fase 2). Si vino, pisa lo
-            //    que SetPlayer haya inferido del StartingDiceBagRef. Si no vino,
-            //    el flujo cae al fallback de Fase 1 (StartingDiceBagRef o
-            //    Resources/AD_Warrior_StartingBag) en CombatHandoffService.
+            //
+            //    La build de Fase 2 se pasa a StartRun para que se aplique ANTES de que
+            //    se dispare OnRunStart. Si llegara después, el RuntimeDiceBag del
+            //    enchantment service ya quedaría cacheado contra el fallback del hero y
+            //    los dados tirarían el rango del fallback (5×D6) — BUG-012. Si no vino
+            //    build, StartRun deja el fallback de Fase 1 (StartingDiceBagRef o
+            //    Resources/AD_Warrior_StartingBag).
             var builtBag = PendingRunRequest.BuiltDiceBag;
-            if (builtBag != null && ServiceLocator.TryGetService<IPlayerService>(out var playerService))
-            {
-                playerService.SetDiceBag(builtBag);
-                Debug.Log(LogPrefix + $"Aplicado built dice bag ({builtBag.Dice.Count} dados).", this);
-            }
+            RunBootstrapper.StartRun(hero, ruleset, runId, builtBag);
+            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}, " +
+                      $"builtBag={(builtBag != null ? builtBag.Dice.Count + " dados" : "fallback")}", this);
 
             var startingItems = PendingRunRequest.StartingItems;
             if (startingItems != null && startingItems.Count > 0)

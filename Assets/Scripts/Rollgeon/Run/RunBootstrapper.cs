@@ -1,6 +1,7 @@
 using System;
 using Patterns;
 using Rollgeon.Balance;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -28,7 +29,16 @@ namespace Rollgeon.Run
         /// <param name="selected">Hero class chosen by the player.</param>
         /// <param name="ruleset">Active ruleset (passed for downstream listeners).</param>
         /// <param name="runId">Unique run identifier.</param>
-        public static void StartRun(ClassHeroSO selected, RulesetSO ruleset, Guid runId)
+        /// <param name="builtDiceBag">
+        /// Bolsa construida en el BuildSelectionScreen (Fase 2). Debe aplicarse ANTES de
+        /// disparar <see cref="EventName.OnRunStart"/>: los listeners run-start (p.ej. el
+        /// DiceEnchantmentService que cachea el RuntimeDiceBag) leen
+        /// <see cref="IPlayerService.DiceBag"/> y quedarían lockeados al fallback del
+        /// hero si la build llegara tarde (BUG-012). <c>null</c> mantiene el fallback de
+        /// Fase 1 (StartingDiceBagRef / Resources).
+        /// </param>
+        public static void StartRun(ClassHeroSO selected, RulesetSO ruleset, Guid runId,
+            DiceBagSO builtDiceBag = null)
         {
             if (selected == null) throw new ArgumentNullException(nameof(selected));
 
@@ -37,6 +47,11 @@ namespace Rollgeon.Run
 
             var playerService = ServiceLocator.GetService<IPlayerService>();
             playerService.SetPlayer(selected, runId);
+
+            // La build de Fase 2 pisa el StartingDiceBagRef inferido por SetPlayer. Va acá
+            // (antes del Trigger de OnRunStart) para que el RuntimeDiceBag del enchantment
+            // service se inicialice desde la build real y no desde el fallback (BUG-012).
+            if (builtDiceBag != null) playerService.SetDiceBag(builtDiceBag);
 
             // EndRun de la run previa hizo ClearScope(Run) y borro los IPreloadableService
             // run-scoped (Inventory, Phase, Grid, EnemyAIRegistry, ...). Recrearlos aca

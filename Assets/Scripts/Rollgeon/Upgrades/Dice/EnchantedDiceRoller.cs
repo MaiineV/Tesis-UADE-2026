@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Dice;
+using UnityEngine;
 
 namespace Rollgeon.Upgrades.Dice
 {
@@ -27,6 +28,7 @@ namespace Rollgeon.Upgrades.Dice
     {
         private readonly IDiceRoller _inner;
         private readonly System.Random _rng;
+        private bool _warnedDivergence;
 
         public EnchantedDiceRoller(IDiceRoller inner)
         {
@@ -90,8 +92,36 @@ namespace Rollgeon.Upgrades.Dice
 
         private int RollOne(DiceType type, int bagIndex, IDiceEnchantmentService service)
         {
+            // Guard (BUG-012): el RuntimeDiceBag del enchantment service debe coincidir,
+            // slot a slot, con la bolsa que estamos tirando. Si divergen (p.ej. el runtime
+            // quedó cacheado contra otra bolsa), las caras de ComputeAllowedFaces pertenecen
+            // a OTRO dado y clamparían éste al rango equivocado — un D20 saldría 1-6. Ante
+            // divergencia, ignoramos el enchantment y tiramos el rango real del dado.
+            var runtime = service.Bag;
+            if (runtime == null || bagIndex < 0 || bagIndex >= runtime.Dice.Count
+                || runtime.Dice[bagIndex] != type)
+            {
+                WarnDivergenceOnce(bagIndex, type, runtime);
+                return _rng.Next(1, type.MaxFace() + 1);
+            }
+
             var allowed = service.ComputeAllowedFaces(bagIndex);
             return PickFromSet(allowed, type);
+        }
+
+        private void WarnDivergenceOnce(int bagIndex, DiceType type, RuntimeDiceBag runtime)
+        {
+            if (_warnedDivergence) return;
+            _warnedDivergence = true;
+
+            var runtimeDie = runtime != null && bagIndex >= 0 && bagIndex < runtime.Dice.Count
+                ? runtime.Dice[bagIndex].ToString()
+                : "n/a";
+            Debug.LogWarning(
+                $"[EnchantedDiceRoller] RuntimeDiceBag diverge de la bolsa tirada en slot " +
+                $"{bagIndex} (runtime={runtimeDie}, roll={type}). Tiro el rango real del dado " +
+                $"e ignoro encantamientos — el RuntimeDiceBag no se sincronizó con la build " +
+                $"(ver BUG-012). Solo se loguea una vez por roller.");
         }
 
         private int PickFromSet(IReadOnlyCollection<int> faces, DiceType type)

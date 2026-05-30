@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -77,6 +78,70 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.StartRun(_hero, null, runId);
 
             Assert.IsTrue(fired);
+        }
+
+        // ----------------------------------------------------------------
+        // Regresión: BUG-012 — la build de Fase 2 debe aplicarse ANTES de
+        // disparar OnRunStart, sino los listeners run-start (DiceEnchantment-
+        // Service → RuntimeDiceBag) cachean el fallback del hero (5×D6) y los
+        // dados tiran el rango equivocado.
+        // ----------------------------------------------------------------
+
+        [Test]
+        public void StartRun_AppliesBuiltDiceBag_BeforeOnRunStartFires()
+        {
+            // Arrange
+            var runId = Guid.NewGuid();
+            var builtBag = MakeBag(DiceType.D20, DiceType.D12, DiceType.D8, DiceType.D6, DiceType.D6);
+            DiceBagSO bagAtRunStart = null;
+            EventManager.Subscribe(EventName.OnRunStart, args => bagAtRunStart = _playerService.DiceBag);
+
+            // Act
+            RunBootstrapper.StartRun(_hero, null, runId, builtBag);
+
+            // Assert — el listener vio la build, no el fallback del hero
+            Assert.AreSame(builtBag, bagAtRunStart,
+                "El built dice bag debe estar aplicado cuando OnRunStart se dispara.");
+
+            UnityEngine.Object.DestroyImmediate(builtBag);
+        }
+
+        [Test]
+        public void StartRun_WithBuiltDiceBag_SetsPlayerDiceBag()
+        {
+            // Arrange
+            var runId = Guid.NewGuid();
+            var builtBag = MakeBag(DiceType.D20, DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6);
+
+            // Act
+            RunBootstrapper.StartRun(_hero, null, runId, builtBag);
+
+            // Assert
+            Assert.AreSame(builtBag, _playerService.DiceBag);
+
+            UnityEngine.Object.DestroyImmediate(builtBag);
+        }
+
+        [Test]
+        public void StartRun_WithoutBuiltDiceBag_KeepsSetPlayerInferredBag()
+        {
+            // Arrange — hero sin StartingDiceBagRef → SetPlayer deja DiceBag en null.
+            var runId = Guid.NewGuid();
+
+            // Act — overload sin bolsa (param opcional) no debe romper el flujo previo.
+            RunBootstrapper.StartRun(_hero, null, runId);
+
+            // Assert
+            Assert.IsNull(_playerService.DiceBag,
+                "Sin built bag ni StartingDiceBagRef, DiceBag queda en el fallback (null).");
+        }
+
+        private DiceBagSO MakeBag(params DiceType[] dice)
+        {
+            var bag = ScriptableObject.CreateInstance<DiceBagSO>();
+            bag.name = "TestBuiltBag";
+            bag.Dice = new List<DiceType>(dice);
+            return bag;
         }
 
         [Test]
