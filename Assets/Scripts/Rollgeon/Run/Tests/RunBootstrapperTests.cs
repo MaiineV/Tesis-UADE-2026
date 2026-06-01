@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -175,6 +176,57 @@ namespace Rollgeon.Run.Tests
             finally
             {
                 UnityEngine.Object.DestroyImmediate(so);
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // Regresión: BUG-012 — la build de dados volvía a ser todos D6.
+        //
+        // El built bag se aplicaba DESPUÉS de disparar OnRunStart, así que los
+        // servicios que siembran estado desde IPlayerService.DiceBag en ese evento
+        // (DiceEnchantmentService → RuntimeDiceBag, consumido por EnchantedDiceRoller)
+        // quedaban sembrados con el StartingDiceBagRef del hero (5×D6 para el Guerrero)
+        // y todos los dados se tiraban como D6 ignorando la build. La build debe estar
+        // aplicada ANTES de que OnRunStart se dispare.
+        // ----------------------------------------------------------------
+
+        [Test]
+        public void StartRun_AppliesBuiltDiceBag_BeforeFiringOnRunStart()
+        {
+            // Arrange — hero con StartingDiceBagRef = 5×D6 (como CH_Warrior).
+            var startingBag = ScriptableObject.CreateInstance<DiceBagSO>();
+            startingBag.Dice = new List<DiceType>
+                { DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6 };
+            _hero.StartingDiceBagRef = startingBag;
+
+            var builtBag = ScriptableObject.CreateInstance<DiceBagSO>();
+            builtBag.Dice = new List<DiceType>
+                { DiceType.D20, DiceType.D12, DiceType.D10, DiceType.D8, DiceType.D8 };
+
+            // Capturamos el bag que ven los listeners de OnRunStart — el momento en que
+            // DiceEnchantmentService siembra su RuntimeDiceBag.
+            List<DiceType> bagAtRunStart = null;
+            EventManager.Subscribe(EventName.OnRunStart,
+                _ => bagAtRunStart = _playerService.DiceBag != null
+                    ? new List<DiceType>(_playerService.DiceBag.Dice)
+                    : null);
+
+            try
+            {
+                // Act
+                RunBootstrapper.StartRun(_hero, null, Guid.NewGuid(), builtBag);
+
+                // Assert — al disparar OnRunStart el bag activo ya es la build, no 5×D6.
+                Assert.IsNotNull(bagAtRunStart, "OnRunStart no vio ningún DiceBag.");
+                CollectionAssert.AreEqual(builtBag.Dice, bagAtRunStart,
+                    "OnRunStart vio el StartingDiceBagRef (5×D6) en vez de la build elegida (BUG-012).");
+                Assert.AreSame(builtBag, _playerService.DiceBag,
+                    "El built bag debe quedar activo tras StartRun.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(startingBag);
+                UnityEngine.Object.DestroyImmediate(builtBag);
             }
         }
 

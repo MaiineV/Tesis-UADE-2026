@@ -1,6 +1,7 @@
 using System;
 using Patterns;
 using Rollgeon.Balance;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -28,7 +29,13 @@ namespace Rollgeon.Run
         /// <param name="selected">Hero class chosen by the player.</param>
         /// <param name="ruleset">Active ruleset (passed for downstream listeners).</param>
         /// <param name="runId">Unique run identifier.</param>
-        public static void StartRun(ClassHeroSO selected, RulesetSO ruleset, Guid runId)
+        /// <param name="builtDiceBag">
+        /// Bolsa armada en <c>BuildSelectionScreen</c> (Fase 2). Si no es <c>null</c>,
+        /// pisa el <c>StartingDiceBagRef</c> que <see cref="IPlayerService.SetPlayer"/>
+        /// infirió del hero, <b>antes</b> de disparar <see cref="EventName.OnRunStart"/>.
+        /// </param>
+        public static void StartRun(ClassHeroSO selected, RulesetSO ruleset, Guid runId,
+            DiceBagSO builtDiceBag = null)
         {
             if (selected == null) throw new ArgumentNullException(nameof(selected));
 
@@ -37,6 +44,16 @@ namespace Rollgeon.Run
 
             var playerService = ServiceLocator.GetService<IPlayerService>();
             playerService.SetPlayer(selected, runId);
+
+            // La build elegida debe pisar el StartingDiceBagRef del hero ANTES de
+            // disparar OnRunStart: los servicios run-scoped que siembran estado desde
+            // IPlayerService.DiceBag en ese evento (DiceEnchantmentService → RuntimeDiceBag,
+            // consumido por EnchantedDiceRoller) verían si no los 5×D6 del Guerrero y
+            // tirarían todos los dados como D6 ignorando la build elegida (BUG-012).
+            if (builtDiceBag != null)
+            {
+                playerService.SetDiceBag(builtDiceBag);
+            }
 
             // EndRun de la run previa hizo ClearScope(Run) y borro los IPreloadableService
             // run-scoped (Inventory, Phase, Grid, EnemyAIRegistry, ...). Recrearlos aca
