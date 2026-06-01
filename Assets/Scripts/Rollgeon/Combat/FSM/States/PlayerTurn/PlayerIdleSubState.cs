@@ -14,6 +14,7 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             Context.PendingAction = null;
             Context.PendingBehaviorContext = null;
             Context.SelectionResult = null;
+            Context.OnActionComplete = null;
         }
 
         public override bool CheckInput(PlayerTurnSubInput input,

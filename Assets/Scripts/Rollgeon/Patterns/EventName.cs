@@ -82,6 +82,13 @@ namespace Patterns
         OnChainPhaseStarted,
         /// <summary>args: [Guid sourceGuid, int phasesCompleted, int totalPhases, bool wasPass]</summary>
         OnChainCompleted,
+        /// <summary>args: [Guid sourceGuid]. Una accion sin tirada (ej. Movement) quedo
+        /// comprometida y esta esperando que el jugador elija el tile target. La accion ya
+        /// se cobro y se ejecuta de forma asincrona al clickear el destino; mientras tanto
+        /// la UI debe lockear los demas slots para impedir iniciar otra accion en paralelo
+        /// (BUG-013). El lock se libera con el <see cref="OnBehaviorExecuted"/> que dispara
+        /// la accion al completarse.</summary>
+        OnActionSelectionStarted,
         /// <summary>args: [Guid sourceGuid, string actionName, bool blockOnRepeat].
         /// El behavior termino de ejecutarse en el turno (sea simple o chain). La UI
         /// lo usa para transicionar el boton del slot a Used/Available segun

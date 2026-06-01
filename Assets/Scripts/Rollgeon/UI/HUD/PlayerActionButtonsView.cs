@@ -84,6 +84,14 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _rolled;
 
+        // True mientras una accion sin tirada (ej. Movement) espera que el jugador
+        // elija el tile destino. La accion ya se comprometio pero ejecuta async; sin
+        // este lock los demas slots quedarian Available y el jugador podria disparar
+        // otra accion en paralelo al movimiento (BUG-013). Lo setea
+        // OnActionSelectionStarted y lo limpia OnBehaviorExecuted.
+        [ShowInInspector, ReadOnly]
+        private bool _awaitingSelection;
+
         // Slot pressed actualmente (Selected visual). Null si no hay seleccion.
         // Limpia al ejecutarse (OnBehaviorExecuted) o cambia por cancel-by-reselection.
         [ShowInInspector, ReadOnly]
@@ -140,6 +148,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.Subscribe(EventName.OnChainStarted, HandleChainStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, HandleChainCompleted);
+            EventManager.Subscribe(EventName.OnActionSelectionStarted, HandleActionSelectionStarted);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, HandleBehaviorExecuted);
             EventManager.Subscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
@@ -159,6 +168,7 @@ namespace Rollgeon.UI.HUD
             _isPlayerTurn = false;
             _inChain = false;
             _rolled = false;
+            _awaitingSelection = false;
             _selectedSlot = null;
 
             RefreshCostLabels();
@@ -183,6 +193,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.UnSubscribe(EventName.OnChainStarted, HandleChainStarted);
             EventManager.UnSubscribe(EventName.OnChainCompleted, HandleChainCompleted);
+            EventManager.UnSubscribe(EventName.OnActionSelectionStarted, HandleActionSelectionStarted);
             EventManager.UnSubscribe(EventName.OnBehaviorExecuted, HandleBehaviorExecuted);
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
@@ -200,6 +211,7 @@ namespace Rollgeon.UI.HUD
             _isPlayerTurn = false;
             _inChain = false;
             _rolled = false;
+            _awaitingSelection = false;
             _selectedSlot = null;
             RecomputeButtonStates();
         }
@@ -216,6 +228,7 @@ namespace Rollgeon.UI.HUD
             _isPlayerTurn = true;
             _inChain = false;
             _rolled = false;
+            _awaitingSelection = false;
             _selectedSlot = null;
             RecomputeButtonStates();
         }
@@ -228,6 +241,7 @@ namespace Rollgeon.UI.HUD
             _isPlayerTurn = false;
             _inChain = false;
             _rolled = false;
+            _awaitingSelection = false;
             _selectedSlot = null;
             RecomputeButtonStates();
         }
@@ -270,9 +284,23 @@ namespace Rollgeon.UI.HUD
 
             _inChain = false;
             _rolled = false;
+            _awaitingSelection = false;
             // _selectedSlot lo limpia OnBehaviorExecuted; si no llega (chain con pass
             // total y phasesCompleted==0), igual queremos liberar la seleccion visual.
             _selectedSlot = null;
+            RecomputeButtonStates();
+        }
+
+        // Una accion sin tirada (Movement) quedo comprometida y espera el click del tile
+        // destino. Lockeamos los demas slots hasta que termine (OnBehaviorExecuted la
+        // libera) — sin esto el jugador podria atacar mientras el movimiento esta pendiente
+        // y ambas acciones corrian en paralelo (BUG-013).
+        private void HandleActionSelectionStarted(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
+
+            _awaitingSelection = true;
             RecomputeButtonStates();
         }
 
@@ -282,7 +310,9 @@ namespace Rollgeon.UI.HUD
             if (guid != _playerGuid) return;
 
             // Limpia la seleccion: el slot que se ejecuto ahora sera Used o Available
-            // (segun BlockOnRepeat) en el proximo RecomputeButtonStates.
+            // (segun BlockOnRepeat) en el proximo RecomputeButtonStates. Tambien libera el
+            // lock de seleccion pendiente (BUG-013) — la accion async ya termino.
+            _awaitingSelection = false;
             _selectedSlot = null;
             RecomputeButtonStates();
         }
@@ -406,11 +436,14 @@ namespace Rollgeon.UI.HUD
             if (behavior.BlockOnRepeat)
                 Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) BlockOnRepeat=true pero WasUsedThisTurn=false");
 
-            // Chain o roll en curso de OTRO slot: los demas estan lockeados para no
-            // dejar al jugador iniciar una accion en paralelo.
+            // Chain, roll, o seleccion de target pendiente de OTRO slot: los demas estan
+            // lockeados para no dejar al jugador iniciar una accion en paralelo. El
+            // _awaitingSelection cubre el caso de Movement (BUG-013), que no rola dados.
             if (_inChain)
                 return ActionButtonState.Locked;
             if (_rolled)
+                return ActionButtonState.Locked;
+            if (_awaitingSelection)
                 return ActionButtonState.Locked;
 
             // Force Door es contextual: solo habilita pegado (Manhattan ≤ 1, ortogonal)

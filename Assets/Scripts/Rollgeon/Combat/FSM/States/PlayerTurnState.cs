@@ -70,16 +70,24 @@ namespace Rollgeon.Combat.FSM.States
             }
         }
 
-        public void RequestAction(HeroActionBehavior action, BehaviorContext behaviorContext)
+        /// <param name="onComplete">
+        /// Callback invocado cuando la acción terminó de ejecutarse — tras resolver la
+        /// selección de target si la requería. El handoff lo usa para postergar el
+        /// desbloqueo de la UI hasta que la acción realmente corre (BUG-013). Se invoca
+        /// también en el path de aborto para que el caller no quede esperando para siempre.
+        /// </param>
+        public void RequestAction(HeroActionBehavior action, BehaviorContext behaviorContext, Action onComplete = null)
         {
             if (_subCtx == null || _subFSM == null)
             {
                 UnityEngine.Debug.LogWarning($"[PlayerTurnState] RequestAction aborted — subCtx={_subCtx != null} subFSM={_subFSM != null}");
+                onComplete?.Invoke();
                 return;
             }
 
             _subCtx.PendingAction = action;
             _subCtx.PendingBehaviorContext = behaviorContext;
+            _subCtx.OnActionComplete = onComplete;
 
             bool needsSelection = action.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
             UnityEngine.Debug.Log($"[PlayerTurnState] RequestAction '{action.ActionName}' needsSelection={needsSelection} currentSubState={_subFSM.Current?.GetType().Name}");

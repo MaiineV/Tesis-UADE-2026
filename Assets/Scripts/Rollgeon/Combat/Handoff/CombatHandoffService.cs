@@ -339,14 +339,24 @@ namespace Rollgeon.Combat.Handoff
                         var r = _lastFaces ?? Array.Empty<int>();
                         EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)r);
 
+                        // BUG-013: estas acciones (ej. Movement) ejecutan de forma asíncrona —
+                        // el jugador todavía tiene que clickear el tile destino. Si soltáramos
+                        // el lock acá (OnBehaviorExecuted) y nulláramos _selectedBehavior, los
+                        // demás botones volverían a estar disponibles y el guard de re-entrada
+                        // desaparecería, dejando que el jugador dispare un ataque EN PARALELO al
+                        // movimiento pendiente. En vez de eso lockeamos la UI ahora y diferimos
+                        // el OnBehaviorExecuted + el clear al callback que el sub-FSM invoca
+                        // recién cuando la acción terminó de ejecutarse.
+                        EventManager.Trigger(EventName.OnActionSelectionStarted, playerGuid);
+
                         Debug.Log("[CombatHandoff] → RequestAction on PlayerTurnState");
-                        playerState.RequestAction(_selectedBehavior, behaviorCtx);
-
-                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
-
-                        _lastFaces = null;
-                        _selectedBehavior = null;
-                        hud.ClearBehaviorForFormula();
+                        playerState.RequestAction(_selectedBehavior, behaviorCtx, () =>
+                        {
+                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+                            _lastFaces = null;
+                            _selectedBehavior = null;
+                            hud.ClearBehaviorForFormula();
+                        });
                         return;
                     }
                     Debug.LogWarning("[CombatHandoff] playerState is null — falling through to TurnManager path");
