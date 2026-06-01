@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
@@ -31,6 +32,7 @@ namespace Rollgeon.Combat.FSM.Tests
         private StubGridManager _grid;
         private StubSelectionController _selection;
         private FakeEnergyService _energy;
+        private TurnManager _turnManager;
         private TurnOrderService _turnOrder;
         private PlayerTurnState _playerState;
 
@@ -53,11 +55,16 @@ namespace Rollgeon.Combat.FSM.Tests
             _energy = new FakeEnergyService();
             _energy.Current[_playerId] = _energy.MaxPerEntity;
 
-            // TurnManager null: la FSM no lo necesita para este test (Executing cae al
-            // path action.Execute). TurnOrder no se construye su cola — sólo se referencia.
+            // TurnManager real (sin catálogo/ruleset): PlayerExecutingSubState lo resuelve del
+            // ServiceLocator y cobra la energía vía TryExecute cuando la acción NO es prepago
+            // (Movement con cobro-al-ejecutar). Sin él, Executing caería a action.Execute.
+            _turnManager = new TurnManager();
+            _turnManager.ConfigureForTests(_energy, actions: null, ruleset: null);
+            ServiceLocator.AddService<TurnManager>(_turnManager, ServiceScope.Global);
+
             _turnOrder = new TurnOrderService();
 
-            var ctx = new CombatContext(_turnOrder, null, _energy, _playerId, _roomId, null);
+            var ctx = new CombatContext(_turnOrder, _turnManager, _energy, _playerId, _roomId, null);
             _playerState = new PlayerTurnState(ctx);
             _playerState.Enter(CombatInput.None);
         }
@@ -65,6 +72,8 @@ namespace Rollgeon.Combat.FSM.Tests
         [TearDown]
         public void TearDown()
         {
+            _turnManager?.Dispose();
+            _turnManager = null;
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
         }
@@ -98,6 +107,61 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         [Test]
+        public void RequestAction_SelectionCancelled_InvokesOnCompleteWithoutHanging()
+        {
+            // Arrange — BUG-013 opción "cancelar + reembolsar": el jugador puede abortar
+            // el movimiento en vez de elegir un tile.
+            var move = BuildSelectionMove();
+            var completed = false;
+            var behaviorCtx = new HeroBehaviorContext { SourceEntity = new Entity { Guid = _playerId } };
+
+            _playerState.RequestAction(move, behaviorCtx, () => completed = true);
+            Assert.IsTrue(_selection.SelectionStarted, "pre: la selección debe haber comenzado.");
+            Assert.IsFalse(completed, "pre: aún no debe completarse.");
+
+            // Act — la selección se cancela (WasCancelled), no se elige tile.
+            _selection.SimulateSelectionDone(new TargetSelectionResult { WasCancelled = true });
+
+            // Assert — el sub-FSM se desenreda igual y dispara onComplete, así el caller
+            // (handoff) puede liberar el lock de la UI. No queda colgado.
+            Assert.IsTrue(completed, "OnComplete debe dispararse también cuando la selección se cancela.");
+        }
+
+        [Test]
+        public void RequestAction_MovementCompleted_ChargesEnergyOnExecute()
+        {
+            // BUG-013 (cobrar al ejecutar): el Movement cobra su energía recién cuando se
+            // ejecuta, es decir al clickear la celda destino (EnergyPrepaid=false → TryExecute).
+            var move = BuildSelectionMove(); // EnergyCost = 1
+            int before = _energy.Current[_playerId];
+
+            _playerState.RequestAction(move, MoveCtx(), () => { });
+            _selection.SimulateSelectionDone(new TargetSelectionResult
+            {
+                WasCompleted = true,
+                SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(3, 2)) },
+            });
+
+            Assert.AreEqual(before - move.EnergyCost, _energy.Current[_playerId],
+                "Completar el movimiento (clickear la celda) debe cobrar su energía.");
+        }
+
+        [Test]
+        public void RequestAction_MovementCancelled_DoesNotChargeEnergy()
+        {
+            // BUG-013 (cobrar al ejecutar): cancelar el Movement antes de clickear la celda
+            // NO debe cobrar — la ejecución se skipea, así que TryExecute nunca corre.
+            var move = BuildSelectionMove(); // EnergyCost = 1
+            int before = _energy.Current[_playerId];
+
+            _playerState.RequestAction(move, MoveCtx(), () => { });
+            _selection.SimulateSelectionDone(new TargetSelectionResult { WasCancelled = true });
+
+            Assert.AreEqual(before, _energy.Current[_playerId],
+                "Cancelar el movimiento no debe cobrar energía.");
+        }
+
+        [Test]
         public void RequestAction_DirectActionWithoutSelection_InvokesOnCompleteImmediately()
         {
             // Arrange — una acción sin selección (no requiere elegir tile) ejecuta directo.
@@ -121,6 +185,14 @@ namespace Rollgeon.Combat.FSM.Tests
 
         // ----- Helpers ---------------------------------------------------------
 
+        // Contexto de un Movement con cobro-al-ejecutar: EnergyPrepaid=false hace que
+        // PlayerExecutingSubState cobre vía TurnManager.TryExecute al ejecutarse.
+        private HeroBehaviorContext MoveCtx() => new HeroBehaviorContext
+        {
+            SourceEntity = new Entity { Guid = _playerId },
+            EnergyPrepaid = false,
+        };
+
         private static HeroActionBehavior BuildSelectionMove()
         {
             return new HeroActionBehavior
@@ -130,6 +202,7 @@ namespace Rollgeon.Combat.FSM.Tests
                 Slot = HeroBehaviorSlot.Movement,
                 EnergyCost = 1,
                 NeedsDiceRoll = false,
+                BlockOnRepeat = false, // movimiento es repetible.
                 Effects = new List<EffectData>
                 {
                     new EffectData

@@ -30,9 +30,15 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             var onComplete = Context.OnActionComplete;
             Context.OnActionComplete = null;
 
-            if (action == null)
+            // Selección cancelada (ej. el jugador abortó el movimiento): no ejecutamos nada
+            // — no se mueve ni se marca usado. El reembolso de la energía lo hace el caller
+            // (CombatHandoffService.CancelPlayerSelection), BUG-013.
+            bool cancelled = Context.SelectionResult != null && Context.SelectionResult.WasCancelled;
+
+            if (action == null || cancelled)
             {
-                UnityEngine.Debug.LogWarning("[PlayerExecutingSubState] PendingAction is null — skipping");
+                if (action == null)
+                    UnityEngine.Debug.LogWarning("[PlayerExecutingSubState] PendingAction is null — skipping");
                 onComplete?.Invoke();
                 _ownerFSM?.SendInput(PlayerTurnSubInput.ActionExecuted);
                 return;

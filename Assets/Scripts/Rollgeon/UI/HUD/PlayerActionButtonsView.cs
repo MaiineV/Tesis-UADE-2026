@@ -352,11 +352,19 @@ namespace Rollgeon.UI.HUD
 
         private void HandleBehaviorClick(int index)
         {
+            // BUG-013: re-click del slot que ya está esperando su tile (Movement) = cancelar.
+            // El handoff resetea el estado vía OnBehaviorExecuted DENTRO del Invoke, así que
+            // no debemos re-seleccionar el slot después (dejaría el botón Selected tras el
+            // cancel). Capturamos la condición antes del Invoke porque éste limpia el estado.
+            bool cancelClick = _awaitingSelection && _selectedSlot == index;
+
             // El service decide aceptar/rechazar. El visual de Selected lo seteamos
             // optimisticamente: si el service rechaza, el proximo evento (OnTurnStarted
             // o el roll/chain de otra accion) resincroniza. Cancel-by-reselection
             // del service tambien limpia su lado.
             OnBehaviorSelected?.Invoke(index);
+            if (cancelClick) return;
+
             _selectedSlot = index;
             RecomputeButtonStates();
         }
