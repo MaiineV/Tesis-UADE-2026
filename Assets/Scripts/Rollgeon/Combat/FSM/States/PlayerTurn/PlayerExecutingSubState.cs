@@ -22,9 +22,24 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
         public override void Enter(PlayerTurnSubInput input)
         {
             var action = Context.PendingAction;
-            if (action == null)
+
+            // Capturamos el callback antes de ejecutar: la transición a Idle (que dispara
+            // ActionExecuted) limpia el contexto, así que lo guardamos local para invocarlo
+            // tras la ejecución. Postergar este callback hasta acá es lo que evita que el
+            // handoff desbloquee la UI antes de que la acción realmente corra (BUG-013).
+            var onComplete = Context.OnActionComplete;
+            Context.OnActionComplete = null;
+
+            // Selección cancelada (ej. el jugador abortó el movimiento): no ejecutamos nada
+            // — no se mueve ni se marca usado. El reembolso de la energía lo hace el caller
+            // (CombatHandoffService.CancelPlayerSelection), BUG-013.
+            bool cancelled = Context.SelectionResult != null && Context.SelectionResult.WasCancelled;
+
+            if (action == null || cancelled)
             {
-                UnityEngine.Debug.LogWarning("[PlayerExecutingSubState] PendingAction is null — skipping");
+                if (action == null)
+                    UnityEngine.Debug.LogWarning("[PlayerExecutingSubState] PendingAction is null — skipping");
+                onComplete?.Invoke();
                 _ownerFSM?.SendInput(PlayerTurnSubInput.ActionExecuted);
                 return;
             }
@@ -53,6 +68,10 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             }
             else
                 action.Execute(behaviorCtx);
+
+            // La acción ya corrió (movió, atacó, etc.) — recién ahora notificamos al
+            // caller para que libere el lock de la UI y emita OnBehaviorExecuted.
+            onComplete?.Invoke();
 
             _ownerFSM?.SendInput(PlayerTurnSubInput.ActionExecuted);
         }

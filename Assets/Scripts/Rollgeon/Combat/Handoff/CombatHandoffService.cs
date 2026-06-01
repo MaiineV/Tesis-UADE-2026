@@ -59,6 +59,12 @@ namespace Rollgeon.Combat.Handoff
         private int[] _lastFaces;
         private HeroActionBehavior _selectedBehavior;
         private bool _awaitingFirstRoll;
+
+        // True mientras una accion sin tirada (Movement) espera que el jugador elija el
+        // tile destino y todavia se puede cancelar+reembolsar (BUG-013). Lo setea el
+        // playerState path de DoConfirm y lo limpia el callback de RequestAction al
+        // completarse o cancelarse la accion.
+        private bool _awaitingPlayerSelection;
         private EffChain _activeChain;
         private int _chainPhaseIndex;
         private TargetSelectionResult _chainPhaseSelectionResult;
@@ -216,6 +222,7 @@ namespace Rollgeon.Combat.Handoff
             _lastFaces = null;
             _selectedBehavior = null;
             _awaitingFirstRoll = false;
+            _awaitingPlayerSelection = false;
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
@@ -243,6 +250,15 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnEndTurnRequested = () =>
             {
+                // BUG-013: si hay un Movement pendiente de selección, End Turn lo cancela
+                // (con reembolso) en vez de quedar inerte. El jugador puede volver a apretar
+                // End Turn para cerrar el turno.
+                if (_awaitingPlayerSelection)
+                {
+                    CancelPlayerSelection();
+                    return;
+                }
+
                 if (_activeChain != null)
                 {
                     if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
@@ -307,16 +323,24 @@ namespace Rollgeon.Combat.Handoff
                         comboResult = combo.Detect(keptDice);
                 }
 
+                bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
+                Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeRoll={hasBeforeRoll}");
+
+                // BUG-013 (cobrar al ejecutar): el Movement (sin tirada + selección before-roll)
+                // NO está prepago — la energía se cobra cuando la acción corre de verdad, es decir
+                // al clickear la celda (TurnManager.TryExecute dentro de PlayerExecutingSubState).
+                // Cancelar antes del click no cuesta nada. El resto sí está prepago: las acciones
+                // con tirada ya cobraron en el primer roll, y las instantáneas sin selección
+                // cobraron al ejecutarse (que es inmediato).
+                bool chargeOnExecute = !_selectedBehavior.NeedsDiceRoll && hasBeforeRoll;
+
                 var behaviorCtx = new HeroBehaviorContext
                 {
                     DiceResult = _lastFaces,
                     MatchedComboResult = comboResult,
                     TargetGuid = firstEnemyId,
-                    EnergyPrepaid = true,
+                    EnergyPrepaid = !chargeOnExecute,
                 };
-
-                bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
-                Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeRoll={hasBeforeRoll}");
 
                 // Capturamos info del behavior antes de nullarlo, para emitir el evento
                 // OnBehaviorExecuted con payload consistente en todos los paths.
@@ -339,14 +363,30 @@ namespace Rollgeon.Combat.Handoff
                         var r = _lastFaces ?? Array.Empty<int>();
                         EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)r);
 
+                        // BUG-013: estas acciones (ej. Movement) ejecutan de forma asíncrona —
+                        // el jugador todavía tiene que clickear el tile destino. Si soltáramos
+                        // el lock acá (OnBehaviorExecuted) y nulláramos _selectedBehavior, los
+                        // demás botones volverían a estar disponibles y el guard de re-entrada
+                        // desaparecería, dejando que el jugador dispare un ataque EN PARALELO al
+                        // movimiento pendiente. En vez de eso lockeamos la UI ahora y diferimos
+                        // el OnBehaviorExecuted + el clear al callback que el sub-FSM invoca
+                        // recién cuando la acción terminó de ejecutarse.
+                        //
+                        // Sólo las acciones sin tirada (Movement) son cancelables: la energía ya
+                        // se cobró pero el movimiento aún no ocurrió, así que re-clickear el slot
+                        // (o End Turn) lo cancela y reembolsa vía CancelPlayerSelection.
+                        _awaitingPlayerSelection = !_selectedBehavior.NeedsDiceRoll;
+                        EventManager.Trigger(EventName.OnActionSelectionStarted, playerGuid);
+
                         Debug.Log("[CombatHandoff] → RequestAction on PlayerTurnState");
-                        playerState.RequestAction(_selectedBehavior, behaviorCtx);
-
-                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
-
-                        _lastFaces = null;
-                        _selectedBehavior = null;
-                        hud.ClearBehaviorForFormula();
+                        playerState.RequestAction(_selectedBehavior, behaviorCtx, () =>
+                        {
+                            _awaitingPlayerSelection = false;
+                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+                            _lastFaces = null;
+                            _selectedBehavior = null;
+                            hud.ClearBehaviorForFormula();
+                        });
                         return;
                     }
                     Debug.LogWarning("[CombatHandoff] playerState is null — falling through to TurnManager path");
@@ -369,6 +409,16 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnBehaviorSelected = (int index) =>
             {
+                // BUG-013 (cancelar + reembolsar): si hay un Movement esperando su tile,
+                // cualquier click de slot lo cancela y devuelve la energía. Durante la
+                // selección sólo el slot de Movement queda interactuable (los demás están
+                // lockeados por _awaitingSelection), así que este click es "deseleccionar".
+                if (_awaitingPlayerSelection)
+                {
+                    CancelPlayerSelection();
+                    return;
+                }
+
                 // Cancel-by-reselection: si hay una accion seleccionada pero el primer
                 // roll todavia no se ejecuto, dejamos que el user cambie de opinion sin
                 // perder energia (la energia aun no se cobro). Si ya rolaron, la accion
@@ -485,15 +535,23 @@ namespace Rollgeon.Combat.Handoff
                     if (phase0BeforeRoll != null)
                     {
                         _chainPhaseSelectionResult = null;
-                        if (!SpendEnergyNow(behavior, playerGuid))
-                        {
-                            _selectedBehavior = null;
-                            _activeChain = null;
-                            hud.ClearBehaviorForFormula();
-                            return;
-                        }
                         BeginChainSelection(phase0BeforeRoll, playerGuid, () =>
                         {
+                            // OnChainSelectionDone invoca este callback tanto al completar como al
+                            // cancelar la selección. Si se canceló (ej. EndTurn durante el target
+                            // select), no cobramos ni rolamos — la limpieza la hace el caller
+                            // (EndTurn → FinishChain). Sin este guard cobraríamos al cancelar.
+                            if (_chainPhaseSelectionResult != null && _chainPhaseSelectionResult.WasCancelled)
+                                return;
+
+                            // BUG-013 (cobrar al ejecutar): selección before-roll → la energía se
+                            // cobra al COMPLETAR la selección (el click del target), antes del
+                            // primer roll. Cancelar la selección antes de clickear no cuesta nada.
+                            if (!SpendEnergyNow(behavior, playerGuid))
+                            {
+                                FinishChain(hud, playerGuid, false);
+                                return;
+                            }
                             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var b) && b != null)
                             {
                                 var w = BuildBudgetAction(behavior);
@@ -526,7 +584,14 @@ namespace Rollgeon.Combat.Handoff
 
                 if (!behavior.NeedsDiceRoll)
                 {
-                    if (!SpendEnergyNow(behavior, playerGuid))
+                    // BUG-013 (cobrar al ejecutar): si la acción necesita elegir un tile/target
+                    // ANTES (Movement), NO cobramos acá — la energía se cobra al clickear la
+                    // celda (DoConfirm marca EnergyPrepaid=false y PlayerExecutingSubState cobra
+                    // vía TurnManager.TryExecute). Cancelar antes del click no cuesta nada. Las
+                    // instantáneas sin selección se ejecutan ya mismo, así que cobrar acá ES
+                    // "al ejecutar".
+                    bool hasBeforeSelection = behavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
+                    if (!hasBeforeSelection && !SpendEnergyNow(behavior, playerGuid))
                     {
                         _selectedBehavior = null;
                         hud.ClearBehaviorForFormula();
@@ -992,6 +1057,38 @@ namespace Rollgeon.Combat.Handoff
             _selectedBehavior = null;
             _awaitingFirstRoll = false;
             hud.ClearBehaviorForFormula();
+        }
+
+        /// <summary>
+        /// Cancela un Movement (acción sin tirada) que está esperando que el jugador
+        /// clickee el tile destino (BUG-013). Con cobro-al-ejecutar la energía recién se
+        /// cobra al clickear la celda, así que cancelar antes NO cuesta nada — no hay nada
+        /// que reembolsar. Cancelar la selección dispara el unwind del sub-FSM
+        /// (<c>PlayerSelectingSubState → PlayerExecutingSubState</c> con <c>WasCancelled</c>),
+        /// que skipea la ejecución (no cobra) e invoca el callback de <c>RequestAction</c>:
+        /// ese callback limpia <see cref="_selectedBehavior"/> /
+        /// <see cref="_awaitingPlayerSelection"/> y emite <c>OnBehaviorExecuted</c> para
+        /// liberar la UI.
+        /// </summary>
+        private void CancelPlayerSelection()
+        {
+            if (!_awaitingPlayerSelection) return;
+
+            if (ServiceLocator.TryGetService<ISelectionController>(out var sel)
+                && sel != null && sel.IsSelecting)
+            {
+                sel.CancelSelection();
+                return;
+            }
+
+            // Defensa: si no había una selección activa que cancelar, liberamos el estado
+            // a mano para no dejar la UI lockeada.
+            var name = _selectedBehavior?.ActionName ?? "Movement";
+            var block = _selectedBehavior?.BlockOnRepeat ?? false;
+            _awaitingPlayerSelection = false;
+            _selectedBehavior = null;
+            _lastFaces = null;
+            EventManager.Trigger(EventName.OnBehaviorExecuted, _player.PlayerGuid, name, block);
         }
 
         private static bool SpendEnergyNow(HeroActionBehavior behavior, Guid playerGuid)
