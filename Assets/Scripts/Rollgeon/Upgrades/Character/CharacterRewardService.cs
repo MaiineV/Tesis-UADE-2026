@@ -175,7 +175,18 @@ namespace Rollgeon.Upgrades.Character
                 return;
             }
 
-            if (!Apply(reward)) return;
+            // BUG-017: marcar Claimed ANTES de Apply para cerrar el TOCTOU contra los
+            // pedestales hermanos. Sin esto, si el frame procesa Update() de varios
+            // pedestales en sucesión (3 pedestales reciben el mismo wasPressedThisFrame
+            // de F), todos pasaban la guard de Claimed=false antes de que el primero
+            // llegue a MarkAllSlotsClaimedAndDespawn. Si Apply falla, rollback.
+            claimedState.Claimed = true;
+
+            if (!Apply(reward))
+            {
+                claimedState.Claimed = false;
+                return;
+            }
 
             // Marcar TODOS los slots de la room como claimed + destruir pedestales hermanos.
             MarkAllSlotsClaimedAndDespawn(room);

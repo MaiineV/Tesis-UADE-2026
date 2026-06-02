@@ -1,5 +1,7 @@
 using System;
 using Patterns;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.State;
 using Rollgeon.Grid;
 using Rollgeon.Player;
 using Rollgeon.UI.Tooltips;
@@ -70,6 +72,17 @@ namespace Rollgeon.Upgrades.Character
             if (_interactRange <= 0f) return;
             if (_service == null) return;
 
+            // BUG-017: si el state de este slot ya fue Claimed (otro pedestal del set
+            // ganó esta ventana de input o un retry resolvió antes), no procesamos F.
+            // El GameObject se destruye al final del frame pero su Update sigue corriendo;
+            // sin este guard, una segunda interacción podría intentar entrar al service.
+            if (IsClaimed())
+            {
+                if (_playerInRangeLastTick) UpdatePromptVisibility(false);
+                _playerInRangeLastTick = false;
+                return;
+            }
+
             bool inRange = IsPlayerInRange();
             if (inRange != _playerInRangeLastTick)
             {
@@ -84,6 +97,15 @@ namespace Rollgeon.Upgrades.Character
             if (!keyboard[_interactKey].wasPressedThisFrame) return;
 
             Interact();
+        }
+
+        private bool IsClaimed()
+        {
+            if (_roomInstanceId == Guid.Empty || string.IsNullOrEmpty(_spawnPointId)) return false;
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null) return false;
+            if (!dungeon.GetAllRoomInstances().TryGetValue(_roomInstanceId, out var room)) return false;
+            return room.ObjectStates.TryGet<CharacterRewardState>(_spawnPointId, out var state)
+                && state.Claimed;
         }
 
         private bool IsPlayerInRange()
