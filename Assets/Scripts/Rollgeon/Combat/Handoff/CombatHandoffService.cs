@@ -814,10 +814,16 @@ namespace Rollgeon.Combat.Handoff
             Debug.Log($"[CHAIN-DIAG] ExecuteChainPhase done — index now={_chainPhaseIndex}/{_activeChain.PhaseCount} " +
                       $"remainingFreeRolls={remainingFreeRolls} energy={currentEnergy}");
 
-            if (remainingFreeRolls == 0 && currentEnergy <= 0)
+            // BUG-019: la phase siguiente (típicamente defensa post-attack) requiere
+            // rolls libres sobrantes del pool de la phase anterior. Si el jugador
+            // gastó los 3 free rolls atacando, la tirada de defensa no debe ocurrir
+            // — aunque tenga energía suficiente para reroll. La energía sola no
+            // habilita la phase: necesita haber pool libre del attack.
+            if (remainingFreeRolls == 0)
             {
                 Debug.Log($"[CHAIN-DIAG] Chain auto-terminated at phase {_chainPhaseIndex}: " +
-                          $"freeRolls={remainingFreeRolls}, energy={currentEnergy} → NO sale escudo");
+                          $"freeRolls={remainingFreeRolls} → no quedan rolls libres del attack, " +
+                          $"no se dispara la phase siguiente (defensa)");
                 FinishChain(hud, playerGuid, false);
                 return;
             }
