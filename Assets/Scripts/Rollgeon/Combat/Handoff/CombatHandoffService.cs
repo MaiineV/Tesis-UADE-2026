@@ -259,6 +259,17 @@ namespace Rollgeon.Combat.Handoff
                     return;
                 }
 
+                // BUG-015: simétrico, End Turn cancela un ActionRoll abierto antes de
+                // cerrar el turno. Si el flow ya estaba en AwaitingRerollDecision la
+                // energía base se cobró (cancel resuelve con la tirada actual, sin
+                // bonus); si estaba en AwaitingConfirm, Cancel es "limpio" (no cobro).
+                if (ServiceLocator.TryGetService<IActionRollService>(out var rsET)
+                    && rsET != null && rsET.IsActive)
+                {
+                    rsET.Cancel();
+                    return;
+                }
+
                 if (_activeChain != null)
                 {
                     if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
@@ -419,6 +430,19 @@ namespace Rollgeon.Combat.Handoff
                     return;
                 }
 
+                // BUG-015: si hay un ActionRoll activo (Heal/Forzar Puerta con panel
+                // abierto), cualquier click de slot lo cancela. La energía la maneja
+                // ActionRollService.Cancel() — si todavía no cobró (estaba en
+                // AwaitingConfirm) no hay charge; si ya cobró (post-roll inicial) el
+                // outcome retorna Cancelled y resolvemos sin reembolso (el user pagó
+                // por la tirada que vio).
+                if (ServiceLocator.TryGetService<IActionRollService>(out var rsActive)
+                    && rsActive != null && rsActive.IsActive)
+                {
+                    rsActive.Cancel();
+                    return;
+                }
+
                 // Cancel-by-reselection: si hay una accion seleccionada pero el primer
                 // roll todavia no se ejecuto, dejamos que el user cambie de opinion sin
                 // perder energia (la energia aun no se cobro). Si ya rolaron, la accion
@@ -478,13 +502,29 @@ namespace Rollgeon.Combat.Handoff
                     _selectedBehavior = behavior;
                     hud.SetBehaviorForFormula(behavior);
 
+                    // BUG-015: simétrico al path Movement, lockear los demás slots
+                    // mientras el ActionRoll está abierto. Sin esto, el usuario podía
+                    // disparar otra acción (ej. Heal pisar Movement, o viceversa) y
+                    // las dos correrían en paralelo. La UI lo limpia al recibir
+                    // OnBehaviorExecuted (que emitimos abajo en el outcome handler).
+                    EventManager.Trigger(EventName.OnActionSelectionStarted, playerGuid);
+                    var executedActionName = behavior.ActionName;
+                    var executedBlockOnRepeat = behavior.BlockOnRepeat;
+
                     actionRollService.StartFlow(rollSpec, playerGuid, rollBag, outcome =>
                     {
                         var resolvedBehavior = _selectedBehavior;
                         _selectedBehavior = null;
                         hud.ClearBehaviorForFormula();
 
-                        if (outcome.Cancelled || resolvedBehavior == null) return;
+                        if (outcome.Cancelled || resolvedBehavior == null)
+                        {
+                            // BUG-015: incluso en Cancelled, soltar el lock de la UI —
+                            // si no la screen queda gateada con los slots Locked.
+                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid,
+                                executedActionName, executedBlockOnRepeat);
+                            return;
+                        }
 
                         Combos.ComboDetectionResult? combo = outcome.HasCombo
                             ? Combos.ComboDetectionResult.Match(outcome.EffectiveTotal,
@@ -504,6 +544,9 @@ namespace Rollgeon.Combat.Handoff
                         // solo ejecuta + trackea repeticion.
                         if (ServiceLocator.TryGetService<TurnManager>(out var tmgr) && tmgr != null)
                             tmgr.TryExecuteEnergyPrepaid(resolvedBehavior, playerGuid, behaviorCtx);
+
+                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid,
+                            executedActionName, executedBlockOnRepeat);
                     });
                     return;
                 }
