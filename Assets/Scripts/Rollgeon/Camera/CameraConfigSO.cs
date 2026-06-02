@@ -48,6 +48,10 @@ namespace Rollgeon.GameCamera
         [ToggleGroup(nameof(EnableZoom))] public bool EnableZoom = true;
         [ToggleGroup(nameof(EnableZoom))] public float ZoomMin = 6f;
         [ToggleGroup(nameof(EnableZoom))] public float ZoomMax = 22f;
+        // Tamaño orthographic con el que arranca la cámara al cargar la sesión.
+        // Antes era (ZoomMin+ZoomMax)/2 = 14 (midpoint), ahora explícito en 9 para
+        // que el usuario vea una vista más cerrada al spawnear.
+        [ToggleGroup(nameof(EnableZoom))] public float DefaultZoom = 9f;
         [ToggleGroup(nameof(EnableZoom))] public float ZoomStep = 1.5f;
         [ToggleGroup(nameof(EnableZoom))] public float ZoomTweenSeconds = 0.18f;
         [ToggleGroup(nameof(EnableZoom))] public Ease ZoomEase = Ease.OutQuad;

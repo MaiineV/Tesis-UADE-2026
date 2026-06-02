@@ -63,10 +63,10 @@ namespace Rollgeon.GameCamera
             _rig = transform;
 
             _currentFacing = _config.StartingFacing;
-            _currentZoom = Mathf.Clamp(
-                (_config.ZoomMin + _config.ZoomMax) * 0.5f,
-                _config.ZoomMin,
-                _config.ZoomMax);
+            // El zoom inicial sale del config (DefaultZoom = 9 por default), clampeado
+            // al rango permitido. Antes era el midpoint del range que daba 14 con los
+            // bounds vigentes (6–22).
+            _currentZoom = Mathf.Clamp(_config.DefaultZoom, _config.ZoomMin, _config.ZoomMax);
             _targetZoom = _currentZoom;
 
             ApplyInitialPose();
