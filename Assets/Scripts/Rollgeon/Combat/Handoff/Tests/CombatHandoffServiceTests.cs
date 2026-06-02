@@ -151,7 +151,6 @@ namespace Rollgeon.Combat.Handoff.Tests
         private class SpyRerollBudgetService : IRerollBudgetService
         {
             public RerollBudget Current { get; private set; }
-            public int LastEndedBudgetRollsRemaining { get; private set; } = -1;
             public int StartBudgetCallCount { get; private set; }
             public int EndBudgetCallCount { get; private set; }
 

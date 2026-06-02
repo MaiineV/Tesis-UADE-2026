@@ -62,23 +62,8 @@ namespace Rollgeon.Dice
 
         private RerollBudget _current;
 
-        // BUG-019: free rolls que quedaron sin usar del último budget terminado en
-        // ESTE turno. La acción de defensa (Special Attack) comparte pool con Attack:
-        // si Attack tenía 3 rolls free y el user usó 2, defensa empieza con 1.
-        // Se resetea a -1 al inicio de cada turno (sentinel = "sin budget previo").
-        private int _lastEndedBudgetRollsRemaining = -1;
-        private EventManager.EventReceiver _onTurnStartedHandler;
-
         /// <inheritdoc />
         public RerollBudget Current => _current;
-
-        /// <summary>
-        /// BUG-019: free rolls que quedaron sin usar al cerrar el último budget en
-        /// este turno. <c>-1</c> = todavía no terminó ningún budget. La acción de
-        /// defensa lee este valor para gatear el botón y para inicializar su propio
-        /// budget con el remanente del ataque.
-        /// </summary>
-        public int LastEndedBudgetRollsRemaining => _lastEndedBudgetRollsRemaining;
 
         /// <inheritdoc />
         public event Action<RerollStartedPayload> OnRerollStarted;
@@ -105,10 +90,6 @@ namespace Rollgeon.Dice
             // RulesetSO es opcional: si no esta, usamos defaults constantes.
             ServiceLocator.TryGetService<RulesetSO>(out _ruleset);
 
-            // BUG-019: el carryover de rolls (Attack→Defense) se resetea por turno.
-            _onTurnStartedHandler = OnTurnStartedExternal;
-            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
-
             ServiceLocator.AddService<IRerollBudgetService>(this, ServiceScope.Global);
         }
 
@@ -119,19 +100,6 @@ namespace Rollgeon.Dice
             _current = null;
             _energy = null;
             _ruleset = null;
-            if (_onTurnStartedHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
-                _onTurnStartedHandler = null;
-            }
-        }
-
-        // BUG-019: OnTurnStarted schema [Guid entityGuid] — limpiamos el carryover
-        // sin filtrar por entityGuid (el RerollBudget es del player actual del HUD;
-        // si el turno cambia a un enemy el carryover deja de ser relevante igual).
-        private void OnTurnStartedExternal(params object[] args)
-        {
-            _lastEndedBudgetRollsRemaining = -1;
         }
 
         // ======================================================================
@@ -183,9 +151,6 @@ namespace Rollgeon.Dice
         public void EndBudget()
         {
             if (_current == null) return;
-            // BUG-019: snapshot del remanente ANTES del Reset, para que la acción
-            // siguiente (típicamente defensa post-attack) lea cuánto pool quedó.
-            _lastEndedBudgetRollsRemaining = Math.Max(0, _current.FreeRollsRemaining);
             _current.Reset();
             _current = null;
         }

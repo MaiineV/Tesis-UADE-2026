@@ -5,7 +5,6 @@ using Rollgeon.ActionRolls;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.EnergyLib;
-using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
@@ -464,14 +463,6 @@ namespace Rollgeon.UI.HUD
                 && !EffForceDoor.CanAttemptForceDoor(_playerGuid))
                 return ActionButtonState.Locked;
 
-            // BUG-019: la "tirada de defensa" (Special Attack del Warrior, da shield)
-            // comparte pool con el ataque del turno — solo se habilita si quedaron
-            // rolls libres tras confirmar el ataque base. Sin Attack previo o con
-            // pool vaciado, queda Locked.
-            if (behavior.Slot == HeroBehaviorSlot.SpecialAttack
-                && !HasDefenseRollsAvailable())
-                return ActionButtonState.Locked;
-
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
             {
                 Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HasUsableEffectGroup=false: {usableReason})");
@@ -518,17 +509,6 @@ namespace Rollgeon.UI.HUD
             if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
                 return true; // sin servicio de energia, no bloqueamos en UI
             return energy.GetCurrent(_playerGuid) >= behavior.EnergyCost;
-        }
-
-        // BUG-019: la defensa requiere que el ataque previo del turno haya dejado
-        // rolls libres sin usar. RerollBudgetService snapshotea ese remanente en
-        // LastEndedBudgetRollsRemaining al cerrar el budget del ataque, y se resetea
-        // a -1 al inicio de cada turno.
-        private bool HasDefenseRollsAvailable()
-        {
-            if (!ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) || budget == null)
-                return false;
-            return budget.LastEndedBudgetRollsRemaining > 0;
         }
 
         // ======================================================================
