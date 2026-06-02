@@ -79,6 +79,12 @@ namespace Rollgeon.Dungeon.Components
             // ConfigureExternalTriggers es no-op acá pero queda como hook por si en el
             // futuro hay triggers en hijos (caso de prefabs custom).
             binder.ConfigureExternalTriggers();
+
+            // Click-to-pass directo sobre la puerta — sólo activo en Exploración.
+            // El propio componente gateaa por IPhaseService.CurrentBase, así que en
+            // combate queda inerte (Force Door sigue siendo el único path).
+            if (GetComponent<DoorClickToPass>() == null)
+                gameObject.AddComponent<DoorClickToPass>();
         }
 
         public void SetState(DoorVisualState state)

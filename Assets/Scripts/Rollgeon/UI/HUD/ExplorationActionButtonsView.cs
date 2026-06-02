@@ -123,12 +123,24 @@ namespace Rollgeon.UI.HUD
             {
                 if (_buttons[i] == null) continue;
                 var behavior = ResolveBehaviorForButton(i);
-                bool hasEntry = behavior != null;
+                bool hasEntry = behavior != null && !IsHiddenInExploration(i, behavior);
                 _buttons[i].gameObject.SetActive(hasEntry);
 
                 if (hasEntry)
                     _buttons[i].interactable = IsBehaviorAvailable(behavior);
             }
+        }
+
+        // El slot ForceDoor en Exploración resuelve al behavior "Pass door". La UX
+        // ahora es click directo sobre la puerta (DoorClickToPass), así que el botón
+        // sobra y se oculta en este HUD. En combate la lógica vive en el HUD de
+        // combate — éste sólo se muestra en Exploración, así que el filtro es local.
+        private bool IsHiddenInExploration(int buttonIndex, HeroActionBehavior behavior)
+        {
+            if (behavior == null) return false;
+            if (_slots != null && buttonIndex < _slots.Count)
+                return _slots[buttonIndex] == HeroBehaviorSlot.ForceDoor;
+            return behavior.Slot == HeroBehaviorSlot.ForceDoor;
         }
 
         private void RefreshInteractable()
