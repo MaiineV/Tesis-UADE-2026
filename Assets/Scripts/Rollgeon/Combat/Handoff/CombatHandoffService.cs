@@ -543,7 +543,16 @@ namespace Rollgeon.Combat.Handoff
                         // Energia ya cobrada por IActionRollService — TryExecuteEnergyPrepaid
                         // solo ejecuta + trackea repeticion.
                         if (ServiceLocator.TryGetService<TurnManager>(out var tmgr) && tmgr != null)
+                        {
                             tmgr.TryExecuteEnergyPrepaid(resolvedBehavior, playerGuid, behaviorCtx);
+                            // BUG-018: en combate, TODA acción que entra al ActionRoll flow
+                            // (Heal, Forzar Puerta) consumió energía y debe ser once-per-turn,
+                            // tenga éxito o falle el threshold. TryExecuteEnergyPrepaid solo
+                            // marca usado si el behavior.BlockOnRepeat=true en el asset; algunos
+                            // assets legacy lo tienen en 0 y permitían retry tras fallo. Forzamos
+                            // la marca acá para que el gate de WasUsedThisTurn aplique siempre.
+                            tmgr.MarkBehaviorUsed(executedActionName);
+                        }
 
                         EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid,
                             executedActionName, executedBlockOnRepeat);

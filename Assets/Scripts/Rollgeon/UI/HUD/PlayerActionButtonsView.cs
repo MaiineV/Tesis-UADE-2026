@@ -434,15 +434,15 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            // Used: ejecutada con exito y BlockOnRepeat=true. TurnManager es la
-            // fuente de verdad — respeta el flag de cada ActionDefinition.
-            if (behavior.BlockOnRepeat && WasUsedThisTurn(behavior.ActionName))
+            // BUG-018: en COMBATE TODA acción es once-per-turn. El asset legacy de
+            // Forzar Puerta tenía BlockOnRepeat=0 (permitía retry tras fallo); el
+            // resto del flow ya hace MarkBehaviorUsed via CombatHandoffService, así
+            // que acá ignoramos BlockOnRepeat y gateamos sólo por WasUsedThisTurn.
+            if (WasUsedThisTurn(behavior.ActionName))
             {
                 Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Used");
                 return ActionButtonState.Used;
             }
-            if (behavior.BlockOnRepeat)
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) BlockOnRepeat=true pero WasUsedThisTurn=false");
 
             // Chain, roll, o seleccion de target pendiente de OTRO slot: los demas estan
             // lockeados para no dejar al jugador iniciar una accion en paralelo. El
