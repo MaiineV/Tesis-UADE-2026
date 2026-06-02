@@ -169,8 +169,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.68, g: 0.1, b: 0.1, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Red 1
-    baseColor: {r: 0.78, g: 0.16, b: 0.14, a: 1}
+  - label: DarkGreen
+    baseColor: {r: 0.23215556, g: 0.4433962, b: 0.25759387, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
