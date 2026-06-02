@@ -229,12 +229,32 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
-            if (_budget == null)
-                ServiceLocator.TryGetService<IRerollBudgetService>(out _budget);
+            EnsureBudgetSubscribed();
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshCostLabel();
             RefreshButtonText();
+        }
+
+        // Si Bind() corrió antes de que el bootstrap registrara IRerollBudgetService,
+        // las suscripciones a OnBudgetStarted/OnRerollStarted nunca se hicieron y el
+        // botón nunca recibe los eventos para repintarse. Resuscribimos lazy desde
+        // cualquier handler que sepa que hubo actividad (un dado fue rolled).
+        private void EnsureBudgetSubscribed()
+        {
+            if (_budget != null) return;
+            if (!ServiceLocator.TryGetService<IRerollBudgetService>(out _budget) || _budget == null) return;
+
+            if (_onRerollStartedTyped == null)
+            {
+                _onRerollStartedTyped = HandleRerollStartedTyped;
+                _budget.OnRerollStarted += _onRerollStartedTyped;
+            }
+            if (_onBudgetStartedTyped == null)
+            {
+                _onBudgetStartedTyped = HandleBudgetStartedTyped;
+                _budget.OnBudgetStarted += _onBudgetStartedTyped;
+            }
         }
 
         private void HandleRollResolved(params object[] args)
