@@ -66,6 +66,33 @@ namespace Rollgeon.UI.HUD
             return copy;
         }
 
+        /// <summary>
+        /// BUG-014: True si <see cref="Bind"/> ya corrió, hay slots activos visibles
+        /// (al menos un dado rolleado) y todos están holdeados. Permite a la UI del
+        /// reroll button deshabilitarse cuando no hay dados para re-tirar.
+        /// </summary>
+        public bool AreAllDiceHeld()
+        {
+            if (_heldStates == null || _heldStates.Length == 0) return false;
+            // Si _resolvedSlots aún no se activó (sin roll todavía), no aplica.
+            bool anySlotActive = false;
+            if (_resolvedSlots != null)
+            {
+                for (int i = 0; i < _resolvedSlots.Length; i++)
+                {
+                    if (_resolvedSlots[i] != null && _resolvedSlots[i].gameObject.activeSelf)
+                    {
+                        anySlotActive = true;
+                        break;
+                    }
+                }
+            }
+            if (!anySlotActive) return false;
+            for (int i = 0; i < _heldStates.Length; i++)
+                if (!_heldStates[i]) return false;
+            return true;
+        }
+
         // ---- Bind / Unbind ---------------------------------------------------
 
         private bool _bound;

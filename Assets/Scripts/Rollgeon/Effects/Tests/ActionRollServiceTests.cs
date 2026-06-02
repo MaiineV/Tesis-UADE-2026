@@ -304,6 +304,56 @@ namespace Rollgeon.Effects.Tests
             }
         }
 
+        // -------------------------------------------------------------------------
+        // BUG-014: si el user holdeó todos los dados, el reroll no movería ningún
+        // dado — no debe consumir energía ni avanzar el RollIndex, y CanAffordReroll
+        // debe reportar false aunque haya energía suficiente.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void CanAffordReroll_WhenAllDiceHeld_ReturnsFalse()
+        {
+            // Arrange
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
+
+            // Act
+            _service.SetHolds(new[] { true, true, true, true, true });
+
+            // Assert
+            Assert.IsFalse(_service.CanAffordReroll,
+                "Con todos los dados holdeados, el reroll no tendría efecto — botón debe quedar deshabilitado.");
+        }
+
+        [Test]
+        public void RequestReroll_WhenAllDiceHeld_DoesNotConsumeEnergy()
+        {
+            // Arrange
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            int spendCallsAfterBase = _energy.SpendCalls;
+            int energyAfterBase = _energy.CurrentEnergy;
+            int rollIndexBefore = _service.RollIndex;
+            _service.SetHolds(new[] { true, true, true, true, true });
+
+            // Act
+            _service.RequestReroll();
+
+            // Assert
+            Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase,
+                "El reroll bloqueado no debe cambiar la fase.");
+            Assert.AreEqual(spendCallsAfterBase, _energy.SpendCalls,
+                "No se debe haber cobrado energía en el reroll bloqueado.");
+            Assert.AreEqual(energyAfterBase, _energy.CurrentEnergy);
+            Assert.AreEqual(rollIndexBefore, _service.RollIndex,
+                "RollIndex no debe avanzar — no hubo tirada.");
+        }
+
         // ----- helpers para tests con combo ---------------------------------
 
         private static ComboCatalogSO MakeCatalogWithGenerala(int baseDamage)

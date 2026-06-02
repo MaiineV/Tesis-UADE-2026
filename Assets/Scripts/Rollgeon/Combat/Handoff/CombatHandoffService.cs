@@ -670,6 +670,17 @@ namespace Rollgeon.Combat.Handoff
             hud.OnEnergyRerollRequested = () =>
             {
                 if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return;
+
+                // BUG-014: si todos los dados están holdeados, el reroll no movería
+                // ningún dado — bail antes de consumir budget/energía. El botón
+                // debería estar deshabilitado por la UI, esto es el guard defensivo.
+                var keep = hud.GetCurrentKeep();
+                if (AllDiceHeld(keep))
+                {
+                    Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — todos los dados están holdeados.");
+                    return;
+                }
+
                 if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                     budget.TryExtraRoll(playerGuid);
 
@@ -681,7 +692,6 @@ namespace Rollgeon.Combat.Handoff
                     return;
                 }
 
-                var keep = hud.GetCurrentKeep();
                 _lastFaces = roller.Reroll(bag, _lastFaces, keep);
                 EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
             };
@@ -1022,6 +1032,18 @@ namespace Rollgeon.Combat.Handoff
             Debug.LogError("[CombatHandoffService] IDiceRoller no registrado. " +
                            "Agregar DiceRollerBootstrap a ServiceBootstrapSO.ExtraServices.");
             return null;
+        }
+
+        /// <summary>
+        /// BUG-014: True si <paramref name="keep"/> existe y todos sus elementos
+        /// son <c>true</c>. Usado por el guard de reroll para no consumir budget/
+        /// energía cuando no hay ningún dado para re-tirar.
+        /// </summary>
+        public static bool AllDiceHeld(bool[] keep)
+        {
+            if (keep == null || keep.Length == 0) return false;
+            for (int i = 0; i < keep.Length; i++) if (!keep[i]) return false;
+            return true;
         }
 
         public static int[] FilterKeptDice(int[] faces, bool[] keep)

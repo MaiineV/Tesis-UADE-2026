@@ -85,6 +85,10 @@ namespace Rollgeon.UI.HUD
         private Action<RerollBudget> _onBudgetStartedTyped;
         private Rollgeon.ActionRolls.IActionRollService _actionRoll;
         private Action<Rollgeon.ActionRolls.ActionRollPhase> _onActionRollPhase;
+        // BUG-014: cache de DiceZoneView para gatear el botón si todos los dados
+        // están holdeados — se resuelve lazy en el primer refresh.
+        private DiceZoneView _diceZone;
+        private Action<ComboMatchedPayload> _onComboMatched;
 
         private void Awake()
         {
@@ -134,6 +138,12 @@ namespace Rollgeon.UI.HUD
                 _actionRoll.OnPhaseChanged += _onActionRollPhase;
             }
 
+            // BUG-014: ComboMatchedPayload se dispara cada vez que el user togglea
+            // un hold (DiceZoneView.RunComboDetection) — refrescamos el botón para
+            // que se deshabilite cuando todos los dados quedan holdeados.
+            _onComboMatched = _ => RefreshButtonInteractable();
+            TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
+
             _bound = true;
             RefreshLabel();
             RefreshButtonInteractable();
@@ -164,7 +174,13 @@ namespace Rollgeon.UI.HUD
                 _onActionRollPhase = null;
                 _actionRoll = null;
             }
+            if (_onComboMatched != null)
+            {
+                TypedEvent<ComboMatchedPayload>.Unsubscribe(_onComboMatched);
+                _onComboMatched = null;
+            }
             _budget = null;
+            _diceZone = null;
             _bound = false;
         }
 
@@ -291,6 +307,7 @@ namespace Rollgeon.UI.HUD
 
             // Si hay un ActionRoll activo (Heal / Forzar Puerta), el budget de Generala
             // no aplica — el gating es por energía vía CanAffordReroll del service.
+            // CanAffordReroll ya incluye el guard de "todos holdeados" (BUG-014).
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
                 && rs != null && rs.IsActive)
             {
@@ -305,7 +322,24 @@ namespace Rollgeon.UI.HUD
             }
 
             var query = _budget.QueryExtraRoll(_playerGuid);
+            // BUG-014: aunque el budget tenga rolls disponibles, si el user holdeó
+            // todos los dados el reroll no movería ningún dado — deshabilitar para
+            // no quemar free rolls / energía en una tirada idéntica.
+            if (query.IsAvailable && ResolveDiceZone()?.AreAllDiceHeld() == true)
+            {
+                _extraRollButton.interactable = false;
+                return;
+            }
             _extraRollButton.interactable = query.IsAvailable;
+        }
+
+        private DiceZoneView ResolveDiceZone()
+        {
+            if (_diceZone != null) return _diceZone;
+            // FindAnyObjectByType es válido en runtime; el HUD tiene exactamente uno.
+            // Cache local para evitar el costo del find en cada toggle.
+            _diceZone = UnityEngine.Object.FindAnyObjectByType<DiceZoneView>();
+            return _diceZone;
         }
 
         private void RefreshButtonText()

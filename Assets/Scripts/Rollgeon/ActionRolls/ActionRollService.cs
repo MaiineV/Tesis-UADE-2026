@@ -198,6 +198,16 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
+            // BUG-014: si el user holdeó todos los dados, el reroll no re-tiraría
+            // ningún dado — cobrar energía sería un drain sin efecto. Bail sin
+            // mutar phase ni cobrar; el panel debería haber deshabilitado el
+            // botón antes vía CanAffordReroll, esto es solo el guard defensivo.
+            if (keep != null && AllTrue(keep))
+            {
+                Debug.LogWarning("[ActionRollService] RequestReroll bloqueado — todos los dados están holdeados.");
+                return;
+            }
+
             // Multi-shot: la spec permite rerollear mientras haya energía. El único
             // gate es SpendEnergy: si falla, resolvemos con la tirada actual (el
             // panel debería haber deshabilitado el botón antes vía CanAffordReroll).
@@ -234,6 +244,13 @@ namespace Rollgeon.ActionRolls
             var arr = new bool[source.Count];
             for (int i = 0; i < source.Count; i++) arr[i] = source[i];
             return arr;
+        }
+
+        private static bool AllTrue(IReadOnlyList<bool> mask)
+        {
+            if (mask == null || mask.Count == 0) return false;
+            for (int i = 0; i < mask.Count; i++) if (!mask[i]) return false;
+            return true;
         }
 
         public void DeclineReroll()
@@ -374,6 +391,10 @@ namespace Rollgeon.ActionRolls
             get
             {
                 if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
+                // BUG-014: si todos los dados están holdeados, no hay nada para
+                // re-tirar — el botón debe quedar deshabilitado aunque sobre energía.
+                if (_currentHolds != null && _currentHolds.Length > 0 && AllTrue(_currentHolds))
+                    return false;
                 int cost = Mathf.Max(0, _spec.RerollEnergyCost);
                 if (cost <= 0) return true;
                 return _energy.GetCurrent(_playerGuid) >= cost;
