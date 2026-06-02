@@ -26,14 +26,20 @@ namespace Rollgeon.ActionRolls
         fileName = "ActionRollServiceBootstrap")]
     public sealed class ActionRollServiceBootstrap : ScriptableObject, IPreloadableService
     {
-        private ActionRollService _instance;
-
         public int Priority => 74;
         public ServiceScope Scope => ServiceScope.Run;
 
         public void Register()
         {
-            if (_instance != null) return;
+            // Idempotencia por presencia en el locator, NO por campo cacheado.
+            // RunBootstrapper.EndRun → ServiceLocator.ClearScope(Run) dispone y borra el
+            // IActionRollService anterior, y RegisterRunScoped() reinvoca este Register()
+            // en cada StartRun. El SO vive toda la sesion, asi que un `if (_instance != null)`
+            // nunca se reseteaba y dejaba el servicio sin registrar en toda run posterior a la
+            // primera — rompiendo Heal y Force Door en exploracion (BUG-016). Construir una
+            // instancia fresca por run mantiene el contrato Run-scoped.
+            if (ServiceLocator.TryGetService<IActionRollService>(out var existing) && existing != null)
+                return;
 
             if (!ServiceLocator.TryGetService<IDiceRoller>(out var roller) || roller == null)
             {
@@ -58,8 +64,8 @@ namespace Rollgeon.ActionRolls
                                  "las tiradas de Force Door / Heal usaran suma cruda en vez de combos.");
             }
 
-            _instance = new ActionRollService(roller, energy, comboCatalog);
-            ServiceLocator.AddService<IActionRollService>(_instance, ServiceScope.Run);
+            var instance = new ActionRollService(roller, energy, comboCatalog);
+            ServiceLocator.AddService<IActionRollService>(instance, ServiceScope.Run);
         }
     }
 }
