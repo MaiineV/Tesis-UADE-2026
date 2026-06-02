@@ -1074,6 +1074,18 @@ namespace Rollgeon.Combat.Handoff
                 wrapper.FreeRollCount = 1;
                 wrapper.AllowsEnergyReroll = false;
             }
+
+            // BUG-019: la defensa (Special Attack del Warrior) comparte pool con el
+            // ataque del turno — overridea FreeRollCount con el remanente snapshoteado
+            // al cerrar el budget previo. La UI ya gateó el botón en LastEnded > 0,
+            // así que acá derivamos el cap del budget de defense.
+            if (behavior.Slot == HeroBehaviorSlot.SpecialAttack
+                && ServiceLocator.TryGetService<IRerollBudgetService>(out var rs)
+                && rs != null && rs.LastEndedBudgetRollsRemaining > 0)
+            {
+                wrapper.FreeRollCount = Mathf.Min(wrapper.FreeRollCount, rs.LastEndedBudgetRollsRemaining);
+            }
+
             return wrapper;
         }
 

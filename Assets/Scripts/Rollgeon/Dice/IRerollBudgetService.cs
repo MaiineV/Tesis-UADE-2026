@@ -38,6 +38,14 @@ namespace Rollgeon.Dice
         RerollBudget Current { get; }
 
         /// <summary>
+        /// BUG-019: free rolls que quedaron sin usar al cerrar el último budget en
+        /// este turno. <c>-1</c> = todavía no terminó ningún budget. Consumido por la
+        /// UI/handoff de la acción de defensa para gatear el botón y derivar el
+        /// FreeRollCount del defense budget (carryover del pool de attack).
+        /// </summary>
+        int LastEndedBudgetRollsRemaining { get; }
+
+        /// <summary>
         /// Evento que levanta el servicio tras cada reroll concedido (gratis o pago).
         /// Se dispara <b>despues</b> del bookkeeping — los handlers ven post-spend state.
         /// Payload: <see cref="RerollStartedPayload"/>.
