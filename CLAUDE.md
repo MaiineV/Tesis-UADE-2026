@@ -83,6 +83,11 @@ archivos y cómo.
 
 - `main` — producción / entregables de sprint aprobados.
 - `develop` — integración continua, default branch para PRs.
+- `Fix#NNNN_PascalCaseName` — ramas de bugfix, ej.
+  `Fix#0007_HealServiceOnRunRestart`. **`NNNN` es un contador secuencial
+  de ramas de fix (la siguiente a `Fix#0006` es `Fix#0007`), NO el ID del
+  bug.** Un fix para BUG-016 puede vivir en `Fix#0007` si es la séptima
+  rama de fix. Se ramifican desde `develop`.
 - `sprint<NN>/<type>/<issue>-<name>` — ramas de feature, ej.
   `sprint03/feature/0104-energy-reroll`.
 - Worktrees aislados por tarea cuando hay múltiples agents corriendo en
