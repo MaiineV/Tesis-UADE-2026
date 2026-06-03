@@ -66,10 +66,18 @@
         },
         {
             "Index": 8,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1579.0,
+                "y": 671.0
+            }
+        },
+        {
+            "Index": 9,
             "TypeName": "AINode_Move",
             "Position": {
-                "x": 1511.0,
-                "y": 698.0
+                "x": 1570.0,
+                "y": 902.0
             }
         }
     ]
