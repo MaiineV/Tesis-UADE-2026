@@ -150,7 +150,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             switch (node)
             {
                 case AINode_Move m:
-                    return $"max {Describe(m.MaxSteps)} steps · stop adj {m.StopAdjacent}";
+                    string mTarget = m.TargetSelector != null ? m.TargetSelector.GetType().Name : "player";
+                    string mRange = m.DesiredRange != null ? Describe(m.DesiredRange) : (m.StopAdjacent ? "1" : "0");
+                    return $"→ {mTarget} · range {mRange} · max {Describe(m.MaxSteps)} steps{(m.Retreat ? " · kite" : "")}";
                 case AINode_KeepDistance k:
                     return $"max {Describe(k.MaxSteps)} steps · ideal {Describe(k.IdealDistance)}";
                 case AINode_If i:
@@ -195,7 +197,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static readonly string[] _ifFields = { "TargetSelector", "Conditions" };
         static readonly string[] _whileFields = { "TargetSelector", "Conditions", "MaxIterations" };
         static readonly string[] _behaviorFields = { "Behavior" };
-        static readonly string[] _moveFields = { "MaxSteps", "StopAdjacent" };
+        static readonly string[] _moveFields = { "TargetSelector", "MaxSteps", "DesiredRange", "Retreat", "StopAdjacent" };
         static readonly string[] _keepDistanceFields = { "MaxSteps", "IdealDistance" };
     }
 }

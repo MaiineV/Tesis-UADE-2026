@@ -45,10 +45,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "RNG inyectado vía AIContext.Rng — los tests pueden seedearlo para determinismo.",
 
             [typeof(AINode_Move)] =
-                "Move: mueve al enemy hacia el player hasta MaxSteps casillas (AIIntReader). " +
-                "Si StopAdjacent es true, frena al estar a 1 casilla del target.\n\n" +
-                "Devuelve Succeeded si se movió o ya estaba adyacente, Failed si no había path. " +
-                "Setea AIContext.PendingWait con la animación.",
+                "Move Toward Target: mueve al enemy hasta MaxSteps casillas (AIIntReader) hacia " +
+                "el target del TargetSelector (null = player), manteniendo DesiredRange casillas " +
+                "de distancia Manhattan. Si DesiredRange es null usa el legacy StopAdjacent " +
+                "(true → 1, false → 0).\n\n" +
+                "Si Retreat es true y está más cerca que DesiredRange, retrocede (kite); si es " +
+                "false, demasiado cerca = no se mueve. Devuelve Succeeded si se movió, Failed si " +
+                "ya está en la banda o no hay tile mejor. Setea AIContext.PendingWait con la animación.",
 
             [typeof(AINode_KeepDistance)] =
                 "Keep Distance (kiting): mueve al enemy hasta MaxSteps casillas para mantener " +
