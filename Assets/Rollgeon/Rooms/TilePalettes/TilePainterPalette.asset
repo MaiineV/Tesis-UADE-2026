@@ -45,3 +45,23 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 0
     IsBlocker: 1
+  - Label: maquina
+    Prefab: {fileID: 3757966456445164470, guid: 3e428fef5566e1345aacb12fd11d88cc, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: mesa-poker
+    Prefab: {fileID: 7191183672202619516, guid: 88a0fa23fbe1f044d83a03ae13844c30, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: ruleta
+    Prefab: {fileID: 907544754280976215, guid: e20f3787352979d498f7313a710e123f, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 0
+  - Label: pared columnas
+    Prefab: {fileID: 5708807474630952342, guid: 83f3e3a7a1fe1714eab4f4e025aedc48, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
