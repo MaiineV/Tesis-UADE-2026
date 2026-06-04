@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Entities;
 using Rollgeon.Feedback;
+using Rollgeon.Patterns;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
@@ -160,9 +162,11 @@ namespace Rollgeon.UI.HUD
                 Debug.LogWarning(LogPrefix + "_instancePrefab no esta cableado — skip spawn.", this);
                 return null;
             }
-            if (_overlayContainer == null)
+
+            var parent = ResolveSpawnParent();
+            if (parent == null)
             {
-                Debug.LogWarning(LogPrefix + "_overlayContainer no esta cableado — skip spawn.", this);
+                Debug.LogWarning(LogPrefix + "no hay container donde instanciar — skip spawn.", this);
                 return null;
             }
 
@@ -173,32 +177,54 @@ namespace Rollgeon.UI.HUD
             _nextSpawnTime = scheduled + _staggerSeconds;
             float delay = scheduled - now;
 
-            // StartCoroutine requiere que el GO esté activo. Si la jerarquía no está
-            // activa (ej. HUD transicionando), spawneamos sincrónicamente en el frame —
-            // perdemos el stagger pero evitamos el error de Unity y al menos intentamos
-            // mostrar el número. Si el container también está inactive, no se va a ver,
-            // pero eso es un problema de estructura de escena, no del spawner.
-            if (delay > 0f && Application.isPlaying && isActiveAndEnabled && gameObject.activeInHierarchy)
+            // Bakeamos el offset acá para que el spawn diferido no dependa de este
+            // componente (que puede destruirse al cerrar el CombatHUD).
+            Vector3 finalPos = screenPos + _screenOffset;
+
+            if (delay > 0f && Application.isPlaying)
             {
-                StartCoroutine(SpawnAfterDelay(text, tint, screenPos, delay));
-                return null; // el caller debe tolerar null cuando hay stagger
+                // El spawn diferido (ej. el oro, staggered 0.4s tras el daño) corre en el
+                // CoroutineHost persistente y apunta al canvas persistente — así aparece
+                // aunque el combate ya haya terminado y el CombatHUD se haya destruido.
+                // El caller tolera null cuando hay stagger.
+                CoroutineHost.Run(DelayedSpawn(_instancePrefab, parent, text, tint, finalPos, delay));
+                return null;
             }
 
-            return SpawnNow(text, tint, screenPos);
+            return SpawnInto(_instancePrefab, parent, text, tint, finalPos);
         }
 
-        private IEnumerator SpawnAfterDelay(string text, Color tint, Vector3 screenPos, float delay)
+        private static IEnumerator DelayedSpawn(FloatingDamageInstance prefab, Transform parent,
+            string text, Color tint, Vector3 pos, float delay)
         {
             yield return new WaitForSeconds(delay);
-            SpawnNow(text, tint, screenPos);
+            SpawnInto(prefab, parent, text, tint, pos);
         }
 
-        private FloatingDamageInstance SpawnNow(string text, Color tint, Vector3 screenPos)
+        private static FloatingDamageInstance SpawnInto(FloatingDamageInstance prefab, Transform parent,
+            string text, Color tint, Vector3 pos)
         {
-            if (_instancePrefab == null || _overlayContainer == null) return null;
-            var instance = Instantiate(_instancePrefab, _overlayContainer);
-            instance.Play(text, tint, screenPos + _screenOffset);
+            if (prefab == null || parent == null) return null;
+            var instance = Instantiate(prefab, parent);
+            instance.Play(text, tint, pos);
             return instance;
+        }
+
+        // Padre donde se instancian los números. En runtime usa el canvas persistente
+        // (DontDestroyOnLoad) para que sobrevivan al teardown del CombatHUD; copia el
+        // scaler del canvas del HUD para mantener tamaño/posición idénticos. En EditMode/
+        // tests (no isPlaying) cae a _overlayContainer — comportamiento de siempre.
+        private Transform ResolveSpawnParent()
+        {
+            if (Application.isPlaying)
+            {
+                CanvasScaler reference = _overlayContainer != null
+                    ? _overlayContainer.GetComponentInParent<CanvasScaler>()
+                    : null;
+                var persistent = PersistentUiOverlay.GetContainer(reference);
+                if (persistent != null) return persistent;
+            }
+            return _overlayContainer;
         }
 
         // ======================================================================

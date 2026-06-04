@@ -792,6 +792,15 @@ namespace Rollgeon.Combat.Handoff
             if (phase?.Effects != null)
                 phase.Effects.TryExecute(effCtx, preCtx);
 
+            // Ejecutar los efectos pudo terminar el combate de inmediato: si el golpe mató
+            // al último enemigo, OnCombatEnd corre síncrono y ResetCombatPhaseState() ya
+            // limpió todo (incluido EndBudget) dejando _activeChain en null. En ese caso no
+            // hay chain que seguir procesando — salimos antes de volver a tocar _activeChain
+            // (sino NRE en _activeChain.PhaseCount). Antes el delay de muerte ocultaba este
+            // race porque el cierre se diferían 1.5s; con cierre instantáneo aflora acá.
+            if (_activeChain == null)
+                return;
+
             budget?.EndBudget();
 
             var resolved = _lastFaces ?? Array.Empty<int>();

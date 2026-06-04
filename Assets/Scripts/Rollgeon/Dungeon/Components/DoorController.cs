@@ -80,11 +80,9 @@ namespace Rollgeon.Dungeon.Components
             // futuro hay triggers en hijos (caso de prefabs custom).
             binder.ConfigureExternalTriggers();
 
-            // Click-to-pass directo sobre la puerta — sólo activo en Exploración.
-            // El propio componente gateaa por IPhaseService.CurrentBase, así que en
-            // combate queda inerte (Force Door sigue siendo el único path).
-            if (GetComponent<DoorClickToPass>() == null)
-                gameObject.AddComponent<DoorClickToPass>();
+            // En Exploración el cruce de puertas ya no es por click directo: el player
+            // selecciona la casilla "frente a puerta" (roja) durante el movimiento y eso
+            // dispara EnterRoomByDoor. En combate sigue siendo Force Door (con tirada).
         }
 
         public void SetState(DoorVisualState state)

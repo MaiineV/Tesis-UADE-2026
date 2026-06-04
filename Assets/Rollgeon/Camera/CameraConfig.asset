@@ -300,6 +300,8 @@ MonoBehaviour:
   PitchDegrees: 45
   StartingFacing: 45
   DiagonalYawOffset: 9.7
+  FollowPlayer: 0
+  DefaultFocusOffset: {x: 0, y: 0, z: 0}
   EnableRotation: 1
   RotationStepDegrees: 45
   DragPixelsPerStep: 50

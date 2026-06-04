@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using UnityEngine;
 
 namespace Rollgeon.GameCamera
@@ -25,6 +26,15 @@ namespace Rollgeon.GameCamera
         private float _targetZoom;
         private float _currentZoom;
         private Vector3 _panOffset;
+        // Foco capturado cuando la cámara está en modo estático (FollowPlayer = false):
+        // la posición del target al momento de anclar (spawn / entrada a sala). La cámara
+        // se encuadra sobre este punto y no trackea al player aunque se mueva.
+        private Vector3 _staticFocus;
+        private bool _hasStaticFocus;
+        // Pedido de reanclar el foco estático en el próximo LateUpdate. Se setea en el
+        // recenter (entrada a sala) porque ahí el pawn puede no estar reposicionado aún;
+        // LateUpdate corre después de los Updates/eventos, con el pawn ya en su spawn.
+        private bool _pendingStaticReanchor;
         private bool _isPanning;
         private bool _isFloorView;
         private float _pendingDragPixels;
@@ -65,6 +75,7 @@ namespace Rollgeon.GameCamera
             _currentFacing = _config.StartingFacing;
             _currentZoom = Mathf.Clamp(_config.DefaultZoom, _config.ZoomMin, _config.ZoomMax);
             _targetZoom = _currentZoom;
+            _panOffset = HomeOffset;
 
             ApplyInitialPose();
             ApplyZoomImmediate(_currentZoom);
@@ -148,22 +159,67 @@ namespace Rollgeon.GameCamera
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target;
-            _panOffset = Vector3.zero;
+            _panOffset = HomeOffset;
             _isPanning = false;
 
-            if (target != null && _rig != null)
+            if (target != null)
             {
-                PlaceRigAt(target.position);
+                // Capturamos el foco estático para el modo no-follow (en follow se ignora
+                // y se usa la posición viva del target).
+                _staticFocus = ResolveStaticFocus();
+                _hasStaticFocus = true;
+                if (_rig != null) PlaceRigAt(FocusAnchor + _panOffset);
+            }
+            else
+            {
+                _hasStaticFocus = false;
             }
         }
+
+        // Foco para el modo estático: el CENTRO de la sala actual (no la posición del
+        // player, que spawnea pegado a la puerta de entrada y dejaba la cámara
+        // descentrada). X/Z del centro del bounding box de la sala, a la altura del piso
+        // (Y del player). Fallback a la posición del player si no hay sala/layout.
+        private Vector3 ResolveStaticFocus()
+        {
+            Vector3 fallback = _followTarget != null ? _followTarget.position : _staticFocus;
+
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null)
+                return fallback;
+
+            var prefab = dungeon.CurrentRoomInstance?.SpawnedPrefab;
+            if (prefab == null) return fallback;
+
+            var layout = prefab.GetComponent<RoomLayout>();
+            if (layout == null) return fallback;
+
+            var center = layout.transform.TransformPoint(layout.LocalBounds.center);
+            float floorY = _followTarget != null ? _followTarget.position.y : center.y;
+            return new Vector3(center.x, floorY, center.z);
+        }
+
+        // Offset "home" del foco: la posición/encuadre default configurado. La cámara
+        // arranca acá y el recenter vuelve a este encuadre. (0,0,0) por default =
+        // centrado exacto en el player (comportamiento previo).
+        private Vector3 HomeOffset => _config != null ? _config.DefaultFocusOffset : Vector3.zero;
 
         private void LateUpdate()
         {
             if (_config == null || _rig == null) return;
 
-            if (_followTarget != null)
+            if (_pendingStaticReanchor && _followTarget != null)
             {
-                PlaceRigAt(_followTarget.position + _panOffset);
+                _staticFocus = ResolveStaticFocus();
+                _hasStaticFocus = true;
+                _pendingStaticReanchor = false;
+            }
+
+            if (_followTarget != null || _hasStaticFocus)
+            {
+                // Follow → trackea la posición actual del player. Estático → usa el foco
+                // anclado (FocusAnchor lo resuelve según FollowPlayer). El _panOffset suma
+                // el encuadre default + el pan manual en ambos casos.
+                PlaceRigAt(FocusAnchor + _panOffset);
             }
             else if (_isPanning)
             {
@@ -173,6 +229,19 @@ namespace Rollgeon.GameCamera
             // Pixel snap siempre al final, después de todo posicionamiento.
             if (_config.EnablePixelSnap)
                 ApplyPixelSnap();
+        }
+
+        // Punto base sobre el que se encuadra la cámara. En modo follow = posición actual
+        // del player (trackea). En modo estático (FollowPlayer = false) = el foco capturado
+        // al anclar, así la cámara se queda quieta aunque el player se mueva.
+        private Vector3 FocusAnchor
+        {
+            get
+            {
+                bool staticMode = _config != null && !_config.FollowPlayer && _hasStaticFocus;
+                if (staticMode) return _staticFocus;
+                return _followTarget != null ? _followTarget.position : Vector3.zero;
+            }
         }
 
         // ------------------------------------------------------------------ //
@@ -317,12 +386,13 @@ namespace Rollgeon.GameCamera
             var bounds = dungeon.GetFloorBounds();
             if (bounds.size == Vector3.zero) return offset;
 
-            var focus = (_followTarget != null ? _followTarget.position : Vector3.zero) + offset;
+            var basePos = FocusAnchor;
+            var focus = basePos + offset;
             var clamped = new Vector3(
                 Mathf.Clamp(focus.x, bounds.min.x, bounds.max.x),
                 focus.y,
                 Mathf.Clamp(focus.z, bounds.min.z, bounds.max.z));
-            return clamped - (_followTarget != null ? _followTarget.position : Vector3.zero);
+            return clamped - basePos;
         }
 
         // ------------------------------------------------------------------ //
@@ -400,16 +470,34 @@ namespace Rollgeon.GameCamera
         {
             if (_followTarget == null)
             {
-                _panOffset = Vector3.zero;
+                _panOffset = HomeOffset;
                 _isPanning = false;
                 return;
             }
 
             if (_recenterTween.isAlive) _recenterTween.Stop();
 
+            // "Recentrar" = volver al encuadre default configurado (HomeOffset). Con
+            // DefaultFocusOffset en (0,0,0) esto es centrar exacto en el player.
+            var homeOffset = HomeOffset;
+
+            // Cámara estática (no-follow): reanclar el foco a la posición actual del player
+            // (típicamente el spawn de la sala) y quedarse ahí. Sin tween de pan — en
+            // estático el pan no se trackea frame a frame, así que el snap directo alcanza.
+            if (_config != null && !_config.FollowPlayer)
+            {
+                // Reanclar diferido: capturamos la posición del player en el próximo
+                // LateUpdate, cuando ya fue reposicionado al spawn de la sala nueva.
+                _pendingStaticReanchor = true;
+                _panOffset = homeOffset;
+                _isPanning = false;
+                EventManager.Trigger(EventName.OnCameraRecentered, instant);
+                return;
+            }
+
             if (instant || _config == null || _config.RecenterTweenSeconds <= 0f)
             {
-                _panOffset = Vector3.zero;
+                _panOffset = homeOffset;
                 _isPanning = false;
             }
             else
@@ -419,7 +507,7 @@ namespace Rollgeon.GameCamera
                     startValue: 0f,
                     endValue: 1f,
                     duration: _config.RecenterTweenSeconds,
-                    onValueChange: t => _panOffset = Vector3.LerpUnclamped(startOffset, Vector3.zero, t),
+                    onValueChange: t => _panOffset = Vector3.LerpUnclamped(startOffset, homeOffset, t),
                     ease: _config.RecenterEase);
                 _isPanning = false;
             }

@@ -16,10 +16,11 @@ namespace Rollgeon.Combat
     public sealed class CombatDeathWatcher : ICombatDeathWatcher
     {
         // Tiempo que esperamos antes de despawnear visualmente al enemigo + notificar
-        // Victory. Le da chance a los floating numbers (damage + gold drop, con stagger
-        // 0.4s) de aparecer antes de que el HUD se desmonte y mate las coroutines del
-        // FloatingDamageSpawner. Si el stagger se aumenta, este valor también debería.
-        private const float DeathAnimationDelaySeconds = 1.5f;
+        // Victory en el kill final. Originalmente le daba chance a los floating numbers
+        // de aparecer antes de que el HUD se desmonte, pero esa pausa entre salas de
+        // combate no aportaba, así que está en 0 → el combate termina instantáneamente.
+        // Subir este valor reactiva el delay (y vuelve a pasar por la coroutine).
+        private const float DeathAnimationDelaySeconds = 0f;
 
         private readonly IPlayerService _player;
         private readonly ICombatSignaller _signaller;
@@ -103,13 +104,11 @@ namespace Rollgeon.Combat
                 && room.State == RoomState.Uncleared
                 && room.SpawnedEnemies.Count == 0;
 
-            if (isFinalKill && Application.isPlaying)
+            if (isFinalKill && Application.isPlaying && DeathAnimationDelaySeconds > 0f)
             {
-                // Solo delayamos el despawn + Victory en el kill FINAL. Es ahí donde el
-                // HUD transiciona (Combat → Exploration) y mata las coroutines del
-                // FloatingDamageSpawner — sin delay, los floating numbers no alcanzan a
-                // aparecer. Mid-combat kills van inmediato para que los enemigos vivos
-                // no vean un "fantasma" ocupando el tile durante 1.5s.
+                // Solo delayamos el despawn + Victory en el kill FINAL, y únicamente si el
+                // delay está configurado > 0. Con delay en 0 (default actual) caemos al
+                // path inmediato de abajo → el combate termina al instante, sin esperar.
                 CoroutineHost.Run(DelayedFinishCombat(deadGuid));
             }
             else
