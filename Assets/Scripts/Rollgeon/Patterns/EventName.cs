@@ -135,6 +135,10 @@ namespace Patterns
         OnFloorCleared,
         /// <summary>args: [Guid runId, int newFloorIndex]. Fired by RunContext.AdvanceFloor().</summary>
         OnFloorChanged,
+        /// <summary>args: [Guid roomInstanceId]. El player activó una puerta de salida física
+        /// (caminó al tile de salida). Lo consume FloorProgressionService para transicionar
+        /// al siguiente piso (#158).</summary>
+        OnFloorExitRequested,
 
         // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>

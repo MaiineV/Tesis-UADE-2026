@@ -315,6 +315,19 @@ namespace Rollgeon.Dungeon
             foreach (var slot in layout.DoorSlots)
             {
                 if (slot == null) continue;
+
+                // Puerta de salida de piso en un slot (#158): la maneja
+                // SyncDoorVisualStates — no aplicar wall-plug/connection (no tiene vecino).
+                if (slot.DoorRoot != null)
+                {
+                    var slotCtrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                    if (slotCtrl != null && slotCtrl.IsExit)
+                    {
+                        authored.Add(slot.Direction);
+                        continue;
+                    }
+                }
+
                 authored.Add(slot.Direction);
 
                 bool connected = instance.Connections.ContainsKey(slot.Direction);
@@ -349,6 +362,7 @@ namespace Rollgeon.Dungeon
                 .GetComponentsInChildren<DoorController>(includeInactive: true);
             foreach (var controller in allControllers)
             {
+                if (controller.IsExit) continue; // Exit doors: las maneja SyncDoorVisualStates (#158).
                 if (authored.Contains(controller.Direction)) continue;
 
                 var roomId = instance.Template != null ? instance.Template.RoomId : "<null>";
@@ -468,6 +482,22 @@ namespace Rollgeon.Dungeon
                 {
                     controller.SetState(DoorVisualState.LockedCombat);
                 }
+            }
+
+            // Puertas de salida de piso (#158): siempre visibles; Open al clearear la sala
+            // (boss derrotado). El mesh "open" distinguible es el efecto visual de habilitación.
+            foreach (var controller in instance.SpawnedPrefab.GetComponentsInChildren<DoorController>(includeInactive: true))
+            {
+                if (!controller.IsExit) continue;
+
+                controller.OwnerRoomInstanceId = instance.InstanceId;
+                if (string.IsNullOrEmpty(controller.SpawnPointId))
+                    controller.SpawnPointId = "exit_" + controller.Direction.DoorStateKey();
+
+                if (!controller.gameObject.activeSelf) controller.gameObject.SetActive(true);
+                controller.SetState(instance.State == RoomState.Cleared
+                    ? DoorVisualState.Open
+                    : DoorVisualState.LockedCombat);
             }
         }
 
