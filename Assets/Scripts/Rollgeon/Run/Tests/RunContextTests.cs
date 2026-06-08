@@ -102,5 +102,46 @@ namespace Rollgeon.Run.Tests
         {
             Assert.Throws<ArgumentNullException>(() => new RunContext(Guid.NewGuid(), null));
         }
+
+        // ---- ISaveable (#158) ------------------------------------------------
+
+        [Test]
+        public void SaveKey_IsStable()
+        {
+            var ctx = new RunContext(Guid.NewGuid(), _hero);
+
+            Assert.AreEqual("run.floor_index", ctx.SaveKey);
+        }
+
+        [Test]
+        public void CaptureState_ReturnsCurrentFloorIndex()
+        {
+            var ctx = new RunContext(Guid.NewGuid(), _hero);
+            ctx.AdvanceFloor();
+            ctx.AdvanceFloor();
+
+            Assert.AreEqual(2, (int)ctx.CaptureState());
+        }
+
+        [Test]
+        public void RestoreState_RestoresFloorIndex()
+        {
+            var ctx = new RunContext(Guid.NewGuid(), _hero);
+
+            ctx.RestoreState(5);
+
+            Assert.AreEqual(5, ctx.FloorIndex);
+        }
+
+        [Test]
+        public void RestoreState_NonIntPayload_IsIgnored()
+        {
+            var ctx = new RunContext(Guid.NewGuid(), _hero);
+            ctx.AdvanceFloor();
+
+            ctx.RestoreState("not-an-int");
+
+            Assert.AreEqual(1, ctx.FloorIndex, "Un payload inválido no debe corromper el estado.");
+        }
     }
 }
