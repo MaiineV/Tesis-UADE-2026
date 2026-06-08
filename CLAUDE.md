@@ -121,6 +121,12 @@ Ver `.gitignore`. Destacados:
 - **Tests**: EditMode por defecto. `Sirenix.*` DLLs como
   `precompiledReferences` cuando el test cree `SerializedScriptableObject`.
 - **Comentarios**: solo el *why*. El *what* lo dicen los nombres.
-- **Nada de Unity MCP**: todo el setup de engine (scenes, SOs, prefabs,
-  UI wiring) lo hace el usuario siguiendo `docs/setup/*.md`. Los agents
-  escriben solo C#.
+- **Unity MCP**: el paquete `com.coplaydev.unity-mcp` está disponible en
+  el proyecto (ver `Packages/manifest.json`). El servidor se levanta desde
+  Unity en `Window → MCP for Unity`.
+  - **Antes de usarlo**, verificar que el MCP esté conectado en la sesión
+    (ej. `claude mcp list`). **Si NO está conectado, avisar al usuario** y
+    no asumir que las operaciones de engine se aplicaron.
+  - Cuando el MCP no esté disponible, el setup de engine (scenes, SOs,
+    prefabs, UI wiring) lo hace el usuario siguiendo `docs/setup/*.md` y
+    los agents escriben solo C#.
