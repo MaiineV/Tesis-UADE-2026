@@ -17,3 +17,9 @@ MonoBehaviour:
     Weight: 1
   - Item: {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
     Weight: 2
+  EntryTierWeights:
+  - Weights:
+    - Tier: 1
+      Weight: 80
+    - Tier: 2
+      Weight: 20

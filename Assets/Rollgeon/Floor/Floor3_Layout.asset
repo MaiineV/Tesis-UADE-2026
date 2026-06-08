@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 588ff46156ed1334dbbacf2ba08ec3b7, type: 3}
-  m_Name: FloorLayout
+  m_Name: Floor3_Layout
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.FloorLayoutSO
   serializationData:
     SerializedFormat: 2
@@ -21,9 +21,9 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  FloorId: floor_1
-  DisplayName: Piso 1
-  NextFloor: {fileID: 11400000, guid: b25b8a98107c6d747b907f323d6ff7fa, type: 2}
+  FloorId: floor_3
+  DisplayName: Piso 3
+  NextFloor: {fileID: 0}
   Slots:
   - Type: 1
     Count:
