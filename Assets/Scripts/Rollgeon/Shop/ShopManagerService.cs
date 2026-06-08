@@ -122,8 +122,11 @@ namespace Rollgeon.Shop
             if (!dungeon.GetAllRoomInstances().TryGetValue(roomId, out var room)) return;
             if (room.Template == null || room.Template.Type != RoomType.Shop) return;
 
-            // MVP: floor depth hardcoded a 0 — multi-floor aterriza después.
-            InitializeInternal(room, floorDepth: 0);
+            // #158: floor depth real desde el RunContext (antes hardcodeado a 0).
+            int floorDepth = ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var runCtx)
+                ? runCtx.FloorIndex
+                : 0;
+            InitializeInternal(room, floorDepth);
         }
 
         private void InitializeInternal(RoomInstance room, int floorDepth)

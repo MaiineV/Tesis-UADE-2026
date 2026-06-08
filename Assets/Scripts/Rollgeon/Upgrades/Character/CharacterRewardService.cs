@@ -265,7 +265,10 @@ namespace Rollgeon.Upgrades.Character
             var exclude = new HashSet<CharacterRewardSO>();
 
             int spawned = 0;
-            int floorDepth = 0; // placeholder hasta multi-floor wiring
+            // #158: floor depth real desde el RunContext (antes placeholder 0).
+            int floorDepth = ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var runCtx)
+                ? runCtx.FloorIndex
+                : 0;
             for (int i = 0; i < slotCount; i++)
             {
                 string key = SpawnPointKey(i);

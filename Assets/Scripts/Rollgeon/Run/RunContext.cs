@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Heroes;
 
 namespace Rollgeon.Run
@@ -8,8 +9,14 @@ namespace Rollgeon.Run
     /// Mutable run state implementing <see cref="IRunContextService"/>.
     /// Created by <see cref="RunBootstrapper.StartRun"/> and disposed when
     /// <see cref="ServiceLocator.ClearScope"/> tears down <see cref="ServiceScope.Run"/>.
+    /// <para>
+    /// Implementa <see cref="ISaveable"/> (#158): persiste <see cref="FloorIndex"/>
+    /// para sobrevivir un save/load a mitad de run. El reset es automatico — cada
+    /// <see cref="RunBootstrapper.StartRun"/> crea un <c>RunContext</c> fresco con
+    /// <c>FloorIndex = 0</c>.
+    /// </para>
     /// </summary>
-    public sealed class RunContext : IRunContextService, IDisposable
+    public sealed class RunContext : IRunContextService, ISaveable, IDisposable
     {
         public Guid RunId { get; }
         public int FloorIndex { get; private set; }
@@ -31,6 +38,17 @@ namespace Rollgeon.Run
         {
             FloorIndex++;
             EventManager.Trigger(EventName.OnFloorChanged, RunId, FloorIndex);
+        }
+
+        // ---- ISaveable (#158) ------------------------------------------------
+
+        public string SaveKey => "run.floor_index";
+
+        public object CaptureState() => FloorIndex;
+
+        public void RestoreState(object state)
+        {
+            if (state is int floorIndex) FloorIndex = floorIndex;
         }
 
         /// <summary>
