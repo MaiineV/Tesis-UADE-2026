@@ -9,9 +9,14 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Victory screen (UI#0013c). Shown when all floors are cleared.
-    /// Subscribes to <see cref="EventName.OnFloorCleared"/> in Awake and
-    /// auto-pushes itself via <see cref="IScreenManager.PushByStringId"/>.
+    /// Victory screen (UI#0013c). Shown when the run is won — el player tomó la salida
+    /// del piso terminal (#158). Subscribes to <see cref="EventName.OnRunVictory"/> in
+    /// Awake and auto-pushes itself via <see cref="IScreenManager.PushByStringId"/>.
+    /// <para>
+    /// (#158) Antes escuchaba <c>OnFloorCleared</c>, que se dispara al derrotar a CADA
+    /// boss — con multi-piso eso mostraba Victory en el piso 1. Ahora la victoria la
+    /// decide <c>FloorProgressionService</c> cuando no hay <c>NextFloor</c>.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// [SETUP] GameObject lives as child of the Canvas in the run scene,
@@ -36,7 +41,7 @@ namespace Rollgeon.UI.Screens
         [ShowInInspector, ReadOnly]
         private bool _pushed;
 
-        private EventManager.EventReceiver _onFloorClearedHandler;
+        private EventManager.EventReceiver _onRunVictoryHandler;
 
         public override string ScreenStringId => ScreenId;
 
@@ -50,19 +55,19 @@ namespace Rollgeon.UI.Screens
         {
             // Idempotencia: Awake (tests) y OnRegisteredByHost (runtime) llaman acá; uno suscribe,
             // el resto es no-op.
-            if (_onFloorClearedHandler != null) return;
-            _onFloorClearedHandler = HandleFloorCleared;
-            EventManager.Subscribe(EventName.OnFloorCleared, _onFloorClearedHandler);
+            if (_onRunVictoryHandler != null) return;
+            _onRunVictoryHandler = HandleRunVictory;
+            EventManager.Subscribe(EventName.OnRunVictory, _onRunVictoryHandler);
         }
 
         private void OnDestroy()
         {
-            if (_onFloorClearedHandler == null) return;
-            EventManager.UnSubscribe(EventName.OnFloorCleared, _onFloorClearedHandler);
-            _onFloorClearedHandler = null;
+            if (_onRunVictoryHandler == null) return;
+            EventManager.UnSubscribe(EventName.OnRunVictory, _onRunVictoryHandler);
+            _onRunVictoryHandler = null;
         }
 
-        private void HandleFloorCleared(params object[] args)
+        private void HandleRunVictory(params object[] args)
         {
             if (_pushed) return;
 

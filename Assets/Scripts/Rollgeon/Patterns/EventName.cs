@@ -27,6 +27,9 @@ namespace Patterns
         OnRunStart,
         /// <summary>args: [Guid runId, RunOutcome outcome]</summary>
         OnRunEnd,
+        /// <summary>args: [Guid runId]. La run se ganó: el player tomó la salida del piso
+        /// terminal (FloorLayoutSO.NextFloor == null). Lo consume VictoryScreen (#158).</summary>
+        OnRunVictory,
 
         // --- Combat lifecycle ---------------------------------------------------
         /// <summary>args: [Guid roomInstanceId]</summary>
