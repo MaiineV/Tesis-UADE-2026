@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Rollgeon.Dungeon;
+using Rollgeon.Run;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,6 +18,10 @@ namespace Rollgeon.Editor.Tools
         const float RightWidth = 320f;
         const float PreviewCell = 22f;
         const float PreviewMaxSize = 240f;
+
+        // Raíz de la cadena para el preview de Run Order cuando 00_Bootstrap no está
+        // abierta (sin RunControllerBootstrapper en escena). Guarda el GUID del asset.
+        const string StartPrefKey = "Rollgeon.FloorEditor.PreviewStartFloorGuid";
 
         static readonly RoomType[] AllTypes =
         {
@@ -90,7 +95,10 @@ namespace Rollgeon.Editor.Tools
             }
             EditorGUILayout.EndHorizontal();
 
+            DrawRunOrder();
+
             EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("All Floors", EditorStyles.boldLabel);
             _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
 
             if (_floors.Count == 0)
@@ -120,6 +128,124 @@ namespace Rollgeon.Editor.Tools
 
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
+        }
+
+        // ── Run Order: cadena de NextFloor ──────────────────────
+
+        void DrawRunOrder()
+        {
+            EditorGUILayout.Space(4);
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+            EditorGUILayout.LabelField("Run Order", EditorStyles.boldLabel);
+
+            var start = ResolveStartFloor(out var boot, out var bootSO, out var bootProp);
+
+            EditorGUI.BeginChangeCheck();
+            var newStart = (FloorLayoutSO)EditorGUILayout.ObjectField(
+                new GUIContent("Start", "Piso inicial de la run."),
+                start, typeof(FloorLayoutSO), false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SetStartFloor(newStart, boot, bootSO, bootProp);
+                start = newStart;
+            }
+
+            EditorGUILayout.LabelField(
+                boot != null ? "(real — RunControllerBootstrapper)" : "(preview — abrí 00_Bootstrap p/ el real)",
+                EditorStyles.miniLabel);
+
+            EditorGUILayout.Space(2);
+
+            if (start == null)
+            {
+                EditorGUILayout.HelpBox("Sin piso inicial asignado.", MessageType.Info);
+            }
+            else
+            {
+                var inChain = new HashSet<FloorLayoutSO>();
+                var cur = start;
+                int idx = 1;
+                bool cycle = false;
+                while (cur != null)
+                {
+                    if (!inChain.Add(cur)) { cycle = true; break; }
+                    DrawChainRow(idx, cur);
+                    cur = cur.NextFloor;
+                    idx++;
+                    if (idx > 64) break; // safety
+                }
+
+                if (cycle)
+                    EditorGUILayout.HelpBox("⚠ Ciclo en NextFloor — la run nunca termina.", MessageType.Error);
+                else
+                    EditorGUILayout.LabelField("⤷ fin (Victory)", EditorStyles.miniLabel);
+
+                var orphans = _floors.Where(f => f != null && !inChain.Contains(f)).ToList();
+                if (orphans.Count > 0)
+                    EditorGUILayout.HelpBox(
+                        $"{orphans.Count} piso(s) no alcanzable(s) desde el inicial:\n• " +
+                        string.Join("\n• ", orphans.Select(FloorLabel)),
+                        MessageType.Warning);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        void DrawChainRow(int idx, FloorLayoutSO floor)
+        {
+            bool isSel = floor == _selected;
+            var prev = GUI.backgroundColor;
+            if (isSel) GUI.backgroundColor = new Color(0.45f, 0.75f, 1f);
+            if (GUILayout.Button($"{idx}.  {FloorLabel(floor)}", EditorStyles.miniButton))
+                SelectFloor(floor);
+            GUI.backgroundColor = prev;
+        }
+
+        static string FloorLabel(FloorLayoutSO f) =>
+            f == null ? "<null>" : (string.IsNullOrEmpty(f.DisplayName) ? f.name : f.DisplayName);
+
+        /// <summary>
+        /// Resuelve el piso inicial: el <c>_defaultLayout</c> del
+        /// <see cref="RunControllerBootstrapper"/> si hay uno en escena (editable),
+        /// si no el preview guardado en EditorPrefs.
+        /// </summary>
+        FloorLayoutSO ResolveStartFloor(out RunControllerBootstrapper boot,
+            out SerializedObject so, out SerializedProperty prop)
+        {
+            boot = null; so = null; prop = null;
+            var boots = Object.FindObjectsByType<RunControllerBootstrapper>(FindObjectsSortMode.None);
+            if (boots != null && boots.Length > 0)
+            {
+                boot = boots[0];
+                so = new SerializedObject(boot);
+                prop = so.FindProperty("_defaultLayout");
+                return prop != null ? prop.objectReferenceValue as FloorLayoutSO : null;
+            }
+
+            var guid = EditorPrefs.GetString(StartPrefKey, string.Empty);
+            if (!string.IsNullOrEmpty(guid))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path))
+                    return AssetDatabase.LoadAssetAtPath<FloorLayoutSO>(path);
+            }
+            return null;
+        }
+
+        void SetStartFloor(FloorLayoutSO f, RunControllerBootstrapper boot,
+            SerializedObject so, SerializedProperty prop)
+        {
+            if (boot != null && so != null && prop != null)
+            {
+                prop.objectReferenceValue = f;
+                so.ApplyModifiedProperties(); // Undo + marca la escena dirty.
+                return;
+            }
+
+            string guid = f != null
+                ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(f))
+                : string.Empty;
+            EditorPrefs.SetString(StartPrefKey, guid);
         }
 
         // ── Middle: slots ───────────────────────────────────────
@@ -159,6 +285,28 @@ namespace Rollgeon.Editor.Tools
                 _selected.DisplayName = newName;
                 EditorUtility.SetDirty(_selected);
             }
+
+            // Progresión: piso siguiente de la ruta principal (#158).
+            EditorGUI.BeginChangeCheck();
+            var newNext = (FloorLayoutSO)EditorGUILayout.ObjectField(
+                new GUIContent("Next Floor", "Piso siguiente de la ruta principal. Vacío = piso terminal (Victory)."),
+                _selected.NextFloor, typeof(FloorLayoutSO), false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (newNext == _selected)
+                {
+                    EditorUtility.DisplayDialog("Next Floor inválido",
+                        "Un piso no puede apuntar a sí mismo (ciclo inmediato).", "Ok");
+                }
+                else
+                {
+                    Undo.RecordObject(_selected, "Edit Next Floor");
+                    _selected.NextFloor = newNext;
+                    EditorUtility.SetDirty(_selected);
+                }
+            }
+            if (_selected.NextFloor == null)
+                EditorGUILayout.LabelField(" ", "→ piso terminal (Victory)", EditorStyles.miniLabel);
         }
 
         void InvalidatePreview() => _previewPlan = null;

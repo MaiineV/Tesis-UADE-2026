@@ -23,6 +23,14 @@ namespace Rollgeon.Dungeon.Components
         public DoorDirection Direction;
 
         /// <summary>
+        /// Puerta de SALIDA de piso (#158). No conecta a una sala vecina: cuando se abre
+        /// (boss derrotado) y el player camina a su tile frente, dispara la transición al
+        /// siguiente piso en vez de un <c>EnterRoomByDoor</c>. Se autorea en el prefab de la
+        /// boss room con un mesh distinguible.
+        /// </summary>
+        public bool IsExit;
+
+        /// <summary>
         /// Id determinístico para el <c>ObjectStates</c> dict de
         /// <see cref="RoomInstance"/> — matcheando
         /// <c>DungeonManager.DoorStateKey(Direction)</c> ("door_N/S/E/W").

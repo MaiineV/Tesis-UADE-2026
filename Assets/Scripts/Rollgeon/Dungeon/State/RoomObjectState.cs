@@ -46,6 +46,12 @@ namespace Rollgeon.Dungeon.State
         public int CurrentHP;
         public bool IsDead;
         public int SpawnPointIndex;
+
+        /// <summary>
+        /// Tier rolleado al spawnear (#158). Se restaura en re-entry para que el
+        /// enemigo conserve el mismo tier. Default 1 ⇒ states viejos = Tier 1.
+        /// </summary>
+        public int Tier = 1;
     }
 
     /// <summary>Cofre — stub, sin consumidor hoy. Cierra la jerarquía (§13.6.1).</summary>

@@ -27,6 +27,9 @@ namespace Patterns
         OnRunStart,
         /// <summary>args: [Guid runId, RunOutcome outcome]</summary>
         OnRunEnd,
+        /// <summary>args: [Guid runId]. La run se ganó: el player tomó la salida del piso
+        /// terminal (FloorLayoutSO.NextFloor == null). Lo consume VictoryScreen (#158).</summary>
+        OnRunVictory,
 
         // --- Combat lifecycle ---------------------------------------------------
         /// <summary>args: [Guid roomInstanceId]</summary>
@@ -147,6 +150,10 @@ namespace Patterns
         OnFloorCleared,
         /// <summary>args: [Guid runId, int newFloorIndex]. Fired by RunContext.AdvanceFloor().</summary>
         OnFloorChanged,
+        /// <summary>args: [Guid roomInstanceId]. El player activó una puerta de salida física
+        /// (caminó al tile de salida). Lo consume FloorProgressionService para transicionar
+        /// al siguiente piso (#158).</summary>
+        OnFloorExitRequested,
 
         // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>

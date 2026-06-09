@@ -630,6 +630,33 @@ MonoBehaviour:
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 1
+  BaseAttackRange: 1
+  ExtraTiers:
+  - Label: T2
+    HP:
+      Mode: 0
+      Multiplier: 1.3
+      ManualValue: 0
+    Attack:
+      Mode: 0
+      Multiplier: 1.2
+      ManualValue: 0
+    Speed:
+      Mode: 0
+      Multiplier: 1.1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
   VisualPrefab: {fileID: 8816966952657547766, guid: ae9cb5869f87759468c9a62ac0046c2a, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5
