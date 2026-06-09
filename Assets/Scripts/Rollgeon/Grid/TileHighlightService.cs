@@ -36,6 +36,9 @@ namespace Rollgeon.Grid
                 // Rojo para la casilla "frente a puerta" en Exploración: seleccionarla
                 // cruza a la sala vecina. Configurable via el bootstrap.
                 { "door", new Color(1f, 0f, 0f, 0.7f) },
+                // Naranja de advertencia para el área telegráfica de los Bosses: estas
+                // casillas van a recibir daño el próximo turno del Boss (Bosses §1).
+                { "warning", new Color(1f, 0.55f, 0.1f, 0.65f) },
             };
             _styleTextures = new Dictionary<string, Texture>();
 

@@ -133,6 +133,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
+            EventManager.Subscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
 
             // Estado inicial: slots apagados hasta que el jugador presione Roll.
             ClearAll();
@@ -144,6 +145,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
+            EventManager.UnSubscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
             if (_resolvedSlots != null)
                 foreach (var s in _resolvedSlots)
                     s?.OnToggled.RemoveAllListeners();
@@ -169,6 +171,31 @@ namespace Rollgeon.UI.HUD
                 _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
                 _resolvedSlots[i]?.SetHeld(false);
             }
+            RefreshDiceBlock();
+        }
+
+        // Boss 1 (§2): refleja el estado de IDiceBlockService en los slots — grayed + candado,
+        // fuerza hold off en los bloqueados, y re-corre la detección de combo (que ya excluye
+        // los bloqueados). Se llama tras cada roll y al cambiar el set de dados bloqueados.
+        private void HandleDiceBlockChanged(params object[] args)
+        {
+            // El payload trae el playerGuid; refrescamos siempre (el set es del jugador activo).
+            RefreshDiceBlock();
+        }
+
+        private void RefreshDiceBlock()
+        {
+            if (_resolvedSlots == null) return;
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db);
+
+            for (int i = 0; i < _resolvedSlots.Length; i++)
+            {
+                bool blocked = db != null && db.IsBlocked(i);
+                if (blocked && _heldStates != null && i < _heldStates.Length)
+                    _heldStates[i] = false; // un dado bloqueado no puede quedar holdeado
+                _resolvedSlots[i]?.SetBlocked(blocked);
+            }
+            PropagateHoldsToActionRoll();
             RunComboDetection();
         }
 
@@ -224,6 +251,11 @@ namespace Rollgeon.UI.HUD
                 Debug.Log($"[DiceZoneView] ToggleHold({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
                 return;
             }
+            // Boss 1 (§2): un dado bloqueado no puede holdearse.
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
+                && db != null && db.IsBlocked(i))
+                return;
+
             _heldStates[i] = !_heldStates[i];
             _resolvedSlots[i]?.SetHeld(_heldStates[i]);
             PropagateHoldsToActionRoll();
@@ -250,7 +282,18 @@ namespace Rollgeon.UI.HUD
         {
             if (_currentFaces == null) return;
 
-            var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, _heldStates);
+            // Boss 1 (§2): la preview de combo excluye los dados bloqueados, igual que la
+            // resolución real en CombatHandoffService.
+            var comboKeep = _heldStates;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
+                && db != null && db.BlockedIndices.Count > 0 && _heldStates != null)
+            {
+                comboKeep = (bool[])_heldStates.Clone();
+                for (int i = 0; i < comboKeep.Length; i++)
+                    if (db.IsBlocked(i)) comboKeep[i] = false;
+            }
+
+            var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, comboKeep);
 
             // Preferimos el ContractSheet del hero (respeta priorities y el set
             // específico de combos que ese hero puede usar). Fallback: catálogo
@@ -260,12 +303,19 @@ namespace Rollgeon.UI.HUD
                 ? sheet.MatchBest(keptDice)
                 : MatchBestFromCatalog(keptDice);
 
+            // Boss 3 (§4): la preview del daño refleja la capa de modificadores del Contrato.
+            int baseDmg = best?.BaseDamage ?? 0;
+            if (best != null
+                && ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var cmods)
+                && cmods != null)
+                baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
+
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best?.DisplayName ?? string.Empty,
-                BaseDamage = best?.BaseDamage ?? 0
+                BaseDamage = baseDmg
             });
         }
 
