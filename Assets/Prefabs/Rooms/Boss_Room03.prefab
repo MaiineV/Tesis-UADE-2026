@@ -583,7 +583,6 @@ Transform:
   - {fileID: 7487635096707754146}
   - {fileID: 5306810430659142307}
   - {fileID: 5342002535232883657}
-  - {fileID: 7849440276882466232}
   - {fileID: 2248614290771819670}
   - {fileID: 1152551362743893211}
   - {fileID: 3497644362538109920}
@@ -595,6 +594,7 @@ Transform:
   - {fileID: 8590822119401960203}
   - {fileID: 7951846519319169985}
   - {fileID: 5900716355483997640}
+  - {fileID: 6816196890288496434}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -4190,22 +4190,22 @@ MonoBehaviour:
   - {fileID: 34153753852635796}
   ObstacleSpawnPoints: []
   DoorSlots:
-  - Direction: 2
-    Anchor: {fileID: 2248614290771819670}
-    WallPlug: {fileID: 2990010566086503959}
-    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 3
     Anchor: {fileID: 3709836555029600952}
     WallPlug: {fileID: 374349336388978745}
     DoorRoot: {fileID: 7064674011663006592}
-  - Direction: 0
-    Anchor: {fileID: 7849440276882466232}
-    WallPlug: {fileID: 6531583249128044345}
-    DoorRoot: {fileID: 4440531032116954240}
+  - Direction: 2
+    Anchor: {fileID: 2248614290771819670}
+    WallPlug: {fileID: 2990010566086503959}
+    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 1
     Anchor: {fileID: 1152551362743893211}
     WallPlug: {fileID: 4158132350853574234}
     DoorRoot: {fileID: 6813823632140852707}
+  - Direction: 0
+    Anchor: {fileID: 6816196890288496434}
+    WallPlug: {fileID: 7556467300058434995}
+    DoorRoot: {fileID: 1145816256970210826}
   LocalBounds:
     m_Center: {x: 0.5, y: 1.0504063, z: 0.5}
     m_Extent: {x: 6.500001, y: 1.5504069, z: 6.500001}
@@ -4491,6 +4491,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
   - {fileID: 11400000, guid: 26b17a40c970e71448add075e202a9b0, type: 2}
+  SetTierWeights: []
 --- !u!1 &6959396803070664933
 GameObject:
   m_ObjectHideFlags: 0
@@ -5190,105 +5191,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 99508534503298429}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &127185406888761843
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1711357143213522343}
-    m_Modifications:
-    - target: {fileID: 1425884830774788301, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: SpawnPointId
-      value: door_N
-      objectReference: {fileID: 0}
-    - target: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_Name
-      value: Door
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 6.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 5420110907286270132}
-  m_SourcePrefab: {fileID: 100100000, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
---- !u!1 &4440531032116954240 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-  m_PrefabInstance: {fileID: 127185406888761843}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &5420110907286270132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4440531032116954240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
-  Coord:
-    X: 0
-    Y: 6
-  Layer: 0
-  Footprint: {x: 1, y: 1, z: 1}
-  FootprintOffset: {x: 0, y: 0, z: 0}
-  Type: 4
-  IsBlocker: 0
---- !u!1 &6531583249128044345 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6586235384682573514, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-  m_PrefabInstance: {fileID: 127185406888761843}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &7849440276882466232 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-  m_PrefabInstance: {fileID: 127185406888761843}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &187089615687093959
 PrefabInstance:
@@ -15005,6 +14907,105 @@ MeshRenderer:
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 4736496444450841041, guid: 0e5a917e382118f4cb8da558471272aa, type: 3}
   m_PrefabInstance: {fileID: 3706628701729505002}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3727560845451486073
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 1425884830774788301, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: SpawnPointId
+      value: door_N
+      objectReference: {fileID: 0}
+    - target: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_Name
+      value: Door
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1378773648776761309}
+  m_SourcePrefab: {fileID: 100100000, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+--- !u!1 &1145816256970210826 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+  m_PrefabInstance: {fileID: 3727560845451486073}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1378773648776761309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145816256970210826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 0
+    Y: 6
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 4
+  IsBlocker: 0
+--- !u!4 &6816196890288496434 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+  m_PrefabInstance: {fileID: 3727560845451486073}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7556467300058434995 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6586235384682573514, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+  m_PrefabInstance: {fileID: 3727560845451486073}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3732103238669453187
 PrefabInstance:
