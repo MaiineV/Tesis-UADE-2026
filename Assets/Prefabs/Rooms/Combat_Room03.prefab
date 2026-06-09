@@ -31,6 +31,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1711357143213522343}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &786953187174852893
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4272907821760693523}
+  - component: {fileID: 4483742767337148753}
+  m_Layer: 0
+  m_Name: SP_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4272907821760693523
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786953187174852893}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.5, y: 1, z: -1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1711357143213522343}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4483742767337148753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786953187174852893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66746566a68b7be45a568b4245dcaadf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
+  EnemySets:
+  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
 --- !u!1 &1318006620687225715
 GameObject:
   m_ObjectHideFlags: 0
@@ -596,8 +642,6 @@ Transform:
   - {fileID: 7849440276882466232}
   - {fileID: 2248614290771819670}
   - {fileID: 1152551362743893211}
-  - {fileID: 3497644362538109920}
-  - {fileID: 5566976110325041359}
   - {fileID: 2191008940836542783}
   - {fileID: 3260488069091567650}
   - {fileID: 2978570432753257700}
@@ -686,6 +730,8 @@ Transform:
   - {fileID: 1107425360058563795}
   - {fileID: 4491834510585506325}
   - {fileID: 7874178578608661271}
+  - {fileID: 8630279905561863136}
+  - {fileID: 4272907821760693523}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -4218,8 +4264,8 @@ MonoBehaviour:
     TileSize: 1
   PlayerSpawnPoint: {fileID: 6170970368573748303}
   EnemySpawnPoints:
-  - {fileID: 3497644362538109920}
-  - {fileID: 5566976110325041359}
+  - {fileID: 8630279905561863136}
+  - {fileID: 4272907821760693523}
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
   DoorSlots:
@@ -4453,53 +4499,6 @@ MonoBehaviour:
   m_FadeFactor: 0.5
   version: 1
   m_DecalLayerMask: 1
---- !u!1 &6310464379564157093
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3497644362538109920}
-  - component: {fileID: 9100345899132275533}
-  m_Layer: 0
-  m_Name: SP_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3497644362538109920
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6310464379564157093}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 1, z: -2.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1711357143213522343}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9100345899132275533
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6310464379564157093}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66746566a68b7be45a568b4245dcaadf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
-  EnemySets:
-  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
-  - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
 --- !u!1 &7960689912611077509
 GameObject:
   m_ObjectHideFlags: 0
@@ -4680,7 +4679,7 @@ MonoBehaviour:
   m_FadeFactor: 0.5
   version: 1
   m_DecalLayerMask: 1
---- !u!1 &8907418235772850985
+--- !u!1 &8973787478810819340
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4688,45 +4687,44 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5566976110325041359}
-  - component: {fileID: 7963787284270023221}
+  - component: {fileID: 8630279905561863136}
+  - component: {fileID: 7343714785176063898}
   m_Layer: 0
-  m_Name: SP_02
+  m_Name: SP_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5566976110325041359
+--- !u!4 &8630279905561863136
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8907418235772850985}
+  m_GameObject: {fileID: 8973787478810819340}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.5, y: 1, z: 3.5}
+  m_LocalPosition: {x: 3.5, y: 1, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1711357143213522343}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7963787284270023221
+--- !u!114 &7343714785176063898
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8907418235772850985}
+  m_GameObject: {fileID: 8973787478810819340}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66746566a68b7be45a568b4245dcaadf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
-  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
-  - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
+  - {fileID: 11400000, guid: aa8154a1c110e7f43923d033431fca88, type: 2}
 --- !u!1001 &12508925095872261
 PrefabInstance:
   m_ObjectHideFlags: 0

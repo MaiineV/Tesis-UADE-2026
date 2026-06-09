@@ -772,6 +772,6 @@ MonoBehaviour:
   BaseHealStrength: 3
   BaseSpeed: 4
   MaxEnergy: 3
-  VisualPrefab: {fileID: 0}
+  VisualPrefab: {fileID: 8816966952657547766, guid: 2a28790685f10514085f46493a8c3ef2, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5
