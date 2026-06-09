@@ -587,6 +587,24 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 46|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: DesiredRange
+      Entry: 7
+      Data: 47|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Retreat
+      Entry: 5
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: true

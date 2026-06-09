@@ -1,5 +1,6 @@
 using System;
 using Rollgeon.Combat.AI.Readers;
+using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -8,9 +9,16 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Mueve al enemigo un máximo de <see cref="MaxSteps"/> tiles hacia el player.
-    /// TECHNICAL.md §7.5 + §17.§B.
+    /// Mueve al enemigo hacia un target configurable manteniendo una distancia deseada
+    /// (<see cref="DesiredRange"/>). Se acerca si está lejos y, si <see cref="Retreat"/>,
+    /// retrocede (kite) si está demasiado cerca. TECHNICAL.md §7.5 + §17.§B.
     /// </summary>
+    /// <remarks>
+    /// Generaliza el viejo "Move Toward Player": con <see cref="TargetSelector"/> null el
+    /// resolver usa <c>TargetSelector_AlwaysPlayer</c>, y con <see cref="DesiredRange"/> null
+    /// se cae al legacy <see cref="StopAdjacent"/> (rango 1). Con <see cref="Retreat"/> activo
+    /// subsume también el comportamiento de <c>AINode_KeepDistance</c>.
+    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Move : AIActionNode
     {
@@ -18,36 +26,66 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Cantidad máxima de tiles a recorrer en un turno.")]
         public AIIntReader MaxSteps;
 
-        [Tooltip("Si true, frena al estar adyacente al player (no pisa el tile del player).")]
+        [OdinSerialize]
+        [Tooltip("A quién apuntar. Null = player (TargetSelector_AlwaysPlayer).")]
+        public BaseEnemyTargetSelector TargetSelector;
+
+        [OdinSerialize]
+        [Tooltip("Distancia Manhattan al target que el enemigo intenta mantener. " +
+                 "Null = legacy: StopAdjacent ? 1 : 0.")]
+        public AIIntReader DesiredRange;
+
+        [Tooltip("Si true y está más cerca que DesiredRange, retrocede (kite). " +
+                 "Si false, demasiado cerca = no se mueve.")]
+        public bool Retreat;
+
+        [Tooltip("DEPRECADO — usar DesiredRange. Solo fallback cuando DesiredRange es null: " +
+                 "true => rango 1 (frena adyacente), false => rango 0.")]
         public bool StopAdjacent = true;
 
-        public override string NodeName => "Move Toward Player";
+        public override string NodeName => "Move Toward Target";
 
         public override AIResult Tick(AIContext context)
         {
             if (context == null) return AIResult.Failed;
             if (context.Grid == null || context.Movement == null) return AIResult.Failed;
-            if (context.PlayerGuid == Guid.Empty) return AIResult.Failed;
+
+            var targetGuid = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
+            if (targetGuid == Guid.Empty) return AIResult.Failed;
 
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord))
                 return AIResult.Failed;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
+            if (!context.Grid.TryGetPosition(targetGuid, out var targetCoord))
                 return AIResult.Failed;
 
-            if (StopAdjacent && selfCoord.Manhattan(playerCoord) <= 1)
-                return AIResult.Failed;
+            int desiredRange = DesiredRange?.Read(context) ?? (StopAdjacent ? 1 : 0);
+            int currentDist = selfCoord.Manhattan(targetCoord);
 
-            var target = ChooseTargetTile(context, selfCoord, playerCoord);
-            if (target == selfCoord) return AIResult.Failed;
-
-            var path = context.Movement.FindPath(selfCoord, target);
-            if (path == null || path.Count < 2) return AIResult.Failed;
+            if (currentDist == desiredRange) return AIResult.Failed;        // ya en la banda
+            if (currentDist < desiredRange && !Retreat) return AIResult.Failed; // muy cerca, kite off
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
-            int steps = Mathf.Min(maxSteps, path.Count - 1);
-            var destination = path[steps];
+            var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+            if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
-            if (!context.Movement.Move(context.SelfGuid, destination))
+            // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
+            // frenar en la banda y alejar (kite) con la misma pasada. Strict '<' =>
+            // determinista y, ante empate con quedarse quieto, no se mueve.
+            var best = selfCoord;
+            int bestErr = Mathf.Abs(currentDist - desiredRange);
+            foreach (var candidate in reachable)
+            {
+                int err = Mathf.Abs(candidate.Manhattan(targetCoord) - desiredRange);
+                if (err < bestErr)
+                {
+                    bestErr = err;
+                    best = candidate;
+                }
+            }
+
+            if (best == selfCoord) return AIResult.Failed;
+
+            if (!context.Movement.Move(context.SelfGuid, best))
                 return AIResult.Failed;
 
             var wait = context.VisualService?.WaitForMoveComplete(context.SelfGuid);
@@ -57,20 +95,6 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Running;
             }
             return AIResult.Succeeded;
-        }
-
-        private static GridCoord ChooseTargetTile(AIContext context, GridCoord selfCoord, GridCoord playerCoord)
-        {
-            GridCoord best = selfCoord;
-            int bestDist = int.MaxValue;
-            foreach (var adj in playerCoord.Neighbors4())
-            {
-                if (!context.Grid.IsWalkable(adj)) continue;
-                if (context.Grid.IsOccupied(adj)) continue;
-                int d = selfCoord.Manhattan(adj);
-                if (d < bestDist) { bestDist = d; best = adj; }
-            }
-            return best;
         }
     }
 }
