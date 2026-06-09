@@ -67,7 +67,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 5
+      Data: 4
     - Name: 
       Entry: 10
       Data: 0
@@ -77,9 +77,6 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 2
-    - Name: 
-      Entry: 10
-      Data: 3
     - Name: 
       Entry: 10
       Data: 3
@@ -242,7 +239,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 931e48afd5b2a0f4da6a8bf015e46e56, type: 2}
   - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
   - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
-  - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
   - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
   SettingsAssets:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
