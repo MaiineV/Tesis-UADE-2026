@@ -38,29 +38,30 @@ el editor (un prefab espacial) más el playtest end-to-end.
 boss room). Ya tiene 4 puertas cardinales `Door` (clones de
 `Assets/Prefabs/Tiles/Door.prefab`) y un `RoomLayout` en la raíz.
 
-La puerta de salida es un **5º `DoorController` con `IsExit = true`**, independiente de
-las 4 cardinales (no usa los `DoorSlots` ni necesita vecino). Pasos:
+**La salida es DINÁMICA — NO hace falta una puerta de salida fija.** El `DungeonManager`
+garantiza que la boss room sea un **dead-end (1 sola entrada)** y designa en runtime como
+salida de piso (`IsExit`) la puerta **opuesta a la entrada**. O sea: cualquiera de las 4
+puertas cardinales puede terminar siendo la salida según por dónde se entre; las 2
+perpendiculares quedan tapiadas. No se rota la sala. (Resetea cualquier `IsExit` autoreado,
+así que un `ExitDoor` fijo en el prefab **sobra** — conviene quitarlo.)
 
-1. Abrí `Boss_Room03.prefab` en modo prefab.
-2. Duplicá uno de los `Door` existentes (o instanciá `Assets/Prefabs/Tiles/Door.prefab`)
-   como hijo de la raíz. Renombralo `ExitDoor`.
-3. En su `DoorController`:
-   - **`IsExit` = true** (lo demás lo setea el `DungeonManager` en runtime).
-   - **`Direction`** = la cardinal cuyo `InwardOffset` apunte hacia adentro de la sala
-     desde donde lo coloques (ej. si lo ponés sobre la pared Norte, `Direction = North`,
-     y el tile-frente cae un paso al Sur, hacia el interior).
-4. **Posición**: pegalo a un segmento de pared (los `TileWall`) en una dirección que
-   quede **libre** visualmente, y verificá que el **tile interior de enfrente sea
-   caminable** en el `NavGraph` (debe ser un tile por el que el player pueda pararse).
-   El tile-frente = `WorldToGrid(door.position) + Direction.InwardOffset()`.
-5. (Opcional, polish) Dale al hijo `MeshOpen` un material/emisivo distinto para que la
-   salida sea **visualmente distinguible** del resto de puertas (lo pide el GDD).
-6. Guardá el prefab. No hace falta tocar `RoomLayout.DoorSlots` — las puertas exit se
-   resuelven por `GetComponentsInChildren<DoorController>()` con `IsExit`.
+Lo único que necesita el prefab `Boss_Room03.prefab`:
 
-> La puerta arranca cerrada (`LockedCombat`) y pasa a `Open` sola al derrotar al boss.
-> Si el `NavGraph` no expone el tile-frente como caminable, el player no podrá pisarlo
-> — rebakealo desde el Room Editor incluyendo esa casilla.
+1. Sus **4 puertas cardinales `Door`** (ya las tiene, clones de `Assets/Prefabs/Tiles/Door.prefab`),
+   con sus `DoorSlots` autoreados (Auto-Populate en `RoomLayout`) — entrada/salida/walls los
+   resuelve el runtime.
+2. **Que el `NavGraph` exponga como caminable el tile-frente de las 4 puertas** (no solo el de
+   la entrada): cualquiera puede ser la salida. El tile-frente =
+   `WorldToGrid(door.position) + Direction.InwardOffset()`. Si falta alguno, rebakealo desde
+   el Room Editor incluyendo esas casillas.
+3. (Opcional, polish — pendiente) "Visualmente distinguible" del GDD: como la salida es
+   dinámica, no hay un mesh fijo distinto. Se puede agregar un hijo `ExitGlow` al
+   `Door.prefab` que se prenda cuando la puerta está `Open` **y** es `IsExit`, o swapear
+   material en runtime. Queda como follow-up.
+
+> La puerta de salida arranca cerrada (`LockedCombat`) y pasa a `Open` sola al derrotar al
+> boss (mismo path que el unlock de puertas). La entrada (puerta de la conexión) también se
+> abre al clearear — el player puede volver o tomar la salida.
 
 ---
 
