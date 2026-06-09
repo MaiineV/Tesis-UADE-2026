@@ -300,6 +300,8 @@ MonoBehaviour:
   PitchDegrees: 45
   StartingFacing: 45
   DiagonalYawOffset: 9.7
+  FollowPlayer: 0
+  DefaultFocusOffset: {x: 0, y: 0, z: 0}
   EnableRotation: 1
   RotationStepDegrees: 45
   DragPixelsPerStep: 50
@@ -310,8 +312,9 @@ MonoBehaviour:
   PanClampToFloorBounds: 1
   PanLerpSeconds: 0.08
   EnableZoom: 1
-  ZoomMin: 6
+  ZoomMin: 5
   ZoomMax: 22
+  DefaultZoom: 9
   ZoomStep: 1.5
   ZoomTweenSeconds: 0.18
   ZoomEase: 6

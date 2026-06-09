@@ -13,9 +13,14 @@ namespace Rollgeon.Effects.Selection
         // service, cae a amarillo — funciona pero no se distingue del "selected".
         private const string PathHighlightStyle = "path";
 
+        // Estilo de la casilla "frente a puerta" (Exploración). Color configurable via
+        // TileHighlightServiceBootstrap (rojo por default).
+        private const string DoorHighlightStyle = "door";
+
         private SelectionRequest _request;
         private List<TargetRef> _selected;
         private HashSet<GridCoord> _validCoords;
+        private HashSet<GridCoord> _doorCoords;
 
         // Cache del último coord hovered para evitar recomputar el A* cada frame cuando
         // el cursor está quieto. Null = sin hover (el mouse no está sobre un tile válido).
@@ -31,6 +36,7 @@ namespace Rollgeon.Effects.Selection
             _request = request ?? throw new ArgumentNullException(nameof(request));
             _selected = new List<TargetRef>();
             _validCoords = new HashSet<GridCoord>();
+            _doorCoords = new HashSet<GridCoord>();
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 
@@ -40,12 +46,24 @@ namespace Rollgeon.Effects.Selection
                     _validCoords.Add(t.Coord);
             }
 
-            UnityEngine.Debug.Log($"[SelectionController] BeginSelection — {_validCoords.Count} valid coords, style='{request.HighlightStyle}'");
+            // Las casillas de puerta son clickeables aunque queden fuera del rango de
+            // movimiento normal — el viejo click-to-pass tampoco chequeaba adyacencia.
+            if (request.DoorTiles != null)
+            {
+                foreach (var d in request.DoorTiles)
+                {
+                    _doorCoords.Add(d);
+                    _validCoords.Add(d);
+                }
+            }
+
+            UnityEngine.Debug.Log($"[SelectionController] BeginSelection — {_validCoords.Count} valid coords ({_doorCoords.Count} door), style='{request.HighlightStyle}'");
 
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
                 var style = request.HighlightStyle ?? "move";
                 highlight.Highlight(_validCoords, style);
+                RepaintDoors(highlight);
             }
             else
             {
@@ -65,7 +83,12 @@ namespace Rollgeon.Effects.Selection
             // configuran los HeroActionBehavior de Movement; otras selecciones (attack,
             // heal) usan estilos distintos y no tienen sentido como "camino A*".
             var style = _request.HighlightStyle ?? "move";
-            if (style != "move" || !coord.HasValue || !_validCoords.Contains(coord.Value))
+
+            // Casilla "frente a puerta": seleccionarla cruza de sala, no mueve, así que no
+            // tiene sentido previsualizar el camino A*. Mantener el rojo.
+            bool hoveringDoor = coord.HasValue && _doorCoords.Contains(coord.Value);
+
+            if (style != "move" || !coord.HasValue || !_validCoords.Contains(coord.Value) || hoveringDoor)
             {
                 ClearPathPreview(style);
                 return;
@@ -93,6 +116,7 @@ namespace Rollgeon.Effects.Selection
             {
                 highlight.Highlight(_validCoords, style);
                 highlight.Highlight(path, PathHighlightStyle);
+                RepaintDoors(highlight); // las puertas quedan rojas por encima del rango/path
                 _hasPathPreview = true;
             }
         }
@@ -101,8 +125,19 @@ namespace Rollgeon.Effects.Selection
         {
             if (!_hasPathPreview) return;
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+            {
                 highlight.Highlight(_validCoords, rangeStyle);
+                RepaintDoors(highlight);
+            }
             _hasPathPreview = false;
+        }
+
+        // Repinta las casillas de puerta con su estilo rojo. Se llama después de cada
+        // repintado del rango "move" (que las dejaría azules al estar en _validCoords).
+        private void RepaintDoors(ITileHighlightService highlight)
+        {
+            if (_doorCoords != null && _doorCoords.Count > 0)
+                highlight.Highlight(_doorCoords, DoorHighlightStyle);
         }
 
         public void OnTargetClicked(TargetRef target)
@@ -154,6 +189,7 @@ namespace Rollgeon.Effects.Selection
             _request = null;
             _selected = null;
             _validCoords = null;
+            _doorCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 
@@ -174,6 +210,7 @@ namespace Rollgeon.Effects.Selection
             _request = null;
             _selected = null;
             _validCoords = null;
+            _doorCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 

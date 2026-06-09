@@ -28,6 +28,18 @@ namespace Rollgeon.GameCamera
                  "Ejemplo: 9.7 → NW=324.7°, NE=54.7°, pero N=0°, E=90°.")]
         public float DiagonalYawOffset = 0f;
 
+        [Tooltip("Si true, la cámara sigue al player frame a frame. Si false, queda " +
+                 "estática: se ancla al encuadre default (DefaultFocusOffset) y se " +
+                 "reposiciona al entrar a cada sala, pero NO trackea al player mientras " +
+                 "se mueve dentro de la sala.")]
+        public bool FollowPlayer = true;
+
+        [Tooltip("Ajuste fino del encuadre default: offset world-space del foco. En modo " +
+                 "follow es respecto del player; en modo estático (FollowPlayer = false) es " +
+                 "respecto del CENTRO de la sala. (0,0,0) = sin ajuste (estático: centrado " +
+                 "exacto en la sala). X/Z desplazan sobre el plano del piso; Y normalmente 0.")]
+        public Vector3 DefaultFocusOffset = Vector3.zero;
+
         // === Rotation ========================================================
         [Title("Rotation")]
         [ToggleGroup(nameof(EnableRotation))] public bool EnableRotation = true;

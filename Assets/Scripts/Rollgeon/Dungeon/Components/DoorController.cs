@@ -23,6 +23,14 @@ namespace Rollgeon.Dungeon.Components
         public DoorDirection Direction;
 
         /// <summary>
+        /// Puerta de SALIDA de piso (#158). No conecta a una sala vecina: cuando se abre
+        /// (boss derrotado) y el player camina a su tile frente, dispara la transición al
+        /// siguiente piso en vez de un <c>EnterRoomByDoor</c>. Se autorea en el prefab de la
+        /// boss room con un mesh distinguible.
+        /// </summary>
+        public bool IsExit;
+
+        /// <summary>
         /// Id determinístico para el <c>ObjectStates</c> dict de
         /// <see cref="RoomInstance"/> — matcheando
         /// <c>DungeonManager.DoorStateKey(Direction)</c> ("door_N/S/E/W").
@@ -80,11 +88,9 @@ namespace Rollgeon.Dungeon.Components
             // futuro hay triggers en hijos (caso de prefabs custom).
             binder.ConfigureExternalTriggers();
 
-            // Click-to-pass directo sobre la puerta — sólo activo en Exploración.
-            // El propio componente gateaa por IPhaseService.CurrentBase, así que en
-            // combate queda inerte (Force Door sigue siendo el único path).
-            if (GetComponent<DoorClickToPass>() == null)
-                gameObject.AddComponent<DoorClickToPass>();
+            // En Exploración el cruce de puertas ya no es por click directo: el player
+            // selecciona la casilla "frente a puerta" (roja) durante el movimiento y eso
+            // dispara EnterRoomByDoor. En combate sigue siendo Force Door (con tirada).
         }
 
         public void SetState(DoorVisualState state)

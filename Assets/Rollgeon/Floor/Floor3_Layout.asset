@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588ff46156ed1334dbbacf2ba08ec3b7, type: 3}
+  m_Name: Floor3_Layout
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.FloorLayoutSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  FloorId: floor_3
+  DisplayName: Piso 3
+  NextFloor: {fileID: 0}
+  Slots:
+  - Type: 1
+    Count:
+      Mode: 1
+      Fixed: 4
+      Min: 4
+      Max: 6
+    Pool:
+    - {fileID: 11400000, guid: fcb05630f717bf84596fd4047d8c2a68, type: 2}
+    - {fileID: 11400000, guid: af8c2a0bcb3f7ad4b8c3c1c32064ea01, type: 2}
+  - Type: 3
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: 007e05491eeab154fb09793b3b421981, type: 2}
+  - Type: 2
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: 32d4f3001b74d8d4d9a76f74a12b45f4, type: 2}
+  - Type: 0
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}
+  - Type: 4
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool:
+    - {fileID: 11400000, guid: 4027d317c77b20d40bef2ea0e662d2dc, type: 2}

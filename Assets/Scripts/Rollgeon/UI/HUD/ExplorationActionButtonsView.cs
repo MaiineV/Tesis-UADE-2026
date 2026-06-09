@@ -132,9 +132,10 @@ namespace Rollgeon.UI.HUD
         }
 
         // El slot ForceDoor en Exploración resuelve al behavior "Pass door". La UX
-        // ahora es click directo sobre la puerta (DoorClickToPass), así que el botón
-        // sobra y se oculta en este HUD. En combate la lógica vive en el HUD de
-        // combate — éste sólo se muestra en Exploración, así que el filtro es local.
+        // ahora es seleccionar la casilla roja "frente a puerta" durante el movimiento
+        // (ver ExplorationBehaviorService), así que el botón sobra y se oculta en este
+        // HUD. En combate la lógica vive en el HUD de combate — éste sólo se muestra en
+        // Exploración, así que el filtro es local.
         private bool IsHiddenInExploration(int buttonIndex, HeroActionBehavior behavior)
         {
             if (behavior == null) return false;
