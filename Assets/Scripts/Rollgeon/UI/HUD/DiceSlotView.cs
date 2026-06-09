@@ -18,9 +18,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional] private Button _button;
         [SerializeField, Optional] private Graphic _background;
 
-        [Title("Boss 1 — Dice block")]
+        [Title("Dice block")]
         [SerializeField, Optional]
-        [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado por el Boss. Opcional.")]
+        [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
         private GameObject _lockIcon;
 
         [HideInInspector] public UnityEvent OnToggled = new UnityEvent();

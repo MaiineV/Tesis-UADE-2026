@@ -3260,6 +3260,7 @@ MonoBehaviour:
   _diceLabel: {fileID: 8615896930220409653}
   _button: {fileID: 3806685457668064138}
   _background: {fileID: 7968057229605714757}
+  _lockIcon: {fileID: 8978899936294565183, guid: 0fd2ccd86cd27c34183e73a4616a79bd, type: 3}
   OnToggled:
     m_PersistentCalls:
       m_Calls: []
@@ -5336,6 +5337,7 @@ MonoBehaviour:
   _diceLabel: {fileID: 6427691331985445488}
   _button: {fileID: 8681614819477428137}
   _background: {fileID: 7784768524628282036}
+  _lockIcon: {fileID: 8978899936294565183, guid: 0fd2ccd86cd27c34183e73a4616a79bd, type: 3}
   OnToggled:
     m_PersistentCalls:
       m_Calls: []
@@ -12033,6 +12035,7 @@ MonoBehaviour:
   _diceLabel: {fileID: 5549481334055587133}
   _button: {fileID: 2656183869551216747}
   _background: {fileID: 4065549598350805611}
+  _lockIcon: {fileID: 8978899936294565183, guid: 0fd2ccd86cd27c34183e73a4616a79bd, type: 3}
   OnToggled:
     m_PersistentCalls:
       m_Calls: []
@@ -14485,6 +14488,7 @@ MonoBehaviour:
   _diceLabel: {fileID: 8955699605629414464}
   _button: {fileID: 133335727913068897}
   _background: {fileID: 4279364730425202375}
+  _lockIcon: {fileID: 8978899936294565183, guid: 0fd2ccd86cd27c34183e73a4616a79bd, type: 3}
   OnToggled:
     m_PersistentCalls:
       m_Calls: []
@@ -15591,6 +15595,7 @@ MonoBehaviour:
   _diceLabel: {fileID: 5082858090498495199}
   _button: {fileID: 3056446813077837924}
   _background: {fileID: 6564775215612586446}
+  _lockIcon: {fileID: 8978899936294565183, guid: 0fd2ccd86cd27c34183e73a4616a79bd, type: 3}
   OnToggled:
     m_PersistentCalls:
       m_Calls: []
