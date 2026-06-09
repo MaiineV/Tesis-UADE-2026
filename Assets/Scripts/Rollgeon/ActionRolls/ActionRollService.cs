@@ -198,6 +198,9 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
+            // Boss 1 (§2): los dados bloqueados nunca se re-rollean — forzamos keep=true en ellos.
+            keep = ForceKeepBlocked(keep, _currentRoll?.Length ?? 0);
+
             // BUG-014: si el user holdeó todos los dados, el reroll no re-tiraría
             // ningún dado — cobrar energía sería un drain sin efecto. Bail sin
             // mutar phase ni cobrar; el panel debería haber deshabilitado el
@@ -237,6 +240,23 @@ namespace Rollgeon.ActionRolls
             // AwaitingRerollDecision para que vea los dados nuevos y decida si
             // confirma. El reroll button debe deshabilitarse en panel (rollIndex=2).
             SetPhase(ActionRollPhase.AwaitingRerollDecision);
+        }
+
+        // Boss 1 (§2): devuelve un keep con los dados bloqueados forzados a true (no se re-rollean).
+        // Si no hay servicio o no hay dados bloqueados, devuelve el keep original sin materializar.
+        private static IReadOnlyList<bool> ForceKeepBlocked(IReadOnlyList<bool> keep, int len)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
+                || db == null || db.BlockedIndices.Count == 0)
+                return keep;
+
+            int n = len > 0 ? len : (keep?.Count ?? 0);
+            var arr = new bool[n];
+            if (keep != null)
+                for (int i = 0; i < n && i < keep.Count; i++) arr[i] = keep[i];
+            foreach (var idx in db.BlockedIndices)
+                if (idx >= 0 && idx < n) arr[idx] = true;
+            return arr;
         }
 
         private static bool[] ToBoolArray(IReadOnlyList<bool> source)
@@ -314,12 +334,16 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
+            // Boss 1 (§2): los dados bloqueados quedan excluidos del combo aunque estén holdeados.
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var diceBlock);
+
             var heldDice = new List<int>(_currentRoll.Length);
             if (_currentHolds != null)
             {
                 int n = Mathf.Min(_currentHolds.Length, _currentRoll.Length);
                 for (int i = 0; i < n; i++)
                 {
+                    if (diceBlock != null && diceBlock.IsBlocked(i)) continue;
                     if (_currentHolds[i]) heldDice.Add(_currentRoll[i]);
                 }
             }
@@ -346,7 +370,7 @@ namespace Rollgeon.ActionRolls
             if (fromSheet != null)
             {
                 _currentCombo = fromSheet;
-                _currentEffectiveTotal = fromSheet.BaseDamage;
+                _currentEffectiveTotal = EffectiveBase(fromSheet);
                 EmitComboMatched();
                 return;
             }
@@ -359,7 +383,7 @@ namespace Rollgeon.ActionRolls
                 if (result.IsMatch)
                 {
                     _currentCombo = best;
-                    _currentEffectiveTotal = result.BaseDamage;
+                    _currentEffectiveTotal = EffectiveBase(best);
                     EmitComboMatched();
                     return;
                 }
@@ -382,8 +406,19 @@ namespace Rollgeon.ActionRolls
                 SourceGuid = _playerGuid,
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
                 DisplayName = _currentCombo != null ? _currentCombo.DisplayName : string.Empty,
-                BaseDamage = _currentCombo != null ? _currentCombo.BaseDamage : 0,
+                BaseDamage = EffectiveBase(_currentCombo),
             });
+        }
+
+        // Boss 3 (§4): daño base del combo tras la capa de modificadores del Contrato. Sin
+        // servicio/modificadores ⇒ el base original.
+        private static int EffectiveBase(BaseComboSO combo)
+        {
+            if (combo == null) return 0;
+            int b = combo.BaseDamage;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
+                b = mods.GetEffectiveBaseDamage(combo.ComboId, b);
+            return b;
         }
 
         public bool CanAffordReroll

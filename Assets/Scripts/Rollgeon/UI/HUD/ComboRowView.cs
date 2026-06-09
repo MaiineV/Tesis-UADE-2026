@@ -1,3 +1,4 @@
+using Patterns;
 using Rollgeon.Combos;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -36,15 +37,23 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Image opcional del icono del combo. Si combo.Icon es null, se desactiva.")]
         private Image _iconImage;
 
+        private static readonly Color BuffedColor = new Color(0.4f, 1f, 0.45f, 1f);
+        private static readonly Color NerfedColor = new Color(1f, 0.45f, 0.4f, 1f);
+
+        private BaseComboSO _combo;
+        private Color _damageDefaultColor = Color.white;
+        private bool _damageDefaultColorCached;
+
         /// <summary>
         /// Popula la fila con los datos de <paramref name="combo"/>: <see cref="BaseComboSO.DisplayName"/>,
-        /// <see cref="BaseComboSO.BaseDamage"/>, <see cref="BaseComboSO.Description"/> (opcional)
-        /// e <see cref="BaseComboSO.Icon"/> (opcional). Fallback a <see cref="BaseComboSO.ComboId"/>
-        /// si <c>DisplayName</c> es null/empty.
+        /// daño base efectivo (tras la capa de modificadores del Contrato — Boss 3 §4),
+        /// <see cref="BaseComboSO.Description"/> (opcional) e <see cref="BaseComboSO.Icon"/> (opcional).
+        /// Fallback a <see cref="BaseComboSO.ComboId"/> si <c>DisplayName</c> es null/empty.
         /// </summary>
         public void Bind(BaseComboSO combo)
         {
             if (combo == null) return;
+            _combo = combo;
 
             if (_nameLabel != null)
             {
@@ -52,10 +61,7 @@ namespace Rollgeon.UI.HUD
                 _nameLabel.text = string.IsNullOrEmpty(name) ? (combo.ComboId ?? string.Empty) : name;
             }
 
-            if (_damageLabel != null)
-            {
-                _damageLabel.text = combo.BaseDamage.ToString();
-            }
+            RefreshDamage();
 
             if (_descriptionLabel != null)
             {
@@ -74,6 +80,32 @@ namespace Rollgeon.UI.HUD
                     _iconImage.enabled = false;
                 }
             }
+        }
+
+        /// <summary>
+        /// Re-lee el daño efectivo del combo desde <see cref="ContractMod.IContractModifierService"/>
+        /// y repinta el label. Lo invoca <see cref="ContractDisplayView"/> al recibir
+        /// <see cref="EventName.OnContractModifierChanged"/> — refleja las Reglas del Boss 3 en vivo.
+        /// </summary>
+        public void RefreshDamage()
+        {
+            if (_combo == null || _damageLabel == null) return;
+
+            if (!_damageDefaultColorCached)
+            {
+                _damageDefaultColor = _damageLabel.color;
+                _damageDefaultColorCached = true;
+            }
+
+            int baseDmg = _combo.BaseDamage;
+            int effective = baseDmg;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
+                effective = mods.GetEffectiveBaseDamage(_combo.ComboId, baseDmg);
+
+            _damageLabel.text = effective.ToString();
+            _damageLabel.color = effective > baseDmg ? BuffedColor
+                : effective < baseDmg ? NerfedColor
+                : _damageDefaultColor;
         }
     }
 }

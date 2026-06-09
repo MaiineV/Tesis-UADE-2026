@@ -117,6 +117,18 @@ namespace Patterns
         /// <summary>args: [Guid playerGuid, int used, int cap]. Estado del reroll budget cambió (T104 extensión — opcional, dispara si el servicio lo emite).</summary>
         OnRerollBudgetChanged,
 
+        // --- Bosses: sistemas prerequisito --------------------------------------
+        /// <summary>args: [Guid sourceGuid]. El Boss marcó un área telegráfica (turno N). Hook para VFX/SFX de advertencia.</summary>
+        OnThreatenedAreaMarked,
+        /// <summary>args: [Guid sourceGuid, bool hit]. Se ejecutó el área telegráfica (turno N+1); hit=true si el jugador estaba dentro.</summary>
+        OnThreatenedAreaResolved,
+        /// <summary>args: [Guid playerGuid]. Cambió el conjunto de dados bloqueados del jugador — la UI re-lee IDiceBlockService.</summary>
+        OnDiceBlockChanged,
+        /// <summary>args: []. Cambió la capa de modificadores del Contrato (Boss 3) — la UI del Contrato re-lee los valores efectivos.</summary>
+        OnContractModifierChanged,
+        /// <summary>args: [Guid bossGuid, int phaseIndex]. El Boss cruzó un umbral de fase (1-based). Hook para feedback visual + diálogo.</summary>
+        OnBossPhaseChanged,
+
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
         /// de la entidad cambió su valor calculado (consumido por Foundation#0003 Attributes + Modifiers).</summary>

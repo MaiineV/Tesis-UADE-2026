@@ -4490,7 +4490,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
-  - {fileID: 11400000, guid: 26b17a40c970e71448add075e202a9b0, type: 2}
+  - {fileID: 11400000, guid: 75e81593959103542a37ef846fa86a80, type: 2}
 --- !u!1 &6959396803070664933
 GameObject:
   m_ObjectHideFlags: 0
