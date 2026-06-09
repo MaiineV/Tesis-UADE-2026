@@ -328,10 +328,17 @@ namespace Rollgeon.Combat.Handoff
 
                 if (hero != null && _lastFaces != null)
                 {
-                    var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
+                    var keptDice = FilterKeptDice(_lastFaces, KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length));
                     combo = hero.Sheet?.MatchBest(keptDice);
                     if (combo != null)
-                        comboResult = combo.Detect(keptDice);
+                        comboResult = DetectWithContractMods(combo, keptDice);
+
+                    // Boss 2 (§3): registrar el combo ejecutado en el ataque del jugador. Si no
+                    // hubo combo (daño mínimo / dado más alto), Record(null) loguea el marcador
+                    // "sin combo". Solo el ataque primario con tirada pasa por acá (el chain
+                    // hace early-return arriba; Heal/Forzar Puerta van por ActionRollService).
+                    if (ServiceLocator.TryGetService<Rollgeon.Combat.ComboLog.IComboLogService>(out var comboLog) && comboLog != null)
+                        comboLog.Record(combo != null ? combo.ComboId : null);
                 }
 
                 bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
@@ -726,7 +733,8 @@ namespace Rollgeon.Combat.Handoff
                 // BUG-014: si todos los dados están holdeados, el reroll no movería
                 // ningún dado — bail antes de consumir budget/energía. El botón
                 // debería estar deshabilitado por la UI, esto es el guard defensivo.
-                var keep = hud.GetCurrentKeep();
+                // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
+                var keep = KeepForcingBlockedDice(hud.GetCurrentKeep(), _lastFaces?.Length ?? 0);
                 if (AllDiceHeld(keep))
                 {
                     Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — todos los dados están holdeados.");
@@ -776,7 +784,7 @@ namespace Rollgeon.Combat.Handoff
                 var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
                 var combo = hero.Sheet?.MatchBest(keptDice);
                 if (combo != null)
-                    effCtx.ComboResult = combo.Detect(keptDice);
+                    effCtx.ComboResult = DetectWithContractMods(combo, keptDice);
             }
 
             var preCtx = new PreConditionContext
@@ -1111,6 +1119,55 @@ namespace Rollgeon.Combat.Handoff
             if (keep == null || keep.Length == 0) return false;
             for (int i = 0; i < keep.Length; i++) if (!keep[i]) return false;
             return true;
+        }
+
+        // Boss 3 (§4): aplica la capa de modificadores del Contrato al daño base del combo
+        // detectado (R01 ×2, R02 ×0.5, R03 prohibido → 0, R04/R05 valor del vecino). Devuelve el
+        // ComboDetectionResult con el daño efectivo. Sin servicio/modificadores ⇒ el base original.
+        private static ComboDetectionResult? DetectWithContractMods(BaseComboSO combo, int[] keptDice)
+        {
+            if (combo == null) return null;
+            var detected = combo.Detect(keptDice);
+            if (!detected.IsMatch) return detected;
+
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
+                && mods != null)
+            {
+                int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
+                return ComboDetectionResult.Match(eff, detected.CountUsed);
+            }
+            return detected;
+        }
+
+        // Boss 1 (§2): el dado bloqueado se ve pero queda EXCLUIDO del combo. Devuelve una
+        // copia del keep con los índices bloqueados en false, sin tocar el array de la UI.
+        private static bool[] KeepExcludingBlockedDice(bool[] keep, int diceLen)
+        {
+            var result = CopyKeep(keep, diceLen);
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db) && db != null)
+                for (int i = 0; i < result.Length; i++)
+                    if (db.IsBlocked(i)) result[i] = false;
+            return result;
+        }
+
+        // Boss 1 (§2): el dado bloqueado NO se puede re-rollear. Fuerza keep=true en los índices
+        // bloqueados para que el roller conserve su cara en el reroll.
+        private static bool[] KeepForcingBlockedDice(bool[] keep, int diceLen)
+        {
+            var result = CopyKeep(keep, diceLen);
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db) && db != null)
+                for (int i = 0; i < result.Length; i++)
+                    if (db.IsBlocked(i)) result[i] = true;
+            return result;
+        }
+
+        private static bool[] CopyKeep(bool[] keep, int diceLen)
+        {
+            int len = diceLen > 0 ? diceLen : (keep?.Length ?? 0);
+            var result = new bool[len];
+            if (keep != null)
+                for (int i = 0; i < len && i < keep.Length; i++) result[i] = keep[i];
+            return result;
         }
 
         public static int[] FilterKeptDice(int[] faces, bool[] keep)
