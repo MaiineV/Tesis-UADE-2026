@@ -113,6 +113,10 @@ namespace Rollgeon.Dungeon
                 }
             }
 
+            // 5b. Boss room = dead-end: exactamente 1 entrada (#158). La puerta opuesta
+            //     a esa entrada se designa como salida de piso dinámica en ConfigureDoorSlots.
+            EnforceBossSingleEntrance();
+
             // 6. Seed default DoorStates en cada instancia.
             foreach (var instance in _instances.Values)
             {
@@ -306,6 +310,13 @@ namespace Rollgeon.Dungeon
 
             var layout = instance.SpawnedPrefab.GetComponent<RoomLayout>();
             if (layout == null) return;
+
+            // Boss room: designar dinámicamente la puerta OPUESTA a la única entrada como
+            // salida de piso (#158). Se marca IsExit acá en runtime; el resto lo maneja el
+            // flujo de puertas exit (skip de wall-plug abajo + apertura al clearear en
+            // SyncDoorVisualStates). No requiere un IsExit autoreado en el prefab — cualquiera
+            // de las 4 puertas cardinales puede terminar siendo la salida según la entrada.
+            MarkBossExitDoor(instance, layout);
 
             // Track qué direcciones están autoreadas para detectar slots faltantes
             // contra Connections — un connection sin DoorSlotRef significa puerta
@@ -604,6 +615,106 @@ namespace Rollgeon.Dungeon
         {
             // El start siempre es Vector2Int.zero (ver FloorTopologyPlanner).
             return _cellIndex[Vector2Int.zero];
+        }
+
+        /// <summary>
+        /// Garantiza que cada boss room tenga exactamente UNA conexión (entrada) — un
+        /// dead-end (#158). Si la topología la dejó con varias, conserva la primera (en
+        /// orden N/S/E/W) cuya poda del resto mantenga TODO el piso alcanzable desde el
+        /// start, y remueve las demás (con su recíproca en el vecino). La puerta opuesta
+        /// a la entrada se vuelve la salida de piso dinámica.
+        /// </summary>
+        private void EnforceBossSingleEntrance()
+        {
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.Template == null || instance.Template.Type != RoomType.Boss) continue;
+                if (instance.Connections.Count <= 1) continue;
+
+                var dirs = new List<DoorDirection>(instance.Connections.Keys);
+                DoorDirection keep = dirs[0];
+                bool found = false;
+                foreach (var dir in dirs)
+                {
+                    if (StaysFullyConnectedKeepingOnly(instance, dir)) { keep = dir; found = true; break; }
+                }
+                if (!found)
+                {
+                    Debug.LogWarning(
+                        $"[DungeonManager] Boss room (cell {instance.GridCell}): no pude reducir a 1 " +
+                        $"entrada sin desconectar el piso; conservo {keep}.");
+                }
+
+                foreach (var dir in dirs)
+                {
+                    if (dir == keep) continue;
+                    if (!instance.Connections.TryGetValue(dir, out var neighborId)) continue;
+                    instance.Connections.Remove(dir);
+                    if (_instances.TryGetValue(neighborId, out var neighbor))
+                        neighbor.Connections.Remove(dir.Opposite());
+                }
+            }
+        }
+
+        /// <summary>
+        /// ¿Sigue todo el piso alcanzable desde el start si el <paramref name="boss"/>
+        /// conservara solo la conexión <paramref name="keepDir"/>? BFS sobre el grafo de
+        /// conexiones tratando al boss como si tuviera únicamente esa arista (ida y vuelta).
+        /// </summary>
+        private bool StaysFullyConnectedKeepingOnly(RoomInstance boss, DoorDirection keepDir)
+        {
+            if (!_cellIndex.TryGetValue(Vector2Int.zero, out var startId)) return true;
+
+            var visited = new HashSet<Guid> { startId };
+            var queue = new Queue<Guid>();
+            queue.Enqueue(startId);
+
+            while (queue.Count > 0)
+            {
+                var id = queue.Dequeue();
+                var inst = _instances[id];
+                foreach (var (dir, neighborId) in inst.Connections)
+                {
+                    // Del boss solo sale la arista keepDir.
+                    if (id == boss.InstanceId && dir != keepDir) continue;
+                    // Hacia el boss solo entra la recíproca de keepDir.
+                    if (neighborId == boss.InstanceId && dir != keepDir.Opposite()) continue;
+                    if (visited.Add(neighborId)) queue.Enqueue(neighborId);
+                }
+            }
+
+            return visited.Count == _instances.Count;
+        }
+
+        /// <summary>
+        /// Marca como salida de piso (<see cref="DoorController.IsExit"/>) la puerta de la
+        /// boss room OPUESTA a su única entrada (#158). No-op si no es boss o no tiene
+        /// exactamente 1 conexión. La entrada queda como puerta normal; las 2 perpendiculares,
+        /// tapiadas. Así cualquiera de las 4 cardinales puede ser la salida según la entrada,
+        /// sin rotar la sala ni una puerta fija.
+        /// </summary>
+        private static void MarkBossExitDoor(RoomInstance instance, RoomLayout layout)
+        {
+            if (instance?.Template == null || instance.Template.Type != RoomType.Boss) return;
+            if (instance.SpawnedPrefab == null) return;
+
+            // En la boss room la salida es 100% dinámica: reseteamos cualquier IsExit
+            // autoreado para nunca terminar con 2 salidas.
+            foreach (var c in instance.SpawnedPrefab.GetComponentsInChildren<DoorController>(includeInactive: true))
+                c.IsExit = false;
+
+            if (instance.Connections.Count != 1 || layout.DoorSlots == null) return;
+
+            DoorDirection entranceDir = default;
+            foreach (var d in instance.Connections.Keys) { entranceDir = d; break; }
+            var exitDir = entranceDir.Opposite();
+
+            foreach (var slot in layout.DoorSlots)
+            {
+                if (slot == null || slot.Direction != exitDir || slot.DoorRoot == null) continue;
+                var ctrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                if (ctrl != null) ctrl.IsExit = true;
+            }
         }
 
         private static RoomState InitialStateFor(RoomType type)

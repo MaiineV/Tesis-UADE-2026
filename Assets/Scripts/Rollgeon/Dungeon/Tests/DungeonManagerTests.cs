@@ -184,6 +184,50 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
+        public void GenerateFloor_BossRoom_IsDeadEnd_WithSingleEntrance_AcrossSeeds()
+        {
+            var start = CreateRoom("start_0", RoomType.Start);
+            var layout = CreateLayout(minRooms: 6, maxRooms: 8);
+            SetStartRoom(layout, start);
+
+            for (int seed = 0; seed < 60; seed++)
+            {
+                _manager.GenerateFloor(layout, seed);
+
+                var all = _manager.GetAllRoomInstances();
+                var boss = all.Values.FirstOrDefault(
+                    i => i.Template != null && i.Template.Type == RoomType.Boss);
+
+                Assert.IsNotNull(boss, $"seed {seed}: debe existir boss room.");
+                Assert.AreEqual(1, boss.Connections.Count,
+                    $"seed {seed}: la boss room debe ser dead-end (exactamente 1 entrada).");
+
+                // La poda de conexiones de la boss no debe desconectar el piso.
+                AssertAllReachableFromStart(all, seed);
+            }
+        }
+
+        private static void AssertAllReachableFromStart(
+            IReadOnlyDictionary<Guid, RoomInstance> all, int seed)
+        {
+            var start = all.Values.FirstOrDefault(i => i.GridCell == Vector2Int.zero);
+            Assert.IsNotNull(start, $"seed {seed}: debe haber start en cell (0,0).");
+
+            var visited = new HashSet<Guid> { start.InstanceId };
+            var queue = new Queue<Guid>();
+            queue.Enqueue(start.InstanceId);
+            while (queue.Count > 0)
+            {
+                var node = all[queue.Dequeue()];
+                foreach (var (dir, neighborId) in node.Connections)
+                    if (visited.Add(neighborId)) queue.Enqueue(neighborId);
+            }
+
+            Assert.AreEqual(all.Count, visited.Count,
+                $"seed {seed}: tras podar la boss a 1 entrada, todo el piso sigue alcanzable.");
+        }
+
+        [Test]
         public void GenerateFloor_BossPlacedAtFurthestManhattan()
         {
             _manager.GenerateFloor(CreateLayout(minRooms: 6, maxRooms: 6), 42);
