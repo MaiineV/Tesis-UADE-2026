@@ -35,13 +35,19 @@ namespace Rollgeon.Meta
         public const int DefaultPriority = 90;
 
         [NonSerialized] private bool _subscribed;
-        [NonSerialized] private readonly List<UnlockDefinitionSO> _unlocksThisRun = new List<UnlockDefinitionSO>();
+
+        // Lazy: cuando la instancia viene deserializada por Odin desde el
+        // ServiceBootstrap asset, los field initializers NO corren (no hay ctor)
+        // y los [NonSerialized] quedan null. Nunca acceder al campo directo.
+        [NonSerialized] private List<UnlockDefinitionSO> _unlocksThisRun;
+
+        private List<UnlockDefinitionSO> UnlocksList => _unlocksThisRun ??= new List<UnlockDefinitionSO>();
 
         /// <inheritdoc />
         public int Priority => DefaultPriority;
 
         /// <inheritdoc />
-        public IReadOnlyList<UnlockDefinitionSO> UnlocksThisRun => _unlocksThisRun;
+        public IReadOnlyList<UnlockDefinitionSO> UnlocksThisRun => UnlocksList;
 
         // ====================================================================
         // IPreloadableService
@@ -115,7 +121,7 @@ namespace Rollgeon.Meta
         // setear player + dice bag, así que acá ya se puede capturar la build.
         private void OnRunStartHandler(params object[] args)
         {
-            _unlocksThisRun.Clear();
+            UnlocksList.Clear();
 
             var state = new RunUnlockState();
 
@@ -280,7 +286,7 @@ namespace Rollgeon.Meta
                 {
                     if (meta.TryUnlock(def, duringRun: true))
                     {
-                        _unlocksThisRun.Add(def);
+                        UnlocksList.Add(def);
                     }
                 }
             }
@@ -313,7 +319,7 @@ namespace Rollgeon.Meta
 
                 if (def.Condition.Evaluate(ctx) && meta.TryUnlock(def, duringRun: false))
                 {
-                    _unlocksThisRun.Add(def);
+                    UnlocksList.Add(def);
                 }
             }
         }

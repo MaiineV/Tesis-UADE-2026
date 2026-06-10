@@ -132,6 +132,30 @@ namespace Rollgeon.Meta.Tests
         private RunUnlockState State =>
             ServiceLocator.TryGetService<RunUnlockState>(out var s) ? s : null;
 
+        // ── Regresión: instancia deserializada por Odin ─────────
+
+        [Test]
+        public void OnRunStart_UninitializedInstance_DoesNotThrow()
+        {
+            // Odin deserializa los servicios del ServiceBootstrap SIN correr el
+            // constructor — los field initializers no existen para esa instancia.
+            // Regresión del NRE en OnRunStartHandler (_unlocksThisRun null).
+            _progress.Dispose();
+            var deserialized = (UnlockProgressService)System.Runtime.Serialization.FormatterServices
+                .GetUninitializedObject(typeof(UnlockProgressService));
+            try
+            {
+                deserialized.Register();
+
+                Assert.DoesNotThrow(StartRun);
+                Assert.AreEqual(0, deserialized.UnlocksThisRun.Count);
+            }
+            finally
+            {
+                deserialized.Dispose();
+            }
+        }
+
         // ── Captura al run start ────────────────────────────────
 
         [Test]
