@@ -6,3 +6,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Rollgeon.Dice.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Run.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Exploration.Tests")]
+[assembly: InternalsVisibleTo("Rollgeon.Meta.Tests")]
