@@ -29,6 +29,10 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _quitButton;
 
+        [Tooltip("Boton 'Desbloqueos' (#164). Opcional hasta que la screen se cablee en engine.")]
+        [SerializeField]
+        private Button _unlocksButton;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -51,12 +55,19 @@ namespace Rollgeon.UI.Screens
             {
                 Debug.LogWarning(LogPrefix + "_quitButton no esta cableado en el Inspector.", this);
             }
+
+            // Opcional (#164): sin botón cableado el menú sigue funcionando igual.
+            if (_unlocksButton != null)
+            {
+                _unlocksButton.onClick.AddListener(OnUnlocksClicked);
+            }
         }
 
         private void OnDisable()
         {
             if (_playButton != null) _playButton.onClick.RemoveListener(OnPlayClicked);
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
+            if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
         }
 
         /// <summary>
@@ -79,6 +90,20 @@ namespace Rollgeon.UI.Screens
             }
 
             screens.PushByStringId(ClassSelectionScreenId);
+        }
+
+        /// <summary>
+        /// Handler del boton "Desbloqueos" (#164). Navega a <c>UnlocksScreen</c>.
+        /// </summary>
+        private void OnUnlocksClicked()
+        {
+            if (!ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado — no se puede navegar.", this);
+                return;
+            }
+
+            screens.PushByStringId("UnlocksScreen");
         }
 
         /// <summary>
