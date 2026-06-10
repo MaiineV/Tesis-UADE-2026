@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.ComboBlock;
 using Rollgeon.Combat.ComboLog;
+using Rollgeon.Combat.ContractMod;
 using Rollgeon.Combat.DiceBlock;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
@@ -18,7 +18,9 @@ namespace Rollgeon.Combat.AI.Decisions
     ///   <item><description><b>Dice</b> (Boss 1): sortea <see cref="Count"/> dados distintos al
     ///   azar de la build y los bloquea vía <see cref="IDiceBlockService"/>.</description></item>
     ///   <item><description><b>Combo</b> (Boss 2): lee los últimos <see cref="Count"/> combos del
-    ///   <see cref="IComboLogService"/> y los bloquea vía <see cref="IComboBlockService"/>.</description></item>
+    ///   <see cref="IComboLogService"/> y los <b>prohíbe</b> vía <see cref="IContractModifierService"/>
+    ///   (ventana deslizante: <c>ClearAll</c> + <c>ForbidCombo</c>). Un combo prohibido aparece con
+    ///   daño 0 en la UI del Contrato y, si el jugador lo arma, hace 0 daño.</description></item>
     /// </list>
     /// </summary>
     /// <remarks>
@@ -38,11 +40,6 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Cuántos dados sortear (Boss 1) o tamaño de la ventana de combos (Boss 2). Fase 1 = 1, Fase 2 = 2.")]
         [MinValue(1)]
         public int Count = 1;
-
-        [Tooltip("Solo Combo: duración (en turnos del jugador) del bloqueo. 1 = ventana deslizante turno a turno.")]
-        [MinValue(1)]
-        [ShowIf(nameof(Target), BlockTarget.Combo)]
-        public int ComboBlockDuration = 1;
 
         public override string NodeName => $"Rotate Block ({Target} ×{Count})";
 
@@ -83,12 +80,13 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        // -- Boss 2: últimos N combos del log ----------------------------------------
+        // -- Boss 2: prohíbe los últimos N combos del log (memoria de combos) --------
         private AIResult RotateCombo(AIContext context)
         {
-            if (!ServiceLocator.TryGetService<IComboBlockService>(out var block) || block == null)
+            if (!ServiceLocator.TryGetService<IContractModifierService>(out var mods) || mods == null)
             {
-                Debug.LogError("[AINode_RotateBlock] IComboBlockService no registrado.");
+                Debug.LogError("[AINode_RotateBlock] IContractModifierService no registrado. " +
+                               "Agrega ContractModifierServiceBootstrap a ServiceBootstrap.ExtraServices.");
                 return AIResult.Failed;
             }
             if (!ServiceLocator.TryGetService<IComboLogService>(out var log) || log == null)
@@ -98,16 +96,16 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
+            // Ventana deslizante: descartamos lo prohibido el turno previo y prohibimos los
+            // últimos N combos. El combo prohibido se muestra con daño 0 en el Contrato y, si
+            // el jugador lo arma, hace 0 daño (ver CombatHandoffService.DetectWithContractMods).
+            mods.ClearAll();
+
             var recent = log.Last(Count);
             if (recent.Count == 0) return AIResult.Succeeded; // Turno 1: nada que repetir todavía.
 
-            int duration = ComboBlockDuration < 1 ? 1 : ComboBlockDuration;
             foreach (var comboId in recent)
-            {
-                // El marcador "sin combo" se bloquea igual: Boss 2 puede consultar
-                // IsBlocked(log.NoComboMarker) para anular el daño mínimo repetido.
-                block.Block(comboId, duration);
-            }
+                mods.ForbidCombo(comboId);
 
             return AIResult.Succeeded;
         }

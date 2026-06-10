@@ -109,11 +109,6 @@ namespace Rollgeon.Upgrades.Character
         {
             if (reward == null) return false;
 
-            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
-            {
-                Debug.LogWarning(LogPrefix + "AttributesManager no registrado — reward no aplicado.");
-                return false;
-            }
             if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null
                 || ps.PlayerGuid == Guid.Empty)
             {
@@ -121,28 +116,17 @@ namespace Rollgeon.Upgrades.Character
                 return false;
             }
 
+            // Stat principal del reward (TargetStat + Amount) + grants extra opcionales
+            // (UpgradeSO.StatGrants) — todo por el canal único compartido PlayerStatGrants.
             int amount = ReadAmount(reward, ps.PlayerGuid);
-            if (amount == 0)
-            {
-                Debug.LogWarning(LogPrefix + $"Reward '{reward.UpgradeId}' resolvió amount=0 — se omite.");
-                return false;
-            }
+            bool any = amount != 0 && PlayerStatGrants.Apply(reward.TargetStat, amount);
+            if (reward.StatGrants != null && reward.StatGrants.Count > 0)
+                any |= PlayerStatGrants.Apply(reward.StatGrants) > 0;
 
-            var modifier = new Modifier<int>(
-                amount: amount,
-                op: ModifierOperation.Add,
-                duration: 0, // unused para lifetime Run
-                carrierId: ps.PlayerGuid,
-                sourceId: Guid.Empty,
-                dir: ModifierDirection.Intrinsic,
-                lifetime: ModifierLifetime.Run,
-                tickEvent: EventName.OnTurnFinished // unused para lifetime Run
-            );
-
-            bool ok = ApplyModifierToStat(reward.TargetStat, attrs, ps.PlayerGuid, modifier);
-            if (!ok)
+            if (!any)
             {
-                Debug.LogWarning(LogPrefix + $"AddModifier falló para stat {reward.TargetStat} — reward no aplicado.");
+                Debug.LogWarning(LogPrefix + $"Reward '{reward.UpgradeId}' no aplicó ningún stat " +
+                                             "(amount=0 / sin grants / stat no registrado en el player).");
                 return false;
             }
 
@@ -376,27 +360,8 @@ namespace Rollgeon.Upgrades.Character
         // Helpers
         // ====================================================================
 
-        private static bool ApplyModifierToStat(
-            CharacterRewardTargetStat target,
-            AttributesManager attrs,
-            Guid playerGuid,
-            Modifier<int> modifier)
-        {
-            switch (target)
-            {
-                case CharacterRewardTargetStat.Health:
-                    return attrs.AddModifier<Health, int>(playerGuid, modifier);
-                case CharacterRewardTargetStat.Energy:
-                    return attrs.AddModifier<Energy, int>(playerGuid, modifier);
-                case CharacterRewardTargetStat.Speed:
-                    return attrs.AddModifier<Speed, int>(playerGuid, modifier);
-                case CharacterRewardTargetStat.Attack:
-                    return attrs.AddModifier<Attack, int>(playerGuid, modifier);
-                default:
-                    Debug.LogWarning(LogPrefix + $"Target stat {target} no soportado — agregar al switch.");
-                    return false;
-            }
-        }
+        // El ruteo modifier→stat ahora vive en PlayerStatGrants (canal único compartido con
+        // las pasivas/ítems de tienda). Ver Rollgeon.Upgrades.PlayerStatGrants.
 
         private static int ReadAmount(CharacterRewardSO reward, Guid playerGuid)
         {

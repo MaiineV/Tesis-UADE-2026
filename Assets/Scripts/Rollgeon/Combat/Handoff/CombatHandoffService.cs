@@ -1133,6 +1133,11 @@ namespace Rollgeon.Combat.Handoff
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
                 && mods != null)
             {
+                // Prohibido (Boss 2 memoria de combos / Boss 3 R03): el ataque NO scorea → 0 daño
+                // TOTAL. Devolvemos NoMatch para que tampoco se sume el daño base del PJ (Attack)
+                // ni los bonos de combo — "armás el combo bloqueado → 0".
+                if (mods.IsForbidden(combo.ComboId))
+                    return ComboDetectionResult.NoMatch();
                 int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
                 return ComboDetectionResult.Match(eff, detected.CountUsed);
             }

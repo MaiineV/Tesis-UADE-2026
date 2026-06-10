@@ -239,6 +239,8 @@ namespace Rollgeon.Run
             playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
             playerAttrs.SetAttribute<Shield>(new Shield(0));
+            // Attack = daño base del PJ (canal de daño unificado). Default 0 = daño solo por combos.
+            playerAttrs.SetAttribute<Attack>(new Attack(hero.BaseAttack));
 
             registry.Register(playerService.PlayerGuid, playerAttrs);
             attributes.Register(playerService.PlayerGuid, playerAttrs);

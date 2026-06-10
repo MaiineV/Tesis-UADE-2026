@@ -218,7 +218,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static readonly string[] _moveFields = { "TargetSelector", "MaxSteps", "DesiredRange", "Retreat", "StopAdjacent" };
         static readonly string[] _keepDistanceFields = { "MaxSteps", "IdealDistance" };
         static readonly string[] _telegraphMarkFields = { "Shape", "Size", "HalfAxis", "Damage", "Kind", "HighlightStyle" };
-        static readonly string[] _rotateBlockFields = { "Target", "Count", "ComboBlockDuration" };
+        static readonly string[] _rotateBlockFields = { "Target", "Count" };
         static readonly string[] _promulgateRuleFields = { "EnabledRules", "RulesPerPromulgation", "IntervalPhase1", "IntervalPhase2", "Phase2HpThreshold", "DoubleFactor", "HalfFactor" };
         static readonly string[] _applyStatModifierFields = { "AttackDelta", "SpeedDelta", "PhaseIndex", "EmitPhaseChangedEvent" };
     }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -44,8 +45,19 @@ namespace Rollgeon.Upgrades
         [OdinSerialize]
         protected Sprite _icon;
 
+        [Title("Stat Grants (canal único)")]
+        [InfoBox("Boosts PERMANENTES (toda la run) a stats del jugador que se aplican al adquirir " +
+                 "este upgrade. Attack = daño base del PJ. Compartido por rewards de personaje y " +
+                 "pasivas/ítems de tienda. Dejá la lista vacía si el upgrade no toca stats.")]
+        [ListDrawerSettings(ShowFoldout = false)]
+        [OdinSerialize]
+        protected List<StatGrant> _statGrants = new List<StatGrant>();
+
         /// <summary>Canal al que pertenece este upgrade. Implementado por cada subclase.</summary>
         public abstract UpgradeChannel Channel { get; }
+
+        /// <summary>Boosts permanentes de stat que otorga este upgrade al adquirirse. Puede estar vacía.</summary>
+        public IReadOnlyList<StatGrant> StatGrants => _statGrants;
 
         /// <summary>Id estable. Format <c>'&lt;channel&gt;.&lt;snake_case&gt;'</c>.</summary>
         public string UpgradeId => _upgradeId;
