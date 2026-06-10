@@ -408,8 +408,11 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(40f, list[0].Value);
         }
 
+        // ComboValue sin combo matched → 0 daño (NO cae al _baseAmount): caer al base
+        // defeateaba el bloqueo de combos (boss inmune a Par seguía recibiendo el
+        // _baseAmount=10 al rolear Par contra un combo bloqueado). Contrato 23e162a.
         [Test]
-        public void EffDealDamage_ComboValue_FallsBackToBaseAmount_WhenNoCombo()
+        public void EffDealDamage_ComboValue_DealsZero_WhenNoCombo()
         {
             var bh = new TestBehavior();
             var ctx = MakeCtx(bh);
@@ -421,15 +424,16 @@ namespace Rollgeon.Effects.Tests
             SetPrivateField(eff, "_baseAmount", 15);
 
             var data = new EffectData { Effects = new List<IEffect> { eff } };
-            data.TryExecute(ctx, MakePreCtx());
+            bool ok = data.TryExecute(ctx, MakePreCtx());
 
-            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
-                BehaviorValueKey.FloatingDamage, out var list));
-            Assert.AreEqual(15f, list[0].Value);
+            Assert.IsTrue(ok, "Amount 0 is a no-op, not a chain failure");
+            Assert.IsFalse(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out _),
+                "No damage dealt — no floating number must be stored");
         }
 
         [Test]
-        public void EffDealDamage_ComboValue_FallsBackToBaseAmount_WhenComboNoMatch()
+        public void EffDealDamage_ComboValue_DealsZero_WhenComboNoMatch()
         {
             var bh = new TestBehavior();
             var ctx = MakeCtx(bh);
@@ -441,11 +445,12 @@ namespace Rollgeon.Effects.Tests
             SetPrivateField(eff, "_baseAmount", 12);
 
             var data = new EffectData { Effects = new List<IEffect> { eff } };
-            data.TryExecute(ctx, MakePreCtx());
+            bool ok = data.TryExecute(ctx, MakePreCtx());
 
-            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
-                BehaviorValueKey.FloatingDamage, out var list));
-            Assert.AreEqual(12f, list[0].Value);
+            Assert.IsTrue(ok, "Amount 0 is a no-op, not a chain failure");
+            Assert.IsFalse(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out _),
+                "No damage dealt — no floating number must be stored");
         }
 
         [Test]

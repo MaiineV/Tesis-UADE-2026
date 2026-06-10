@@ -15,6 +15,7 @@ namespace Rollgeon.UI.Tests
         private GameObject _go;
         private PlayerActionButtonsView _view;
         private Button _confirm;
+        private DiceZoneView _diceZone;
         private Guid _playerGuid;
 
         [SetUp]
@@ -30,6 +31,13 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_view, "_confirmButton", _confirm);
             AssignPrivate(_view, "_buttons", new ActionButton[4]);
 
+            // El gate del Confirm exige al menos un dado holdeado (AnyDieHeld) ademas
+            // de _rolled — sin holds confirmar no tiene sentido. Seteamos _heldStates
+            // directo: el Bind real de DiceZoneView pide slots cableados que no
+            // aportan nada a estos tests.
+            _diceZone = CreateDiceZoneWithHolds("DiceZone", _go, new[] { true });
+            AssignPrivate(_view, "_diceZone", _diceZone);
+
             InvokeAwake(_view);
         }
 
@@ -37,6 +45,7 @@ namespace Rollgeon.UI.Tests
         public void Teardown()
         {
             EventManager.ResetEventDictionary();
+            TypedEvent<ComboMatchedPayload>.Clear();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
 
@@ -88,6 +97,23 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.IsTrue(_confirm.interactable, "Confirm enabled tras OnDiceRolled.");
+        }
+
+        [Test]
+        public void should_keep_confirm_disabled_when_rolled_without_holds()
+        {
+            // Arrange — sin dados holdeados no hay combo posible; el Confirm debe
+            // quedar disabled aunque _isPlayerTurn y _rolled esten en true.
+            AssignPrivate(_diceZone, "_heldStates", new[] { false, false });
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+
+            // Act
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+
+            // Assert
+            Assert.IsFalse(_confirm.interactable,
+                "Confirm disabled tras OnDiceRolled si no hay dados holdeados.");
         }
 
         [Test]
@@ -255,6 +281,16 @@ namespace Rollgeon.UI.Tests
             var go = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
             return go.AddComponent<Button>();
+        }
+
+        private static DiceZoneView CreateDiceZoneWithHolds(string name, GameObject parent, bool[] holds)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var zone = go.AddComponent<DiceZoneView>();
+            // Sin Bind: solo necesitamos que GetHeldStates devuelva los holds simulados.
+            AssignPrivate(zone, "_heldStates", holds);
+            return zone;
         }
 
         private static ActionButton CreateActionButton(string name, GameObject parent, HeroBehaviorSlot slot)
