@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Rollgeon.Dice;
+using Rollgeon.Meta;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -105,6 +106,8 @@ namespace Rollgeon.Upgrades.Dice
             if (entry.MinFloorDepth > floorDepth) return false;
             if (!entry.Enchantment.IsCompatibleWith(targetType)) return false;
             if (exclude != null && exclude.Contains(entry.Enchantment)) return false;
+            // Meta-progresión (#164): encantamientos gateados quedan fuera hasta desbloquearse.
+            if (!MetaUnlockGate.IsAvailable(UnlockableCategory.Enchantment, entry.Enchantment.UpgradeId)) return false;
             return true;
         }
     }

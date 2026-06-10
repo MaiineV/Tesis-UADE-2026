@@ -29,6 +29,15 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _quitButton;
 
+        [Tooltip("Boton 'Desbloqueos' (#164). Opcional hasta que la screen se cablee en engine.")]
+        [SerializeField]
+        private Button _unlocksButton;
+
+        [Tooltip("Boton 'Borrar partida' (#164). Resetea la meta-progresion al estado inicial " +
+                 "(borra el save y los pools se actualizan al instante). Opcional.")]
+        [SerializeField]
+        private Button _resetSaveButton;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -51,12 +60,25 @@ namespace Rollgeon.UI.Screens
             {
                 Debug.LogWarning(LogPrefix + "_quitButton no esta cableado en el Inspector.", this);
             }
+
+            // Opcionales (#164): sin botón cableado el menú sigue funcionando igual.
+            if (_unlocksButton != null)
+            {
+                _unlocksButton.onClick.AddListener(OnUnlocksClicked);
+            }
+
+            if (_resetSaveButton != null)
+            {
+                _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
+            }
         }
 
         private void OnDisable()
         {
             if (_playButton != null) _playButton.onClick.RemoveListener(OnPlayClicked);
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
+            if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
+            if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
         }
 
         /// <summary>
@@ -79,6 +101,37 @@ namespace Rollgeon.UI.Screens
             }
 
             screens.PushByStringId(ClassSelectionScreenId);
+        }
+
+        /// <summary>
+        /// Handler del boton "Desbloqueos" (#164). Navega a <c>UnlocksScreen</c>.
+        /// </summary>
+        private void OnUnlocksClicked()
+        {
+            if (!ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado — no se puede navegar.", this);
+                return;
+            }
+
+            screens.PushByStringId("UnlocksScreen");
+        }
+
+        /// <summary>
+        /// Handler del boton "Borrar partida" (#164). Resetea la meta-progresión al
+        /// estado inicial (Guerrero + D3/D4/D6): borra el save file y limpia el
+        /// estado en memoria — los pools y screens se actualizan al instante.
+        /// </summary>
+        private void OnResetSaveClicked()
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta) || meta == null)
+            {
+                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — no hay save que borrar.", this);
+                return;
+            }
+
+            meta.ResetProgression();
+            Debug.Log(LogPrefix + "Partida guardada borrada — meta-progresion en estado inicial.", this);
         }
 
         /// <summary>

@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Heroes;
+using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.Screens
@@ -68,6 +71,13 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _picaroButton;
 
+        [Title("Unlockable Classes (#164)")]
+        [InfoBox("Clases adicionales gateadas por meta-progresión (ej. Berserker, Gambler). " +
+                 "El botón queda interactable solo si la clase está desbloqueada según " +
+                 "IMetaProgressionService. Lista vacía = solo Guerrero (comportamiento legacy).")]
+        [SerializeField]
+        private List<SelectableClassEntry> _unlockableClasses = new List<SelectableClassEntry>();
+
         [Required("Arrastrar el Button Confirmar.")]
         [SerializeField]
         private Button _confirmButton;
@@ -96,6 +106,25 @@ namespace Rollgeon.UI.Screens
         // ---- State -----------------------------------------------------------
 
         private ClassHeroSO _selectedHero;
+        private readonly List<(Button button, UnityAction handler)> _classButtonHandlers
+            = new List<(Button, UnityAction)>();
+
+        /// <summary>Entry de clase desbloqueable cableada en el Inspector (#164).</summary>
+        [Serializable]
+        public class SelectableClassEntry
+        {
+            [Tooltip("ClassHeroSO de la clase (ej. CH_Berserker).")]
+            public ClassHeroSO Hero;
+
+            [Tooltip("Button de la clase en el panel izquierdo.")]
+            public Button Button;
+
+            [Tooltip("Indicador de selección (outline/check). Opcional.")]
+            public GameObject SelectionIndicator;
+
+            [Tooltip("Candado visual mostrado mientras la clase está bloqueada. Opcional.")]
+            public GameObject LockIndicator;
+        }
 
         /// <inheritdoc/>
         public override string ScreenStringId => ClassSelectionScreenId;
@@ -112,12 +141,17 @@ namespace Rollgeon.UI.Screens
             if (_warriorButton != null)
             {
                 _warriorButton.onClick.AddListener(OnWarriorClicked);
-                _warriorButton.interactable = true;
+                // El Guerrero pertenece al pool base (#164) — sin definición de
+                // unlock que lo gatee, IsAvailable devuelve true.
+                _warriorButton.interactable = _warriorHero == null ||
+                    MetaUnlockGate.IsAvailable(UnlockableCategory.HeroClass, _warriorHero.EntityId);
             }
             else
             {
                 Debug.LogWarning(LogPrefix + "_warriorButton no esta cableado.", this);
             }
+
+            WireUnlockableClasses();
 
             if (_magoButton != null)
             {
@@ -162,6 +196,13 @@ namespace Rollgeon.UI.Screens
         {
             if (_warriorButton != null) _warriorButton.onClick.RemoveListener(OnWarriorClicked);
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(OnConfirmClicked);
+
+            foreach (var (button, handler) in _classButtonHandlers)
+            {
+                if (button != null) button.onClick.RemoveListener(handler);
+            }
+            _classButtonHandlers.Clear();
+
             _selectedHero = null;
         }
 
@@ -170,6 +211,33 @@ namespace Rollgeon.UI.Screens
         private void OnWarriorClicked()
         {
             SelectWarrior();
+        }
+
+        /// <summary>
+        /// Cablea las clases desbloqueables (#164): cada entry queda interactable
+        /// solo si su clase está disponible según <see cref="MetaUnlockGate"/>, con
+        /// candado visible mientras está bloqueada.
+        /// </summary>
+        private void WireUnlockableClasses()
+        {
+            foreach (var entry in _unlockableClasses)
+            {
+                if (entry?.Button == null) continue;
+
+                bool available = entry.Hero != null &&
+                    MetaUnlockGate.IsAvailable(UnlockableCategory.HeroClass, entry.Hero.EntityId);
+
+                entry.Button.interactable = available;
+                if (entry.LockIndicator != null) entry.LockIndicator.SetActive(!available);
+                if (entry.SelectionIndicator != null) entry.SelectionIndicator.SetActive(false);
+
+                if (!available) continue;
+
+                var captured = entry;
+                UnityAction handler = () => SelectHero(captured.Hero, captured.SelectionIndicator);
+                entry.Button.onClick.AddListener(handler);
+                _classButtonHandlers.Add((entry.Button, handler));
+            }
         }
 
         /// <summary>
@@ -186,26 +254,44 @@ namespace Rollgeon.UI.Screens
                 return;
             }
 
-            _selectedHero = _warriorHero;
+            SelectHero(_warriorHero, _warriorSelectionIndicator);
+        }
 
-            if (_portraitDisplay != null && _warriorHero.Portrait != null)
+        /// <summary>
+        /// Selección generalizada (#164): setea el héroe, puebla el panel derecho
+        /// y deja un único indicador de selección activo.
+        /// </summary>
+        private void SelectHero(ClassHeroSO hero, GameObject selectionIndicator)
+        {
+            if (hero == null) return;
+
+            _selectedHero = hero;
+
+            if (_portraitDisplay != null && hero.Portrait != null)
             {
-                _portraitDisplay.sprite = _warriorHero.Portrait;
+                _portraitDisplay.sprite = hero.Portrait;
             }
 
             if (_contractDisplay != null)
             {
-                _contractDisplay.Bind(_warriorHero.Sheet);
+                _contractDisplay.Bind(hero.Sheet);
             }
 
             if (_passiveDisplay != null)
             {
-                _passiveDisplay.text = _selectedHero.Passive.Description;
+                _passiveDisplay.text = hero.Passive != null ? hero.Passive.Description : "Pasiva: TBD";
             }
 
             if (_warriorSelectionIndicator != null)
             {
-                _warriorSelectionIndicator.SetActive(true);
+                _warriorSelectionIndicator.SetActive(ReferenceEquals(selectionIndicator, _warriorSelectionIndicator));
+            }
+            foreach (var entry in _unlockableClasses)
+            {
+                if (entry?.SelectionIndicator != null)
+                {
+                    entry.SelectionIndicator.SetActive(ReferenceEquals(selectionIndicator, entry.SelectionIndicator));
+                }
             }
 
             if (_confirmButton != null)

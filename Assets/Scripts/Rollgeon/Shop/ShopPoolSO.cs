@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Rollgeon.Meta;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -98,6 +99,8 @@ namespace Rollgeon.Shop
             if (entry.Weight <= 0f) return false;
             if (entry.MinFloorDepth > floorDepth) return false;
             if (exclude != null && exclude.Contains(rewardEntry)) return false;
+            // Meta-progresión (#164): ítems gateados quedan fuera hasta desbloquearse.
+            if (!MetaUnlockGate.IsAvailable(UnlockableCategory.ShopItem, rewardEntry.EntryId)) return false;
             return true;
         }
     }

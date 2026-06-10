@@ -20,6 +20,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
     - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
     - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
+    - {fileID: 11400000, guid: 8ff5bb6fab3ceb747bfe8ec8dda67c02, type: 2}
     - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
     - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
@@ -68,7 +69,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 4
+      Data: 5
     - Name: 
       Entry: 10
       Data: 0
@@ -81,6 +82,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
     - Name: 
       Entry: 13
       Data: 
@@ -96,10 +100,10 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 10
-      Data: 4
+      Data: 5
     - Name: 
       Entry: 10
-      Data: 5
+      Data: 6
     - Name: 
       Entry: 13
       Data: 
@@ -112,7 +116,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 38
+      Data: 40
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -121,16 +125,13 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 10
-      Data: 6
-    - Name: 
-      Entry: 10
       Data: 7
-    - Name: 
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 10
       Data: 8
+    - Name: 
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 10
       Data: 9
@@ -189,14 +190,14 @@ MonoBehaviour:
       Entry: 10
       Data: 27
     - Name: 
+      Entry: 10
+      Data: 28
+    - Name: 
       Entry: 7
       Data: 4|Rollgeon.Combat.ComboBlock.ComboBlockService, Rollgeon
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 10
-      Data: 28
     - Name: 
       Entry: 10
       Data: 29
@@ -234,6 +235,21 @@ MonoBehaviour:
       Entry: 10
       Data: 40
     - Name: 
+      Entry: 10
+      Data: 41
+    - Name: 
+      Entry: 7
+      Data: 5|Rollgeon.Meta.MetaProgressionService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 6|Rollgeon.Meta.UnlockProgressService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -244,6 +260,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9bde27bc0e219974a8323a636f5678de, type: 2}
   - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
   - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
+  - {fileID: 11400000, guid: 8ff5bb6fab3ceb747bfe8ec8dda67c02, type: 2}
   SettingsAssets:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
   - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
