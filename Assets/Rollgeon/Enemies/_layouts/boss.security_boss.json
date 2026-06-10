@@ -1,0 +1,140 @@
+{
+    "Entries": [
+        {
+            "Index": 0,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 1100.0,
+                "y": 555.0
+            }
+        },
+        {
+            "Index": 1,
+            "TypeName": "AINode_ExecuteTelegraph",
+            "Position": {
+                "x": 1414.0,
+                "y": 572.0
+            }
+        },
+        {
+            "Index": 2,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1414.0,
+                "y": 788.0
+            }
+        },
+        {
+            "Index": 3,
+            "TypeName": "AINode_Once",
+            "Position": {
+                "x": 1756.0,
+                "y": 812.0
+            }
+        },
+        {
+            "Index": 4,
+            "TypeName": "AINode_ApplyStatModifier",
+            "Position": {
+                "x": 2018.0,
+                "y": 812.0
+            }
+        },
+        {
+            "Index": 5,
+            "TypeName": "AINode_Wait",
+            "Position": {
+                "x": 1728.0,
+                "y": 992.0
+            }
+        },
+        {
+            "Index": 6,
+            "TypeName": "AINode_Selector",
+            "Position": {
+                "x": 1350.0,
+                "y": 1029.0
+            }
+        },
+        {
+            "Index": 7,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1728.0,
+                "y": 1107.0
+            }
+        },
+        {
+            "Index": 8,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 2086.0,
+                "y": 1122.0
+            }
+        },
+        {
+            "Index": 9,
+            "TypeName": "AINode_Random",
+            "Position": {
+                "x": 1507.0,
+                "y": 1291.0
+            }
+        },
+        {
+            "Index": 10,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1756.0,
+                "y": 1516.0
+            }
+        },
+        {
+            "Index": 11,
+            "TypeName": "AINode_TelegraphMark",
+            "Position": {
+                "x": 2084.0,
+                "y": 1476.0
+            }
+        },
+        {
+            "Index": 12,
+            "TypeName": "AINode_TelegraphMark",
+            "Position": {
+                "x": 2081.0,
+                "y": 1680.0
+            }
+        },
+        {
+            "Index": 13,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 1756.0,
+                "y": 1691.0
+            }
+        },
+        {
+            "Index": 14,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1303.0,
+                "y": 1848.0
+            }
+        },
+        {
+            "Index": 15,
+            "TypeName": "AINode_RotateBlock",
+            "Position": {
+                "x": 1692.0,
+                "y": 1872.0
+            }
+        },
+        {
+            "Index": 16,
+            "TypeName": "AINode_RotateBlock",
+            "Position": {
+                "x": 1692.0,
+                "y": 2029.0
+            }
+        }
+    ]
+}
