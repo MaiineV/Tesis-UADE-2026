@@ -41,9 +41,6 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Tipo de ataque del DamageContext al ejecutar.")]
         public AttackKind Kind = AttackKind.BasicAttack;
 
-        [Tooltip("Estilo de highlight (clave de TileHighlightService). Default 'warning'.")]
-        public string HighlightStyle = "warning";
-
         public override string NodeName => $"Telegraph Mark ({Shape}, dmg {Damage})";
 
         public override AIResult Tick(AIContext context)
@@ -70,8 +67,11 @@ namespace Rollgeon.Combat.AI.Decisions
 
             threat.Mark(context.SelfGuid, tiles, Damage, Kind);
 
-            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight) && highlight != null)
-                highlight.Highlight(tiles, HighlightStyle);
+            // Overlay de sprites independiente del tinte del piso: el highlight de
+            // move/path del jugador pinta y limpia sus tiles a su antojo y antes se
+            // llevaba puesto el warning (quedaba azul y después default con el
+            // telegraph todavía pendiente).
+            ThreatTelegraphOverlay.ResolveOrCreate().Show(context.SelfGuid, tiles);
 
             return AIResult.Succeeded;
         }
