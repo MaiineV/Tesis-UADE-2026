@@ -55,13 +55,28 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
-  - Label: ruleta
+  - Label: Ruleta chica
     Prefab: {fileID: 907544754280976215, guid: e20f3787352979d498f7313a710e123f, type: 3}
     Icon: {fileID: 0}
     Type: 2
-    IsBlocker: 0
+    IsBlocker: 1
   - Label: pared columnas
     Prefab: {fileID: 5708807474630952342, guid: 83f3e3a7a1fe1714eab4f4e025aedc48, type: 3}
     Icon: {fileID: 0}
     Type: 1
     IsBlocker: 0
+  - Label: cartel
+    Prefab: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Ruleta grande
+    Prefab: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Mesa Pool
+    Prefab: {fileID: 2879759769342412074, guid: ffa2e707b36efd040a75c092e4ff87f3, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
