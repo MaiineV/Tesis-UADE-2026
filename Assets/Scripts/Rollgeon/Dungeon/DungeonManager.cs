@@ -339,15 +339,26 @@ namespace Rollgeon.Dungeon
                     }
                 }
 
-                authored.Add(slot.Direction);
-
                 bool connected = instance.Connections.ContainsKey(slot.Direction);
 
+                // BUG-014: un DoorSlotRef sin DoorRoot no puede activar/desactivar su
+                // puerta física. Si igual lo marcáramos como autoreado, el loop de
+                // huérfanos de abajo saltearía esa dirección y un DoorController suelto
+                // del prefab quedaría activo apuntando a la nada (puerta de tienda a
+                // zona sin sala). Lo dejamos sin autorear para que ese loop lo tapie
+                // o lo cablee según haya vecino.
+                if (slot.DoorRoot == null)
+                {
+                    if (slot.WallPlug != null) slot.WallPlug.SetActive(!connected);
+                    continue;
+                }
+
+                authored.Add(slot.Direction);
+
                 if (slot.WallPlug != null) slot.WallPlug.SetActive(!connected);
-                if (slot.DoorRoot != null) slot.DoorRoot.SetActive(connected);
+                slot.DoorRoot.SetActive(connected);
 
                 if (!connected) continue;
-                if (slot.DoorRoot == null) continue;
 
                 var controller = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
                 if (controller == null) continue;
@@ -594,7 +605,12 @@ namespace Rollgeon.Dungeon
             {
                 if (instance.SpawnedPrefab != null)
                 {
-                    UnityEngine.Object.Destroy(instance.SpawnedPrefab);
+                    // Destroy() está prohibido fuera de play mode — los tests EditMode
+                    // que spawn-ean prefabs reales necesitan el camino Immediate.
+                    if (Application.isPlaying)
+                        UnityEngine.Object.Destroy(instance.SpawnedPrefab);
+                    else
+                        UnityEngine.Object.DestroyImmediate(instance.SpawnedPrefab);
                     instance.SpawnedPrefab = null;
                 }
                 instance.SpawnedEnemies.Clear();
