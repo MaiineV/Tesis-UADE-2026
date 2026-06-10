@@ -13,5 +13,8 @@ namespace Rollgeon.Meta
 
         /// <summary>Persiste el snapshot de forma inmediata (write-through).</summary>
         void Save(MetaProgressionSnapshot snapshot);
+
+        /// <summary>Borra el save persistido. No-op si no existe.</summary>
+        void Delete();
     }
 }

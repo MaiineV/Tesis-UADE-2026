@@ -181,6 +181,14 @@ namespace Rollgeon.Meta
             _store?.Save((MetaProgressionSnapshot)State.CaptureState());
         }
 
+        /// <inheritdoc />
+        public void ResetProgression()
+        {
+            State.RestoreState(null);
+            _store?.Delete();
+            Debug.Log(LogPrefix + "Meta-progresión reseteada a estado inicial (save borrado).");
+        }
+
         // ====================================================================
         // Helpers
         // ====================================================================

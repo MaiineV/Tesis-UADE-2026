@@ -45,5 +45,12 @@ namespace Rollgeon.Meta
 
         /// <summary>Fuerza un write-through del estado actual.</summary>
         void SaveNow();
+
+        /// <summary>
+        /// Borra el save de meta-progresión (archivo + estado en memoria) y vuelve
+        /// al estado inicial: Guerrero + D3/D4/D6, contadores en cero. Los pools
+        /// quedan actualizados al instante — no requiere reiniciar el juego.
+        /// </summary>
+        void ResetProgression();
     }
 }

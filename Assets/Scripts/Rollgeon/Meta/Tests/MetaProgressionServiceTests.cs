@@ -216,5 +216,35 @@ namespace Rollgeon.Meta.Tests
             Assert.AreEqual(0, state.UnlockedTargetKeys.Count);
             Assert.AreEqual(0, state.ConsecutiveWins);
         }
+
+        // ── Reset de progresión (botón Borrar partida) ──────────
+
+        [Test]
+        public void ResetProgression_ClearsUnlocksCountersAndDeletesSave()
+        {
+            var def = AddDefinition("unlock.dice.d8", UnlockableCategory.Dice, "D8");
+            _service.TryUnlock(def, duringRun: false);
+            _service.RecordRunCompleted(won: true, classId: "Warrior");
+
+            _service.ResetProgression();
+
+            Assert.IsFalse(_service.IsAvailable(UnlockableCategory.Dice, "D8"), "Vuelve a estar gateado");
+            Assert.IsFalse(_service.IsDefinitionCompleted(def));
+            Assert.AreEqual(0, _service.ConsecutiveWins);
+            Assert.AreEqual(0, _service.ClassesPlayed.Count);
+            Assert.IsNull(_store.Load(), "El save persistido debe borrarse");
+        }
+
+        [Test]
+        public void ResetProgression_KeepsBasePoolAvailable()
+        {
+            _service.RecordRunCompleted(won: true, classId: "Warrior");
+
+            _service.ResetProgression();
+
+            // Estado inicial: lo no gateado (pool base) sigue disponible.
+            Assert.IsTrue(_service.IsAvailable(UnlockableCategory.Dice, "D6"));
+            Assert.IsTrue(_service.IsAvailable(UnlockableCategory.HeroClass, "Warrior"));
+        }
     }
 }

@@ -57,5 +57,18 @@ namespace Rollgeon.Meta
                 Debug.LogError(LogPrefix + $"No se pudo escribir '{_path}'. {ex.Message}");
             }
         }
+
+        /// <inheritdoc />
+        public void Delete()
+        {
+            try
+            {
+                if (File.Exists(_path)) File.Delete(_path);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(LogPrefix + $"No se pudo borrar '{_path}'. {ex.Message}");
+            }
+        }
     }
 }

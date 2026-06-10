@@ -17,5 +17,7 @@ namespace Rollgeon.Meta.Tests
             Stored = snapshot;
             SaveCount++;
         }
+
+        public void Delete() => Stored = null;
     }
 }
