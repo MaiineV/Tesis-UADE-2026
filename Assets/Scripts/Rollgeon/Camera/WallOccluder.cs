@@ -41,13 +41,21 @@ namespace Rollgeon.GameCamera
 
         private void Awake()
         {
+            EnsureInitialized();
+            ApplyCutoffToRenderers(_currentCutoff);
+        }
+
+        // Lazy init: Awake no corre en EditMode tras AddComponent (tests) y
+        // SetHidden puede llegar antes de Awake en objetos inactivos —
+        // sin esto, ApplyCutoffToRenderers no-opea en silencio.
+        private void EnsureInitialized()
+        {
             if (_renderers == null || _renderers.Length == 0)
             {
                 _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
             }
 
-            _mpb = new MaterialPropertyBlock();
-            ApplyCutoffToRenderers(_currentCutoff);
+            _mpb ??= new MaterialPropertyBlock();
         }
 
         /// <summary>
@@ -58,11 +66,12 @@ namespace Rollgeon.GameCamera
         public void SetHidden(bool hidden, float fadeSeconds)
         {
             IsHidden = hidden;
+            EnsureInitialized();
 
             float target = hidden ? 0f : 1f;
             if (_fadeTween.isAlive) _fadeTween.Stop();
 
-            if (fadeSeconds <= 0f || _mpb == null)
+            if (fadeSeconds <= 0f)
             {
                 _currentCutoff = target;
                 ApplyCutoffToRenderers(_currentCutoff);

@@ -4500,6 +4500,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
   - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
+  SetTierWeights: []
 --- !u!1 &7960689912611077509
 GameObject:
   m_ObjectHideFlags: 0
@@ -4727,6 +4728,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
   - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
+  SetTierWeights: []
 --- !u!1001 &12508925095872261
 PrefabInstance:
   m_ObjectHideFlags: 0

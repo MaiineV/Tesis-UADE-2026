@@ -246,7 +246,10 @@ namespace Rollgeon.Exploration.Tests
         {
             public readonly Dictionary<Guid, GridCoord> Positions = new Dictionary<Guid, GridCoord>();
 
-            public NavGraph Graph => null;
+            // SelectionSettings.ResolveValidTiles itera Graph.AllCoords() en el path
+            // de selección global — un Graph null tira NRE, así que el stub expone
+            // una grilla real (mismo patrón que PlayerTurnStateSelectionTests).
+            public NavGraph Graph { get; } = NavGraph.Rect(5, 5);
             public Vector3 GridOrigin => Vector3.zero;
             public float TileSize => 1f;
 

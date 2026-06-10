@@ -4105,9 +4105,9 @@ MonoBehaviour:
     WallPlug: {fileID: 563630392459690736}
     DoorRoot: {fileID: 6983215994020409673}
   - Direction: 1
-    Anchor: {fileID: 0}
-    WallPlug: {fileID: 0}
-    DoorRoot: {fileID: 0}
+    Anchor: {fileID: 4794523887508757426}
+    WallPlug: {fileID: 8413737985618970931}
+    DoorRoot: {fileID: 1439090533153815178}
   LocalBounds:
     m_Center: {x: 0.5, y: 1.0504063, z: 0.5}
     m_Extent: {x: 6.500001, y: 1.5504069, z: 6.500001}
@@ -14226,6 +14226,11 @@ MonoBehaviour:
 --- !u!4 &4794523887508757426 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+  m_PrefabInstance: {fileID: 3433036153880274937}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8413737985618970931 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6586235384682573514, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
   m_PrefabInstance: {fileID: 3433036153880274937}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3461373398434514195

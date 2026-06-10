@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions.Concretes;
+using UnityEngine;
 
 namespace Rollgeon.PreConditions.Tests
 {
@@ -68,10 +70,20 @@ namespace Rollgeon.PreConditions.Tests
         [Test]
         public void Evaluate_SameTile_PassesWithRangeZero()
         {
-            _grid.Register(_ownerId,    new GridCoord(3, 3));
-            _grid.Register(_opponentId, new GridCoord(3, 3));
+            // Arrange — el GridManager real impone 1 entity por tile (Register
+            // desaloja al ocupante previo), así que para probar la semántica de
+            // distancia 0 usamos un stub que solo trackea posiciones.
+            var grid = new PositionOnlyGridStub();
+            ServiceLocator.AddService<IGridManager>(grid);
+            grid.Register(_ownerId,    new GridCoord(3, 3));
+            grid.Register(_opponentId, new GridCoord(3, 3));
             var pc = new PCEntityInRange { MaxRange = 0 };
-            Assert.IsTrue(pc.Evaluate(Ctx(_ownerId, _opponentId)));
+
+            // Act
+            bool result = pc.Evaluate(Ctx(_ownerId, _opponentId));
+
+            // Assert
+            Assert.IsTrue(result);
         }
 
         [Test]
@@ -105,6 +117,53 @@ namespace Rollgeon.PreConditions.Tests
             Assert.IsFalse(pc.Evaluate(new PreConditionContext()));
             Assert.IsFalse(pc.Evaluate(new PreConditionContext { OwnerGuid = _ownerId }));
             Assert.IsFalse(pc.Evaluate(new PreConditionContext { OpponentGuid = _opponentId }));
+        }
+
+        /// <summary>
+        /// <see cref="IGridManager"/> mínimo sin invariante de ocupancia: permite dos
+        /// entities en el mismo tile (el GridManager real desaloja al ocupante previo),
+        /// necesario para testear la rama de distancia 0 de PCEntityInRange.
+        /// </summary>
+        private sealed class PositionOnlyGridStub : IGridManager
+        {
+            private readonly Dictionary<Guid, GridCoord> _positions =
+                new Dictionary<Guid, GridCoord>();
+
+            public NavGraph Graph { get; } = new NavGraph();
+            public Vector3 GridOrigin => Vector3.zero;
+            public float TileSize => 1f;
+
+            public void LoadRoom(NavGraph graph, Vector3 origin = default, float tileSize = 1f) { }
+            public bool InBounds(GridCoord c) => true;
+            public bool IsWalkable(GridCoord c) => true;
+            public bool IsOccupied(GridCoord c) => false;
+            public bool IsFree(GridCoord c) => true;
+
+            public bool TryGetOccupant(GridCoord c, out Guid entityGuid)
+            {
+                entityGuid = Guid.Empty;
+                return false;
+            }
+
+            public bool TryGetPosition(Guid entityGuid, out GridCoord coord) =>
+                _positions.TryGetValue(entityGuid, out coord);
+
+            public void Register(Guid entityGuid, GridCoord coord) =>
+                _positions[entityGuid] = coord;
+
+            public void Unregister(Guid entityGuid) => _positions.Remove(entityGuid);
+
+            public bool Move(Guid entityGuid, GridCoord to)
+            {
+                _positions[entityGuid] = to;
+                return true;
+            }
+
+            public Vector3 GridToWorld(GridCoord c) => new Vector3(c.X, 0f, c.Y);
+            public GridCoord WorldToGrid(Vector3 world) =>
+                new GridCoord((int)world.x, (int)world.z);
+
+            public IEnumerable<KeyValuePair<Guid, GridCoord>> Occupants() => _positions;
         }
     }
 }

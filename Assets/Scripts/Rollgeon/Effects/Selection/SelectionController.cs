@@ -84,11 +84,10 @@ namespace Rollgeon.Effects.Selection
             // heal) usan estilos distintos y no tienen sentido como "camino A*".
             var style = _request.HighlightStyle ?? "move";
 
-            // Casilla "frente a puerta": seleccionarla cruza de sala, no mueve, así que no
-            // tiene sentido previsualizar el camino A*. Mantener el rojo.
-            bool hoveringDoor = coord.HasValue && _doorCoords.Contains(coord.Value);
-
-            if (style != "move" || !coord.HasValue || !_validCoords.Contains(coord.Value) || hoveringDoor)
+            // La casilla "frente a puerta" también previewa camino: el héroe CAMINA
+            // hasta ella antes de cruzar (CrossDoorAfterArrival), así que el A* aplica
+            // igual que en un move normal. RepaintDoors la mantiene roja por encima.
+            if (style != "move" || !coord.HasValue || !_validCoords.Contains(coord.Value))
             {
                 ClearPathPreview(style);
                 return;

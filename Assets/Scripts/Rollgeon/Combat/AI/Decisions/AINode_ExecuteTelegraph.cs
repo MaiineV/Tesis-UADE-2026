@@ -33,9 +33,11 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
                 return AIResult.Succeeded;
 
-            // Limpiar el resaltado de advertencia siempre que ejecutemos (haya o no impacto).
-            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight) && highlight != null)
-                highlight.ClearAll();
+            // Apagar el overlay de advertencia siempre que ejecutemos (haya o no
+            // impacto). Antes esto era TileHighlightService.ClearAll(), que además
+            // se llevaba puesto cualquier highlight ajeno al telegraph.
+            if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
+                overlay.Clear(context.SelfGuid);
 
             if (!threat.TryConsume(context.SelfGuid, out var area))
                 return AIResult.Succeeded;

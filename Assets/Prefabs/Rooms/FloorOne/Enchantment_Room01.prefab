@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
   Direction: 2
+  IsExit: 0
   SpawnPointId: 
   _meshOpen: {fileID: 0}
   _meshClosed: {fileID: 0}

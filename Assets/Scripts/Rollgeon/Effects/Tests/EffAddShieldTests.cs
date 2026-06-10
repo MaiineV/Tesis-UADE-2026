@@ -158,28 +158,33 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(30f, list[0].Value);
         }
 
+        // ComboValue sin combo matched → 0 (NO cae al _baseAmount): caer al base
+        // defeateaba el bloqueo de combos (boss inmune a Par seguía recibiendo el
+        // _baseAmount). Contrato cambiado en 23e162a y propagado en 8f820c7.
         [Test]
-        public void ComboValue_FallsBackToBaseAmount_WhenNoCombo()
+        public void ComboValue_AddsNoShield_WhenNoCombo()
         {
             var eff = CreateComboEffect(2f, baseAmount: 8);
             var ctx = MakeCtx();
             ctx.ComboResult = null;
 
-            eff.ApplyEffect(ctx);
+            bool result = eff.ApplyEffect(ctx);
 
-            Assert.AreEqual(8, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            Assert.IsTrue(result, "Amount 0 is a no-op, not a chain failure");
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         [Test]
-        public void ComboValue_FallsBackToBaseAmount_WhenComboNoMatch()
+        public void ComboValue_AddsNoShield_WhenComboNoMatch()
         {
             var eff = CreateComboEffect(2f, baseAmount: 5);
             var ctx = MakeCtx();
             ctx.ComboResult = ComboDetectionResult.NoMatch();
 
-            eff.ApplyEffect(ctx);
+            bool result = eff.ApplyEffect(ctx);
 
-            Assert.AreEqual(5, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            Assert.IsTrue(result, "Amount 0 is a no-op, not a chain failure");
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         [Test]

@@ -160,7 +160,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void UnbindAll_StopsReceivingEvents()
+        public void UnbindAll_ThenDisable_StopsReceivingEvents()
         {
             _hud.BindAll(_playerGuid);
             var fill = GetPrivate<Image>(_hp, "_fillImage");
@@ -175,7 +175,13 @@ namespace Rollgeon.UI.Tests
             });
             Assert.AreEqual(0.5f, fill.fillAmount, 0.001f);
 
+            // HealthBarView.Unbind es no-op deliberado: su ciclo de vida lo controla
+            // OnEnable/OnDisable (sin eso, la barra de exploration quedaba stale al
+            // reactivarse post-combate). El teardown real es la desactivacion del
+            // GameObject; como este fixture nunca activa la jerarquia, OnDisable no
+            // dispara solo y lo invocamos directo.
             _hud.UnbindAll();
+            InvokeNonPublic(_hp, "OnDisable");
 
             _attrManager.SetAttributeValue<Health, int>(_playerGuid, 100);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
@@ -187,7 +193,7 @@ namespace Rollgeon.UI.Tests
             });
 
             Assert.AreEqual(0.5f, fill.fillAmount, 0.001f,
-                "Despues de UnbindAll, nuevos eventos no deben mutar la UI.");
+                "Despues del teardown (UnbindAll + OnDisable), nuevos eventos no deben mutar la UI.");
         }
 
         [Test]
@@ -205,9 +211,13 @@ namespace Rollgeon.UI.Tests
                 WeaknessHit = false
             });
 
+            // El teardown del health bar es OnDisable (Unbind es no-op); un solo
+            // OnDisable debe bastar — si el doble BindAll hubiera duplicado la
+            // suscripcion, el handler extra quedaria vivo y el evento mutaria la UI.
             _hud.UnbindAll();
+            InvokeNonPublic(_hp, "OnDisable");
             var fill = GetPrivate<Image>(_hp, "_fillImage");
-            float afterUnbind = fill.fillAmount;
+            float afterTeardown = fill.fillAmount;
 
             _attrManager.SetAttributeValue<Health, int>(_playerGuid, 100);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
@@ -217,8 +227,8 @@ namespace Rollgeon.UI.Tests
                 FinalDamage = 0,
                 WeaknessHit = false
             });
-            Assert.AreEqual(afterUnbind, fill.fillAmount, 0.001f,
-                "Un solo UnbindAll debe bastar — si BindAll hubiera duplicado subs, uno quedaria vivo.");
+            Assert.AreEqual(afterTeardown, fill.fillAmount, 0.001f,
+                "Un solo teardown debe bastar — si BindAll hubiera duplicado subs, uno quedaria vivo.");
         }
 
         [Test]
@@ -267,6 +277,15 @@ namespace Rollgeon.UI.Tests
                 System.Reflection.BindingFlags.NonPublic);
             Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
             field.SetValue(target, value);
+        }
+
+        private static void InvokeNonPublic(object target, string methodName)
+        {
+            var method = target.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method, $"Method '{methodName}' no encontrado en {target.GetType().Name}.");
+            method.Invoke(target, null);
         }
 
         private static T GetPrivate<T>(object target, string fieldName) where T : class

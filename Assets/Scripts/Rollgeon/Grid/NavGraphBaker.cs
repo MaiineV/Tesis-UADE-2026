@@ -23,9 +23,13 @@ namespace Rollgeon.Grid
 
             // IsBlocker is the only source of truth. Stacking is allowed for
             // non-blockers and never auto-promotes them to obstacles.
+            // BUG-012: el volumen horizontal de bloqueo sale del Footprint
+            // autorado por la tool (en celdas), NO del renderer del modelo —
+            // un prop de 1 celda con un mesh que sobresale bloqueaba 2-3
+            // celdas al moverse.
             var blockerBounds = new List<Bounds>();
-            foreach (var (m, b) in tiles)
-                if (m.IsBlocker) blockerBounds.Add(b);
+            foreach (var m in markers)
+                if (m.IsBlocker) blockerBounds.Add(BlockerBounds(m, tileSize));
 
             var nodeWorldPos = new Dictionary<GridCoord, Vector3>();
 
@@ -111,6 +115,39 @@ namespace Rollgeon.Grid
             for (int i = 0; i < blockers.Count; i++)
                 if (blockers[i].Contains(point)) return true;
             return false;
+        }
+
+        // Región de bloqueo de un marker: en XZ son las celdas del Footprint
+        // (la tool deja el marker en el centro de su celda ancla, así que la
+        // región arranca en offset - media celda). En Y se conserva el rango
+        // del renderer cuando existe — es lo que decide si el blocker llega a
+        // la banda de walk clearance — con fallback al volumen de celdas.
+        private static Bounds BlockerBounds(TileMarker marker, float tileSize)
+        {
+            var pos = marker.transform.position;
+            var fp = marker.Footprint;
+            var off = marker.FootprintOffset;
+
+            float sizeX = Mathf.Max(1, fp.x) * tileSize;
+            float sizeZ = Mathf.Max(1, fp.z) * tileSize;
+            float minX = pos.x + (off.x - 0.5f) * tileSize;
+            float minZ = pos.z + (off.z - 0.5f) * tileSize;
+
+            float minY, sizeY;
+            if (TryComputeBounds(marker.gameObject, out var rendered))
+            {
+                minY = rendered.min.y;
+                sizeY = rendered.size.y;
+            }
+            else
+            {
+                minY = pos.y + (off.y - 0.5f) * tileSize;
+                sizeY = Mathf.Max(1, fp.y) * tileSize;
+            }
+
+            var size = new Vector3(sizeX, sizeY, sizeZ);
+            var center = new Vector3(minX, minY, minZ) + size * 0.5f;
+            return new Bounds(center, size);
         }
 
         private static bool TryComputeBounds(GameObject go, out Bounds bounds)

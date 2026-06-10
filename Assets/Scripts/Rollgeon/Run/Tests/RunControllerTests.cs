@@ -102,6 +102,12 @@ namespace Rollgeon.Run.Tests
             ServiceLocator.AddService<ICombatStarter>(new StubCombatStarter(), ServiceScope.Global);
             ServiceLocator.AddService<ICombatSignaller>(new StubCombatSignaller(), ServiceScope.Global);
             ServiceLocator.AddService<IPlayerCombatActions>(new StubPlayerCombatActions(), ServiceScope.Global);
+            // CombatDeathWatcher.CreateAndRegister (paso 9b de OnRunStart) resuelve
+            // TurnOrderService con GetService (asume presencia). En producción lo
+            // garantiza TurnOrderServiceBootstrap como Global; acá registramos la
+            // implementación real porque es plain C# sin dependencias en su ctor.
+            ServiceLocator.AddService<Combat.TurnOrderService>(
+                new Combat.TurnOrderService(), ServiceScope.Global);
         }
 
         [TearDown]
