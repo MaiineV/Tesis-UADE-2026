@@ -59,19 +59,58 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.AddGoldOnRoll, Rollgeon
+      Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.ModifyResourceTrigger, Rollgeon
+    - Name: When
+      Entry: 3
+      Data: 1
+    - Name: Filter
+      Entry: 7
+      Data: 3|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
+    - Name: Mode
+      Entry: 3
+      Data: 0
+    - Name: ComboIds
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Target
+      Entry: 7
+      Data: Rollgeon.Upgrades.Dice.ResourceTarget, Rollgeon
+    - Name: Kind
+      Entry: 3
+      Data: 0
+    - Name: Stat
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
     - Name: Amount
       Entry: 7
-      Data: 3|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+      Data: 5|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 2
     - Name: 
       Entry: 8
       Data: 
-    - Name: OnlyIfNoComboMatched
-      Entry: 5
-      Data: true
+    - Name: Condition
+      Entry: 3
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -84,19 +123,27 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 2879776407734714519
+  - rid: 7158437841552278107
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 2879776407734714519
-      type: {class: AddGoldOnRoll, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
+    - rid: 7158437841552278107
+      type: {class: ModifyResourceTrigger, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
       data:
+        When: 1
+        Filter:
+          Mode: 0
+          ComboIds: []
+        Target:
+          Kind: 0
+          Stat: 0
+        Operation: 0
         Amount:
-          rid: 2879776407734714520
-        OnlyIfNoComboMatched: 1
-    - rid: 2879776407734714520
+          rid: 7158437841552278108
+        Condition: 1
+    - rid: 7158437841552278108
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

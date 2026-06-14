@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentSO
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -32,83 +32,117 @@ MonoBehaviour:
       Data: Otorga 5 de oro al completar una escalera.
     - Name: _icon
       Entry: 6
-      Data:
+      Data: 
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
         mscorlib
-    - Name:
+    - Name: 
       Entry: 12
       Data: 0
-    - Name:
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
     - Name: _faceFilter
       Entry: 6
-      Data:
+      Data: 
     - Name: _triggers
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.Triggers.IEnchantmentTrigger,
         Rollgeon]], mscorlib
-    - Name:
+    - Name: 
       Entry: 12
       Data: 1
-    - Name:
+    - Name: 
       Entry: 7
-      Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.AddGoldOnStraight, Rollgeon
+      Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.ModifyResourceTrigger, Rollgeon
+    - Name: When
+      Entry: 3
+      Data: 0
+    - Name: Filter
+      Entry: 7
+      Data: 3|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
+    - Name: Mode
+      Entry: 3
+      Data: 2
+    - Name: ComboIds
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 1
+      Data: combo.ladder
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Target
+      Entry: 7
+      Data: Rollgeon.Upgrades.Dice.ResourceTarget, Rollgeon
+    - Name: Kind
+      Entry: 3
+      Data: 0
+    - Name: Stat
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
     - Name: Amount
       Entry: 7
-      Data: 3|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+      Data: 5|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 5
-    - Name:
+    - Name: 
       Entry: 8
-      Data:
-    - Name: StraightComboIds
-      Entry: 7
-      Data: 4|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
-    - Name:
-      Entry: 12
-      Data: 1
-    - Name:
-      Entry: 1
-      Data: combo.ladder
-    - Name:
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
-    - Name:
-      Entry: 8
-      Data:
-    - Name:
-      Entry: 13
-      Data:
-    - Name:
-      Entry: 8
-      Data:
+      Data: 
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 5000000000000000062
+  - rid: 7158437841552277920
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 5000000000000000062
-      type: {class: AddGoldOnStraight, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
+    - rid: 7158437841552277920
+      type: {class: ModifyResourceTrigger, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
       data:
+        When: 0
+        Filter:
+          Mode: 2
+          ComboIds:
+          - combo.ladder
+        Target:
+          Kind: 0
+          Stat: 0
+        Operation: 0
         Amount:
-          rid: 5000000000000000063
-        StraightComboIds:
-        - combo.ladder
-    - rid: 5000000000000000063
+          rid: 7158437841552277921
+    - rid: 7158437841552277921
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 5
