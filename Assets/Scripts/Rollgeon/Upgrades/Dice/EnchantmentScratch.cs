@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Rollgeon.Upgrades.Dice
 {
     /// <summary>
@@ -40,6 +42,24 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Shield extra que el service le aplica al jugador tras el evento.</summary>
         public int BonusShield;
 
+        /// <summary>
+        /// Acumuladores genéricos por recurso (oro / stats) que escriben los triggers
+        /// parametrizables vía <see cref="Modify"/>. El <c>EnchantmentScratchApplier</c>
+        /// los resuelve sobre los sistemas reales tras el evento. Los campos legacy
+        /// <see cref="BonusGold"/> / <see cref="BonusShield"/> se fusionan acá al aplicar.
+        /// </summary>
+        private readonly Dictionary<ResourceTarget, ResourceAccumulator> _resources =
+            new Dictionary<ResourceTarget, ResourceAccumulator>();
+
+        public IReadOnlyDictionary<ResourceTarget, ResourceAccumulator> Resources => _resources;
+
+        /// <summary>Aplica una operación sobre un recurso, acumulándola para el evento.</summary>
+        public void Modify(ResourceTarget target, ResourceOperation op, int amount)
+        {
+            if (!_resources.TryGetValue(target, out var acc)) acc = ResourceAccumulator.Identity;
+            _resources[target] = acc.Apply(op, amount);
+        }
+
         /// <summary>Resetea el scratch para reusar la instancia. Llamado por el service entre eventos.</summary>
         public void Reset()
         {
@@ -48,6 +68,7 @@ namespace Rollgeon.Upgrades.Dice
             BlockComboDamage = false;
             BonusGold = 0;
             BonusShield = 0;
+            _resources.Clear();
         }
     }
 }
