@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
-  m_Name: ED_Goblin
+  m_Name: ED_MeleeCardEnemy
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
   serializationData:
     SerializedFormat: 2

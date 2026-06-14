@@ -80,3 +80,23 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
+  - Label: Barril
+    Prefab: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Ruleta vertical
+    Prefab: {fileID: 6822607915483828944, guid: 3d66c8b9bc0754c41b1f5e2ad470712c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Diana
+    Prefab: {fileID: 729366230790791192, guid: 749fa0712c4addc43aa67f7f840e0f59, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Vela
+    Prefab: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1

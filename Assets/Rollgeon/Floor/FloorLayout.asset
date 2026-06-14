@@ -32,8 +32,8 @@ MonoBehaviour:
       Min: 4
       Max: 6
     Pool:
-    - {fileID: 11400000, guid: fcb05630f717bf84596fd4047d8c2a68, type: 2}
-    - {fileID: 11400000, guid: af8c2a0bcb3f7ad4b8c3c1c32064ea01, type: 2}
+    - {fileID: 11400000, guid: 029dae47a1824234ebdb4e679f435815, type: 2}
+    - {fileID: 11400000, guid: 1b81ef71a035c014d96cecd2bf6bec1b, type: 2}
   - Type: 3
     Count:
       Mode: 0
@@ -66,3 +66,10 @@ MonoBehaviour:
       Max: 1
     Pool:
     - {fileID: 11400000, guid: 4027d317c77b20d40bef2ea0e662d2dc, type: 2}
+  - Type: 1
+    Count:
+      Mode: 0
+      Fixed: 1
+      Min: 0
+      Max: 1
+    Pool: []
