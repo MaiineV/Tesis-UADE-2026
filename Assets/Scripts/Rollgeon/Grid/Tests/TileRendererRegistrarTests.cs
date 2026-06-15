@@ -88,6 +88,27 @@ namespace Rollgeon.Grid.Tests
         }
 
         [Test]
+        public void RegisterRoomTiles_TwoFloorMarkersSameCoord_FirstFloorWins()
+        {
+            // Arrange — regresión del BUG de highlight en Start_Room01: un prop mal
+            // tipado como Type=Floor (o con su Coord sin autorar → default (0,0)) caía
+            // en la misma celda que el piso real. El "último gana" viejo le robaba el
+            // slot pintable al piso y ese tile quedaba caminable pero sin highlight.
+            var realFloor = AddMarkerTile(0, 0, TileType.Floor, rendererOnChild: false);
+            var strayFloor = AddMarkerTile(0, 0, TileType.Floor, rendererOnChild: false);
+
+            // Act
+            TileRendererRegistrar.RegisterRoomTiles(_root, _layout, _highlight);
+            _highlight.Highlight(new List<GridCoord> { new GridCoord(0, 0) }, "move");
+
+            // Assert
+            Assert.IsTrue(IsPainted(realFloor),
+                "El primer Floor que reclama la celda debe quedar pintable.");
+            Assert.IsFalse(IsPainted(strayFloor),
+                "Un segundo marker Type=Floor en la misma celda no debe robarse el slot pintable.");
+        }
+
+        [Test]
         public void RegisterRoomTiles_LegacyMeshWithoutMarker_RegistersInferredCoord()
         {
             // Arrange — paridad con NavGraphBaker: un mesh sin TileMarker genera
