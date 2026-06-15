@@ -130,6 +130,50 @@ namespace Rollgeon.Dungeon.Components
             Vector3 localCenter = transform.InverseTransformPoint(world.center);
             LocalBounds = new Bounds(localCenter, world.size);
         }
+
+        // Visualiza el NavGraph horneado (lo que usa el runtime) + los volúmenes de
+        // blocker. Sirve para revisar de un vistazo: si un piso real NO aparece verde
+        // su nodo se cayó en el bake (IsBlocker / IntersectsAnyBlocker); si un blocker
+        // rojo pisa celdas vecinas de piso, eso es el "reconoce los costados".
+        private void OnDrawGizmosSelected()
+        {
+            var origin = GetOrigin();
+            float ts = Mathf.Max(TileSize, 0.01f);
+
+            if (NavGraph != null && !NavGraph.IsEmpty)
+            {
+                Gizmos.color = new Color(0.3f, 1f, 0.4f, 0.9f);
+                foreach (var n in NavGraph.Nodes)
+                {
+                    var c = origin + new Vector3((n.Coord.X + 0.5f) * ts, n.Height + 0.02f, (n.Coord.Y + 0.5f) * ts);
+                    Gizmos.DrawWireCube(c, new Vector3(ts * 0.9f, 0.02f, ts * 0.9f));
+                }
+
+                Gizmos.color = new Color(0.3f, 1f, 0.4f, 0.35f);
+                foreach (var e in NavGraph.Edges)
+                {
+                    var a = origin + new Vector3((e.From.X + 0.5f) * ts, 0.02f, (e.From.Y + 0.5f) * ts);
+                    var b = origin + new Vector3((e.To.X + 0.5f) * ts, 0.02f, (e.To.Y + 0.5f) * ts);
+                    Gizmos.DrawLine(a, b);
+                }
+            }
+
+            // Footprint XZ de cada blocker, idéntico a NavGraphBaker.BlockerBounds:
+            // minX = pos.x + (off.x - 0.5)*ts ; size = max(1, fp)*ts.
+            Gizmos.color = new Color(1f, 0.25f, 0.2f, 0.9f);
+            foreach (var m in GetComponentsInChildren<TileMarker>(true))
+            {
+                if (m == null || !m.IsBlocker) continue;
+                var pos = m.transform.position;
+                var fp = m.Footprint;
+                var off = m.FootprintOffset;
+                float sx = Mathf.Max(1, fp.x) * ts;
+                float sz = Mathf.Max(1, fp.z) * ts;
+                float cx = pos.x + (off.x - 0.5f) * ts + sx * 0.5f;
+                float cz = pos.z + (off.z - 0.5f) * ts + sz * 0.5f;
+                Gizmos.DrawWireCube(new Vector3(cx, pos.y + 0.5f, cz), new Vector3(sx, 1f, sz));
+            }
+        }
 #endif
     }
 }
