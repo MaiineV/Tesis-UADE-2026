@@ -32,8 +32,9 @@ MonoBehaviour:
       Min: 4
       Max: 6
     Pool:
-    - {fileID: 11400000, guid: fcb05630f717bf84596fd4047d8c2a68, type: 2}
-    - {fileID: 11400000, guid: af8c2a0bcb3f7ad4b8c3c1c32064ea01, type: 2}
+    - {fileID: 11400000, guid: 029dae47a1824234ebdb4e679f435815, type: 2}
+    - {fileID: 11400000, guid: 1b81ef71a035c014d96cecd2bf6bec1b, type: 2}
+    - {fileID: 11400000, guid: 080423e7076a55949bcba43140e7e373, type: 2}
   - Type: 3
     Count:
       Mode: 0

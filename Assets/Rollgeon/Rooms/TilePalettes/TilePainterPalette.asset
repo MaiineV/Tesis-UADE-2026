@@ -100,3 +100,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
+  - Label: Bolillero
+    Prefab: {fileID: 443420555430030984, guid: 8f3970bb1a87c4b4db69722f4d638f4c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
