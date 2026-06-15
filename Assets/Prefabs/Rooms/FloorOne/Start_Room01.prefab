@@ -648,6 +648,10 @@ MonoBehaviour:
     _nodes:
     - Coord:
         X: 0
+        Y: 2
+      Height: -0.00003245473
+    - Coord:
+        X: 0
         Y: 3
       Height: -0.00003245473
     - Coord:
@@ -679,16 +683,8 @@ MonoBehaviour:
         Y: -1
       Height: -0.00003245473
     - Coord:
-        X: -3
-        Y: 0
-      Height: -0.00003245473
-    - Coord:
         X: 3
         Y: -3
-      Height: -0.00003245473
-    - Coord:
-        X: -3
-        Y: 2
       Height: -0.00003245473
     - Coord:
         X: -2
@@ -697,10 +693,6 @@ MonoBehaviour:
     - Coord:
         X: -3
         Y: 3
-      Height: -0.00003245473
-    - Coord:
-        X: -3
-        Y: 1
       Height: -0.00003245473
     - Coord:
         X: -3
@@ -737,6 +729,14 @@ MonoBehaviour:
     - Coord:
         X: 0
         Y: -1
+      Height: -0.00003245473
+    - Coord:
+        X: 0
+        Y: 0
+      Height: -0.00003245473
+    - Coord:
+        X: 0
+        Y: 1
       Height: -0.00003245473
     - Coord:
         X: 0
@@ -945,18 +945,6 @@ MonoBehaviour:
     - Coord:
         X: -3
         Y: 5
-      Height: -0.00003245473
-    - Coord:
-        X: -4
-        Y: 5
-      Height: -0.00003245473
-    - Coord:
-        X: -5
-        Y: 5
-      Height: -0.00003245473
-    - Coord:
-        X: -5
-        Y: 4
       Height: -0.00003245473
     - Coord:
         X: -5
@@ -1074,13 +1062,51 @@ MonoBehaviour:
         X: 4
         Y: -3
       Height: -0.00003245473
-    - Coord:
-        X: 0
-        Y: 0
-      Height: 1.46
     _edges:
     - From:
         X: 0
+        Y: 2
+      To:
+        X: 0
+        Y: 3
+      Cost: 1
+    - From:
+        X: 0
+        Y: 3
+      To:
+        X: 0
+        Y: 2
+      Cost: 1
+    - From:
+        X: 0
+        Y: 2
+      To:
+        X: 1
+        Y: 2
+      Cost: 1
+    - From:
+        X: 1
+        Y: 2
+      To:
+        X: 0
+        Y: 2
+      Cost: 1
+    - From:
+        X: 0
+        Y: 2
+      To:
+        X: 0
+        Y: 1
+      Cost: 1
+    - From:
+        X: 0
+        Y: 1
+      To:
+        X: 0
+        Y: 2
+      Cost: 1
+    - From:
+        X: 0
         Y: 3
       To:
         X: 1
@@ -1346,48 +1372,6 @@ MonoBehaviour:
         Y: -1
       Cost: 1
     - From:
-        X: -3
-        Y: 0
-      To:
-        X: -3
-        Y: 1
-      Cost: 1
-    - From:
-        X: -3
-        Y: 1
-      To:
-        X: -3
-        Y: 0
-      Cost: 1
-    - From:
-        X: -3
-        Y: 0
-      To:
-        X: -3
-        Y: -1
-      Cost: 1
-    - From:
-        X: -3
-        Y: -1
-      To:
-        X: -3
-        Y: 0
-      Cost: 1
-    - From:
-        X: -3
-        Y: 0
-      To:
-        X: -4
-        Y: 0
-      Cost: 1
-    - From:
-        X: -4
-        Y: 0
-      To:
-        X: -3
-        Y: 0
-      Cost: 1
-    - From:
         X: 3
         Y: -3
       To:
@@ -1444,48 +1428,6 @@ MonoBehaviour:
         Y: -3
       Cost: 1
     - From:
-        X: -3
-        Y: 2
-      To:
-        X: -3
-        Y: 3
-      Cost: 1
-    - From:
-        X: -3
-        Y: 3
-      To:
-        X: -3
-        Y: 2
-      Cost: 1
-    - From:
-        X: -3
-        Y: 2
-      To:
-        X: -3
-        Y: 1
-      Cost: 1
-    - From:
-        X: -3
-        Y: 1
-      To:
-        X: -3
-        Y: 2
-      Cost: 1
-    - From:
-        X: -3
-        Y: 2
-      To:
-        X: -4
-        Y: 2
-      Cost: 1
-    - From:
-        X: -4
-        Y: 2
-      To:
-        X: -3
-        Y: 2
-      Cost: 1
-    - From:
         X: -2
         Y: 3
       To:
@@ -1543,20 +1485,6 @@ MonoBehaviour:
       Cost: 1
     - From:
         X: -3
-        Y: 1
-      To:
-        X: -4
-        Y: 1
-      Cost: 1
-    - From:
-        X: -4
-        Y: 1
-      To:
-        X: -3
-        Y: 1
-      Cost: 1
-    - From:
-        X: -3
         Y: -3
       To:
         X: -3
@@ -1792,6 +1720,20 @@ MonoBehaviour:
       To:
         X: -2
         Y: -3
+      Cost: 1
+    - From:
+        X: 0
+        Y: -1
+      To:
+        X: 0
+        Y: 0
+      Cost: 1
+    - From:
+        X: 0
+        Y: 0
+      To:
+        X: 0
+        Y: -1
       Cost: 1
     - From:
         X: 0
@@ -1820,6 +1762,48 @@ MonoBehaviour:
       To:
         X: 0
         Y: -1
+      Cost: 1
+    - From:
+        X: 0
+        Y: 0
+      To:
+        X: 0
+        Y: 1
+      Cost: 1
+    - From:
+        X: 0
+        Y: 1
+      To:
+        X: 0
+        Y: 0
+      Cost: 1
+    - From:
+        X: 0
+        Y: 0
+      To:
+        X: 1
+        Y: 0
+      Cost: 1
+    - From:
+        X: 1
+        Y: 0
+      To:
+        X: 0
+        Y: 0
+      Cost: 1
+    - From:
+        X: 0
+        Y: 1
+      To:
+        X: 1
+        Y: 1
+      Cost: 1
+    - From:
+        X: 1
+        Y: 1
+      To:
+        X: 0
+        Y: 1
       Cost: 1
     - From:
         X: 0
@@ -3057,20 +3041,6 @@ MonoBehaviour:
         X: -3
         Y: 5
       To:
-        X: -4
-        Y: 5
-      Cost: 1
-    - From:
-        X: -4
-        Y: 5
-      To:
-        X: -3
-        Y: 5
-      Cost: 1
-    - From:
-        X: -3
-        Y: 5
-      To:
         X: -3
         Y: 4
       Cost: 1
@@ -3080,76 +3050,6 @@ MonoBehaviour:
       To:
         X: -3
         Y: 5
-      Cost: 1
-    - From:
-        X: -4
-        Y: 5
-      To:
-        X: -5
-        Y: 5
-      Cost: 1
-    - From:
-        X: -5
-        Y: 5
-      To:
-        X: -4
-        Y: 5
-      Cost: 1
-    - From:
-        X: -4
-        Y: 5
-      To:
-        X: -4
-        Y: 4
-      Cost: 1
-    - From:
-        X: -4
-        Y: 4
-      To:
-        X: -4
-        Y: 5
-      Cost: 1
-    - From:
-        X: -5
-        Y: 5
-      To:
-        X: -5
-        Y: 4
-      Cost: 1
-    - From:
-        X: -5
-        Y: 4
-      To:
-        X: -5
-        Y: 5
-      Cost: 1
-    - From:
-        X: -5
-        Y: 4
-      To:
-        X: -5
-        Y: 3
-      Cost: 1
-    - From:
-        X: -5
-        Y: 3
-      To:
-        X: -5
-        Y: 4
-      Cost: 1
-    - From:
-        X: -5
-        Y: 4
-      To:
-        X: -4
-        Y: 4
-      Cost: 1
-    - From:
-        X: -4
-        Y: 4
-      To:
-        X: -5
-        Y: 4
       Cost: 1
     - From:
         X: -5
@@ -3621,20 +3521,20 @@ MonoBehaviour:
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
   DoorSlots:
-  - Direction: 2
-    Anchor: {fileID: 2248614290771819670}
-    WallPlug: {fileID: 2990010566086503959}
-    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 3
-    Anchor: {fileID: 3709836555029600952}
+    Anchor: {fileID: 7886996463205632771}
     WallPlug: {fileID: 374349336388978745}
     DoorRoot: {fileID: 7064674011663006592}
   - Direction: 0
-    Anchor: {fileID: 7849440276882466232}
+    Anchor: {fileID: 7886996463205632771}
     WallPlug: {fileID: 6531583249128044345}
     DoorRoot: {fileID: 4440531032116954240}
+  - Direction: 2
+    Anchor: {fileID: 7886996463205632771}
+    WallPlug: {fileID: 2990010566086503959}
+    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 1
-    Anchor: {fileID: 1152551362743893211}
+    Anchor: {fileID: 7886996463205632771}
     WallPlug: {fileID: 4158132350853574234}
     DoorRoot: {fileID: 6813823632140852707}
   LocalBounds:

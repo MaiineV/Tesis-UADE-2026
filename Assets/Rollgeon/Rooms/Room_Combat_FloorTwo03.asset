@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a90962a68bd18054c9caa2054733f6d3, type: 3}
-  m_Name: Start_02
+  m_Name: Room_Combat_FloorTwo03
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.RoomSO
   serializationData:
     SerializedFormat: 2
@@ -21,10 +21,10 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  RoomId: Start02
-  DisplayName: Start
-  Type: 0
-  RoomPrefab: {fileID: 3358072774779011347, guid: 77ade3de3c18d574092f4d09da3cdb38, type: 3}
+  RoomId: RoomCombatFloorTwo01
+  DisplayName: RoomCombat
+  Type: 1
+  RoomPrefab: {fileID: 3358072774779011347, guid: 401751d4e2868374f8ee429537cc0d6e, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
-  EnemyPool: {fileID: 0}
+  EnemyPool: {fileID: 11400000, guid: dd00474c454651149a3ef6813cda83a3, type: 2}

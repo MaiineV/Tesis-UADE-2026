@@ -105,3 +105,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
+  - Label: Cortina
+    Prefab: {fileID: 2436884024731330200, guid: e0224d170d55baf4bb0b55b78fbeb52f, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
