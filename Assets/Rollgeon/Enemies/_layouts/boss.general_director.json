@@ -4,120 +4,112 @@
             "Index": 0,
             "TypeName": "AINode_Sequence",
             "Position": {
-                "x": 951.0,
-                "y": 662.0
+                "x": 903.0,
+                "y": 441.0
             }
         },
         {
             "Index": 1,
             "TypeName": "AINode_ExecuteTelegraph",
             "Position": {
-                "x": 1320.0,
-                "y": 502.0
+                "x": 1372.0,
+                "y": 420.0
             }
         },
         {
             "Index": 2,
-            "TypeName": "AINode_KeepDistance",
+            "TypeName": "AINode_PromulgateRule",
             "Position": {
-                "x": 1320.0,
-                "y": 697.0
+                "x": 1372.0,
+                "y": 566.0
             }
         },
         {
             "Index": 3,
             "TypeName": "AINode_If",
             "Position": {
-                "x": 1229.0,
-                "y": 890.0
+                "x": 1391.0,
+                "y": 709.0
             }
         },
         {
             "Index": 4,
             "TypeName": "AINode_Once",
             "Position": {
-                "x": 1488.0,
-                "y": 914.0
+                "x": 1667.0,
+                "y": 733.0
             }
         },
         {
             "Index": 5,
             "TypeName": "AINode_ApplyStatModifier",
             "Position": {
-                "x": 1705.0,
-                "y": 914.0
+                "x": 1973.0,
+                "y": 770.0
             }
         },
         {
             "Index": 6,
             "TypeName": "AINode_Wait",
             "Position": {
-                "x": 1488.0,
-                "y": 1030.0
+                "x": 1667.0,
+                "y": 920.0
             }
         },
         {
             "Index": 7,
             "TypeName": "AINode_Selector",
             "Position": {
-                "x": 1151.0,
-                "y": 1056.0
+                "x": 1069.0,
+                "y": 831.0
             }
         },
         {
             "Index": 8,
-            "TypeName": "AINode_Random",
+            "TypeName": "AINode_If",
             "Position": {
-                "x": 1334.0,
-                "y": 1373.0
+                "x": 1226.0,
+                "y": 990.0
             }
         },
         {
             "Index": 9,
-            "TypeName": "AINode_Move",
+            "TypeName": "AINode_Behavior",
             "Position": {
-                "x": 1566.0,
-                "y": 1698.0
+                "x": 1606.0,
+                "y": 1051.0
             }
         },
         {
             "Index": 10,
-            "TypeName": "AINode_TelegraphMark",
+            "TypeName": "AINode_Move",
             "Position": {
-                "x": 1577.0,
-                "y": 1552.0
+                "x": 1579.0,
+                "y": 1214.0
             }
         },
         {
             "Index": 11,
-            "TypeName": "AINode_Behavior",
+            "TypeName": "AINode_Random",
             "Position": {
-                "x": 1705.0,
-                "y": 1409.0
+                "x": 1219.0,
+                "y": 1288.0
             }
         },
         {
             "Index": 12,
-            "TypeName": "AINode_If",
+            "TypeName": "AINode_TelegraphMark",
             "Position": {
-                "x": 1120.0,
-                "y": 1808.0
+                "x": 1530.0,
+                "y": 1406.0
             }
         },
         {
             "Index": 13,
-            "TypeName": "AINode_RotateBlock",
+            "TypeName": "AINode_Move",
             "Position": {
-                "x": 1433.0,
-                "y": 1882.0
-            }
-        },
-        {
-            "Index": 14,
-            "TypeName": "AINode_RotateBlock",
-            "Position": {
-                "x": 1385.0,
-                "y": 2024.0
+                "x": 1530.0,
+                "y": 1562.0
             }
         }
     ]

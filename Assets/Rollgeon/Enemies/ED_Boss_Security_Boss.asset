@@ -435,12 +435,18 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 37|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: DesiredRange
-      Entry: 6
+      Entry: 7
+      Data: 38|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
       Data: 
     - Name: Retreat
       Entry: 5
@@ -474,23 +480,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 39|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 7
-      Data: 39|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 40|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 40|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 41|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 41|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+      Data: 42|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -508,7 +514,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 43|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 1
@@ -520,7 +526,7 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 43|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 1
