@@ -463,6 +463,15 @@ namespace Rollgeon.UI.HUD
                 && !EffForceDoor.CanAttemptForceDoor(_playerGuid))
                 return ActionButtonState.Locked;
 
+            // BUG-017: con la vida llena el heal no aporta nada (HealPipeline lo
+            // clampea a 0) — el botón debe quedar Locked para no gastar el turno.
+            if (behavior.Slot == HeroBehaviorSlot.Healing
+                && !HealAvailability.CanHealMore(_playerGuid))
+            {
+                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HP lleno — heal sin headroom)");
+                return ActionButtonState.Locked;
+            }
+
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
             {
                 Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HasUsableEffectGroup=false: {usableReason})");

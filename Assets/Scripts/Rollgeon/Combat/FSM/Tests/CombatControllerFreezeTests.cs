@@ -131,9 +131,18 @@ namespace Rollgeon.Combat.FSM.Tests
                 Guid.NewGuid(),
                 enemyActionHandler: g => { });
 
+            // HandleFsmFinished nullea _controller.FSM al terminar el combate
+            // (teardown para permitir un proximo StartCombat). Guardamos la ref
+            // local: Stop() no borra Current, asi podemos assertear el estado
+            // terminal despues del teardown.
+            var fsm = _controller.FSM;
+
             _controller.NotifyCombatEnded(CombatOutcome.Victory);
+
             Assert.AreEqual(CombatOutcome.Victory, captured);
-            Assert.IsInstanceOf<States.CombatExitState>(_controller.FSM.Current);
+            Assert.IsInstanceOf<States.CombatExitState>(fsm.Current);
+            Assert.IsNull(_controller.FSM,
+                "Post-combate la FSM debe quedar nulleada para habilitar el proximo StartCombat.");
         }
 
         [Test]

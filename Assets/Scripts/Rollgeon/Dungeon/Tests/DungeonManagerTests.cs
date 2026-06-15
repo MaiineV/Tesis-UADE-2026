@@ -184,6 +184,50 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
+        public void GenerateFloor_BossRoom_IsDeadEnd_WithSingleEntrance_AcrossSeeds()
+        {
+            var start = CreateRoom("start_0", RoomType.Start);
+            var layout = CreateLayout(minRooms: 6, maxRooms: 8);
+            SetStartRoom(layout, start);
+
+            for (int seed = 0; seed < 60; seed++)
+            {
+                _manager.GenerateFloor(layout, seed);
+
+                var all = _manager.GetAllRoomInstances();
+                var boss = all.Values.FirstOrDefault(
+                    i => i.Template != null && i.Template.Type == RoomType.Boss);
+
+                Assert.IsNotNull(boss, $"seed {seed}: debe existir boss room.");
+                Assert.AreEqual(1, boss.Connections.Count,
+                    $"seed {seed}: la boss room debe ser dead-end (exactamente 1 entrada).");
+
+                // La poda de conexiones de la boss no debe desconectar el piso.
+                AssertAllReachableFromStart(all, seed);
+            }
+        }
+
+        private static void AssertAllReachableFromStart(
+            IReadOnlyDictionary<Guid, RoomInstance> all, int seed)
+        {
+            var start = all.Values.FirstOrDefault(i => i.GridCell == Vector2Int.zero);
+            Assert.IsNotNull(start, $"seed {seed}: debe haber start en cell (0,0).");
+
+            var visited = new HashSet<Guid> { start.InstanceId };
+            var queue = new Queue<Guid>();
+            queue.Enqueue(start.InstanceId);
+            while (queue.Count > 0)
+            {
+                var node = all[queue.Dequeue()];
+                foreach (var (dir, neighborId) in node.Connections)
+                    if (visited.Add(neighborId)) queue.Enqueue(neighborId);
+            }
+
+            Assert.AreEqual(all.Count, visited.Count,
+                $"seed {seed}: tras podar la boss a 1 entrada, todo el piso sigue alcanzable.");
+        }
+
+        [Test]
         public void GenerateFloor_BossPlacedAtFurthestManhattan()
         {
             _manager.GenerateFloor(CreateLayout(minRooms: 6, maxRooms: 6), 42);
@@ -512,5 +556,76 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         private static string DoorKey(DoorDirection dir) => dir.DoorStateKey();
+
+        // -----------------------------------------------------------------
+        // Puertas — BUG-014
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Prefab de sala con 4 DoorControllers físicos activos pero cuyos
+        /// DoorSlotRefs no tienen DoorRoot cableado — el estado real de
+        /// Shop_Room01 que disparó BUG-014. El root queda inactivo para que
+        /// Instantiate no dispare los Awake de tooltips en EditMode.
+        /// </summary>
+        private GameObject CreateRoomPrefabWithOrphanDoors()
+        {
+            var root = new GameObject("RoomTemplate_OrphanDoors");
+            root.SetActive(false);
+            _createdObjects.Add(root);
+
+            var layout = root.AddComponent<Components.RoomLayout>();
+            foreach (DoorDirection dir in Enum.GetValues(typeof(DoorDirection)))
+            {
+                var door = new GameObject($"Door_{dir}");
+                door.transform.SetParent(root.transform, false);
+                var ctrl = door.AddComponent<DoorController>();
+                ctrl.Direction = dir;
+
+                layout.DoorSlots.Add(new DoorSlotRef { Direction = dir });
+            }
+            return root;
+        }
+
+        [Test]
+        public void GenerateFloor_DoorSlotWithoutDoorRoot_DeactivatesDoorsWithoutNeighbor()
+        {
+            // Arrange
+            var prefab = CreateRoomPrefabWithOrphanDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+
+            // Act — el warning "DoorController sin DoorSlotRef" es esperado acá.
+            _manager.GenerateFloor(layout, 42);
+
+            // Assert — ninguna puerta activa puede apuntar a una dirección sin vecino.
+            int orphansChecked = 0;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                Assert.IsNotNull(instance.SpawnedPrefab,
+                    $"'{instance.Template.RoomId}' debe instanciar su prefab.");
+
+                var controllers = instance.SpawnedPrefab
+                    .GetComponentsInChildren<DoorController>(includeInactive: true);
+
+                foreach (var ctrl in controllers)
+                {
+                    if (ctrl.IsExit) continue;
+                    if (instance.Connections.ContainsKey(ctrl.Direction)) continue;
+
+                    orphansChecked++;
+                    Assert.IsFalse(ctrl.gameObject.activeSelf,
+                        $"BUG-014: puerta {ctrl.Direction} de '{instance.Template.RoomId}' " +
+                        "quedó activa sin sala vecina del otro lado.");
+                    Assert.AreEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
+                        $"BUG-014: puerta {ctrl.Direction} sin vecino debe quedar Tapiada.");
+                }
+            }
+
+            // La boss room es dead-end (1 conexión), así que siempre hay
+            // al menos 3 puertas sin vecino — el assert no puede ser vacuo.
+            Assert.Greater(orphansChecked, 0, "El escenario debe producir puertas sin vecino.");
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace Rollgeon.UI.Tests
     /// EditMode tests for <see cref="VictoryScreen"/> (UI#0013c).
     /// <list type="bullet">
     /// <item><description><see cref="ScreenStringId_ReturnsVictoryScreen"/> — literal match.</description></item>
-    /// <item><description><see cref="OnFloorCleared_PushesScreenViaScreenManager"/> — event triggers push.</description></item>
+    /// <item><description><see cref="OnRunVictory_PushesScreenViaScreenManager"/> — event triggers push.</description></item>
     /// <item><description><see cref="OnPushed_WiresReturnButton"/> — button click does not throw.</description></item>
     /// <item><description><see cref="OnPopped_RemovesButtonListener"/> — button click after pop has no side effects.</description></item>
     /// <item><description><see cref="OnPushed_SetsTitleText"/> — title label set to "Victory!".</description></item>
@@ -104,15 +104,15 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnFloorCleared_PushesScreenViaScreenManager()
+        public void OnRunVictory_PushesScreenViaScreenManager()
         {
             // Manually invoke Awake via reflection to subscribe the handler
             InvokeAwake();
 
-            EventManager.Trigger(EventName.OnFloorCleared, System.Guid.NewGuid(), 0);
+            EventManager.Trigger(EventName.OnRunVictory, System.Guid.NewGuid());
 
             Assert.AreEqual(1, _spyScreenManager.PushByStringIdCalls.Count,
-                "OnFloorCleared must trigger exactly one PushByStringId call.");
+                "OnRunVictory must trigger exactly one PushByStringId call.");
             Assert.AreEqual("VictoryScreen", _spyScreenManager.PushByStringIdCalls[0],
                 "PushByStringId must be called with 'VictoryScreen'.");
         }
@@ -157,10 +157,10 @@ namespace Rollgeon.UI.Tests
             Object.DestroyImmediate(_screenGO);
             _screenGO = null;
 
-            EventManager.Trigger(EventName.OnFloorCleared, System.Guid.NewGuid(), 0);
+            EventManager.Trigger(EventName.OnRunVictory, System.Guid.NewGuid());
 
             Assert.AreEqual(0, _spyScreenManager.PushByStringIdCalls.Count,
-                "After OnDestroy, OnFloorCleared must not trigger a push.");
+                "After OnDestroy, OnRunVictory must not trigger a push.");
         }
 
         // -------------------------------------------------------------------

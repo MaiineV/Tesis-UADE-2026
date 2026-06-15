@@ -33,6 +33,10 @@ namespace Rollgeon.Exploration
         // Si el user clickea una de estas, se cruza de sala en vez de moverse.
         private System.Collections.Generic.Dictionary<GridCoord, DoorDirection> _doorTiles;
 
+        // Casillas frente a la puerta de SALIDA de piso (#158). Pisarlas dispara la
+        // transición al siguiente piso en vez de cruzar a una sala vecina.
+        private System.Collections.Generic.HashSet<GridCoord> _exitTiles;
+
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
 
@@ -160,6 +164,7 @@ namespace Rollgeon.Exploration
 
             _pendingBehavior = null;
             _doorTiles = null;
+            _exitTiles = null;
             _state = State.Idle;
         }
 
@@ -359,15 +364,22 @@ namespace Rollgeon.Exploration
             HeroActionBehavior behavior, IGridManager grid, System.Collections.Generic.List<TargetRef> validTargets)
         {
             _doorTiles = null;
+            _exitTiles = null;
 
             if (!behavior.IsBaseBehavior || behavior.Slot != HeroBehaviorSlot.Movement) return null;
             if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null) return null;
 
             var fronts = DoorTileQuery.GetOpenDoorFrontTiles(dungeon, grid);
-            if (fronts.Count == 0) return null;
+            var exitFronts = DoorTileQuery.GetOpenExitDoorFrontTiles(dungeon, grid);
+            if (fronts.Count == 0 && exitFronts.Count == 0) return null;
 
-            _doorTiles = fronts;
+            if (fronts.Count > 0) _doorTiles = fronts;
+            if (exitFronts.Count > 0) _exitTiles = exitFronts;
+
+            // Las dos clases de casilla (cruce de sala + salida de piso) se ofrecen como
+            // targets extra con el mismo highlight "door"; el destino se distingue al confirmar.
             var coords = new System.Collections.Generic.HashSet<GridCoord>(fronts.Keys);
+            coords.UnionWith(exitFronts);
 
             foreach (var coord in coords)
             {
@@ -389,8 +401,10 @@ namespace Rollgeon.Exploration
 
             var behavior = _pendingBehavior;
             var doorTiles = _doorTiles;
+            var exitTiles = _exitTiles;
             _pendingBehavior = null;
             _doorTiles = null;
+            _exitTiles = null;
             _state = State.Idle;
 
             if (behavior == null || !result.WasCompleted) return;
@@ -410,6 +424,12 @@ namespace Rollgeon.Exploration
                 Debug.Log($"[ExplorationBehaviorService] Casilla frente a puerta dir={dir} seleccionada — caminar y cruzar al llegar.");
                 CoroutineHost.Run(CrossDoorAfterArrival(playerGuid, dir));
             }
+            // Si es la casilla frente a la puerta de SALIDA, transicionar de piso al llegar (#158).
+            else if (picked.HasValue && exitTiles != null && exitTiles.Contains(picked.Value))
+            {
+                Debug.Log("[ExplorationBehaviorService] Casilla frente a puerta de salida seleccionada — caminar y transicionar de piso.");
+                CoroutineHost.Run(ExitFloorAfterArrival(playerGuid));
+            }
         }
 
         // Espera a que el pawn del player termine de caminar y recién ahí cruza la puerta.
@@ -427,6 +447,25 @@ namespace Rollgeon.Exploration
             {
                 Debug.Log($"[ExplorationBehaviorService] Player llegó a la casilla frente a puerta dir={dir} — EnterRoomByDoor.");
                 dungeon.EnterRoomByDoor(dir);
+            }
+        }
+
+        // Espera a que el pawn llegue a la casilla de salida y dispara la transición de
+        // piso (#158). FloorProgressionService consume OnFloorExitRequested.
+        private static IEnumerator ExitFloorAfterArrival(Guid playerGuid)
+        {
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
+            {
+                var wait = visuals.WaitForMoveComplete(playerGuid);
+                if (wait != null) yield return wait;
+            }
+
+            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon) && dungeon != null
+                && dungeon.CurrentRoomInstance != null)
+            {
+                var roomId = dungeon.CurrentRoomInstance.InstanceId;
+                Debug.Log("[ExplorationBehaviorService] Player llegó a la puerta de salida — OnFloorExitRequested.");
+                EventManager.Trigger(EventName.OnFloorExitRequested, roomId);
             }
         }
 

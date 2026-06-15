@@ -3,8 +3,6 @@ using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
-using Rollgeon.Upgrades.Combos;
-using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -66,26 +64,18 @@ namespace Rollgeon.Effects.Concretes
         {
             int amount = _damageSource switch
             {
+                // Ataque de combo del jugador: fórmula unificada
+                // (dañoBasePJ + bonosPJ + (comboBase + bonosCombo)) × multiplicador.
+                // El comboBase ya llega ajustado por el Contrato (Boss 3). Ver PlayerComboDamage.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                    => Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                        ResolveSourceId(context), combo.BaseDamage, _comboMultiplier),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
                 DamageSource.FromReader => 0,
                 _ => _baseAmount,
             };
-
-            // Consumimos los bonuses de combo passives (tienda) y dice enchantments
-            // que se acumulan en LastComboScratch.BonusComboDamage durante OnComboMatched.
-            // Solo aplica cuando hay combo matcheado — sin combo, no hay bonus que sumar.
-            if (_damageSource == DamageSource.ComboValue
-                && context?.ComboResult is { IsMatch: true })
-            {
-                if (ServiceLocator.TryGetService<IComboPassiveService>(out var passives) && passives?.LastComboScratch != null)
-                    amount += passives.LastComboScratch.BonusComboDamage;
-                if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) && enchants?.LastComboScratch != null)
-                    amount += enchants.LastComboScratch.BonusComboDamage;
-            }
 
             return new DamageArgs { BaseAmount = amount };
         }
@@ -138,6 +128,10 @@ namespace Rollgeon.Effects.Concretes
 
             return true;
         }
+
+        // Guid del atacante para leer su stat Attack (daño base del PJ). Mismo criterio que ApplyEffect.
+        private static Guid ResolveSourceId(EffectContext context)
+            => context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
 
         private static System.Collections.Generic.List<Guid> ResolveAllTargetGuids(EffectContext context)
         {

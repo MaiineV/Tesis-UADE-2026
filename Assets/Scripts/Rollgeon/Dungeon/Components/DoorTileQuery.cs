@@ -29,6 +29,9 @@ namespace Rollgeon.Dungeon.Components
 
             foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
             {
+                // Las puertas de salida tienen su propio canal (no cruzan a sala vecina).
+                if (door.IsExit) continue;
+
                 // Solo puertas atravesables: abiertas y con vecino conectado. Las
                 // tapiadas o locked no ofrecen casilla de cruce.
                 if (door.CurrentState != DoorVisualState.Open) continue;
@@ -42,6 +45,31 @@ namespace Rollgeon.Dungeon.Components
             }
 
             return map;
+        }
+
+        /// <summary>
+        /// Casillas frente a las puertas de SALIDA (<see cref="DoorController.IsExit"/>)
+        /// que estén <see cref="DoorVisualState.Open"/> en la sala actual (#158). Pisarlas
+        /// dispara la transición de piso. Vacío si no hay salida habilitada.
+        /// </summary>
+        public static HashSet<GridCoord> GetOpenExitDoorFrontTiles(
+            IDungeonService dungeon, IGridManager grid)
+        {
+            var set = new HashSet<GridCoord>();
+
+            var room = dungeon?.CurrentRoomInstance;
+            if (room?.SpawnedPrefab == null || grid == null) return set;
+
+            foreach (var door in room.SpawnedPrefab.GetComponentsInChildren<DoorController>())
+            {
+                if (!door.IsExit) continue;
+                if (door.CurrentState != DoorVisualState.Open) continue;
+
+                var doorCoord = grid.WorldToGrid(door.transform.position);
+                set.Add(doorCoord + door.Direction.InwardOffset());
+            }
+
+            return set;
         }
     }
 }

@@ -150,7 +150,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             switch (node)
             {
                 case AINode_Move m:
-                    return $"max {Describe(m.MaxSteps)} steps · stop adj {m.StopAdjacent}";
+                    string mTarget = m.TargetSelector != null ? m.TargetSelector.GetType().Name : "player";
+                    string mRange = m.DesiredRange != null ? Describe(m.DesiredRange) : (m.StopAdjacent ? "1" : "0");
+                    return $"→ {mTarget} · range {mRange} · max {Describe(m.MaxSteps)} steps{(m.Retreat ? " · kite" : "")}";
                 case AINode_KeepDistance k:
                     return $"max {Describe(k.MaxSteps)} steps · ideal {Describe(k.IdealDistance)}";
                 case AINode_If i:
@@ -163,6 +165,18 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     return $"while {wconds} cond(s) · max {w.MaxIterations} · {wsel}";
                 case AINode_Behavior b:
                     return b.Behavior != null ? b.Behavior.BehaviorName : "(no behavior)";
+                case AINode_TelegraphMark t:
+                    return $"telegraph {t.Shape} · size {t.Size} · dmg {t.Damage}";
+                case AINode_ExecuteTelegraph _:
+                    return "execute pending telegraph";
+                case AINode_RotateBlock r:
+                    return $"rotate {r.Target} ×{r.Count}";
+                case AINode_PromulgateRule p:
+                    return $"rule every {p.IntervalPhase1}/{p.IntervalPhase2} turns · {(p.EnabledRules != null ? p.EnabledRules.Count : 0)} enabled";
+                case AINode_ApplyStatModifier a:
+                    return $"ATK {a.AttackDelta:+0;-0;0} · SPD {a.SpeedDelta:+0;-0;0} → phase {a.PhaseIndex}";
+                case AINode_Once _:
+                    return "run child once";
                 default:
                     return null;
             }
@@ -188,6 +202,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_Behavior _:     return _behaviorFields;
                 case AINode_Move _:         return _moveFields;
                 case AINode_KeepDistance _: return _keepDistanceFields;
+                case AINode_TelegraphMark _:    return _telegraphMarkFields;
+                case AINode_RotateBlock _:      return _rotateBlockFields;
+                case AINode_PromulgateRule _:   return _promulgateRuleFields;
+                case AINode_ApplyStatModifier _: return _applyStatModifierFields;
+                // AINode_ExecuteTelegraph y AINode_Once no tienen params inline:
+                // ExecuteTelegraph no configura nada; Once edita su Child via el port del grafo.
                 default:                    return Array.Empty<string>();
             }
         }
@@ -195,7 +215,11 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static readonly string[] _ifFields = { "TargetSelector", "Conditions" };
         static readonly string[] _whileFields = { "TargetSelector", "Conditions", "MaxIterations" };
         static readonly string[] _behaviorFields = { "Behavior" };
-        static readonly string[] _moveFields = { "MaxSteps", "StopAdjacent" };
+        static readonly string[] _moveFields = { "TargetSelector", "MaxSteps", "DesiredRange", "Retreat", "StopAdjacent" };
         static readonly string[] _keepDistanceFields = { "MaxSteps", "IdealDistance" };
+        static readonly string[] _telegraphMarkFields = { "Shape", "Size", "HalfAxis", "Damage", "Kind", "HighlightStyle" };
+        static readonly string[] _rotateBlockFields = { "Target", "Count" };
+        static readonly string[] _promulgateRuleFields = { "EnabledRules", "RulesPerPromulgation", "IntervalPhase1", "IntervalPhase2", "Phase2HpThreshold", "DoubleFactor", "HalfFactor" };
+        static readonly string[] _applyStatModifierFields = { "AttackDelta", "SpeedDelta", "PhaseIndex", "EmitPhaseChangedEvent" };
     }
 }

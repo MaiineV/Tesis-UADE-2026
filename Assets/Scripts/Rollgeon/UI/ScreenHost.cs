@@ -54,7 +54,7 @@ namespace Rollgeon.UI
 
                 // Inicializar la screen (ej. suscripción a eventos) ANTES de desactivarla.
                 // Desactivar un GameObject antes de su primer Awake saltea ese Awake (Unity),
-                // así que las screens que se suscriben en Awake (VictoryScreen→OnFloorCleared,
+                // así que las screens que se suscriben en Awake (VictoryScreen→OnRunVictory,
                 // DefeatScreen→OnPlayerDefeated) nunca recibirían su evento ni se mostrarían.
                 // Este init explícito garantiza la suscripción sin depender del orden de Awake.
                 screen.OnRegisteredByHost();

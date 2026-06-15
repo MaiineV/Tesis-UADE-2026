@@ -53,6 +53,11 @@ namespace Rollgeon.Dungeon
         public string FloorId;
         public string DisplayName;
 
+        [Title("Progression (#158)")]
+        [InfoBox("Piso siguiente de la ruta principal. Null = piso terminal (al tomar la salida " +
+                 "se gana la run → Victory).")]
+        public FloorLayoutSO NextFloor;
+
         [Title("Room Slots")]
         [InfoBox("Use Tools ▸ Floor Editor for a richer authoring experience.")]
         public List<RoomTypeSlot> Slots = new List<RoomTypeSlot>();

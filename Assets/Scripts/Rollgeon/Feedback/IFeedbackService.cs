@@ -7,14 +7,14 @@ namespace Rollgeon.Feedback
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Versión inicial stub (Sprint 03 FP). La implementación real (<c>FeedbackManager</c>
-    /// con <c>FeedbackDBSO</c>, dispatch por <c>FeedbackType</c>, watchdog de timeout)
-    /// queda para tickets posteriores.
+    /// Dos implementaciones: <c>FeedbackManager</c> (real — DB, dispatch por
+    /// <c>FeedbackType</c>, secuencias, watchdog de timeout) y <c>FeedbackServiceStub</c>
+    /// (no-op para EditMode tests / tooling). Solo una puede estar registrada (ver
+    /// invariante en <c>FeedbackServiceStub</c>).
     /// </para>
     /// <para>
-    /// Única entrada pública por ahora: <see cref="RequestFeedbackBlocking"/>. El caller
-    /// pasa el request + un callback que se invoca cuando el feedback termina. El stub
-    /// invoca el callback inmediatamente.
+    /// Única entrada pública: <see cref="RequestFeedbackBlocking"/>. El caller pasa el
+    /// request + un callback que se invoca cuando el feedback termina.
     /// </para>
     /// </remarks>
     public interface IFeedbackService

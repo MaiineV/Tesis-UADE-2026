@@ -55,13 +55,53 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
-  - Label: ruleta
+  - Label: Ruleta chica
     Prefab: {fileID: 907544754280976215, guid: e20f3787352979d498f7313a710e123f, type: 3}
     Icon: {fileID: 0}
     Type: 2
-    IsBlocker: 0
+    IsBlocker: 1
   - Label: pared columnas
     Prefab: {fileID: 5708807474630952342, guid: 83f3e3a7a1fe1714eab4f4e025aedc48, type: 3}
     Icon: {fileID: 0}
     Type: 1
     IsBlocker: 0
+  - Label: cartel
+    Prefab: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Ruleta grande
+    Prefab: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Mesa Pool
+    Prefab: {fileID: 2879759769342412074, guid: ffa2e707b36efd040a75c092e4ff87f3, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Barril
+    Prefab: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Ruleta vertical
+    Prefab: {fileID: 6822607915483828944, guid: 3d66c8b9bc0754c41b1f5e2ad470712c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Diana
+    Prefab: {fileID: 729366230790791192, guid: 749fa0712c4addc43aa67f7f840e0f59, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Vela
+    Prefab: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Bolillero
+    Prefab: {fileID: 443420555430030984, guid: 8f3970bb1a87c4b4db69722f4d638f4c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1

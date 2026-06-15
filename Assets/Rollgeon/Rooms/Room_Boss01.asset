@@ -24,7 +24,7 @@ MonoBehaviour:
   RoomId: CombatBoss
   DisplayName: Boss
   Type: 2
-  RoomPrefab: {fileID: 3358072774779011347, guid: a6c231829f5d532418ed4fbdb5f40ed1, type: 3}
+  RoomPrefab: {fileID: 3358072774779011347, guid: 35a15b0ca42bd3e4c9a9693f78f0470e, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
-  EnemyPool: {fileID: 11400000, guid: dd00474c454651149a3ef6813cda83a3, type: 2}
+  EnemyPool: {fileID: 11400000, guid: bd74180960bc12942954b84df15c28ac, type: 2}

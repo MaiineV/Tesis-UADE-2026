@@ -113,6 +113,9 @@ namespace Rollgeon.Upgrades.Combos
                 return;
             }
             state.Add(passive);
+            // Canal único: aplica los boosts permanentes de stat (+Attack/Health/Speed/Energy) que la
+            // pasiva tenga configurados, además de su efecto de combo (FlatDamageBonus / triggers).
+            Rollgeon.Upgrades.PlayerStatGrants.Apply(passive.StatGrants);
             EventManager.Trigger(EventName.OnItemObtained, ResolvePlayerGuid(), passive.UpgradeId);
         }
 

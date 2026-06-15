@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combos;
 using Rollgeon.Heroes;
 using Sirenix.OdinInspector;
@@ -50,6 +52,11 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         [Tooltip("Footer opcional (ej. 'Dano minimo = dado mas alto'). Se deja en null si no aplica.")]
         private TextMeshProUGUI _footerLabel;
+
+        // Filas instanciadas en el último Bind — usadas para refrescar los valores efectivos
+        // cuando el Boss 3 cambia la capa de modificadores del Contrato (§4).
+        private readonly List<ComboRowView> _rows = new List<ComboRowView>();
+        private bool _subscribed;
 
         /// <summary>
         /// Limpia rows previas, setea el header y re-instancia una <see cref="ComboRowView"/>
@@ -112,6 +119,29 @@ namespace Rollgeon.UI.HUD
 
                 var row = Instantiate(_rowPrefab, _rowsContainer);
                 row.Bind(combo);
+                _rows.Add(row);
+            }
+
+            // Boss 3 (§4): refrescar los valores cuando cambie la capa de modificadores.
+            if (!_subscribed)
+            {
+                EventManager.Subscribe(EventName.OnContractModifierChanged, HandleContractModifierChanged);
+                _subscribed = true;
+            }
+        }
+
+        private void HandleContractModifierChanged(params object[] args)
+        {
+            for (int i = 0; i < _rows.Count; i++)
+                _rows[i]?.RefreshDamage();
+        }
+
+        private void OnDisable()
+        {
+            if (_subscribed)
+            {
+                EventManager.UnSubscribe(EventName.OnContractModifierChanged, HandleContractModifierChanged);
+                _subscribed = false;
             }
         }
 
@@ -120,6 +150,7 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void Clear()
         {
+            _rows.Clear();
             if (_rowsContainer == null) return;
             for (int i = _rowsContainer.childCount - 1; i >= 0; i--)
             {

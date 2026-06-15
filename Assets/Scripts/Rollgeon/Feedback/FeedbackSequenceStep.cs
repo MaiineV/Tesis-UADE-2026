@@ -17,6 +17,9 @@ namespace Rollgeon.Feedback
         public StepSource Source = StepSource.FeedbackRef;
 
         [ShowIf(nameof(IsFeedbackRef))]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
         [Tooltip("Id de la entry en el FeedbackDBSO cuando Source = FeedbackRef.")]
         public string FeedbackRefId;
 
@@ -67,6 +70,21 @@ namespace Rollgeon.Feedback
         [Title("Blocking")]
         [Tooltip("Si false, la secuencia global no espera a este step para reportar complete.")]
         public bool BlockSequence = true;
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static System.Collections.Generic.IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO");
+            foreach (var guid in guids)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
 
         // --- ShowIf helpers ------------------------------------------------
         private bool IsFeedbackRef() => Source == StepSource.FeedbackRef;

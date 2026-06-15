@@ -95,6 +95,10 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Speed base (initiative).")]
         public int BaseSpeed;
 
+        [Tooltip("Daño base del PJ (stat Attack). 0 = el daño sale solo de los combos (backward-compat). " +
+                 "Lo aumentan rewards de personaje (+Attack) y pasivas/ítems de tienda con StatGrants.")]
+        public int BaseAttack;
+
         [Tooltip("[STUB] — elevated by Hero Template task. Portrait para UI de seleccion.")]
         public Sprite Portrait;
 

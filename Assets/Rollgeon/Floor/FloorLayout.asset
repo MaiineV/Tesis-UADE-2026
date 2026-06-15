@@ -21,10 +21,21 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  FloorId: floor_01
-  DisplayName: Default Floor
+  FloorId: floor_1
+  DisplayName: Piso 1
+  NextFloor: {fileID: 11400000, guid: b25b8a98107c6d747b907f323d6ff7fa, type: 2}
   Slots:
-  - Type: 0
+  - Type: 1
+    Count:
+      Mode: 1
+      Fixed: 4
+      Min: 4
+      Max: 7
+    Pool:
+    - {fileID: 11400000, guid: 029dae47a1824234ebdb4e679f435815, type: 2}
+    - {fileID: 11400000, guid: 1b81ef71a035c014d96cecd2bf6bec1b, type: 2}
+    - {fileID: 11400000, guid: 080423e7076a55949bcba43140e7e373, type: 2}
+  - Type: 3
     Count:
       Mode: 0
       Fixed: 1

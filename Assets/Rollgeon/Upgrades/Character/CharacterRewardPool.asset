@@ -18,8 +18,8 @@ MonoBehaviour:
     ReferencedUnityObjects:
     - {fileID: 11400000, guid: 1883787ed0a9c2b4e853378e990afc08, type: 2}
     - {fileID: 11400000, guid: 7ea5ae5c1173a75458edd4af8a1ebca2, type: 2}
-    - {fileID: 11400000, guid: 47d6348282d6a054a9aa6750ed5f7780, type: 2}
     - {fileID: 11400000, guid: a188ca2af59cc324e9fefe2abbfee1db, type: 2}
+    - {fileID: 11400000, guid: 47d6348282d6a054a9aa6750ed5f7780, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -105,9 +105,9 @@ MonoBehaviour:
   - Reward: {fileID: 11400000, guid: 7ea5ae5c1173a75458edd4af8a1ebca2, type: 2}
     Weight: 1
     MinFloorDepth: 0
-  - Reward: {fileID: 11400000, guid: 47d6348282d6a054a9aa6750ed5f7780, type: 2}
+  - Reward: {fileID: 11400000, guid: a188ca2af59cc324e9fefe2abbfee1db, type: 2}
     Weight: 1
     MinFloorDepth: 0
-  - Reward: {fileID: 11400000, guid: a188ca2af59cc324e9fefe2abbfee1db, type: 2}
+  - Reward: {fileID: 11400000, guid: 47d6348282d6a054a9aa6750ed5f7780, type: 2}
     Weight: 1
     MinFloorDepth: 0

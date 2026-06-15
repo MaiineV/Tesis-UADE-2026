@@ -182,6 +182,12 @@ namespace Rollgeon.UI.HUD
 
         private bool IsBehaviorAvailable(HeroActionBehavior behavior)
         {
+            // BUG-017: con la vida llena el heal no aporta nada (HealPipeline lo
+            // clampea a 0) — el botón no debe ser interactable.
+            if (behavior.Slot == HeroBehaviorSlot.Healing
+                && !HealAvailability.CanHealMore(_playerGuid))
+                return false;
+
             // Combina dos chequeos: energia suficiente Y preconditions del behavior
             // (ej. Heal requiere PCHasInventoryItem(potion.healing)). Sin esto el
             // boton de Heal queda interactable despues de consumir la pocion.

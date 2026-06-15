@@ -20,11 +20,6 @@ namespace Rollgeon.Effects.Concretes
     /// delega al servicio. El callback bajado al servicio marca el feedback como completo
     /// en el turn manager.
     /// </para>
-    /// <para>
-    /// [TODO §10] Hoy el servicio es un stub (<c>FeedbackServiceStub</c>) que completa
-    /// inmediatamente. Cuando llegue <c>FeedbackManager</c> con <c>FeedbackDBSO</c>, este
-    /// effect no cambia — lo único que cambia es el lado del servicio.
-    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffPlayFeedback : BaseEffect,
@@ -32,8 +27,26 @@ namespace Rollgeon.Effects.Concretes
     {
         [Title("Feedback")]
         [SerializeField]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
         [Tooltip("Id de la entry en el FeedbackDBSO que dispara este effect.")]
         private string _feedbackId;
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static System.Collections.Generic.IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO");
+            foreach (var guid in guids)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
 
         public override string GetEffectName() => "Play Feedback";
 

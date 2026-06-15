@@ -87,18 +87,18 @@ namespace Rollgeon.Dungeon
 
             foreach (var go in _shellGOs.Values)
             {
-                if (go != null) UnityEngine.Object.Destroy(go);
+                if (go != null) DestroyObject(go);
             }
             _shellGOs.Clear();
 
             if (_shellRoot != null)
             {
-                UnityEngine.Object.Destroy(_shellRoot.gameObject);
+                DestroyObject(_shellRoot.gameObject);
                 _shellRoot = null;
             }
             if (_sharedShellMaterial != null && (_config == null || _config.ShellMaterial != _sharedShellMaterial))
             {
-                UnityEngine.Object.Destroy(_sharedShellMaterial);
+                DestroyObject(_sharedShellMaterial);
             }
             _sharedShellMaterial = null;
         }
@@ -133,10 +133,17 @@ namespace Rollgeon.Dungeon
 
         private void MaterializeShellsIfNeeded()
         {
-            if (_shellGOs.Count > 0) return;
-
             var shells = _dungeon.GetFloorShells();
             if (shells == null || shells.Count == 0) return;
+
+            // Rematerializar si el set de shells cambió respecto del materializado —
+            // pasa tras una transición de piso, que regenera el grafo con GUIDs nuevos
+            // (#158). Sin esto el floor view mostraría el layout del piso anterior.
+            if (_shellGOs.Count > 0)
+            {
+                if (ShellSetMatches(shells)) return;
+                ClearShellGOs();
+            }
 
             if (_shellRoot == null)
             {
@@ -144,22 +151,7 @@ namespace Rollgeon.Dungeon
                 _shellRoot = rootGO.transform;
             }
 
-            if (_config != null && _config.ShellMaterial != null)
-            {
-                _sharedShellMaterial = _config.ShellMaterial;
-            }
-            else
-            {
-                var shader = Shader.Find("Universal Render Pipeline/Unlit");
-                if (shader == null)
-                {
-                    Debug.LogWarning(LogPrefix + "URP Unlit shader not found, falling back to Standard.");
-                    shader = Shader.Find("Standard");
-                }
-                _sharedShellMaterial = new Material(shader);
-                Color shellColor = _config != null ? _config.ShellColor : new Color(0.1f, 0.1f, 0.15f, 0.85f);
-                _sharedShellMaterial.color = shellColor;
-            }
+            EnsureShellMaterial();
 
             foreach (var (id, shell) in shells)
             {
@@ -173,11 +165,63 @@ namespace Rollgeon.Dungeon
                 if (renderer != null) renderer.sharedMaterial = _sharedShellMaterial;
 
                 var collider = cube.GetComponent<Collider>();
-                if (collider != null) UnityEngine.Object.Destroy(collider);
+                if (collider != null) DestroyObject(collider);
 
                 cube.SetActive(false);
                 _shellGOs[id] = cube;
             }
+        }
+
+        /// <summary>
+        /// <c>true</c> si los shell GameObjects materializados corresponden exactamente
+        /// al set de shells actual del dungeon (mismas keys). Como los GUIDs de room
+        /// instance se regeneran por piso, un piso nuevo nunca matchea ⇒ fuerza rebuild.
+        /// </summary>
+        private bool ShellSetMatches(IReadOnlyDictionary<Guid, FloorShell> shells)
+        {
+            if (_shellGOs.Count != shells.Count) return false;
+            foreach (var id in shells.Keys)
+                if (!_shellGOs.ContainsKey(id)) return false;
+            return true;
+        }
+
+        private void ClearShellGOs()
+        {
+            foreach (var go in _shellGOs.Values)
+                if (go != null) DestroyObject(go);
+            _shellGOs.Clear();
+        }
+
+        /// <summary>
+        /// Destruye un objeto respetando el modo del editor: <c>Destroy</c> en runtime,
+        /// <c>DestroyImmediate</c> en edit mode (evita el error "Destroy may not be called
+        /// from edit mode" y hace al controller testeable en EditMode).
+        /// </summary>
+        private static void DestroyObject(UnityEngine.Object obj)
+        {
+            if (obj == null) return;
+            if (Application.isPlaying) UnityEngine.Object.Destroy(obj);
+            else UnityEngine.Object.DestroyImmediate(obj);
+        }
+
+        private void EnsureShellMaterial()
+        {
+            if (_sharedShellMaterial != null) return;
+
+            if (_config != null && _config.ShellMaterial != null)
+            {
+                _sharedShellMaterial = _config.ShellMaterial;
+                return;
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                Debug.LogWarning(LogPrefix + "URP Unlit shader not found, falling back to Standard.");
+                shader = Shader.Find("Standard");
+            }
+            _sharedShellMaterial = new Material(shader);
+            _sharedShellMaterial.color = _config != null ? _config.ShellColor : new Color(0.1f, 0.1f, 0.15f, 0.85f);
         }
     }
 }

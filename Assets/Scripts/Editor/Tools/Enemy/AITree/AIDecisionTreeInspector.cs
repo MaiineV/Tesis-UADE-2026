@@ -404,6 +404,26 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         void DrawMoveNode(AINode_Move node)
         {
+            // Target Selector (mismo patrón que DrawIfNode). Null = player.
+            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            PolymorphicPicker.DrawSingle(
+                "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                newInstance =>
+                {
+                    Undo.RecordObject(_enemy, "Change Target Selector");
+                    node.TargetSelector = (BaseEnemyTargetSelector)newInstance;
+                    EditorUtility.SetDirty(_enemy);
+                    NotifyChanged();
+                });
+            if (node.TargetSelector != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("TargetSelector");
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(8);
+
             EditorGUILayout.LabelField("Max Steps", EditorStyles.boldLabel);
             DrawIntReaderField("MaxSteps", node.MaxSteps,
                 r => { node.MaxSteps = r; });
@@ -415,6 +435,22 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             }
 
             EditorGUILayout.Space(6);
+
+            EditorGUILayout.LabelField("Desired Range", EditorStyles.boldLabel);
+            DrawIntReaderField("DesiredRange", node.DesiredRange,
+                r => { node.DesiredRange = r; });
+            if (node.DesiredRange != null)
+            {
+                EditorGUI.indentLevel++;
+                DrawOdinProp("DesiredRange");
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(6);
+            DrawOdinProp("Retreat");
+
+            EditorGUILayout.Space(6);
+            EditorGUILayout.LabelField("Legacy (fallback si Desired Range es null)", EditorStyles.miniBoldLabel);
             DrawOdinProp("StopAdjacent");
         }
 

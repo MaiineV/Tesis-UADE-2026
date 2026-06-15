@@ -85,6 +85,23 @@ namespace Rollgeon.Entities
         [Tooltip("Energia maxima por turno. El Support gasta energia cuando el action economy esta activo (T100b).")]
         public int MaxEnergy = 3;
 
+        [MinValue(0)]
+        [Tooltip("Rango de ataque base (tiles). RESERVADO (#158): hoy ningun sistema de combate " +
+                 "lo consume — se autorea para tiers pero queda inerte hasta que exista un targeting " +
+                 "con rango. Wirearlo es follow-up.")]
+        public int BaseAttackRange = 1;
+
+        // -----------------------------------------------------------------
+        // Tiers — #158. Tier 1 = Base Stats de arriba.
+        // -----------------------------------------------------------------
+
+        [Title("Tiers (#158)")]
+        [InfoBox("Tier 1 = los Base Stats de arriba. Agregá tiers para variantes mas fuertes. " +
+                 "Cada stat por tier es Multiplicador (×base) o Manual (valor exacto), y se pueden " +
+                 "mezclar dentro del mismo tier. Los tiers cambian solo stats, nunca la apariencia. " +
+                 "Sin tiers configurados, el enemigo siempre es Tier 1 = comportamiento actual.")]
+        public List<EnemyTier> ExtraTiers = new List<EnemyTier>();
+
         [Title("Visual")]
         [Tooltip("Prefab que se instancia como pawn visual de este enemigo. " +
                  "Debe tener un EntityPawn (se agrega en runtime si falta).")]
@@ -125,17 +142,56 @@ namespace Rollgeon.Entities
         // -----------------------------------------------------------------
 
         /// <inheritdoc />
-        public override ModifiableAttributes CreateRuntimeStats()
+        public override ModifiableAttributes CreateRuntimeStats() => CreateRuntimeStats(1);
+
+        /// <summary>
+        /// Construye los stats runtime para el <paramref name="tier"/> pedido (1-based).
+        /// Tier 1 = los <c>Base*</c>; tiers superiores resuelven cada stat via
+        /// <see cref="TierStat.Resolve"/>. <c>virtual</c> para que
+        /// <c>BossFloorManagerSO</c> herede el tiering sin cambios.
+        /// </summary>
+        public virtual ModifiableAttributes CreateRuntimeStats(int tier)
         {
             var attrs = new ModifiableAttributes();
             attrs.EnsureInitialized();
-            attrs.SetAttribute<Health>(new Health(BaseHP));
-            attrs.SetAttribute<Attack>(new Attack(BaseAttack));
-            attrs.SetAttribute<Speed>(new Speed(BaseSpeed));
-            attrs.SetAttribute<Energy>(new Energy(MaxEnergy));
-            attrs.SetAttribute<HealStrength>(new HealStrength(BaseHealStrength));
+            attrs.SetAttribute<Health>(new Health(ResolveStat(tier, t => t.HP, BaseHP)));
+            attrs.SetAttribute<Attack>(new Attack(ResolveStat(tier, t => t.Attack, BaseAttack)));
+            attrs.SetAttribute<Speed>(new Speed(ResolveStat(tier, t => t.Speed, BaseSpeed)));
+            attrs.SetAttribute<Energy>(new Energy(ResolveStat(tier, t => t.Energy, MaxEnergy)));
+            attrs.SetAttribute<HealStrength>(new HealStrength(ResolveStat(tier, t => t.HealStrength, BaseHealStrength)));
             attrs.SetAttribute<Shield>(new Shield(0));
             return attrs;
+        }
+
+        // -----------------------------------------------------------------
+        // Tier resolvers — #158.
+        // -----------------------------------------------------------------
+
+        /// <summary>Tiers totales disponibles (Tier 1 base + <see cref="ExtraTiers"/>).</summary>
+        public int TierCount => 1 + (ExtraTiers?.Count ?? 0);
+
+        /// <summary>Clampea un tier 1-based al rango disponible.</summary>
+        public int ClampTier(int tier) => Mathf.Clamp(tier, 1, TierCount);
+
+        /// <summary>
+        /// Config del tier pedido, o <c>null</c> para Tier 1 / fuera de rango (⇒ usar <c>Base*</c>).
+        /// </summary>
+        public EnemyTier GetTier(int tier)
+        {
+            if (tier <= 1 || ExtraTiers == null) return null;
+            int idx = tier - 2;
+            return (idx >= 0 && idx < ExtraTiers.Count) ? ExtraTiers[idx] : null;
+        }
+
+        /// <summary>
+        /// HP maximo resuelto para el tier — fuente unica de verdad para healthbar / AI / state.
+        /// </summary>
+        public int ResolveMaxHP(int tier) => ResolveStat(tier, t => t.HP, BaseHP);
+
+        private int ResolveStat(int tier, Func<EnemyTier, TierStat> pick, int baseValue)
+        {
+            var t = GetTier(tier);
+            return t == null ? baseValue : pick(t).Resolve(baseValue);
         }
 
         /// <summary>

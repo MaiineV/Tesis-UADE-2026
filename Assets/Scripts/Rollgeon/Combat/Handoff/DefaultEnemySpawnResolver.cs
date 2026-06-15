@@ -29,6 +29,14 @@ namespace Rollgeon.Combat.Handoff
         private const int CombatDefaultSpawnCount = 2;
         private const int BossDefaultSpawnCount = 1;
 
+        /// <summary>Un enemigo planificado para spawn + su tier rolleado (#158).</summary>
+        private readonly struct PlannedSpawn
+        {
+            public readonly EnemyDataSO Enemy;
+            public readonly int Tier;
+            public PlannedSpawn(EnemyDataSO enemy, int tier) { Enemy = enemy; Tier = tier; }
+        }
+
         private readonly InMemoryEntityRegistry _registry;
         private readonly AttributesManager _attributes;
         private readonly IEnemyAIRegistry _aiRegistry;
@@ -81,7 +89,7 @@ namespace Rollgeon.Combat.Handoff
 
                     var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
                     var id = randomCoord.HasValue
-                        ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state)
+                        ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier)
                         : RegisterEnemyFromState(data, state, layout, rng);
 
                     if (id != Guid.Empty)
@@ -96,11 +104,12 @@ namespace Rollgeon.Combat.Handoff
             // 2. Primer spawn de la sala.
             var plan = BuildSpawnPlan(room, layout, rng);
             int spawnIndex = 0;
-            foreach (var enemyData in plan)
+            foreach (var planned in plan)
             {
+                var enemyData = planned.Enemy;
                 if (enemyData == null) continue;
 
-                var id = RegisterEnemy(enemyData, spawnIndex, layout, rng);
+                var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, layout, rng);
                 if (id != Guid.Empty)
                 {
                     result.Add((id, enemyData));
@@ -110,9 +119,10 @@ namespace Rollgeon.Combat.Handoff
                     {
                         SpawnPointId = EnemyStateKey(spawnIndex),
                         EnemyDataSOId = enemyData.EntityId,
-                        CurrentHP = enemyData.BaseHP,
+                        CurrentHP = enemyData.ResolveMaxHP(planned.Tier),
                         IsDead = false,
-                        SpawnPointIndex = spawnIndex
+                        SpawnPointIndex = spawnIndex,
+                        Tier = planned.Tier
                     });
                 }
                 spawnIndex++;
@@ -125,7 +135,7 @@ namespace Rollgeon.Combat.Handoff
         // Internals
         // -----------------------------------------------------------------
 
-        private List<EnemyDataSO> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
+        private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
         {
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
             if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
@@ -147,7 +157,7 @@ namespace Rollgeon.Combat.Handoff
 
                     int setIndex = rng.Next(0, minSets);
 
-                    var plan = new List<EnemyDataSO>();
+                    var plan = new List<PlannedSpawn>();
                     foreach (var sp in layout.EnemySpawnPoints)
                     {
                         if (sp == null) continue;
@@ -156,12 +166,18 @@ namespace Rollgeon.Combat.Handoff
 
                         if (enemy != null)
                         {
-                            plan.Add(enemy);
+                            int tier = EnemyTierRoll.Roll(config.GetTierWeightsForSet(setIndex), enemy, rng);
+                            plan.Add(new PlannedSpawn(enemy, tier));
                         }
                         else if (room.EnemyPool != null)
                         {
-                            var currentRolled = room.EnemyPool.RollForSpawns(1, rng);
-                            if (currentRolled.Count > 0) plan.Add(currentRolled[0]);
+                            var idxs = room.EnemyPool.RollForSpawnIndices(1, rng);
+                            if (idxs.Count > 0 && idxs[0] >= 0)
+                            {
+                                var e = room.EnemyPool.Entries[idxs[0]].Item;
+                                int tier = EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idxs[0]), e, rng);
+                                plan.Add(new PlannedSpawn(e, tier));
+                            }
                         }
                     }
                     return plan;
@@ -174,10 +190,11 @@ namespace Rollgeon.Combat.Handoff
                 var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];
                 if (setup != null && setup.Slots != null && setup.Slots.Count > 0)
                 {
-                    var plan = new List<EnemyDataSO>(setup.Slots.Count);
+                    var plan = new List<PlannedSpawn>(setup.Slots.Count);
                     foreach (var slot in setup.Slots)
                     {
-                        plan.Add(slot.Enemy);
+                        int tier = EnemyTierRoll.Roll(slot.TierWeights, slot.Enemy, rng);
+                        plan.Add(new PlannedSpawn(slot.Enemy, tier));
                     }
                     return plan;
                 }
@@ -187,18 +204,23 @@ namespace Rollgeon.Combat.Handoff
                 ? BossDefaultSpawnCount
                 : CombatDefaultSpawnCount;
 
-            if (room.EnemyPool == null) return new List<EnemyDataSO>();
+            if (room.EnemyPool == null) return new List<PlannedSpawn>();
 
-            var rolled = room.EnemyPool.RollForSpawns(defaultCount, rng);
-            var list = new List<EnemyDataSO>(defaultCount);
-            foreach (var e in rolled) list.Add(e);
+            var rolledIndices = room.EnemyPool.RollForSpawnIndices(defaultCount, rng);
+            var list = new List<PlannedSpawn>(rolledIndices.Count);
+            foreach (var idx in rolledIndices)
+            {
+                var e = idx >= 0 ? room.EnemyPool.Entries[idx].Item : null;
+                int tier = e != null ? EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idx), e, rng) : 1;
+                list.Add(new PlannedSpawn(e, tier));
+            }
             return list;
         }
 
-        private Guid RegisterEnemy(EnemyDataSO enemyData, int spawnIndex, RoomLayout layout, System.Random rng)
+        private Guid RegisterEnemy(EnemyDataSO enemyData, int tier, int spawnIndex, RoomLayout layout, System.Random rng)
         {
             var coord = ResolveSpawnCoord(layout, spawnIndex);
-            return RegisterEnemyAtCoord(enemyData, coord, rng, state: null);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state: null, tier: tier);
         }
 
         /// <summary>
@@ -207,23 +229,24 @@ namespace Rollgeon.Combat.Handoff
         /// gold drops). Si <paramref name="state"/> no es null, restaura el HP del state.
         /// </summary>
         private Guid RegisterEnemyAtCoord(
-            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state)
+            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state, int tier)
         {
             var id = Guid.NewGuid();
-            var attrs = enemyData.CreateRuntimeStats();
+            int maxHp = enemyData.ResolveMaxHP(tier);
+            var attrs = enemyData.CreateRuntimeStats(tier);
             _registry.Register(id, attrs);
             _attributes.Register(id, attrs);
 
             if (_aiRegistry != null)
             {
                 var aiRoot = enemyData.CreateRuntimeAIRoot();
-                _aiRegistry.Register(id, aiRoot, enemyData.BaseHP);
+                _aiRegistry.Register(id, aiRoot, maxHp);
             }
 
             if (_grid != null) _grid.Register(id, coord);
             if (_visuals != null) _visuals.SpawnEnemy(id, enemyData, coord);
 
-            int hp = state != null ? Math.Max(0, state.CurrentHP) : enemyData.BaseHP;
+            int hp = state != null ? Math.Max(0, state.CurrentHP) : maxHp;
             if (state != null)
             {
                 var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(id);
@@ -231,7 +254,7 @@ namespace Rollgeon.Combat.Handoff
             }
 
             if (_visuals != null && _visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
-                pawn.HealthBar.Initialize(id, hp, enemyData.BaseHP);
+                pawn.HealthBar.Initialize(id, hp, maxHp);
 
             if (_goldDrops != null)
             {
@@ -270,7 +293,7 @@ namespace Rollgeon.Combat.Handoff
             EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng)
         {
             var coord = ResolveSpawnCoord(layout, state.SpawnPointIndex);
-            return RegisterEnemyAtCoord(enemyData, coord, rng, state);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state, state.Tier);
         }
 
         /// <summary>

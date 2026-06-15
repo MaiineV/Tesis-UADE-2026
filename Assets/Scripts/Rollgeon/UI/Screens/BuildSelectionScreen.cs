@@ -4,6 +4,7 @@ using System.Linq;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Heroes;
+using Rollgeon.Meta;
 using Rollgeon.Run;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
@@ -152,6 +153,9 @@ namespace Rollgeon.UI.Screens
         {
             foreach (var entry in pool.Offerings)
             {
+                // Meta-progresión (#164): dados gateados no se ofrecen hasta desbloquearse.
+                if (!MetaUnlockGate.IsAvailable(UnlockableCategory.Dice, entry.Type.ToString())) continue;
+
                 var row = Instantiate(_poolOfferingPrefab, _poolOfferingsContainer);
                 row.Bind(entry.Type, entry.MaxInBag);
                 row.OnAddRequested += OnAddDice;

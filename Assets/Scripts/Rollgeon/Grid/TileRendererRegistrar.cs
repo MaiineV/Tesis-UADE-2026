@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
@@ -47,18 +48,65 @@ namespace Rollgeon.Grid
                 return;
             }
 
-            var markers = instance.SpawnedPrefab.GetComponentsInChildren<TileMarker>(true);
+            int registered = RegisterRoomTiles(instance.SpawnedPrefab, layout, highlight);
+            UnityEngine.Debug.Log($"[TileRendererRegistrar] OnRoomEntered — registered {registered} renderers");
+        }
+
+        /// <summary>
+        /// Registra los renderers pintables de la sala en el highlight service.
+        /// Estático para poder testearlo sin stubear <c>IDungeonService</c>.
+        /// </summary>
+        public static int RegisterRoomTiles(
+            GameObject spawnedPrefab, RoomLayout layout, ITileHighlightService highlight)
+        {
             int registered = 0;
+
+            // Los markers de Floor son dueños del slot de su coord: un prop o
+            // decoración stackeado sobre el piso no debe robarse el renderer
+            // pintable de esa celda (pintaría el prop y el piso quedaría default).
+            var floorOwned = new HashSet<GridCoord>();
+            var owned = new HashSet<GridCoord>();
+
+            var markers = spawnedPrefab.GetComponentsInChildren<TileMarker>(true);
             foreach (var marker in markers)
             {
-                var renderer = marker.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    highlight.RegisterTile(marker.Coord, renderer);
-                    registered++;
-                }
+                // El mesh puede vivir en un hijo del root del tile (Pedestal,
+                // TileWall, CornerUp…) — buscar solo en el mismo GO dejaba esas
+                // celdas caminables sin registrar y el highlight las salteaba
+                // en silencio.
+                var renderer = marker.GetComponentInChildren<Renderer>(true);
+                if (renderer == null) continue;
+
+                bool isFloor = marker.Type == TileType.Floor;
+                if (!isFloor && floorOwned.Contains(marker.Coord)) continue;
+
+                highlight.RegisterTile(marker.Coord, renderer);
+                owned.Add(marker.Coord);
+                if (isFloor) floorOwned.Add(marker.Coord);
+                registered++;
             }
-            UnityEngine.Debug.Log($"[TileRendererRegistrar] OnRoomEntered — found {markers.Length} TileMarkers, registered {registered} renderers");
+
+            // Paridad con NavGraphBaker: los meshes legacy sin TileMarker generan
+            // nodos caminables en el bake (coord inferida por posición) — sin
+            // registrarlos acá esas celdas quedan walkable pero imposibles de pintar.
+            float tileSize = Mathf.Max(layout.BakeSettings?.TileSize ?? 1f, 0.01f);
+            var root = spawnedPrefab.transform;
+            foreach (var r in spawnedPrefab.GetComponentsInChildren<Renderer>(includeInactive: false))
+            {
+                if (r.GetComponentInParent<TileMarker>() != null) continue;
+
+                var lp = root.InverseTransformPoint(r.bounds.center);
+                var coord = new GridCoord(
+                    Mathf.FloorToInt(lp.x / tileSize),
+                    Mathf.FloorToInt(lp.z / tileSize));
+                if (owned.Contains(coord)) continue;
+
+                highlight.RegisterTile(coord, r);
+                owned.Add(coord);
+                registered++;
+            }
+
+            return registered;
         }
     }
 }

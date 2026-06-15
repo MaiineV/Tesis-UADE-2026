@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Meta;
 using UnityEngine;
 
 namespace Rollgeon.Dungeon
@@ -216,7 +217,12 @@ namespace Rollgeon.Dungeon
                 }
                 foreach (var room in slot.Pool)
                 {
-                    if (room != null && !list.Contains(room)) list.Add(room);
+                    if (room == null || list.Contains(room)) continue;
+                    // Meta-progresión (#164): salas gateadas quedan fuera de la
+                    // generación hasta desbloquearse. Sin servicio registrado
+                    // (tests, preview de editor) el gate degrada a disponible.
+                    if (!MetaUnlockGate.IsAvailable(UnlockableCategory.SpecialRoom, room.RoomId)) continue;
+                    list.Add(room);
                 }
             }
             return pools;
