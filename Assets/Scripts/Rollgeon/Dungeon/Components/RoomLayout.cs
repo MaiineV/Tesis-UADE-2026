@@ -60,6 +60,19 @@ namespace Rollgeon.Dungeon.Components
             return null;
         }
 
+        /// <summary>
+        /// Infiere la dirección cardinal de una puerta a partir de su posición world,
+        /// relativa al <see cref="LocalBounds"/>.center — NO al origen del prefab. Con los
+        /// tiles nuevos el pivot quedó en la esquina, así que medir contra el origen
+        /// clasificaba casi todas las puertas como N/E. Fuente de verdad única compartida
+        /// por Auto-Populate y el binder del Room Editor.
+        /// </summary>
+        public DoorDirection InferDoorDirection(Vector3 worldPosition)
+        {
+            Vector3 local = transform.InverseTransformPoint(worldPosition) - LocalBounds.center;
+            return DoorDirectionExtensions.FromLocalPosition(local);
+        }
+
 #if UNITY_EDITOR
         public void AutoPopulateDoorSlots()
         {
@@ -75,8 +88,7 @@ namespace Rollgeon.Dungeon.Components
 
             foreach (var controller in controllers)
             {
-                var localPos = transform.InverseTransformPoint(controller.transform.position);
-                var dir = DoorDirectionExtensions.FromLocalPosition(localPos);
+                var dir = InferDoorDirection(controller.transform.position);
 
                 if (!usedDirections.Add(dir))
                 {
@@ -88,10 +100,10 @@ namespace Rollgeon.Dungeon.Components
 
                 UnityEditor.Undo.RecordObject(controller, "Auto-Populate Door Slots");
                 controller.Direction = dir;
+                // Igual que RoomEditorDoorBinder.BindOnPlace: el runtime también lo setea,
+                // pero dejarlo coherente evita divergencia entre los dos paths de autoría.
+                controller.SpawnPointId = dir.DoorStateKey();
                 UnityEditor.EditorUtility.SetDirty(controller);
-
-                var doorGroup = FindDoorGroup(controller.transform);
-                var anchor = doorGroup != null ? doorGroup : controller.transform;
 
                 GameObject wallPlug = null;
                 if (wallPlugField != null)
@@ -100,7 +112,11 @@ namespace Rollgeon.Dungeon.Components
                 DoorSlots.Add(new DoorSlotRef
                 {
                     Direction = dir,
-                    Anchor = anchor,
+                    // Anchor = el transform del propio DoorController, MISMA referencia que usa
+                    // DoorTileQuery (door.transform) para el tile-frente. Si acá pusiéramos un
+                    // grupo padre con offset, spawn (PlayerRoomTransitioner usa Anchor) y cruce
+                    // (DoorTileQuery usa door.transform) caerían en celdas distintas.
+                    Anchor = controller.transform,
                     WallPlug = wallPlug,
                     DoorRoot = controller.gameObject,
                 });
@@ -108,14 +124,6 @@ namespace Rollgeon.Dungeon.Components
 
             UnityEditor.EditorUtility.SetDirty(this);
             Debug.Log($"[RoomLayout] '{name}': auto-populated {DoorSlots.Count} door slots.");
-        }
-
-        private Transform FindDoorGroup(Transform child)
-        {
-            var current = child;
-            while (current != null && current != transform && current.parent != transform)
-                current = current.parent;
-            return current != transform ? current : null;
         }
 
         private void OnValidate()

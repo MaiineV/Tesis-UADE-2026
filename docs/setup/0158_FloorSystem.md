@@ -34,9 +34,10 @@ el editor (un prefab espacial) más el playtest end-to-end.
 
 ## Falta: puerta de salida en el prefab de la boss room
 
-**Prefab:** `Assets/Prefabs/Rooms/Boss_Room03.prefab` (lo usa `Room_Boss01`, la única
-boss room). Ya tiene 4 puertas cardinales `Door` (clones de
-`Assets/Prefabs/Tiles/Door.prefab`) y un `RoomLayout` en la raíz.
+**Prefab:** `Assets/Prefabs/Rooms/FloorOne/Boss.prefab` (lo usa `Room_Boss01`, la única
+boss room — referencia el GUID `35a15b0ca42bd3e4c9a9693f78f0470e`). Ya tiene 4 puertas
+cardinales `Door` (clones de `Assets/Prefabs/Tiles/Door.prefab`) y un `RoomLayout` en la
+raíz. (Hay un `FloorOne/Boss_Room03.prefab` **legacy** que ya no se referencia — ignorarlo.)
 
 **La salida es DINÁMICA — NO hace falta una puerta de salida fija.** El `DungeonManager`
 garantiza que la boss room sea un **dead-end (1 sola entrada)** y designa en runtime como
@@ -45,7 +46,7 @@ puertas cardinales puede terminar siendo la salida según por dónde se entre; l
 perpendiculares quedan tapiadas. No se rota la sala. (Resetea cualquier `IsExit` autoreado,
 así que un `ExitDoor` fijo en el prefab **sobra** — conviene quitarlo.)
 
-Lo único que necesita el prefab `Boss_Room03.prefab`:
+Lo único que necesita el prefab `FloorOne/Boss.prefab`:
 
 1. Sus **4 puertas cardinales `Door`** (ya las tiene, clones de `Assets/Prefabs/Tiles/Door.prefab`),
    con sus `DoorSlots` autoreados (Auto-Populate en `RoomLayout`) — entrada/salida/walls los
@@ -62,6 +63,39 @@ Lo único que necesita el prefab `Boss_Room03.prefab`:
 > La puerta de salida arranca cerrada (`LockedCombat`) y pasa a `Open` sola al derrotar al
 > boss (mismo path que el unlock de puertas). La entrada (puerta de la conexión) también se
 > abre al clearear — el player puede volver o tomar la salida.
+
+---
+
+## Bake doors — workflow canónico (Fix#0013)
+
+El cruce de puertas en Exploración se resuelve por la casilla **tile-frente** de cada
+puerta, no por click directo. Esa casilla tiene que ser un **nodo caminable** del NavGraph
+horneado. Invariante del sistema:
+
+```
+tile-frente = WorldToGrid(door.transform.position) + Direction.InwardOffset()
+            debe ser nodo Floor caminable en RoomLayout.NavGraph
+```
+
+**Por sala** (inspector del `RoomLayout`):
+1. Tener un `DoorController` por dirección (clones de `Assets/Prefabs/Tiles/Door.prefab`).
+2. **Auto-Populate Door Slots** — bakea los `DoorSlots`. La dirección se infiere relativa a
+   `LocalBounds.center` (NO al origen del prefab); el `Anchor` queda en el transform del
+   propio `DoorController` (misma referencia que usa el runtime para spawn y cruce).
+3. **Bake NavGraph** — al terminar corre la validación y avisa por consola si a alguna
+   puerta le falta el tile-frente caminable (pintá un `Floor` en esa celda y rebakeá).
+
+**En bloque** (menús `Rollgeon/Tools/`):
+- **Diagnose Room Doors (FloorOne+FloorTwo)** — read-only. Reporta por sala: matriz N/S/E/W,
+  slots faltantes, NavGraph vacío y tile-frentes no caminables. No toca nada.
+- **Repair Room Doors** — re-corre Auto-Populate + Bake NavGraph + validación y guarda cada
+  prefab. Reescribe direcciones/Anchors con la convención correcta en una pasada.
+- **Rebake Room NavGraphs** — solo NavGraph (incluye salas con graph vacío, ej. `FloorTwo/`).
+
+> **Gotchas.** `NavGraph` vacío = "sin restricciones" → todo caminable (solo para debug;
+> oculta tile-frentes rotos). Auto-Populate descartado de salas con el origen en la esquina
+> clasificaba mal las direcciones (fix RC1). Tras tocar geometría de una sala, re-correr
+> Repair (o Auto-Populate + Bake) o el cruce puede romperse en silencio.
 
 ---
 

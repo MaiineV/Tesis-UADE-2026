@@ -23,8 +23,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         public static DoorDirection InferDirection(RoomLayout layout, Vector3 worldPosition)
         {
             if (layout == null) return DoorDirection.North;
-            Vector3 local = layout.transform.InverseTransformPoint(worldPosition) - layout.LocalBounds.center;
-            return DoorDirectionExtensions.FromLocalPosition(local);
+            return layout.InferDoorDirection(worldPosition);
         }
 
         /// <summary>

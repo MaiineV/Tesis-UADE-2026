@@ -33,10 +33,14 @@ namespace Rollgeon.EditorTools
                 Debug.Log($"[NavGraphBaker] Baked {nodeCount} nodes, {edgeCount} edges.");
 
                 ValidateTiles(layout); // surface tile-authoring problems right after baking
+                ValidateDoors(layout); // y puertas cuyo tile-frente no quedó caminable
             }
 
             if (GUILayout.Button("Validate Tiles", GUILayout.Height(24)))
+            {
                 ValidateTiles(layout);
+                ValidateDoors(layout);
+            }
 
             if (layout.NavGraph != null && !layout.NavGraph.IsEmpty)
             {
@@ -89,6 +93,20 @@ namespace Rollgeon.EditorTools
                 Debug.Log($"[RoomLayout] '{layout.name}': tiles OK — sin celdas con Floor duplicado.", layout);
             else
                 Debug.LogWarning($"[RoomLayout] '{layout.name}': {dupCells} celda(s) con Floor duplicado (ver detalle arriba).", layout);
+        }
+
+        // Cada puerta debe tener su tile-frente caminable en el NavGraph horneado, si no el
+        // cruce en Exploración no ofrece casilla. RoomDoorBakeValidator solo avisa (no toca).
+        private static void ValidateDoors(RoomLayout layout)
+        {
+            var findings = RoomDoorBakeValidator.ValidateRoom(layout);
+            if (findings.Count == 0)
+            {
+                Debug.Log($"[RoomDoorBakeValidator] '{layout.name}': puertas OK.", layout);
+                return;
+            }
+            foreach (var f in findings)
+                Debug.LogWarning($"[RoomDoorBakeValidator] {f}", layout);
         }
     }
 }
