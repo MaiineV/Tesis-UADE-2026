@@ -4190,10 +4190,6 @@ MonoBehaviour:
   - {fileID: 34153753852635796}
   ObstacleSpawnPoints: []
   DoorSlots:
-  - Direction: 2
-    Anchor: {fileID: 2248614290771819670}
-    WallPlug: {fileID: 2990010566086503959}
-    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 3
     Anchor: {fileID: 3709836555029600952}
     WallPlug: {fileID: 374349336388978745}
@@ -4202,6 +4198,10 @@ MonoBehaviour:
     Anchor: {fileID: 7849440276882466232}
     WallPlug: {fileID: 6531583249128044345}
     DoorRoot: {fileID: 4440531032116954240}
+  - Direction: 2
+    Anchor: {fileID: 2248614290771819670}
+    WallPlug: {fileID: 2990010566086503959}
+    DoorRoot: {fileID: 5640074555512135086}
   - Direction: 1
     Anchor: {fileID: 1152551362743893211}
     WallPlug: {fileID: 4158132350853574234}

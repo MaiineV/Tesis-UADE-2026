@@ -149,7 +149,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
   Direction: 2
   IsExit: 0
-  SpawnPointId: 
+  SpawnPointId: door_E
   _meshOpen: {fileID: 0}
   _meshClosed: {fileID: 0}
   _wallPlug: {fileID: 0}
@@ -4255,6 +4255,10 @@ MonoBehaviour:
   - {fileID: 3507539451795896978}
   ObstacleSpawnPoints: []
   DoorSlots:
+  - Direction: 2
+    Anchor: {fileID: 1861789218857891522}
+    WallPlug: {fileID: 0}
+    DoorRoot: {fileID: 1832780176720489718}
   - Direction: 3
     Anchor: {fileID: 1616711979673033631}
     WallPlug: {fileID: 2316467550622681374}
@@ -4263,10 +4267,6 @@ MonoBehaviour:
     Anchor: {fileID: 7829870591305991624}
     WallPlug: {fileID: 6549150702785025865}
     DoorRoot: {fileID: 4456442622202176752}
-  - Direction: 2
-    Anchor: {fileID: 6375804519844673727}
-    WallPlug: {fileID: 7940233592837892670}
-    DoorRoot: {fileID: 651429078040893831}
   - Direction: 1
     Anchor: {fileID: 4589265611476817371}
     WallPlug: {fileID: 718975937083852634}
@@ -16385,11 +16385,6 @@ MonoBehaviour:
 --- !u!4 &6375804519844673727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
-  m_PrefabInstance: {fileID: 3843367418913424628}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7940233592837892670 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6586235384682573514, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
   m_PrefabInstance: {fileID: 3843367418913424628}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3851276405843592229

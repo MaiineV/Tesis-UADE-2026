@@ -4092,22 +4092,22 @@ MonoBehaviour:
   - {fileID: 2684911468010924827}
   ObstacleSpawnPoints: []
   DoorSlots:
-  - Direction: 2
-    Anchor: {fileID: 6678018756156091811}
-    WallPlug: {fileID: 7703159365821693730}
-    DoorRoot: {fileID: 998718885593304219}
-  - Direction: 3
-    Anchor: {fileID: 5337516732667953833}
-    WallPlug: {fileID: 8960090938448973864}
-    DoorRoot: {fileID: 1973583882908836753}
-  - Direction: 0
-    Anchor: {fileID: 3573714980064628849}
-    WallPlug: {fileID: 563630392459690736}
-    DoorRoot: {fileID: 6983215994020409673}
   - Direction: 1
     Anchor: {fileID: 4794523887508757426}
     WallPlug: {fileID: 8413737985618970931}
     DoorRoot: {fileID: 1439090533153815178}
+  - Direction: 3
+    Anchor: {fileID: 5337516732667953833}
+    WallPlug: {fileID: 8960090938448973864}
+    DoorRoot: {fileID: 1973583882908836753}
+  - Direction: 2
+    Anchor: {fileID: 6678018756156091811}
+    WallPlug: {fileID: 7703159365821693730}
+    DoorRoot: {fileID: 998718885593304219}
+  - Direction: 0
+    Anchor: {fileID: 3573714980064628849}
+    WallPlug: {fileID: 563630392459690736}
+    DoorRoot: {fileID: 6983215994020409673}
   LocalBounds:
     m_Center: {x: 0.5, y: 1.0504063, z: 0.5}
     m_Extent: {x: 6.500001, y: 1.5504069, z: 6.500001}
