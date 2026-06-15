@@ -1,0 +1,17 @@
+# UnityYAMLMerge (Smart Merge) — merge 3-way de assets YAML de Unity.
+# El driver "unityyamlmerge" se define por-clon en .git/config (no se versiona):
+#   git config merge.unityyamlmerge.driver \
+#     "'<UnityEditor>/Data/Tools/UnityYAMLMerge.exe' merge -p %O %B %A %A"
+#   git config merge.unityyamlmerge.recursive binary
+# Ver docs/setup o el README para el path del editor instalado.
+
+*.unity            merge=unityyamlmerge
+*.prefab           merge=unityyamlmerge
+*.asset            merge=unityyamlmerge
+*.mat              merge=unityyamlmerge
+*.anim             merge=unityyamlmerge
+*.controller       merge=unityyamlmerge
+*.overrideController merge=unityyamlmerge
+*.physicMaterial   merge=unityyamlmerge
+*.physicsMaterial2D merge=unityyamlmerge
+*.meta             merge=unityyamlmerge
