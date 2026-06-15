@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 08bf22a1c42d65542958afff3896bd74, type: 3}
-  m_Name: Ench_GoldOnRoll
+  m_Name: Ench_Fortaleza
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentSO
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
-    ReferencedUnityObjects:
-    - {fileID: 21300000, guid: e4517bb2f521d99439ec9981a44a87ec, type: 3}
+    ReferencedUnityObjects: []
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -24,16 +23,17 @@ MonoBehaviour:
     SerializationNodes:
     - Name: _upgradeId
       Entry: 1
-      Data: ench.gold_on_roll
+      Data: ench.fortaleza
     - Name: _displayName
       Entry: 1
-      Data: Greed
+      Data: Fortaleza
     - Name: _description
       Entry: 1
-      Data: If the dice is not in a combo, win 2 gold.
+      Data: El dado muestra su valor maximo y participa en combo, genera 2 puntos
+        de escudo.
     - Name: _icon
-      Entry: 10
-      Data: 0
+      Entry: 6
+      Data: 
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -62,13 +62,13 @@ MonoBehaviour:
       Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.ModifyResourceTrigger, Rollgeon
     - Name: When
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: Filter
       Entry: 7
       Data: 3|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: ComboIds
       Entry: 7
       Data: 4|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
@@ -89,10 +89,10 @@ MonoBehaviour:
       Data: Rollgeon.Upgrades.Dice.ResourceTarget, Rollgeon
     - Name: Kind
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: Stat
       Entry: 3
-      Data: 0
+      Data: 4
     - Name: 
       Entry: 8
       Data: 
@@ -110,7 +110,7 @@ MonoBehaviour:
       Data: 
     - Name: Condition
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: 
       Entry: 8
       Data: 
@@ -123,27 +123,27 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7158437841552278107
+  - rid: 7158437841552278109
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7158437841552278107
+    - rid: 7158437841552278109
       type: {class: ModifyResourceTrigger, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
       data:
-        When: 1
+        When: 0
         Filter:
-          Mode: 0
+          Mode: 1
           ComboIds: []
         Target:
-          Kind: 0
-          Stat: 0
+          Kind: 1
+          Stat: 4
         Operation: 0
         Amount:
-          rid: 7158437841552278108
-        Condition: 1
-    - rid: 7158437841552278108
+          rid: 7158437841552278110
+        Condition: 2
+    - rid: 7158437841552278110
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

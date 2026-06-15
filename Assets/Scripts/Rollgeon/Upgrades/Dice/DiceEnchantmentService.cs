@@ -284,11 +284,7 @@ namespace Rollgeon.Upgrades.Dice
 
         private static void ApplyScratchSideEffects(EnchantmentScratch scratch)
         {
-            if (scratch == null) return;
-            if (scratch.BonusGold == 0) return;
-            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return;
-            if (scratch.BonusGold > 0) economy.Add(scratch.BonusGold);
-            else economy.Spend(-scratch.BonusGold);
+            EnchantmentScratchApplier.Apply(scratch, ResolvePlayerGuid());
         }
 
         // ====================================================================
