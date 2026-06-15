@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Boss_GeneralDirector
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Behaviors
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIRoot
+      Entry: 6
+      Data: 
+  EntityId: boss.general_director
+  DisplayName: General Director
+  Description: 
+  WeaknessComboId: 
+  WeaknessMultiplierOverride: 0
+  BaseHP: 200
+  BaseAttack: 4
+  BaseHealStrength: 5
+  BaseSpeed: 4
+  MaxEnergy: 3
+  BaseAttackRange: 1
+  ExtraTiers: []
+  VisualPrefab: {fileID: 8816966952657547766, guid: 1d91f0f914a935c4cb6d3767044294c2, type: 3}
+  MinGoldDrop: 60
+  MaxGoldDrop: 80

@@ -385,9 +385,6 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
-    - Name: HighlightStyle
-      Entry: 1
-      Data: warning
     - Name: 
       Entry: 8
       Data: 
@@ -409,9 +406,6 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
-    - Name: HighlightStyle
-      Entry: 1
-      Data: warning
     - Name: 
       Entry: 8
       Data: 
@@ -556,13 +550,13 @@ MonoBehaviour:
     left alive to protect. If the player repeats a move, he already has it recorded.
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  BaseHP: 20
-  BaseAttack: 0
+  BaseHP: 200
+  BaseAttack: 3
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
   VisualPrefab: {fileID: 5047352166231496340, guid: d5850ff2d25822f48967f044a77ef5b0, type: 3}
-  MinGoldDrop: 15
-  MaxGoldDrop: 23
+  MinGoldDrop: 30
+  MaxGoldDrop: 60
