@@ -101,11 +101,29 @@ namespace Rollgeon.GameCamera
         [InfoBox("Si CurrentZoom >= este valor se activa la vista del piso (sala actual oculta, shells visibles).")]
         public float FloorViewZoomThreshold = 18f;
         [ToggleGroup(nameof(EnableFloorView))] public float FloorViewTweenSeconds = 0.3f;
-        [ToggleGroup(nameof(EnableFloorView))] public Color ShellColor = new(0.1f, 0.1f, 0.15f, 0.85f);
+
+        // Ícono de sala (sprite encima del shell): tamaño world uniforme y cuánto flota
+        // sobre la cara superior. Antes vivían hardcoded en FloorShellVisibilityController.
+        [ToggleGroup(nameof(EnableFloorView))]
+        [MinValue(0.1f)]
+        [InfoBox("Tamaño world del sprite de ícono (boss/shop) que flota sobre el shell.")]
+        public float ShellIconWorldSize = 3f;
+        [ToggleGroup(nameof(EnableFloorView))]
+        [Tooltip("Altura a la que flota el ícono sobre la cara superior del shell.")]
+        public float ShellIconHeightOffset = 0.75f;
+
+        // Dos estados de shell en el floor view: salas ya visitadas (más claras) vs vecinas
+        // descubiertas pero no visitadas (más oscuras). Si el Material slot es null se genera
+        // un URP/Unlit con el Color de fallback correspondiente.
+        [ToggleGroup(nameof(EnableFloorView))]
+        [InfoBox("Shell de salas ya visitadas (más claro). Si es null se usa ShellVisitedColor.")]
+        public Material ShellVisitedMaterial;
+        [ToggleGroup(nameof(EnableFloorView))] public Color ShellVisitedColor = new(0.38f, 0.38f, 0.44f, 0.9f);
 
         [ToggleGroup(nameof(EnableFloorView))]
-        [InfoBox("Material para los shells del floor view. Si es null se crea uno con URP/Unlit + ShellColor.")]
-        public Material ShellMaterial;
+        [InfoBox("Shell de salas adyacentes descubiertas pero no visitadas (más oscuro). Si es null se usa ShellAdjacentColor.")]
+        public Material ShellAdjacentMaterial;
+        [ToggleGroup(nameof(EnableFloorView))] public Color ShellAdjacentColor = new(0.1f, 0.1f, 0.15f, 0.85f);
 
         [ToggleGroup(nameof(EnableWallOcclusion))]
         [Button("Reset OcclusionMap to Default", ButtonSizes.Medium)]

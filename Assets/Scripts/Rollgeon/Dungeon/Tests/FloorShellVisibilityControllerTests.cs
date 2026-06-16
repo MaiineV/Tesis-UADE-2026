@@ -21,7 +21,8 @@ namespace Rollgeon.Dungeon.Tests
         private FloorShellVisibilityController _ctrl;
         private FakeDungeon _dungeon;
         private CameraConfigSO _config;
-        private Material _mat;
+        private Material _visitedMat;
+        private Material _adjacentMat;
         private readonly List<UnityEngine.Object> _toCleanup = new();
 
         [SetUp]
@@ -29,9 +30,13 @@ namespace Rollgeon.Dungeon.Tests
         {
             EventManager.ResetEventDictionary();
             _dungeon = new FakeDungeon();
-            _mat = new Material(Shader.Find("Sprites/Default"));
+            // Dos materiales distintos: evitan el Shader.Find de URP/Standard en EditMode y
+            // permiten asertar cuál se asigna según el estado visitada/adyacente.
+            _visitedMat = new Material(Shader.Find("Sprites/Default"));
+            _adjacentMat = new Material(Shader.Find("Sprites/Default"));
             _config = ScriptableObject.CreateInstance<CameraConfigSO>();
-            _config.ShellMaterial = _mat; // evita Shader.Find de URP/Standard en EditMode.
+            _config.ShellVisitedMaterial = _visitedMat;
+            _config.ShellAdjacentMaterial = _adjacentMat;
             _ctrl = new FloorShellVisibilityController(_dungeon, _config);
         }
 
@@ -43,7 +48,8 @@ namespace Rollgeon.Dungeon.Tests
             var orphan = GameObject.Find("FloorShells");
             if (orphan != null) UnityEngine.Object.DestroyImmediate(orphan);
             if (_config != null) UnityEngine.Object.DestroyImmediate(_config);
-            if (_mat != null) UnityEngine.Object.DestroyImmediate(_mat);
+            if (_visitedMat != null) UnityEngine.Object.DestroyImmediate(_visitedMat);
+            if (_adjacentMat != null) UnityEngine.Object.DestroyImmediate(_adjacentMat);
             foreach (var obj in _toCleanup)
                 if (obj != null) UnityEngine.Object.DestroyImmediate(obj);
             _toCleanup.Clear();
@@ -190,6 +196,32 @@ namespace Rollgeon.Dungeon.Tests
             // Assert
             Assert.IsNull(FindChild(ShellsRoot(), IconName(a)), "Sin Icon ⇒ sin hijo ShellIcon.");
             Assert.IsNull(FindChild(ShellsRoot(), IconName(b)), "Sin Icon ⇒ sin hijo ShellIcon.");
+        }
+
+        [Test]
+        public void FloorView_AssignsVisitedMaterialToVisited_AdjacentMaterialToNeighbor()
+        {
+            // Arrange — cadena a-b-c. a y b visitadas; b es la sala actual (su shell queda oculto).
+            //   a: visitada, no actual  ⇒ visible con material "visitada".
+            //   c: vecina de b (visitada) pero no visitada ⇒ visible con material "adyacente".
+            var a = Guid.NewGuid();
+            var b = Guid.NewGuid();
+            var c = Guid.NewGuid();
+            SetFloor(a, b, c);
+            _dungeon.Instances[b].Visited = true;
+            _dungeon.Current = _dungeon.Instances[b];
+
+            // Act
+            EventManager.Trigger(EventName.OnCameraFloorViewToggled, true);
+
+            // Assert
+            var root = ShellsRoot();
+            var shellA = FindChild(root, ShellName(a)).GetComponent<Renderer>();
+            var shellC = FindChild(root, ShellName(c)).GetComponent<Renderer>();
+            Assert.AreEqual(_visitedMat, shellA.sharedMaterial,
+                "Sala visitada no-actual usa el material de visitada (más claro).");
+            Assert.AreEqual(_adjacentMat, shellC.sharedMaterial,
+                "Sala adyacente a una visitada pero no visitada usa el material adyacente (más oscuro).");
         }
 
         // -----------------------------------------------------------------

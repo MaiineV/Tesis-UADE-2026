@@ -59,8 +59,13 @@ public class CameraConfigSO : SerializedScriptableObject {
 
     // Floor view
     public bool EnableFloorView; public float FloorViewZoomThreshold;
-    public float FloorViewTweenSeconds; public Color ShellColor;
-    public Material ShellMaterial;
+    public float FloorViewTweenSeconds;
+    // Ícono de sala (sprite sobre el shell): tamaño world + flotación.
+    public float ShellIconWorldSize; public float ShellIconHeightOffset;
+    // Dos estados de shell — visitada (clara) vs adyacente no visitada (oscura).
+    // Material slot opcional + color de fallback URP/Unlit por estado.
+    public Material ShellVisitedMaterial;  public Color ShellVisitedColor;
+    public Material ShellAdjacentMaterial; public Color ShellAdjacentColor;
 
     public static Dictionary<CameraFacing, List<WallDirection>> DefaultOcclusionMap();
 }

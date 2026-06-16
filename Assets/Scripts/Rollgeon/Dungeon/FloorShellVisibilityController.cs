@@ -27,17 +27,24 @@ namespace Rollgeon.Dungeon
     {
         private const string LogPrefix = "[FloorShellVisibilityController] ";
 
-        // Ícono de sala especial: tamaño world y cuánto flota sobre la cara superior del shell.
+        // Fallbacks de ícono usados solo cuando no hay CameraConfigSO (tests / bootstrap sin asset).
+        // Con config presente, el tamaño/offset sale de ShellIconWorldSize / ShellIconHeightOffset.
         private const float IconWorldSize = 3f;
         private const float IconHeightOffset = 0.75f;
+
+        // Colores de fallback por estado cuando no hay config (espejan los defaults del SO).
+        private static readonly Color VisitedFallbackColor = new(0.38f, 0.38f, 0.44f, 0.9f);
+        private static readonly Color AdjacentFallbackColor = new(0.1f, 0.1f, 0.15f, 0.85f);
 
         private readonly IDungeonService _dungeon;
         private readonly CameraConfigSO _config;
 
         private readonly Dictionary<Guid, GameObject> _shellGOs = new();
         private readonly Dictionary<Guid, GameObject> _shellIcons = new();
+        private readonly Dictionary<Guid, Renderer> _shellRenderers = new();
         private Transform _shellRoot;
-        private Material _sharedShellMaterial;
+        private Material _visitedShellMaterial;
+        private Material _adjacentShellMaterial;
 
         private EventManager.EventReceiver _onFloorViewToggled;
         private EventManager.EventReceiver _onRoomEntered;
@@ -101,17 +108,23 @@ namespace Rollgeon.Dungeon
                 if (icon != null) DestroyObject(icon);
             }
             _shellIcons.Clear();
+            _shellRenderers.Clear();
 
             if (_shellRoot != null)
             {
                 DestroyObject(_shellRoot.gameObject);
                 _shellRoot = null;
             }
-            if (_sharedShellMaterial != null && (_config == null || _config.ShellMaterial != _sharedShellMaterial))
-            {
-                DestroyObject(_sharedShellMaterial);
-            }
-            _sharedShellMaterial = null;
+
+            DestroyGeneratedMaterial(ref _visitedShellMaterial, _config != null ? _config.ShellVisitedMaterial : null);
+            DestroyGeneratedMaterial(ref _adjacentShellMaterial, _config != null ? _config.ShellAdjacentMaterial : null);
+        }
+
+        // Destruye un material solo si lo generamos nosotros (no es el override del config).
+        private static void DestroyGeneratedMaterial(ref Material mat, Material configOverride)
+        {
+            if (mat != null && mat != configOverride) DestroyObject(mat);
+            mat = null;
         }
 
         private void OnFloorViewToggled(params object[] args)
@@ -132,6 +145,7 @@ namespace Rollgeon.Dungeon
         private void ApplyVisibility()
         {
             MaterializeShellsIfNeeded();
+            EnsureShellMaterials();
 
             var current = _dungeon.CurrentRoomInstance;
             var rooms = _dungeon.GetAllRoomInstances();
@@ -143,10 +157,17 @@ namespace Rollgeon.Dungeon
                 // a una visitada). La sala actual se muestra como prefab world, no como shell.
                 bool visible = _isFloorView && !isCurrent && IsDiscovered(id, rooms);
                 go.SetActive(visible);
+                if (visible && _shellRenderers.TryGetValue(id, out var renderer) && renderer != null)
+                    // Visitadas más claras, adyacentes descubiertas más oscuras. Se elige aquí
+                    // (no al materializar) porque Visited cambia a medida que el player avanza.
+                    renderer.sharedMaterial = IsVisited(id, rooms) ? _visitedShellMaterial : _adjacentShellMaterial;
                 if (_shellIcons.TryGetValue(id, out var icon) && icon != null)
                     icon.SetActive(visible);
             }
         }
+
+        private static bool IsVisited(Guid id, IReadOnlyDictionary<Guid, RoomInstance> rooms)
+            => rooms != null && rooms.TryGetValue(id, out var room) && room != null && room.Visited;
 
         /// <summary>
         /// Descubierta = visitada O vecina conectada por puerta a una sala visitada.
@@ -182,8 +203,6 @@ namespace Rollgeon.Dungeon
                 _shellRoot = rootGO.transform;
             }
 
-            EnsureShellMaterial();
-
             foreach (var (id, shell) in shells)
             {
                 var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -192,8 +211,9 @@ namespace Rollgeon.Dungeon
                 cube.transform.position = shell.WorldPosition;
                 cube.transform.localScale = shell.Size;
 
+                // El material se asigna en ApplyVisibility según el estado visitada/adyacente.
                 var renderer = cube.GetComponent<Renderer>();
-                if (renderer != null) renderer.sharedMaterial = _sharedShellMaterial;
+                if (renderer != null) _shellRenderers[id] = renderer;
 
                 var collider = cube.GetComponent<Collider>();
                 if (collider != null) DestroyObject(collider);
@@ -219,11 +239,16 @@ namespace Rollgeon.Dungeon
         /// </summary>
         private GameObject CreateShellIcon(Guid id, FloorShell shell)
         {
+            float worldSize = _config != null ? _config.ShellIconWorldSize : IconWorldSize;
+            float heightOffset = _config != null ? _config.ShellIconHeightOffset : IconHeightOffset;
+
             var iconGO = new GameObject($"ShellIcon_{id:N}");
             iconGO.transform.SetParent(_shellRoot, worldPositionStays: false);
-            iconGO.transform.position = shell.WorldPosition + Vector3.up * (shell.Size.y * 0.5f + IconHeightOffset);
-            iconGO.transform.localScale = Vector3.one * IconWorldSize;
+            iconGO.transform.position = shell.WorldPosition + Vector3.up * (shell.Size.y * 0.5f + heightOffset);
+            iconGO.transform.localScale = Vector3.one * worldSize;
 
+            // Orientación inicial — en runtime el BillboardToCamera la actualiza cada frame; en
+            // EditMode/tests (donde no corre LateUpdate) este valor es el que queda.
             var cam = Camera.main;
             iconGO.transform.rotation = cam != null
                 ? cam.transform.rotation
@@ -231,6 +256,10 @@ namespace Rollgeon.Dungeon
 
             var sr = iconGO.AddComponent<SpriteRenderer>();
             sr.sprite = shell.Icon;
+
+            // Billboard continuo: el ícono sigue a la cámara cada frame (antes se orientaba una
+            // sola vez al materializar y quedaba fijo cuando la cámara rotaba).
+            iconGO.AddComponent<BillboardToCamera>();
             return iconGO;
         }
 
@@ -252,6 +281,7 @@ namespace Rollgeon.Dungeon
             foreach (var go in _shellGOs.Values)
                 if (go != null) DestroyObject(go);
             _shellGOs.Clear();
+            _shellRenderers.Clear();
 
             foreach (var icon in _shellIcons.Values)
                 if (icon != null) DestroyObject(icon);
@@ -270,15 +300,23 @@ namespace Rollgeon.Dungeon
             else UnityEngine.Object.DestroyImmediate(obj);
         }
 
-        private void EnsureShellMaterial()
+        private void EnsureShellMaterials()
         {
-            if (_sharedShellMaterial != null) return;
+            _visitedShellMaterial ??= ResolveShellMaterial(
+                _config != null ? _config.ShellVisitedMaterial : null,
+                _config != null ? _config.ShellVisitedColor : VisitedFallbackColor);
+            _adjacentShellMaterial ??= ResolveShellMaterial(
+                _config != null ? _config.ShellAdjacentMaterial : null,
+                _config != null ? _config.ShellAdjacentColor : AdjacentFallbackColor);
+        }
 
-            if (_config != null && _config.ShellMaterial != null)
-            {
-                _sharedShellMaterial = _config.ShellMaterial;
-                return;
-            }
+        /// <summary>
+        /// Devuelve el material override del config si existe; si no, genera uno URP/Unlit
+        /// (fallback Standard) tinteado con <paramref name="fallbackColor"/>.
+        /// </summary>
+        private static Material ResolveShellMaterial(Material overrideMat, Color fallbackColor)
+        {
+            if (overrideMat != null) return overrideMat;
 
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
@@ -286,8 +324,7 @@ namespace Rollgeon.Dungeon
                 Debug.LogWarning(LogPrefix + "URP Unlit shader not found, falling back to Standard.");
                 shader = Shader.Find("Standard");
             }
-            _sharedShellMaterial = new Material(shader);
-            _sharedShellMaterial.color = _config != null ? _config.ShellColor : new Color(0.1f, 0.1f, 0.15f, 0.85f);
+            return new Material(shader) { color = fallbackColor };
         }
     }
 }

@@ -4802,13 +4802,13 @@ public void RoomObjectState_Polymorphism_SurvivesRoundTrip()
   ```csharp
   var layoutComponent = roomInstance.Template.RoomPrefab.GetComponent<RoomLayout>();
   var bounds = layoutComponent.Bounds;          // §13.3 — local, recomputado en OnValidate
-  var shell  = CreateShellBox(bounds, cameraConfig.ShellColor);
+  var shell  = CreateShellBox(bounds);           // material asignado al mostrarse, según estado
   shell.transform.position = roomInstance.WorldPosition + bounds.center;
   shell.transform.localScale = bounds.size;
   shell.SetActive(false);                        // default hidden — el camera service los muestra al cruzar el zoom threshold
   floor.FloorShells[roomInstance.InstanceId] = shell;
   ```
-  `CreateShellBox` arma un `GameObject` runtime con un cube `MeshFilter` + `MeshRenderer` con material transparente. Cero asset manual por sala. `cameraConfig` se resuelve vía `ServiceLocator.GetService<CameraConfigSO>()`.
+  `CreateShellBox` arma un `GameObject` runtime con un cube `MeshFilter` + `MeshRenderer`. El material se elige al mostrar el shell según el estado de la sala: `ShellVisitedMaterial`/`ShellVisitedColor` (visitada, más clara) o `ShellAdjacentMaterial`/`ShellAdjacentColor` (adyacente no visitada, más oscura). Cero asset manual por sala. `cameraConfig` se resuelve vía `ServiceLocator.GetService<CameraConfigSO>()`.
 - **`GetFloorBounds()`** — devuelve la unión de `RoomLayout.Bounds` trasladados a `RoomInstance.WorldPosition`. Consumido por el camera service para clampear el pan (§17.E.6).
 - Al entrar a una sala por primera vez: instancia el `RoomPrefab`, elige setup de enemigos (fijo o procedural), rolea rewards por cada spawn point, spawnea obstáculos del pool, inicializa `ObjectStates` por spawn point. Notifica al `ICameraService.SetFollowTarget(player)` (§17.E).
 - **Interactables de la sala.** Cada `InteractableComponent` (§7.7) hijo del `RoomPrefab` resuelve su `OwnerData` / `OwnerEntity` / `SpawnPointId` en `Awake` contra el `DungeonManager` del `ServiceLocator` y se auto‑registra en `IInteractionService` vía `OnEnable`. Al `ExitCurrentRoom()` el manager desactiva (o destruye) el prefab de la sala, lo que dispara `OnDisable` en los components y los desregistra. El service siempre refleja sólo los interactables de la sala actualmente activa.
@@ -6540,7 +6540,15 @@ public class CameraConfigSO : SerializedScriptableObject
     [InfoBox("Si CurrentZoom >= este valor se activa la vista del piso (sala actual oculta, shells visibles).")]
     public float FloorViewZoomThreshold = 18f;
     public float FloorViewTweenSeconds  = 0.3f;
-    public Color ShellColor             = new(0.1f, 0.1f, 0.15f, 0.85f);
+    // Ícono de sala (sprite sobre el shell): tamaño world + flotación.
+    public float ShellIconWorldSize     = 3f;
+    public float ShellIconHeightOffset  = 0.75f;
+    // Dos estados de shell: visitada (clara) vs adyacente no visitada (oscura).
+    // Material slot opcional + color de fallback URP/Unlit por estado.
+    public Material ShellVisitedMaterial;
+    public Color    ShellVisitedColor   = new(0.38f, 0.38f, 0.44f, 0.9f);
+    public Material ShellAdjacentMaterial;
+    public Color    ShellAdjacentColor  = new(0.1f, 0.1f, 0.15f, 0.85f);
 }
 ```
 
@@ -6673,14 +6681,14 @@ foreach (var roomInstance in floor.Rooms)
 {
     var bounds = roomInstance.Template.RoomPrefab
                      .GetComponent<RoomLayout>().Bounds;   // §13.3
-    var shell = CreateShellBox(bounds, config.ShellColor);
+    var shell = CreateShellBox(bounds);                     // material por estado al mostrarse
     shell.transform.position = roomInstance.WorldPosition;
     shell.SetActive(false);                                  // default hidden
     floor.FloorShells[roomInstance.InstanceId] = shell;
 }
 ```
 
-`CreateShellBox` es un helper interno del `CameraService` (o del `DungeonManager`, por cercanía al código que lo usa) que arma un `GameObject` con un `MeshFilter` + `MeshRenderer` usando un cube mesh escalado al `bounds.size`, con un material transparente definido por `ShellColor`. Cero asset manual por sala.
+`CreateShellBox` es un helper interno del `CameraService` (o del `DungeonManager`, por cercanía al código que lo usa) que arma un `GameObject` con un `MeshFilter` + `MeshRenderer` usando un cube mesh escalado al `bounds.size`. El material transparente se asigna al mostrar el shell según el estado de la sala: claro para visitadas (`ShellVisited*`), oscuro para adyacentes no visitadas (`ShellAdjacent*`). Cero asset manual por sala.
 
 **Regla.** Las shells **no** son prefabs autorados. Son mesh runtime generados procedurales. Si el diseñador quiere shells más elaboradas por sala, se puede agregar un `ShellPrefab` override en `RoomSO` más adelante, pero v8 de este doc lo deja fuera — procedural alcanza.
 
@@ -8908,7 +8916,7 @@ Menú `Assets > Create > Rollgeon > Templates >` con presets:
 - `2026-04-14` — **v8**: sistema de cámara scripteada.
   - §17.E: **nuevo**. `ICameraService` registrado en `ServiceLocator`, con rotación snapped a 45° (RMB + drag horizontal del mouse con accumulator), pan libre con MMB que suspende el seguimiento hasta un recenter explícito, zoom con scroll clampeado, recenter por tecla o botón UI, wall occlusion direccional por `CameraFacing`, floor view con shells procedurales al cruzar un `FloorViewZoomThreshold`, smoothing universal con PrimeTween. Todo toggleable desde `CameraConfigSO` (§E.3) por feature individual.
   - §17.E.8: wall occlusion — `WallOccluder` component con `WallDirection` en cada pared del `RoomPrefab`; `CameraService` resuelve qué paredes esconder contra el `OcclusionMap` del config (`Dictionary<CameraFacing, List<WallDirection>>`), editable por el diseñador sin tocar código.
-  - §17.E.9: floor view — shells procedurales generadas por `DungeonManager` desde el `Bounds` del `RoomLayout` (§13.3). Cero assets manuales por sala. Las shells son `GameObject`s runtime con un cube mesh escalado al bounds y un material transparente definido por `CameraConfigSO.ShellColor`.
+  - §17.E.9: floor view — shells procedurales generadas por `DungeonManager` desde el `Bounds` del `RoomLayout` (§13.3). Cero assets manuales por sala. Las shells son `GameObject`s runtime con un cube mesh escalado al bounds y un material transparente por estado (`CameraConfigSO.ShellVisited*` claro para visitadas, `ShellAdjacent*` oscuro para adyacentes no visitadas). Los íconos de sala especial usan `BillboardToCamera` para mirar siempre a la cámara y tamaño regulable (`ShellIconWorldSize`).
   - §13.3: `RoomLayout` gana campo `Bounds` con `OnValidate` que lo recomputa a partir de los renderers children. Se lee desde el prefab asset sin instanciarlo.
   - §13.6: `GeneratedFloor` gana `Dictionary<Guid, GameObject> FloorShells`; `RoomInstance` gana `Vector3 WorldPosition` explícito; `IDungeonManager` gana `Bounds GetFloorBounds()` para el clamp del pan. `DungeonManager.GenerateFloor` instancia las shells al final. Al `EnterRoom` avisa a `ICameraService.SetFollowTarget`.
   - §1.1.1: `CameraConfigSO` agregado al `ServiceBootstrapSO` como settings‑catalog; `RegisterAll` lo registra para que el `CameraService` lo resuelva al despertar.

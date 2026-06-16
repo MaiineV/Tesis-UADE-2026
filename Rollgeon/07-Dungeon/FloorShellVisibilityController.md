@@ -22,10 +22,19 @@ is left untouched so combat / exploration keep rendering normally.
 
 Shell GameObjects are materialised lazily the first time floor view is
 activated. Each shell is a `Cube` primitive parented under a single
-`FloorShells` root, sharing one [[CameraConfigSO|ShellMaterial]]
-(falling back to URP Unlit / Standard if the config doesn't supply
-one). Colliders are stripped on creation. `Dispose` tears down every
-spawned shell and the shared material it owned.
+`FloorShells` root. Per-state materials are chosen in `ApplyVisibility`
+(not at materialisation, since `Visited` changes as the player advances):
+visited rooms get [[CameraConfigSO|ShellVisitedMaterial]] (lighter),
+discovered-but-unvisited neighbours get [[CameraConfigSO|ShellAdjacentMaterial]]
+(darker) — each falling back to a URP Unlit / Standard material tinted
+with the matching `Shell*Color` when no override is supplied. Colliders
+are stripped on creation. `Dispose` tears down every spawned shell and
+both materials it generated.
+
+Special-room icons (boss/shop sprites floating over the shell) are sized
+from [[CameraConfigSO|ShellIconWorldSize]] / `ShellIconHeightOffset` and
+carry a [[BillboardToCamera]] component so they keep facing the camera
+every frame, even while it rotates (`RotateBy45`).
 
 ## API / Shape
 
