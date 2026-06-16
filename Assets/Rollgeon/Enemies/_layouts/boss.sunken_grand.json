@@ -74,14 +74,6 @@
         },
         {
             "Index": 9,
-            "TypeName": "AINode_Move",
-            "Position": {
-                "x": 1566.0,
-                "y": 1698.0
-            }
-        },
-        {
-            "Index": 10,
             "TypeName": "AINode_TelegraphMark",
             "Position": {
                 "x": 1577.0,
@@ -89,7 +81,7 @@
             }
         },
         {
-            "Index": 11,
+            "Index": 10,
             "TypeName": "AINode_Behavior",
             "Position": {
                 "x": 1705.0,
@@ -97,7 +89,7 @@
             }
         },
         {
-            "Index": 12,
+            "Index": 11,
             "TypeName": "AINode_If",
             "Position": {
                 "x": 1120.0,
@@ -105,7 +97,7 @@
             }
         },
         {
-            "Index": 13,
+            "Index": 12,
             "TypeName": "AINode_RotateBlock",
             "Position": {
                 "x": 1433.0,
@@ -113,7 +105,7 @@
             }
         },
         {
-            "Index": 14,
+            "Index": 13,
             "TypeName": "AINode_RotateBlock",
             "Position": {
                 "x": 1385.0,

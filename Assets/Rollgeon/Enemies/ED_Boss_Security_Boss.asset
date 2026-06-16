@@ -74,7 +74,7 @@ MonoBehaviour:
       Data: true
     - Name: Percent
       Entry: 4
-      Data: 0.3
+      Data: 0.2
     - Name: 
       Entry: 8
       Data: 
@@ -312,21 +312,54 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Else
-      Entry: 6
+      Entry: 7
+      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: MaxSteps
+      Entry: 7
+      Data: 28|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 29|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: DesiredRange
+      Entry: 7
+      Data: 30|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: StopAdjacent
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
       Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Random, Rollgeon
+      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_Random, Rollgeon
     - Name: Options
       Entry: 7
-      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AINode_Random+Option,
+      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AINode_Random+Option,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 7
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
@@ -335,23 +368,23 @@ MonoBehaviour:
       Data: 1
     - Name: Node
       Entry: 7
-      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 7
-      Data: 30|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 34|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 31|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 35|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 32|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+      Data: 36|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -369,7 +402,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -390,7 +423,7 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -409,51 +442,6 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: Node
-      Entry: 7
-      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
-    - Name: MaxSteps
-      Entry: 7
-      Data: 36|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
-      Entry: 3
-      Data: 3
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: DesiredRange
-      Entry: 7
-      Data: 38|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
-      Entry: 3
-      Data: 1
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Retreat
-      Entry: 5
-      Data: false
-    - Name: StopAdjacent
-      Entry: 5
-      Data: true
     - Name: 
       Entry: 8
       Data: 

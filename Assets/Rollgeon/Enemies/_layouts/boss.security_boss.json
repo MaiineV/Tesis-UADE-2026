@@ -74,6 +74,14 @@
         },
         {
             "Index": 9,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 2097.0,
+                "y": 1242.0
+            }
+        },
+        {
+            "Index": 10,
             "TypeName": "AINode_Random",
             "Position": {
                 "x": 1507.0,
@@ -81,7 +89,7 @@
             }
         },
         {
-            "Index": 10,
+            "Index": 11,
             "TypeName": "AINode_If",
             "Position": {
                 "x": 1756.0,
@@ -89,7 +97,7 @@
             }
         },
         {
-            "Index": 11,
+            "Index": 12,
             "TypeName": "AINode_TelegraphMark",
             "Position": {
                 "x": 2084.0,
@@ -97,19 +105,11 @@
             }
         },
         {
-            "Index": 12,
+            "Index": 13,
             "TypeName": "AINode_TelegraphMark",
             "Position": {
                 "x": 2081.0,
                 "y": 1680.0
-            }
-        },
-        {
-            "Index": 13,
-            "TypeName": "AINode_Move",
-            "Position": {
-                "x": 1756.0,
-                "y": 1691.0
             }
         },
         {
