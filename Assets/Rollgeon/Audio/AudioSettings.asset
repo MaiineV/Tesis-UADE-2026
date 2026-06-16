@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e861f2d9c673fa4aa452161f36fc6f0, type: 3}
+  m_Name: AudioSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Audio.AudioSettingsSO
+  Mixer: {fileID: 24100000, guid: a2bb749abd5e56649aaaac129a06d62c, type: 2}
+  MasterParam: MasterVol
+  MusicParam: MusicVol
+  SfxParam: SfxVol
+  UiParam: UiVol
+  SfxGroup: {fileID: -1096402358978223112, guid: a2bb749abd5e56649aaaac129a06d62c, type: 2}
+  MusicGroup: {fileID: 8221405102472822382, guid: a2bb749abd5e56649aaaac129a06d62c, type: 2}
+  UiGroup: {fileID: -116051874001067145, guid: a2bb749abd5e56649aaaac129a06d62c, type: 2}
+  SfxPoolSize: 16
+  DefaultMaster: 1
+  DefaultMusic: 0.8
+  DefaultSfx: 1
+  DefaultUi: 1
+  BiomeMusic: []

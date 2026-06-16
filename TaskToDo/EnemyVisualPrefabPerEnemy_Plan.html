@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Per-Enemy Visual Prefab — Plan</title>
+<style>
+  :root {
+    --bg: #141414;
+    --panel: #2a2a2a;
+    --panel-2: #333;
+    --border: #444;
+    --text: #e6e6e6;
+    --text-dim: #9aa0a6;
+    --accent: #ff8a4c;
+    --accent-soft: rgba(255,138,76,0.15);
+    --warn: #f0b85f;
+    --danger: #ff6b6b;
+    --good: #8bd17c;
+    --code: #ffd1c8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #3a2218, #2a1a2e);
+    padding: 24px 32px;
+    border-bottom: 2px solid var(--accent);
+  }
+  header h1 { margin: 0; font-size: 26px; }
+  header p { margin: 6px 0 0; color: var(--text-dim); }
+  main { padding: 24px 32px; max-width: 1180px; margin: 0 auto; }
+  section { margin-bottom: 36px; }
+  h2 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    color: var(--accent);
+    font-size: 20px;
+    margin-top: 0;
+  }
+  h3 { color: #ffc8a8; margin-top: 22px; }
+  code {
+    background: #111;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: var(--code);
+  }
+  pre {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 12.5px;
+    overflow-x: auto;
+  }
+  .muted { color: var(--text-dim); }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .badge {
+    display: inline-block;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .badge.warn { color: var(--warn); border-color: var(--warn); background: rgba(240,184,95,0.12); }
+  .badge.danger { color: var(--danger); border-color: var(--danger); background: rgba(255,107,107,0.12); }
+  .badge.good { color: var(--good); border-color: var(--good); background: rgba(139,209,124,0.12); }
+  .file {
+    font-family: Consolas, monospace;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #cfe7ff;
+    font-size: 12.5px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    background: var(--panel);
+    vertical-align: top;
+  }
+  th { background: var(--panel-2); color: var(--text-dim); }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .panel h4 { margin-top: 0; color: #ffc8a8; }
+  .strike { text-decoration: line-through; color: var(--text-dim); }
+  .arrow { color: var(--accent); }
+  details {
+    background: #1c1c1c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+  }
+  details summary { cursor: pointer; color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Per-Entity Visual Prefab</h1>
+  <p>Cada <code>EnemyDataSO</code> y cada <code>ClassHeroSO</code> referencia su propio prefab visual. Se elimina la heurística central <code>BaseHP &gt;= 80</code> y los 3 slots (<code>_heroPrefab</code> / <code>_enemyPrefab</code> / <code>_bossPrefab</code>) del bootstrap.</p>
+</header>
+
+<main>
+
+<section>
+  <h2>1. Objetivo</h2>
+  <ul>
+    <li>Cada enemigo decide qué <strong>GameObject</strong> se instancia como su pawn visual.</li>
+    <li>Cada hero (clase) también decide su propio prefab — mismo patrón que enemies.</li>
+    <li>Remover el branching central <em>"si HP &gt;= 80 entonces boss prefab"</em>.</li>
+    <li>Remover los <strong>3</strong> slots del bootstrap: <code>_heroPrefab</code>, <code>_enemyPrefab</code>, <code>_bossPrefab</code> (legacy del FP).</li>
+    <li>Conservar el contrato del <code>EntityVisualService</code> y de <code>EntityPawn</code> — la capa de lógica no cambia.</li>
+  </ul>
+  <p class="muted"><strong>Fuera de scope:</strong> Animaciones, materials, VFX per-entity. Pool de pawns.</p>
+</section>
+
+<section>
+  <h2>2. Estado actual</h2>
+
+  <h3>2.1. Punto central a remover</h3>
+  <p><span class="file">Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualService.cs:81-89</span></p>
+  <pre>public EntityPawn SpawnEnemy(Guid guid, EnemyDataSO data, GridCoord coord)
+{
+    var isBoss = data != null && data.BaseHP &gt;= 80; // heurística simple para FP
+    var prefab = isBoss
+        ? (_bossPrefab ?? _enemyPrefab ?? CreatePrimitiveFallback(PrimitiveType.Cube, Color.magenta))
+        : (_enemyPrefab ?? CreatePrimitiveFallback(PrimitiveType.Capsule, Color.red));
+    var kind = isBoss ? EntityPawn.PawnKind.Boss : EntityPawn.PawnKind.Enemy;
+    return SpawnInternal(guid, prefab, coord, kind);
+}</pre>
+  <p>El comentario <em>"heurística simple para FP"</em> marca esto como deuda técnica desde el First Playable. Hoy con dos enemy types nuevos (<code>ED_Healer</code>, <code>ED_RangedEnemy</code>) ya no escala.</p>
+
+  <h3>2.2. Bootstrap centralizado</h3>
+  <p><span class="file">Assets/Scripts/Rollgeon/Entities/Visuals/EntityVisualServiceBootstrap.cs:22-28</span></p>
+  <pre>[SerializeField] private GameObject _heroPrefab;    // <span class="strike">remover</span>
+[SerializeField] private GameObject _enemyPrefab;   // <span class="strike">remover</span>
+[SerializeField] private GameObject _bossPrefab;    // <span class="strike">remover</span></pre>
+  <p>Los 3 slots son <em>"placeholders opcionales"</em> del FP: si están vacíos el service caía a primitives. Hoy ya no son placeholders — todos los entities tienen modelos reales.</p>
+
+  <h3>2.3. EnemyDataSO / ClassHeroSO — falta el campo visual</h3>
+  <ul>
+    <li><span class="file">Assets/Scripts/Rollgeon/Entities/EnemyDataSO.cs</span> — tiene Identity, Weakness, Stats, Rewards, Behaviors, AIRoot. <strong>Sin VisualPrefab.</strong></li>
+    <li><span class="file">Assets/Scripts/Rollgeon/Heroes/ClassHeroSO.cs</span> — tiene Identity, Sheet, PhaseBehaviors, DiceBagPool, etc. Recibe el SO en <code>SpawnHero(guid, hero, coord)</code> pero el service lo <strong>ignora</strong> y usa <code>_heroPrefab</code> del bootstrap.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>3. Diseño propuesto</h2>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h4>Antes <span class="badge danger">deprecado</span></h4>
+      <p>El bootstrap decide qué se instancia.</p>
+      <pre>EnemyDataSO  ──┐
+               ├──&gt; SpawnEnemy
+GridCoord    ──┘        │
+                        ▼
+               if BaseHP &gt;= 80
+                ? _bossPrefab
+                : _enemyPrefab
+
+ClassHeroSO  ──┐
+               ├──&gt; SpawnHero
+GridCoord    ──┘        │
+                        ▼
+               _heroPrefab  (hero SO ignorado)</pre>
+    </div>
+    <div class="panel">
+      <h4>Después <span class="badge good">target</span></h4>
+      <p>Cada SO trae su prefab.</p>
+      <pre>EnemyDataSO.VisualPrefab ─┐
+                          ├──&gt; SpawnEnemy
+GridCoord                ─┘        │
+                                   ▼
+                       Instantiate(data.VisualPrefab)
+
+ClassHeroSO.VisualPrefab ─┐
+                          ├──&gt; SpawnHero
+GridCoord                ─┘        │
+                                   ▼
+                       Instantiate(hero.VisualPrefab)</pre>
+    </div>
+  </div>
+
+  <h3>3.1. Campos nuevos en <code>EnemyDataSO</code></h3>
+  <pre>[Title("Visual")]
+[Required, AssetsOnly]
+[Tooltip("Prefab que se instancia como pawn visual de este enemigo. " +
+         "Debe tener un EntityPawn (se agrega en runtime si falta).")]
+public GameObject VisualPrefab;
+
+[Tooltip("Marca este enemigo como boss — afecta PawnKind y eventualmente UI/SFX. " +
+         "Reemplaza la heurística vieja basada en BaseHP &gt;= 80.")]
+public bool IsBoss;</pre>
+  <p class="muted">Razón del <code>IsBoss</code> explícito: el <code>PawnKind</code> se sigue usando en feedback, UI y muerte. Mejor un flag intencional que volver a inferirlo.</p>
+
+  <h3>3.2. Campo nuevo en <code>ClassHeroSO</code></h3>
+  <pre>[Title("Visual")]
+[Required, AssetsOnly]
+[Tooltip("Prefab que se instancia como pawn visual del hero. " +
+         "Debe tener un EntityPawn (se agrega en runtime si falta).")]
+public GameObject VisualPrefab;</pre>
+  <p class="muted">Notar que <code>ClassHeroSO</code> ya viene declarado en CLAUDE.md como "minimal skeleton" con stubs (Portrait, BaseMaxHp, etc.) — <code>VisualPrefab</code> entra al lado de esos sin breaking changes.</p>
+
+  <h3>3.3. <code>EntityVisualService</code> simplificado</h3>
+  <pre>public EntityPawn SpawnEnemy(Guid guid, EnemyDataSO data, GridCoord coord)
+{
+    if (data == null) throw new ArgumentNullException(nameof(data));
+    if (data.VisualPrefab == null)
+    {
+        Debug.LogError($"[EntityVisualService] EnemyDataSO '{data.name}' " +
+                       "no tiene VisualPrefab asignado.");
+        return null;
+    }
+    var kind = data.IsBoss ? EntityPawn.PawnKind.Boss : EntityPawn.PawnKind.Enemy;
+    return SpawnInternal(guid, data.VisualPrefab, coord, kind);
+}
+
+public EntityPawn SpawnHero(Guid guid, ClassHeroSO hero, GridCoord coord)
+{
+    if (hero == null) throw new ArgumentNullException(nameof(hero));
+    if (hero.VisualPrefab == null)
+    {
+        Debug.LogError($"[EntityVisualService] ClassHeroSO '{hero.name}' " +
+                       "no tiene VisualPrefab asignado.");
+        return null;
+    }
+    return SpawnInternal(guid, hero.VisualPrefab, coord, EntityPawn.PawnKind.Hero);
+}</pre>
+
+  <h3>3.4. Bootstrap — sin slots de prefab</h3>
+  <pre>// <span class="strike">_heroPrefab, _enemyPrefab, _bossPrefab</span> — los 3 removidos.
+
+_instance = new EntityVisualService(grid, movement);</pre>
+
+  <h3>3.5. Constructor del service</h3>
+  <p>Cae de 3 prefab params a <strong>cero</strong>. <code>CreatePrimitiveFallback</code> se elimina por completo — si falta <code>VisualPrefab</code> en cualquier entity SO es un error de data, no un fallback silencioso a un cubo magenta.</p>
+</section>
+
+<section>
+  <h2>4. Cambios por archivo</h2>
+  <table>
+    <thead>
+      <tr><th>Archivo</th><th>Acción</th><th>Detalle</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="file">EnemyDataSO.cs</span></td>
+        <td><span class="badge good">add</span></td>
+        <td>Campos <code>VisualPrefab</code>, <code>IsBoss</code>. Sin tocar el resto.</td>
+      </tr>
+      <tr>
+        <td><span class="file">ClassHeroSO.cs</span></td>
+        <td><span class="badge good">add</span></td>
+        <td>Campo <code>VisualPrefab</code> (Title "Visual", <code>[Required, AssetsOnly]</code>). Convivirá con los stubs ya marcados como "elevated by Hero Template task".</td>
+      </tr>
+      <tr>
+        <td><span class="file">EntityVisualService.cs</span></td>
+        <td><span class="badge warn">edit</span></td>
+        <td>Quitar los 3 fields (<code>_heroPrefab</code>, <code>_enemyPrefab</code>, <code>_bossPrefab</code>) y los 3 params del ctor. Reescribir <code>SpawnEnemy</code> y <code>SpawnHero</code>. Eliminar <code>CreatePrimitiveFallback</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="file">EntityVisualServiceBootstrap.cs</span></td>
+        <td><span class="badge warn">edit</span></td>
+        <td>Borrar fields <code>_heroPrefab</code>, <code>_enemyPrefab</code>, <code>_bossPrefab</code> y los <code>[Title("Placeholder prefabs (opcionales)")]</code>. Ajustar el <code>new EntityVisualService(grid, movement)</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="file">IEntityVisualService.cs</span></td>
+        <td><span class="badge">none</span></td>
+        <td>Firmas de <code>SpawnHero</code> / <code>SpawnEnemy</code> quedan igual — el SO ya viaja como argumento.</td>
+      </tr>
+      <tr>
+        <td><span class="file">EntityVisualServiceTests.cs</span></td>
+        <td><span class="badge warn">rewrite</span></td>
+        <td>Tests de boss-por-HP fuera. Agregar tests "usa el VisualPrefab del data/hero" y "VisualPrefab null → error". Ajustar setUp para no crear los 3 prefabs centralizados.</td>
+      </tr>
+      <tr>
+        <td><span class="file">CombatDeathWatcherTests.cs</span></td>
+        <td><span class="badge">none</span></td>
+        <td>Mock fake mantiene la firma — no cambia.</td>
+      </tr>
+      <tr>
+        <td><span class="file">DefaultEnemySpawnResolver.cs</span></td>
+        <td><span class="badge">none</span></td>
+        <td>Sigue llamando <code>_visuals.SpawnEnemy(id, enemyData, coord)</code>. Sin cambios.</td>
+      </tr>
+      <tr>
+        <td><span class="file">GameplayBootstrapper.cs</span></td>
+        <td><span class="badge">none</span></td>
+        <td><code>visuals.SpawnHero(playerService.PlayerGuid, hero, spawnCoord)</code> ya pasa el <code>ClassHeroSO</code>. Sin cambios de código.</td>
+      </tr>
+      <tr>
+        <td><span class="file">ED_*.asset</span> (existentes)</td>
+        <td><span class="badge warn">data</span></td>
+        <td>El usuario asigna <code>VisualPrefab</code> + <code>IsBoss</code> en cada SO desde el inspector. <span class="muted">CLAUDE.md: setup de engine lo hace el user.</span></td>
+      </tr>
+      <tr>
+        <td><span class="file">ClassHero_*.asset</span> (existentes)</td>
+        <td><span class="badge warn">data</span></td>
+        <td>El usuario asigna <code>VisualPrefab</code> en cada SO de clase de héroe.</td>
+      </tr>
+      <tr>
+        <td><span class="file">EntityVisualServiceBootstrap.asset</span></td>
+        <td><span class="badge warn">data</span></td>
+        <td>Limpiar las 3 referencias huérfanas a los prefabs centralizados.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>5. Lógica deprecada que se remueve</h2>
+  <ul>
+    <li><span class="badge danger">remove</span> Heurística <code>data.BaseHP &gt;= 80 → boss</code> (<span class="file">EntityVisualService.cs:83</span>).</li>
+    <li><span class="badge danger">remove</span> Fields <code>_heroPrefab</code>, <code>_enemyPrefab</code>, <code>_bossPrefab</code> en bootstrap (<span class="file">EntityVisualServiceBootstrap.cs:20-28</span>) y los 3 params del ctor del service.</li>
+    <li><span class="badge danger">remove</span> Método <code>CreatePrimitiveFallback</code> completo (<span class="file">EntityVisualService.cs:154-163</span>) — placeholder Capsule cyan/red y Cube magenta del FP. Ningún path lo necesita.</li>
+    <li><span class="badge danger">remove</span> Tests <code>SpawnEnemy_UsesBossPrefab_WhenBaseHPHigh</code> y <code>SpawnEnemy_UsesEnemyPrefab_WhenBaseHPLow</code> (<span class="file">EntityVisualServiceTests.cs:74-100</span>) — testean la heurística que se va.</li>
+    <li><span class="badge danger">remove</span> Llamadas <code>SpawnHero(..., null, ...)</code> en tests (<span class="file">EntityVisualServiceTests.cs:59, 106, 118, 133, 151-152, 162, 168</span>) — el hero SO pasa a ser obligatorio para resolver el prefab.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6. Tests nuevos</h2>
+  <p>Siguen <span class="file">.claude/rules/test-standards.md</span> — naming descriptivo, AAA, sin estado compartido.</p>
+  <pre>[Test] should_spawn_enemy_using_VisualPrefab_from_data()
+{
+    // Arrange
+    var customPrefab = MakePrefab("CustomEnemyVisual");
+    var data = ScriptableObject.CreateInstance&lt;EnemyDataSO&gt;();
+    data.VisualPrefab = customPrefab;
+    data.IsBoss = false;
+
+    // Act
+    var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+
+    // Assert
+    Assert.IsNotNull(pawn);
+    StringAssert.StartsWith("CustomEnemyVisual", pawn.gameObject.name);
+    Assert.AreEqual(EntityPawn.PawnKind.Enemy, pawn.Kind);
+}
+
+[Test] should_mark_pawn_as_Boss_when_IsBoss_flag_is_true()
+{
+    // Arrange
+    var data = ScriptableObject.CreateInstance&lt;EnemyDataSO&gt;();
+    data.VisualPrefab = MakePrefab("BossVisual");
+    data.IsBoss = true;
+
+    // Act
+    var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+
+    // Assert
+    Assert.AreEqual(EntityPawn.PawnKind.Boss, pawn.Kind);
+}
+
+[Test] should_log_error_and_return_null_when_enemy_VisualPrefab_is_missing()
+{
+    // Arrange
+    var data = ScriptableObject.CreateInstance&lt;EnemyDataSO&gt;();
+    data.VisualPrefab = null;
+
+    // Act + Assert
+    LogAssert.Expect(LogType.Error, new Regex("no tiene VisualPrefab"));
+    var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+    Assert.IsNull(pawn);
+}
+
+[Test] should_spawn_hero_using_VisualPrefab_from_ClassHeroSO()
+{
+    // Arrange
+    var heroPrefab = MakePrefab("WarriorVisual");
+    var hero = ScriptableObject.CreateInstance&lt;ClassHeroSO&gt;();
+    hero.VisualPrefab = heroPrefab;
+
+    // Act
+    var pawn = _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
+
+    // Assert
+    Assert.IsNotNull(pawn);
+    StringAssert.StartsWith("WarriorVisual", pawn.gameObject.name);
+    Assert.AreEqual(EntityPawn.PawnKind.Hero, pawn.Kind);
+}
+
+[Test] should_log_error_and_return_null_when_hero_VisualPrefab_is_missing()
+{
+    // Arrange
+    var hero = ScriptableObject.CreateInstance&lt;ClassHeroSO&gt;();
+    hero.VisualPrefab = null;
+
+    // Act + Assert
+    LogAssert.Expect(LogType.Error, new Regex("no tiene VisualPrefab"));
+    var pawn = _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
+    Assert.IsNull(pawn);
+}</pre>
+</section>
+
+<section>
+  <h2>7. Plan de ejecución</h2>
+  <ol>
+    <li><strong>Branch:</strong> <code>Fix#NNNN_PerEntityVisualPrefab</code> desde <code>develop</code>.</li>
+    <li><strong>Código.</strong>
+      <ul>
+        <li>Agregar campos a <code>EnemyDataSO</code> (<code>VisualPrefab</code>, <code>IsBoss</code>).</li>
+        <li>Agregar <code>VisualPrefab</code> a <code>ClassHeroSO</code>.</li>
+        <li>Reescribir <code>SpawnEnemy</code> + <code>SpawnHero</code> y simplificar ctor del service.</li>
+        <li>Adelgazar <code>EntityVisualServiceBootstrap</code> (sin fields ni Title).</li>
+        <li>Eliminar <code>CreatePrimitiveFallback</code>.</li>
+      </ul>
+    </li>
+    <li><strong>Tests.</strong> Borrar los 2 obsoletos, ajustar SetUp, agregar los 5 nuevos (3 enemy + 2 hero). Run editmode suite. <span class="badge good">verde</span></li>
+    <li><strong>Data.</strong> El user (no MCP) abre cada <code>ED_*.asset</code>, asigna <code>VisualPrefab</code> y marca <code>IsBoss</code>. Idem cada <code>ClassHero_*.asset</code>. Limpia el <code>EntityVisualServiceBootstrap.asset</code>.</li>
+    <li><strong>Smoke.</strong> Iniciar run → confirmar que el hero instancia su prefab propio. Entrar a una sala de combate normal + sala de boss → confirmar que cada enemigo instancia su prefab propio en su tile.</li>
+    <li><strong>Commit.</strong> Convencional:
+      <pre>refactor(entities)!: per-entity visual prefab, drop bootstrap prefab slots
+
+BREAKING CHANGE: EntityVisualServiceBootstrap ya no tiene _heroPrefab,
+_enemyPrefab ni _bossPrefab. Cada EnemyDataSO debe asignar VisualPrefab
+e IsBoss; cada ClassHeroSO debe asignar VisualPrefab.</pre>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <h2>8. Riesgos y mitigaciones</h2>
+  <table>
+    <thead><tr><th>Riesgo</th><th>Mitigación</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Algún <code>ED_*.asset</code> queda sin <code>VisualPrefab</code> → enemigo invisible en runtime.</td>
+        <td>Validación <code>[Required]</code> de Odin + <code>LogError</code> explícito en <code>SpawnEnemy</code>. Smoke por sala antes de mergear.</td>
+      </tr>
+      <tr>
+        <td>Algún <code>ClassHero_*.asset</code> queda sin <code>VisualPrefab</code> → hero invisible al iniciar run.</td>
+        <td><code>[Required]</code> en el SO + <code>LogError</code> en <code>SpawnHero</code>. Smoke al iniciar run cubre el caso.</td>
+      </tr>
+      <tr>
+        <td>Bosses ya marcados con HP&lt;80 dejan de ser boss visualmente.</td>
+        <td>Migración manual: el user marca <code>IsBoss=true</code> en cada SO de boss. Documentado en el commit BREAKING CHANGE.</td>
+      </tr>
+      <tr>
+        <td>Tests del watcher de combate / otros mocks de <code>IEntityVisualService</code>.</td>
+        <td>Firma de la interfaz <strong>no cambia</strong> — los mocks compilan tal cual.</td>
+      </tr>
+      <tr>
+        <td>Re-entry de salas — <code>DefaultEnemySpawnResolver</code> sigue llamando <code>_visuals.SpawnEnemy</code>.</td>
+        <td>El refactor está localizado al service; el resolver no toca lógica de prefab. Sin cambios ahí.</td>
+      </tr>
+      <tr>
+        <td><code>GameplayBootstrapper</code> ya pasa el <code>ClassHeroSO</code> a <code>SpawnHero</code>; si el SO no tenía el campo poblado, el hero no aparece.</td>
+        <td>Validación en build via <code>[Required]</code> Odin + smoke. <em>No</em> hace falta cambiar <code>GameplayBootstrapper</code> — solo el data.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>9. Criterios de aceptación</h2>
+  <ul>
+    <li><span class="badge good">✓</span> No queda ninguna referencia a <code>_heroPrefab</code>, <code>_enemyPrefab</code> ni <code>_bossPrefab</code> en código.</li>
+    <li><span class="badge good">✓</span> No queda ninguna comparación <code>BaseHP &gt;= 80</code> para inferir boss.</li>
+    <li><span class="badge good">✓</span> <code>CreatePrimitiveFallback</code> está eliminado.</li>
+    <li><span class="badge good">✓</span> Cada <code>ED_*.asset</code> tiene <code>VisualPrefab</code> asignado e <code>IsBoss</code> con valor intencional.</li>
+    <li><span class="badge good">✓</span> Cada <code>ClassHero_*.asset</code> tiene <code>VisualPrefab</code> asignado.</li>
+    <li><span class="badge good">✓</span> Test suite de <code>Rollgeon.Entities.Visuals.Tests</code> pasa en verde.</li>
+    <li><span class="badge good">✓</span> En play, el hero y dos enemigos distintos en la misma sala instancian cada uno su prefab propio en su propio tile.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>10. Rollback</h2>
+  <p>Revert del commit deja al bootstrap re-pidiendo los 3 prefabs centralizados y a <code>SpawnEnemy</code>/<code>SpawnHero</code> con la lógica vieja. Los campos nuevos en <code>EnemyDataSO</code> y <code>ClassHeroSO</code> quedan serializados pero ignorados — no rompen nada.</p>
+</section>
+
+<footer style="margin-top:60px; padding-top:16px; border-top:1px solid var(--border); color:var(--text-dim); font-size:12px;">
+  Plan generado <span id="d"></span> · branch base: <code>develop</code>
+  <script>document.getElementById('d').textContent = new Date().toISOString().slice(0,10);</script>
+</footer>
+
+</main>
+</body>
+</html>

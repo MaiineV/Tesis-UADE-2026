@@ -1,0 +1,116 @@
+{
+    "Entries": [
+        {
+            "Index": 0,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 903.0,
+                "y": 441.0
+            }
+        },
+        {
+            "Index": 1,
+            "TypeName": "AINode_ExecuteTelegraph",
+            "Position": {
+                "x": 1372.0,
+                "y": 420.0
+            }
+        },
+        {
+            "Index": 2,
+            "TypeName": "AINode_PromulgateRule",
+            "Position": {
+                "x": 1372.0,
+                "y": 566.0
+            }
+        },
+        {
+            "Index": 3,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1391.0,
+                "y": 709.0
+            }
+        },
+        {
+            "Index": 4,
+            "TypeName": "AINode_Once",
+            "Position": {
+                "x": 1667.0,
+                "y": 733.0
+            }
+        },
+        {
+            "Index": 5,
+            "TypeName": "AINode_ApplyStatModifier",
+            "Position": {
+                "x": 1973.0,
+                "y": 770.0
+            }
+        },
+        {
+            "Index": 6,
+            "TypeName": "AINode_Wait",
+            "Position": {
+                "x": 1667.0,
+                "y": 920.0
+            }
+        },
+        {
+            "Index": 7,
+            "TypeName": "AINode_Selector",
+            "Position": {
+                "x": 1069.0,
+                "y": 831.0
+            }
+        },
+        {
+            "Index": 8,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 1226.0,
+                "y": 990.0
+            }
+        },
+        {
+            "Index": 9,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1606.0,
+                "y": 1051.0
+            }
+        },
+        {
+            "Index": 10,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 1579.0,
+                "y": 1214.0
+            }
+        },
+        {
+            "Index": 11,
+            "TypeName": "AINode_Random",
+            "Position": {
+                "x": 1219.0,
+                "y": 1288.0
+            }
+        },
+        {
+            "Index": 12,
+            "TypeName": "AINode_TelegraphMark",
+            "Position": {
+                "x": 1530.0,
+                "y": 1406.0
+            }
+        },
+        {
+            "Index": 13,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 1530.0,
+                "y": 1562.0
+            }
+        }
+    ]
+}

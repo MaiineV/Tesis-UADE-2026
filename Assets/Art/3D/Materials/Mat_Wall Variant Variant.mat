@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Mat_Wall Variant Variant
+  m_Shader: {fileID: 4800000, guid: 4882ce624e1a4d746be7a4235eed768d, type: 3}
+  m_Parent: {fileID: 2100000, guid: 6bc204cd81bd87f449da9e914438940a, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _USESHADOWDITHER_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _BorderWidth: 0
+    - _DetailType: 1.69
+    - _PatternType: 2.18
+    - _ShadowThreshold: 0.197
+    - _ShapeOpacity: 1
+    - _ShapeScaleX: 0.83
+    - _ShapeScaleY: 1.12
+    - _ShapeSize: 0.78
+    - _ShapeType: 1.78
+    - _SolidRows: 20
+    - _TileScale: 2
+    m_Colors:
+    - _BGColor: {r: 0.09433961, g: 0.09433961, b: 0.09433961, a: 1}
+    - _ColorA: {r: 0.19940564, g: 0.24528301, b: 0.17933428, a: 1}
+    - _ColorB: {r: 1, g: 0.8970643, b: 0, a: 1}
+    - _DetailColor: {r: 0.745283, g: 0.57394606, b: 0.03163936, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

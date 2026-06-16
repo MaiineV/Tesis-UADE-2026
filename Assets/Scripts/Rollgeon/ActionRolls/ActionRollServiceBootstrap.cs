@@ -1,0 +1,71 @@
+using Patterns;
+using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combos;
+using Rollgeon.Dice;
+using Rollgeon.Patterns.Bootstrap;
+using UnityEngine;
+
+namespace Rollgeon.ActionRolls
+{
+    /// <summary>
+    /// Wrapper <see cref="ScriptableObject"/> que registra el
+    /// <see cref="ActionRollService"/> en el <c>ServiceBootstrapSO.ExtraServices</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Scope.</b> <see cref="ServiceScope.Run"/> — la instancia vive lo que vive
+    /// el run, sin estado persistente entre runs.
+    /// </para>
+    /// <para>
+    /// <b>Priority.</b> <c>74</c> — despues de <c>RerollBudgetService</c> (70),
+    /// <c>DiceRollerBootstrap</c> (72) y <c>EnergyService</c> (50). Necesita ambos
+    /// como prerequisito.
+    /// </para>
+    /// </remarks>
+    [CreateAssetMenu(menuName = "Rollgeon/Action Rolls/Action Roll Service Bootstrap",
+        fileName = "ActionRollServiceBootstrap")]
+    public sealed class ActionRollServiceBootstrap : ScriptableObject, IPreloadableService
+    {
+        public int Priority => 74;
+        public ServiceScope Scope => ServiceScope.Run;
+
+        public void Register()
+        {
+            // Idempotencia por presencia en el locator, NO por campo cacheado.
+            // RunBootstrapper.EndRun → ServiceLocator.ClearScope(Run) dispone y borra el
+            // IActionRollService anterior, y RegisterRunScoped() reinvoca este Register()
+            // en cada StartRun. El SO vive toda la sesion, asi que un `if (_instance != null)`
+            // nunca se reseteaba y dejaba el servicio sin registrar en toda run posterior a la
+            // primera — rompiendo Heal y Force Door en exploracion (BUG-016). Construir una
+            // instancia fresca por run mantiene el contrato Run-scoped.
+            if (ServiceLocator.TryGetService<IActionRollService>(out var existing) && existing != null)
+                return;
+
+            if (!ServiceLocator.TryGetService<IDiceRoller>(out var roller) || roller == null)
+            {
+                Debug.LogError("[ActionRollServiceBootstrap] IDiceRoller no registrado — " +
+                               "agregar DiceRollerBootstrap con Priority < 74.");
+                return;
+            }
+
+            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
+            {
+                Debug.LogError("[ActionRollServiceBootstrap] IEnergyService no registrado — " +
+                               "agregar EnergyService con Priority < 74.");
+                return;
+            }
+
+            // ComboCatalog es opcional — si no esta registrado, las tiradas resuelven
+            // por suma cruda (sin combo) en vez de por BaseDamage del combo (formula B).
+            ServiceLocator.TryGetService<ComboCatalogSO>(out var comboCatalog);
+            if (comboCatalog == null)
+            {
+                Debug.LogWarning("[ActionRollServiceBootstrap] ComboCatalogSO no registrado — " +
+                                 "las tiradas de Force Door / Heal usaran suma cruda en vez de combos.");
+            }
+
+            var instance = new ActionRollService(roller, energy, comboCatalog);
+            ServiceLocator.AddService<IActionRollService>(instance, ServiceScope.Run);
+        }
+    }
+}

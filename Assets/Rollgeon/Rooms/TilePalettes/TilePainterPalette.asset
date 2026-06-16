@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dbdece1042e33f4896d87c595dc0418, type: 3}
+  m_Name: TilePainterPalette
+  m_EditorClassIdentifier: Rollgeon.Editor::Rollgeon.Editor.Tools.RoomEditor.TilePainterPaletteSO
+  DisplayName: Floor01Palette
+  DefaultTileSize: {x: 1, y: 1, z: 1}
+  Entries:
+  - Label: BaseFloor
+    Prefab: {fileID: 2189185042564396352, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 0
+  - Label: UpWall
+    Prefab: {fileID: 2189185042564396352, guid: 8780a362dbcd7014d81aa5aa4ed42417, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 1
+  - Label: BaseDoor
+    Prefab: {fileID: 4349409642055064947, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
+    Icon: {fileID: 0}
+    Type: 4
+    IsBlocker: 0
+  - Label: DownWall
+    Prefab: {fileID: 2189185042564396352, guid: 0e5a917e382118f4cb8da558471272aa, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 1
+  - Label: Corner
+    Prefab: {fileID: 2189185042564396352, guid: 6c82398a4c54706458281cc3c10ab34b, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 1
+  - Label: CornerUP
+    Prefab: {fileID: 2189185042564396352, guid: c38a4a5745898f44d8e2585e0ceae507, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 1
+  - Label: maquina
+    Prefab: {fileID: 3757966456445164470, guid: 3e428fef5566e1345aacb12fd11d88cc, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: mesa-poker
+    Prefab: {fileID: 7191183672202619516, guid: 88a0fa23fbe1f044d83a03ae13844c30, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Ruleta chica
+    Prefab: {fileID: 907544754280976215, guid: e20f3787352979d498f7313a710e123f, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: pared columnas
+    Prefab: {fileID: 5708807474630952342, guid: 83f3e3a7a1fe1714eab4f4e025aedc48, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: cartel
+    Prefab: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Ruleta grande
+    Prefab: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Mesa Pool
+    Prefab: {fileID: 2879759769342412074, guid: ffa2e707b36efd040a75c092e4ff87f3, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Barril
+    Prefab: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Ruleta vertical
+    Prefab: {fileID: 6822607915483828944, guid: 3d66c8b9bc0754c41b1f5e2ad470712c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Diana
+    Prefab: {fileID: 729366230790791192, guid: 749fa0712c4addc43aa67f7f840e0f59, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
+  - Label: Vela
+    Prefab: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Bolillero
+    Prefab: {fileID: 443420555430030984, guid: 8f3970bb1a87c4b4db69722f4d638f4c, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1
+  - Label: Cortina
+    Prefab: {fileID: 2436884024731330200, guid: e0224d170d55baf4bb0b55b78fbeb52f, type: 3}
+    Icon: {fileID: 0}
+    Type: 1
+    IsBlocker: 0
