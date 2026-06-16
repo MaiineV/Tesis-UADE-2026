@@ -59,7 +59,7 @@ MonoBehaviour:
       Max: 1
     Pool:
     - {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}
-  - Type: 4
+  - Type: 5
     Count:
       Mode: 0
       Fixed: 1

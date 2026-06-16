@@ -164,8 +164,12 @@ namespace Rollgeon.Dungeon
                     warnings.Add($"Boss: pedía {bossCount}, cupieron {take}.");
             }
 
-            // Special types
-            var specialOrder = new[] { RoomType.Shop, RoomType.Potion };
+            // Special types. El orden es explícito (no iterar `resolved`) para
+            // que la colocación sea determinística contra un mismo seed. Todo
+            // tipo resuelto que NO tenga colocación dedicada (Start/Boss arriba,
+            // Combat abajo) debe estar acá; si falta, su count infla el target
+            // pero la cell cae al fallback de Combat y la sala nunca aparece.
+            var specialOrder = new[] { RoomType.Shop, RoomType.Potion, RoomType.Enchantment };
             foreach (var type in specialOrder)
             {
                 if (!resolved.TryGetValue(type, out var count) || count <= 0) continue;

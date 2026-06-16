@@ -28,3 +28,4 @@ MonoBehaviour:
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
   EnemyPool: {fileID: 0}
+  ShellIcon: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
