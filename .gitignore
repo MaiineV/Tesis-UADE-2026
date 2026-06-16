@@ -105,3 +105,8 @@ InitTestScene*.unity*
 # Obsidian volatile workspace files
 Rollgeon/.obsidian/workspace.json
 Rollgeon/.obsidian/core-plugins.json
+
+# Performance Testing package leftovers — los escribe el preprocess de la build en
+# Assets/Resources/ y los borra el postprocess; si la build falla quedan colgados.
+/[Aa]ssets/[Rr]esources/PerformanceTestRunInfo.json*
+/[Aa]ssets/[Rr]esources/PerformanceTestRunSettings.json*
