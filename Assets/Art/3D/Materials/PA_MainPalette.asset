@@ -74,7 +74,7 @@ MonoBehaviour:
     midColor: {r: 0.55, g: 0.46, b: 0.08, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
   - label: Gold
-    baseColor: {r: 0.82, g: 0.67, b: 0.08, a: 1}
+    baseColor: {r: 1, g: 0.6203928, b: 0, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1

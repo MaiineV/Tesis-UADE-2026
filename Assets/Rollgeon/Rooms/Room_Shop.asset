@@ -24,7 +24,7 @@ MonoBehaviour:
   RoomId: Shop01
   DisplayName: Shop
   Type: 3
-  RoomPrefab: {fileID: 3358072774779011347, guid: 80137989630381f45822b9fca3a48d85, type: 3}
+  RoomPrefab: {fileID: 3358072774779011347, guid: aaae459ac1ceede47abc16fa490c0b0c, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
   EnemyPool: {fileID: 0}

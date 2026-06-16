@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a90962a68bd18054c9caa2054733f6d3, type: 3}
-  m_Name: Room_Enchantment_01
+  m_Name: Room_Boss02
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.RoomSO
   serializationData:
     SerializedFormat: 2
@@ -21,11 +21,11 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  RoomId: Enchantment
-  DisplayName: Enchantment Room
-  Type: 5
-  RoomPrefab: {fileID: 3358072774779011347, guid: 6b1077f4c8a448843bb2d21d1b974d0c, type: 3}
+  RoomId: CombatBoss
+  DisplayName: Boss
+  Type: 2
+  RoomPrefab: {fileID: 3358072774779011347, guid: 5cc6921941e609d4da48810e00b3fafa, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
-  EnemyPool: {fileID: 0}
-  ShellIcon: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
+  EnemyPool: {fileID: 11400000, guid: bd74180960bc12942954b84df15c28ac, type: 2}
+  ShellIcon: {fileID: 995867419, guid: 0e83ef559e7126e4d89b611c7be3f0df, type: 3}
