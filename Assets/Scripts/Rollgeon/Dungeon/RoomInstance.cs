@@ -38,6 +38,14 @@ namespace Rollgeon.Dungeon
 
         public RoomState State = RoomState.Uncleared;
 
+        /// <summary>
+        /// El player ya pisó esta sala alguna vez. Distinto de <see cref="State"/>:
+        /// una sala no-combate nace <see cref="RoomState.Cleared"/> sin haber sido
+        /// visitada. Lo usa el floor view para el fog of war (visitadas + vecinas
+        /// conectadas a una visitada).
+        /// </summary>
+        public bool Visited;
+
         /// <summary>GUIDs de enemigos spawneados en la visita actual; vaciado en ExitCurrentRoom.</summary>
         [NonSerialized]
         public List<Guid> SpawnedEnemies = new List<Guid>();

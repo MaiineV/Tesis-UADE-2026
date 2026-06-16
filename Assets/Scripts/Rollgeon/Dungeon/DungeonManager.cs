@@ -94,7 +94,8 @@ namespace Rollgeon.Dungeon
                 {
                     InstanceId = id,
                     WorldPosition = worldPos,
-                    Size = ShellSizeFor(template)
+                    Size = ShellSizeFor(template),
+                    Icon = template != null ? template.ShellIcon : null
                 };
             }
 
@@ -149,6 +150,7 @@ namespace Rollgeon.Dungeon
             // 8. Seed _currentId con la start room.
             var startId = FindStartInstanceId();
             _currentId = startId;
+            MarkVisited(startId);
 
             // 8b. Fog of war — solo la sala actual queda visible.
             RefreshRoomVisibility();
@@ -265,6 +267,7 @@ namespace Rollgeon.Dungeon
             DeactivateCurrentRoomCombat();
 
             _currentId = neighborId;
+            MarkVisited(neighborId);
 
             RefreshRoomVisibility();
 
@@ -457,6 +460,12 @@ namespace Rollgeon.Dungeon
         /// en escena. Los shells procedurales del floor view (§17.E.9) no se
         /// tocan — siguen visibles como minimap zoom-out.
         /// </summary>
+        /// <summary>Marca la sala como visitada (fog of war del floor view). No-op si el id no existe.</summary>
+        private void MarkVisited(Guid id)
+        {
+            if (_instances.TryGetValue(id, out var instance)) instance.Visited = true;
+        }
+
         private void RefreshRoomVisibility()
         {
             foreach (var instance in _instances.Values)

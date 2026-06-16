@@ -31,5 +31,10 @@ namespace Rollgeon.Dungeon
 
         [Tooltip("Fallback ponderado cuando PossibleSetups está vacío. Se roteá 1:1 contra RoomLayout.EnemySpawnPoints.")]
         public EnemyPoolSO EnemyPool;
+
+        [Title("Floor View")]
+        [Tooltip("Sprite opcional dibujado sobre el shell de la sala en el floor view (ej. boss/shop). Null = sin overlay, solo el shell.")]
+        [PreviewField(48, ObjectFieldAlignment.Left)]
+        public Sprite ShellIcon;
     }
 }

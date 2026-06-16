@@ -27,10 +27,15 @@ namespace Rollgeon.Dungeon
     {
         private const string LogPrefix = "[FloorShellVisibilityController] ";
 
+        // Ícono de sala especial: tamaño world y cuánto flota sobre la cara superior del shell.
+        private const float IconWorldSize = 3f;
+        private const float IconHeightOffset = 0.75f;
+
         private readonly IDungeonService _dungeon;
         private readonly CameraConfigSO _config;
 
         private readonly Dictionary<Guid, GameObject> _shellGOs = new();
+        private readonly Dictionary<Guid, GameObject> _shellIcons = new();
         private Transform _shellRoot;
         private Material _sharedShellMaterial;
 
@@ -91,6 +96,12 @@ namespace Rollgeon.Dungeon
             }
             _shellGOs.Clear();
 
+            foreach (var icon in _shellIcons.Values)
+            {
+                if (icon != null) DestroyObject(icon);
+            }
+            _shellIcons.Clear();
+
             if (_shellRoot != null)
             {
                 DestroyObject(_shellRoot.gameObject);
@@ -123,12 +134,32 @@ namespace Rollgeon.Dungeon
             MaterializeShellsIfNeeded();
 
             var current = _dungeon.CurrentRoomInstance;
+            var rooms = _dungeon.GetAllRoomInstances();
             foreach (var (id, go) in _shellGOs)
             {
                 if (go == null) continue;
                 bool isCurrent = current != null && id == current.InstanceId;
-                go.SetActive(_isFloorView && !isCurrent);
+                // Fog of war (#158): solo salas descubiertas (visitadas o vecinas conectadas
+                // a una visitada). La sala actual se muestra como prefab world, no como shell.
+                bool visible = _isFloorView && !isCurrent && IsDiscovered(id, rooms);
+                go.SetActive(visible);
+                if (_shellIcons.TryGetValue(id, out var icon) && icon != null)
+                    icon.SetActive(visible);
             }
+        }
+
+        /// <summary>
+        /// Descubierta = visitada O vecina conectada por puerta a una sala visitada.
+        /// La adyacencia sale de <see cref="RoomInstance.Connections"/> (solo conexiones reales).
+        /// </summary>
+        private static bool IsDiscovered(Guid id, IReadOnlyDictionary<Guid, RoomInstance> rooms)
+        {
+            if (rooms == null || !rooms.TryGetValue(id, out var room) || room == null) return false;
+            if (room.Visited) return true;
+            foreach (var neighborId in room.Connections.Values)
+                if (rooms.TryGetValue(neighborId, out var neighbor) && neighbor != null && neighbor.Visited)
+                    return true;
+            return false;
         }
 
         private void MaterializeShellsIfNeeded()
@@ -169,7 +200,38 @@ namespace Rollgeon.Dungeon
 
                 cube.SetActive(false);
                 _shellGOs[id] = cube;
+
+                if (shell.Icon != null)
+                {
+                    var icon = CreateShellIcon(id, shell);
+                    icon.SetActive(false);
+                    _shellIcons[id] = icon;
+                }
             }
+        }
+
+        /// <summary>
+        /// Crea el <see cref="SpriteRenderer"/> del ícono de sala flotando sobre la cara
+        /// superior del shell, orientado hacia la cámara del floor view (ángulo fijo ⇒ se
+        /// billboardea una sola vez al materializar). Se parenta al root <b>sin escalar</b>
+        /// —no al cubo— para no heredar la escala no-uniforme del shell (x/z = tamaño de
+        /// sala, y ≈ 1) que deformaría el sprite.
+        /// </summary>
+        private GameObject CreateShellIcon(Guid id, FloorShell shell)
+        {
+            var iconGO = new GameObject($"ShellIcon_{id:N}");
+            iconGO.transform.SetParent(_shellRoot, worldPositionStays: false);
+            iconGO.transform.position = shell.WorldPosition + Vector3.up * (shell.Size.y * 0.5f + IconHeightOffset);
+            iconGO.transform.localScale = Vector3.one * IconWorldSize;
+
+            var cam = Camera.main;
+            iconGO.transform.rotation = cam != null
+                ? cam.transform.rotation
+                : Quaternion.Euler(90f, 0f, 0f); // fallback: plano apoyado sobre la cara superior.
+
+            var sr = iconGO.AddComponent<SpriteRenderer>();
+            sr.sprite = shell.Icon;
+            return iconGO;
         }
 
         /// <summary>
@@ -190,6 +252,10 @@ namespace Rollgeon.Dungeon
             foreach (var go in _shellGOs.Values)
                 if (go != null) DestroyObject(go);
             _shellGOs.Clear();
+
+            foreach (var icon in _shellIcons.Values)
+                if (icon != null) DestroyObject(icon);
+            _shellIcons.Clear();
         }
 
         /// <summary>

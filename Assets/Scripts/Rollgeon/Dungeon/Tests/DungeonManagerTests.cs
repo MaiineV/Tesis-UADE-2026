@@ -347,6 +347,47 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         // -----------------------------------------------------------------
+        // Visited — fog of war del floor view
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void GenerateFloor_OnlyStartRoomIsVisited()
+        {
+            var start = CreateRoom("start_0", RoomType.Start);
+            var layout = CreateLayout();
+            SetStartRoom(layout, start);
+
+            _manager.GenerateFloor(layout, 42);
+
+            var startId = _manager.CurrentRoomInstance.InstanceId;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                bool expected = instance.InstanceId == startId;
+                Assert.AreEqual(expected, instance.Visited,
+                    $"Solo la start room nace visitada (id {instance.InstanceId}).");
+            }
+        }
+
+        [Test]
+        public void EnterRoomByDoor_MarksDestinationVisited()
+        {
+            var start = CreateRoom("start_0", RoomType.Start);
+            var layout = CreateLayout();
+            SetStartRoom(layout, start);
+            _manager.GenerateFloor(layout, 42);
+
+            var dir = _manager.CurrentRoomInstance.Connections.Keys.First();
+            var destId = _manager.CurrentRoomInstance.Connections[dir];
+            Assume.That(_manager.GetAllRoomInstances()[destId].Visited, Is.False,
+                "Precondición: la sala destino arranca no visitada.");
+
+            _manager.EnterRoomByDoor(dir);
+
+            Assert.IsTrue(_manager.GetAllRoomInstances()[destId].Visited,
+                "Entrar a una sala la marca como visitada.");
+        }
+
+        // -----------------------------------------------------------------
         // Navegación
         // -----------------------------------------------------------------
 

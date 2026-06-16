@@ -92,5 +92,12 @@ namespace Rollgeon.Dungeon
         public Guid InstanceId;
         public Vector3 WorldPosition;
         public Vector3 Size;
+
+        /// <summary>
+        /// Sprite opcional dibujado sobre el shell en el floor view (ícono de sala
+        /// especial — boss, shop, etc.). Viene de <see cref="RoomSO.ShellIcon"/>.
+        /// <c>null</c> ⇒ solo se muestra el shell.
+        /// </summary>
+        public Sprite Icon;
     }
 }
