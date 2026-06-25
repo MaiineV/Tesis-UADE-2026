@@ -27,7 +27,11 @@ namespace Rollgeon.Grid
             _tileRenderers = new Dictionary<GridCoord, Renderer>();
             _styleColors = new Dictionary<string, Color>
             {
-                { "move", new Color(0.3f, 0.8f, 1f, 0.6f) },
+                // El rango de movimiento ahora está SIEMPRE pintado en Exploración
+                // (click-to-move permanente), así que se baja el alpha para que el
+                // tinte permanente no sea molesto. El path A* (verde) sigue marcando
+                // claramente el destino al hacer hover.
+                { "move", new Color(0.3f, 0.8f, 1f, 0.28f) },
                 { "attack", new Color(1f, 0.3f, 0.3f, 0.6f) },
                 { "selected", new Color(1f, 0.9f, 0.2f, 0.7f) },
                 // Verde brillante para el camino A* previewado durante hover. Se pinta
