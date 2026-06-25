@@ -39,6 +39,7 @@ namespace Rollgeon.Exploration
 
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
+        private EventManager.EventReceiver _onRoomEntered;
 
         public bool IsActive => _state != State.Inactive;
 
@@ -46,9 +47,11 @@ namespace Rollgeon.Exploration
         {
             _onPhaseEnter = OnPhaseEnter;
             _onPhaseExit = OnPhaseExit;
+            _onRoomEntered = OnRoomEntered;
 
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
+            EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEntered);
         }
 
         public static ExplorationBehaviorService CreateAndRegister()
@@ -150,6 +153,9 @@ namespace Rollgeon.Exploration
             }
 
             ExecuteBehavior(behavior, playerGuid, null, null);
+            // Acción instantánea (ej. Heal): re-armar el movimiento para no quedar sin
+            // click-to-move tras usarla. Movement nunca cae acá (siempre va por selección).
+            ArmMovement();
         }
 
         public void CancelSelection()
@@ -211,8 +217,49 @@ namespace Rollgeon.Exploration
                 EventManager.UnSubscribe(EventName.OnPhaseExit, _onPhaseExit);
                 _onPhaseExit = null;
             }
+            if (_onRoomEntered != null)
+            {
+                EventManager.UnSubscribe(EventName.OnRoomEntered, _onRoomEntered);
+                _onRoomEntered = null;
+            }
 
             _state = State.Inactive;
+        }
+
+        // En Exploración el modo movimiento está SIEMPRE activo: en vez de apretar el
+        // botón de Movement, el player se mueve clickeando una casilla. Esto re-arma la
+        // selección de movimiento (mismo flujo que el botón) cada vez que el player
+        // queda idle en Exploración. Si hay otra acción en curso (Selecting/Rolling) NO
+        // la pisa — el guard de _state evita el ForceCancel de OnBehaviorSelected.
+        private void ArmMovement()
+        {
+            if (_state != State.Idle) return;
+            if (!ServiceLocator.TryGetService<IPhaseService>(out var phase)
+                || phase.CurrentBase != GamePhase.Exploration)
+                return;
+
+            OnBehaviorSelected((int)HeroBehaviorSlot.Movement);
+        }
+
+        // Arma el movimiento un frame después para darle tiempo al TileRendererRegistrar
+        // (que también escucha OnRoomEntered) a registrar los renderers de la sala antes
+        // de pintar el rango — si no, el highlight saltea tiles recién cargados.
+        private IEnumerator ArmMovementNextFrame()
+        {
+            yield return null;
+            ArmMovement();
+        }
+
+        // Re-arma el movimiento recién cuando el pawn termina de caminar, para que el
+        // rango se recalcule desde la casilla de destino y no mientras se mueve.
+        private IEnumerator RearmMovementAfterArrival(Guid playerGuid)
+        {
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
+            {
+                var wait = visuals.WaitForMoveComplete(playerGuid);
+                if (wait != null) yield return wait;
+            }
+            ArmMovement();
         }
 
         private static bool TryFindActionRollEffect(HeroActionBehavior behavior,
@@ -278,6 +325,8 @@ namespace Rollgeon.Exploration
 
                 ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll, combo,
                     outcome.EffectiveTotal);
+                // Acción con tirada terminada (ej. Force Door) — re-armar movimiento.
+                ArmMovement();
             });
         }
 
@@ -312,6 +361,7 @@ namespace Rollgeon.Exploration
                         { TargetRef.At(ownerPos) },
                 };
                 ExecuteBehavior(behavior, playerGuid, selfResult, null);
+                ArmMovement();
                 return;
             }
 
@@ -319,6 +369,7 @@ namespace Rollgeon.Exploration
             {
                 var autoResult = targetSettings.AutoResolveTargets(ownerPos, playerGuid);
                 ExecuteBehavior(behavior, playerGuid, autoResult, null);
+                ArmMovement();
                 return;
             }
 
@@ -423,12 +474,20 @@ namespace Rollgeon.Exploration
             {
                 Debug.Log($"[ExplorationBehaviorService] Casilla frente a puerta dir={dir} seleccionada — caminar y cruzar al llegar.");
                 CoroutineHost.Run(CrossDoorAfterArrival(playerGuid, dir));
+                // El re-armado lo dispara OnRoomEntered al cargar la sala vecina.
             }
             // Si es la casilla frente a la puerta de SALIDA, transicionar de piso al llegar (#158).
             else if (picked.HasValue && exitTiles != null && exitTiles.Contains(picked.Value))
             {
                 Debug.Log("[ExplorationBehaviorService] Casilla frente a puerta de salida seleccionada — caminar y transicionar de piso.");
                 CoroutineHost.Run(ExitFloorAfterArrival(playerGuid));
+                // El re-armado lo dispara la primera sala del piso siguiente (OnRoomEntered).
+            }
+            else
+            {
+                // Movimiento normal dentro de la misma sala: al terminar de caminar,
+                // re-armar el modo movimiento para seguir clickeando casillas sin botón.
+                CoroutineHost.Run(RearmMovementAfterArrival(playerGuid));
             }
         }
 
@@ -493,7 +552,18 @@ namespace Rollgeon.Exploration
             {
                 Debug.Log("[ExplorationBehaviorService] OnPhaseEnter(Exploration) — _state cambia a Idle.");
                 _state = State.Idle;
+                // Entrar a Exploración (inicio de run, nuevo piso, o volver de combate)
+                // arma el modo movimiento permanente.
+                CoroutineHost.Run(ArmMovementNextFrame());
             }
+        }
+
+        // Entrar a una sala nueva (cruzar puerta, nuevo piso) re-arma el movimiento. El
+        // frame de delay deja que el TileRendererRegistrar registre los tiles primero, y
+        // el guard de fase en ArmMovement evita armar si la sala disparó combate.
+        private void OnRoomEntered(params object[] args)
+        {
+            CoroutineHost.Run(ArmMovementNextFrame());
         }
 
         private void OnPhaseExit(params object[] args)
