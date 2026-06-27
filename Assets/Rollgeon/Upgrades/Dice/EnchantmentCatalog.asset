@@ -1,0 +1,168 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 571ffb2fa7339ee4ab1b3e3169c90e97, type: 3}
+  m_Name: EnchantmentCatalog
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentCatalogSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 7a449381a24f3994d8493d675a9dc7ae, type: 2}
+    - {fileID: 11400000, guid: 6f90e8ee48bf3784e893803ce7c91fa6, type: 2}
+    - {fileID: 11400000, guid: 7d664a1866fd2f540ae8c016b78b5d77, type: 2}
+    - {fileID: 11400000, guid: 68a9332155d9b034aba4aa1592652162, type: 2}
+    - {fileID: 11400000, guid: 9aef6dc01840b8541b3441530b2f669e, type: 2}
+    - {fileID: 11400000, guid: d14ee834b95532e40a207a4015ee60a5, type: 2}
+    - {fileID: 11400000, guid: d7c77930662c7744e8c323484e9a42cd, type: 2}
+    - {fileID: 11400000, guid: 7437184f7dee4594bbac5a74541eb3ad, type: 2}
+    - {fileID: 11400000, guid: ce915610a0c89ca4a8453f6d65097851, type: 2}
+    - {fileID: 11400000, guid: 9eaed93c7c888ae40b188a1441072f17, type: 2}
+    - {fileID: 11400000, guid: 01bd2dca9603eb54c8583b9bb0ccc69e, type: 2}
+    - {fileID: 11400000, guid: d33c35546923d1d489bc60585a714c77, type: 2}
+    - {fileID: 11400000, guid: 1dd4d477e3fb6f14db806eb8d09d7202, type: 2}
+    - {fileID: 11400000, guid: d2bd695341c18664cbf25a59e66e2b6a, type: 2}
+    - {fileID: 11400000, guid: cc571e39b109d5240adf9aac9d608393, type: 2}
+    - {fileID: 11400000, guid: b737b909e9076e44ea1fcb901d1bdb66, type: 2}
+    - {fileID: 11400000, guid: cccf52ed4875ce74eb865688a537c7b9, type: 2}
+    - {fileID: 11400000, guid: b07f4b2987e8ec04fb0701605b03c2a8, type: 2}
+    - {fileID: 11400000, guid: 9f9234678f2a5254b99dd7097ba4f2db, type: 2}
+    - {fileID: 11400000, guid: 00964469057e179408e66d1c3d93678d, type: 2}
+    - {fileID: 11400000, guid: fc3e1265e18a733418a7c27cc494a8bc, type: 2}
+    - {fileID: 11400000, guid: 9a2c3fba0b805e0419d0cb8b4afa5d00, type: 2}
+    - {fileID: 11400000, guid: 63faf47a8fb01f2419efa39cbdf8d107, type: 2}
+    - {fileID: 11400000, guid: 3ca06658037ea114b9620418643f1e16, type: 2}
+    - {fileID: 11400000, guid: d34652ce8e7cdc54f9155b68112b085e, type: 2}
+    - {fileID: 11400000, guid: 9dea89f22c2ad93488b15ac5c1a73ec3, type: 2}
+    - {fileID: 11400000, guid: 45f1716ce26fb5944be4e4a00ea6dde6, type: 2}
+    - {fileID: 11400000, guid: 6d9cc65716967ba4d99318efe418d8d1, type: 2}
+    - {fileID: 11400000, guid: de0f0ffa2bd2ab74fb82c1b924d70fec, type: 2}
+    - {fileID: 11400000, guid: d073c5b549b53e644a3e87900067889c, type: 2}
+    - {fileID: 11400000, guid: 62f333bd7b79b6f42a51cc52f8483e01, type: 2}
+    - {fileID: 11400000, guid: 087900d38c5f021438d2487e1a1bcebe, type: 2}
+    - {fileID: 11400000, guid: bc51e8dc5712271498ada74e8a0ca951, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _entries
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.EnchantmentSO,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 33
+    - Name: 
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
+      Entry: 10
+      Data: 7
+    - Name: 
+      Entry: 10
+      Data: 8
+    - Name: 
+      Entry: 10
+      Data: 9
+    - Name: 
+      Entry: 10
+      Data: 10
+    - Name: 
+      Entry: 10
+      Data: 11
+    - Name: 
+      Entry: 10
+      Data: 12
+    - Name: 
+      Entry: 10
+      Data: 13
+    - Name: 
+      Entry: 10
+      Data: 14
+    - Name: 
+      Entry: 10
+      Data: 15
+    - Name: 
+      Entry: 10
+      Data: 16
+    - Name: 
+      Entry: 10
+      Data: 17
+    - Name: 
+      Entry: 10
+      Data: 18
+    - Name: 
+      Entry: 10
+      Data: 19
+    - Name: 
+      Entry: 10
+      Data: 20
+    - Name: 
+      Entry: 10
+      Data: 21
+    - Name: 
+      Entry: 10
+      Data: 22
+    - Name: 
+      Entry: 10
+      Data: 23
+    - Name: 
+      Entry: 10
+      Data: 24
+    - Name: 
+      Entry: 10
+      Data: 25
+    - Name: 
+      Entry: 10
+      Data: 26
+    - Name: 
+      Entry: 10
+      Data: 27
+    - Name: 
+      Entry: 10
+      Data: 28
+    - Name: 
+      Entry: 10
+      Data: 29
+    - Name: 
+      Entry: 10
+      Data: 30
+    - Name: 
+      Entry: 10
+      Data: 31
+    - Name: 
+      Entry: 10
+      Data: 32
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
