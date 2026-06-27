@@ -13,7 +13,7 @@ Test → fix → retest → keep or revert loop on a single skill.
 
 ## Phase 1: Parse Argument
 
-Read skill name from first arg. Verify `.claude/skills/[name]/SKILL.md` exists. If missing → stop.
+Read skill name from first arg. Verify `skills/[name]/SKILL.md` exists. If missing → stop.
 
 ## Phase 2: Baseline Test
 
