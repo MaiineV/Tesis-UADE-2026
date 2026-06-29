@@ -71,6 +71,14 @@ Shader "Rollgeon/PaletteCelLitPattern"
         // para WallOccluders. No se serializa por material — el default queda en 1.
         _AlphaCutoff ("Alpha Cutoff (1=visible, 0=hidden)", Range(0,1)) = 1
         _DitherScale ("Dither Scale (pixel chunkiness)", Range(1,32)) = 1
+
+        [Header(Hit Flash)]
+        _HitFlashAmount ("Hit Flash Amount", Range(0,1))   = 0
+        _HitFlashColor  ("Hit Flash Color",  Color)        = (1,1,1,1)
+
+        [Header(Emission)]
+        [Toggle] _EnableEmission ("Enable Emission", Float) = 0
+        [HDR] _EmissionColor     ("Emission Color",  Color) = (0,0,0,0)
     }
 
     SubShader
@@ -101,7 +109,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -145,6 +153,10 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             struct Attributes
@@ -414,7 +426,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float lightValue = CelLightVal(normalWS, mainLight, _LightWrap);
 
                 float3 addTint = float3(0, 0, 0);
-                #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
+                #if defined(_CLUSTER_LIGHT_LOOP) || defined(_ADDITIONAL_LIGHTS)
                 {
                     InputData inputData = (InputData)0;
                     inputData.positionWS              = IN.positionWS;
@@ -498,6 +510,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 }
 
                 color = saturate(color + addTint * _LightTintStrength);
+                color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
+                color += _EmissionColor.rgb * _EnableEmission;
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -535,6 +549,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -613,6 +628,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -666,6 +682,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -701,5 +718,6 @@ Shader "Rollgeon/PaletteCelLitPattern"
             }
             ENDHLSL
         }
+
     }
 }
