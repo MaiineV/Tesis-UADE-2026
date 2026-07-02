@@ -396,6 +396,11 @@ namespace Rollgeon.Exploration
             Debug.LogWarning($"[ExplorationBehaviorService] BeginSelection: behavior='{behavior.ActionName}' " +
                              $"validTargets={validTargets.Count} doorTiles={(doorTiles?.Count ?? 0)} → _state=Selecting (esperando click del user).");
 
+            // Movement está siempre armado en Exploración → no pintamos ningún tinte de
+            // piso (ni rango de fondo, ni path en hover, ni destino "selected"): en
+            // permanencia molesta. Click-to-move limpio; solo las puertas se pintan.
+            bool isMovement = behavior.IsBaseBehavior && behavior.Slot == HeroBehaviorSlot.Movement;
+
             controller.OnSelectionCompleted += OnSelectionCompleted;
             controller.BeginSelection(new SelectionRequest
             {
@@ -404,6 +409,8 @@ namespace Rollgeon.Exploration
                 OwnerGuid = playerGuid,
                 HighlightStyle = "move",
                 DoorTiles = doorTiles,
+                SuppressRangeHighlight = isMovement,
+                SuppressPathPreview = isMovement,
             });
         }
 

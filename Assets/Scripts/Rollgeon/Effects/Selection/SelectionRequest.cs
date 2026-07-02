@@ -18,5 +18,22 @@ namespace Rollgeon.Effects.Selection
         /// el resto de selecciones no lo setean → comportamiento intacto).
         /// </summary>
         public HashSet<GridCoord> DoorTiles;
+
+        /// <summary>
+        /// Si es true, NO se pinta el rango de casillas válidas (el tinte de fondo). Solo
+        /// se muestra el preview del path (verde) al hacer hover y las puertas. Usado por
+        /// el movimiento de Exploración, que está siempre armado: pintar todo el rango en
+        /// permanencia es molesto. Default false → combate y demás selecciones intactas.
+        /// </summary>
+        public bool SuppressRangeHighlight;
+
+        /// <summary>
+        /// Si es true, NO se pinta NINGÚN tinte de piso durante la selección: ni el preview
+        /// del path (verde) en hover, ni el tinte "selected" de la casilla clickeada. Las
+        /// puertas se siguen pintando (viven aparte). Usado por el movimiento de Exploración
+        /// (siempre armado): con permanencia cualquier tinte que siga al cursor molesta, el
+        /// user quiere click-to-move limpio. Default false → combate y demás intactos.
+        /// </summary>
+        public bool SuppressPathPreview;
     }
 }

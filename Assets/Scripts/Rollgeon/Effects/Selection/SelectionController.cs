@@ -27,6 +27,15 @@ namespace Rollgeon.Effects.Selection
         private GridCoord? _lastHoveredCoord;
         private bool _hasPathPreview;
 
+        // Si true, no se pinta el rango de fondo: solo el path verde (en hover) y las
+        // puertas. Lo setea el movimiento de Exploración (siempre armado). Sin rango de
+        // fondo que sobrescriba, el path anterior se limpia con ClearAll en cada cambio.
+        private bool _suppressRange;
+
+        // Si true, no se pinta NINGÚN tinte de piso (ni path en hover, ni "selected" al
+        // clickear); solo las puertas. Movimiento de Exploración → click-to-move limpio.
+        private bool _suppressPathPreview;
+
         public bool IsSelecting => _request != null;
 
         public event Action<TargetSelectionResult> OnSelectionCompleted;
@@ -39,6 +48,8 @@ namespace Rollgeon.Effects.Selection
             _doorCoords = new HashSet<GridCoord>();
             _lastHoveredCoord = null;
             _hasPathPreview = false;
+            _suppressRange = request.SuppressRangeHighlight;
+            _suppressPathPreview = request.SuppressPathPreview;
 
             if (request.ValidTargets != null)
             {
@@ -61,8 +72,10 @@ namespace Rollgeon.Effects.Selection
 
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                var style = request.HighlightStyle ?? "move";
-                highlight.Highlight(_validCoords, style);
+                // Con _suppressRange no se pinta el rango: el player ve la sala limpia y
+                // solo aparece el path verde al apuntar una casilla. Las puertas sí.
+                if (!_suppressRange)
+                    highlight.Highlight(_validCoords, request.HighlightStyle ?? "move");
                 RepaintDoors(highlight);
             }
             else
@@ -78,6 +91,10 @@ namespace Rollgeon.Effects.Selection
             var coord = target?.Coord;
             if (Nullable.Equals(coord, _lastHoveredCoord)) return;
             _lastHoveredCoord = coord;
+
+            // Movimiento de Exploración: click-to-move limpio, sin ningún tinte que siga
+            // al cursor. No calculamos ni pintamos path (las puertas ya viven aparte).
+            if (_suppressPathPreview) return;
 
             // Solo hacemos path preview en selecciones de movimiento. El estilo "move" lo
             // configuran los HeroActionBehavior de Movement; otras selecciones (attack,
@@ -113,7 +130,13 @@ namespace Rollgeon.Effects.Selection
             // SetPropertyBlock es barato.
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                highlight.Highlight(_validCoords, style);
+                // Sin rango de fondo, el path verde anterior no se sobrescribe solo —
+                // hay que limpiarlo con ClearAll antes de pintar el nuevo. Con rango, el
+                // repintado del rango ya tapa el path viejo (más barato que ClearAll).
+                if (_suppressRange)
+                    highlight.ClearAll();
+                else
+                    highlight.Highlight(_validCoords, style);
                 highlight.Highlight(path, PathHighlightStyle);
                 RepaintDoors(highlight); // las puertas quedan rojas por encima del rango/path
                 _hasPathPreview = true;
@@ -125,7 +148,10 @@ namespace Rollgeon.Effects.Selection
             if (!_hasPathPreview) return;
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                highlight.Highlight(_validCoords, rangeStyle);
+                if (_suppressRange)
+                    highlight.ClearAll(); // borra el path verde; no hay rango que repintar
+                else
+                    highlight.Highlight(_validCoords, rangeStyle);
                 RepaintDoors(highlight);
             }
             _hasPathPreview = false;
@@ -163,7 +189,10 @@ namespace Rollgeon.Effects.Selection
 
             _selected.Add(target);
 
-            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+            // En movimiento de Exploración no queremos ningún tinte de piso: saltamos el
+            // "selected" para que el destino no quede pintado mientras el pawn camina.
+            if (!_suppressPathPreview
+                && ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
                 highlight.HighlightSingle(target.Coord, "selected");
 
             var settings = _request.Settings;
