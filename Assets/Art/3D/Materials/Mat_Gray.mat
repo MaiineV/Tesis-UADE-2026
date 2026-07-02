@@ -104,10 +104,10 @@ Material:
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CreaseAlpha: 0.652
+    - _CreaseAlpha: 0.52
     - _CreaseDither: 0
     - _CreaseSmooth: 0.3
-    - _CreaseThreshold: 0.533
+    - _CreaseThreshold: 1
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
@@ -117,15 +117,18 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnableCrease: 0
+    - _EnableEmission: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HitFlashAmount: 0
     - _LightTintStrength: 0.4
     - _LightWrap: 0.1
     - _Metallic: 0
     - _MidThreshold: 0.65
     - _OcclusionStrength: 1
+    - _OutlineWidth: 0.022
     - _PaletteSlot: 9
     - _Parallax: 0.005
     - _QueueOffset: 0
@@ -151,10 +154,12 @@ Material:
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _CreaseColor: {r: 0.14999998, g: 0.14999998, b: 0.19999996, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _CreaseColor: {r: 1, g: 0.15690309, b: 0, a: 1}
+    - _EmissionColor: {r: 1, g: 0.46619305, b: 0, a: 1}
+    - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _LightColor: {r: 0.5882353, g: 0.6, b: 0.59607846, a: 1}
     - _MidColor: {r: 0.454902, g: 0.47058827, b: 0.47058827, a: 1}
+    - _OutlineColor: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowColor: {r: 0.21568629, g: 0.24705884, b: 0.27058825, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
