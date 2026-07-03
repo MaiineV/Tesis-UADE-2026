@@ -26,11 +26,11 @@ Examples:
 2. If no manifest, error: "Run `arcane install` first"
 3. For each argument:
    - If it starts with `+`, it's a profile name:
-     - Read `profiles/<name>.profile` from source
-     - Extract SKILLS, RULES, and AGENTS arrays
+     - Read `profiles/<name>.yaml` from source
+     - Extract skills, rules, and agents lists
      - Copy each skill, rule, and agent directory that isn't already installed
    - Otherwise it's a skill name:
-     - Search all `skills-*` directories in source for a matching folder
+     - Search `skills/` directory in source for a matching folder
      - Copy it to `.claude/skills/<skill-name>/`
 4. Update `arcane-manifest.json`:
    - Increment `total_skills` count
@@ -39,8 +39,8 @@ Examples:
 
 ```
 Added 3 skills:
-  [ok] docker-setup (from skills-devops)
-  [ok] terraform-init (from skills-devops)
+  [ok] docker-setup
+  [ok] terraform-init
   [skip] ci-cd-setup (already installed)
 
 Updated arcane-manifest.json

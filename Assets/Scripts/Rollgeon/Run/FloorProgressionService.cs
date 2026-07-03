@@ -103,18 +103,18 @@ namespace Rollgeon.Run
             runCtx.AdvanceFloor();
             int floorIndex = runCtx.FloorIndex;
 
-            // 4. Cubrir el swap con la pantalla de transición ANTES de regenerar.
-            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
-            {
-                screens.PushByStringId("FloorTransitionScreen", new FloorTransitionPayload
-                {
-                    FloorNumber = floorIndex + 1,
-                    FloorTitle = next.DisplayName,
-                });
-            }
+            // 4. Cubrir el swap con la pantalla de carga ANTES de regenerar. 4 pasos
+            //    reportables desde acá (push, frame wait, generar dungeon, restaurar
+            //    fase) — el último llega a 1f y dispara el reveal solo.
+            const int totalSteps = 4;
+            ServiceLocator.TryGetService<IScreenManager>(out var screens);
+            ServiceLocator.TryGetService<ILoadingScreenService>(out var loading);
+            loading?.Show(onRevealComplete: () => screens?.PushByStringId("ExplorationHUD"));
+            loading?.ReportProgress(1 / (float)totalSteps);
 
-            // Un frame para que la screen renderice y tape el swap del piso.
+            // Un frame para que la pantalla de carga renderice y tape el swap del piso.
             yield return null;
+            loading?.ReportProgress(2 / (float)totalSteps);
 
             // 5. Regenerar el piso. GenerateFloor dispara OnRoomEntered → RoomGridLoader +
             //    PlayerRoomTransitioner recolocan al héroe (el pawn sobrevive a ClearState).
@@ -128,9 +128,11 @@ namespace Rollgeon.Run
             {
                 Debug.LogError(LogPrefix + "IDungeonService no registrado — no se puede generar el piso siguiente.");
             }
+            loading?.ReportProgress(3 / (float)totalSteps);
 
             // 6. Restaurar exploración. La start room es Start/Cleared → no dispara combate.
             phase?.ReplacePhase(GamePhase.Exploration);
+            loading?.ReportProgress(1f);
 
             _transitioning = false;
         }

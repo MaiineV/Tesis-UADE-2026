@@ -1,10 +1,12 @@
 using System;
 using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.Input;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -89,6 +91,7 @@ namespace Rollgeon.UI.HUD
         // están holdeados — se resuelve lazy en el primer refresh.
         private DiceZoneView _diceZone;
         private Action<ComboMatchedPayload> _onComboMatched;
+        private IGameplayHotkeyService _hotkeys;
 
         private void Awake()
         {
@@ -144,6 +147,9 @@ namespace Rollgeon.UI.HUD
             _onComboMatched = _ => RefreshButtonInteractable();
             TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
 
+            if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys) && _hotkeys != null)
+                _hotkeys.Subscribe(GameplayHotkey.Roll, OnHotkeyRoll);
+
             _bound = true;
             RefreshLabel();
             RefreshButtonInteractable();
@@ -178,6 +184,11 @@ namespace Rollgeon.UI.HUD
             {
                 TypedEvent<ComboMatchedPayload>.Unsubscribe(_onComboMatched);
                 _onComboMatched = null;
+            }
+            if (_hotkeys != null)
+            {
+                _hotkeys.Unsubscribe(GameplayHotkey.Roll, OnHotkeyRoll);
+                _hotkeys = null;
             }
             _budget = null;
             _diceZone = null;
@@ -223,6 +234,14 @@ namespace Rollgeon.UI.HUD
                 return;
             }
             _onExtraRollPressed?.Invoke();
+        }
+
+        // R = click del botón Roll/Reroll, solo si está interactable (mismo gating de
+        // budget/energía/holds que aplica RefreshButtonInteractable).
+        private void OnHotkeyRoll(InputAction.CallbackContext _)
+        {
+            if (_extraRollButton != null && _extraRollButton.interactable)
+                _extraRollButton.onClick.Invoke();
         }
 
         private void HandleDiceRolled(params object[] args)
