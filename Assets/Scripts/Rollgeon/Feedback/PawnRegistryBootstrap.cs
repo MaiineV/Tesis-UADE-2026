@@ -18,7 +18,10 @@ namespace Rollgeon.Feedback
 
         public void Register()
         {
-            if (_instance != null) return;
+            // BUG-016: no gatear por `_instance != null` — el campo del SO puede sobrevivir
+            // a un ServiceLocator limpiado (tests EditMode, play sin domain reload) y el
+            // servicio quedaría sin registrar. La verdad está en el locator.
+            if (ServiceLocator.HasService<IPawnRegistry>()) return;
             _instance = new PawnRegistry();
             ServiceLocator.AddService<IPawnRegistry>(_instance, ServiceScope.Global);
         }

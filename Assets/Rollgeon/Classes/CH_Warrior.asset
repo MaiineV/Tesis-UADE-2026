@@ -534,7 +534,7 @@ MonoBehaviour:
       Data: 1
     - Name: Timing
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: EntityFilter
       Entry: 3
       Data: 2
@@ -1062,7 +1062,7 @@ MonoBehaviour:
       Data: 1
     - Name: Timing
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: EntityFilter
       Entry: 3
       Data: 2

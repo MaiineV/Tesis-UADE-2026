@@ -402,6 +402,7 @@ GameObject:
   - component: {fileID: 7937393824760835357}
   - component: {fileID: 3821633793728467348}
   - component: {fileID: -5253838994059866951}
+  - component: {fileID: 6661013225928534313}
   m_Layer: 0
   m_Name: Goblin
   m_TagString: Untagged
@@ -490,6 +491,29 @@ MonoBehaviour:
   _returnSeconds: 0.18
   _strength: 1
   _localSpace: 1
+--- !u!114 &6661013225928534313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816966952657547766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25c2f9ec2b6def84d93508072eb6fd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnMaterialFeedback
+  _hitFlashSeconds: 0.12
+  _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  _selectedCreaseColor: {r: 1, g: 0, b: 0, a: 1}
+  _selectedCreaseThreshold: 1
+  _selectedCreaseSmooth: 0.3
+  _selectedCreaseAlpha: 0.52
+  _renderers:
+  - {fileID: 3004957286605185089}
+  - {fileID: 259043744524054608}
+  - {fileID: 5586238081035726864}
+  - {fileID: 1271649045104336698}
 --- !u!1001 &4366254673467139743
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -547,8 +571,28 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
+--- !u!23 &259043744524054608 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -4683669308469848369, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
+  m_PrefabInstance: {fileID: 4366254673467139743}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1271649045104336698 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -5963395461492672091, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
+  m_PrefabInstance: {fileID: 4366254673467139743}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &3004957286605185089 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1525539152500033246, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
+  m_PrefabInstance: {fileID: 4366254673467139743}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4256662512131932532 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
+  m_PrefabInstance: {fileID: 4366254673467139743}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &5586238081035726864 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8151023354082563727, guid: 827a7ef303d5a90438d926eda8ee234f, type: 3}
   m_PrefabInstance: {fileID: 4366254673467139743}
   m_PrefabAsset: {fileID: 0}
