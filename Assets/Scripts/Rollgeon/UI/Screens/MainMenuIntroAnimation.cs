@@ -6,10 +6,11 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Animación de entrada de <c>01_MainMenu</c>: desvanece tres overlays con
-    /// shaders custom (FadeUI, DistorcionUI, BurnUI), empuja un título y hace
-    /// subir un set configurable de elementos. Se dispara una sola vez, apenas
-    /// la escena carga.
+    /// Animación de entrada de <c>01_MainMenu</c>: abre un telón (CurtainUI) a
+    /// los costados y desvanece dos overlays más con shaders custom
+    /// (DistorcionUI, BurnUI), empuja un título y hace subir un set
+    /// configurable de elementos. Se dispara una sola vez, apenas la escena
+    /// carga.
     /// </summary>
     /// <remarks>
     /// [SETUP] Vive en un GameObject hijo de <c>MainMenuScreen</c>
@@ -43,11 +44,12 @@ namespace Rollgeon.UI.Screens
         [SerializeField] private float _tituloPushDelay = 0f;
         [SerializeField] private Ease _tituloPushEase = Ease.InOutSine;
 
-        [Title("FadeUI")]
-        [SerializeField] private Image _fadeOverlay;
-        [SerializeField] private float _fadeDuration = 1f;
-        [SerializeField] private float _fadeDelay = 0f;
-        [SerializeField] private Ease _fadeEase = Ease.Linear;
+        [Title("Telón (CurtainUI)")]
+        [SerializeField] private RectTransform _curtainLeft;
+        [SerializeField] private RectTransform _curtainRight;
+        [SerializeField] private float _curtainSlideDuration = 1.2f;
+        [SerializeField] private float _curtainSlideDelay = 0f;
+        [SerializeField] private Ease _curtainEase = Ease.InOutSine;
 
         [Title("DistorcionUI")]
         [SerializeField] private Image _distorcionOverlay;
@@ -93,7 +95,7 @@ namespace Rollgeon.UI.Screens
         {
             PlayScroll();
             PlayTitulo();
-            PlayFadeUI();
+            PlayCurtains();
             PlayDistorcionUI();
             PlayBurnUI();
             PlayButtonsFadeIn();
@@ -121,16 +123,25 @@ namespace Rollgeon.UI.Screens
                 startDelay: _tituloPushDelay);
         }
 
-        private void PlayFadeUI()
+        private void PlayCurtains()
         {
-            if (_fadeOverlay == null) return;
+            if (_curtainLeft != null)
+            {
+                var targetX = _curtainLeft.anchoredPosition.x - _curtainLeft.rect.width;
+                var leftGO = _curtainLeft.gameObject;
+                Tween.UIAnchoredPositionX(_curtainLeft, targetX, _curtainSlideDuration, _curtainEase,
+                        startDelay: _curtainSlideDelay)
+                    .OnComplete(() => leftGO.SetActive(false));
+            }
 
-            var material = _fadeOverlay.material;
-            material.SetFloat(ProgressId, 0f);
-            var overlayGO = _fadeOverlay.gameObject;
-
-            Tween.MaterialProperty(material, ProgressId, 1f, _fadeDuration, _fadeEase, startDelay: _fadeDelay)
-                .OnComplete(() => overlayGO.SetActive(false));
+            if (_curtainRight != null)
+            {
+                var targetX = _curtainRight.anchoredPosition.x + _curtainRight.rect.width;
+                var rightGO = _curtainRight.gameObject;
+                Tween.UIAnchoredPositionX(_curtainRight, targetX, _curtainSlideDuration, _curtainEase,
+                        startDelay: _curtainSlideDelay)
+                    .OnComplete(() => rightGO.SetActive(false));
+            }
         }
 
         private void PlayDistorcionUI()
