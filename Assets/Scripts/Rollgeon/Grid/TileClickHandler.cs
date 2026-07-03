@@ -86,9 +86,8 @@ namespace Rollgeon.Grid
             if (cam == null) return;
 
             var screenPos = _positionAction.ReadValue<Vector2>();
-            var rtPos = new Vector2(
-                screenPos.x / Screen.width  * cam.pixelWidth,
-                screenPos.y / Screen.height * cam.pixelHeight);
+            var rtPos = RenderTextureCursor.ScreenToRt(
+                screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
             var ray = cam.ScreenPointToRay(rtPos);
             GridCoord? hovered = null;
@@ -144,9 +143,8 @@ namespace Rollgeon.Grid
             // Si la cámara renderiza a un RenderTexture (pixel art pipeline), sus
             // dimensiones internas (pixelWidth/Height) difieren de las de pantalla.
             // Escalamos screenPos al espacio del RT antes de pasarlo al raycast.
-            var rtPos = new Vector2(
-                screenPos.x / Screen.width  * cam.pixelWidth,
-                screenPos.y / Screen.height * cam.pixelHeight);
+            var rtPos = RenderTextureCursor.ScreenToRt(
+                screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
             Debug.Log($"[TileClickHandler] Raycast from screenPos={screenPos} rtPos={rtPos} layer={_tileLayer.value}");
             var ray = cam.ScreenPointToRay(rtPos);
