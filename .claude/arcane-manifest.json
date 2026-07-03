@@ -1,5 +1,5 @@
 {
-  "arcane_version": "1.4.0",
+  "arcane_version": "3fb45e0feaad",
   "cli": "npm",
   "profile_command": "unity-dev+unity-design+statusline",
   "profiles": [
@@ -84,7 +84,7 @@
     "game"
   ],
   "source": "C:\\Users\\agust\\.arcane\\cache\\3fb45e0feaad",
-  "source_version": "1.4.0",
+  "source_version": "3fb45e0feaad",
   "worktree": {
     "is_worktree": false,
     "main_worktree": "C:\\Users\\agust\\Documents\\GitHub\\Tesis-UADE-2026",
@@ -143,11 +143,10 @@
       "test-setup": "4d131e46dd2a1ecf00e781e3d2e882c0b7f486c28f8153899f5bee1bdbca8f72",
       "unity-game-architecture": "f3bcf4a717beb2d49abb62ce99c6acfc6f3777095dc426dff67249ff6b3feaba",
       "user-persona": "816dff320087b248cb3609ce2757f0b8635196adf4d31534f4a6d6cb3060cd87",
-      "ux-design": "cb040d2eddf006d6755798c2ecae4c1da511d5ec8f1b285ab70749cc9ed9a668",
-      "_templates": "18d97584caf56888a9dd8c4120c4df94116adb468d07fd71efad5c30bb919c9a"
+      "ux-design": "cb040d2eddf006d6755798c2ecae4c1da511d5ec8f1b285ab70749cc9ed9a668"
     },
     "rules": {
-      "ai-code.md": "0b2ed79ed959c24262ca1b7ae353a78d574019d64eca040293753e165c5adb21",
+      "ai-code.md": "77724351c28907af87630f98b6e38dcdbcabb4d74e02a4df17874b1cc1276a0b",
       "data-files.md": "e0f5ca44b833fae2b793ae23c433d873e4f97f36b3399c0392a56ebf20ff4385",
       "design-docs.md": "8e3ea21cd637f39b2fbca4ec1d660c97e0143f1b211466c7b03cf6447a59bfb4",
       "engine-code.md": "c4b2210d0947781735b2b456e73e370494a3403306ca320c7ae403d92c0ebee8",
@@ -175,11 +174,13 @@
       "pre-compact.sh": "d3e015715fbdabac8acb9db42c3868739a5c1776b7eab01e327744eb140ecf0b",
       "session-start.sh": "2875afb86b212448bc2a4d538f44c19b231c9995b663dd21888640b1c9e32e89",
       "session-stop.sh": "261955eaa7249e770c8a75b8c3c26e7b4f76f82519c546729cb35bf14e06d624",
+      "statusline.sh": "3048c41cf030de6daa3dbb9e3a8fdbbdfc3940fb9c2e703fed49593542abaf19",
       "validate-assets.sh": "bb4877adc6ab469005d8db5a37acff89d148a87ed8a50c7e1aad01a3f7c6a151",
       "validate-commit.sh": "a6d66d0ce3e0c8890e51b120d4c56560ebc439b14ec754aceb991437f48778c3",
       "validate-push.sh": "86ff656f617e73fc118847f0ecf038c6c11a633d2d96e65676759d96c6defa3f",
       "validate-secrets.sh": "15def2070b886485a4eaee4317bc748c5b389e8ff9cbe781b4fb4bcab1275670",
       "validate-skill-change.sh": "fff75731d79c25041929fec75c43b02cbd74dedf0d6a7f247f63f4eec62dd370"
     }
-  }
+  },
+  "updated_at": "2026-06-29T16:23:42Z"
 }
