@@ -13,7 +13,9 @@ namespace Rollgeon.Effects.Tests
     [TestFixture]
     public sealed class SelectionControllerTests
     {
-        private static readonly int ColorId = Shader.PropertyToID("_BaseColor");
+        // El highlight ahora tintea via el contrato _HitFlash* del shader del piso
+        // (TileHighlightService.ApplyStyle) — el color del estilo va a _HitFlashColor.
+        private static readonly int ColorId = Shader.PropertyToID("_HitFlashColor");
 
         private static readonly Color PathColor = new Color(0.45f, 1f, 0.55f, 0.85f);
         private static readonly Color DoorColor = new Color(1f, 0f, 0f, 0.7f);

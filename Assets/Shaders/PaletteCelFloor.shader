@@ -61,6 +61,12 @@ Shader "Rollgeon/PaletteCelFloor"
         _CrackDensity          ("Crack Density    (0=todo 1=nada)", Range(0,1))   = 0.45
         _CrackDensityScale     ("Crack Density Scale",              Float)        = 0.7
         _CrackSeed             ("Crack Seed",                       Float)        = 0.0
+
+        // Mismo contrato que PaletteCelLit: escrito por MPB (TileHighlightService) para
+        // el highlight de celdas — lerp final hacia el color, preserva el patrón del piso.
+        [Header(Hit Flash)]
+        _HitFlashAmount ("Hit Flash Amount", Range(0,1))   = 0
+        _HitFlashColor  ("Hit Flash Color",  Color)        = (1,1,1,1)
     }
 
     SubShader
@@ -133,6 +139,8 @@ Shader "Rollgeon/PaletteCelFloor"
                 float  _CrackSeed;
                 float  _LightTintStrength;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
             CBUFFER_END
 
             struct Attributes
@@ -394,6 +402,13 @@ Shader "Rollgeon/PaletteCelFloor"
                 }
 
                 color = saturate(color + addTint * _LightTintStrength);
+                // Highlight de celda (MPB, TileHighlightService): tinte MULTIPLICATIVO,
+                // no lerp plano — multiplicar preserva el patrón/sombras del piso (lo
+                // oscuro sigue oscuro) y solo corre el matiz hacia el color del estilo.
+                // El ×2.0 es la ganancia estilo "overlay": permite que tintes claros
+                // aclaren la celda además de teñirla (×1 solo podría oscurecer).
+                float3 tinted = saturate(color * _HitFlashColor.rgb * 2.0);
+                color = lerp(color, tinted, _HitFlashAmount);
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -432,6 +447,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -493,6 +509,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor;
             CBUFFER_END
 
             struct DOAttr { float4 posOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -530,6 +547,7 @@ Shader "Rollgeon/PaletteCelFloor"
                 float _EnableCracks; float _CrackScale; float _CrackWidth;
                 float _CrackDarken; float _CrackDensity; float _CrackDensityScale; float _CrackSeed;
                 float _LightTintStrength; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor;
             CBUFFER_END
 
             struct DNAttr { float4 posOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
