@@ -12,9 +12,9 @@ namespace Rollgeon.UI.HUD.DragDrop
     /// <remarks>
     /// Sólo arranca el drag si el botón está <see cref="ActionButtonState.Available"/> (gate
     /// load-bearing: en Locked/Selected/Used hay otra selección/roll en curso y arrancar un
-    /// drag re-entraría en el flujo de combate). El click legacy sigue funcionando: UGUI marca
-    /// <c>eligibleForClick=false</c> cuando hubo un drag real (&gt; <c>pixelDragThreshold</c>),
-    /// así que un tap corto dispara <c>Button.onClick</c> (select) y un drag dispara el drop.
+    /// drag re-entraría en el flujo de combate). Desde CNF-002 v2 el click está deshabilitado
+    /// en los chips de combate (<see cref="ActionButton.SetClickActivation"/>, lo apaga el
+    /// controller al attachear) — la única activación es el drag.
     /// </remarks>
     [RequireComponent(typeof(ActionButton))]
     [AddComponentMenu("Rollgeon/UI/HUD/Action Drag Handle")]
@@ -47,16 +47,14 @@ namespace Rollgeon.UI.HUD.DragDrop
         public void OnBeginDrag(PointerEventData eventData)
         {
             _dragging = false;
-            if (_button == null) { Debug.Log("[DragDrop] OnBeginDrag: _button null — handle sin ActionButton."); return; }
+            if (_button == null) return;
 
-            Debug.Log($"[DragDrop] OnBeginDrag slot={_button.Slot} state={_button.State} canBegin={ActionDragPolicy.CanBeginDrag(_button.State)}");
             if (!ActionDragPolicy.CanBeginDrag(_button.State)) return;
 
             var controller = ResolveController();
             if (controller == null) { Debug.LogWarning("[DragDrop] OnBeginDrag: no se resolvió ActionDragController."); return; }
 
             _dragging = controller.BeginDrag(_button, eventData);
-            Debug.Log($"[DragDrop] BeginDrag devolvió dragging={_dragging}");
         }
 
         public void OnDrag(PointerEventData eventData)

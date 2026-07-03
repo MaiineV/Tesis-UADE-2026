@@ -66,6 +66,12 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Range(0f, 1f), Tooltip("Multiplicador aplicado al color base cuando Used.")]
         private float _usedColorMultiplier = 0.45f;
 
+        [Title("Activación")]
+        [SerializeField, Tooltip("Si false, el click NO invoca OnClicked — el botón se activa " +
+                 "solo por drag-and-drop (CNF-002 v2). ActionDragController lo apaga al " +
+                 "attachear su ActionDragHandle; default true para usos sin drag.")]
+        private bool _clickActivates = true;
+
         // ======================================================================
         // Internal state
         // ======================================================================
@@ -222,8 +228,13 @@ namespace Rollgeon.UI.HUD
         // Click handler
         // ======================================================================
 
+        /// <summary>Habilita/deshabilita la activación por click. El drag (que invoca
+        /// <see cref="OnClicked"/> directo vía el dispatcher) no pasa por este gate.</summary>
+        public void SetClickActivation(bool enabled) => _clickActivates = enabled;
+
         private void HandleClick()
         {
+            if (!_clickActivates) return;
             OnClicked?.Invoke();
         }
     }

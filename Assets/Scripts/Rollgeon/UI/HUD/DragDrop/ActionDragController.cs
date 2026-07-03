@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;
@@ -65,6 +67,9 @@ namespace Rollgeon.UI.HUD.DragDrop
         private SelectionSettings _selection;
         private bool _requiresTile;
         private readonly HashSet<GridCoord> _validCoords = new HashSet<GridCoord>();
+        private string _activeStyle = "move";
+        private bool _hasHover;
+        private GridCoord _hoverCoord;
 
         private RectTransform _ghost;
         private ActionPlayDispatcher _dispatcher;
@@ -76,7 +81,6 @@ namespace Rollgeon.UI.HUD.DragDrop
         private void OnEnable()
         {
             ResolveTileLayer();
-            Debug.Log($"[DragDrop] Controller OnEnable — autoAttach={_autoAttachHandles} tileLayer={_tileLayer.value} active={isActiveAndEnabled}");
             if (_autoAttachHandles) AttachHandles();
         }
 
@@ -106,8 +110,11 @@ namespace Rollgeon.UI.HUD.DragDrop
                     button.gameObject.AddComponent<ActionDragHandle>();
                     attached++;
                 }
+
+                // CNF-002 v2: los chips de combate se activan SOLO por drag — el click
+                // queda deshabilitado en cada botón que este controller gobierna.
+                button.SetClickActivation(false);
             }
-            Debug.Log($"[DragDrop] AttachHandles — buttons encontrados={buttons.Length} handles nuevos={attached}");
         }
 
         // ---- Public API (llamada por ActionDragHandle) ----------------------
@@ -127,8 +134,6 @@ namespace Rollgeon.UI.HUD.DragDrop
                 ComputeAndHighlightValidTiles();
 
             CreateGhost(button, eventData);
-            Debug.Log($"[DragDrop] BeginDrag ok slot={button.Slot} requiresTile={_requiresTile} " +
-                      $"selection={(_selection != null)} validCoords={_validCoords.Count} ghost={(_ghost != null)}");
             return true;
         }
 
@@ -152,6 +157,7 @@ namespace Rollgeon.UI.HUD.DragDrop
             _selection = null;
             _requiresTile = false;
             _validCoords.Clear();
+            _hasHover = false;
 
             // committed no dispara nada extra hoy; se deja el hook para feedback futuro
             // (SFX de drop aceptado / rechazado, tween de vuelta del ghost, etc.).
@@ -164,31 +170,21 @@ namespace Rollgeon.UI.HUD.DragDrop
         {
             // Drop sobre la HUD (cualquier UI con raycast) = cancelar. El raycast 3D
             // "atravesaría" la HUD hacia un tile detrás, así que gateamos antes.
-            if (IsPointerOverUI(eventData))
-            {
-                Debug.Log("[DragDrop] TryCommit: cancelado — pointer sobre UI (IsPointerOverGameObject).");
-                return false;
-            }
+            if (IsPointerOverUI(eventData)) return false;
 
             bool hitTile = TryRaycastCoord(eventData, out var coord);
-            Debug.Log($"[DragDrop] TryCommit hitTile={hitTile} coord={coord} requiresTile={_requiresTile} " +
-                      $"isValid={(hitTile && ActionDragPolicy.IsValidDrop(coord, _validCoords))} validCoords={_validCoords.Count}");
 
             if (_requiresTile)
             {
-                // Movement: sólo commitea si la celda soltada está en el set válido.
+                // Targeting por celda (Movement, ataques): sólo commitea si la celda
+                // soltada está en el set válido.
                 if (!hitTile || !ActionDragPolicy.IsValidDrop(coord, _validCoords))
                     return false;
             }
-            else
-            {
-                // Acciones auto-target / instantáneas: soltar sobre el tablero (cualquier tile)
-                // commitea. Sin tile debajo (void off-grid) = cancelar.
-                if (!hitTile)
-                    return false;
-            }
+            // CNF-002 v2: acciones auto-target / instantáneas (Heal, Force Door) se activan
+            // al soltar en CUALQUIER lado fuera de la UI — no requieren celda debajo. El
+            // gate IsPointerOverUI de arriba ya cubre "soltar de vuelta sobre los chips".
 
-            Debug.Log($"[DragDrop] TryCommit: commit → dispatcher.Commit(coord={coord})");
             ResolveDispatcher()?.Commit(button, coord);
             return true;
         }
@@ -197,7 +193,7 @@ namespace Rollgeon.UI.HUD.DragDrop
 
         // Mirror de PlayerSelectingSubState.Enter: busca el primer effect con selección
         // BeforeRoll y devuelve su SelectionSettings. Null si la acción no requiere selección
-        // (ataques auto-target, self-cast, etc.).
+        // (self-cast, auto-resolve, etc.).
         private SelectionSettings ResolveBeforeRollSelection(ActionButton button)
         {
             if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps?.CurrentHero == null)
@@ -211,7 +207,25 @@ namespace Rollgeon.UI.HUD.DragDrop
                 if (group?.Effects == null) continue;
                 foreach (var eff in group.Effects)
                 {
-                    if (eff != null && eff.RequiresSelectionAt(SelectionTiming.BeforeRoll))
+                    if (eff == null) continue;
+
+                    // CNF-002: los ataques son EffChain. La selección real (Occupied+Enemies,
+                    // BeforeRoll) vive en los effects de la phase 0 — el Selection propio del
+                    // chain es un default vacío que igual reporta BeforeRoll, así que hay que
+                    // mirar adentro (mismo criterio que CombatHandoffService.FindPhaseSelectionAt).
+                    if (eff is EffChain chain)
+                    {
+                        var phase0 = chain.PhaseCount > 0 ? chain.Phases[0] : null;
+                        if (phase0?.Effects?.Effects == null) continue;
+                        foreach (var phaseEff in phase0.Effects.Effects)
+                        {
+                            if (phaseEff != null && phaseEff.RequiresSelectionAt(SelectionTiming.BeforeRoll))
+                                return phaseEff.GetSelection();
+                        }
+                        continue;
+                    }
+
+                    if (eff.RequiresSelectionAt(SelectionTiming.BeforeRoll))
                         return eff.GetSelection();
                 }
             }
@@ -230,9 +244,17 @@ namespace Rollgeon.UI.HUD.DragDrop
                 foreach (var t in tiles)
                     if (t != null) _validCoords.Add(t.Coord);
 
+            // CNF-002: selecciones de enemigo se pintan rojas ("attack"), igual que el
+            // highlight que abre el handoff al commitear. El resto usa el estilo default.
+            _activeStyle = (_selection.EntityFilter & EntityFilterMask.Enemies) != 0
+                ? "attack"
+                : _highlightStyle;
+
             if (_validCoords.Count > 0
                 && ServiceLocator.TryGetService<ITileHighlightService>(out var hl) && hl != null)
-                hl.Highlight(_validCoords, _highlightStyle);
+            {
+                hl.Highlight(_validCoords, _activeStyle);
+            }
         }
 
         private void ClearHighlights()
@@ -243,7 +265,7 @@ namespace Rollgeon.UI.HUD.DragDrop
 
         // ---- Raycast (mirror TileClickHandler) ------------------------------
 
-        private bool TryRaycastCoord(PointerEventData eventData, out GridCoord coord)
+        private bool TryRaycastCoord(PointerEventData eventData, out GridCoord coord, bool log = true)
         {
             coord = default;
             var cam = _camera != null ? _camera : Camera.main;
@@ -252,6 +274,21 @@ namespace Rollgeon.UI.HUD.DragDrop
             var rtPos = RenderTextureCursor.ScreenToRt(
                 eventData.position, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
             var ray = cam.ScreenPointToRay(rtPos);
+
+            // CNF-002 v2: primero raycast SIN máscara — soltar SOBRE el modelo del enemigo
+            // debe targetear SU celda. Con la máscara de tiles sola, el ray atraviesa el
+            // modelo (los pawns no son layer Tile) y pega en la celda que queda DETRÁS,
+            // cancelando el drop en silencio (cámara en ángulo).
+            if (Physics.Raycast(ray, out var hitAny, 100f))
+            {
+                var pawn = hitAny.collider.GetComponentInParent<EntityPawn>();
+                if (pawn != null
+                    && ServiceLocator.TryGetService<IGridManager>(out var pawnGrid) && pawnGrid != null
+                    && pawnGrid.TryGetPosition(pawn.EntityGuid, out coord))
+                {
+                    return true;
+                }
+            }
 
             if (!Physics.Raycast(ray, out var hit, 100f, _tileLayer))
                 return false;
@@ -312,10 +349,53 @@ namespace Rollgeon.UI.HUD.DragDrop
         {
             if (_ghost == null || _dragLayer == null) return;
 
+            // Snap: sobre una celda válida, el ghost se imanta al centro de la celda en vez
+            // de seguir libre al puntero — lee mejor cuál celda va a recibir el drop.
+            var screenPos = eventData.position;
+            GridCoord hoverCoord = default;
+            bool snapped = _requiresTile && TrySnapToValidCell(eventData, ref screenPos, out hoverCoord);
+            if (_requiresTile) UpdateHoverHighlight(snapped, hoverCoord);
+
             var cam = GetCanvasCamera(_dragLayer);
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _dragLayer, eventData.position, cam, out var local))
+                    _dragLayer, screenPos, cam, out var local))
                 _ghost.anchoredPosition = local;
+        }
+
+        // Devuelve true (y sobreescribe screenPos con el centro de la celda proyectado a
+        // pantalla) si el puntero está sobre una celda válida del drag en curso.
+        private bool TrySnapToValidCell(PointerEventData eventData, ref Vector2 screenPos, out GridCoord coord)
+        {
+            if (!TryRaycastCoord(eventData, out coord, log: false)) return false;
+            if (!ActionDragPolicy.IsValidDrop(coord, _validCoords)) return false;
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
+
+            var cam = _camera != null ? _camera : Camera.main;
+            if (cam == null) return false;
+
+            // WorldToScreenPoint devuelve píxeles del RT de la cámara — hay que
+            // reescalar a pantalla (inversa del ScreenToRt que usa el picking).
+            var rtPos = cam.WorldToScreenPoint(grid.GridToWorld(coord));
+            if (rtPos.z <= 0f) return false;
+            screenPos = RenderTextureCursor.RtToScreen(
+                new Vector2(rtPos.x, rtPos.y), Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
+            return true;
+        }
+
+        // La celda snapeada se marca con el estilo "selected" (amarillo) por encima del set
+        // base. Al cambiar/perder el hover se repinta el set completo con el estilo activo —
+        // más barato que trackear el estilo previo por celda y no toca otros overlays.
+        private void UpdateHoverHighlight(bool snapped, GridCoord coord)
+        {
+            if (snapped && _hasHover && coord.Equals(_hoverCoord)) return;
+            if (!snapped && !_hasHover) return;
+
+            _hasHover = snapped;
+            _hoverCoord = coord;
+
+            if (!ServiceLocator.TryGetService<ITileHighlightService>(out var hl) || hl == null) return;
+            if (_validCoords.Count > 0) hl.Highlight(_validCoords, _activeStyle);
+            if (snapped) hl.HighlightSingle(coord, "selected");
         }
 
         private void DestroyGhost()

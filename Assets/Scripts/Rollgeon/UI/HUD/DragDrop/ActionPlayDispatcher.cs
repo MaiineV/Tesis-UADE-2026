@@ -15,8 +15,9 @@ namespace Rollgeon.UI.HUD.DragDrop
     /// La cadena <c>OnBehaviorSelected → DoConfirm → RequestAction → PlayerSelectingSubState →
     /// SelectionController.BeginSelection</c> es síncrona, así que cuando
     /// <see cref="ActionButton.OnClicked"/> retorna, <see cref="ISelectionController.IsSelecting"/>
-    /// ya es <c>true</c> para acciones con selección BeforeRoll (Movement). No hace falta
-    /// deferral. Para ataques con dados (auto-target) no se abre selección y el feed se saltea.
+    /// ya es <c>true</c> para acciones con selección BeforeRoll. No hace falta deferral.
+    /// Desde CNF-002 los ataques también abren selección BeforeRoll (elegir enemigo antes de
+    /// tirar), así que soltar Attack sobre un enemigo lo targetea y dispara la tirada.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Action Play Dispatcher")]
     public sealed class ActionPlayDispatcher : MonoBehaviour
@@ -37,19 +38,16 @@ namespace Rollgeon.UI.HUD.DragDrop
 
             if (!ServiceLocator.TryGetService<ISelectionController>(out var selection) || selection == null)
             {
-                Debug.LogWarning("[DragDrop] Commit: no hay ISelectionController registrado.");
                 return;
             }
 
-            Debug.Log($"[DragDrop] Commit: tras OnClicked IsSelecting={selection.IsSelecting} coord={coord}");
 
-            // 2) Si la acción abrió una selección de tile (Movement / chain con target before-roll),
-            //    la autocompletamos con la celda soltada. Con AutoAccept + 1 target se resuelve y
-            //    ejecuta síncrono. Ataques auto-target no abren selección → IsSelecting == false.
+            // 2) Si la acción abrió una selección de tile (Movement / ataque con target
+            //    before-roll, CNF-002), la autocompletamos con la celda soltada. Con
+            //    AutoAccept + 1 target se resuelve síncrono (en ataques: dispara la tirada).
             if (selection.IsSelecting)
                 selection.OnTargetClicked(TargetRef.At(coord));
 
-            Debug.Log($"[DragDrop] Commit: tras OnTargetClicked IsSelecting={selection.IsSelecting}");
 
             // 3) Atomicidad: si sigue seleccionando, la celda no era válida o la acción no se
             //    satisface con un solo drop → cancelar (el cancel de Movement no cobra energía).
