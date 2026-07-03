@@ -8,12 +8,14 @@ using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
+using Rollgeon.Input;
 using Rollgeon.Movement;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -98,6 +100,7 @@ namespace Rollgeon.UI.HUD
         private int? _selectedSlot;
 
         private IMovementService _movementService;
+        private IGameplayHotkeyService _hotkeys;
 
         // ======================================================================
         // Lifecycle
@@ -156,6 +159,8 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
 
+            HookHotkeys(true);
+
             if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
@@ -200,6 +205,8 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
+
+            HookHotkeys(false);
 
             if (_movementService != null)
             {
@@ -367,6 +374,71 @@ namespace Rollgeon.UI.HUD
 
             _selectedSlot = index;
             RecomputeButtonStates();
+        }
+
+        // ======================================================================
+        // Hotkeys (teclado) — mirror del click, gateado por interactable
+        // ======================================================================
+
+        // Suscribe/desuscribe las teclas a los mismos paths que los botones. Un
+        // hotkey solo dispara si el botón está interactable, así hereda el gating
+        // (turno, energía, chain, once-per-turn) sin duplicar reglas.
+        private void HookHotkeys(bool subscribe)
+        {
+            if (subscribe)
+            {
+                if (_hotkeys == null
+                    && !ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys))
+                    return;
+            }
+            if (_hotkeys == null) return;
+
+            if (subscribe)
+            {
+                _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Subscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
+            }
+            else
+            {
+                _hotkeys.Unsubscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Unsubscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Unsubscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
+                _hotkeys = null;
+            }
+        }
+
+        private void OnHotkeyMove(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Movement);
+        private void OnHotkeyAttack(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.BaseAttack);
+        private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
+        private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
+        private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
+
+        private void OnHotkeyConfirm(InputAction.CallbackContext _)
+        {
+            if (_confirmButton != null && _confirmButton.interactable)
+                _confirmButton.onClick.Invoke();
+        }
+
+        // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
+        // click real → HandleBehaviorClick con el index correcto). No-op si el botón
+        // no está interactable.
+        private void TriggerSlotHotkey(HeroBehaviorSlot slot)
+        {
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                var button = _buttons[i];
+                if (button == null || button.Slot != slot) continue;
+                if (button.Button != null && button.Button.interactable)
+                    button.Button.onClick.Invoke();
+                return;
+            }
         }
 
         private void HandleConfirmClick()

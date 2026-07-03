@@ -1,8 +1,10 @@
 using System;
 using Patterns;
+using Rollgeon.Input;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -29,6 +31,8 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _enabled;
 
+        private IGameplayHotkeyService _hotkeys;
+
         private void Awake()
         {
             if (_endTurnButton != null) _endTurnButton.onClick.AddListener(HandleClick);
@@ -53,6 +57,10 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
+
+            if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys) && _hotkeys != null)
+                _hotkeys.Subscribe(GameplayHotkey.EndTurn, OnHotkeyEndTurn);
+
             _bound = true;
             _enabled = false;
             RefreshInteractable();
@@ -65,6 +73,13 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
+
+            if (_hotkeys != null)
+            {
+                _hotkeys.Unsubscribe(GameplayHotkey.EndTurn, OnHotkeyEndTurn);
+                _hotkeys = null;
+            }
+
             _bound = false;
             _enabled = false;
             RefreshInteractable();
@@ -110,6 +125,13 @@ namespace Rollgeon.UI.HUD
         private void HandleClick()
         {
             _onEndTurnPressed?.Invoke();
+        }
+
+        // Space = click de End Turn, solo si el botón está interactable (mismo gating).
+        private void OnHotkeyEndTurn(InputAction.CallbackContext _)
+        {
+            if (_endTurnButton != null && _endTurnButton.interactable)
+                _endTurnButton.onClick.Invoke();
         }
     }
 }
