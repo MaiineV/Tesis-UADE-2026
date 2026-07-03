@@ -378,6 +378,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &473242269
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 473242271}
+  - component: {fileID: 473242270}
+  m_Layer: 0
+  m_Name: FirstNorth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &473242270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 473242269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
+  Direction: 0
+  IsExit: 0
+  SpawnPointId: 
+  _meshOpen: {fileID: 0}
+  _meshClosed: {fileID: 0}
+  _wallPlug: {fileID: 0}
+--- !u!4 &473242271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 473242269}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &529724461
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,6 +475,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &600462860
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 600462861}
+  m_Layer: 0
+  m_Name: ActiveChipAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &600462861
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600462860}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7544345578890199561}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 130, y: 160}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &600060839
 GameObject:
   m_ObjectHideFlags: 0
@@ -783,6 +868,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 45, y: 45, z: 0}
+--- !u!1 &632336248
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 632336250}
+  - component: {fileID: 632336249}
+  m_Layer: 0
+  m_Name: Tile_1_5_Wall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &632336249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632336248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 1
+    Y: 5
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 1
+  IsBlocker: 1
+--- !u!4 &632336250
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632336248}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &635831481
 GameObject:
   m_ObjectHideFlags: 0
@@ -2365,6 +2502,58 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1547898506}
   m_CullTransparentMesh: 1
+--- !u!1 &1575827080
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1575827082}
+  - component: {fileID: 1575827081}
+  m_Layer: 0
+  m_Name: Tile_1_5_Wall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1575827081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1575827080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 1
+    Y: 5
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 1
+  IsBlocker: 1
+--- !u!4 &1575827082
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1575827080}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1637183839
 GameObject:
   m_ObjectHideFlags: 0
@@ -3647,11 +3836,11 @@ RectTransform:
   - {fileID: 856125280}
   m_Father: {fileID: 2573874159130969205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 250, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 110, y: 5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!224 &114005043078767367
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3855,11 +4044,11 @@ RectTransform:
   - {fileID: 804851989827261951}
   m_Father: {fileID: 2573874159130969205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -220, y: 5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 1}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &198547769958952123
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3995,6 +4184,7 @@ GameObject:
   - component: {fileID: 2573874159130969205}
   - component: {fileID: 3553894364548766767}
   - component: {fileID: 7233176749794277971}
+  - component: {fileID: 7233176749794277972}
   m_Layer: 0
   m_Name: PlayerActionButtonsView
   m_TagString: Untagged
@@ -4427,6 +4617,7 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _clickActivates: 1
 --- !u!222 &532492885807345357
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5708,11 +5899,11 @@ RectTransform:
   - {fileID: 783781946021690183}
   m_Father: {fileID: 2573874159130969205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -110, y: 5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1508065968284677840
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6751,6 +6942,7 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _clickActivates: 1
 --- !u!224 &2239467765236832777
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7159,6 +7351,7 @@ GameObject:
   - component: {fileID: 6766548626193843720}
   - component: {fileID: 7544345578890199563}
   - component: {fileID: 7544345578890199562}
+  - component: {fileID: 7544345578890199564}
   m_Layer: 0
   m_Name: CombatHUDView
   m_TagString: Untagged
@@ -7624,11 +7817,11 @@ RectTransform:
   - {fileID: 4826987111915339981}
   m_Father: {fileID: 7544345578890199561}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 50, y: 25}
-  m_SizeDelta: {x: 475, y: 250}
-  m_Pivot: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 20}
+  m_SizeDelta: {x: 560, y: 110}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &2594339532771492159
 GameObject:
   m_ObjectHideFlags: 0
@@ -12152,11 +12345,11 @@ RectTransform:
   - {fileID: 1045717286}
   m_Father: {fileID: 2573874159130969205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 371.7, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 220, y: 5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!224 &4841479030330084042
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13784,6 +13977,7 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _clickActivates: 1
 --- !u!114 &5658104266899090903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14684,6 +14878,7 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _clickActivates: 1
 --- !u!1 &6160730770457594584
 GameObject:
   m_ObjectHideFlags: 0
@@ -15441,11 +15636,11 @@ RectTransform:
   - {fileID: 2826870688221220949}
   m_Father: {fileID: 2573874159130969205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 125, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &6564775215612586446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15701,6 +15896,7 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _clickActivates: 1
 --- !u!222 &6766548626193843720
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16511,6 +16707,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 269775767210543253}
   m_CullTransparentMesh: 1
+--- !u!225 &7233176749794277972
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269775767210543253}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &7285672047560488878
 GameObject:
   m_ObjectHideFlags: 0
@@ -16842,6 +17050,7 @@ RectTransform:
   - {fileID: 7123434885395480874}
   - {fileID: 7369708564809739450}
   - {fileID: 6239843997878764798}
+  - {fileID: 600462861}
   m_Father: {fileID: 6408216767782424874}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -16883,6 +17092,23 @@ MonoBehaviour:
   _highlightStyle: move
   _ghostAlpha: 0.85
   _ghostScale: 1
+--- !u!114 &7544345578890199564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2394376216935306657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db07d6b6738a1384cbd0474d116a79a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.CombatHudZoneFlow
+  _chipsGroup: {fileID: 7233176749794277972}
+  _buttonsView: {fileID: 3553894364548766767}
+  _activeChipAnchor: {fileID: 600462861}
+  _fadeSeconds: 0.15
+  _chipMoveSeconds: 0.2
 --- !u!222 &7597165956536101233
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -20246,3 +20472,6 @@ SceneRoots:
   - {fileID: 1785892748}
   - {fileID: 903249836}
   - {fileID: 139510774}
+  - {fileID: 632336250}
+  - {fileID: 1575827082}
+  - {fileID: 473242271}
