@@ -62,6 +62,7 @@ namespace Rollgeon.UI
             var scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = _settings.ReferenceResolution;
+            scaler.matchWidthOrHeight = _settings.MatchWidthOrHeight;
 
             _backgroundMask = CreateImage("Background", transform);
             var bgRect = _backgroundMask.rectTransform;

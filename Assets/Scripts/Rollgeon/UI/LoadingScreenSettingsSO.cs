@@ -32,6 +32,10 @@ namespace Rollgeon.UI
         public Vector2 ReferenceResolution = new Vector2(1920f, 1080f);
         public int SortingOrder = 31000;
 
+        [Range(0f, 1f)]
+        [Tooltip("Igual que el CanvasScaler de 01_MainMenu/02_Gameplay (0.5) para que el spinner se escale proporcionalmente al ancho y alto de la pantalla.")]
+        public float MatchWidthOrHeight = 0.5f;
+
         [Header("Tween")]
         [Tooltip("Tiempo mínimo que se muestra el loading, aunque el trabajo real termine antes " +
                  "(evita el parpadeo si la carga es demasiado rápida).")]
