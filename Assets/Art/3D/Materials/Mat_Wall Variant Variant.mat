@@ -13,6 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
+  - _FLATTENTOPFACES_ON
   - _USESHADOWDITHER_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -27,21 +28,22 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _BorderWidth: 0
-    - _DetailType: 1.69
-    - _PatternType: 2.18
-    - _ShadowThreshold: 0.197
-    - _ShapeOpacity: 1
-    - _ShapeScaleX: 0.83
-    - _ShapeScaleY: 1.12
-    - _ShapeSize: 0.78
-    - _ShapeType: 1.78
-    - _SolidRows: 20
-    - _TileScale: 2
+    - _BorderWidth: 0.069
+    - _DetailType: 0.85
+    - _FlattenTopFaces: 1
+    - _PatternType: 1.96
+    - _ShadowThreshold: 0.228
+    - _ShapeOpacity: 0.429
+    - _ShapeScaleX: 1.41
+    - _ShapeScaleY: 1.09
+    - _ShapeSize: 0.97
+    - _ShapeType: 4
+    - _SolidRows: 0
+    - _TileScale: 1.3
     m_Colors:
-    - _BGColor: {r: 0.09433961, g: 0.09433961, b: 0.09433961, a: 1}
-    - _ColorA: {r: 0.19940564, g: 0.24528301, b: 0.17933428, a: 1}
-    - _ColorB: {r: 1, g: 0.8970643, b: 0, a: 1}
-    - _DetailColor: {r: 0.745283, g: 0.57394606, b: 0.03163936, a: 1}
+    - _BGColor: {r: 0.29411766, g: 0.09411765, b: 0.14117648, a: 1}
+    - _ColorA: {r: 0.6509804, g: 0.20784314, b: 0.31764707, a: 1}
+    - _ColorB: {r: 0.76862746, g: 0.3882353, b: 0.4862745, a: 1}
+    - _DetailColor: {r: 0.8509804, g: 0.6431373, b: 0.30588236, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
