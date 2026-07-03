@@ -7157,6 +7157,8 @@ GameObject:
   - component: {fileID: 7544345578890199561}
   - component: {fileID: 570679422537238208}
   - component: {fileID: 6766548626193843720}
+  - component: {fileID: 7544345578890199563}
+  - component: {fileID: 7544345578890199562}
   m_Layer: 0
   m_Name: CombatHUDView
   m_TagString: Untagged
@@ -16847,6 +16849,40 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &7544345578890199562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2394376216935306657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ac8ba5af105e564aa51b5f3f9842e4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DragDrop.ActionPlayDispatcher
+--- !u!114 &7544345578890199563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2394376216935306657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e8c31e490eb7d4c8c3b72e9bb226e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DragDrop.ActionDragController
+  _camera: {fileID: 0}
+  _tileLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  _dragLayer: {fileID: 0}
+  _autoAttachHandles: 1
+  _buttonsRoot: {fileID: 0}
+  _highlightStyle: move
+  _ghostAlpha: 0.85
+  _ghostScale: 1
 --- !u!222 &7597165956536101233
 CanvasRenderer:
   m_ObjectHideFlags: 0
