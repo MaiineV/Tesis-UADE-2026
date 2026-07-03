@@ -2284,8 +2284,8 @@ MonoBehaviour:
   _tituloPushEase: 4
   _curtainLeft: {fileID: 466044640}
   _curtainRight: {fileID: 970420820}
-  _curtainSlideDuration: 1.2
-  _curtainSlideDelay: 0
+  _curtainSlideDuration: 5
+  _curtainSlideDelay: 1
   _curtainEase: 4
   _distorcionOverlay: {fileID: 183388321}
   _distOpacidadDuration: 2
@@ -4197,12 +4197,12 @@ RectTransform:
   - {fileID: 471749171}
   - {fileID: 2120411720}
   - {fileID: 1137696857}
+  - {fileID: 466044640}
+  - {fileID: 970420820}
   - {fileID: 183388323}
   - {fileID: 1222618285}
   - {fileID: 2138486463}
   - {fileID: 636127788}
-  - {fileID: 466044640}
-  - {fileID: 970420820}
   m_Father: {fileID: 260393550}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

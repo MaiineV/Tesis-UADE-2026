@@ -30,8 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _FoldCount: 14
-    - _FoldSharpness: 3
+    - _FoldCount: 4.48
+    - _FoldSharpness: 1
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -40,10 +40,10 @@ Material:
     - _SwayAmount: 0.02
     - _SwaySpeed: 0.6
     - _UseUIAlphaClip: 0
-    - _VignetteStrength: 0.4
+    - _VignetteStrength: 0.832
     m_Colors:
-    - _BaseColor: {r: 0.54999995, g: 0.03, b: 0.059999965, a: 1}
+    - _BaseColor: {r: 0.5499999, g: 0.12156863, b: 0.12156863, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowColor: {r: 0.21999997, g: 0.01, b: 0.03, a: 1}
+    - _ShadowColor: {r: 0.16470589, g: 0.05490196, b: 0.101960786, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
