@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Patterns;
@@ -6,12 +7,14 @@ using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Meta;
 using Rollgeon.Run;
+using Rollgeon.UI;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using CoroutineHost = Rollgeon.Patterns.CoroutineHost;
 
 namespace Rollgeon.UI.Screens
 {
@@ -262,7 +265,33 @@ namespace Rollgeon.UI.Screens
         private void OnConfirmClicked()
         {
             if (!TryBuildAndStoreRequest()) return;
-            SceneManager.LoadScene("02_Gameplay");
+
+            ServiceLocator.TryGetService<ILoadingScreenService>(out var loading);
+            loading?.Show();
+            CoroutineHost.Run(LoadGameplayAsync(loading));
+        }
+
+        /// <summary>
+        /// Carga <c>02_Gameplay</c> de forma asincrona reportando progreso real al
+        /// <see cref="ILoadingScreenService"/> — corre en <see cref="CoroutineHost"/>
+        /// (no en este MonoBehaviour) porque la screen se destruye con la escena vieja
+        /// apenas <c>allowSceneActivation</c> dispara el swap.
+        /// </summary>
+        private static IEnumerator LoadGameplayAsync(ILoadingScreenService loading)
+        {
+            var op = SceneManager.LoadSceneAsync("02_Gameplay");
+            op.allowSceneActivation = false;
+
+            while (op.progress < 0.9f)
+            {
+                loading?.ReportProgress(op.progress / 0.9f);
+                yield return null;
+            }
+
+            op.allowSceneActivation = true;
+            yield return op;
+
+            loading?.ReportProgress(1f);
         }
 
         /// <summary>

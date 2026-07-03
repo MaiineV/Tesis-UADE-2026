@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e7332a700ba2f340acf8438cffa58ee, type: 3}
+  m_Name: LoadingScreenSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.LoadingScreenSettingsSO
+  BackgroundMaterial: {fileID: 2100000, guid: ae4f931f12dadcf429e919d965c22bdd, type: 2}
+  BackgroundProgressMax: 1.5
+  SpinnerMaterial: {fileID: 2100000, guid: 9e25698a7e4bdd145b4cf0f8f58ac7c2, type: 2}
+  SpinnerIcon: {fileID: 1000462782, guid: 1298b5c7d3c38414980a839940b9907c, type: 3}
+  SpinnerSize: {x: 200, y: 200}
+  ReferenceResolution: {x: 1920, y: 1080}
+  SortingOrder: 31000
+  MinimumDisplayDuration: 2
+  StepTweenDuration: 0.15
+  VanishDuration: 1
+  RevealDuration: 5

@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RotateUI
-  m_Shader: {fileID: 4800000, guid: 1df28694fb06d954c9daaf13a3cf524f, type: 3}
+  m_Name: LoadingScreen_UnlitBackground
+  m_Shader: {fileID: 4800000, guid: cf97d582fc9d478409b73d962b3cf963, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -24,35 +24,30 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 1298b5c7d3c38414980a839940b9907c, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Rotation:
-        m_Texture: {fileID: 2800000, guid: 0a94db72e9578804582d9711a1cdb217, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _RotationMask:
-        m_Texture: {fileID: 2800000, guid: 1bd2dbe18157b174f906012203c72249, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _texcoord:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _Progress: 1
+    - _Deformacion: 0.5
+    - _Progreso: 1.5
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     - _UseUIAlphaClip: 0
-    - _Vanish: 1
+    - _scale1: 2
+    - _scale2: 3
+    - _scale3: 2.49
     m_Colors:
-    - _Color: {r: 0.6603774, g: 0.6603774, b: 0.6603774, a: 1}
-    - _RotationPosScale: {r: 0, g: 0, b: 1.5, a: 1}
-    - _RotationTint: {r: 0.8018868, g: 0.8018868, b: 0.8018868, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Vel1: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _Vel2: {r: 0.7, g: 0.7, b: 0, a: 0}
+    - _Vel3: {r: 0.1, g: 0.1, b: 0, a: 0}
+    - _col1: {r: 0.28411078, g: 0.21800455, b: 0.6698113, a: 0}
+    - _col2: {r: 0.22429407, g: 0.18623167, b: 0.42452827, a: 0}
+    - _col3: {r: 0.30149817, g: 0.22316656, b: 0.5566037, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
