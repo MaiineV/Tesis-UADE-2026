@@ -26,5 +26,20 @@ namespace Rollgeon.Grid
                 screen.x / screenWidth * pixelWidth,
                 screen.y / screenHeight * pixelHeight);
         }
+
+        /// <summary>
+        /// Inversa de <see cref="ScreenToRt"/>: convierte una posición en píxeles del RT
+        /// (ej. salida de <c>cam.WorldToScreenPoint</c>) a píxeles de pantalla. Usada por el
+        /// snap del drag para posicionar UI sobre una celda del mundo.
+        /// </summary>
+        public static Vector2 RtToScreen(
+            Vector2 rt, float screenWidth, float screenHeight, float pixelWidth, float pixelHeight)
+        {
+            if (pixelWidth <= 0f || pixelHeight <= 0f) return Vector2.zero;
+
+            return new Vector2(
+                rt.x / pixelWidth * screenWidth,
+                rt.y / pixelHeight * screenHeight);
+        }
     }
 }
