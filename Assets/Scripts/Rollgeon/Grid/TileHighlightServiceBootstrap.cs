@@ -19,8 +19,9 @@ namespace Rollgeon.Grid
         [SerializeField] private Texture2D _doorTileSprite;
 
         [Header("Paleta de estilos (RGB = color del tinte, Alpha = fuerza por estilo)")]
-        [Tooltip("Rango de movimiento / celdas válidas de una acción.")]
-        [SerializeField] private Color _moveColor = new Color(0.3f, 0.8f, 1f, 0.6f);
+        [Tooltip("Rango de movimiento / celdas válidas de una acción. Alpha bajo: en " +
+                 "Exploración el rango está SIEMPRE pintado (perma-move).")]
+        [SerializeField] private Color _moveColor = new Color(0.3f, 0.8f, 1f, 0.28f);
 
         [Tooltip("Celdas de enemigos targeteables por un ataque.")]
         [SerializeField] private Color _attackColor = new Color(1f, 0.3f, 0.3f, 0.6f);
