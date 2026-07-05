@@ -127,15 +127,41 @@ namespace Rollgeon.Run
             var playerService = ServiceLocator.GetService<IPlayerService>();
             RegisterPlayer(playerService, registry, attributes);
 
-            // 3. Dungeon
-            DungeonManager.CreateAndRegister(_defaultLayout, seed);
+            // 3. Dungeon — el tutorial usa el piso fijo autorado (plan explícito);
+            //    el flujo normal, la topología random del layout default. Si el flag
+            //    viene seteado pero la config no está lanzable, degrada a run normal.
+            bool isTutorial = PendingRunRequest.IsTutorial;
+            Rollgeon.Tutorial.TutorialConfigSO tutorialConfig = null;
+            if (isTutorial
+                && (!ServiceLocator.TryGetService(out tutorialConfig)
+                    || tutorialConfig == null || !tutorialConfig.IsLaunchable))
+            {
+                Debug.LogWarning(
+                    "[RunController] PendingRunRequest.IsTutorial pero TutorialConfigSO no está " +
+                    "registrado/completo — degradando a run normal.");
+                isTutorial = false;
+            }
+
+            if (isTutorial)
+            {
+                DungeonManager.CreateAndRegisterFromPlan(tutorialConfig.FloorPlan.ToPlan());
+            }
+            else
+            {
+                DungeonManager.CreateAndRegister(_defaultLayout, seed);
+            }
 
             // 3b. Floor shells visibility — toggles prefab vs shells según camera floor view.
             FloorShellVisibilityController.CreateAndRegister();
 
             // 3c. Floor progression — orquesta la transición multi-piso (#158). Recibe el
             //     layout inicial + el seed base; deriva el seed de cada piso siguiente.
-            FloorProgressionService.CreateAndRegister(_defaultLayout, seed);
+            //     En tutorial NO se registra: el fin de piso lo maneja TutorialFlowController
+            //     (teardown → fresh run) en vez de avanzar a otro piso.
+            if (!isTutorial)
+            {
+                FloorProgressionService.CreateAndRegister(_defaultLayout, seed);
+            }
 
             // 4. Damage pipeline (parameterless ctor resolves from ServiceLocator)
             var damagePipeline = new DamagePipeline();
@@ -201,6 +227,14 @@ namespace Rollgeon.Run
             // 10. Begin exploration
             var exploration = ServiceLocator.GetService<IExplorationController>();
             exploration.BeginExploration();
+
+            // 11. Tutorial flow — se crea ÚLTIMO a propósito: sus handlers de eventos
+            //     (OnCombatEnd, OnRoomEntered) deben correr después de los del
+            //     DungeonManager (suscripto antes) para leer el estado ya actualizado.
+            if (isTutorial)
+            {
+                Rollgeon.Tutorial.TutorialFlowController.CreateAndRegister(tutorialConfig, runId);
+            }
 
             IsRunActive = true;
         }

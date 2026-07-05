@@ -57,13 +57,29 @@ namespace Rollgeon.Dungeon
         {
             if (layout == null) throw new ArgumentNullException(nameof(layout));
 
+            // 1+2. Plan puro: cells + asignaciones (sin side effects).
+            var plan = FloorTopologyPlanner.Generate(layout, seed);
+            GenerateFromPlan(plan);
+        }
+
+        /// <summary>
+        /// Genera el piso desde un <see cref="FloorTopologyPlanner.Plan"/> ya resuelto —
+        /// mismo pipeline que <see cref="GenerateFloor"/> pero sin pasar por la topología
+        /// aleatoria. Permite pisos autorados (tutorial, pisos fijos) siempre que el plan
+        /// tenga la Start room en <see cref="Vector2Int.zero"/>.
+        /// </summary>
+        public void GenerateFromPlan(FloorTopologyPlanner.Plan plan)
+        {
+            if (plan == null) throw new ArgumentNullException(nameof(plan));
+
             ClearState();
             _lastEntryDirection = null;
 
-            // 1+2. Plan puro: cells + asignaciones (sin side effects).
-            var plan = FloorTopologyPlanner.Generate(layout, seed);
-            foreach (var w in plan.Warnings)
-                Debug.LogWarning($"[DungeonManager] {w}");
+            if (plan.Warnings != null)
+            {
+                foreach (var w in plan.Warnings)
+                    Debug.LogWarning($"[DungeonManager] {w}");
+            }
 
             var cells = plan.Cells;
             var assignments = plan.Assignments;
@@ -170,6 +186,16 @@ namespace Rollgeon.Dungeon
             if (current == null) return false;
             if (!current.Connections.TryGetValue(direction, out neighborInstanceId)) return false;
 
+            // Vecino Locked (gate externo — tutorial, boss key, evento) → bloqueado
+            // SIEMPRE, incluso con DoorState.Forced/Unlocked: un force previo no puede
+            // abrir una sala gateada después (EffForceDoor marca Forced antes de cruzar).
+            if (_instances.TryGetValue(neighborInstanceId, out var lockedNeighbor)
+                && lockedNeighbor.State == RoomState.Locked)
+            {
+                Debug.LogWarning($"[DungeonManager] CanEnterRoomByDoor({direction}) bloqueado — vecino '{neighborInstanceId:N}' state=Locked.");
+                return false;
+            }
+
             // Sala cleared → libre.
             if (current.State == RoomState.Cleared) return true;
 
@@ -254,6 +280,41 @@ namespace Rollgeon.Dungeon
             ServiceLocator.AddService<IDungeonService>(manager, ServiceScope.Run);
             manager.GenerateFloor(layout, seed);
             return manager;
+        }
+
+        /// <summary>
+        /// Factory para pisos autorados (tutorial): igual que <see cref="CreateAndRegister"/>
+        /// pero generando desde un plan fijo en vez de la topología aleatoria.
+        /// </summary>
+        public static DungeonManager CreateAndRegisterFromPlan(FloorTopologyPlanner.Plan plan)
+        {
+            var manager = new DungeonManager();
+            ServiceLocator.AddService<IDungeonService>(manager, ServiceScope.Run);
+            manager.GenerateFromPlan(plan);
+            return manager;
+        }
+
+        /// <summary>
+        /// Setea la <see cref="RoomState"/> de una sala desde afuera (gates externos —
+        /// tutorial, boss key, evento). No toca <see cref="RoomInstance.ObjectStates"/>,
+        /// así el toggle Locked↔Uncleared preserva HP de enemigos y flags de puertas.
+        /// </summary>
+        public bool SetRoomState(Guid instanceId, RoomState state)
+        {
+            if (!_instances.TryGetValue(instanceId, out var instance)) return false;
+            instance.State = state;
+            return true;
+        }
+
+        /// <summary>
+        /// Refresca los visuales de puertas de una sala instanciada — necesario cuando
+        /// un gate externo cambió el estado de una sala VECINA (la puerta que refleja
+        /// ese lock vive en el prefab de esta sala).
+        /// </summary>
+        public void ResyncDoorVisuals(Guid instanceId)
+        {
+            if (_instances.TryGetValue(instanceId, out var instance))
+                SyncDoorVisualStates(instance);
         }
 
         // -----------------------------------------------------------------
@@ -499,6 +560,16 @@ namespace Rollgeon.Dungeon
                 if (!instance.Connections.ContainsKey(slot.Direction))
                 {
                     controller.SetState(DoorVisualState.Tapiada);
+                    continue;
+                }
+
+                // Vecino Locked (gate externo) → LockedSkillCheck, con precedencia
+                // sobre Open/LockedCombat — espeja el check de CanEnterRoomByDoor.
+                if (instance.Connections.TryGetValue(slot.Direction, out var neighborId)
+                    && _instances.TryGetValue(neighborId, out var neighbor)
+                    && neighbor.State == RoomState.Locked)
+                {
+                    controller.SetState(DoorVisualState.LockedSkillCheck);
                     continue;
                 }
 

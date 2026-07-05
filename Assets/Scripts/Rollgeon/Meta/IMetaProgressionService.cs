@@ -43,6 +43,15 @@ namespace Rollgeon.Meta
         /// </summary>
         void RecordRunCompleted(bool won, string classId);
 
+        /// <summary>
+        /// El jugador ya completó el tutorial. Con <c>false</c>, el botón Play del
+        /// main menu arranca el tutorial en vez del flujo de selección de clase.
+        /// </summary>
+        bool IsTutorialCompleted { get; }
+
+        /// <summary>Marca el tutorial como completado y persiste a disco. Idempotente.</summary>
+        void MarkTutorialCompleted();
+
         /// <summary>Fuerza un write-through del estado actual.</summary>
         void SaveNow();
 

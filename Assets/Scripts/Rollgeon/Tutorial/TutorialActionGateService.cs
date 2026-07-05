@@ -1,0 +1,78 @@
+using System;
+using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Heroes;
+using UnityEngine;
+
+namespace Rollgeon.Tutorial
+{
+    /// <summary>
+    /// Implementación runtime de <see cref="ITutorialActionGateService"/>. Mantiene
+    /// el set de slots bloqueados y el mapa <c>ActionName → Slot</c> construido
+    /// desde los <c>PhaseBehaviors</c> del héroe del tutorial (para el backstop por
+    /// actionId del <c>TurnManager</c>). ActionNames que no pertenecen al héroe
+    /// (behaviors de enemigos, acciones de catálogo) nunca bloquean.
+    /// </summary>
+    public sealed class TutorialActionGateService : ITutorialActionGateService
+    {
+        private const string LogPrefix = "[TutorialActionGateService] ";
+
+        private readonly HashSet<HeroBehaviorSlot> _lockedSlots;
+        private readonly Dictionary<string, HeroBehaviorSlot> _slotByActionName;
+
+        public TutorialActionGateService(ClassHeroSO hero, IEnumerable<HeroBehaviorSlot> initiallyLocked)
+        {
+            _lockedSlots = initiallyLocked != null
+                ? new HashSet<HeroBehaviorSlot>(initiallyLocked)
+                : new HashSet<HeroBehaviorSlot>();
+
+            _slotByActionName = new Dictionary<string, HeroBehaviorSlot>(StringComparer.Ordinal);
+            if (hero?.PhaseBehaviors != null)
+            {
+                foreach (var behavior in hero.PhaseBehaviors)
+                {
+                    if (behavior == null || string.IsNullOrEmpty(behavior.ActionName)) continue;
+                    // Ante ActionNames duplicados entre fases, gana el primero — el
+                    // slot es el mismo para el par exploración/combate de una acción.
+                    _slotByActionName.TryAdd(behavior.ActionName, behavior.Slot);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Factory: crea el gate con el lock inicial del tutorial
+        /// ({BaseAttack, SpecialAttack, Healing, ForceDoor} — solo Movement libre;
+        /// ATACAR se desbloquea recién en su paso de enseñanza) y lo registra en
+        /// <see cref="ServiceScope.Run"/>.
+        /// </summary>
+        public static TutorialActionGateService CreateAndRegister(ClassHeroSO hero)
+        {
+            var service = new TutorialActionGateService(hero, new[]
+            {
+                HeroBehaviorSlot.BaseAttack,
+                HeroBehaviorSlot.SpecialAttack,
+                HeroBehaviorSlot.Healing,
+                HeroBehaviorSlot.ForceDoor,
+            });
+            ServiceLocator.AddService<ITutorialActionGateService>(service, ServiceScope.Run);
+            return service;
+        }
+
+        public bool IsSlotLocked(HeroBehaviorSlot slot) => _lockedSlots.Contains(slot);
+
+        public bool IsActionLocked(string actionId)
+        {
+            if (string.IsNullOrEmpty(actionId)) return false;
+            return _slotByActionName.TryGetValue(actionId, out var slot)
+                   && _lockedSlots.Contains(slot);
+        }
+
+        public void Unlock(HeroBehaviorSlot slot)
+        {
+            if (!_lockedSlots.Remove(slot)) return;
+
+            Debug.Log(LogPrefix + $"Acción desbloqueada: {slot}.");
+            EventManager.Trigger(EventName.OnTutorialActionUnlocked, slot);
+        }
+    }
+}

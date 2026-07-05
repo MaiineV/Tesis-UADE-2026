@@ -114,6 +114,33 @@ namespace Rollgeon.UI.Screens
         private bool _autoPopOnCombatEnd = true;
 
         // ======================================================================
+        // Tutorial anchors — mismo patrón que PlayerActionButtonsView.TryGetButtonRect
+        // ======================================================================
+
+        /// <summary>RectTransform de la barra de vida del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetHealthBarRect(out RectTransform rect)
+        {
+            rect = _healthBar != null ? _healthBar.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la barra de energía del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetEnergyBarRect(out RectTransform rect)
+        {
+            rect = _energyBar != null ? _energyBar.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la zona de dados (roll area) — anchor del overlay del tutorial.</summary>
+        public bool TryGetDiceZoneRect(out RectTransform rect)
+        {
+            rect = null;
+            if (_diceZone != null) rect = _diceZone.GetRollArea();
+            if (rect == null && _diceZone != null) rect = _diceZone.transform as RectTransform;
+            return rect != null;
+        }
+
+        // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
 

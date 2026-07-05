@@ -1,0 +1,69 @@
+namespace Rollgeon.Tutorial
+{
+    /// <summary>
+    /// Pasos del tutorial, en orden de recorrido. La transición la dirigen los
+    /// eventos del bus (ver tabla en <see cref="TutorialFlowController"/>).
+    /// </summary>
+    public enum TutorialStep
+    {
+        /// <summary>Sala A: enseñar movimiento hasta la puerta.</summary>
+        Movement,
+
+        /// <summary>Sala B: spotlight a los enemigos — click para continuar.</summary>
+        EnemiesIntro,
+
+        /// <summary>Sala B: señalar el botón MOVER (el héroe es melee).</summary>
+        MoveTeach,
+
+        /// <summary>Sala B: señalar las casillas alcanzables — elegir a dónde moverse.</summary>
+        MoveTiles,
+
+        /// <summary>Sala B: explicar la barra de vida.</summary>
+        StatsHp,
+
+        /// <summary>Sala B: explicar la barra de energía.</summary>
+        StatsEnergy,
+
+        /// <summary>Sala B: se desbloqueó ATACAR — señalar el botón.</summary>
+        AttackTeach,
+
+        /// <summary>Sala B: señalar los dados — combos de generala, holds, hasta 3 tiradas, confirmar.</summary>
+        DiceTeach,
+
+        /// <summary>Sala B: dados confirmados — señalar al enemigo para pegarle.</summary>
+        TargetTeach,
+
+        /// <summary>Sala B: loop libre del combate 1 — repetir hasta vencer.</summary>
+        Combat1,
+
+        /// <summary>Sala B: el enemigo golpeó al jugador — se desbloqueó Heal.</summary>
+        HealUnlocked,
+
+        /// <summary>B clareada: ir a C (la puerta de la tienda sigue bloqueada).</summary>
+        GoToC,
+
+        /// <summary>Sala C: combate 2v2 — se desbloqueó ForceDoor, enseñar el escape.</summary>
+        EscapeTeach,
+
+        /// <summary>Escapó de C: la tienda se desbloqueó — comprar la mejora de Par.</summary>
+        Shop,
+
+        /// <summary>Compró: C se desbloqueó de nuevo — volver a pelear.</summary>
+        Combat2Prep,
+
+        /// <summary>Sala C round 2: matar a los 2 enemigos.</summary>
+        Combat2,
+
+        /// <summary>C clareada: ir a la sala de encantamientos.</summary>
+        GoToE,
+
+        /// <summary>Sala E: encantar un dado en el altar.</summary>
+        Enchant,
+
+        /// <summary>Dado encantado: cruzar la puerta de salida.</summary>
+        Exit,
+
+        /// <summary>Teardown en curso / terminado.</summary>
+        Done,
+    }
+}

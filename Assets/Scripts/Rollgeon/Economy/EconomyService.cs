@@ -37,5 +37,13 @@ namespace Rollgeon.Economy
         }
 
         public bool CanAfford(int amount) => amount <= 0 || _gold >= amount;
+
+        public void ResetTo(int amount)
+        {
+            int clamped = Mathf.Max(0, amount);
+            int delta = clamped - _gold;
+            _gold = clamped;
+            EventManager.Trigger(EventName.OnGoldChanged, _gold, delta);
+        }
     }
 }

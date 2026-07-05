@@ -85,6 +85,10 @@ namespace Patterns
         OnChainPhaseStarted,
         /// <summary>args: [Guid sourceGuid, int phasesCompleted, int totalPhases, bool wasPass]</summary>
         OnChainCompleted,
+        /// <summary>args: [Guid sourceGuid]. Una fase del chain abrió una selección
+        /// INTERACTIVA de target (post-confirm) — el jugador tiene que clickear al
+        /// enemigo. No dispara en fases Self/AutoResolve/sin targets.</summary>
+        OnChainTargetSelectionStarted,
         /// <summary>args: [Guid sourceGuid]. Una accion sin tirada (ej. Movement) quedo
         /// comprometida y esta esperando que el jugador elija el tile target. La accion ya
         /// se cobro y se ejecuta de forma asincrona al clickear el destino; mientras tanto
@@ -253,5 +257,11 @@ namespace Patterns
         OnCameraRecentered,
         /// <summary>args: [float amplitude, float durationSeconds]. Feedback pide un camera shake; el CameraService lo consume (§17.E.10, TODO v8).</summary>
         OnCameraShakeRequested,
+
+        // --- Tutorial ------------------------------------------------------------
+        /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El tutorial desbloqueó una acción — los HUDs recomputan estados de botones.</summary>
+        OnTutorialActionUnlocked,
+        /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El jugador clickeó (y seleccionó efectivamente) un botón de acción del HUD de combate — el tutorial encadena el paso siguiente (p.e. señalar los dados).</summary>
+        OnHeroBehaviorClicked,
     }
 }

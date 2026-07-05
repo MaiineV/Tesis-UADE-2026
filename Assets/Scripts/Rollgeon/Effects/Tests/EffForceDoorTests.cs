@@ -270,6 +270,8 @@ namespace Rollgeon.Effects.Tests
                 return EnterResult;
             }
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Array.Empty<WallOccluder>();
         }

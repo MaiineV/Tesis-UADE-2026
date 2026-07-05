@@ -124,6 +124,17 @@ namespace Rollgeon.Combat.Pipelines
                     int newHp = currentHp - finalDamage;
                     if (newHp < 0) newHp = 0;
 
+                    // Override de letalidad (tutorial): el golpe letal deja al target
+                    // en 1 HP y WasLethal queda false — el DeathWatcher nunca lo ve.
+                    if (newHp <= 0
+                        && ServiceLocator.TryGetService<ILethalDamageOverride>(out var lethalOverride)
+                        && lethalOverride != null
+                        && lethalOverride.ShouldPreventLethal(ctx.TargetId))
+                    {
+                        newHp = 1;
+                        ctx.FinalDamage = currentHp - newHp;
+                    }
+
                     _attributes.SetAttributeValue<Health, int>(ctx.TargetId, newHp);
                     ctx.WasLethal = newHp <= 0;
                 }

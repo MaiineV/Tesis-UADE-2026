@@ -52,6 +52,8 @@ namespace Rollgeon.Combat.Handoff.Tests
             public Rollgeon.Dungeon.Components.DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(Rollgeon.Dungeon.Components.DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, Rollgeon.Dungeon.RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
 
             public UnityEngine.Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>

@@ -1091,6 +1091,10 @@ namespace Rollgeon.Combat.Handoff
                 // el estilo rojo "attack"; el resto conserva el celeste "move".
                 HighlightStyle = (settings.EntityFilter & EntityFilterMask.Enemies) != 0 ? "attack" : "move",
             });
+
+            // Selección interactiva abierta: el jugador debe clickear el target.
+            // El tutorial usa esta señal para el paso "pegale al enemigo".
+            EventManager.Trigger(EventName.OnChainTargetSelectionStarted, playerGuid);
         }
 
         private void OnChainSelectionDone(TargetSelectionResult result)
