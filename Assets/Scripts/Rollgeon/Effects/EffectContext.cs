@@ -43,6 +43,14 @@ namespace Rollgeon.Effects
         /// <summary>Resultado de la tirada de dados (las caras). Null si el behavior no usa dados.</summary>
         public IReadOnlyList<int> DiceResult;
 
+        /// <summary>
+        /// Subset de <see cref="DiceResult"/> que el jugador holdeó para el ataque (los dados
+        /// que participan del combo). Null = sin keep explícito (usar <see cref="DiceResult"/>).
+        /// Lo consume el fallback sin combo de <c>EffDealDamage</c> (GD §5: daño mínimo =
+        /// dado más alto de los ELEGIDOS, no de toda la tirada).
+        /// </summary>
+        public IReadOnlyList<int> KeptDice;
+
         /// <summary>Resultado del combo matching via ContractSheet.MatchBest. Null si no hubo match.</summary>
         public ComboDetectionResult? ComboResult;
 

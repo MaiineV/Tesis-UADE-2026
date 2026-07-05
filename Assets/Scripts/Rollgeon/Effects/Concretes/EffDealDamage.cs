@@ -70,7 +70,10 @@ namespace Rollgeon.Effects.Concretes
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
                         ResolveSourceId(context), combo.BaseDamage, _comboMultiplier),
-                DamageSource.ComboValue => 0,
+                // Sin combo el ataque NO es 0 — daño mínimo del GD §5 ("número más
+                // alto"): el dado más alto de los holdeados entra a la misma fórmula
+                // como comboBase (TECHNICAL §12: rawDamage = combo?.BaseDamage ?? max).
+                DamageSource.ComboValue => ResolveNoComboFallback(context),
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
                 DamageSource.FromReader => 0,
@@ -78,6 +81,23 @@ namespace Rollgeon.Effects.Concretes
             };
 
             return new DamageArgs { BaseAmount = amount };
+        }
+
+        // Prioriza KeptDice (los dados que el jugador eligió) sobre DiceResult (la tirada
+        // completa): si holdeó solo un 3 y quedó un 6 sin holdear, el mínimo es 3, no 6.
+        // Sin dados (behavior ComboValue sin tirada) sigue siendo 0, como antes.
+        private int ResolveNoComboFallback(EffectContext context)
+        {
+            var dice = context?.KeptDice ?? context?.DiceResult;
+            if (dice == null || dice.Count == 0) return 0;
+
+            int max = 0;
+            for (int i = 0; i < dice.Count; i++)
+                if (dice[i] > max) max = dice[i];
+            if (max <= 0) return 0;
+
+            return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                ResolveSourceId(context), max, _comboMultiplier);
         }
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;

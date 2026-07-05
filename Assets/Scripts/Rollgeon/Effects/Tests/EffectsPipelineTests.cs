@@ -408,9 +408,11 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(40f, list[0].Value);
         }
 
-        // ComboValue sin combo matched → 0 daño (NO cae al _baseAmount): caer al base
-        // defeateaba el bloqueo de combos (boss inmune a Par seguía recibiendo el
-        // _baseAmount=10 al rolear Par contra un combo bloqueado). Contrato 23e162a.
+        // ComboValue sin combo matched Y SIN dados → 0 daño (NO cae al _baseAmount):
+        // caer al base defeateaba el bloqueo de combos (boss inmune a Par seguía
+        // recibiendo el _baseAmount=10 al rolear Par contra un combo bloqueado).
+        // Contrato 23e162a. Con dados holdeados aplica el mínimo del GD §5 (dado más
+        // alto) — ver los tests NoCombo_DealsHighestKeptDie de abajo.
         [Test]
         public void EffDealDamage_ComboValue_DealsZero_WhenNoCombo()
         {
@@ -451,6 +453,55 @@ namespace Rollgeon.Effects.Tests
             Assert.IsFalse(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
                 BehaviorValueKey.FloatingDamage, out _),
                 "No damage dealt — no floating number must be stored");
+        }
+
+        // Regresión "combo número más alto" (GD §5 / TECHNICAL §12): sin combo
+        // matcheado pero CON dados holdeados, el daño mínimo es el dado más alto
+        // de los elegidos (holdear solo un 6 → 6 de daño, no 0).
+        [Test]
+        public void EffDealDamage_ComboValue_NoCombo_DealsHighestKeptDie()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = null;
+            ctx.DiceResult = new[] { 6, 2, 3, 1, 5 };
+            ctx.KeptDice = new[] { 6 };
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_comboMultiplier", 1f);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(6f, list[0].Value);
+        }
+
+        // El mínimo sale de los dados ELEGIDOS, no de toda la tirada: holdear un 3
+        // con un 6 sin holdear en la mesa da 3, no 6.
+        [Test]
+        public void EffDealDamage_ComboValue_NoCombo_UsesKeptDiceNotFullRoll()
+        {
+            var bh = new TestBehavior();
+            var ctx = MakeCtx(bh);
+            ctx.TargetGuid = Guid.NewGuid();
+            ctx.ComboResult = null;
+            ctx.DiceResult = new[] { 3, 6, 1 };
+            ctx.KeptDice = new[] { 3 };
+
+            var eff = new EffDealDamage();
+            SetPrivateField(eff, "_damageSource", DamageSource.ComboValue);
+            SetPrivateField(eff, "_comboMultiplier", 1f);
+
+            var data = new EffectData { Effects = new List<IEffect> { eff } };
+            data.TryExecute(ctx, MakePreCtx());
+
+            Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
+                BehaviorValueKey.FloatingDamage, out var list));
+            Assert.AreEqual(3f, list[0].Value);
         }
 
         [Test]

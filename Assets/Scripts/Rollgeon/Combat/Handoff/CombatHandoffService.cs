@@ -336,10 +336,11 @@ namespace Rollgeon.Combat.Handoff
                 var hero = ResolveHero();
                 BaseComboSO combo = null;
                 ComboDetectionResult? comboResult = null;
+                int[] keptDice = null;
 
                 if (hero != null && _lastFaces != null)
                 {
-                    var keptDice = FilterKeptDice(_lastFaces, KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length));
+                    keptDice = FilterKeptDice(_lastFaces, KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length));
                     combo = hero.Sheet?.MatchBest(keptDice);
                     if (combo != null)
                         comboResult = DetectWithContractMods(combo, keptDice);
@@ -366,6 +367,7 @@ namespace Rollgeon.Combat.Handoff
                 var behaviorCtx = new HeroBehaviorContext
                 {
                     DiceResult = _lastFaces,
+                    KeptDice = keptDice,
                     MatchedComboResult = comboResult,
                     TargetGuid = firstEnemyId,
                     EnergyPrepaid = !chargeOnExecute,
@@ -793,6 +795,7 @@ namespace Rollgeon.Combat.Handoff
             if (hero != null && _lastFaces != null)
             {
                 var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
+                effCtx.KeptDice = keptDice;
                 var combo = hero.Sheet?.MatchBest(keptDice);
                 if (combo != null)
                     effCtx.ComboResult = DetectWithContractMods(combo, keptDice);
