@@ -8,6 +8,7 @@ using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
+using Rollgeon.Dice.Throw;
 using Rollgeon.Dungeon;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -210,8 +211,52 @@ namespace Rollgeon.Combat.Handoff
         // sin este reset, _activeChain queda non-null y el RerollBudgetService
         // global preserva _current, asi que el primer StartBudget del proximo
         // combate tira InvalidOperationException).
+        // ------------------------------------------------------------------
+        // CNF-008: gate de throw manual. Los rolls del jugador delegan en
+        // IDiceThrowService — en modos manuales el reveal (OnDiceRolled) se
+        // difiere hasta que el jugador arroje los dados y asienten. Sin el
+        // servicio registrado (tests, escenas sin la UI) cae al path legacy
+        // sincrónico, byte-idéntico al comportamiento anterior.
+        // ------------------------------------------------------------------
+
+        private void RollViaThrow(Guid playerGuid, DiceBagSO bag, IDiceRoller roller)
+        {
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
+            {
+                throwSvc.RequestRoll(playerGuid, bag, faces => _lastFaces = faces);
+                return;
+            }
+            _lastFaces = roller.RollAll(bag);
+            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+        }
+
+        private void RerollViaThrow(Guid playerGuid, DiceBagSO bag, IDiceRoller roller, bool[] keep)
+        {
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
+            {
+                throwSvc.RequestReroll(playerGuid, bag, _lastFaces, keep, faces => _lastFaces = faces);
+                return;
+            }
+            _lastFaces = roller.Reroll(bag, _lastFaces, keep);
+            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+        }
+
+        // Guard para entry points disparables por el jugador: mientras hay dados en
+        // el aire no se acepta otro roll/reroll/reselección (evita dobles sesiones).
+        private static bool ThrowBusy()
+            => ServiceLocator.TryGetService<IDiceThrowService>(out var t) && t != null && t.IsBusy;
+
+        // Un throw pendiente no puede sobrevivir a su contexto (fin de chain, fin de
+        // combate, cancel) — se aborta SIN revelar (no reembolsa: decisión de diseño).
+        private static void AbortThrow()
+        {
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var t) && t != null && t.IsBusy)
+                t.Abort();
+        }
+
         private void ResetCombatPhaseState()
         {
+            AbortThrow();
             ClearAttackTargetCrease();
 
             if (_chainSelectionController != null)
@@ -440,6 +485,10 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnBehaviorSelected = (int index) =>
             {
+                // CNF-008: con dados en el aire no se reselecciona — evita abrir una
+                // segunda sesión de throw o cancelar el chain con el reveal pendiente.
+                if (ThrowBusy()) return;
+
                 // BUG-013 (cancelar + reembolsar): si hay un Movement esperando su tile,
                 // cualquier click de slot lo cancela y devuelve la energía. Durante la
                 // selección sólo el slot de Movement queda interactuable (los demás están
@@ -647,8 +696,7 @@ namespace Rollgeon.Combat.Handoff
                             // ahora (no al seleccionar) para que la UI mantenga los demas
                             // slots Available durante la fase de target selection.
                             EventManager.Trigger(EventName.OnChainStarted, playerGuid);
-                            _lastFaces = selRoller.RollAll(selBag);
-                            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+                            RollViaThrow(playerGuid, selBag, selRoller);
                         });
                         return;
                     }
@@ -691,6 +739,7 @@ namespace Rollgeon.Combat.Handoff
             hud.OnRollRequested = () =>
             {
                 if (!_awaitingFirstRoll || _selectedBehavior == null) return;
+                if (ThrowBusy()) return;
 
                 var bag = ResolvePlayerBag();
                 var roller = ResolveRoller();
@@ -716,8 +765,7 @@ namespace Rollgeon.Combat.Handoff
                 // true, los demas slots quedaron Available).
                 if (_activeChain != null)
                     EventManager.Trigger(EventName.OnChainStarted, playerGuid);
-                _lastFaces = roller.RollAll(bag);
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+                RollViaThrow(playerGuid, bag, roller);
             };
 
             hud.OnConfirmRequested = () => DoConfirm();
@@ -742,6 +790,7 @@ namespace Rollgeon.Combat.Handoff
             hud.OnEnergyRerollRequested = () =>
             {
                 if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return;
+                if (ThrowBusy()) return;
 
                 // BUG-014: si todos los dados están holdeados, el reroll no movería
                 // ningún dado — bail antes de consumir budget/energía. El botón
@@ -765,8 +814,7 @@ namespace Rollgeon.Combat.Handoff
                     return;
                 }
 
-                _lastFaces = roller.Reroll(bag, _lastFaces, keep);
-                EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+                RerollViaThrow(playerGuid, bag, roller, keep);
             };
         }
 
@@ -888,8 +936,9 @@ namespace Rollgeon.Combat.Handoff
                 return;
             }
 
-            _lastFaces = roller.RollAll(bag);
-            EventManager.Trigger(EventName.OnDiceRolled, playerGuid, (IReadOnlyList<int>)_lastFaces);
+            // CNF-008: entre fases del chain ya no hay roll automático — los dados
+            // aparecen sin tirar y la fase (ej. defensa) espera el throw del jugador.
+            RollViaThrow(playerGuid, bag, roller);
             EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
         }
 
@@ -897,6 +946,8 @@ namespace Rollgeon.Combat.Handoff
         {
             // CNF-002: funnel terminal del chain (resolver, pass, End Turn, cancel) —
             // ningún path debe dejar el crease de selección huérfano.
+            // CNF-008: ídem con un throw pendiente — se aborta sin revelar.
+            AbortThrow();
             ClearAttackTargetCrease();
 
             int phasesCompleted = _chainPhaseIndex;
@@ -1250,6 +1301,7 @@ namespace Rollgeon.Combat.Handoff
         /// </summary>
         private void CancelAwaitingSelection(CombatHUDView hud)
         {
+            AbortThrow();
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
                 budget.EndBudget();
 
