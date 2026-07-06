@@ -157,8 +157,8 @@ namespace Rollgeon.UI.Screens
         /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
         public bool TryGetEndTurnRect(out RectTransform rect)
         {
-            rect = _endTurnButtonView != null ? _endTurnButtonView.transform as RectTransform : null;
-            return rect != null;
+            rect = null;
+            return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
         }
 
         // ======================================================================
