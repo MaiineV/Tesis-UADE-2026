@@ -623,33 +623,9 @@ namespace Rollgeon.UI.HUD
 
         // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
         // IActionRollService con el cost del spec — el behavior.EnergyCost queda
-        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Para
-        // que el label refleje lo que efectivamente se va a cobrar, priorizamos
-        // el spec del effect.
+        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Regla
+        // compartida con el texto de tooltips (HeroActionTooltip).
         private int ResolveDisplayCost(HeroActionBehavior behavior)
-        {
-            if (TryFindActionRollSpec(behavior, out var spec))
-                return spec.EnergyCost;
-            return behavior.EnergyCost;
-        }
-
-        private bool TryFindActionRollSpec(HeroActionBehavior behavior, out ActionRollSpec spec)
-        {
-            spec = default;
-            if (behavior?.Effects == null) return false;
-            foreach (var group in behavior.Effects)
-            {
-                if (group?.Effects == null) continue;
-                foreach (var eff in group.Effects)
-                {
-                    if (eff is IActionRollEffect rollEffect
-                        && rollEffect.TryGetRollSpec(_playerGuid, out spec))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+            => Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
     }
 }

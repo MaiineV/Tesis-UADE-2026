@@ -1,8 +1,11 @@
 using System;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -23,7 +26,7 @@ namespace Rollgeon.Effects.Concretes
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffDealDamage : BaseEffect<DamageArgs, int>,
-        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior, IHasTooltipInfo
     {
         [Title("Damage")]
         [SerializeField]
@@ -59,6 +62,48 @@ namespace Rollgeon.Effects.Concretes
         public int BaseAmount => _baseAmount;
 
         public override string GetEffectName() => "Deal Damage";
+
+        // IHasTooltipInfo — texto dinámico por personaje: ComboValue lee el ATQ del
+        // owner en hover-time; FromReader ejecuta el reader configurado (ej. un stat
+        // del character) con un contexto mínimo. Expansión de personajes = data-driven.
+        public string BuildTooltip()
+            => TooltipContext.TryForCurrentHero(Rollgeon.Phase.GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
+
+        public string BuildTooltip(in TooltipContext context)
+        {
+            switch (_damageSource)
+            {
+                case DamageSource.ComboValue:
+                {
+                    int attack = ResolveOwnerAttack(context.OwnerGuid);
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append("Daño: ATQ (").Append(attack).Append(") + puntaje del combo");
+                    if (!Mathf.Approximately(_comboMultiplier, 1f))
+                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                    sb.AppendLine();
+                    sb.Append("Sin combo: ATQ + dado más alto elegido");
+                    return sb.ToString();
+                }
+                case DamageSource.FromReader when _reader != null:
+                    return "Daño: " + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                case DamageSource.FromReader:
+                    return null;
+                default:
+                    return "Daño: " + _baseAmount;
+            }
+        }
+
+        private static int ResolveOwnerAttack(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                || attributes == null)
+                return 0;
+            return attributes.GetAttribute<Attack>(ownerGuid)?.ModifiedValue ?? 0;
+        }
 
         protected override DamageArgs ResolveArgs(EffectContext context)
         {

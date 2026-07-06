@@ -102,11 +102,17 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void BuildTooltip_BuildDiceOff_ReturnsNull()
+        public void BuildTooltip_BuildDiceOff_ConstantSource_ShowsFlatHeal()
         {
-            // Sin _useBuildDice, no hay umbral/tope relevantes para mostrar.
+            // Sin _useBuildDice el tooltip describe la fuente del heal (Constant default).
+            // El header/costo los agrega HeroActionTooltip.BuildFor, acá solo el body.
             var heal = new EffHeal();
-            Assert.IsNull(heal.BuildTooltip());
+            SetPrivateField(heal, "_baseAmount", 12);
+
+            var text = heal.BuildTooltip();
+
+            Assert.IsNotNull(text);
+            StringAssert.Contains("Curación: 12 HP", text);
         }
 
         [Test]
