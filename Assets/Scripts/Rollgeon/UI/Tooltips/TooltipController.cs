@@ -215,14 +215,33 @@ namespace Rollgeon.UI.Tooltips
         // de ningún trigger real.
         internal const int EditorPreviewOwnerId = int.MinValue;
 
+        // Ancestros (incluido este GO) que el preview activó porque estaban inactivos
+        // en la escena de edición — el TooltipController vive apagado hasta que el
+        // sistema de pantallas lo activa en runtime. Se restauran al ocultar el preview.
+        private readonly System.Collections.Generic.List<GameObject> _editorPreviewActivated =
+            new System.Collections.Generic.List<GameObject>();
+
         /// <summary>
         /// Muestra el panel real con texto de ejemplo SIN play mode, para previsualizar
         /// en el Game view qué espacio ocupa el tooltip en la posición configurada.
-        /// Invocado por los botones de preview de los triggers.
+        /// Invocado por los botones de preview de los triggers. Activa temporalmente la
+        /// jerarquía del controller si está inactiva (se restaura en
+        /// <see cref="EditorPreviewHide"/>).
         /// </summary>
         internal void EditorPreview(string text, Vector2 screenPos, TooltipPlacementMode placement)
         {
             EnsureRefs();
+
+            // Sin esto el panel se "activa" pero nunca se ve: activeSelf=true con un
+            // ancestro apagado sigue siendo invisible. Activar ANTES de Show para que
+            // el layout rebuild del clamp mida el tamaño real.
+            for (var t = transform; t != null; t = t.parent)
+            {
+                if (t.gameObject.activeSelf) continue;
+                t.gameObject.SetActive(true);
+                _editorPreviewActivated.Add(t.gameObject);
+            }
+
             Show(text, screenPos, EditorPreviewOwnerId, placement);
         }
 
@@ -230,6 +249,10 @@ namespace Rollgeon.UI.Tooltips
         {
             EnsureRefs();
             HideForce();
+
+            foreach (var go in _editorPreviewActivated)
+                if (go != null) go.SetActive(false);
+            _editorPreviewActivated.Clear();
         }
 #endif
     }
