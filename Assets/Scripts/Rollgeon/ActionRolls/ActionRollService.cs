@@ -139,6 +139,15 @@ namespace Rollgeon.ActionRolls
             _currentRoll = null;
             _rollIndex = 0;
 
+            // CNF-008 (grab-to-reroll): mientras este flow está activo, agarrar dados
+            // asentados y arrojarlos ejecuta NUESTRO reroll (no el de combate). Se
+            // guarda el handler previo (el del handoff) y se restaura en ResetState.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var grabSvc) && grabSvc != null)
+            {
+                _prevGrabRerollHandler = grabSvc.GrabRerollHandler;
+                grabSvc.GrabRerollHandler = TryGrabReroll;
+            }
+
             if (spec.RequireConfirm)
             {
                 SetPhase(ActionRollPhase.AwaitingConfirm);
@@ -147,6 +156,19 @@ namespace Rollgeon.ActionRolls
             {
                 BeginInitialRoll();
             }
+        }
+
+        private Func<bool[], bool> _prevGrabRerollHandler;
+
+        // Reroll iniciado por agarre: mismas reglas que el botón (fase, energía).
+        private bool TryGrabReroll(bool[] keep)
+        {
+            if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
+            if (!CanAffordReroll) return false;
+            RequestReroll(keep);
+            // RequestReroll pudo bailar por sus guards internos — arrancó solo si la
+            // fase se movió (Rolling en modos manuales) o ya hay tirada nueva.
+            return _phase == ActionRollPhase.Rolling;
         }
 
         public void Confirm()
@@ -546,6 +568,15 @@ namespace Rollgeon.ActionRolls
 
         private void ResetState()
         {
+            // Devolver el grab-reroll al dueño anterior (el handoff de combate) —
+            // este flow ya no puede ejecutar rerolls.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var grabSvc) && grabSvc != null
+                && grabSvc.GrabRerollHandler == (Func<bool[], bool>)TryGrabReroll)
+            {
+                grabSvc.GrabRerollHandler = _prevGrabRerollHandler;
+            }
+            _prevGrabRerollHandler = null;
+
             _onCompleted = null;
             _bag = null;
             _currentRoll = null;

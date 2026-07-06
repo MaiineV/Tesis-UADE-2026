@@ -350,11 +350,19 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
                 && rs != null && rs.IsActive)
             {
-                _extraRollButton.interactable = rs.CanAffordReroll;
+                _extraRollButton.interactable = rs.CanAffordReroll && !IsGrabRerollMode();
                 return;
             }
 
             if (_budget == null)
+            {
+                _extraRollButton.interactable = false;
+                return;
+            }
+
+            // CNF-008 (grab-to-reroll): en modo 2D el botón solo dispara el PRIMER
+            // roll — los rerolls se hacen agarrando los dados asentados y arrojándolos.
+            if (!IsFirstRollPending() && IsGrabRerollMode())
             {
                 _extraRollButton.interactable = false;
                 return;
@@ -371,6 +379,16 @@ namespace Rollgeon.UI.HUD
             }
             _extraRollButton.interactable = query.IsAvailable;
         }
+
+        // Mismo criterio de "primer roll" que RefreshButtonText.
+        private bool IsFirstRollPending()
+            => _budget != null && _budget.Current != null && _budget.Current.Action != null
+               && _budget.Current.FreeRollsRemaining == _budget.Current.Action.FreeRollCount
+               && _budget.Current.PaidRollsUsed == 0;
+
+        private static bool IsGrabRerollMode()
+            => ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
+               && t != null && t.Mode == Rollgeon.Dice.Throw.DiceThrowMode.TwoD;
 
         private DiceZoneView ResolveDiceZone()
         {

@@ -1040,7 +1040,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.Throw.DiceThrow2DPresenter
   _diceZone: {fileID: 7832882399325725898}
-  _dieSize: {x: 56, y: 56}
+  _diePrefab: {fileID: 4802173880582162208, guid: cabfae1b6cb79aa4685aca012136f93d, type: 3}
+  _layer: {fileID: 1894434048}
 --- !u!1 &818900992
 GameObject:
   m_ObjectHideFlags: 0
@@ -3300,6 +3301,54 @@ MonoBehaviour:
   _bodyLabel: {fileID: 1642134872}
   _displaySeconds: 3
   _gapSeconds: 0.25
+--- !u!1 &1894434047
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1894434048}
+  - component: {fileID: 1894434049}
+  m_Layer: 0
+  m_Name: DiceThrowLayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1894434048
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894434047}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6408216767782424874}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &1894434049
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894434047}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1976207800
 GameObject:
   m_ObjectHideFlags: 0
@@ -15425,6 +15474,7 @@ RectTransform:
   - {fileID: 8704688057759328083}
   - {fileID: 1890664007}
   - {fileID: 726939617}
+  - {fileID: 1894434048}
   m_Father: {fileID: 2024317181}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

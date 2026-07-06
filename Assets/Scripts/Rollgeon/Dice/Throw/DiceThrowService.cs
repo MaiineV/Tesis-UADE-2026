@@ -72,6 +72,10 @@ namespace Rollgeon.Dice.Throw
         public event Action OnGrabCancelled;
         public event Action OnSessionAborted;
 
+        public Func<bool[], bool> GrabRerollHandler { get; set; }
+
+        public bool CanGrabReroll => !IsBusy && GrabRerollHandler != null && WillDefer;
+
         // ---- Lado caller -----------------------------------------------------
 
         public void RequestRoll(Guid playerGuid, DiceBagSO bag, Action<int[]> onRevealed)

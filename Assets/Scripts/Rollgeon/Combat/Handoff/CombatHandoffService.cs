@@ -257,6 +257,9 @@ namespace Rollgeon.Combat.Handoff
         private void ResetCombatPhaseState()
         {
             AbortThrow();
+            // El grab-reroll no sobrevive al combate — el handler apunta a un hud viejo.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvcReset) && throwSvcReset != null)
+                throwSvcReset.GrabRerollHandler = null;
             ClearAttackTargetCrease();
 
             if (_chainSelectionController != null)
@@ -787,35 +790,53 @@ namespace Rollgeon.Combat.Handoff
                 FinishChain(hud, playerGuid, true);
             };
 
-            hud.OnEnergyRerollRequested = () =>
+            hud.OnEnergyRerollRequested = () => TryEnergyReroll(hud, playerGuid);
+
+            // CNF-008 (grab-to-reroll): en modos manuales el reroll también se inicia
+            // agarrando dados asentados y arrojándolos — el presenter arma el agarre
+            // y pide el reroll acá con keep = los dados NO agarrados.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var grabThrowSvc) && grabThrowSvc != null)
+                grabThrowSvc.GrabRerollHandler = keepOverride => TryEnergyReroll(hud, playerGuid, keepOverride);
+        }
+
+        // Cuerpo compartido del reroll de combate: el botón Roll/Reroll lo invoca sin
+        // keepOverride (usa los holds del HUD) y el grab-to-reroll con el mask armado
+        // por el presenter. Devuelve true si el reroll efectivamente arrancó.
+        private bool TryEnergyReroll(CombatHUDView hud, Guid playerGuid, bool[] keepOverride = null)
+        {
+            if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return false;
+            if (ThrowBusy()) return false;
+            if (_lastFaces == null) return false; // nada rolleado todavía — no hay qué re-tirar
+
+            // BUG-014: si todos los dados están holdeados, el reroll no movería
+            // ningún dado — bail antes de consumir budget/energía. El botón
+            // debería estar deshabilitado por la UI, esto es el guard defensivo.
+            // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
+            var keep = KeepForcingBlockedDice(keepOverride ?? hud.GetCurrentKeep(), _lastFaces?.Length ?? 0);
+            if (AllDiceHeld(keep))
             {
-                if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return;
-                if (ThrowBusy()) return;
+                Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — todos los dados están holdeados.");
+                return false;
+            }
 
-                // BUG-014: si todos los dados están holdeados, el reroll no movería
-                // ningún dado — bail antes de consumir budget/energía. El botón
-                // debería estar deshabilitado por la UI, esto es el guard defensivo.
-                // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
-                var keep = KeepForcingBlockedDice(hud.GetCurrentKeep(), _lastFaces?.Length ?? 0);
-                if (AllDiceHeld(keep))
-                {
-                    Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — todos los dados están holdeados.");
-                    return;
-                }
+            // Sin budget/energía el reroll no procede — clave para el grab-to-reroll,
+            // que no tiene el gating visual del botón.
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null
+                && !budget.TryExtraRoll(playerGuid))
+            {
+                return false;
+            }
 
-                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
-                    budget.TryExtraRoll(playerGuid);
+            var bag = ResolvePlayerBag();
+            var roller = ResolveRoller();
+            if (bag == null || roller == null)
+            {
+                Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Reroll abortado.");
+                return false;
+            }
 
-                var bag = ResolvePlayerBag();
-                var roller = ResolveRoller();
-                if (bag == null || roller == null)
-                {
-                    Debug.LogError("[CombatHandoffService] No se pudo resolver bag/roller — Reroll abortado.");
-                    return;
-                }
-
-                RerollViaThrow(playerGuid, bag, roller, keep);
-            };
+            RerollViaThrow(playerGuid, bag, roller, keep);
+            return true;
         }
 
         // ======================================================================

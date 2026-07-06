@@ -49,8 +49,16 @@ namespace Rollgeon.UI.HUD
                 _diceLabel.text = diceTypeName;
         }
 
+        /// <summary>Última cara mostrada (0 = sin tirada). Lo lee el presenter de
+        /// throw para etiquetar el ghost al agarrar este dado en un grab-reroll.</summary>
+        public int CurrentFace { get; private set; }
+
         /// <summary>Combat — show rolled face value.</summary>
-        public void ShowFace(int face) => _diceLabel?.SetText(face.ToString());
+        public void ShowFace(int face)
+        {
+            CurrentFace = face;
+            _diceLabel?.SetText(face.ToString());
+        }
 
         /// <summary>Combat — toggle held visual (blue tint). Sin efecto si el dado está bloqueado.</summary>
         public void SetHeld(bool held)
@@ -82,6 +90,7 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void Clear()
         {
+            CurrentFace = 0;
             _diceLabel?.SetText(string.Empty);
             SetBlocked(false);
             SetHeld(false);

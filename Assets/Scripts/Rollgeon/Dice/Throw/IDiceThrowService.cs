@@ -60,6 +60,19 @@ namespace Rollgeon.Dice.Throw
         /// </summary>
         void Abort();
 
+        /// <summary>
+        /// Reroll iniciado por agarre (2D): el flujo dueño del roll registra acá cómo
+        /// ejecutar un reroll cuando el jugador agarra dados asentados y los arroja.
+        /// El handler recibe el keep-mask (true = conservar) y devuelve true si el
+        /// reroll arrancó (validó estado, cobró budget/energía y abrió la sesión).
+        /// El dueño lo limpia al salir de su contexto (fin de combate / resolve).
+        /// </summary>
+        Func<bool[], bool> GrabRerollHandler { get; set; }
+
+        /// <summary>true si un presenter puede armar un grab-reroll ahora (hay handler,
+        /// no hay sesión en curso, y el modo difiere el reveal).</summary>
+        bool CanGrabReroll { get; }
+
         // ---- Lado presenter (2D/3D) ----------------------------------------
 
         /// <summary>Registra el presenter activo. Sin presenter, los requests resuelven
