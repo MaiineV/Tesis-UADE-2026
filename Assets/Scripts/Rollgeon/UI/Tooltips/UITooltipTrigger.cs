@@ -57,32 +57,12 @@ namespace Rollgeon.UI.Tooltips
 
         // Punto-pantalla final según el modo: AutoFit ancla al propio elemento (el
         // controller suma su offset global y clampea); Fixed ancla al RectTransform
-        // configurado + offset X/Y exactos.
+        // configurado + offset X/Y en píxeles de referencia (resolución-independiente).
         private Vector2 ResolvePlacementScreenPos()
         {
-            if (_placement.Mode == TooltipPlacementMode.Fixed)
-            {
-                var anchor = _placement.FixedAnchor != null ? _placement.FixedAnchor : SelfRect;
-                var canvas = anchor != null ? anchor.GetComponentInParent<Canvas>() : null;
-                float scale = canvas != null ? canvas.scaleFactor : 1f;
-                return ScreenPosOf(anchor) + _placement.FixedOffset * scale;
-            }
-
-            return ScreenPosOf(SelfRect);
-        }
-
-        // Punto-pantalla de un rect de UI. Para Canvas Screen Space Overlay,
-        // RectTransform.position ya está en screen-space (las x/y coinciden con pixels).
-        // Para Camera/World, convertimos con la cámara del canvas.
-        private static Vector2 ScreenPosOf(RectTransform rect)
-        {
-            if (rect == null) return Vector2.zero;
-
-            var canvas = rect.GetComponentInParent<Canvas>();
-            if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                return rect.position;
-
-            return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, rect.position);
+            return _placement.Mode == TooltipPlacementMode.Fixed
+                ? _placement.ResolveFixedScreenPos(SelfRect)
+                : TooltipPlacementSettings.ScreenPosOf(SelfRect);
         }
 
 #if UNITY_EDITOR

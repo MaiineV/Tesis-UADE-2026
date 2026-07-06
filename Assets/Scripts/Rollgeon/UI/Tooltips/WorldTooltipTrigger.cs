@@ -152,19 +152,13 @@ namespace Rollgeon.UI.Tooltips
 
         // Punto-pantalla final según el modo: AutoFit ancla al objeto 3D (el controller
         // suma su offset global y clampea a pantalla); Fixed ancla al RectTransform de UI
-        // configurado + offset X/Y exactos (sin anchor configurado cae al objeto 3D).
+        // configurado + offset en píxeles de referencia (resolución-independiente). Fixed
+        // SIN anchor cae al objeto 3D + offset en píxeles reales — para tooltips de mundo
+        // conviene configurar un anchor de UI o usar AutoFit.
         private Vector2 ResolvePlacementScreenPos(Camera cam)
         {
             if (_placement.Mode == TooltipPlacementMode.Fixed && _placement.FixedAnchor != null)
-            {
-                var anchor = _placement.FixedAnchor;
-                var canvas = anchor.GetComponentInParent<Canvas>();
-                float scale = canvas != null ? canvas.scaleFactor : 1f;
-                Vector2 anchorScreen = canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay
-                    ? (Vector2)anchor.position
-                    : RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, anchor.position);
-                return anchorScreen + _placement.FixedOffset * scale;
-            }
+                return _placement.ResolveFixedScreenPos(null);
 
             Vector2 objScreen = ResolveAnchorScreenPos(cam);
             return _placement.Mode == TooltipPlacementMode.Fixed

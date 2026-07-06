@@ -37,10 +37,47 @@ namespace Rollgeon.UI.Tooltips
         public RectTransform FixedAnchor;
 
         [ShowIf(nameof(IsFixed))]
-        [Tooltip("Offset X/Y en píxeles de referencia del canvas, relativo al anchor " +
-                 "(se escala con el CanvasScaler).")]
+        [Tooltip("Offset X/Y relativo al anchor, en píxeles de REFERENCIA del canvas " +
+                 "(ej. 1920x1080 del CanvasScaler). Se multiplica por canvas.scaleFactor, " +
+                 "así que la posición relativa se mantiene en cualquier resolución.")]
         public Vector2 FixedOffset;
 
         private bool IsFixed => Mode == TooltipPlacementMode.Fixed;
+
+        /// <summary>
+        /// Punto-pantalla final del modo Fixed: anchor configurado (o
+        /// <paramref name="fallbackAnchor"/>) + offset escalado por el scaleFactor del
+        /// canvas del anchor. Como el anchor se mueve con el layout del canvas y el
+        /// offset escala con la resolución, el resultado es resolución-independiente
+        /// (el offset se interpreta en píxeles de referencia del CanvasScaler).
+        /// </summary>
+        public Vector2 ResolveFixedScreenPos(RectTransform fallbackAnchor)
+        {
+            var anchor = FixedAnchor != null ? FixedAnchor : fallbackAnchor;
+            if (anchor == null) return FixedOffset;
+
+            var canvas = anchor.GetComponentInParent<Canvas>();
+            float scale = canvas != null ? canvas.scaleFactor : 1f;
+            return ScreenPosOf(anchor, canvas) + FixedOffset * scale;
+        }
+
+        /// <summary>
+        /// Punto-pantalla de un rect de UI. Para Canvas Screen Space Overlay,
+        /// RectTransform.position ya está en screen-space; para Camera/World se
+        /// proyecta con la cámara del canvas.
+        /// </summary>
+        public static Vector2 ScreenPosOf(RectTransform rect)
+        {
+            if (rect == null) return Vector2.zero;
+            return ScreenPosOf(rect, rect.GetComponentInParent<Canvas>());
+        }
+
+        private static Vector2 ScreenPosOf(RectTransform rect, Canvas canvas)
+        {
+            if (rect == null) return Vector2.zero;
+            if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                return rect.position;
+            return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, rect.position);
+        }
     }
 }

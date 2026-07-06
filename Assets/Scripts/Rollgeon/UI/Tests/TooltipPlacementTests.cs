@@ -104,6 +104,73 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(target.y, root.position.y, 1e-3f);
         }
 
+        [Test]
+        public void ResolveFixedScreenPos_OffsetScalesWithCanvasScaleFactor()
+        {
+            // Arrange — el offset se ingresa en píxeles de REFERENCIA del canvas: al
+            // cambiar la resolución (scaleFactor del CanvasScaler), la distancia relativa
+            // al anchor debe mantenerse constante en unidades de canvas.
+            var canvasGo = new GameObject("Canvas", typeof(Canvas));
+            _objects.Add(canvasGo);
+            var canvas = canvasGo.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var anchorGo = new GameObject("Anchor", typeof(RectTransform));
+            anchorGo.transform.SetParent(canvasGo.transform, false);
+            var anchor = (RectTransform)anchorGo.transform;
+
+            var settings = new TooltipPlacementSettings
+            {
+                Mode = TooltipPlacementMode.Fixed,
+                FixedAnchor = anchor,
+                FixedOffset = new Vector2(30f, -20f),
+            };
+
+            // Act — misma escena a dos "resoluciones" (scaleFactor 1x y 2x).
+            canvas.scaleFactor = 1f;
+            Vector2 deltaAt1x = (settings.ResolveFixedScreenPos(null) - (Vector2)anchor.position)
+                                / canvas.scaleFactor;
+            canvas.scaleFactor = 2f;
+            Vector2 deltaAt2x = (settings.ResolveFixedScreenPos(null) - (Vector2)anchor.position)
+                                / canvas.scaleFactor;
+
+            // Assert — en unidades de canvas la posición relativa no cambia con la resolución.
+            Assert.AreEqual(settings.FixedOffset.x, deltaAt1x.x, 1e-3f);
+            Assert.AreEqual(settings.FixedOffset.y, deltaAt1x.y, 1e-3f);
+            Assert.AreEqual(deltaAt1x.x, deltaAt2x.x, 1e-3f,
+                "El offset en píxeles de referencia debe mantenerse al cambiar la resolución.");
+            Assert.AreEqual(deltaAt1x.y, deltaAt2x.y, 1e-3f,
+                "El offset en píxeles de referencia debe mantenerse al cambiar la resolución.");
+        }
+
+        [Test]
+        public void ResolveFixedScreenPos_NoAnchorConfigured_FallsBackToProvidedRect()
+        {
+            // Arrange
+            var canvasGo = new GameObject("Canvas", typeof(Canvas));
+            _objects.Add(canvasGo);
+            canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var fallbackGo = new GameObject("Trigger", typeof(RectTransform));
+            fallbackGo.transform.SetParent(canvasGo.transform, false);
+            var fallback = (RectTransform)fallbackGo.transform;
+            fallback.position = new Vector3(200f, 100f, 0f);
+
+            var settings = new TooltipPlacementSettings
+            {
+                Mode = TooltipPlacementMode.Fixed,
+                FixedAnchor = null,
+                FixedOffset = new Vector2(10f, 5f),
+            };
+
+            // Act
+            var pos = settings.ResolveFixedScreenPos(fallback);
+
+            // Assert — sin anchor explícito usa el rect del trigger.
+            Assert.AreEqual(210f, pos.x, 1e-3f);
+            Assert.AreEqual(105f, pos.y, 1e-3f);
+        }
+
         private TooltipController CreateOverlayTooltipController(out RectTransform root)
         {
             var canvasGo = new GameObject("Canvas", typeof(Canvas));
