@@ -287,6 +287,59 @@ namespace Rollgeon.Patterns.Save.Tests
             Assert.AreEqual(0, _store.WriteCount);
         }
 
+        // ====================================================================
+        // Queries (menú / resume)
+        // ====================================================================
+
+        [Test]
+        public void HasSave_NoFileOnStore_ReturnsFalse()
+        {
+            Assert.IsFalse(SaveSystem.HasSave());
+        }
+
+        [Test]
+        public void HasSave_FileExistsOnStore_ReturnsTrue()
+        {
+            _store.Files[_settings.GetSavePath()] = new byte[] { 1 };
+
+            Assert.IsTrue(SaveSystem.HasSave());
+        }
+
+        [Test]
+        public void HasSave_NoSettingsRegistered_ReturnsFalse()
+        {
+            ServiceLocator.RemoveService<SaveSettingsSO>();
+
+            Assert.IsFalse(SaveSystem.HasSave());
+        }
+
+        [Test]
+        public void TryGetCached_AfterCaptureAll_ReturnsStateWithoutRestoring()
+        {
+            var s = new FakeSaveable("k", 7);
+            SaveSystem.Register(s);
+            SaveSystem.CaptureAll();
+
+            Assert.IsTrue(SaveSystem.TryGetCached("k", out var cached));
+            Assert.AreEqual(7, cached);
+            Assert.AreEqual(0, s.RestoreCalls);
+        }
+
+        [Test]
+        public void DeleteSave_RemovesFileAndClearsCache()
+        {
+            var s = new FakeSaveable("k", 7);
+            SaveSystem.Register(s);
+            SaveSystem.CaptureAll();
+            SaveSystem.Flush(SaveTrigger.Manual);
+            Assert.IsTrue(SaveSystem.HasSave());
+
+            SaveSystem.DeleteSave();
+
+            Assert.IsFalse(SaveSystem.HasSave());
+            Assert.IsFalse(SaveSystem.TryGetCached("k", out _));
+        }
+
         [Test]
         public void Clear_EmptiesCacheAndDirty()
         {

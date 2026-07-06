@@ -86,7 +86,7 @@ namespace Rollgeon.Run.Tests
             var runId = Guid.NewGuid();
             RunBootstrapper.StartRun(_hero, null, runId);
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(ServiceLocator.HasService<IRunContextService>());
         }
@@ -97,7 +97,7 @@ namespace Rollgeon.Run.Tests
             var runId = Guid.NewGuid();
             RunBootstrapper.StartRun(_hero, null, runId);
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsNull(_playerService.CurrentHero);
             Assert.AreEqual(Guid.Empty, _playerService.RunId);
@@ -110,7 +110,7 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.StartRun(_hero, null, runId);
             var ctx = ServiceLocator.GetService<IRunContextService>();
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(ctx.IsRunActive);
         }
@@ -123,7 +123,7 @@ namespace Rollgeon.Run.Tests
             bool fired = false;
             EventManager.Subscribe(EventName.OnRunEnd, args => fired = true);
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsTrue(fired);
         }
@@ -164,7 +164,7 @@ namespace Rollgeon.Run.Tests
                 Assert.AreEqual(1, stub.RegisterCount, "Primera StartRun no invocó Register.");
                 Assert.IsTrue(ServiceLocator.HasService<RunScopedStub>(), "Stub no quedó registrado tras la 1ª run.");
 
-                RunBootstrapper.EndRun(runId1);
+                RunBootstrapper.EndRun(runId1, runCompleted: false);
                 Assert.IsFalse(ServiceLocator.HasService<RunScopedStub>(), "EndRun no limpió el stub Run-scoped.");
 
                 RunBootstrapper.StartRun(_hero, null, Guid.NewGuid());
@@ -253,7 +253,7 @@ namespace Rollgeon.Run.Tests
                 // Sólo RegisterRunScoped corre desde StartRun. Como el stub es Global,
                 // su contador queda en 0 incluso después de varios StartRun.
                 RunBootstrapper.StartRun(_hero, null, Guid.NewGuid());
-                RunBootstrapper.EndRun(Guid.Empty);
+                RunBootstrapper.EndRun(Guid.Empty, runCompleted: false);
                 RunBootstrapper.StartRun(_hero, null, Guid.NewGuid());
 
                 Assert.AreEqual(0, globalStub.RegisterCount,

@@ -22,5 +22,10 @@ namespace Rollgeon.Patterns.Save.Tests
             Files[path] = bytes;
             WriteCount++;
         }
+
+        public void Delete(string path)
+        {
+            Files.Remove(path);
+        }
     }
 }

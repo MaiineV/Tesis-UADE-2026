@@ -204,7 +204,7 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.StartRun(_hero, null, runId);
             Assert.IsTrue(_controller.IsRunActive);
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(_controller.IsRunActive);
         }
@@ -242,7 +242,7 @@ namespace Rollgeon.Run.Tests
             var playerGuid = _playerService.PlayerGuid;
             Assert.IsTrue(_attributesManager.IsRegistered(playerGuid));
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(_attributesManager.IsRegistered(playerGuid),
                 "AttributesManager is Global scope — the player entry must be cleaned up on run end");
