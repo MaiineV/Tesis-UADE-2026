@@ -33,6 +33,12 @@ namespace Rollgeon.Tutorial
         /// <summary>Sala B: dados confirmados — señalar al enemigo para pegarle.</summary>
         TargetTeach,
 
+        /// <summary>Sala B: el chain siguió a la fase de defensa — explicar el escudo.</summary>
+        DefenseTeach,
+
+        /// <summary>Sala B: la acción terminó — explicar el fin de turno.</summary>
+        EndTurnTeach,
+
         /// <summary>Sala B: loop libre del combate 1 — repetir hasta vencer.</summary>
         Combat1,
 

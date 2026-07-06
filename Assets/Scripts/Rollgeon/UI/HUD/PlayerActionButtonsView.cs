@@ -216,6 +216,13 @@ namespace Rollgeon.UI.HUD
             return false;
         }
 
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmRect(out RectTransform rect)
+        {
+            rect = _confirmButton != null ? _confirmButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         public void Unbind()
         {
             if (!_bound) return;

@@ -140,6 +140,27 @@ namespace Rollgeon.UI.Screens
             return rect != null;
         }
 
+        /// <summary>RectTransform del botón Roll/Reroll — anchor del overlay del tutorial.</summary>
+        public bool TryGetRollButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _rerollCount != null && _rerollCount.TryGetRollButtonRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _playerActionButtons != null && _playerActionButtons.TryGetConfirmRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
+        public bool TryGetEndTurnRect(out RectTransform rect)
+        {
+            rect = _endTurnButtonView != null ? _endTurnButtonView.transform as RectTransform : null;
+            return rect != null;
+        }
+
         // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================

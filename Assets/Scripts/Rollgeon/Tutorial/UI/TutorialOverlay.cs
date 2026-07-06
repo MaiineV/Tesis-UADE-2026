@@ -252,7 +252,7 @@ namespace Rollgeon.Tutorial.UI
             float radius = _request.CutoutRadiusPx > 0f
                 ? _request.CutoutRadiusPx
                 : _request.AnchorKind == TutorialAnchorKind.RectTransform
-                    ? TutorialAnchorResolver.ResolveUiCutoutRadius(_request.UiTarget, _settings.UiCutoutPaddingPx)
+                    ? TutorialAnchorResolver.ResolveUiCutoutRadius(_request.UiTarget, _request.UiTargetsExtra, _settings.UiCutoutPaddingPx)
                     : _settings.DefaultCutoutRadiusPx;
 
             // Clamp del centro a pantalla (anchor fuera de cuadro sigue señalizable).

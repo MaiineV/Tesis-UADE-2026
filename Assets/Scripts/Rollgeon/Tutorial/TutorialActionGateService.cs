@@ -74,5 +74,18 @@ namespace Rollgeon.Tutorial
             Debug.Log(LogPrefix + $"Acción desbloqueada: {slot}.");
             EventManager.Trigger(EventName.OnTutorialActionUnlocked, slot);
         }
+
+        /// <summary>
+        /// Re-bloquea un slot (ej. durante la lección de escape solo queda Forzar
+        /// Puerta). Dispara el mismo evento que <see cref="Unlock"/> — los HUDs
+        /// solo lo usan como señal de "recomputá estados de botones".
+        /// </summary>
+        public void Lock(HeroBehaviorSlot slot)
+        {
+            if (!_lockedSlots.Add(slot)) return;
+
+            Debug.Log(LogPrefix + $"Acción re-bloqueada: {slot}.");
+            EventManager.Trigger(EventName.OnTutorialActionUnlocked, slot);
+        }
     }
 }

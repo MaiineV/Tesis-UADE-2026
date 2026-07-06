@@ -36,7 +36,7 @@ namespace Rollgeon.Tutorial.UI
                            && TryWorldToScreen(worldPos, out screenPos);
 
                 case TutorialAnchorKind.RectTransform:
-                    return TryResolveRect(request.UiTarget, out screenPos);
+                    return TryResolveRectGroup(request.UiTarget, request.UiTargetsExtra, out screenPos);
 
                 default:
                     return false;
@@ -44,17 +44,14 @@ namespace Rollgeon.Tutorial.UI
         }
 
         /// <summary>
-        /// Radio del recorte para un RectTransform del HUD: media diagonal del rect
-        /// en pantalla + padding. Los anchors de mundo usan el default de settings.
+        /// Radio del recorte para un grupo de RectTransforms del HUD: media diagonal
+        /// del bounding box en pantalla + padding. Los anchors de mundo usan el
+        /// default de settings.
         /// </summary>
-        public static float ResolveUiCutoutRadius(RectTransform target, float paddingPx)
+        public static float ResolveUiCutoutRadius(RectTransform target, RectTransform[] extras, float paddingPx)
         {
-            if (target == null) return paddingPx;
-            var corners = new Vector3[4];
-            target.GetWorldCorners(corners);
-            // Canvas ScreenSpaceOverlay: los world corners YA están en píxeles de pantalla.
-            float halfDiagonal = Vector2.Distance(corners[0], corners[2]) * 0.5f;
-            return halfDiagonal + paddingPx;
+            if (!TryGetGroupBounds(target, extras, out var min, out var max)) return paddingPx;
+            return Vector2.Distance(min, max) * 0.5f + paddingPx;
         }
 
         private static bool TryWorldToScreen(Vector3 worldPos, out Vector2 screenPos)
@@ -100,17 +97,42 @@ namespace Rollgeon.Tutorial.UI
             return false;
         }
 
-        private static bool TryResolveRect(RectTransform target, out Vector2 screenPos)
+        // Centro del bounding box del grupo (target + extras). ScreenSpaceOverlay:
+        // world == screen píxeles. (El HUD del proyecto es siempre overlay; si algún
+        // canvas usara cámara habría que pasar por RectTransformUtility con esa cámara.)
+        private static bool TryResolveRectGroup(
+            RectTransform target, RectTransform[] extras, out Vector2 screenPos)
         {
             screenPos = default;
-            if (target == null || !target.gameObject.activeInHierarchy) return false;
+            if (!TryGetGroupBounds(target, extras, out var min, out var max)) return false;
+            screenPos = (min + max) * 0.5f;
+            return true;
+        }
+
+        // Bounding box (en píxeles de pantalla) del rect principal + los extras vivos.
+        // false si NINGÚN rect es resoluble este frame.
+        private static bool TryGetGroupBounds(
+            RectTransform target, RectTransform[] extras, out Vector2 min, out Vector2 max)
+        {
+            min = new Vector2(float.MaxValue, float.MaxValue);
+            max = new Vector2(float.MinValue, float.MinValue);
+            bool any = AccumulateRect(target, ref min, ref max);
+            if (extras != null)
+            {
+                foreach (var extra in extras)
+                    any |= AccumulateRect(extra, ref min, ref max);
+            }
+            return any;
+        }
+
+        private static bool AccumulateRect(RectTransform rect, ref Vector2 min, ref Vector2 max)
+        {
+            if (rect == null || !rect.gameObject.activeInHierarchy) return false;
 
             var corners = new Vector3[4];
-            target.GetWorldCorners(corners);
-            // ScreenSpaceOverlay: world == screen píxeles. (El HUD del proyecto es
-            // siempre overlay; si algún canvas usara cámara habría que pasar por
-            // RectTransformUtility.WorldToScreenPoint con esa cámara.)
-            screenPos = (corners[0] + corners[2]) * 0.5f;
+            rect.GetWorldCorners(corners);
+            min = Vector2.Min(min, Vector2.Min(corners[0], corners[2]));
+            max = Vector2.Max(max, Vector2.Max(corners[0], corners[2]));
             return true;
         }
     }

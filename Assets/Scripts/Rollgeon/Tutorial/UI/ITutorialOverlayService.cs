@@ -45,6 +45,11 @@ namespace Rollgeon.Tutorial.UI
         /// <summary>Anchor para <see cref="TutorialAnchorKind.RectTransform"/> (botón del HUD).</summary>
         public RectTransform UiTarget;
 
+        /// <summary>Rects adicionales que el recorte también debe abarcar (ej. la zona
+        /// de dados + los botones Roll y Confirmar). Centro y radio se calculan sobre
+        /// el bounding box de <see cref="UiTarget"/> + estos. Opcional.</summary>
+        public RectTransform[] UiTargetsExtra;
+
         /// <summary>Texto del popup (español literal, como el resto de la UI). Puede
         /// contener <c>{0}</c> — se formatea con la tecla viva de <see cref="HotkeyHint"/>.</summary>
         public string Text;

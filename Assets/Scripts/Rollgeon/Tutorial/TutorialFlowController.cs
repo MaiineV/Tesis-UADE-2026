@@ -79,8 +79,10 @@ namespace Rollgeon.Tutorial
         private EventManager.EventReceiver _onActionSelectionStarted;
         private EventManager.EventReceiver _onHeroBehaviorClicked;
         private EventManager.EventReceiver _onChainTargetSelectionStarted;
+        private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onRollResolved;
         private EventManager.EventReceiver _onBehaviorExecuted;
+        private EventManager.EventReceiver _onEnchantmentAltarActivated;
 
         private TutorialFlowController(TutorialConfigSO config, Guid runId)
         {
@@ -117,8 +119,10 @@ namespace Rollgeon.Tutorial
             if (_onActionSelectionStarted != null) EventManager.UnSubscribe(EventName.OnActionSelectionStarted, _onActionSelectionStarted);
             if (_onHeroBehaviorClicked != null) EventManager.UnSubscribe(EventName.OnHeroBehaviorClicked, _onHeroBehaviorClicked);
             if (_onChainTargetSelectionStarted != null) EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
+            if (_onChainPhaseStarted != null) EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             if (_onRollResolved != null) EventManager.UnSubscribe(EventName.OnRollResolved, _onRollResolved);
             if (_onBehaviorExecuted != null) EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
+            if (_onEnchantmentAltarActivated != null) EventManager.UnSubscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
             TypedEvent<DamageResolvedPayload>.Unsubscribe(OnDamageResolved);
 
             if (_movementService != null)
@@ -214,8 +218,10 @@ namespace Rollgeon.Tutorial
             _onActionSelectionStarted = OnActionSelectionStarted;
             _onHeroBehaviorClicked = OnHeroBehaviorClicked;
             _onChainTargetSelectionStarted = OnChainTargetSelectionStarted;
+            _onChainPhaseStarted = OnChainPhaseStarted;
             _onRollResolved = OnRollResolved;
             _onBehaviorExecuted = OnBehaviorExecuted;
+            _onEnchantmentAltarActivated = OnEnchantmentAltarActivated;
 
             EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEntered);
             EventManager.Subscribe(EventName.OnCombatTriggered, _onCombatTriggered);
@@ -226,8 +232,10 @@ namespace Rollgeon.Tutorial
             EventManager.Subscribe(EventName.OnActionSelectionStarted, _onActionSelectionStarted);
             EventManager.Subscribe(EventName.OnHeroBehaviorClicked, _onHeroBehaviorClicked);
             EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
+            EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnRollResolved, _onRollResolved);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
+            EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
             TypedEvent<DamageResolvedPayload>.Subscribe(OnDamageResolved);
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
@@ -303,6 +311,17 @@ namespace Rollgeon.Tutorial
                     Text = "Esta es la tienda. Acercate al pedestal y presioná F para comprar la mejora: tu combo PAR va a hacer +50 de daño.",
                 });
             }
+            else if (_step == TutorialStep.Combat2Prep && roomId == _roomB)
+            {
+                // De vuelta en B camino a C: dejar de señalar la puerta de la tienda
+                // y apuntar a la de la revancha (feedback playtest).
+                ShowStep(TutorialStep.Combat2Prep, new TutorialStepDisplayRequest
+                {
+                    AnchorKind = TutorialAnchorKind.WorldPosition,
+                    WorldPosition = ResolveDoorPosition(_roomB, _roomC),
+                    Text = "La sala se desbloqueó: entrá y terminá lo que empezaste.",
+                });
+            }
             else if (_step == TutorialStep.GoToE && roomId == _roomE)
             {
                 _step = TutorialStep.Enchant;
@@ -310,7 +329,7 @@ namespace Rollgeon.Tutorial
                 {
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveAltarPosition(),
-                    Text = "La mesa de encantamientos mejora tus dados a cambio de oro. Acercate, presioná F y encantá uno de tus dados.",
+                    Text = "Esta es la mesa de encantamientos: mejora uno de tus dados a cambio de oro, por el resto de la run. Acercate al altar y presioná F para abrirla.",
                 });
             }
         }
@@ -327,11 +346,19 @@ namespace Rollgeon.Tutorial
             {
                 _step = TutorialStep.EscapeTeach;
                 _gate?.Unlock(HeroBehaviorSlot.ForceDoor);
+
+                // El player entra ya adyacente a la puerta — si se mueve pierde la
+                // adyacencia y la lección se rompe (feedback playtest): durante el
+                // escape solo queda FORZAR PUERTA disponible.
+                _gate?.Lock(HeroBehaviorSlot.Movement);
+                _gate?.Lock(HeroBehaviorSlot.BaseAttack);
+                if (_healTaught) _gate?.Lock(HeroBehaviorSlot.Healing);
+
                 ShowStep(TutorialStep.EscapeTeach, new TutorialStepDisplayRequest
                 {
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveDoorPosition(_roomC, _roomB),
-                    Text = "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): movete al lado de la puerta por la que entraste y usala para escapar.",
+                    Text = "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): estás justo al lado de la puerta por la que entraste — usala para escapar.",
                     HotkeyHint = GameplayHotkey.ForceDoor,
                 });
             }
@@ -341,8 +368,9 @@ namespace Rollgeon.Tutorial
                 ShowStep(TutorialStep.Combat2, new TutorialStepDisplayRequest
                 {
                     AnchorKind = TutorialAnchorKind.None,
-                    Text = "¡Ahora sí! Con la mejora de PAR estás listo: acabá con los dos enemigos.",
-                });
+                    Text = "¡Ahora sí! Con la mejora de PAR estás listo: acabá con los dos enemigos. (Click para seguir.)",
+                    InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+                }, () => Overlay()?.Hide());
             }
         }
 
@@ -364,6 +392,11 @@ namespace Rollgeon.Tutorial
             }
             else if (_step == TutorialStep.EscapeTeach && roomId == _roomC && outcome == CombatOutcome.Aborted)
             {
+                // El lock del escape terminó — devolver las acciones enseñadas.
+                _gate?.Unlock(HeroBehaviorSlot.Movement);
+                _gate?.Unlock(HeroBehaviorSlot.BaseAttack);
+                if (_healTaught) _gate?.Unlock(HeroBehaviorSlot.Healing);
+
                 // Escapó: C queda gateada y se abre la tienda. El jugador está en B.
                 if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon))
                 {
@@ -396,12 +429,9 @@ namespace Rollgeon.Tutorial
         {
             if (!TryGetPlayerGuid(out var playerGuid)) return;
 
-            // El golpe del jugador aterrizó durante la lección de ataque → cerrarla.
-            if (_step == TutorialStep.TargetTeach && payload.SourceGuid == playerGuid)
-            {
-                CompleteAttackTeach();
-                return;
-            }
+            // (El cierre de la lección de ataque NO va acá: después del daño puede
+            // venir la fase de defensa del chain — lo maneja OnChainPhaseStarted /
+            // OnRollResolved al final de la acción.)
 
             // Primer golpe recibido → se desbloquea Curar. Inmediato en el loop
             // libre; diferido si todavía corre la secuencia de enseñanza (el enemigo
@@ -420,7 +450,8 @@ namespace Rollgeon.Tutorial
         private static bool IsCombat1TeachStep(TutorialStep step) =>
             step is TutorialStep.EnemiesIntro or TutorialStep.MoveTeach or TutorialStep.MoveTiles
                 or TutorialStep.StatsHp or TutorialStep.StatsEnergy or TutorialStep.AttackTeach
-                or TutorialStep.DiceTeach or TutorialStep.TargetTeach;
+                or TutorialStep.DiceTeach or TutorialStep.TargetTeach
+                or TutorialStep.DefenseTeach or TutorialStep.EndTurnTeach;
 
         private void ShowEnemiesIntro()
         {
@@ -467,11 +498,43 @@ namespace Rollgeon.Tutorial
             ShowStep(TutorialStep.MoveTiles, request);
         }
 
+        // La lección de mover se cumple por ADYACENCIA, no por "hubo un movimiento":
+        // si el player quedó lejos, se reintenta; si el enemigo se acercó solo,
+        // también cuenta (feedback playtest: moverse lejos bugeaba la secuencia).
         private void OnEntityMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
-            if (_step != TutorialStep.MoveTiles) return;
-            if (!TryGetPlayerGuid(out var playerGuid) || entity != playerGuid) return;
-            ShowStatsHp();
+            if (_step != TutorialStep.MoveTeach && _step != TutorialStep.MoveTiles) return;
+            if (!TryGetPlayerGuid(out var playerGuid)) return;
+
+            if (IsPlayerAdjacentToRoomBEnemy(playerGuid))
+            {
+                ShowStatsHp();
+                return;
+            }
+
+            if (_step == TutorialStep.MoveTiles && entity == playerGuid)
+            {
+                _step = TutorialStep.MoveTeach;
+                ShowStep(TutorialStep.MoveTeach, ButtonStepRequest(HeroBehaviorSlot.Movement,
+                    "Quedaste lejos del enemigo. Cuando puedas, seleccioná MOVER ({0}) de nuevo y ponete a su lado.",
+                    GameplayHotkey.Move));
+            }
+        }
+
+        private bool IsPlayerAdjacentToRoomBEnemy(Guid playerGuid)
+        {
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
+            if (!grid.TryGetPosition(playerGuid, out var playerCoord)) return false;
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon)
+                || !dungeon.GetAllRoomInstances().TryGetValue(_roomB, out var room)) return false;
+
+            foreach (var enemy in room.SpawnedEnemies)
+            {
+                if (!grid.TryGetPosition(enemy, out var enemyCoord)) continue;
+                int distance = Math.Abs(enemyCoord.X - playerCoord.X) + Math.Abs(enemyCoord.Y - playerCoord.Y);
+                if (distance <= 1) return true;
+            }
+            return false;
         }
 
         private void ShowStatsHp()
@@ -574,16 +637,51 @@ namespace Rollgeon.Tutorial
             ShowStep(TutorialStep.TargetTeach, request);
         }
 
-        // Red de seguridad: en el path chain OnRollResolved dispara al FINAL de la
-        // acción completa — si la lección de ataque sigue abierta a esta altura
-        // (fase auto-resuelta, pass, o el DamageResolved no llegó), cerrarla.
-        private void OnRollResolved(params object[] args)
+        // El chain siguió a su fase 2 (defensa post-ataque, con los rolls libres
+        // sobrantes) → explicar el escudo sobre la zona de dados.
+        private void OnChainPhaseStarted(params object[] args)
         {
-            if (_step != TutorialStep.DiceTeach && _step != TutorialStep.TargetTeach) return;
+            if (_step != TutorialStep.TargetTeach && _step != TutorialStep.DiceTeach) return;
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
 
-            CompleteAttackTeach();
+            _step = TutorialStep.DefenseTeach;
+            ShowStep(TutorialStep.DefenseTeach, DiceZoneRequest(
+                "¡Golpe dado! Te sobraron tiradas del ataque, así que viene la fase de DEFENSA: " +
+                "tirá los dados para armar un ESCUDO que absorbe el próximo golpe. " +
+                "Bloqueá, re-tirá y confirmá — o pasá si preferís no defenderte."));
+        }
+
+        // En el path chain OnRollResolved dispara al FINAL de la acción completa
+        // (ataque + defensa) — la lección sigue con el fin de turno.
+        private void OnRollResolved(params object[] args)
+        {
+            if (_step != TutorialStep.DiceTeach && _step != TutorialStep.TargetTeach
+                && _step != TutorialStep.DefenseTeach) return;
+            if (args == null || args.Length < 1 || args[0] is not Guid source) return;
+            if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
+
+            ShowEndTurnTeach();
+        }
+
+        private void ShowEndTurnTeach()
+        {
+            _step = TutorialStep.EndTurnTeach;
+            var request = new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = "Al completar el ataque tu turno terminó solo — ahora juega el enemigo. " +
+                       "Si alguna vez querés cortar tu turno antes, usá FINALIZAR TURNO ({0}). (Click para continuar.)",
+                HotkeyHint = GameplayHotkey.EndTurn,
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            };
+            var hud = FindCombatHud();
+            if (hud != null && hud.TryGetEndTurnRect(out var rect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = rect;
+            }
+            ShowStep(TutorialStep.EndTurnTeach, request, CompleteAttackTeach);
         }
 
         private void OnBehaviorExecuted(params object[] args)
@@ -620,8 +718,9 @@ namespace Rollgeon.Tutorial
             ShowStep(TutorialStep.Combat1, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = "¡Así se pelea! Repetí el proceso — moverte, atacar, armar combos — hasta vencer al enemigo.",
-            });
+                Text = "¡Así se pelea! Repetí el proceso — moverte, atacar, armar combos — hasta vencer al enemigo. (Click para seguir.)",
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            }, () => Overlay()?.Hide());
         }
 
         private void ShowHealTeach()
@@ -657,6 +756,19 @@ namespace Rollgeon.Tutorial
             });
         }
 
+        // Abrió la mesa (interact sobre el altar) → explicar cómo se encanta.
+        private void OnEnchantmentAltarActivated(params object[] args)
+        {
+            if (_step != TutorialStep.Enchant) return;
+
+            ShowStep(TutorialStep.Enchant, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = "Elegí uno de tus dados, elegí el encantamiento y confirmá: el dado queda mejorado por el resto de la run. " +
+                       "Cada encantamiento cuesta oro — el que juntaste alcanza para exactamente UNO. Cuando termines, cerrá la mesa.",
+            });
+        }
+
         private void OnEnchantmentApplied(params object[] args)
         {
             if (_step != TutorialStep.Enchant) return;
@@ -673,7 +785,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.WorldPosition,
                 WorldPosition = ResolveExitDoorPosition(_roomE),
-                Text = "¡Dado encantado! Ya sabés todo lo que necesitás. Cruzá la puerta para empezar tu aventura de verdad.",
+                Text = "¡Dado encantado! Cerrá la mesa — ya sabés todo lo que necesitás. Cruzá la puerta señalada para empezar tu aventura de verdad.",
             });
         }
 
@@ -789,8 +901,9 @@ namespace Rollgeon.Tutorial
         }
 
         /// <summary>
-        /// Paso anclado a la zona de dados del HUD de combate. Degrada a popup
-        /// centrado si el HUD no está disponible.
+        /// Paso anclado a la zona de dados del HUD de combate — el recorte abarca
+        /// también los botones Roll y Confirmar (feedback playtest). Degrada a
+        /// popup centrado si el HUD no está disponible.
         /// </summary>
         private TutorialStepDisplayRequest DiceZoneRequest(string text)
         {
@@ -805,6 +918,11 @@ namespace Rollgeon.Tutorial
             {
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
+
+                var extras = new List<RectTransform>(2);
+                if (hud.TryGetRollButtonRect(out var rollRect)) extras.Add(rollRect);
+                if (hud.TryGetConfirmButtonRect(out var confirmRect)) extras.Add(confirmRect);
+                if (extras.Count > 0) request.UiTargetsExtra = extras.ToArray();
             }
             return request;
         }
