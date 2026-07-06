@@ -5,6 +5,7 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace Rollgeon.Effects.Concretes
 {
     [Serializable, HideReferenceObjectPicker]
     public class EffAddShield : BaseEffect<ShieldArgs, int>,
-        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior, IHasTooltipInfo
     {
         [Title("Shield")]
         [SerializeField]
@@ -44,6 +45,31 @@ namespace Rollgeon.Effects.Concretes
         public float ComboMultiplier => _comboMultiplier;
 
         public override string GetEffectName() => "Add Shield";
+
+        // IHasTooltipInfo — mismo criterio que EffDealDamage: valores dinámicos cuando
+        // la fuente lo permite (FromReader lee stats del owner en hover-time).
+        public string BuildTooltip()
+            => TooltipContext.TryForCurrentHero(Rollgeon.Phase.GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
+
+        public string BuildTooltip(in TooltipContext context)
+        {
+            switch (_shieldSource)
+            {
+                case DamageSource.ComboValue:
+                    return Mathf.Approximately(_comboMultiplier, 1f)
+                        ? "Escudo: puntaje del combo"
+                        : "Escudo: puntaje del combo × " + _comboMultiplier.ToString("0.##");
+                case DamageSource.FromReader when _reader != null:
+                    return "Escudo: +" + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                case DamageSource.FromReader:
+                    return null;
+                default:
+                    return "Escudo: +" + _baseAmount;
+            }
+        }
 
         protected override ShieldArgs ResolveArgs(EffectContext context)
         {

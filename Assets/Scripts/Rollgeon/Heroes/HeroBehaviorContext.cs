@@ -9,6 +9,10 @@ namespace Rollgeon.Heroes
     public class HeroBehaviorContext : BehaviorContext
     {
         public IReadOnlyList<int> DiceResult;
+
+        /// <summary>Subset holdeado de <see cref="DiceResult"/> — ver <c>EffectContext.KeptDice</c>.</summary>
+        public IReadOnlyList<int> KeptDice;
+
         public ComboDetectionResult? MatchedComboResult;
         public Guid TargetGuid;
         public TargetSelectionResult SelectionResult;

@@ -206,6 +206,7 @@ namespace Rollgeon.Heroes
             if (ctx is HeroBehaviorContext heroCtx)
             {
                 effCtx.DiceResult = heroCtx.DiceResult;
+                effCtx.KeptDice = heroCtx.KeptDice;
                 effCtx.ComboResult = heroCtx.MatchedComboResult;
                 effCtx.TargetGuid = heroCtx.TargetGuid;
                 effCtx.SelectionResult = heroCtx.SelectionResult;

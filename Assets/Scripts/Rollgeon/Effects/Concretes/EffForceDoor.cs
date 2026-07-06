@@ -85,15 +85,16 @@ namespace Rollgeon.Effects.Concretes
             return true;
         }
 
-        // IHasTooltipInfo — el binder de la puerta consume esto. Fuera de combate
-        // devuelve null porque la puerta se abre sin tirada y el tooltip no aporta.
-        // En sala de Boss tampoco se puede escapar — el boss debe vencerse.
+        // IHasTooltipInfo — solo el body: el header (nombre de la acción) y el costo
+        // los agrega HeroActionTooltip.BuildFor (el costo sale del ActionRollSpec).
+        // Fuera de combate devuelve null (la puerta se abre sin tirada; el binder de
+        // puertas además corta por _onlyDuringCombat). En sala de Boss explica por qué
+        // no se puede — sin texto el fallback mostraría nombre + costo engañosos.
         public string BuildTooltip()
         {
             if (!IsInCombat()) return null;
-            if (IsBossRoom()) return null;
-            return $"<b>Forzar Puerta</b>\nPuntaje a superar: {RequiredValue}\n" +
-                   $"Costo: {EnergyCostInCombat} de energía";
+            if (IsBossRoom()) return "El Boss debe ser vencido — no se puede forzar la puerta";
+            return $"Puntaje a superar: {RequiredValue}";
         }
 
         public override bool ApplyEffect(EffectContext context)

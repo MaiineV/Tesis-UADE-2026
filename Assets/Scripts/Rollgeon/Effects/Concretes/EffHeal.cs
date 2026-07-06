@@ -158,24 +158,41 @@ namespace Rollgeon.Effects.Concretes
                    && phase.CurrentBase == GamePhase.Combat;
         }
 
-        // IHasTooltipInfo — el binder de la pocion consume esto. Solo emite texto
-        // cuando _useBuildDice esta on: en modo constante / generic dice no hay
-        // umbral ni tope relevantes para mostrar al jugador.
+        // IHasTooltipInfo — solo el body: el header (nombre de la acción) y el costo
+        // los agrega HeroActionTooltip.BuildFor. FromReader lee el stat configurado
+        // del owner en hover-time (heals por personaje, data-driven).
         public string BuildTooltip()
-        {
-            if (!_useBuildDice) return null;
+            => TooltipContext.TryForCurrentHero(GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
 
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("<b>Poción de Curación</b>");
-            sb.Append("HP Base: ").Append(_baseAmount);
-            sb.AppendLine();
-            sb.Append("Umbral Mínimo: ").Append(_healThreshold);
-            if (_healMaxCap > 0)
+        public string BuildTooltip(in TooltipContext context)
+        {
+            if (_useBuildDice)
             {
+                var sb = new System.Text.StringBuilder();
+                sb.Append("HP Base: ").Append(_baseAmount);
                 sb.AppendLine();
-                sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
+                sb.Append("Umbral Mínimo: ").Append(_healThreshold);
+                if (_healMaxCap > 0)
+                {
+                    sb.AppendLine();
+                    sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
+                }
+                return sb.ToString();
             }
-            return sb.ToString();
+
+            return _healSource switch
+            {
+                DamageSource.FromReader when _reader != null
+                    => "Curación: " + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier) + " HP",
+                DamageSource.FromReader => null,
+                DamageSource.ComboValue => "Curación: puntaje del combo",
+                _ => _isPercentOfMax
+                    ? $"Curación: {_baseAmount}% del HP máximo"
+                    : $"Curación: {_baseAmount} HP",
+            };
         }
 
         // Self-heal no requiere selección.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Entities;
 using Rollgeon.Grid;
+using Rollgeon.Movement;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -28,8 +29,13 @@ namespace Rollgeon.Effects.Selection
 
         [ShowIf(nameof(ShowRange))]
         [MinValue(1), MaxValue(20)]
-        [Tooltip("Rango BFS desde la posición del ejecutor.")]
+        [Tooltip("Rango desde la posición del ejecutor (interpretado según RangeMode).")]
         public int Range = 1;
+
+        [ShowIf(nameof(ShowRange))]
+        [Tooltip("Manhattan: distancia pura, ignora paredes (ataques). " +
+                 "PathReachable: BFS real por celdas caminables no ocupadas (movimiento).")]
+        public RangeMode RangeMode = RangeMode.Manhattan;
 
         [HideIf(nameof(IsSelf))]
         [Tooltip("true → la cantidad de targets es literalmente SelectionCount. " +
@@ -76,8 +82,6 @@ namespace Rollgeon.Effects.Selection
         {
             var result = new List<TargetRef>();
 
-            Debug.Log($"[SelectionSettings] ResolveValidTiles — SlotState={SlotState} IsGlobal={IsGlobal} Range={Range} EntityFilter={EntityFilter} ownerPos={ownerPosition} ownerGuid={ownerGuid}");
-
             if (SlotState == SlotState.Self)
             {
                 result.Add(TargetRef.At(ownerPosition));
@@ -91,14 +95,11 @@ namespace Rollgeon.Effects.Selection
                     Debug.LogWarning("[SelectionSettings] IGridManager not registered");
                     return result;
                 }
-                int totalCoords = 0;
                 foreach (var coord in grid.Graph.AllCoords())
                 {
-                    totalCoords++;
                     if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
                         result.Add(TargetRef.At(coord));
                 }
-                Debug.Log($"[SelectionSettings] Global scan — {totalCoords} coords checked, {result.Count} passed");
             }
             else
             {
@@ -107,15 +108,29 @@ namespace Rollgeon.Effects.Selection
                     Debug.LogWarning("[SelectionSettings] IGridManager not registered");
                     return result;
                 }
-                int scanned = 0;
-                foreach (var coord in grid.Graph.AllCoords())
+
+                if (RangeMode == RangeMode.PathReachable
+                    && ServiceLocator.TryGetService<IMovementService>(out var movement))
                 {
-                    if (ownerPosition.Manhattan(coord) > Range) continue;
-                    scanned++;
-                    if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
-                        result.Add(TargetRef.At(coord));
+                    foreach (var coord in movement.GetReachableTiles(ownerPosition, Range))
+                    {
+                        if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
+                            result.Add(TargetRef.At(coord));
+                    }
                 }
-                Debug.Log($"[SelectionSettings] Range scan — {scanned} coords within range={Range}, {result.Count} passed slot filters");
+                else
+                {
+                    if (RangeMode == RangeMode.PathReachable)
+                        Debug.LogWarning("[SelectionSettings] IMovementService not registered — " +
+                                         "fallback a rango Manhattan");
+
+                    foreach (var coord in grid.Graph.AllCoords())
+                    {
+                        if (ownerPosition.Manhattan(coord) > Range) continue;
+                        if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
+                            result.Add(TargetRef.At(coord));
+                    }
+                }
             }
 
             return result;
@@ -156,14 +171,8 @@ namespace Rollgeon.Effects.Selection
             switch (SlotState)
             {
                 case SlotState.Occupied:
-                    if (!isOccupied)
-                    {
-                        Debug.Log($"[SelectionSettings] PassesSlotFilters — coord={coord} REJECTED (not occupied)");
-                        return false;
-                    }
-                    bool entityPass = PassesEntityFilter(grid, coord, ownerGuid);
-                    Debug.Log($"[SelectionSettings] PassesSlotFilters — coord={coord} occupied, entityFilter={entityPass}");
-                    return entityPass;
+                    if (!isOccupied) return false;
+                    return PassesEntityFilter(grid, coord, ownerGuid);
 
                 case SlotState.Empty:
                     return isFree;
@@ -180,28 +189,18 @@ namespace Rollgeon.Effects.Selection
 
         private bool PassesEntityFilter(IGridManager grid, GridCoord coord, Guid ownerGuid)
         {
-            if (EntityFilter == EntityFilterMask.None)
-            {
-                Debug.Log($"[SelectionSettings] PassesEntityFilter — coord={coord} REJECTED (EntityFilter is None)");
-                return false;
-            }
+            if (EntityFilter == EntityFilterMask.None) return false;
 
             if (!grid.TryGetOccupant(coord, out var occupantGuid) || occupantGuid == Guid.Empty)
-            {
-                Debug.Log($"[SelectionSettings] PassesEntityFilter — coord={coord} REJECTED (no occupant found)");
                 return false;
-            }
 
+            // Sin IEntityQueryService (tests/bootstrap temprano) se acepta cualquier
+            // occupant para no romper flujos que no registran el servicio.
             if (!ServiceLocator.TryGetService<IEntityQueryService>(out var entityQuery))
-            {
-                Debug.Log($"[SelectionSettings] PassesEntityFilter — coord={coord} ACCEPTED (no IEntityQueryService, permissive fallback)");
                 return true;
-            }
 
             var relationship = entityQuery.GetRelationship(ownerGuid, occupantGuid);
-            bool passes = (EntityFilter & relationship) != 0;
-            Debug.Log($"[SelectionSettings] PassesEntityFilter — coord={coord} occupant={occupantGuid} relationship={relationship} filter={EntityFilter} passes={passes}");
-            return passes;
+            return (EntityFilter & relationship) != 0;
         }
     }
 }

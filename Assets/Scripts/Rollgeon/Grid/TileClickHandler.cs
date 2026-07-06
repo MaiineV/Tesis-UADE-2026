@@ -86,13 +86,25 @@ namespace Rollgeon.Grid
             if (cam == null) return;
 
             var screenPos = _positionAction.ReadValue<Vector2>();
-            var rtPos = new Vector2(
-                screenPos.x / Screen.width  * cam.pixelWidth,
-                screenPos.y / Screen.height * cam.pixelHeight);
+            var rtPos = RenderTextureCursor.ScreenToRt(
+                screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
             var ray = cam.ScreenPointToRay(rtPos);
             GridCoord? hovered = null;
-            if (Physics.Raycast(ray, out var hit, 100f, _tileLayer))
+
+            // Hover sobre el modelo de un pawn = hover sobre su celda (simétrico al click).
+            if (Physics.Raycast(ray, out var hitAny, 100f))
+            {
+                var pawn = hitAny.collider.GetComponentInParent<Rollgeon.Entities.Visuals.EntityPawn>();
+                if (pawn != null
+                    && ServiceLocator.TryGetService<IGridManager>(out var pawnGrid)
+                    && pawnGrid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
+                {
+                    hovered = pawnCoord;
+                }
+            }
+
+            if (hovered == null && Physics.Raycast(ray, out var hit, 100f, _tileLayer))
             {
                 var marker = hit.collider.GetComponentInParent<TileMarker>();
                 if (marker != null)
@@ -144,12 +156,27 @@ namespace Rollgeon.Grid
             // Si la cámara renderiza a un RenderTexture (pixel art pipeline), sus
             // dimensiones internas (pixelWidth/Height) difieren de las de pantalla.
             // Escalamos screenPos al espacio del RT antes de pasarlo al raycast.
-            var rtPos = new Vector2(
-                screenPos.x / Screen.width  * cam.pixelWidth,
-                screenPos.y / Screen.height * cam.pixelHeight);
+            var rtPos = RenderTextureCursor.ScreenToRt(
+                screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
             Debug.Log($"[TileClickHandler] Raycast from screenPos={screenPos} rtPos={rtPos} layer={_tileLayer.value}");
             var ray = cam.ScreenPointToRay(rtPos);
+
+            // CNF-002: primero raycast SIN máscara — clickear SOBRE el modelo del enemigo
+            // debe targetear SU celda. Con la máscara de tiles sola, el ray atraviesa el
+            // modelo (los pawns no son layer Tile) y pega en la celda que queda DETRÁS
+            // (cámara en ángulo). Mismo patrón que el drop del drag.
+            if (Physics.Raycast(ray, out var hitAny, 100f))
+            {
+                var pawn = hitAny.collider.GetComponentInParent<Rollgeon.Entities.Visuals.EntityPawn>();
+                if (pawn != null && grid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
+                {
+                    Debug.Log($"[TileClickHandler] Click sobre pawn '{pawn.name}' — coord={pawnCoord}");
+                    controller.OnTargetClicked(TargetRef.At(pawnCoord));
+                    return;
+                }
+            }
+
             if (!Physics.Raycast(ray, out var hit, 100f, _tileLayer))
             {
                 Debug.Log("[TileClickHandler] Raycast missed — no tile hit");

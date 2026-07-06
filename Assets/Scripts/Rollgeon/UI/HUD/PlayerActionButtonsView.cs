@@ -65,6 +65,15 @@ namespace Rollgeon.UI.HUD
 
         public Action<int> OnBehaviorSelected;
 
+        /// <summary>Slot actualmente Selected (pressed), o null si no hay selección.
+        /// Lo consume <see cref="CombatHudZoneFlow"/> para saber qué chip mover al
+        /// anchor de "acción activa" durante la fase de dados (CNF-007).</summary>
+        public int? SelectedSlot => _selectedSlot;
+
+        /// <summary>Botón del slot pedido, o null si el índice está fuera de rango.</summary>
+        public ActionButton GetButtonAt(int slotIndex)
+            => slotIndex >= 0 && slotIndex < _buttons.Length ? _buttons[slotIndex] : null;
+
         // ======================================================================
         // Internal state
         // ======================================================================
@@ -491,7 +500,6 @@ namespace Rollgeon.UI.HUD
             // Quitar estos Debug.Log una vez diagnosticado.
             if (!_isPlayerTurn)
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (no es turno del player)");
                 return ActionButtonState.Locked;
             }
 
@@ -502,7 +510,6 @@ namespace Rollgeon.UI.HUD
             var behavior = ResolveBehaviorForSlot(slotIndex);
             if (behavior == null)
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (behavior null — no resuelve en Combat)");
                 return ActionButtonState.Locked;
             }
 
@@ -512,7 +519,6 @@ namespace Rollgeon.UI.HUD
             // que acá ignoramos BlockOnRepeat y gateamos sólo por WasUsedThisTurn.
             if (WasUsedThisTurn(behavior.ActionName))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Used");
                 return ActionButtonState.Used;
             }
 
@@ -540,13 +546,11 @@ namespace Rollgeon.UI.HUD
             if (behavior.Slot == HeroBehaviorSlot.Healing
                 && !HealAvailability.CanHealMore(_playerGuid))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HP lleno — heal sin headroom)");
                 return ActionButtonState.Locked;
             }
 
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HasUsableEffectGroup=false: {usableReason})");
                 return ActionButtonState.Locked;
             }
 
@@ -554,7 +558,6 @@ namespace Rollgeon.UI.HUD
             {
                 int cur = ServiceLocator.TryGetService<IEnergyService>(out var es) && es != null
                     ? es.GetCurrent(_playerGuid) : -1;
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (energía: current={cur} < cost={behavior.EnergyCost}, playerGuid={_playerGuid})");
                 return ActionButtonState.Locked;
             }
 
@@ -620,33 +623,9 @@ namespace Rollgeon.UI.HUD
 
         // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
         // IActionRollService con el cost del spec — el behavior.EnergyCost queda
-        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Para
-        // que el label refleje lo que efectivamente se va a cobrar, priorizamos
-        // el spec del effect.
+        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Regla
+        // compartida con el texto de tooltips (HeroActionTooltip).
         private int ResolveDisplayCost(HeroActionBehavior behavior)
-        {
-            if (TryFindActionRollSpec(behavior, out var spec))
-                return spec.EnergyCost;
-            return behavior.EnergyCost;
-        }
-
-        private bool TryFindActionRollSpec(HeroActionBehavior behavior, out ActionRollSpec spec)
-        {
-            spec = default;
-            if (behavior?.Effects == null) return false;
-            foreach (var group in behavior.Effects)
-            {
-                if (group?.Effects == null) continue;
-                foreach (var eff in group.Effects)
-                {
-                    if (eff is IActionRollEffect rollEffect
-                        && rollEffect.TryGetRollSpec(_playerGuid, out spec))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+            => Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
     }
 }

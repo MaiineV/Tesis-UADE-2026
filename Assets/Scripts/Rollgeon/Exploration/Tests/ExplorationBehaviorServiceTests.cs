@@ -202,6 +202,7 @@ namespace Rollgeon.Exploration.Tests
             public bool SelectionStarted;
             public bool CancelCalled;
             public bool IsSelecting => SelectionStarted && !CancelCalled;
+            public bool CanOverlayHoverPreview => !IsSelecting;
 
             public void BeginSelection(SelectionRequest request)
             {
@@ -216,6 +217,8 @@ namespace Rollgeon.Exploration.Tests
             {
                 CancelCalled = true;
             }
+
+            public void RefreshHighlights() { }
 
             public event Action<TargetSelectionResult> OnSelectionCompleted;
 

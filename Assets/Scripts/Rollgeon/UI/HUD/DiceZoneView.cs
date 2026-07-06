@@ -242,6 +242,41 @@ namespace Rollgeon.UI.HUD
             RunComboDetection();
         }
 
+        // ---- Throw manual (CNF-008) -------------------------------------------
+
+        private bool[] _hiddenForThrow;
+
+        /// <summary>
+        /// Oculta los slots cuyos dados van a volar en una sesión de throw manual —
+        /// en un reroll seguían mostrando la cara vieja debajo de los dados voladores.
+        /// <see cref="HandleDiceRolled"/> los reactiva solo en el reveal; si la sesión
+        /// se aborta, <see cref="RestoreSlotsAfterThrow"/> los devuelve como estaban.
+        /// </summary>
+        public void HideSlotsForThrow(IReadOnlyList<bool> thrownMask)
+        {
+            if (_resolvedSlots == null || thrownMask == null) return;
+            _hiddenForThrow = new bool[_resolvedSlots.Length];
+            for (int i = 0; i < _resolvedSlots.Length && i < thrownMask.Count; i++)
+            {
+                if (!thrownMask[i] || _resolvedSlots[i] == null) continue;
+                if (!_resolvedSlots[i].gameObject.activeSelf) continue;
+                _hiddenForThrow[i] = true;
+                _resolvedSlots[i].gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>Deshace <see cref="HideSlotsForThrow"/> tras un abort (sin reveal).</summary>
+        public void RestoreSlotsAfterThrow()
+        {
+            if (_resolvedSlots == null || _hiddenForThrow == null) return;
+            for (int i = 0; i < _resolvedSlots.Length && i < _hiddenForThrow.Length; i++)
+            {
+                if (_hiddenForThrow[i] && _resolvedSlots[i] != null)
+                    _resolvedSlots[i].gameObject.SetActive(true);
+            }
+            _hiddenForThrow = null;
+        }
+
         // ---- Hold toggle -----------------------------------------------------
 
         private void ToggleHold(int i)

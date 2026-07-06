@@ -27,6 +27,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new SetDiceCommand());
             r.Register(new SetBagCommand());
             r.Register(new EnchantCommand());
+            r.Register(new DiceModeCommand());
 
             // Mundo
             r.Register(new TeleportCommand());

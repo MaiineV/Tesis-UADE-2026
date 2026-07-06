@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2342407727602210712}
   - component: {fileID: -4870171332520286658}
   - component: {fileID: 1787099158243479220}
+  - component: {fileID: 7711802017538401288}
   m_Layer: 0
   m_Name: Boss
   m_TagString: Untagged
@@ -148,6 +149,28 @@ MonoBehaviour:
   _returnSeconds: 0.18
   _strength: 1
   _localSpace: 1
+--- !u!114 &7711802017538401288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5047352166231496340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25c2f9ec2b6def84d93508072eb6fd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnMaterialFeedback
+  _hitFlashSeconds: 0.12
+  _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  _selectedCreaseColor: {r: 1, g: 0, b: 0, a: 1}
+  _selectedCreaseThreshold: 1
+  _selectedCreaseSmooth: 0.3
+  _selectedCreaseAlpha: 0.52
+  _renderers:
+  - {fileID: 4417068601581464449}
+  - {fileID: 7515077485699120784}
+  - {fileID: 5569681426752672371}
 --- !u!1001 &6248216483085741402
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -205,8 +228,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3bfe329af292d4748af0d70ff8a3000c, type: 3}
+--- !u!23 &5569681426752672371 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7206493366530343127, guid: 3bfe329af292d4748af0d70ff8a3000c, type: 3}
+  m_PrefabInstance: {fileID: 6248216483085741402}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5853736907911826097 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3bfe329af292d4748af0d70ff8a3000c, type: 3}
+  m_PrefabInstance: {fileID: 6248216483085741402}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &7515077485699120784 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -4684600263410887734, guid: 3bfe329af292d4748af0d70ff8a3000c, type: 3}
   m_PrefabInstance: {fileID: 6248216483085741402}
   m_PrefabAsset: {fileID: 0}

@@ -243,6 +243,7 @@ namespace Rollgeon.Combat.FSM.Tests
             public bool SelectionStarted;
             public bool CancelCalled;
             public bool IsSelecting => SelectionStarted && !CancelCalled;
+            public bool CanOverlayHoverPreview => !IsSelecting;
 
             public event Action<TargetSelectionResult> OnSelectionCompleted;
 
@@ -250,6 +251,7 @@ namespace Rollgeon.Combat.FSM.Tests
             public void OnTargetClicked(TargetRef target) { }
             public void OnTargetHovered(TargetRef target) { }
             public void CancelSelection() => CancelCalled = true;
+            public void RefreshHighlights() { }
 
             public void SimulateSelectionDone(TargetSelectionResult result) => OnSelectionCompleted?.Invoke(result);
         }

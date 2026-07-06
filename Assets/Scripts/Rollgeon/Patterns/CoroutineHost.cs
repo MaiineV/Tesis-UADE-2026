@@ -25,7 +25,10 @@ namespace Rollgeon.Patterns
             {
                 if (_instance != null) return _instance;
                 var go = new GameObject("[CoroutineHost]");
-                DontDestroyOnLoad(go);
+                // DontDestroyOnLoad explota fuera de play mode — los tests EditMode
+                // llegan acá vía eventos de fase (perma-move arma el movimiento con
+                // una corrutina). En EditMode el host es un GO común de la escena.
+                if (Application.isPlaying) DontDestroyOnLoad(go);
                 _instance = go.AddComponent<CoroutineHost>();
                 return _instance;
             }

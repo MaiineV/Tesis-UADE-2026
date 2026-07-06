@@ -402,6 +402,7 @@ GameObject:
   - component: {fileID: 7937393824760835357}
   - component: {fileID: 3821633793728467348}
   - component: {fileID: -5253838994059866951}
+  - component: {fileID: 5828631822782181205}
   m_Layer: 0
   m_Name: GeneralDirector
   m_TagString: Untagged
@@ -490,6 +491,28 @@ MonoBehaviour:
   _returnSeconds: 0.18
   _strength: 1
   _localSpace: 1
+--- !u!114 &5828631822782181205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816966952657547766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25c2f9ec2b6def84d93508072eb6fd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnMaterialFeedback
+  _hitFlashSeconds: 0.12
+  _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  _selectedCreaseColor: {r: 1, g: 0, b: 0, a: 1}
+  _selectedCreaseThreshold: 1
+  _selectedCreaseSmooth: 0.3
+  _selectedCreaseAlpha: 0.52
+  _renderers:
+  - {fileID: 4161732024664342645}
+  - {fileID: 3483803288976001758}
+  - {fileID: 6076877062476570821}
 --- !u!1001 &5942807449205629540
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -547,6 +570,21 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3299454aac1d32b45bbdc333606c8705, type: 3}
+--- !u!23 &3483803288976001758 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7071182760956848314, guid: 3299454aac1d32b45bbdc333606c8705, type: 3}
+  m_PrefabInstance: {fileID: 5942807449205629540}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &4161732024664342645 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1461304994638716399, guid: 3299454aac1d32b45bbdc333606c8705, type: 3}
+  m_PrefabInstance: {fileID: 5942807449205629540}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &6076877062476570821 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 444854288700719777, guid: 3299454aac1d32b45bbdc333606c8705, type: 3}
+  m_PrefabInstance: {fileID: 5942807449205629540}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6193485910434055567 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3299454aac1d32b45bbdc333606c8705, type: 3}

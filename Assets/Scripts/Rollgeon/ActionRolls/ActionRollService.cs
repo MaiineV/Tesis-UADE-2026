@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
+using Rollgeon.Dice.Throw;
 using Rollgeon.Player;
 using UnityEngine;
 
@@ -96,11 +97,18 @@ namespace Rollgeon.ActionRolls
 
         public void Dispose()
         {
+            AbortPendingThrow();
             OnPhaseChanged = null;
             _onCompleted = null;
             _currentRoll = null;
             _bag = null;
             _phase = ActionRollPhase.Inactive;
+        }
+
+        private static void AbortPendingThrow()
+        {
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var t) && t != null && t.IsBusy)
+                t.Abort();
         }
 
         public void StartFlow(ActionRollSpec spec, Guid playerGuid, DiceBagSO bag,
@@ -131,6 +139,15 @@ namespace Rollgeon.ActionRolls
             _currentRoll = null;
             _rollIndex = 0;
 
+            // CNF-008 (grab-to-reroll): mientras este flow está activo, agarrar dados
+            // asentados y arrojarlos ejecuta NUESTRO reroll (no el de combate). Se
+            // guarda el handler previo (el del handoff) y se restaura en ResetState.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var grabSvc) && grabSvc != null)
+            {
+                _prevGrabRerollHandler = grabSvc.GrabRerollHandler;
+                grabSvc.GrabRerollHandler = TryGrabReroll;
+            }
+
             if (spec.RequireConfirm)
             {
                 SetPhase(ActionRollPhase.AwaitingConfirm);
@@ -139,6 +156,19 @@ namespace Rollgeon.ActionRolls
             {
                 BeginInitialRoll();
             }
+        }
+
+        private Func<bool[], bool> _prevGrabRerollHandler;
+
+        // Reroll iniciado por agarre: mismas reglas que el botón (fase, energía).
+        private bool TryGrabReroll(bool[] keep)
+        {
+            if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
+            if (!CanAffordReroll) return false;
+            RequestReroll(keep);
+            // RequestReroll pudo bailar por sus guards internos — arrancó solo si la
+            // fase se movió (Rolling en modos manuales) o ya hay tirada nueva.
+            return _phase == ActionRollPhase.Rolling;
         }
 
         public void Confirm()
@@ -162,8 +192,12 @@ namespace Rollgeon.ActionRolls
 
         public void Cancel()
         {
+            // CNF-008: Rolling dejó de ser transitorio — en modos manuales es "dados
+            // esperando el throw" y el flujo debe poder cancelarse ahí (ej. el combate
+            // termina con el ActionRoll abierto). CompleteCancelled aborta el throw.
             if (_phase != ActionRollPhase.AwaitingConfirm
-                && _phase != ActionRollPhase.AwaitingRerollDecision)
+                && _phase != ActionRollPhase.AwaitingRerollDecision
+                && _phase != ActionRollPhase.Rolling)
             {
                 Debug.LogWarning($"[ActionRollService] Cancel() ignored — phase={_phase}.");
                 return;
@@ -224,6 +258,17 @@ namespace Rollgeon.ActionRolls
 
             EventManager.Trigger(EventName.OnRerollStarted, _playerGuid, _rollIndex);
 
+            // CNF-008: reroll via el gate de throw manual. Solo en modos manuales se
+            // vuelve a Rolling (el panel oculta botones durante el vuelo) — en Classic
+            // la secuencia de fases queda idéntica a la legacy.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
+            {
+                if (throwSvc.WillDefer) SetPhase(ActionRollPhase.Rolling);
+                throwSvc.RequestReroll(_playerGuid, _bag, _currentRoll,
+                    keep != null ? ToBoolArray(keep) : null, OnRerollRevealed);
+                return;
+            }
+
             // Si el caller paso un keep mask, respetamos los holds — solo tiramos los
             // dados con keep[i]=false. Sino, fallback a re-tirar todo (legacy path).
             int[] faces = (keep != null)
@@ -239,6 +284,15 @@ namespace Rollgeon.ActionRolls
             // Despues del reroll, NO resolvemos directo — devolvemos al user a
             // AwaitingRerollDecision para que vea los dados nuevos y decida si
             // confirma. El reroll button debe deshabilitarse en panel (rollIndex=2).
+            SetPhase(ActionRollPhase.AwaitingRerollDecision);
+        }
+
+        // Continuación del reroll en el gate de throw (ver OnInitialRollRevealed).
+        private void OnRerollRevealed(int[] faces)
+        {
+            _currentRoll = faces;
+            _rollIndex++;
+            RecomputeComboAndTotal();
             SetPhase(ActionRollPhase.AwaitingRerollDecision);
         }
 
@@ -299,26 +353,52 @@ namespace Rollgeon.ActionRolls
 
             EventManager.Trigger(EventName.OnRollStarted, _playerGuid);
 
+            // CNF-008: el roll pasa por el gate de throw manual. En modos manuales la
+            // fase queda en Rolling (el panel ya la trata como "sin botones") hasta que
+            // el jugador arroje los dados; la continuación corre al reveal (el servicio
+            // emite OnDiceRolled después del callback). Sin el servicio registrado
+            // (tests) cae al path legacy sincrónico, con su orden original de eventos.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
+            {
+                throwSvc.RequestRoll(_playerGuid, _bag, OnInitialRollRevealed);
+                return;
+            }
+
             var faces = _roller.RollAll(_bag);
             _currentRoll = faces;
             _rollIndex = 1;
             // Holds parten vacios — el user los marca despues clickeando dados.
             _currentHolds = new bool[faces.Length];
-
             RecomputeComboAndTotal();
             EventManager.Trigger(EventName.OnDiceRolled, _playerGuid, (IReadOnlyList<int>)faces);
-
-            string comboTag = _currentCombo != null ? _currentCombo.DisplayName : "(no combo)";
-            Debug.LogWarning($"[ActionRollService] Roll → dice=[{string.Join(",", faces)}] combo={comboTag} " +
-                             $"effective={_currentEffectiveTotal} threshold={_spec.Threshold} " +
-                             $"allowReroll={_spec.AllowReroll} energy={_energy.GetCurrent(_playerGuid)} " +
-                             $"rerollCost={_spec.RerollEnergyCost}");
+            LogRollState(faces);
 
             // Despues del initial roll, SIEMPRE pasamos a AwaitingRerollDecision para
             // que el user vea los dados, decida si holdea/rerollea, y confirme cuando
             // este conforme. Este reemplaza el auto-resolver anterior — el user pidio
             // expresamente el flujo manual igual que combat (holdear, reroll, confirm).
             SetPhase(ActionRollPhase.AwaitingRerollDecision);
+        }
+
+        // Continuación del initial roll en el gate de throw: corre como callback del
+        // reveal, con OnDiceRolled emitido por el servicio inmediatamente después.
+        private void OnInitialRollRevealed(int[] faces)
+        {
+            _currentRoll = faces;
+            _rollIndex = 1;
+            _currentHolds = new bool[faces.Length];
+            RecomputeComboAndTotal();
+            LogRollState(faces);
+            SetPhase(ActionRollPhase.AwaitingRerollDecision);
+        }
+
+        private void LogRollState(int[] faces)
+        {
+            string comboTag = _currentCombo != null ? _currentCombo.DisplayName : "(no combo)";
+            Debug.LogWarning($"[ActionRollService] Roll → dice=[{string.Join(",", faces)}] combo={comboTag} " +
+                             $"effective={_currentEffectiveTotal} threshold={_spec.Threshold} " +
+                             $"allowReroll={_spec.AllowReroll} energy={_energy.GetCurrent(_playerGuid)} " +
+                             $"rerollCost={_spec.RerollEnergyCost}");
         }
 
         // Detecta el mejor combo + effective total considerando SOLO los dados holdeados.
@@ -476,6 +556,8 @@ namespace Rollgeon.ActionRolls
 
         private void CompleteCancelled()
         {
+            // CNF-008: si el cancel llega con un throw en el aire, abortarlo sin revelar.
+            AbortPendingThrow();
             var outcome = new ActionRollOutcome { Cancelled = true };
             SetPhase(ActionRollPhase.Cancelled);
 
@@ -486,6 +568,15 @@ namespace Rollgeon.ActionRolls
 
         private void ResetState()
         {
+            // Devolver el grab-reroll al dueño anterior (el handoff de combate) —
+            // este flow ya no puede ejecutar rerolls.
+            if (ServiceLocator.TryGetService<IDiceThrowService>(out var grabSvc) && grabSvc != null
+                && grabSvc.GrabRerollHandler == (Func<bool[], bool>)TryGrabReroll)
+            {
+                grabSvc.GrabRerollHandler = _prevGrabRerollHandler;
+            }
+            _prevGrabRerollHandler = null;
+
             _onCompleted = null;
             _bag = null;
             _currentRoll = null;
