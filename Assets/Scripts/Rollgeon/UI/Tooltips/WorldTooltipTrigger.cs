@@ -1,4 +1,5 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
@@ -39,6 +40,8 @@ namespace Rollgeon.UI.Tooltips
         public Func<string> TextProvider;
 
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
+
+        [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
 
         [Tooltip("Cámara usada para raycast + WorldToScreenPoint. Null = Camera.main en runtime.")]
         [SerializeField] private Camera _camera;
@@ -137,14 +140,36 @@ namespace Rollgeon.UI.Tooltips
         {
             string text = ResolveText();
             if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Show(text, ResolveAnchorScreenPos(cam), _ownerId);
+            TooltipController.Instance.Show(text, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
         }
 
         private void ToggleTooltip(Camera cam)
         {
             string text = ResolveText();
             if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Toggle(text, ResolveAnchorScreenPos(cam), _ownerId);
+            TooltipController.Instance.Toggle(text, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+        }
+
+        // Punto-pantalla final según el modo: AutoFit ancla al objeto 3D (el controller
+        // suma su offset global y clampea a pantalla); Fixed ancla al RectTransform de UI
+        // configurado + offset X/Y exactos (sin anchor configurado cae al objeto 3D).
+        private Vector2 ResolvePlacementScreenPos(Camera cam)
+        {
+            if (_placement.Mode == TooltipPlacementMode.Fixed && _placement.FixedAnchor != null)
+            {
+                var anchor = _placement.FixedAnchor;
+                var canvas = anchor.GetComponentInParent<Canvas>();
+                float scale = canvas != null ? canvas.scaleFactor : 1f;
+                Vector2 anchorScreen = canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                    ? (Vector2)anchor.position
+                    : RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, anchor.position);
+                return anchorScreen + _placement.FixedOffset * scale;
+            }
+
+            Vector2 objScreen = ResolveAnchorScreenPos(cam);
+            return _placement.Mode == TooltipPlacementMode.Fixed
+                ? objScreen + _placement.FixedOffset
+                : objScreen;
         }
 
         // WorldToScreenPoint devuelve coords del viewport interno de la cámara — para
@@ -176,5 +201,40 @@ namespace Rollgeon.UI.Tooltips
             if (TextProvider == null) TextProvider = TooltipResolver.AutoResolve(this);
             return TextProvider?.Invoke();
         }
+
+#if UNITY_EDITOR
+        [Title("Preview (solo editor)")]
+        [TextArea(2, 5)]
+        [Tooltip("Texto de ejemplo usado por el botón de preview — elegí uno del largo " +
+                 "real esperado para ver cuánto espacio ocupa el panel.")]
+        [SerializeField] private string _previewText =
+            "<b>Forzar Puerta</b>\nCosto: 2 de energía\nPuntaje a superar: 25";
+
+        [Button("Mostrar preview en Game view")]
+        private void ShowEditorPreview()
+        {
+            var controller = FindFirstObjectByType<TooltipController>(FindObjectsInactive.Include);
+            if (controller == null)
+            {
+                Debug.LogWarning("[WorldTooltipTrigger] No hay TooltipController en la escena.", this);
+                return;
+            }
+            var cam = _camera != null ? _camera : Camera.main;
+            if (cam == null && _placement.FixedAnchor == null)
+            {
+                Debug.LogWarning("[WorldTooltipTrigger] Sin cámara para proyectar el objeto — " +
+                                 "asigná _camera o usá modo Fixed con anchor de UI.", this);
+                return;
+            }
+            controller.EditorPreview(_previewText, ResolvePlacementScreenPos(cam), _placement.Mode);
+        }
+
+        [Button("Ocultar preview")]
+        private void HideEditorPreview()
+        {
+            var controller = FindFirstObjectByType<TooltipController>(FindObjectsInactive.Include);
+            if (controller != null) controller.EditorPreviewHide();
+        }
+#endif
     }
 }

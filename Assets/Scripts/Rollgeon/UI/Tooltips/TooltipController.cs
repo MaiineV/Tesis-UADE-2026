@@ -28,8 +28,13 @@ namespace Rollgeon.UI.Tooltips
         [SerializeField] private TMP_Text _text;
 
         [Tooltip("Offset en píxeles desde el punto-pantalla del anchor. Default (16, -16): " +
-                 "un poco a la derecha y abajo del objeto.")]
+                 "un poco a la derecha y abajo del objeto. Solo aplica en modo AutoFit — " +
+                 "en Fixed la posición configurada en el trigger es exacta.")]
         [SerializeField] private Vector2 _anchorOffset = new Vector2(16f, -16f);
+
+        [Tooltip("Margen mínimo en píxeles del canvas entre el panel y el borde de la " +
+                 "pantalla cuando AutoFit re-posiciona el tooltip.")]
+        [SerializeField] private float _screenPadding = 8f;
 
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
@@ -52,10 +57,16 @@ namespace Rollgeon.UI.Tooltips
                 return;
             }
             Instance = this;
+            EnsureRefs();
+            SetVisible(false);
+        }
 
-            // Auto-resolve si no se cableo en Inspector (convencion: primer RectTransform
-            // hijo es _root, primer TMP_Text descendiente es _text). Esto deja el setup
-            // "agregar componente y crear sub-objetos Panel/Text" funcionando sin Drag&Drop.
+        // Auto-resolve si no se cableo en Inspector (convencion: primer RectTransform
+        // hijo es _root, primer TMP_Text descendiente es _text). Esto deja el setup
+        // "agregar componente y crear sub-objetos Panel/Text" funcionando sin Drag&Drop.
+        // Separado de Awake para que el preview de editor funcione sin play mode.
+        private void EnsureRefs()
+        {
             if (_root == null && transform.childCount > 0)
                 _root = transform.GetChild(0) as RectTransform;
             if (_text == null)
@@ -63,8 +74,6 @@ namespace Rollgeon.UI.Tooltips
 
             if (_hostCanvas == null) _hostCanvas = GetComponentInParent<Canvas>();
             _hostCanvasRect = _hostCanvas != null ? _hostCanvas.transform as RectTransform : null;
-
-            SetVisible(false);
         }
 
         private void OnDestroy()
@@ -79,11 +88,27 @@ namespace Rollgeon.UI.Tooltips
         /// cierre/sobrescriba un tooltip que no le pertenece.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId)
+            => Show(text, screenPos, ownerId, TooltipPlacementMode.AutoFit);
+
+        /// <summary>
+        /// Variante con modo de posicionamiento. <see cref="TooltipPlacementMode.AutoFit"/>
+        /// aplica el offset global y re-posiciona para que el panel entre completo en el
+        /// canvas; <see cref="TooltipPlacementMode.Fixed"/> usa <paramref name="screenPos"/>
+        /// exacto sin offset ni clamp (el trigger ya resolvió anchor + offset configurados).
+        /// </summary>
+        public void Show(string text, Vector2 screenPos, int ownerId, TooltipPlacementMode placement)
         {
             if (_text != null) _text.text = text ?? string.Empty;
             _currentOwnerId = ownerId;
             SetVisible(true);
-            PositionAt(screenPos);
+
+            var target = placement == TooltipPlacementMode.Fixed
+                ? screenPos
+                : screenPos + _anchorOffset;
+            PositionAt(target);
+
+            if (placement == TooltipPlacementMode.AutoFit)
+                ClampToCanvas();
         }
 
         /// <summary>
@@ -108,7 +133,8 @@ namespace Rollgeon.UI.Tooltips
         /// Toggle: si el owner actual == <paramref name="ownerId"/>, oculta. Si no, muestra
         /// con el nuevo owner. Usado por click triggers (puerta).
         /// </summary>
-        public void Toggle(string text, Vector2 screenPos, int ownerId)
+        public void Toggle(string text, Vector2 screenPos, int ownerId,
+            TooltipPlacementMode placement = TooltipPlacementMode.AutoFit)
         {
             if (_visible && _currentOwnerId == ownerId)
             {
@@ -117,15 +143,13 @@ namespace Rollgeon.UI.Tooltips
             }
             else
             {
-                Show(text, screenPos, ownerId);
+                Show(text, screenPos, ownerId, placement);
             }
         }
 
-        private void PositionAt(Vector2 screenPos)
+        private void PositionAt(Vector2 target)
         {
             if (_root == null) return;
-
-            Vector2 target = screenPos + _anchorOffset;
 
             if (_hostCanvas == null || _hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
             {
@@ -142,10 +166,71 @@ namespace Rollgeon.UI.Tooltips
             }
         }
 
+        /// <summary>
+        /// Re-posiciona el panel lo mínimo necesario para que quede COMPLETO dentro del
+        /// rect del canvas (con <see cref="_screenPadding"/> de margen). El default de
+        /// anchor abajo-derecha hacía que tooltips cerca del borde quedaran cortados.
+        /// </summary>
+        private void ClampToCanvas()
+        {
+            if (_root == null || _hostCanvasRect == null) return;
+
+            // El TMP recién recibió texto nuevo — forzar layout para medir el tamaño real.
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
+
+            var corners = new Vector3[4];
+            _root.GetWorldCorners(corners); // 0 = bottom-left, 2 = top-right
+            Vector2 min = _hostCanvasRect.InverseTransformPoint(corners[0]);
+            Vector2 max = _hostCanvasRect.InverseTransformPoint(corners[2]);
+
+            var shift = ComputeClampShift(min, max, _hostCanvasRect.rect, _screenPadding);
+            if (shift.sqrMagnitude > 0.0001f)
+                _root.position += _hostCanvasRect.TransformVector(new Vector3(shift.x, shift.y, 0f));
+        }
+
+        /// <summary>
+        /// Desplazamiento mínimo para meter el rect [<paramref name="min"/>, <paramref name="max"/>]
+        /// dentro de <paramref name="bounds"/> con <paramref name="padding"/> de margen.
+        /// Si el rect es más grande que los bounds, prioriza el borde izquierdo/inferior.
+        /// Pura para poder testearla sin canvas real.
+        /// </summary>
+        public static Vector2 ComputeClampShift(Vector2 min, Vector2 max, Rect bounds, float padding)
+        {
+            Vector2 shift = Vector2.zero;
+            if (max.x > bounds.xMax - padding) shift.x = bounds.xMax - padding - max.x;
+            if (min.x + shift.x < bounds.xMin + padding) shift.x = bounds.xMin + padding - min.x;
+            if (max.y > bounds.yMax - padding) shift.y = bounds.yMax - padding - max.y;
+            if (min.y + shift.y < bounds.yMin + padding) shift.y = bounds.yMin + padding - min.y;
+            return shift;
+        }
+
         private void SetVisible(bool visible)
         {
             _visible = visible;
             if (_root != null) _root.gameObject.SetActive(visible);
         }
+
+#if UNITY_EDITOR
+        // Owner reservado para el preview de editor — no colisiona con GetInstanceID()
+        // de ningún trigger real.
+        internal const int EditorPreviewOwnerId = int.MinValue;
+
+        /// <summary>
+        /// Muestra el panel real con texto de ejemplo SIN play mode, para previsualizar
+        /// en el Game view qué espacio ocupa el tooltip en la posición configurada.
+        /// Invocado por los botones de preview de los triggers.
+        /// </summary>
+        internal void EditorPreview(string text, Vector2 screenPos, TooltipPlacementMode placement)
+        {
+            EnsureRefs();
+            Show(text, screenPos, EditorPreviewOwnerId, placement);
+        }
+
+        internal void EditorPreviewHide()
+        {
+            EnsureRefs();
+            HideForce();
+        }
+#endif
     }
 }
