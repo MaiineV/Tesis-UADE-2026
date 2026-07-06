@@ -23,5 +23,10 @@ namespace Patterns.Save
             if (File.Exists(path)) File.Delete(path);
             File.Move(tmp, path);
         }
+
+        public void Delete(string path)
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 }

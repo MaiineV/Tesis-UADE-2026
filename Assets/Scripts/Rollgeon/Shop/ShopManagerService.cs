@@ -148,7 +148,10 @@ namespace Rollgeon.Shop
             }
 
             int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, _config.MaxItemSlots));
-            var rng = new System.Random(room.InstanceId.GetHashCode());
+            // Seed derivado del seed del piso + celda (estables entre regeneraciones)
+            // y NO del InstanceId (Guid nuevo por GenerateFloor): un piso resumido
+            // desde save restockea la tienda idéntica.
+            var rng = new System.Random(DeriveShopSeed(room));
             var slots = new List<ShopSlot>(slotCount);
             // Tracks entries ya rolleadas en esta tienda — pasadas como exclude a Roll()
             // para que cada slot tenga un ítem distinto (mientras el pool tenga variedad).
@@ -171,6 +174,23 @@ namespace Rollgeon.Shop
 
             _slotsByRoom[room.InstanceId] = slots;
             _initialized.Add(room.InstanceId);
+        }
+
+        private int DeriveShopSeed(RoomInstance room)
+        {
+            if (!TryGetDungeonService(out var dungeon))
+                return room.InstanceId.GetHashCode();
+            return DeriveShopSeed(dungeon.CurrentFloorSeed, room.GridCell);
+        }
+
+        /// <summary>Puro para tests: mismo (floorSeed, celda) → mismo stock.</summary>
+        public static int DeriveShopSeed(int floorSeed, Vector2Int cell)
+        {
+            unchecked
+            {
+                // Mismo estilo que FloorProgressionService.DeriveSeed.
+                return floorSeed * 92821 + cell.x * 31 + cell.y;
+            }
         }
 
         private ShopSlot BuildOrHydrateSlot(

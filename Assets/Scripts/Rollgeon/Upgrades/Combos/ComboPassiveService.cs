@@ -31,8 +31,18 @@ namespace Rollgeon.Upgrades.Combos
     {
         private const string LogPrefix = "[ComboPassiveService] ";
 
+        private readonly ComboPassivePoolSO _pool;
         private bool _subscribed;
         private IReadOnlyList<int> _lastFinalRoll;
+
+        /// <param name="pool">
+        /// Pool de pasivas — usado como resolver UpgradeId → SO al restaurar un save.
+        /// Puede ser null (el restore descarta pasivas con warning).
+        /// </param>
+        public ComboPassiveService(ComboPassivePoolSO pool = null)
+        {
+            _pool = pool;
+        }
 
         public EnchantmentScratch LastComboScratch { get; private set; }
 
@@ -81,8 +91,20 @@ namespace Rollgeon.Upgrades.Combos
 
         private void OnRunStartHandler(params object[] args)
         {
-            var state = new RunComboPassivesState();
+            var state = new RunComboPassivesState(ResolvePassiveById);
             ServiceLocator.AddService<RunComboPassivesState>(state, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(state);
+        }
+
+        private ComboPassiveSO ResolvePassiveById(string upgradeId)
+        {
+            if (_pool?.Entries == null || string.IsNullOrEmpty(upgradeId)) return null;
+            foreach (var entry in _pool.Entries)
+            {
+                if (entry.Passive != null && entry.Passive.UpgradeId == upgradeId)
+                    return entry.Passive;
+            }
+            return null;
         }
 
         private void OnRunEndHandler(params object[] args)

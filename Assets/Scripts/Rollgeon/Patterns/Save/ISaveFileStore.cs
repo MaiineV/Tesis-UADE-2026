@@ -13,5 +13,8 @@ namespace Patterns.Save
 
         /// <summary>Escritura completa del archivo. La atomicidad es responsabilidad del impl.</summary>
         void Write(string path, byte[] bytes);
+
+        /// <summary>Borra el archivo si existe. No lanza si no existía.</summary>
+        void Delete(string path);
     }
 }

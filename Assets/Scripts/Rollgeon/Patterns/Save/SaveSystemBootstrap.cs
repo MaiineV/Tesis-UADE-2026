@@ -27,6 +27,7 @@ namespace Patterns.Save
         public const int DefaultPriority = 200;
 
         [NonSerialized] private bool _subscribed;
+        [NonSerialized] private bool _runActive;
         [NonSerialized] private EventManager.EventReceiver _onRunStart;
         [NonSerialized] private EventManager.EventReceiver _onFloorChanged;
         [NonSerialized] private EventManager.EventReceiver _onRoomEntered;
@@ -45,10 +46,10 @@ namespace Patterns.Save
             if (_subscribed) return;
             _subscribed = true;
 
-            _onRunStart = _ => CaptureAndFlush(SaveTrigger.RunStart);
+            _onRunStart = _ => { _runActive = true; CaptureAndFlush(SaveTrigger.RunStart); };
             _onFloorChanged = _ => CaptureAndFlush(SaveTrigger.FloorEnd);
             _onRoomEntered = _ => CaptureAndFlush(SaveTrigger.RoomEnd);
-            _onRunEnd = _ => CaptureAndFlush(SaveTrigger.RunEnd);
+            _onRunEnd = _ => { CaptureAndFlush(SaveTrigger.RunEnd); _runActive = false; };
 
             EventManager.Subscribe(EventName.OnRunStart, _onRunStart);
             EventManager.Subscribe(EventName.OnFloorChanged, _onFloorChanged);
@@ -87,10 +88,16 @@ namespace Patterns.Save
             SaveSystem.Flush(trigger);
         }
 
-        private static bool OnWantsToQuit()
+        private bool OnWantsToQuit()
         {
-            // Exit siempre flushea sincrono (§15.3.1) — nunca bloquea el quit.
-            CaptureAndFlush(SaveTrigger.Exit);
+            // Solo con run activa: el Exit flush existe para preservar progreso
+            // mid-run. En el menú (post victoria/derrota, save ya borrado por
+            // EndRun) escribir acá recrearía un save inválido y re-encendería el
+            // Continue. Exit siempre flushea sincrono (§15.3.1) — nunca bloquea.
+            if (_runActive)
+            {
+                CaptureAndFlush(SaveTrigger.Exit);
+            }
             return true;
         }
     }

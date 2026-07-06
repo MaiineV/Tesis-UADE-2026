@@ -27,6 +27,14 @@ namespace Rollgeon.Dungeon
         /// <summary>Nodo del grafo de la sala activa, o <c>null</c> pre-<see cref="GenerateFloor"/>.</summary>
         RoomInstance CurrentRoomInstance { get; }
 
+        /// <summary>
+        /// Seed con el que se generó el piso actual. Los sistemas que rollean
+        /// contenido por sala (tienda) derivan de acá para que un piso regenerado
+        /// desde save (mismo seed) produzca el mismo contenido. Default 0 para
+        /// fakes de test que no modelan generación.
+        /// </summary>
+        int CurrentFloorSeed => 0;
+
         void GenerateFloor(FloorLayoutSO layout, int seed);
 
         /// <summary>Grafo completo del piso — key = <see cref="RoomInstance.InstanceId"/>.</summary>

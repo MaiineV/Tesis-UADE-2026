@@ -43,6 +43,8 @@ namespace Rollgeon.Dungeon
         public RoomInstance CurrentRoomInstance =>
             _currentId != Guid.Empty && _instances.TryGetValue(_currentId, out var ri) ? ri : null;
 
+        public int CurrentFloorSeed { get; private set; }
+
         public DoorDirection? LastEntryDirection => _lastEntryDirection;
 
         public DungeonManager()
@@ -58,6 +60,7 @@ namespace Rollgeon.Dungeon
             if (layout == null) throw new ArgumentNullException(nameof(layout));
 
             ClearState();
+            CurrentFloorSeed = seed;
             _lastEntryDirection = null;
 
             // 1+2. Plan puro: cells + asignaciones (sin side effects).

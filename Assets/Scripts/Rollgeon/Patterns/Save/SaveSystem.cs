@@ -34,7 +34,8 @@ namespace Patterns.Save
         /// el save viejo con mensaje claro en vez de crashear al deserializar — no hay
         /// migration paths en fase de diseño (§15.3).
         /// </summary>
-        public const int CurrentSchemaVersion = 1;
+        // v2: RunContext pasó de boxed int a RunContextSnapshot {FloorIndex, RunId}.
+        public const int CurrentSchemaVersion = 2;
 
         private static readonly Dictionary<string, object> _cache = new();
         private static readonly List<WeakReference<ISaveable>> _registered = new();
@@ -258,6 +259,45 @@ namespace Patterns.Save
         {
             _cache.Clear();
             _dirty.Clear();
+        }
+
+        // ====================================================================
+        // Queries (menú / resume)
+        // ====================================================================
+
+        /// <summary>
+        /// <c>true</c> si existe un save en disco para el slot activo. Pasa por el
+        /// store (no <c>File</c> directo) para poder testearse sin filesystem.
+        /// </summary>
+        public static bool HasSave()
+        {
+            if (!ServiceLocator.TryGetService<SaveSettingsSO>(out var settings) || settings == null)
+                return false;
+            return _store.Exists(settings.GetSavePath());
+        }
+
+        /// <summary>
+        /// Peek del cache sin restaurar nada — para leer la identidad de la run
+        /// (héroe, build, RunId) después de <see cref="LoadFromDisk"/> y antes de
+        /// arrancar el resume.
+        /// </summary>
+        public static bool TryGetCached(string key, out object state)
+        {
+            return _cache.TryGetValue(key, out state);
+        }
+
+        /// <summary>
+        /// Borra el save del slot activo y vacía el cache. Lo invoca
+        /// <c>RunBootstrapper.EndRun</c> cuando la run terminó de verdad
+        /// (victoria/derrota) — el quit mid-run NO pasa por acá.
+        /// </summary>
+        public static void DeleteSave()
+        {
+            if (ServiceLocator.TryGetService<SaveSettingsSO>(out var settings) && settings != null)
+            {
+                _store.Delete(settings.GetSavePath());
+            }
+            Clear();
         }
 
         // ====================================================================
