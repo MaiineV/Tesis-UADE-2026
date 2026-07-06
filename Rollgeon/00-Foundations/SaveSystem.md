@@ -40,8 +40,34 @@ tags: [foundation, save, persistence, service]
 
 ## Registered saveables
 
-`run.floor_index` (RunContext), `run.inventory` (InventoryService),
-`run.combo_counter_state`, `run.unlock_tracker`, `audio.volumes`.
+`run.floor_index` (RunContext — snapshot `{FloorIndex, RunId}`; the dungeon seed
+derives from RunId so a resumed run regenerates identical floors),
+`run.inventory` (InventoryService), `run.combo_counter_state`,
+`run.unlock_tracker` (also carries hero ClassId + DiceBuild — the resume
+identity), `run.gold` (EconomyService, resets on new run),
+`run.dice_enchantments` (RuntimeDiceBag — per-die enchantment ids + altar
+counters), `run.player_attributes` (HP/Energy/Attack/Speed values + Run and
+Permanent modifiers — character upgrades live here), `run.combo_passives`
+(RunComboPassivesState — shop-bought passives by UpgradeId), `audio.volumes`.
+
+## Continue (main menu resume)
+
+- `MainMenuScreen._continueButton` enabled iff `SaveSystem.HasSave()`; click →
+  `LoadFromDisk` + peek identity (`TryGetCached`) → `PendingRunRequest` with
+  `IsResume` → `GameplaySceneFlow.LoadGameplay()`.
+- `StartRun(resume: true)` skips the cache `Clear()` — run-scoped `Register`
+  auto-restores. `RunBootstrapper.IsResuming` gates OnRunStart resets (gold) and
+  starting-item grants.
+- `EndRun(runCompleted:)` — `true` (Victory/Defeat) deletes the save; `false`
+  (pause quit-to-menu) keeps it. `SaveSystemBootstrap` only Exit-flushes while a
+  run is active, so a finished run can't resurrect its save on quit.
+- Floor fast-forward: `RunController.OnRunStart` resolves the layout via
+  `FloorProgressionService.ResolveLayoutForFloor(default, FloorIndex)` with
+  `DeriveSeed(baseSeed, floorIndex)`. Shop stock is floor-seed-derived
+  (`ShopManagerService.DeriveShopSeed`) so a resumed floor restocks identically.
+- v1 semantics: resume starts at the beginning of the saved floor — in-floor
+  progress (cleared rooms, doors, position) replays; combat-scoped state
+  (Shield, Turns/Encounter modifiers) intentionally excluded.
 
 ## Code
 
