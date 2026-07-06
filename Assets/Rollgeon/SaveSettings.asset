@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Patterns.Save.SaveSettingsSO
   FlushOn: 0000000002000000030000000400000005000000
   SaveFilePrefix: rollgeon
-  MaxSaveSlots: 3
+  MaxSaveSlots: 1
   AsyncFlushThresholdBytes: 500000
   PrettyPrint: 0
   LogFlushes: 0

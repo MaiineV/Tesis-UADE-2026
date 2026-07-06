@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 564a619d6b6facd46b291c4175b38302, type: 3}
   m_Name: ComboPassiveBootstrap
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Combos.ComboPassiveBootstrap
+  _passivePool: {fileID: 11400000, guid: aee1eefd99d9d7f4badf337802bf75ab, type: 2}

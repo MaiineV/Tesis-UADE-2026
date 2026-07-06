@@ -1,4 +1,11 @@
+using System;
+using System.Collections.Generic;
 using Patterns;
+using Patterns.Save;
+using Rollgeon.Dice;
+using Rollgeon.Heroes;
+using Rollgeon.Meta;
+using Rollgeon.Run;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +13,7 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Screen principal del juego. Dos botones: Jugar y Salir.
+    /// Screen principal del juego: Jugar, Continue (resume de run guardada), Salir.
     /// Plan §4.4 / TECHNICAL.md §17.D.
     /// </summary>
     /// <remarks>
@@ -24,6 +31,11 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar el boton 'Jugar' del Canvas (ver instructivo §8.4).")]
         [SerializeField]
         private Button _playButton;
+
+        [Tooltip("Boton 'Continue' — clon del Play. Habilitado solo si hay una run " +
+                 "guardada en curso (SaveSystem.HasSave). Opcional hasta cablearse.")]
+        [SerializeField]
+        private Button _continueButton;
 
         [Required("Arrastrar el boton 'Salir' del Canvas (ver instructivo §8.4).")]
         [SerializeField]
@@ -62,6 +74,12 @@ namespace Rollgeon.UI.Screens
             }
 
             // Opcionales (#164): sin botón cableado el menú sigue funcionando igual.
+            if (_continueButton != null)
+            {
+                _continueButton.onClick.AddListener(OnContinueClicked);
+                RefreshContinueButton();
+            }
+
             if (_unlocksButton != null)
             {
                 _unlocksButton.onClick.AddListener(OnUnlocksClicked);
@@ -76,6 +94,7 @@ namespace Rollgeon.UI.Screens
         private void OnDisable()
         {
             if (_playButton != null) _playButton.onClick.RemoveListener(OnPlayClicked);
+            if (_continueButton != null) _continueButton.onClick.RemoveListener(OnContinueClicked);
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
             if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
@@ -101,6 +120,93 @@ namespace Rollgeon.UI.Screens
             }
 
             screens.PushByStringId(ClassSelectionScreenId);
+        }
+
+        // ================================================================
+        // Continue (resume de run guardada)
+        // ================================================================
+
+        /// <summary>
+        /// Prende/apaga el Continue según exista un save de run en curso. Se invoca
+        /// en <c>OnEnable</c> — el save se borra en <c>EndRun(runCompleted: true)</c>,
+        /// así que al volver al menú tras victoria/derrota el botón aparece apagado.
+        /// </summary>
+        private void RefreshContinueButton()
+        {
+            if (_continueButton == null) return;
+            _continueButton.interactable = SaveSystem.HasSave();
+        }
+
+        private void OnContinueClicked()
+        {
+            if (!TryBuildResumeRequest())
+            {
+                // Save ilegible o build irrecuperable — el botón se apaga para no
+                // reintentar en loop; el archivo queda para diagnóstico.
+                if (_continueButton != null) _continueButton.interactable = false;
+                return;
+            }
+
+            GameplaySceneFlow.LoadGameplay();
+        }
+
+        /// <summary>
+        /// Lee el save, resuelve héroe + build + RunId y deja armada la
+        /// <see cref="PendingRunRequest"/> con <c>isResume: true</c>. Aislado del
+        /// scene-load para poder testearse en EditMode (patrón
+        /// <c>BuildSelectionScreen.TryBuildAndStoreRequest</c>).
+        /// </summary>
+        private bool TryBuildResumeRequest()
+        {
+            // En el menú solo hay saveables globales registrados — el restore
+            // temprano es inocuo; los run-scoped se rehidratan al Register durante
+            // StartRun(resume: true).
+            SaveSystem.LoadFromDisk();
+
+            if (!SaveSystem.TryGetCached(RunUnlockState.SaveKeyConst, out var unlockObj) ||
+                unlockObj is not RunUnlockSnapshot unlock ||
+                string.IsNullOrEmpty(unlock.ClassId))
+            {
+                Debug.LogWarning(LogPrefix + "Save sin identidad de run (unlock_tracker) — no se puede resumir.", this);
+                return false;
+            }
+
+            if (!ServiceLocator.TryGetService<HeroCatalogSO>(out var heroCatalog) || heroCatalog == null)
+            {
+                Debug.LogWarning(LogPrefix + "HeroCatalogSO no registrado — no se puede resolver el héroe del save.", this);
+                return false;
+            }
+
+            var hero = heroCatalog.GetById(unlock.ClassId);
+            if (hero == null)
+            {
+                Debug.LogWarning(LogPrefix + $"Héroe '{unlock.ClassId}' del save no existe en el catálogo.", this);
+                return false;
+            }
+
+            // RunId guardado — de él deriva el seed del dungeon (RunController), así
+            // el piso resumido se regenera idéntico. Fallback: Guid nuevo (piso nuevo).
+            var runId = Guid.NewGuid();
+            if (SaveSystem.TryGetCached(RunContext.SaveKeyConst, out var ctxObj) &&
+                ctxObj is RunContextSnapshot ctxSnapshot &&
+                Guid.TryParse(ctxSnapshot.RunId, out var savedRunId) &&
+                savedRunId != Guid.Empty)
+            {
+                runId = savedRunId;
+            }
+
+            DiceBagSO bag = null;
+            if (unlock.DiceBuild != null && unlock.DiceBuild.Count > 0)
+            {
+                bag = ScriptableObject.CreateInstance<DiceBagSO>();
+                bag.name = $"ResumedBag.{hero.EntityId}";
+                bag.Dice = new List<DiceType>(unlock.DiceBuild);
+            }
+
+            PendingRunRequest.Set(hero, runId, rulesetId: null, bag, isResume: true);
+            Debug.Log(LogPrefix + $"Resuming run. hero={hero.EntityId}, runId={runId}, " +
+                      $"bag={(bag != null ? bag.Dice.Count + " dados" : "null (StartingDiceBagRef)")}", this);
+            return true;
         }
 
         /// <summary>
