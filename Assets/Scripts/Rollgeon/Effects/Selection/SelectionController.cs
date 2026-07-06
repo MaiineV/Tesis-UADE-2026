@@ -38,7 +38,24 @@ namespace Rollgeon.Effects.Selection
 
         public bool IsSelecting => _request != null;
 
+        public bool CanOverlayHoverPreview => _request == null || _suppressRange;
+
         public event Action<TargetSelectionResult> OnSelectionCompleted;
+
+        public void RefreshHighlights()
+        {
+            if (_request == null) return;
+            if (!ServiceLocator.TryGetService<ITileHighlightService>(out var highlight)) return;
+
+            if (!_suppressRange)
+                highlight.Highlight(_validCoords, _request.HighlightStyle ?? "move");
+            RepaintDoors(highlight);
+
+            // El path preview quedó borrado por el ClearAll ajeno; se recomputa en el
+            // próximo hover de tile.
+            _hasPathPreview = false;
+            _lastHoveredCoord = null;
+        }
 
         public void BeginSelection(SelectionRequest request)
         {
