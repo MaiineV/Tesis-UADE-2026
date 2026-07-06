@@ -127,11 +127,15 @@ namespace Rollgeon.Dice.Throw
 
         // El servicio es Run-scoped: se re-crea por run. Re-resolver por frame y
         // re-attachear cuando cambia la instancia (mismo patrón de polling que usa
-        // TileClickHandler con ISelectionController).
+        // TileClickHandler con ISelectionController). En modo 3D este presenter se
+        // desengancha — el DiceThrow3DPresenter toma el rol.
         private void SyncServiceBinding()
         {
             ServiceLocator.TryGetService<IDiceThrowService>(out var svc);
-            if (ReferenceEquals(svc, _service)) return;
+            bool wantsThis = svc != null && svc.Mode != DiceThrowMode.ThreeD;
+
+            if (ReferenceEquals(svc, _service) && wantsThis) return;
+            if (_service == null && !wantsThis) return;
 
             if (_service != null)
             {
@@ -139,11 +143,12 @@ namespace Rollgeon.Dice.Throw
                 _service.DetachPresenter(this);
                 CancelArmingInstant();
                 TeardownVisuals();
+                _service = null;
             }
 
-            _service = svc;
-            if (_service == null) return;
+            if (!wantsThis) return;
 
+            _service = svc;
             _service.OnSessionStarted += HandleSessionStarted;
             _service.OnSessionAborted += HandleSessionAborted;
             _service.OnPhaseChanged += HandlePhaseChanged;
