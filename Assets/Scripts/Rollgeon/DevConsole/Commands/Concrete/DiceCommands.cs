@@ -123,6 +123,51 @@ namespace Rollgeon.DevConsole.Commands
         }
     }
 
+    public sealed class DiceModeCommand : DevCommandBase
+    {
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("classic|2d|3d", ArgKind.Choice, optional: true, options: ArgProviders.DiceModes),
+        };
+
+        private static readonly string[] _aliases = { "dice.mode" };
+
+        public override string Name => "dicemode";
+        public override IReadOnlyList<string> Aliases => _aliases;
+        public override string Description =>
+            "Modo de tirada (CNF-008): classic = botón Roll, 2d = arrojables canvas, 3d = física real. Sin args muestra el actual.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
+
+        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
+        {
+            if (!RequireService<Rollgeon.Dice.Throw.IDiceThrowService>(ctx, out var svc, out var e1)) return e1;
+
+            if (args.Count == 0)
+                return CommandResult.Ok($"Modo actual: {ModeLabel(svc.Mode)}.");
+
+            Rollgeon.Dice.Throw.DiceThrowMode mode;
+            switch (args[0].ToLowerInvariant())
+            {
+                case "classic": mode = Rollgeon.Dice.Throw.DiceThrowMode.Classic; break;
+                case "2d": mode = Rollgeon.Dice.Throw.DiceThrowMode.TwoD; break;
+                case "3d": mode = Rollgeon.Dice.Throw.DiceThrowMode.ThreeD; break;
+                default:
+                    return CommandResult.Fail("Modo inválido. Usá classic|2d|3d.");
+            }
+
+            return svc.SetMode(mode)
+                ? CommandResult.Ok($"Modo de tirada: {ModeLabel(mode)}.")
+                : CommandResult.Fail("Hay dados en el aire — terminá el throw y reintentá.");
+        }
+
+        private static string ModeLabel(Rollgeon.Dice.Throw.DiceThrowMode mode) => mode switch
+        {
+            Rollgeon.Dice.Throw.DiceThrowMode.TwoD => "2d",
+            Rollgeon.Dice.Throw.DiceThrowMode.ThreeD => "3d",
+            _ => "classic",
+        };
+    }
+
     public sealed class SetBagCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args =
