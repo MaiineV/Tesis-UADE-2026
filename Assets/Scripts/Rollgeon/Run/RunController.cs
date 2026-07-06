@@ -127,15 +127,27 @@ namespace Rollgeon.Run
             var playerService = ServiceLocator.GetService<IPlayerService>();
             RegisterPlayer(playerService, registry, attributes);
 
-            // 3. Dungeon
-            DungeonManager.CreateAndRegister(_defaultLayout, seed);
+            // 3. Dungeon. En run nueva FloorIndex es 0 → layout = _defaultLayout y
+            //    seed = base (idéntico a antes). En resume, el RunContext ya restauró
+            //    FloorIndex (StartRun lo registra antes de disparar OnRunStart) y el
+            //    fast-forward de la cadena NextFloor + el seed derivado regeneran el
+            //    piso guardado idéntico.
+            int startFloorIndex = ServiceLocator.TryGetService<IRunContextService>(out var runCtxForFloor)
+                ? runCtxForFloor.FloorIndex
+                : 0;
+            var startLayout = FloorProgressionService.ResolveLayoutForFloor(_defaultLayout, startFloorIndex);
+            int startFloorSeed = startFloorIndex == 0
+                ? seed
+                : FloorProgressionService.DeriveSeed(seed, startFloorIndex);
+            DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
 
             // 3b. Floor shells visibility — toggles prefab vs shells según camera floor view.
             FloorShellVisibilityController.CreateAndRegister();
 
             // 3c. Floor progression — orquesta la transición multi-piso (#158). Recibe el
-            //     layout inicial + el seed base; deriva el seed de cada piso siguiente.
-            FloorProgressionService.CreateAndRegister(_defaultLayout, seed);
+            //     layout actual + el seed base de la run; deriva el seed de cada piso
+            //     siguiente con el FloorIndex absoluto.
+            FloorProgressionService.CreateAndRegister(startLayout, seed);
 
             // 4. Damage pipeline (parameterless ctor resolves from ServiceLocator)
             var damagePipeline = new DamagePipeline();
@@ -259,7 +271,17 @@ namespace Rollgeon.Run
                 energy.InitializeForEntity(playerService.PlayerGuid);
             }
 
-            GrantStartingItems(hero);
+            // Después de Energy: el auto-restore de Register (resume) debe ver todos
+            // los stats para pisar los valores base con los guardados.
+            var attrsSaveable = new PlayerAttributesSaveable(playerAttrs);
+            ServiceLocator.AddService<PlayerAttributesSaveable>(attrsSaveable, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(attrsSaveable);
+
+            // En resume el inventario viene del save — regalar de nuevo duplicaría.
+            if (!RunBootstrapper.IsResuming)
+            {
+                GrantStartingItems(hero);
+            }
         }
 
         private static void GrantStartingItems(Rollgeon.Heroes.ClassHeroSO hero)
