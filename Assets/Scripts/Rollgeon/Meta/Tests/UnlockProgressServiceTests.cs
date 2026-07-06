@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combos.Counters;
 using Rollgeon.Dice;
@@ -67,6 +68,9 @@ namespace Rollgeon.Meta.Tests
         {
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
+            // RunUnlockState se registra en SaveSystem al crearse (OnRunStart) — sin
+            // reset, el cache estático re-hidrataría estado de un test anterior.
+            SaveSystem.ResetForTests();
 
             _store = new InMemoryMetaSaveStore();
             _catalog = ScriptableObject.CreateInstance<UnlockCatalogSO>();
@@ -105,6 +109,7 @@ namespace Rollgeon.Meta.Tests
             TypedEvent<DamageResolvedPayload>.Clear();
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
+            SaveSystem.ResetForTests();
             foreach (var asset in _assets) Object.DestroyImmediate(asset);
             _assets.Clear();
         }

@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Balance;
 using Rollgeon.Combos.Counters;
 using UnityEngine;
@@ -28,6 +29,10 @@ namespace Rollgeon.Combos.Counters.Tests
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
             TypedEvent<ComboMatchedPayload>.Clear();
+            // El state se registra en SaveSystem al crearse (OnRunStart) y su Dispose
+            // captura el estado final al cache estático — sin reset, cada test
+            // heredaría los counts del anterior (en prod lo limpia StartRun).
+            SaveSystem.ResetForTests();
 
             _ruleset = ScriptableObject.CreateInstance<RulesetSO>();
             // Config default: PerUseBonus=0.02, MaxBonus=0.20.
@@ -52,12 +57,17 @@ namespace Rollgeon.Combos.Counters.Tests
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
             TypedEvent<ComboMatchedPayload>.Clear();
+            SaveSystem.ResetForTests();
         }
 
         // Helpers ----------------------------------------------------------
 
         private static void TriggerRunStart()
         {
+            // Espeja RunBootstrapper.StartRun: run nueva = cache de save limpio.
+            // Sin esto, el Unregister del Dispose (run anterior) dejaría counts en el
+            // cache y el Register del state nuevo los auto-restauraría.
+            SaveSystem.Clear();
             EventManager.Trigger(EventName.OnRunStart, Guid.NewGuid(), "test-ruleset");
         }
 
