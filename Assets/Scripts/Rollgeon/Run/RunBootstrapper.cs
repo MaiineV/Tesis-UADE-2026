@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Balance;
 using Rollgeon.Dice;
 using Rollgeon.Heroes;
@@ -39,8 +40,14 @@ namespace Rollgeon.Run
         {
             if (selected == null) throw new ArgumentNullException(nameof(selected));
 
+            // Run nueva = cache de save vacío. Debe correr ANTES de crear RunContext y
+            // de RegisterRunScoped(): SaveSystem.Register auto-restaura desde cache, y
+            // sin este Clear la run heredaría floor/inventario/counters de la anterior.
+            SaveSystem.Clear();
+
             var context = new RunContext(runId, selected);
             ServiceLocator.AddService<IRunContextService>(context, ServiceScope.Run);
+            SaveSystem.Register(context);
 
             var playerService = ServiceLocator.GetService<IPlayerService>();
             playerService.SetPlayer(selected, runId);

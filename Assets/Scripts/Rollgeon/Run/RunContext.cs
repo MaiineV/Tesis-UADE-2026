@@ -61,8 +61,10 @@ namespace Rollgeon.Run
 
         public void Dispose()
         {
-            // No unmanaged resources; exists so ClearScope disposes cleanly.
             IsRunActive = false;
+            // Sin este Unregister, la próxima run registraría un segundo RunContext con
+            // la misma SaveKey y CaptureAll (reverso) capturaría el viejo al final.
+            SaveSystem.Unregister(this);
         }
     }
 }

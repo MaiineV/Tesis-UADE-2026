@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18758a8a5e44feb4ca348e27d0ac5d68, type: 3}
+  m_Name: SaveSettings
+  m_EditorClassIdentifier: Rollgeon::Patterns.Save.SaveSettingsSO
+  FlushOn: 0000000002000000030000000400000005000000
+  SaveFilePrefix: rollgeon
+  MaxSaveSlots: 3
+  AsyncFlushThresholdBytes: 500000
+  PrettyPrint: 0
+  LogFlushes: 0
