@@ -95,6 +95,8 @@ namespace Rollgeon.Tutorial
         private EventManager.EventReceiver _onActionSelectionStarted;
         private EventManager.EventReceiver _onHeroBehaviorClicked;
         private EventManager.EventReceiver _onChainTargetSelectionStarted;
+        private EventManager.EventReceiver _onChainStarted;
+        private EventManager.EventReceiver _onDiceRolled;
         private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onChainCompleted;
         private EventManager.EventReceiver _onTurnFinished;
@@ -136,6 +138,8 @@ namespace Rollgeon.Tutorial
             if (_onActionSelectionStarted != null) EventManager.UnSubscribe(EventName.OnActionSelectionStarted, _onActionSelectionStarted);
             if (_onHeroBehaviorClicked != null) EventManager.UnSubscribe(EventName.OnHeroBehaviorClicked, _onHeroBehaviorClicked);
             if (_onChainTargetSelectionStarted != null) EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
+            if (_onChainStarted != null) EventManager.UnSubscribe(EventName.OnChainStarted, _onChainStarted);
+            if (_onDiceRolled != null) EventManager.UnSubscribe(EventName.OnDiceRolled, _onDiceRolled);
             if (_onChainPhaseStarted != null) EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             if (_onChainCompleted != null) EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
             if (_onTurnFinished != null) EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinished);
@@ -242,6 +246,8 @@ namespace Rollgeon.Tutorial
             _onActionSelectionStarted = OnActionSelectionStarted;
             _onHeroBehaviorClicked = OnHeroBehaviorClicked;
             _onChainTargetSelectionStarted = OnChainTargetSelectionStarted;
+            _onChainStarted = OnChainStarted;
+            _onDiceRolled = OnDiceRolled;
             _onChainPhaseStarted = OnChainPhaseStarted;
             _onChainCompleted = OnChainCompleted;
             _onTurnFinished = OnTurnFinished;
@@ -257,6 +263,8 @@ namespace Rollgeon.Tutorial
             EventManager.Subscribe(EventName.OnActionSelectionStarted, _onActionSelectionStarted);
             EventManager.Subscribe(EventName.OnHeroBehaviorClicked, _onHeroBehaviorClicked);
             EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
+            EventManager.Subscribe(EventName.OnChainStarted, _onChainStarted);
+            EventManager.Subscribe(EventName.OnDiceRolled, _onDiceRolled);
             EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinished);
@@ -482,8 +490,15 @@ namespace Rollgeon.Tutorial
         private static bool IsCombat1TeachStep(TutorialStep step) =>
             step is TutorialStep.EnemiesIntro or TutorialStep.MoveTeach or TutorialStep.MoveTiles
                 or TutorialStep.StatsHp or TutorialStep.StatsEnergy or TutorialStep.AttackTeach
-                or TutorialStep.DiceTeach or TutorialStep.TargetTeach
+                or TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach
                 or TutorialStep.DefenseTeach or TutorialStep.EndTurnTeach;
+
+        /// <summary>Pasos de la lección de ataque que pueden reintentarse: si el
+        /// jugador cancela la acción (EndTurn a mitad de camino), el próximo click
+        /// en ATACAR re-abre la selección de objetivo y la lección re-arranca ahí.</summary>
+        private static bool IsAttackLessonStep(TutorialStep step) =>
+            step is TutorialStep.AttackTeach or TutorialStep.TargetTeach
+                or TutorialStep.ThrowTeach or TutorialStep.DiceTeach;
 
         private void ShowEnemiesIntro()
         {
@@ -615,33 +630,29 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.AttackTeach;
             _gate?.Unlock(HeroBehaviorSlot.BaseAttack);
             ShowStep(TutorialStep.AttackTeach, ButtonStepRequest(HeroBehaviorSlot.BaseAttack,
-                "Se desbloqueó ATACAR ({0}). Seleccionalo para tirar tus dados.",
+                "Se desbloqueó ATACAR ({0}). Seleccionalo para elegir a quién golpear.",
                 GameplayHotkey.Attack));
         }
 
-        // Click efectivo en un botón de acción del HUD → encadenar la lección de dados.
+        // Click efectivo en un botón de acción del HUD. OJO con el orden: para el
+        // ataque este evento llega DESPUÉS de OnChainTargetSelectionStarted (el
+        // handoff corre dentro del mismo click, antes del Trigger del view), así que
+        // la lección de ataque la encadena aquel handler — acá solo las acciones que
+        // NO abren selección (Heal / ForceDoor van directo a los dados).
         private void OnHeroBehaviorClicked(params object[] args)
         {
             if (args == null || args.Length < 1 || args[0] is not HeroBehaviorSlot slot) return;
 
-            if (_step == TutorialStep.AttackTeach && slot == HeroBehaviorSlot.BaseAttack)
-            {
-                _step = TutorialStep.DiceTeach;
-                ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
-                    "Estos son tus dados. Tiralos con ROLL y armá combos de generala (par, trío, escalera...). " +
-                    "Hacé click en un dado para bloquearlo y conservarlo entre tiradas — tenés hasta 3 tiradas. " +
-                    "Cuando te guste el combo, apretá CONFIRMAR."));
-            }
-            else if (_step == TutorialStep.HealUnlocked && slot == HeroBehaviorSlot.Healing)
+            if (_step == TutorialStep.HealUnlocked && slot == HeroBehaviorSlot.Healing)
             {
                 ShowStep(TutorialStep.HealUnlocked, DiceZoneRequest(
-                    "Curar también usa los dados: tirá y superá el umbral para recuperar vida. " +
-                    "Bloqueá los dados altos, re-tirá si hace falta y confirmá."));
+                    "Curar también usa los dados: agarralos con click sostenido, arrojalos y superá el umbral " +
+                    "para recuperar vida. Bloqueá los dados altos, re-tirá los demás si hace falta y confirmá."));
             }
             else if (_step == TutorialStep.EscapeTeach && slot == HeroBehaviorSlot.ForceDoor)
             {
                 ShowStep(TutorialStep.EscapeTeach, DiceZoneRequest(
-                    "Forzar la puerta se resuelve con los dados: superá el umbral y escapás del combate."));
+                    "Forzar la puerta se resuelve con los dados: agarralos, arrojalos y superá el umbral para escapar del combate."));
             }
             else if (_step == TutorialStep.Combat1)
             {
@@ -650,12 +661,12 @@ namespace Rollgeon.Tutorial
             }
         }
 
-        // Confirmó los dados y el chain abrió la selección interactiva de target
-        // → señalar al enemigo. (OnRollResolved NO sirve acá: en el path chain se
-        // dispara recién al final de toda la acción.)
+        // Eligió ATACAR y el chain abrió la selección interactiva de objetivo (la
+        // selección va ANTES de la tirada) → señalar al enemigo. También re-engancha
+        // la lección si el jugador la había cancelado a mitad de camino (EndTurn).
         private void OnChainTargetSelectionStarted(params object[] args)
         {
-            if (_step != TutorialStep.DiceTeach) return;
+            if (!IsAttackLessonStep(_step)) return;
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
 
@@ -663,7 +674,7 @@ namespace Rollgeon.Tutorial
             var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = "¡Combo confirmado! Ahora hacé click en el enemigo para descargarle el golpe.",
+                Text = "Primero se elige el objetivo: hacé click en el enemigo iluminado en rojo.",
             };
             var enemy = FirstEnemyOf(_roomB);
             if (enemy != Guid.Empty)
@@ -672,6 +683,37 @@ namespace Rollgeon.Tutorial
                 request.EntityGuid = enemy;
             }
             ShowStep(TutorialStep.TargetTeach, request);
+        }
+
+        // Objetivo clickeado → el chain arrancó y los dados aparecieron SIN tirar
+        // (modo manual: esperan el agarre del jugador) → enseñar a arrojarlos.
+        private void OnChainStarted(params object[] args)
+        {
+            // AttackTeach cubre el caso de una selección no interactiva (AutoResolve/
+            // Self): sin click de target, el chain arranca directo desde el botón.
+            if (_step != TutorialStep.TargetTeach && _step != TutorialStep.AttackTeach) return;
+            if (args == null || args.Length < 1 || args[0] is not Guid source) return;
+            if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
+
+            _step = TutorialStep.ThrowTeach;
+            ShowStep(TutorialStep.ThrowTeach, DiceZoneRequest(
+                "¡Objetivo marcado! Estos son tus dados: agarralos manteniendo click izquierdo " +
+                "y arrojalos con un movimiento rápido del mouse."));
+        }
+
+        // Los dados asentaron y se reveló la primera tirada → enseñar combos,
+        // holds y el re-tiro por agarre.
+        private void OnDiceRolled(params object[] args)
+        {
+            if (_step != TutorialStep.ThrowTeach) return;
+            if (args == null || args.Length < 1 || args[0] is not Guid source) return;
+            if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
+
+            _step = TutorialStep.DiceTeach;
+            ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
+                "Armá combos de generala (par, trío, escalera...). Hacé click en un dado para bloquearlo " +
+                "y conservarlo. ¿Querés re-tirar? Agarrá los dados que quieras cambiar y arrojalos de nuevo " +
+                "— tenés hasta 3 tiradas. Cuando te guste el combo, apretá CONFIRMAR."));
         }
 
         // El chain siguió a su fase 2 (defensa post-ataque) — solo sucede si al
@@ -683,7 +725,7 @@ namespace Rollgeon.Tutorial
         private void OnChainPhaseStarted(params object[] args)
         {
             if (_defenseTaught) return;
-            bool guided = _step is TutorialStep.TargetTeach or TutorialStep.DiceTeach;
+            bool guided = _step is TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach;
             bool freeLoop = _step is TutorialStep.Combat1 or TutorialStep.Combat2
                 or TutorialStep.HealUnlocked;
             if (!guided && !freeLoop) return;
@@ -695,7 +737,7 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.DefenseTeach;
             ShowStep(TutorialStep.DefenseTeach, DiceZoneRequest(
                 "¡Golpe dado! Te sobraron tiradas del ataque, así que viene la fase de DEFENSA: " +
-                "tirá los dados para armar un ESCUDO que absorbe el próximo golpe. " +
+                "agarrá y arrojá los dados para armar un ESCUDO que absorbe el próximo golpe. " +
                 "Bloqueá, re-tirá y CONFIRMÁ tu combo de defensa."));
         }
 
@@ -709,7 +751,7 @@ namespace Rollgeon.Tutorial
         private void OnChainCompleted(params object[] args)
         {
             if (_step != TutorialStep.DiceTeach && _step != TutorialStep.TargetTeach
-                && _step != TutorialStep.DefenseTeach) return;
+                && _step != TutorialStep.ThrowTeach && _step != TutorialStep.DefenseTeach) return;
             if (args == null || args.Length < 2 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
             if (args[1] is int phasesCompleted && phasesCompleted == 0) return;
@@ -787,7 +829,8 @@ namespace Rollgeon.Tutorial
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
 
-            if (_step is TutorialStep.DiceTeach or TutorialStep.TargetTeach or TutorialStep.DefenseTeach)
+            if (_step is TutorialStep.DiceTeach or TutorialStep.TargetTeach
+                or TutorialStep.ThrowTeach or TutorialStep.DefenseTeach)
             {
                 // Red de seguridad para un ataque que resuelva sin pasar por el
                 // chain — en el path chain OnChainCompleted ya corrió (FinishChain

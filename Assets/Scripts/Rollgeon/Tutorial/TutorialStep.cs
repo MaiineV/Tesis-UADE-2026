@@ -27,11 +27,14 @@ namespace Rollgeon.Tutorial
         /// <summary>Sala B: se desbloqueó ATACAR — señalar el botón.</summary>
         AttackTeach,
 
-        /// <summary>Sala B: señalar los dados — combos de generala, holds, hasta 3 tiradas, confirmar.</summary>
-        DiceTeach,
-
-        /// <summary>Sala B: dados confirmados — señalar al enemigo para pegarle.</summary>
+        /// <summary>Sala B: la selección de objetivo se abrió (antes de tirar) — señalar al enemigo.</summary>
         TargetTeach,
+
+        /// <summary>Sala B: objetivo marcado, aparecieron los dados — enseñar a agarrarlos y arrojarlos.</summary>
+        ThrowTeach,
+
+        /// <summary>Sala B: primera tirada revelada — combos de generala, holds, re-tirar agarrando, confirmar.</summary>
+        DiceTeach,
 
         /// <summary>Sala B: el chain siguió a la fase de defensa — explicar el escudo.</summary>
         DefenseTeach,
