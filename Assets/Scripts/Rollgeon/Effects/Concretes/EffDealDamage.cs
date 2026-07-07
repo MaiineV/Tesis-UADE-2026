@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.UI.Tooltips;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -109,12 +112,13 @@ namespace Rollgeon.Effects.Concretes
         {
             int amount = _damageSource switch
             {
-                // Ataque de combo del jugador: fórmula unificada
-                // (dañoBasePJ + bonosPJ + (comboBase + bonosCombo)) × multiplicador.
+                // Ataque de combo del jugador: fórmula v2 (Spec de Daño, Santi) —
+                // dmg_base_PJ + bonos_PJ + (comboBase × multi_dmg_combo) + bono_combo.
                 // El comboBase ya llega ajustado por el Contrato (Boss 3). Ver PlayerComboDamage.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
-                        ResolveSourceId(context), combo.BaseDamage, _comboMultiplier),
+                        ResolveSourceId(context), combo.BaseDamage,
+                        ResolveContributingDice(context, combo.ContributingIndices), _comboMultiplier),
                 // Sin combo el ataque NO es 0 — daño mínimo del GD §5 ("número más
                 // alto"): el dado más alto de los holdeados entra a la misma fórmula
                 // como comboBase (TECHNICAL §12: rawDamage = combo?.BaseDamage ?? max).
@@ -137,12 +141,29 @@ namespace Rollgeon.Effects.Concretes
             if (dice == null || dice.Count == 0) return 0;
 
             int max = 0;
+            int maxIndex = -1;
             for (int i = 0; i < dice.Count; i++)
-                if (dice[i] > max) max = dice[i];
+                if (dice[i] > max) { max = dice[i]; maxIndex = i; }
             if (max <= 0) return 0;
 
+            var contributingDice = maxIndex >= 0
+                ? ResolveContributingDice(context, new[] { maxIndex })
+                : null;
+
             return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
-                ResolveSourceId(context), max, _comboMultiplier);
+                ResolveSourceId(context), max, contributingDice, _comboMultiplier);
+        }
+
+        // Spec de Daño v2: multi_dmg_combo necesita el DiceType real de cada dado
+        // contribuyente, no solo su valor de cara. Sin IDiceEnchantmentService/Bag
+        // disponible, devuelve null (Resolve cae a multiplicador neutral ×1.00).
+        private static IReadOnlyList<DiceType> ResolveContributingDice(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) || enchants?.Bag == null)
+                return null;
+            return Rollgeon.Combat.Damage.ContributingDiceResolver.Resolve(
+                contributingIndices, context?.KeptDiceOriginalIndices, enchants.Bag.Dice);
         }
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;

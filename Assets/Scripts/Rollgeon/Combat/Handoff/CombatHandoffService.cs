@@ -385,10 +385,13 @@ namespace Rollgeon.Combat.Handoff
                 BaseComboSO combo = null;
                 ComboDetectionResult? comboResult = null;
                 int[] keptDice = null;
+                int[] keptDiceOriginalIndices = null;
 
                 if (hero != null && _lastFaces != null)
                 {
-                    keptDice = FilterKeptDice(_lastFaces, KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length));
+                    var keepMask = KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length);
+                    keptDice = FilterKeptDice(_lastFaces, keepMask);
+                    keptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                     combo = hero.Sheet?.MatchBest(keptDice);
                     if (combo != null)
                         comboResult = DetectWithContractMods(combo, keptDice);
@@ -416,6 +419,7 @@ namespace Rollgeon.Combat.Handoff
                 {
                     DiceResult = _lastFaces,
                     KeptDice = keptDice,
+                    KeptDiceOriginalIndices = keptDiceOriginalIndices,
                     MatchedComboResult = comboResult,
                     TargetGuid = firstEnemyId,
                     EnergyPrepaid = !chargeOnExecute,
@@ -863,8 +867,10 @@ namespace Rollgeon.Combat.Handoff
 
             if (hero != null && _lastFaces != null)
             {
-                var keptDice = FilterKeptDice(_lastFaces, hud.GetCurrentKeep());
+                var keepMask = hud.GetCurrentKeep();
+                var keptDice = FilterKeptDice(_lastFaces, keepMask);
                 effCtx.KeptDice = keptDice;
+                effCtx.KeptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                 var combo = hero.Sheet?.MatchBest(keptDice);
                 if (combo != null)
                     effCtx.ComboResult = DetectWithContractMods(combo, keptDice);
@@ -1259,7 +1265,10 @@ namespace Rollgeon.Combat.Handoff
                 if (mods.IsForbidden(combo.ComboId))
                     return ComboDetectionResult.NoMatch();
                 int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
-                return ComboDetectionResult.Match(eff, detected.CountUsed);
+                // Preservar ContributingIndices — perderlos acá haría que multi_dmg_combo
+                // (Spec de Daño v2) cayera al fallback neutral para cualquier combo con
+                // modificador de Contrato activo (Boss 3).
+                return ComboDetectionResult.Match(eff, detected.CountUsed, detected.ContributingIndices);
             }
             return detected;
         }
@@ -1312,6 +1321,34 @@ namespace Rollgeon.Combat.Handoff
             int idx = 0;
             for (int i = 0; i < len; i++)
                 if (keep[i]) result[idx++] = faces[i];
+            return result;
+        }
+
+        /// <summary>
+        /// Contraparte de <see cref="FilterKeptDice"/>: en vez de los valores de cara, devuelve
+        /// los índices ORIGINALES de bag slot que quedaron holdeados, en el mismo orden. Ej.
+        /// <c>keep=[F,T,F,T,T]</c> → <c>[1,3,4]</c>. Necesario para mapear
+        /// <see cref="ComboDetectionResult.ContributingIndices"/> (relativos al subset holdeado)
+        /// de vuelta al <c>DiceType</c> real de cada dado (Spec de Daño v2).
+        /// </summary>
+        public static int[] FilterKeptIndices(bool[] keep, int diceLen)
+        {
+            if (keep == null || keep.Length == 0)
+            {
+                var all = new int[diceLen];
+                for (int i = 0; i < diceLen; i++) all[i] = i;
+                return all;
+            }
+
+            int len = Math.Min(diceLen, keep.Length);
+            int count = 0;
+            for (int i = 0; i < len; i++)
+                if (keep[i]) count++;
+
+            var result = new int[count];
+            int idx = 0;
+            for (int i = 0; i < len; i++)
+                if (keep[i]) result[idx++] = i;
             return result;
         }
 

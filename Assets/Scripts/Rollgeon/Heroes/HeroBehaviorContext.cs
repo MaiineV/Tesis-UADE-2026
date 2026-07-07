@@ -13,6 +13,9 @@ namespace Rollgeon.Heroes
         /// <summary>Subset holdeado de <see cref="DiceResult"/> — ver <c>EffectContext.KeptDice</c>.</summary>
         public IReadOnlyList<int> KeptDice;
 
+        /// <summary>Ver <c>EffectContext.KeptDiceOriginalIndices</c>.</summary>
+        public IReadOnlyList<int> KeptDiceOriginalIndices;
+
         public ComboDetectionResult? MatchedComboResult;
         public Guid TargetGuid;
         public TargetSelectionResult SelectionResult;
