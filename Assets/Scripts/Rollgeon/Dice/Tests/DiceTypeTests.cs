@@ -45,5 +45,25 @@ namespace Rollgeon.Dice.Tests
         {
             Assert.AreEqual(expected, type.MaxEnchantmentSlots());
         }
+
+        // Tabla literal del Spec de Daño v2 (Santi, 2026-07-06): EV = (MaxFace+1)/2.
+        // El d6 (3.5) es la línea base ×1.00 de multi_dmg_combo.
+        [TestCase(DiceType.D3, 2.0f)]
+        [TestCase(DiceType.D4, 2.5f)]
+        [TestCase(DiceType.D6, 3.5f)]
+        [TestCase(DiceType.D8, 4.5f)]
+        [TestCase(DiceType.D10, 5.5f)]
+        [TestCase(DiceType.D12, 6.5f)]
+        [TestCase(DiceType.D20, 10.5f)]
+        public void ExpectedValue_MatchesDamageSpec(DiceType type, float expected)
+        {
+            Assert.AreEqual(expected, type.ExpectedValue(), 0.0001f);
+        }
+
+        [Test]
+        public void BaselineExpectedValue_MatchesD6()
+        {
+            Assert.AreEqual(DiceType.D6.ExpectedValue(), DiceTypeExt.BaselineExpectedValue, 0.0001f);
+        }
     }
 }
