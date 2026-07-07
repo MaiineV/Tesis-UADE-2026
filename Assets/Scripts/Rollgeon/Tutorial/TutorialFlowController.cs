@@ -22,6 +22,7 @@ using Rollgeon.UI;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
 using Rollgeon.Upgrades.Dice;
+using Rollgeon.Upgrades.Dice.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using CoroutineHost = Rollgeon.Patterns.CoroutineHost;
@@ -73,6 +74,10 @@ namespace Rollgeon.Tutorial
         // (registro Global) — Dispose lo restaura.
         private IInitiativeProvider _initiativeToRestore;
         private IMovementService _movementService;
+
+        // Vista de la mesa de encantamientos mientras esperamos su cierre
+        // (paso CloseEnchantTable) — para desuscribir OnPanelClosed.
+        private EnchantmentAltarView _enchantAltarView;
 
         // Roles del recorrido, resueltos por tipo+adyacencia (no por celdas hardcodeadas).
         private Guid _roomA; // Start
@@ -142,6 +147,12 @@ namespace Rollgeon.Tutorial
             {
                 _movementService.OnEntityMoved -= OnEntityMoved;
                 _movementService = null;
+            }
+
+            if (_enchantAltarView != null)
+            {
+                _enchantAltarView.OnPanelClosed -= OnEnchantTableClosed;
+                _enchantAltarView = null;
             }
 
             // Restaurar el initiative provider default (la entry Global fue pisada
@@ -535,10 +546,15 @@ namespace Rollgeon.Tutorial
 
             if (_step == TutorialStep.MoveTiles && entity == playerGuid)
             {
+                // Quedó lejos y ya gastó su movida del turno (solo se puede mover
+                // UNA vez por turno en combate): enseñar FINALIZAR TURNO — el
+                // enemigo se acerca solo en su turno, y esa adyacencia también
+                // completa la lección. El paso vuelve a MoveTeach por si el turno
+                // siguiente necesita moverse de nuevo.
                 _step = TutorialStep.MoveTeach;
-                ShowStep(TutorialStep.MoveTeach, ButtonStepRequest(HeroBehaviorSlot.Movement,
-                    "Quedaste lejos del enemigo. Cuando puedas, seleccioná MOVER ({0}) de nuevo y ponete a su lado.",
-                    GameplayHotkey.Move));
+                ShowStep(TutorialStep.MoveTeach, EndTurnAnchoredRequest(
+                    "Quedaste lejos del enemigo — y solo podés moverte una vez por turno. " +
+                    "Apretá FINALIZAR TURNO ({0}) y dejá que se acerque él."));
             }
         }
 
@@ -740,11 +756,21 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.EndTurnTeach;
             // No bloquea input: el jugador tiene que poder apretar el botón real.
             // La lección se cierra con OnTurnFinished.
+            ShowStep(TutorialStep.EndTurnTeach, EndTurnAnchoredRequest(
+                "¡Golpe completado! Cuando no quieras hacer nada más, apretá " +
+                "FINALIZAR TURNO ({0}) para cederle el turno al enemigo."));
+        }
+
+        /// <summary>
+        /// Paso no bloqueante anclado al botón FINALIZAR TURNO del HUD. Degrada a
+        /// popup centrado si el HUD no está disponible.
+        /// </summary>
+        private TutorialStepDisplayRequest EndTurnAnchoredRequest(string text)
+        {
             var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = "¡Golpe completado! Cuando no quieras hacer nada más, apretá " +
-                       "FINALIZAR TURNO ({0}) para cederle el turno al enemigo.",
+                Text = text,
                 HotkeyHint = GameplayHotkey.EndTurn,
             };
             var hud = FindCombatHud();
@@ -753,7 +779,7 @@ namespace Rollgeon.Tutorial
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
             }
-            ShowStep(TutorialStep.EndTurnTeach, request);
+            return request;
         }
 
         private void OnBehaviorExecuted(params object[] args)
@@ -859,12 +885,52 @@ namespace Rollgeon.Tutorial
                 dungeon.ResyncDoorVisuals(_roomE);
             }
 
+            // Primero guiar al botón de cerrar la mesa; la puerta de salida se
+            // señala recién al cerrarse el panel (feedback playtest: la puerta
+            // no se ve con la mesa abierta). Sin vista → directo a la puerta.
+            _enchantAltarView = UnityEngine.Object.FindFirstObjectByType<EnchantmentAltarView>(
+                FindObjectsInactive.Include);
+            if (_enchantAltarView == null)
+            {
+                ShowExitStep();
+                return;
+            }
+
+            _enchantAltarView.OnPanelClosed += OnEnchantTableClosed;
+            _step = TutorialStep.CloseEnchantTable;
+            var request = new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = "¡Dado encantado! Ya sabés todo lo que necesitás — cerrá la mesa.",
+            };
+            if (_enchantAltarView.TryGetCloseButtonRect(out var closeRect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = closeRect;
+            }
+            ShowStep(TutorialStep.CloseEnchantTable, request);
+        }
+
+        private void OnEnchantTableClosed()
+        {
+            if (_enchantAltarView != null)
+            {
+                _enchantAltarView.OnPanelClosed -= OnEnchantTableClosed;
+                _enchantAltarView = null;
+            }
+            if (_step != TutorialStep.CloseEnchantTable) return;
+
+            ShowExitStep();
+        }
+
+        private void ShowExitStep()
+        {
             _step = TutorialStep.Exit;
             ShowStep(TutorialStep.Exit, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.WorldPosition,
                 WorldPosition = ResolveExitDoorPosition(_roomE),
-                Text = "¡Dado encantado! Cerrá la mesa — ya sabés todo lo que necesitás. Cruzá la puerta señalada para empezar tu aventura de verdad.",
+                Text = "Cruzá la puerta señalada para empezar tu aventura de verdad.",
             });
         }
 

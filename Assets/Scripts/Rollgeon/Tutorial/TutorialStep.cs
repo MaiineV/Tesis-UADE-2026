@@ -66,7 +66,10 @@ namespace Rollgeon.Tutorial
         /// <summary>Sala E: encantar un dado en el altar.</summary>
         Enchant,
 
-        /// <summary>Dado encantado: cruzar la puerta de salida.</summary>
+        /// <summary>Dado encantado: señalar el botón de cerrar la mesa.</summary>
+        CloseEnchantTable,
+
+        /// <summary>Mesa cerrada: cruzar la puerta de salida.</summary>
         Exit,
 
         /// <summary>Teardown en curso / terminado.</summary>
