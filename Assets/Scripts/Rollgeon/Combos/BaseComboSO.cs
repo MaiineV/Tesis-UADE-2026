@@ -159,10 +159,7 @@ namespace Rollgeon.Combos
 
         /// <summary>
         /// Índices (en <paramref name="finalDice"/>) de los dados que formaron el combo ganador.
-        /// Spec de Daño v2 (Santi): <c>multi_dmg_combo</c> se calcula solo sobre estos dados, no
-        /// sobre toda la tirada. Default: todos los índices — correcto para combos que consumen
-        /// la build completa bajo el invariante "5 dados exactos" (Escalera, Generala, Full
-        /// House). Combos que matchean con un subconjunto menor (Par, Trio, Poker, Doble Par,
+        /// Default: todos los índices. Combos de subconjunto menor (Par, Trio, Poker, Doble Par,
         /// Suma X) overridean.
         /// </summary>
         protected virtual int[] GetContributingIndices(int[] finalDice)

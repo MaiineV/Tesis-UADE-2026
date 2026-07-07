@@ -90,12 +90,7 @@ namespace Patterns
         /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
         public int BaseDamage;
 
-        /// <summary>
-        /// multi_dmg_combo (Spec de Daño v2) — EV promedio de los dados que formaron el combo
-        /// dividido por la línea base del d6. <c>0</c> (default de struct) significa "no
-        /// calculado por este emisor" — los consumidores deben tratarlo como neutral (×1.00),
-        /// NO como "×0". Solo <c>DiceZoneView</c> lo calcula hoy.
-        /// </summary>
+        /// <summary>Multiplicador de daño por calidad de dados. 0 = no calculado (tratar como 1.0).</summary>
         public float MultiDmgCombo;
     }
 }

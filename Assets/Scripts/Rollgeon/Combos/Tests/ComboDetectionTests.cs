@@ -44,11 +44,6 @@ namespace Rollgeon.Combos.Tests
             CollectionAssert.AreEqual(new[] { 0, 2 }, result.ContributingIndices);
         }
 
-        /// <summary>
-        /// Spec de Daño v2: cuando hay ruido (un Trio de 4s conviviendo con un par de 2s en
-        /// la misma tirada), Combo_Par debe reportar el par de MAYOR valor, no cualquier
-        /// subset arbitrario — multi_dmg_combo depende de exactamente estos 2 dados.
-        /// </summary>
         [Test]
         public void Par_PicksHighestValueGroup_WhenMultipleQualify_2_2_4_4_4()
         {

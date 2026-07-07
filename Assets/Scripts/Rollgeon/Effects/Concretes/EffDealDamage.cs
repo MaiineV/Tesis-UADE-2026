@@ -112,9 +112,7 @@ namespace Rollgeon.Effects.Concretes
         {
             int amount = _damageSource switch
             {
-                // Ataque de combo del jugador: fórmula v2 (Spec de Daño, Santi) —
-                // dmg_base_PJ + bonos_PJ + (comboBase × multi_dmg_combo) + bono_combo.
-                // El comboBase ya llega ajustado por el Contrato (Boss 3). Ver PlayerComboDamage.
+                // Ver PlayerComboDamage.Resolve para la fórmula completa.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
                         ResolveSourceId(context), combo.BaseDamage,
@@ -154,9 +152,6 @@ namespace Rollgeon.Effects.Concretes
                 ResolveSourceId(context), max, contributingDice, _comboMultiplier);
         }
 
-        // Spec de Daño v2: multi_dmg_combo necesita el DiceType real de cada dado
-        // contribuyente, no solo su valor de cara. Sin IDiceEnchantmentService/Bag
-        // disponible, devuelve null (Resolve cae a multiplicador neutral ×1.00).
         private static IReadOnlyList<DiceType> ResolveContributingDice(
             EffectContext context, IReadOnlyList<int> contributingIndices)
         {

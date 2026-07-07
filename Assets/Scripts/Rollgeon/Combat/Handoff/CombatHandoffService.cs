@@ -1265,9 +1265,6 @@ namespace Rollgeon.Combat.Handoff
                 if (mods.IsForbidden(combo.ComboId))
                     return ComboDetectionResult.NoMatch();
                 int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
-                // Preservar ContributingIndices — perderlos acá haría que multi_dmg_combo
-                // (Spec de Daño v2) cayera al fallback neutral para cualquier combo con
-                // modificador de Contrato activo (Boss 3).
                 return ComboDetectionResult.Match(eff, detected.CountUsed, detected.ContributingIndices);
             }
             return detected;

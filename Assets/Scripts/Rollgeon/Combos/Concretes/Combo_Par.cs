@@ -25,9 +25,6 @@ namespace Rollgeon.Combos.Concretes
         /// <inheritdoc />
         protected override int GetCountUsed(int[] finalDice) => 2;
 
-        // Spec de Daño v2: multi_dmg_combo necesita los dados EXACTOS del par, no toda la
-        // tirada. Si hay un Trio/Poker/Generala (que también matchean acá), nos quedamos con
-        // el grupo de mayor valor entre los que califican como par — determinístico.
         /// <inheritdoc />
         protected override int[] GetContributingIndices(int[] finalDice)
         {

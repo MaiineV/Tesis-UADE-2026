@@ -348,9 +348,6 @@ namespace Rollgeon.UI.HUD
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
-            // Spec de Daño v2: la preview muestra el mismo multi_dmg_combo que va a aplicar
-            // PlayerComboDamage.Resolve — evita que el HUD prometa un número que el golpe
-            // real no entrega.
             float multiDmgCombo = 1f;
             if (best != null)
             {

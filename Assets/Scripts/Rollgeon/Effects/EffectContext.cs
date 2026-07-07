@@ -52,14 +52,9 @@ namespace Rollgeon.Effects
         public IReadOnlyList<int> KeptDice;
 
         /// <summary>
-        /// Índices de slot del bag (0-based, mismo orden que <c>RuntimeDiceBag.Dice</c>) que
-        /// corresponden 1:1 a cada entrada de <see cref="KeptDice"/> — ej. si el player holdeó
-        /// los dados 0, 2 y 3 de una bolsa de 5, esto es <c>[0, 2, 3]</c>. Necesario porque
-        /// <see cref="ComboDetectionResult.ContributingIndices"/> son índices relativos a
-        /// <see cref="KeptDice"/> (el subset), no al bag completo — sin este mapeo no se puede
-        /// resolver el <c>DiceType</c> real de los dados que ganaron el combo (Spec de Daño v2:
-        /// <c>multi_dmg_combo</c> lo necesita). Null = sin mapeo disponible (ver
-        /// <c>EffDealDamage.ResolveContributingDice</c> para el fallback).
+        /// Índices de slot del bag (0-based) que corresponden 1:1 a cada entrada de
+        /// <see cref="KeptDice"/> — ej. holdear los dados 0, 2 y 3 de una bolsa de 5 da
+        /// <c>[0, 2, 3]</c>. Null = sin mapeo disponible.
         /// </summary>
         public IReadOnlyList<int> KeptDiceOriginalIndices;
 

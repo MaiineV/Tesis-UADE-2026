@@ -12,13 +12,7 @@ using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="PlayerComboDamage.Resolve"/> — fórmula v2 (Spec de Daño, Santi
-    /// 2026-07-06): <c>dmg_base_PJ + bonos_PJ + (comboBase × multi_dmg_combo) + bono_combo</c>.
-    /// Cubre: separación aditivo/multiplicativo (regla de oro), cálculo de multi_dmg_combo
-    /// desde EV de los dados contribuyentes, el multiplicador por habilidad y el de scratch
-    /// (Gemelo/Par-Impar) escalando solo el término de combo, y el block de daño.
-    /// </summary>
+    /// <summary>Tests de <see cref="PlayerComboDamage.Resolve"/>.</summary>
     [TestFixture]
     public class PlayerComboDamageTests
     {
@@ -60,8 +54,6 @@ namespace Rollgeon.Combat.Tests
             _attrs.AddModifier<Attack, int>(_player, mod);
         }
 
-        // ---- dmg_base_PJ + bonos_PJ: aditivo puro, nunca multiplicado --------
-
         [Test]
         public void Resolve_NoAttackNoDice_ReturnsComboBaseOnly()
         {
@@ -76,11 +68,6 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(15, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
-        /// <summary>
-        /// La regla de oro: dmg_base_PJ (5) y bonos_PJ (3, de un modifier Intrinsic) quedan
-        /// FUERA del multiplicador de habilidad/dados — solo el término de combo escala.
-        /// (5 + 3) + (10 × 3.0 [EV d20] × 2 [ability]) = 8 + 60 = 68.
-        /// </summary>
         [Test]
         public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
         {
@@ -90,6 +77,7 @@ namespace Rollgeon.Combat.Tests
             int result = PlayerComboDamage.Resolve(_player, comboBaseDamage: 10,
                 contributingDice: dice, abilityMultiplier: 2f);
 
+            // (5 + 3) + (10 × 3.0 × 2) = 68
             Assert.AreEqual(68, result);
         }
 
@@ -98,11 +86,9 @@ namespace Rollgeon.Combat.Tests
         {
             RegisterPlayerAttack(5);
 
-            // multi_dmg_combo = 1.0 (sin dice info) → 5 + (10 × 1 × 2) = 25, NO (5+10)×2=30.
+            // 5 + (10 × 1 × 2) = 25
             Assert.AreEqual(25, PlayerComboDamage.Resolve(_player, 10, null, abilityMultiplier: 2f));
         }
-
-        // ---- multi_dmg_combo: EV de los dados contribuyentes / 3.5 -----------
 
         [Test]
         public void Resolve_MultiDmgCombo_AllD6_IsBaselineOne()
@@ -133,13 +119,6 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, Array.Empty<DiceType>()));
         }
 
-        // ---- bono_combo: aditivo, se suma DESPUÉS del multiplicador ----------
-
-        /// <summary>
-        /// La otra mitad de la regla de oro: bono_combo (4, de una pasiva de combo) NO se
-        /// multiplica junto con daño_combo_base. scratchMultiplier (2, ej. Gemelo) solo
-        /// escala el término de combo: (10 × 2) + 4 = 24, NO (10 + 4) × 2 = 28.
-        /// </summary>
         [Test]
         public void Resolve_BonoCombo_AddedAfterMultiplier_NotBefore()
         {
@@ -149,6 +128,7 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
+            // (10 × 2) + 4 = 24
             Assert.AreEqual(24, PlayerComboDamage.Resolve(_player, 10, null));
         }
 

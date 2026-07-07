@@ -141,8 +141,6 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = payload.DisplayName;
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
-            // MultiDmgCombo default de struct es 0 para emisores que no lo calculan
-            // (ActionRollService) — tratarlo como neutral, no como "×0" (ver EventPayloads.cs).
             _lastMultiDmgCombo = payload.MultiDmgCombo > 0f ? payload.MultiDmgCombo : 1f;
             UpdateFormula();
         }
@@ -181,9 +179,6 @@ namespace Rollgeon.UI.HUD
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
-            // Compone multi_dmg_combo (EV de los dados del combo, Spec de Daño v2) con el
-            // multiplicador por habilidad del efecto (ej. golpe rápido = 0.75) — mismo orden
-            // que PlayerComboDamage.Resolve.
             float totalMultiplier = _lastMultiDmgCombo * dmgEff.ComboMultiplier;
             int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * totalMultiplier);
             int bonus = ResolveComboBonusDamage(_lastComboId);
