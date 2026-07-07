@@ -64,17 +64,20 @@ namespace Rollgeon.Combos.Concretes
         /// <summary>
         /// Override de <see cref="BaseComboSO.Detect"/>. Formula del contrato §4.4:
         /// <c>BaseDamage = _baseDamageConfigurable + X * hits</c>, <c>CountUsed = hits</c>.
+        /// <c>ContributingIndices</c> (Spec de Daño v2) = los índices exactos de los dados
+        /// que muestran X — son los únicos que entran a <c>multi_dmg_combo</c>.
         /// </summary>
         public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues)
         {
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();
-            int hits = 0;
+            var hitIndices = new List<int>();
             for (int i = 0; i < diceValues.Count; i++)
             {
-                if (diceValues[i] == _x) hits++;
+                if (diceValues[i] == _x) hitIndices.Add(i);
             }
-            if (hits == 0) return ComboDetectionResult.NoMatch();
-            return ComboDetectionResult.Match(_baseDamageConfigurable + _x * hits, hits);
+            if (hitIndices.Count == 0) return ComboDetectionResult.NoMatch();
+            int hits = hitIndices.Count;
+            return ComboDetectionResult.Match(_baseDamageConfigurable + _x * hits, hits, hitIndices);
         }
     }
 }

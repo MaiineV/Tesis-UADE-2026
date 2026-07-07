@@ -146,7 +146,7 @@ namespace Rollgeon.Combos
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();
             var arr = diceValues as int[] ?? diceValues.ToArray();
             if (!Matches(arr)) return ComboDetectionResult.NoMatch();
-            return ComboDetectionResult.Match(BaseDamage, GetCountUsed(arr));
+            return ComboDetectionResult.Match(BaseDamage, GetCountUsed(arr), GetContributingIndices(arr));
         }
 
         /// <summary>
@@ -156,6 +156,22 @@ namespace Rollgeon.Combos
         /// </summary>
         protected virtual int GetCountUsed(int[] finalDice)
             => finalDice?.Length ?? 0;
+
+        /// <summary>
+        /// Índices (en <paramref name="finalDice"/>) de los dados que formaron el combo ganador.
+        /// Spec de Daño v2 (Santi): <c>multi_dmg_combo</c> se calcula solo sobre estos dados, no
+        /// sobre toda la tirada. Default: todos los índices — correcto para combos que consumen
+        /// la build completa bajo el invariante "5 dados exactos" (Escalera, Generala, Full
+        /// House). Combos que matchean con un subconjunto menor (Par, Trio, Poker, Doble Par,
+        /// Suma X) overridean.
+        /// </summary>
+        protected virtual int[] GetContributingIndices(int[] finalDice)
+        {
+            if (finalDice == null) return Array.Empty<int>();
+            var indices = new int[finalDice.Length];
+            for (int i = 0; i < finalDice.Length; i++) indices[i] = i;
+            return indices;
+        }
 
         // ---- Odin dropdown source ---------------------------------------
 

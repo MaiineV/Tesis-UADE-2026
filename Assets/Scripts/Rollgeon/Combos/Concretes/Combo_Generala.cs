@@ -28,6 +28,9 @@ namespace Rollgeon.Combos.Concretes
         /// <inheritdoc />
         protected override int GetCountUsed(int[] finalDice) => 5;
 
+        // GetContributingIndices: usa el default de BaseComboSO (todos los índices) — correcto
+        // porque el match ya exige que los 5 dados sean iguales.
+
         /// <inheritdoc />
         public override int Priority => int.MaxValue;
     }

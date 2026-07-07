@@ -26,5 +26,8 @@ namespace Rollgeon.Combos.Concretes
 
         /// <inheritdoc />
         protected override int GetCountUsed(int[] finalDice) => StraightLength;
+
+        // GetContributingIndices: usa el default de BaseComboSO (todos los índices) — correcto
+        // porque el match ya exige 5 valores distintos consecutivos sobre una build de 5 dados.
     }
 }

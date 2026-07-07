@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -37,5 +38,20 @@ namespace Rollgeon.Combos.Concretes
 
         /// <inheritdoc />
         protected override int GetCountUsed(int[] finalDice) => 4;
+
+        // Exactamente los dos grupos de tamaño 2 (la invariante de Matches garantiza que hay
+        // exactamente dos, dado el disambiguator contra FullHouse/Poker).
+        /// <inheritdoc />
+        protected override int[] GetContributingIndices(int[] finalDice)
+        {
+            if (finalDice == null) return Array.Empty<int>();
+            return finalDice
+                .Select((value, index) => (value, index))
+                .GroupBy(t => t.value)
+                .Where(g => g.Count() == 2)
+                .SelectMany(g => g)
+                .Select(t => t.index)
+                .ToArray();
+        }
     }
 }
