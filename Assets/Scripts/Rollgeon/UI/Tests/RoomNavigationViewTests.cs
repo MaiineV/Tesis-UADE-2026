@@ -44,6 +44,8 @@ namespace Rollgeon.UI.Tests
             public DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
 
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>

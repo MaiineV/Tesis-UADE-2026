@@ -58,6 +58,16 @@ namespace Rollgeon.Upgrades.Dice.UI
         [Title("Result feedback")]
         [SerializeField] private TextMeshProUGUI _resultLabel;
 
+        /// <summary>La pantalla se cerró con el botón — el tutorial encadena el paso siguiente.</summary>
+        public event Action OnPanelClosed;
+
+        /// <summary>RectTransform del botón de cerrar — anchor del overlay del tutorial.</summary>
+        public bool TryGetCloseButtonRect(out RectTransform rect)
+        {
+            rect = _closeButton != null ? _closeButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         // ----- Runtime state ----------------------------------------------------
         private bool _subscribed;
         private Guid _currentRoomInstanceId;
@@ -149,6 +159,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void HandleCloseClicked()
         {
             if (_panelRoot != null) _panelRoot.SetActive(false);
+            OnPanelClosed?.Invoke();
         }
 
         // ====================================================================

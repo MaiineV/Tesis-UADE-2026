@@ -81,6 +81,8 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, _onInventoryChanged);
             EventManager.Subscribe(EventName.OnItemRemoved, _onInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
+            // Tutorial: refrescar interactables cuando un slot se desbloquea.
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, _onInventoryChanged);
 
             HookHotkeys(true);
 
@@ -108,6 +110,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
+            EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, _onInventoryChanged);
 
             HookHotkeys(false);
 
@@ -193,6 +196,12 @@ namespace Rollgeon.UI.HUD
 
         private bool IsBehaviorAvailable(HeroActionBehavior behavior)
         {
+            // Tutorial: slots todavía no desbloqueados quedan no-interactables.
+            // Backstop de ejecución en TurnManager.IsForbiddenByRuleset.
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null && tutorialGate.IsSlotLocked(behavior.Slot))
+                return false;
+
             // BUG-017: con la vida llena el heal no aporta nada (HealPipeline lo
             // clampea a 0) — el botón no debe ser interactable.
             if (behavior.Slot == HeroBehaviorSlot.Healing

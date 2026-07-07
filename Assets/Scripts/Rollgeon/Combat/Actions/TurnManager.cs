@@ -397,12 +397,20 @@ namespace Rollgeon.Combat.Actions
         }
 
         /// <summary>
-        /// Hook point para <c>RulesetSO.ForbiddenActionIds</c> (Balance#0101). Hoy stub —
-        /// siempre devuelve <c>false</c>. Balance#0101 agrega el campo al SO; en ese
-        /// momento el return cambia a leer la coleccion. No-breaking para <see cref="CanExecute"/>.
+        /// Hook point para reglas que prohíben acciones por id. Hoy cubre el gate del
+        /// tutorial (<see cref="Rollgeon.Tutorial.ITutorialActionGateService"/> — solo
+        /// registrado durante el tutorial; ausente = nada prohibido). Backstop de
+        /// ejecución: bloquea ambos paths de <see cref="CanExecute"/> aunque la UI
+        /// deje pasar un click/hotkey.
         /// </summary>
         private bool IsForbiddenByRuleset(string actionId)
         {
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null && tutorialGate.IsActionLocked(actionId))
+            {
+                return true;
+            }
+
             // [FOLLOWUP Balance#0101]: read RulesetSO.ForbiddenActionIds (not yet defined).
             // Cuando Balance#0101 agregue el campo:
             //   return _ruleset != null && _ruleset.ForbiddenActionIds != null

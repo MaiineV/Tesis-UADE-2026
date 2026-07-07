@@ -29,6 +29,10 @@ namespace Rollgeon.Dungeon
         [Tooltip("Setups pre-diseñados — al entrar a la sala se elige uno random. Vacío = fallback a EnemyPool ponderado.")]
         public List<EnemySetupSO> PossibleSetups = new List<EnemySetupSO>();
 
+        [Tooltip("Si true, PossibleSetups le gana a los SpawnPointConfig del prefab (que normalmente " +
+                 "tienen precedencia). Para salas autoradas con spawns exactos — ej. tutorial.")]
+        public bool ForcePossibleSetups;
+
         [Tooltip("Fallback ponderado cuando PossibleSetups está vacío. Se roteá 1:1 contra RoomLayout.EnemySpawnPoints.")]
         public EnemyPoolSO EnemyPool;
 

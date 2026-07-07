@@ -23,6 +23,14 @@ namespace Rollgeon.Shop
         private readonly ShopConfigSO _config;
         private readonly ShopPoolSO _pool;
 
+        // Override del tutorial (tienda de 1 item). El service es Global, así que
+        // el teardown del tutorial debe llamar ClearTutorialOverride().
+        private ShopConfigSO _overrideConfig;
+        private ShopPoolSO _overridePool;
+
+        private ShopConfigSO ActiveConfig => _overrideConfig != null ? _overrideConfig : _config;
+        private ShopPoolSO ActivePool => _overridePool != null ? _overridePool : _pool;
+
         private readonly Dictionary<Guid, List<ShopSlot>> _slotsByRoom = new Dictionary<Guid, List<ShopSlot>>();
         private readonly HashSet<Guid> _initialized = new HashSet<Guid>();
 
@@ -94,7 +102,7 @@ namespace Rollgeon.Shop
             EventManager.Trigger(EventName.OnShopItemPurchased, spawnPointId, entryId, pricePaid);
         }
 
-        public bool CanRestock(Guid roomInstanceId) => _config != null && _config.AllowRestock;
+        public bool CanRestock(Guid roomInstanceId) => ActiveConfig != null && ActiveConfig.AllowRestock;
 
         public void Restock(Guid roomInstanceId)
         {
@@ -106,6 +114,18 @@ namespace Rollgeon.Shop
         public void Initialize(RoomInstance room, int floorDepth)
         {
             InitializeInternal(room, floorDepth);
+        }
+
+        public void SetTutorialOverride(ShopConfigSO config, ShopPoolSO pool)
+        {
+            _overrideConfig = config;
+            _overridePool = pool;
+        }
+
+        public void ClearTutorialOverride()
+        {
+            _overrideConfig = null;
+            _overridePool = null;
         }
 
         // -----------------------------------------------------------------
@@ -133,7 +153,7 @@ namespace Rollgeon.Shop
         {
             if (room == null) return;
             if (_initialized.Contains(room.InstanceId)) return;
-            if (_config == null || _pool == null)
+            if (ActiveConfig == null || ActivePool == null)
             {
                 Debug.LogError(LogPrefix + "ShopConfigSO o ShopPoolSO ausentes — no se inicializa la shop.");
                 return;
@@ -147,7 +167,7 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, _config.MaxItemSlots));
+            int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, ActiveConfig.MaxItemSlots));
             var rng = new System.Random(room.InstanceId.GetHashCode());
             var slots = new List<ShopSlot>(slotCount);
             // Tracks entries ya rolleadas en esta tienda — pasadas como exclude a Roll()
@@ -197,14 +217,14 @@ namespace Rollgeon.Shop
 
             // Primera visita: rolear + persistir. Pasamos los rolled previos como
             // exclude para evitar duplicados dentro del mismo shop.
-            var rolled = _pool.Roll(rng, floorDepth, rolledInThisShop);
+            var rolled = ActivePool.Roll(rng, floorDepth, rolledInThisShop);
             if (rolled.Item == null)
             {
                 Debug.LogWarning(LogPrefix + "Pool vacío o sin entries eligibles — slot se omite.");
                 return null;
             }
 
-            int price = _config.ResolvePrice(rolled.BasePrice, rng);
+            int price = ActiveConfig.ResolvePrice(rolled.BasePrice, rng);
             var newState = new ShopItemState
             {
                 SpawnPointId = spawnPointId,
@@ -226,7 +246,7 @@ namespace Rollgeon.Shop
 
         private void SpawnPedestalVisual(ShopSlot slot, RoomInstance room, Transform spawnPoint)
         {
-            if (_config.PedestalPrefab == null)
+            if (ActiveConfig.PedestalPrefab == null)
             {
                 Debug.LogWarning(LogPrefix + "ShopConfigSO.PedestalPrefab sin asignar — no se instancia visual.");
                 return;
@@ -234,7 +254,7 @@ namespace Rollgeon.Shop
             if (spawnPoint == null) return;
 
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
-            var go = UnityEngine.Object.Instantiate(_config.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
+            var go = UnityEngine.Object.Instantiate(ActiveConfig.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
             go.name = $"[ShopPedestal] {slot.Item?.DisplayName ?? slot.Item?.EntryId ?? "?"}";
 
             var pedestal = go.GetComponent<ShopItemPedestalInteractable>();
@@ -266,7 +286,7 @@ namespace Rollgeon.Shop
             if (prefab == null) return;
 
             var visual = UnityEngine.Object.Instantiate(prefab, pedestalRoot);
-            visual.transform.localPosition = _config != null ? _config.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
+            visual.transform.localPosition = ActiveConfig != null ? ActiveConfig.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
             visual.transform.localRotation = Quaternion.identity;
             string displayName = slot.Item.DisplayName ?? slot.Item.EntryId ?? "?";
             visual.name = $"[ShopItemVisual] {displayName}";
@@ -308,8 +328,8 @@ namespace Rollgeon.Shop
 
         private IShopRewardEntry ResolveEntryFromPool(string entryId)
         {
-            if (_pool == null || string.IsNullOrEmpty(entryId)) return null;
-            foreach (var weighted in _pool.Items)
+            if (ActivePool == null || string.IsNullOrEmpty(entryId)) return null;
+            foreach (var weighted in ActivePool.Items)
             {
                 var entry = weighted.GetEntry();
                 if (entry == null) continue;
