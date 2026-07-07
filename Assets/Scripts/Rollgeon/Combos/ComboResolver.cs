@@ -8,6 +8,27 @@ namespace Rollgeon.Combos
     /// Heal) y cualquier consumer que necesite resolver "el mejor combo" sin reinventar
     /// el loop sobre <see cref="ComboCatalogSO"/>.
     /// </summary>
+    /// <remarks>
+    /// <b>Spec de Daño v2 (Santi) — decisión de scope.</b> El spec pide "elegir el combo con
+    /// mayor dmg, no el primero detectado". Evaluamos esto y decidimos <b>no</b> cambiar el
+    /// criterio de selección acá ni en <c>ContractSheet.MatchBest</c> (el path real en
+    /// combate — este resolver es solo fallback defensivo). Motivos:
+    /// <list type="bullet">
+    /// <item><description><c>ContractSheet.Validate</c> exige que la última entrada del
+    /// contrato sea Generala con <c>Priority == int.MaxValue</c> — es una regla dura
+    /// validada por asset. Reordenar por dmg total la vuelve inconsistente/inútil.</description></item>
+    /// <item><description>El bono de encantamientos de dado (Gemelo/Par-Impar vía
+    /// <c>IDiceEnchantmentService.LastComboScratch</c>) se calcula reactivamente DESPUÉS de
+    /// elegir el combo ganador (dispara triggers con side effects, ej. gastar oro) — no es
+    /// posible evaluarlo "por candidato" antes de decidir sin re-disparar esos efectos.</description></item>
+    /// <item><description>Elegir por dmg exigiría enhebrar <c>DiceType</c> (no solo el valor
+    /// de cara) por <c>ContractSheet</c>, <c>ActionRollService</c> y la UI — blast radius
+    /// mucho mayor al de aplicar la fórmula v2 solo sobre el combo ya elegido.</description></item>
+    /// </list>
+    /// La fórmula v2 completa (multi_dmg_combo + bono_combo bien ordenados) se aplica en
+    /// <see cref="Rollgeon.Combat.Damage.PlayerComboDamage"/> sobre el combo que esta clase
+    /// ya eligió por <c>Priority</c> — sin cambios acá.
+    /// </remarks>
     public static class ComboResolver
     {
         /// <summary>
