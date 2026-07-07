@@ -10,14 +10,9 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// Encantamiento "Gemelo".
     /// </summary>
     /// <remarks>
-    /// <b>Excepción documentada (Spec de Daño v2, D3).</b> Este trigger multiplica el daño de
-    /// combo directamente vía <c>scratch.ComboDamageMultiplier</c> — es exactamente el patrón
-    /// que el spec marca como "señal de alarma" si se generaliza. Se preserva porque ya está
-    /// autorado como contenido jugado/balanceado; compone solo sobre el término
-    /// <c>daño_combo_base</c> en <see cref="Rollgeon.Combat.Damage.PlayerComboDamage.Resolve"/>,
-    /// nunca sobre <c>dmg_base_PJ</c>/<c>bonos_PJ</c>/<c>bono_combo</c>. No copiar este patrón
-    /// para encantamientos nuevos — un ítem nuevo que quiera sumar debe usar
-    /// <c>BonusComboDamage</c> (aditivo), no <c>ComboDamageMultiplier</c>.
+    /// Excepción autorada (Spec de Daño v2, D3): multiplica <c>daño_combo_base</c> directo vía
+    /// <c>ComboDamageMultiplier</c>. No usar como plantilla — encantamientos nuevos deben sumar
+    /// con <c>BonusComboDamage</c>, no multiplicar.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class TwinBonus : IOnComboMatchedTrigger

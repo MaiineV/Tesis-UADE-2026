@@ -12,13 +12,8 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// El multiplicador se compone con los de otros triggers via
     /// <c>scratch.ComboDamageMultiplier *= factor</c>. Múltiples triggers de
     /// este tipo en distintos dados se multiplican entre sí — atender el balance.
-    /// <para>
-    /// <b>Excepción documentada (Spec de Daño v2, D3).</b> Mismo caso que
-    /// <see cref="TwinBonus"/>: multiplica <c>daño_combo_base</c> directamente — la "señal de
-    /// alarma" del spec, preservada por ser contenido ya autorado. Compone solo sobre el
-    /// término de combo en <see cref="Rollgeon.Combat.Damage.PlayerComboDamage.Resolve"/>. No
-    /// usar como plantilla para encantamientos nuevos.
-    /// </para>
+    /// Excepción autorada (Spec de Daño v2, D3) igual que <see cref="TwinBonus"/> — no usar
+    /// como plantilla para encantamientos nuevos.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class ParityScoreMultiplier : IOnComboMatchedTrigger
