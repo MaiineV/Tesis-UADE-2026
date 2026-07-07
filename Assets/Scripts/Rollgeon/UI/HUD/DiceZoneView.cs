@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -345,12 +348,31 @@ namespace Rollgeon.UI.HUD
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
+            // Spec de Daño v2: la preview muestra el mismo multi_dmg_combo que va a aplicar
+            // PlayerComboDamage.Resolve — evita que el HUD prometa un número que el golpe
+            // real no entrega.
+            float multiDmgCombo = 1f;
+            if (best != null)
+            {
+                var comboResult = best.Detect(keptDice);
+                if (comboResult.IsMatch
+                    && ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                    && enchants?.Bag != null)
+                {
+                    var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
+                    var contributingDice = ContributingDiceResolver.Resolve(
+                        comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
+                    multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
+                }
+            }
+
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best?.DisplayName ?? string.Empty,
-                BaseDamage = baseDmg
+                BaseDamage = baseDmg,
+                MultiDmgCombo = multiDmgCombo,
             });
         }
 

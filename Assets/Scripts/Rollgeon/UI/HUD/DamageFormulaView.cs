@@ -33,6 +33,7 @@ namespace Rollgeon.UI.HUD
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
+        private float _lastMultiDmgCombo = 1f;
         private Action<ComboMatchedPayload> _onComboMatched;
         private IActionRollService _actionRollService;
         private Action<ActionRollPhase> _onActionRollPhase;
@@ -110,6 +111,7 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
+            _lastMultiDmgCombo = 1f;
             _bound = false;
             _bindCount = 0;
             ClearFormula();
@@ -128,6 +130,7 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
+            _lastMultiDmgCombo = 1f;
             ClearFormula();
             HideThreshold();
         }
@@ -138,6 +141,9 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = payload.DisplayName;
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
+            // MultiDmgCombo default de struct es 0 para emisores que no lo calculan
+            // (ActionRollService) — tratarlo como neutral, no como "×0" (ver EventPayloads.cs).
+            _lastMultiDmgCombo = payload.MultiDmgCombo > 0f ? payload.MultiDmgCombo : 1f;
             UpdateFormula();
         }
 
@@ -175,7 +181,11 @@ namespace Rollgeon.UI.HUD
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
-            int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * dmgEff.ComboMultiplier);
+            // Compone multi_dmg_combo (EV de los dados del combo, Spec de Daño v2) con el
+            // multiplicador por habilidad del efecto (ej. golpe rápido = 0.75) — mismo orden
+            // que PlayerComboDamage.Resolve.
+            float totalMultiplier = _lastMultiDmgCombo * dmgEff.ComboMultiplier;
+            int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * totalMultiplier);
             int bonus = ResolveComboBonusDamage(_lastComboId);
             int total = comboPart + bonus;
 
@@ -186,9 +196,9 @@ namespace Rollgeon.UI.HUD
             //   "Par: 50 + 60 = 110"       (mejora de +60)
             //   "Par: 50 × 2 = 100"        (multiplicador 2)
             //   "Par: 50 × 2 + 60 = 160"   (ambos)
-            bool hasMultiplier = !Mathf.Approximately(dmgEff.ComboMultiplier, 1f);
+            bool hasMultiplier = !Mathf.Approximately(totalMultiplier, 1f);
             string formula = $"{comboName}: {_lastComboBaseDamage}";
-            if (hasMultiplier) formula += $" × {dmgEff.ComboMultiplier}";
+            if (hasMultiplier) formula += $" × {totalMultiplier:0.##}";
             if (bonus > 0) formula += $" + {bonus}";
             if (hasMultiplier || bonus > 0) formula += $" = {total}";
             _formulaLabel.text = formula;
