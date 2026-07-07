@@ -2,7 +2,8 @@
     "name": "Rollgeon.Editor",
     "rootNamespace": "",
     "references": [
-        "Rollgeon"
+        "Rollgeon",
+        "Rollgeon.Steam"
     ],
     "includePlatforms": [
         "Editor"
