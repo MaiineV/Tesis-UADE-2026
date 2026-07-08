@@ -10,8 +10,10 @@ namespace Rollgeon.Combat.FSM.States
     /// <remarks>
     /// <para>
     /// <b>Enter.</b> Dispara <c>OnCombatStart(roomInstanceId)</c>, llama
-    /// <c>TurnOrder.BuildForCombat(CachedParticipants)</c> (que a su vez
-    /// dispara <c>OnTurnQueueBuilt</c>).
+    /// <c>TurnOrder.BuildForCombat(CachedParticipants, Context.PlayerId)</c> (que a
+    /// su vez dispara <c>OnTurnQueueBuilt</c>). Pasar <c>PlayerId</c> como
+    /// <c>priorityGuid</c> es la política CNF-006 ("el jugador siempre tiene el
+    /// primer turno del combate") — no hay flag de config, es incondicional.
     /// </para>
     /// <para>
     /// <b>CheckInput(StartCombat).</b> Si <c>TurnOrder.Current == PlayerId</c>
@@ -44,7 +46,8 @@ namespace Rollgeon.Combat.FSM.States
             }
 
             // BuildForCombat internamente dispara OnTurnQueueBuilt (T100c).
-            Context.TurnOrder.BuildForCombat(Context.CachedParticipants);
+            // priorityGuid = PlayerId → CNF-006, el player siempre abre la cola.
+            Context.TurnOrder.BuildForCombat(Context.CachedParticipants, Context.PlayerId);
         }
 
         public override bool CheckInput(CombatInput input, out BaseState<CombatContext, CombatInput> next)
@@ -52,6 +55,10 @@ namespace Rollgeon.Combat.FSM.States
             switch (input)
             {
                 case CombatInput.StartCombat:
+                    // Remark (CNF-006): con el player forzado al frente de la cola en
+                    // Enter, la rama Enemy es teóricamente inalcanzable mientras el
+                    // player esté entre los participantes — se deja como fallback
+                    // defensivo (ej. combates sin player, tests de FSM aislada).
                     next = (Context.TurnOrder.Current == Context.PlayerId)
                         ? (BaseState<CombatContext, CombatInput>)Player
                         : Enemy;

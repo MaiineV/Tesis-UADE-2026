@@ -57,6 +57,22 @@ namespace Rollgeon.Combat.FSM
         public Action<Guid> EnemyActionHandler { get; }
 
         /// <summary>
+        /// Grace period (CNF-006, segundos) que <see cref="EnemyTurnState"/> espera
+        /// antes de invocar <see cref="EnemyActionHandler"/>. <c>0</c> (default)
+        /// preserva el comportamiento legacy: el handler corre síncrono en <c>Enter</c>.
+        /// </summary>
+        public float EnemyActionDelaySeconds { get; }
+
+        /// <summary>
+        /// Proveedor de delta time inyectado por el caller. <c>null</c> (default,
+        /// usado por tests viejos que no pasan este parámetro) desactiva el delay
+        /// aunque <see cref="EnemyActionDelaySeconds"/> sea &gt; 0 — sin un reloj no
+        /// hay forma de contar el grace period, así que <see cref="EnemyTurnState"/>
+        /// cae al path síncrono.
+        /// </summary>
+        public Func<float> DeltaTimeProvider { get; }
+
+        /// <summary>
         /// Outcome que <see cref="CombatExitState"/> lee al entrar. Setearlo desde
         /// <see cref="CombatController.NotifyCombatEnded"/> antes de disparar
         /// <see cref="CombatInput.CombatEnded"/>.
@@ -75,7 +91,9 @@ namespace Rollgeon.Combat.FSM
             IEnergyService energy,
             Guid playerId,
             Guid roomInstanceId,
-            Action<Guid> enemyActionHandler)
+            Action<Guid> enemyActionHandler,
+            float enemyActionDelaySeconds = 0f,
+            Func<float> deltaTimeProvider = null)
         {
             TurnOrder = turnOrder ?? throw new ArgumentNullException(nameof(turnOrder));
             // TurnManager puede ser null en tests unitarios de la FSM.
@@ -89,6 +107,10 @@ namespace Rollgeon.Combat.FSM
             PlayerId = playerId;
             RoomInstanceId = roomInstanceId;
             EnemyActionHandler = enemyActionHandler;
+            // Parámetros opcionales al final (CNF-006) — los call sites existentes
+            // (CombatController, tests) compilan sin tocar sus invocaciones.
+            EnemyActionDelaySeconds = enemyActionDelaySeconds;
+            DeltaTimeProvider = deltaTimeProvider;
         }
     }
 }
