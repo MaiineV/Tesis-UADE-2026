@@ -119,6 +119,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -325,6 +328,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -503,6 +509,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -643,7 +652,7 @@ MonoBehaviour:
   Description: 
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  BaseHP: 20
+  BaseHP: 60
   BaseAttack: 2
   BaseHealStrength: 5
   BaseSpeed: 4
