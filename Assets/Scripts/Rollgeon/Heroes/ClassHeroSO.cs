@@ -95,9 +95,23 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Speed base (initiative).")]
         public int BaseSpeed;
 
-        [Tooltip("Daño base del PJ (stat Attack). 0 = el daño sale solo de los combos (backward-compat). " +
+        [Tooltip("Daño base del PJ (stat Attack) — dmg_base_PJ del Spec de Daño v2. Es el piso " +
+                 "garantizado del turno (aplica incluso sin combo), por eso nunca debe ser 0. " +
                  "Lo aumentan rewards de personaje (+Attack) y pasivas/ítems de tienda con StatGrants.")]
+        [ValidateInput(nameof(ValidateBaseAttack),
+                       "Spec Daño v2: dmg_base_PJ nunca debería ser 0 — es el piso que evita un turno vacío.")]
         public int BaseAttack;
+
+        private bool ValidateBaseAttack(int value) => value > 0;
+
+        private void OnValidate()
+        {
+            if (BaseAttack <= 0)
+            {
+                Debug.LogWarning(
+                    $"{name}: BaseAttack={BaseAttack}. Spec Daño v2 — dmg_base_PJ nunca debería ser 0.", this);
+            }
+        }
 
         [Tooltip("[STUB] — elevated by Hero Template task. Portrait para UI de seleccion.")]
         public Sprite Portrait;

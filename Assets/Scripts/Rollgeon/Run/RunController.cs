@@ -239,7 +239,13 @@ namespace Rollgeon.Run
             playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
             playerAttrs.SetAttribute<Shield>(new Shield(0));
-            // Attack = daño base del PJ (canal de daño unificado). Default 0 = daño solo por combos.
+            // Attack = dmg_base_PJ (Spec Daño v2): piso garantizado del turno, aplica incluso sin combo.
+            if (hero.BaseAttack <= 0)
+            {
+                Debug.LogWarning(
+                    $"[RunController] '{hero.name}' tiene BaseAttack={hero.BaseAttack}. " +
+                    "Spec Daño v2 — dmg_base_PJ nunca debería ser 0.");
+            }
             playerAttrs.SetAttribute<Attack>(new Attack(hero.BaseAttack));
 
             registry.Register(playerService.PlayerGuid, playerAttrs);
