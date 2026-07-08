@@ -341,8 +341,9 @@ namespace Rollgeon.UI.HUD
                 ? sheet.MatchBest(keptDice)
                 : MatchBestFromCatalog(keptDice);
 
-            // Boss 3 (§4): la preview del daño refleja la capa de modificadores del Contrato.
-            int baseDmg = best?.BaseDamage ?? 0;
+            // Capa 1: base plano de la tabla por clase (Spec Daño v2). Capa 2 (Boss 3 §4):
+            // la preview del daño refleja la capa de modificadores del Contrato.
+            int baseDmg = best == null ? 0 : (sheet != null ? sheet.GetBaseDamage(best) : best.BaseDamage);
             if (best != null
                 && ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var cmods)
                 && cmods != null)

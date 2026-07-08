@@ -490,12 +490,17 @@ namespace Rollgeon.ActionRolls
             });
         }
 
-        // Boss 3 (§4): daño base del combo tras la capa de modificadores del Contrato. Sin
-        // servicio/modificadores ⇒ el base original.
+        // Capa 1 — tabla por clase (Spec Daño v2): base plano del ContractSheet del player.
+        // Capa 2 — Boss 3 (§4): modificadores del Contrato encima. Sin sheet/servicio ⇒ base original.
+        // Mismo layering que CombatHandoffService.DetectWithContractMods para que el preview
+        // del HUD muestre el número que el golpe real va a usar.
         private static int EffectiveBase(BaseComboSO combo)
         {
             if (combo == null) return 0;
             int b = combo.BaseDamage;
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
+                && player?.CurrentHero?.Sheet != null)
+                b = player.CurrentHero.Sheet.GetBaseDamage(combo);
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
                 b = mods.GetEffectiveBaseDamage(combo.ComboId, b);
             return b;

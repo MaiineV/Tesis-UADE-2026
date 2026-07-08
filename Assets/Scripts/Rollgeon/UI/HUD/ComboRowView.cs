@@ -97,7 +97,13 @@ namespace Rollgeon.UI.HUD
                 _damageDefaultColorCached = true;
             }
 
+            // Base plano de la tabla por clase (Spec Daño v2) — la lista del contrato debe
+            // mostrar los valores de ESTA clase, no los del catálogo global.
             int baseDmg = _combo.BaseDamage;
+            if (ServiceLocator.TryGetService<Rollgeon.Player.IPlayerService>(out var player)
+                && player?.CurrentHero?.Sheet != null)
+                baseDmg = player.CurrentHero.Sheet.GetBaseDamage(_combo);
+
             int effective = baseDmg;
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
                 effective = mods.GetEffectiveBaseDamage(_combo.ComboId, baseDmg);

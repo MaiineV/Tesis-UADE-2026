@@ -42,8 +42,42 @@ namespace Rollgeon.Heroes
         [Tooltip("Etiqueta legible para UI de seleccion de clase (ej. 'Contrato del Guerrero').")]
         private string _displayLabel;
 
+        [Title("Base Damage por clase (Spec Daño v2)")]
+        [InfoBox("daño_combo_base por clase: cada entrada overridea el base plano del combo SO " +
+                 "para ESTA clase. Sin entrada = se usa el base del SO (tabla global). " +
+                 "No cambia la selección de combo (Priority sigue leyendo el base global), solo el daño. " +
+                 "Para SumaX reemplaza solo el piso plano — X × hits suma encima.")]
+        public List<ComboBaseDamageEntry> BaseDamageTable = new List<ComboBaseDamageEntry>();
+
         /// <summary>Etiqueta legible para UI (screen #98).</summary>
         public string DisplayLabel => _displayLabel;
+
+        // ---- Base damage por clase (Spec Daño v2) ------------------------
+
+        /// <summary>
+        /// Base plano de la tabla por clase para <paramref name="comboId"/>, o <c>null</c> si
+        /// esta clase no define entrada (fallback al base del SO). Scan lineal — la tabla tiene
+        /// ≤8 entradas.
+        /// </summary>
+        public int? GetBaseDamageOverride(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId) || BaseDamageTable == null) return null;
+            for (int i = 0; i < BaseDamageTable.Count; i++)
+            {
+                if (BaseDamageTable[i].ComboId == comboId) return BaseDamageTable[i].BaseDamage;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Base plano efectivo del combo para esta clase: entrada de la tabla, o
+        /// <see cref="BaseComboSO.BaseDamage"/> si no hay. Para lectores "planos" (UI de contrato,
+        /// comparaciones de boss); el path de detección usa
+        /// <see cref="BaseComboSO.Detect(IReadOnlyList{int}, int?)"/> con
+        /// <see cref="GetBaseDamageOverride"/> para respetar combos dinámicos (SumaX).
+        /// </summary>
+        public int GetBaseDamage(BaseComboSO combo)
+            => combo == null ? 0 : GetBaseDamageOverride(combo.ComboId) ?? combo.BaseDamage;
 
         [NonSerialized] private HashSet<string> _crossedComboIds;
 
@@ -180,8 +214,29 @@ namespace Rollgeon.Heroes
             {
                 Combos = Combos != null ? new List<BaseComboSO>(Combos) : new List<BaseComboSO>(),
                 _displayLabel = _displayLabel,
+                // Entradas struct — copia por valor: mutar la tabla de la run no toca el asset.
+                BaseDamageTable = BaseDamageTable != null
+                    ? new List<ComboBaseDamageEntry>(BaseDamageTable)
+                    : new List<ComboBaseDamageEntry>(),
             };
             return copy;
         }
+    }
+
+    /// <summary>
+    /// Entrada de la tabla <c>daño_combo_base</c> por clase (Spec Daño v2). Struct plano
+    /// (string + int) para serializar idéntico por Unity y Odin — no agregar polimorfismo.
+    /// </summary>
+    [Serializable]
+    public struct ComboBaseDamageEntry
+    {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()", AppendNextDrawer = true)]
+        [Tooltip("ComboId del combo a overridear (ej. 'combo.par').")]
+        public string ComboId;
+
+        [Range(0, 500)]
+        [Tooltip("daño_combo_base de esta clase para el combo. No cambia la selección " +
+                 "(Priority usa el base global), solo el daño. En SumaX reemplaza el piso plano.")]
+        public int BaseDamage;
     }
 }

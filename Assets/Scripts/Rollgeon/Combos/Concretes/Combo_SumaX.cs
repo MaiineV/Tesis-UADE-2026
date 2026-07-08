@@ -62,12 +62,13 @@ namespace Rollgeon.Combos.Concretes
         }
 
         /// <summary>
-        /// Override de <see cref="BaseComboSO.Detect"/>. Formula del contrato §4.4:
-        /// <c>BaseDamage = _baseDamageConfigurable + X * hits</c>, <c>CountUsed = hits</c>.
-        /// <c>ContributingIndices</c> (Spec de Daño v2) = los índices exactos de los dados
-        /// que muestran X — son los únicos que entran a <c>multi_dmg_combo</c>.
+        /// Override de <see cref="BaseComboSO.Detect(IReadOnlyList{int}, int?)"/>. Formula del
+        /// contrato §4.4: <c>BaseDamage = _baseDamageConfigurable + X * hits</c>,
+        /// <c>CountUsed = hits</c>. <c>ContributingIndices</c> (Spec de Daño v2) = los índices
+        /// exactos de los dados que muestran X — son los únicos que entran a <c>multi_dmg_combo</c>.
+        /// El override de la tabla por clase reemplaza solo el piso plano; <c>X * hits</c> suma encima.
         /// </summary>
-        public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues)
+        public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
         {
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();
             var hitIndices = new List<int>();
@@ -77,7 +78,8 @@ namespace Rollgeon.Combos.Concretes
             }
             if (hitIndices.Count == 0) return ComboDetectionResult.NoMatch();
             int hits = hitIndices.Count;
-            return ComboDetectionResult.Match(_baseDamageConfigurable + _x * hits, hits, hitIndices);
+            return ComboDetectionResult.Match(
+                (flatBaseOverride ?? _baseDamageConfigurable) + _x * hits, hits, hitIndices);
         }
     }
 }

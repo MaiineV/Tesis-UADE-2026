@@ -394,7 +394,7 @@ namespace Rollgeon.Combat.Handoff
                     keptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                     combo = hero.Sheet?.MatchBest(keptDice);
                     if (combo != null)
-                        comboResult = DetectWithContractMods(combo, keptDice);
+                        comboResult = DetectWithContractMods(hero.Sheet, combo, keptDice);
 
                     // Boss 2 (§3): registrar el combo ejecutado en el ataque del jugador. Si no
                     // hubo combo (daño mínimo / dado más alto), Record(null) loguea el marcador
@@ -873,7 +873,7 @@ namespace Rollgeon.Combat.Handoff
                 effCtx.KeptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                 var combo = hero.Sheet?.MatchBest(keptDice);
                 if (combo != null)
-                    effCtx.ComboResult = DetectWithContractMods(combo, keptDice);
+                    effCtx.ComboResult = DetectWithContractMods(hero.Sheet, combo, keptDice);
             }
 
             var preCtx = new PreConditionContext
@@ -1247,13 +1247,15 @@ namespace Rollgeon.Combat.Handoff
             return true;
         }
 
-        // Boss 3 (§4): aplica la capa de modificadores del Contrato al daño base del combo
-        // detectado (R01 ×2, R02 ×0.5, R03 prohibido → 0, R04/R05 valor del vecino). Devuelve el
-        // ComboDetectionResult con el daño efectivo. Sin servicio/modificadores ⇒ el base original.
-        private static ComboDetectionResult? DetectWithContractMods(BaseComboSO combo, int[] keptDice)
+        // Capa 1 — tabla por clase (Spec Daño v2): Detect con el base plano de la clase.
+        // Capa 2 — Boss 3 (§4): modificadores del Contrato encima del base de clase
+        // (R01 ×2, R02 ×0.5, R03 prohibido → 0, R04/R05 valor del vecino). Devuelve el
+        // ComboDetectionResult con el daño efectivo. Sin servicio/modificadores ⇒ el base de clase.
+        private static ComboDetectionResult? DetectWithContractMods(
+            Heroes.ContractSheet sheet, BaseComboSO combo, int[] keptDice)
         {
             if (combo == null) return null;
-            var detected = combo.Detect(keptDice);
+            var detected = combo.Detect(keptDice, sheet?.GetBaseDamageOverride(combo.ComboId));
             if (!detected.IsMatch) return detected;
 
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
