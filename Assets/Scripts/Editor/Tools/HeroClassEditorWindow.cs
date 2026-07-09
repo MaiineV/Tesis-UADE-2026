@@ -194,6 +194,7 @@ namespace Rollgeon.Editor.Tools
                     _issues.Add((MessageType.Error, $"ContractSheet: {sheetError}"));
 
                 ValidateBaseDamageTable(_selected.Sheet);
+                ValidateShieldBaseTable(_selected.Sheet);
             }
 
             if (_issues.Count == 0)
@@ -226,6 +227,42 @@ namespace Rollgeon.Editor.Tools
                 if (entry.BaseDamage <= 0)
                     _issues.Add((MessageType.Warning,
                         $"BaseDamageTable: '{entry.ComboId}' con BaseDamage={entry.BaseDamage}."));
+            }
+        }
+
+        void ValidateShieldBaseTable(ContractSheet sheet)
+        {
+            var table = sheet.ShieldBaseTable;
+            if (table == null || table.Count == 0) return;
+
+            var seen = new HashSet<string>();
+            foreach (var entry in table)
+            {
+                if (string.IsNullOrEmpty(entry.ComboId))
+                {
+                    _issues.Add((MessageType.Error, "ShieldBaseTable: entrada con ComboId vacío."));
+                    continue;
+                }
+                if (!seen.Add(entry.ComboId))
+                    _issues.Add((MessageType.Error,
+                        $"ShieldBaseTable: ComboId duplicado '{entry.ComboId}' — gana la primera entrada."));
+
+                bool inContract = sheet.Combos != null
+                    && sheet.Combos.Exists(c => c != null && c.ComboId == entry.ComboId);
+                if (!inContract)
+                    _issues.Add((MessageType.Warning,
+                        $"ShieldBaseTable: '{entry.ComboId}' no está en el contrato de esta clase — la entrada no tiene efecto."));
+
+                if (entry.ShieldBase <= 0)
+                    _issues.Add((MessageType.Warning,
+                        $"ShieldBaseTable: '{entry.ComboId}' con ShieldBase={entry.ShieldBase} — " +
+                        "entrada redundante, sin entrada ya es 0."));
+
+                if (entry.ShieldBase > Rollgeon.Combat.Damage.PlayerComboShield.ShieldCap)
+                    _issues.Add((MessageType.Warning,
+                        $"ShieldBaseTable: '{entry.ComboId}' con ShieldBase={entry.ShieldBase} > " +
+                        $"cap {Rollgeon.Combat.Damage.PlayerComboShield.ShieldCap} — el cap corta siempre, " +
+                        "el excedente no aporta."));
             }
         }
 
