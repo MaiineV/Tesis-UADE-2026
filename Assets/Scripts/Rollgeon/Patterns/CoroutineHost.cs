@@ -39,6 +39,17 @@ namespace Rollgeon.Patterns
             return Instance.StartCoroutine(routine);
         }
 
+        /// <summary>
+        /// Detiene una coroutine lanzada con <see cref="Run"/>. Usa el backing field
+        /// directamente: si el host no existe, no hay nada corriendo que detener y
+        /// crearlo solo para esto sería un side-effect gratuito.
+        /// </summary>
+        public static void Stop(Coroutine routine)
+        {
+            if (routine == null || _instance == null) return;
+            _instance.StopCoroutine(routine);
+        }
+
         private void OnDestroy()
         {
             if (_instance == this) _instance = null;

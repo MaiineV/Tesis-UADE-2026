@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Handoff;
@@ -35,6 +36,12 @@ namespace Rollgeon.Combat.AI
         private int _roundIndex;
         private bool _subscribed;
 
+        // Coroutines de turno en vuelo, por enemigo. CoroutineHost es un singleton
+        // persistente: sin este tracking, una coroutine que sobrevive a su turno (o al
+        // combate entero, ej. el golpe que mata al player) sigue tickeando el árbol y
+        // puede aplicar daño extra fuera de su turno.
+        private readonly Dictionary<Guid, Coroutine> _running = new Dictionary<Guid, Coroutine>();
+
         public TreeDrivenEnemyAI(
             IEnemyAIRegistry registry,
             AttributesManager attributes,
@@ -51,6 +58,7 @@ namespace Rollgeon.Combat.AI
             _onTurnComplete = onTurnComplete ?? throw new ArgumentNullException(nameof(onTurnComplete));
 
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
+            EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEnd);
             _subscribed = true;
         }
 
@@ -60,6 +68,8 @@ namespace Rollgeon.Combat.AI
         {
             if (!_subscribed) return;
             EventManager.UnSubscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
+            EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEnd);
+            StopAllRunning();
             _subscribed = false;
         }
 
@@ -75,7 +85,11 @@ namespace Rollgeon.Combat.AI
 
             if (Application.isPlaying)
             {
-                CoroutineHost.Run(HandleEnemyTurnCoroutine(root, ctx));
+                // Un turno nuevo del mismo enemigo invalida cualquier coroutine previa
+                // suya que haya quedado en vuelo — nunca dos árboles del mismo guid.
+                if (_running.TryGetValue(enemyId, out var stale))
+                    CoroutineHost.Stop(stale);
+                _running[enemyId] = CoroutineHost.Run(HandleEnemyTurnCoroutine(root, ctx, enemyId));
             }
             else
             {
@@ -85,7 +99,7 @@ namespace Rollgeon.Combat.AI
             }
         }
 
-        private IEnumerator HandleEnemyTurnCoroutine(Decisions.AIDecisionNode root, AIContext ctx)
+        private IEnumerator HandleEnemyTurnCoroutine(Decisions.AIDecisionNode root, AIContext ctx, Guid enemyId)
         {
             AIResult result = AIResult.Failed;
             IEnumerator co = null;
@@ -96,6 +110,7 @@ namespace Rollgeon.Combat.AI
             catch (Exception ex)
             {
                 Debug.LogError($"[TreeDrivenEnemyAI] Exception creating tick coroutine for {ctx.SelfGuid}: {ex}");
+                _running.Remove(enemyId);
                 _onTurnComplete();
                 yield break;
             }
@@ -112,7 +127,23 @@ namespace Rollgeon.Combat.AI
                 if (hasMore) yield return co.Current;
             }
 
+            _running.Remove(enemyId);
             _onTurnComplete();
+        }
+
+        private void OnCombatEnd(params object[] args)
+        {
+            // El combate puede cerrarse en mitad de un turno enemigo (ej. el golpe que
+            // mata al player, o Victory instantánea): las coroutines de AI en vuelo no
+            // deben seguir tickeando contra un combate que ya no existe.
+            StopAllRunning();
+        }
+
+        private void StopAllRunning()
+        {
+            foreach (var co in _running.Values)
+                CoroutineHost.Stop(co);
+            _running.Clear();
         }
 
         private AIContext BuildContext(Guid enemyId, int maxHp)

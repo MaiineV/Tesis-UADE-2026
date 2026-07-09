@@ -880,6 +880,13 @@ namespace Rollgeon.Combat.Handoff
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget?.Current != null)
                 remainingFreeRolls = budget.Current.FreeRollsRemaining;
 
+            // El chain NO pasa por HeroActionBehavior.Execute() (que limpia stored values
+            // en su primera línea): sin esta limpieza, los FloatingDamage/Shield/Heal que
+            // los efectos appendean quedan acumulados en el behavior del ClassHeroSO
+            // (compartido toda la run) y el feedback re-emite tiradas de casteos viejos —
+            // un número extra por cada sala jugada.
+            _selectedBehavior?.ClearBehaviorValues();
+
             if (phase?.Effects != null)
                 phase.Effects.TryExecute(effCtx, preCtx);
 
