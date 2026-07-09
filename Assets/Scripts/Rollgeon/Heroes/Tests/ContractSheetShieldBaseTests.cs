@@ -6,7 +6,7 @@ namespace Rollgeon.Heroes.Tests
     /// Tests de la tabla <c>escudo_combo_base</c> por clase (Spec Escudo v2):
     /// <see cref="ContractSheet.ShieldBaseTable"/> + <see cref="ContractSheet.GetShieldBase"/>.
     /// La invariante central es la independencia total de <see cref="ContractSheet.BaseDamageTable"/>
-    /// (anti-regresión de BUG-019: escudo derivado de la tabla de ataque).
+    /// (anti-regresión de BUG-021: escudo derivado de la tabla de ataque).
     /// </summary>
     [TestFixture]
     public class ContractSheetShieldBaseTests
@@ -53,7 +53,7 @@ namespace Rollgeon.Heroes.Tests
         [Test]
         public void GetShieldBase_IsIndependentFromDamageTable()
         {
-            // Regression BUG-019: el escudo NUNCA lee la tabla de daño.
+            // Regression BUG-021: el escudo NUNCA lee la tabla de daño.
             // Arrange — mismo combo con daño alto y escudo bajo
             _sheet.BaseDamageTable.Add(new ComboBaseDamageEntry { ComboId = "combo.par", BaseDamage = 99 });
             _sheet.ShieldBaseTable.Add(new ComboShieldBaseEntry { ComboId = "combo.par", ShieldBase = 2 });
@@ -71,7 +71,7 @@ namespace Rollgeon.Heroes.Tests
         [Test]
         public void GetShieldBase_DamageTableEntryWithoutShieldEntry_StillReturnsZero()
         {
-            // Regression BUG-019 (variante): tener daño configurado no otorga escudo implícito.
+            // Regression BUG-021 (variante): tener daño configurado no otorga escudo implícito.
             // Arrange
             _sheet.BaseDamageTable.Add(new ComboBaseDamageEntry { ComboId = "combo.generala", BaseDamage = 90 });
 

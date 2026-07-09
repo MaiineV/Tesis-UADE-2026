@@ -150,7 +150,7 @@ namespace Rollgeon.Effects.Tests
         // ── ComboValue source ───────────────────────────────────────────
 
         // Spec Escudo v2: el escudo sale de la tabla escudo_combo_base del ContractSheet,
-        // NUNCA del BaseDamage del ComboResult (tabla de ATAQUE — regression BUG-019).
+        // NUNCA del BaseDamage del ComboResult (tabla de ATAQUE — regression BUG-021).
         [Test]
         public void ComboValue_UsesShieldTable_IgnoresAttackBaseDamage()
         {

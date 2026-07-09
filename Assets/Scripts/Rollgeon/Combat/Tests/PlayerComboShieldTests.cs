@@ -91,7 +91,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Resolve_AttackTableScaleBase_NeverExceedsCap()
         {
-            // Regression BUG-019: con la fórmula vieja una Generala (BaseDamage 90 de la
+            // Regression BUG-021: con la fórmula vieja una Generala (BaseDamage 90 de la
             // tabla de ATAQUE) daba 90 de escudo ≈ 45 turnos de inmunidad. Aún si un valor
             // de esa escala llegara a la fórmula nueva, el cap lo corta.
             // Arrange
