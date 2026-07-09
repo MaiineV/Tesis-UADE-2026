@@ -1,6 +1,7 @@
 using System;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
 using Rollgeon.Upgrades.Combos;
@@ -34,9 +35,16 @@ namespace Rollgeon.UI.HUD
         private string _lastComboId;
         private int _lastComboBaseDamage;
         private float _lastMultiDmgCombo = 1f;
+        private int _lastShieldPreview;
         private Action<ComboMatchedPayload> _onComboMatched;
         private IActionRollService _actionRollService;
         private Action<ActionRollPhase> _onActionRollPhase;
+
+        // Fase de defensa del chain (Spec Escudo v2): la fórmula muestra el escudo
+        // esperado de la tirada de escudo, no el daño de la fase anterior.
+        private bool _inDefensePhase;
+        private EventManager.EventReceiver _onChainPhaseStarted;
+        private EventManager.EventReceiver _onChainCompleted;
 
         private void Awake()
         {
@@ -80,6 +88,21 @@ namespace Rollgeon.UI.HUD
                 _actionRollService.OnPhaseChanged += _onActionRollPhase;
             }
 
+            // args: [playerGuid, phaseIndex, phaseCount] — fase > 0 = defensa post-attack.
+            _onChainPhaseStarted = args =>
+            {
+                if (args.Length < 2 || (Guid)args[0] != _playerGuid) return;
+                _inDefensePhase = (int)args[1] > 0;
+                UpdateFormula();
+            };
+            _onChainCompleted = args =>
+            {
+                _inDefensePhase = false;
+                _lastShieldPreview = 0;
+            };
+            EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
+            EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
+
             _bound = true;
             ClearFormula();
             HideThreshold();
@@ -107,11 +130,23 @@ namespace Rollgeon.UI.HUD
                 _onActionRollPhase = null;
                 _actionRollService = null;
             }
+            if (_onChainPhaseStarted != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
+                _onChainPhaseStarted = null;
+            }
+            if (_onChainCompleted != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
+                _onChainCompleted = null;
+            }
             _currentBehavior = null;
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
             _lastMultiDmgCombo = 1f;
+            _lastShieldPreview = 0;
+            _inDefensePhase = false;
             _bound = false;
             _bindCount = 0;
             ClearFormula();
@@ -131,6 +166,8 @@ namespace Rollgeon.UI.HUD
             _lastComboId = null;
             _lastComboBaseDamage = 0;
             _lastMultiDmgCombo = 1f;
+            _lastShieldPreview = 0;
+            _inDefensePhase = false;
             ClearFormula();
             HideThreshold();
         }
@@ -142,6 +179,7 @@ namespace Rollgeon.UI.HUD
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
             _lastMultiDmgCombo = payload.MultiDmgCombo > 0f ? payload.MultiDmgCombo : 1f;
+            _lastShieldPreview = payload.ShieldPreview;
             UpdateFormula();
         }
 
@@ -152,6 +190,17 @@ namespace Rollgeon.UI.HUD
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
+
+            // Fase de defensa del chain: la tirada activa genera ESCUDO, no daño — mostrar
+            // el escudo esperado (tabla por clase × multi, con cap) en vivo con los holds.
+            if (_inDefensePhase)
+            {
+                HideThreshold();
+                _formulaLabel.text = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? $"{_lastComboDisplayName}: escudo {_lastShieldPreview} (máx {PlayerComboShield.ShieldCap})"
+                    : "Defensa - armá un combo para generar escudo";
+                return;
+            }
 
             HideThreshold();
             if (_currentBehavior == null) { ClearFormula(); return; }

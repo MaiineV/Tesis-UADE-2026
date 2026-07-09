@@ -350,18 +350,26 @@ namespace Rollgeon.UI.HUD
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
             float multiDmgCombo = 1f;
+            int shieldPreview = 0;
             if (best != null)
             {
                 var comboResult = best.Detect(keptDice);
+                System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
                 if (comboResult.IsMatch
                     && ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
                     && enchants?.Bag != null)
                 {
                     var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
-                    var contributingDice = ContributingDiceResolver.Resolve(
+                    contributingDice = ContributingDiceResolver.Resolve(
                         comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
                     multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
                 }
+
+                // Preview del escudo (Spec Escudo v2) — mismos dados contribuyentes que
+                // el multi; sin sheet no hay tabla y el preview queda en 0.
+                if (comboResult.IsMatch && sheet != null)
+                    shieldPreview = PlayerComboShield.Resolve(
+                        sheet.GetShieldBase(best.ComboId), contributingDice);
             }
 
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
@@ -371,6 +379,7 @@ namespace Rollgeon.UI.HUD
                 DisplayName = best?.DisplayName ?? string.Empty,
                 BaseDamage = baseDmg,
                 MultiDmgCombo = multiDmgCombo,
+                ShieldPreview = shieldPreview,
             });
         }
 
