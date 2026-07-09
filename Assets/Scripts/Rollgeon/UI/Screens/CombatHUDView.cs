@@ -198,6 +198,7 @@ namespace Rollgeon.UI.Screens
 
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Coroutine _flashCoroutine;
+        private bool _pushed;
 
         private void Awake()
         {
@@ -232,6 +233,11 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPushed(IScreenPayload payload)
         {
+            // ScreenManager no dedupea el stack: un doble push acumularía la suscripción
+            // del flash de daño y el safety-net de OnCombatEnd. Re-push → rebind limpio.
+            if (_pushed) OnPopped();
+            _pushed = true;
+
             ResolvePlayer();
 
             BindAll(_playerGuid);
@@ -249,6 +255,9 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPopped()
         {
+            if (!_pushed) return;
+            _pushed = false;
+
             UnbindAll();
 
             if (_onDamageResolved != null)
