@@ -7,7 +7,11 @@
 
 ## Bugs
 
-### BUG-019 — Escudo reusa la tabla de daño de ataque (causa raíz "escudo trivial")
+> **Nota de numeración**: el código ya usa BUG-019 (gating de free rolls del chain,
+> `CombatHandoffService.cs:924`) — la serie interna va más adelante que lo que refleja
+> el código commiteado. El bug del escudo acá se numera **BUG-021**.
+
+### BUG-021 — Escudo reusa la tabla de daño de ataque (causa raíz "escudo trivial")
 - **Severidad**: Alta (balance-breaking)
 - **Área**: Combat / Effects
 - **Repro**: combatir con el Warrior y resolver cualquier combo alto; observar el escudo otorgado por la fase escudo del chain.
@@ -15,13 +19,13 @@
 - **Observado**: escudo = `BaseDamage` del combo de ATAQUE × multiplier (`EffAddShield.cs:78-79`). Generala → 90 de escudo ≈ 45 turnos de inmunidad vs Melee (Attack 2).
 - **Branch**: `feature/damage-formula-v2` (pre-fix). **Estado**: **FIXED 09/07** — `PlayerComboShield` (min(tabla × multi, 8)) + rewire de `EffAddShield` + tabla seedeada en CH_Warrior. 1743/1743 tests EditMode verdes, incl. regresión `ComboValue_UsesShieldTable_IgnoresAttackBaseDamage`. Sin commitear aún.
 
-### BUG-020 — Fase escudo del chain hereda el ComboResult del ataque
-- **Severidad**: Media (diseño divergente de spec)
-- **Área**: Combat / Handoff
-- **Repro**: atacar con acción que encadena daño+escudo; la fase escudo no abre tirada propia.
-- **Esperado** (spec Bocco 08/07 + decisión de equipo 09/07, lectura A): la fase escudo dispara su propia tirada y el multi se calcula sobre esos dados.
-- **Observado**: un solo `ComboResult` compartido para todo el chain (`CombatHandoffService.cs:876`).
-- **Branch**: `feature/damage-formula-v2`. **Estado**: solución definida (flow `IActionRollEffect` existente, patrón Curarse), pendiente confirmación de Bocco.
+### ~~BUG-020 — Fase escudo hereda el ComboResult del ataque~~ INVALIDADO 09/07
+**Falso positivo del análisis estático.** Verificado en código: el chain hace roll POR FASE
+— tras la fase de daño, `PrepareNextChainPhase` → `RollViaThrow` (CNF-008: el jugador tira
+de nuevo para la defensa, rerolls gateados por free rolls sobrantes del ataque) y
+`ExecuteChainPhase` re-detecta el combo sobre los dados de ESA tirada
+(`CombatHandoffService.cs:868-877`). La "lectura A" (tirada propia de escudo) **ya es el
+diseño implementado** — la spec de Bocco se cumple sin cambios en el chain.
 
 ## Pulido / mejoras
 
