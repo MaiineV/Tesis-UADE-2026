@@ -49,6 +49,13 @@ namespace Rollgeon.Heroes
                  "Para SumaX reemplaza solo el piso plano — X × hits suma encima.")]
         public List<ComboBaseDamageEntry> BaseDamageTable = new List<ComboBaseDamageEntry>();
 
+        [Title("Escudo por clase (Spec Escudo v2)")]
+        [InfoBox("escudo_combo_base por clase: tabla FIJA, independiente de BaseDamageTable — " +
+                 "el escudo NUNCA deriva del daño (causa raíz del bug de escudo trivial). " +
+                 "Sin entrada = 0: esta clase no genera escudo con ese combo. " +
+                 "Fórmula completa en PlayerComboShield: min(base × multi_dmg_combo, cap 8).")]
+        public List<ComboShieldBaseEntry> ShieldBaseTable = new List<ComboShieldBaseEntry>();
+
         /// <summary>Etiqueta legible para UI (screen #98).</summary>
         public string DisplayLabel => _displayLabel;
 
@@ -78,6 +85,23 @@ namespace Rollgeon.Heroes
         /// </summary>
         public int GetBaseDamage(BaseComboSO combo)
             => combo == null ? 0 : GetBaseDamageOverride(combo.ComboId) ?? combo.BaseDamage;
+
+        // ---- Escudo por clase (Spec Escudo v2) ----------------------------
+
+        /// <summary>
+        /// <c>escudo_combo_base</c> de esta clase para <paramref name="comboId"/>. Sin entrada
+        /// ⇒ 0 — la clase no genera escudo con ese combo (fallback explícito, sin default
+        /// global). Scan lineal — la tabla tiene ≤8 entradas.
+        /// </summary>
+        public int GetShieldBase(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId) || ShieldBaseTable == null) return 0;
+            for (int i = 0; i < ShieldBaseTable.Count; i++)
+            {
+                if (ShieldBaseTable[i].ComboId == comboId) return ShieldBaseTable[i].ShieldBase;
+            }
+            return 0;
+        }
 
         [NonSerialized] private HashSet<string> _crossedComboIds;
 
@@ -218,6 +242,9 @@ namespace Rollgeon.Heroes
                 BaseDamageTable = BaseDamageTable != null
                     ? new List<ComboBaseDamageEntry>(BaseDamageTable)
                     : new List<ComboBaseDamageEntry>(),
+                ShieldBaseTable = ShieldBaseTable != null
+                    ? new List<ComboShieldBaseEntry>(ShieldBaseTable)
+                    : new List<ComboShieldBaseEntry>(),
             };
             return copy;
         }
@@ -238,5 +265,23 @@ namespace Rollgeon.Heroes
         [Tooltip("daño_combo_base de esta clase para el combo. No cambia la selección " +
                  "(Priority usa el base global), solo el daño. En SumaX reemplaza el piso plano.")]
         public int BaseDamage;
+    }
+
+    /// <summary>
+    /// Entrada de la tabla <c>escudo_combo_base</c> por clase (Spec Escudo v2). Struct plano
+    /// — mismo criterio de serialización que <see cref="ComboBaseDamageEntry"/>. Tabla
+    /// independiente de la de daño por mandato de la spec: el escudo nunca deriva del ataque.
+    /// </summary>
+    [Serializable]
+    public struct ComboShieldBaseEntry
+    {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()", AppendNextDrawer = true)]
+        [Tooltip("ComboId del combo (ej. 'combo.par').")]
+        public string ComboId;
+
+        [Range(0, 50)]
+        [Tooltip("escudo_combo_base de esta clase para el combo. El resultado final se " +
+                 "capea en PlayerComboShield.ShieldCap tras aplicar multi_dmg_combo.")]
+        public int ShieldBase;
     }
 }
