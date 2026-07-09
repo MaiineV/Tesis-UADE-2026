@@ -5,9 +5,14 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combos;
+using Rollgeon.Combos.Concretes;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
+using UnityEngine;
 
 namespace Rollgeon.Effects.Tests
 {
@@ -16,6 +21,7 @@ namespace Rollgeon.Effects.Tests
     {
         private AttributesManager _attrManager;
         private Guid _sourceId;
+        private readonly List<ScriptableObject> _createdObjects = new List<ScriptableObject>();
 
         [SetUp]
         public void SetUp()
@@ -41,6 +47,9 @@ namespace Rollgeon.Effects.Tests
             _attrManager.Dispose();
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
+            foreach (var so in _createdObjects)
+                if (so != null) UnityEngine.Object.DestroyImmediate(so);
+            _createdObjects.Clear();
         }
 
         // ── Constant source ─────────────────────────────────────────────
@@ -140,22 +149,84 @@ namespace Rollgeon.Effects.Tests
 
         // ── ComboValue source ───────────────────────────────────────────
 
+        // Spec Escudo v2: el escudo sale de la tabla escudo_combo_base del ContractSheet,
+        // NUNCA del BaseDamage del ComboResult (tabla de ATAQUE — regression BUG-019).
         [Test]
-        public void ComboValue_UsesComboBaseDamageTimesMultiplier()
+        public void ComboValue_UsesShieldTable_IgnoresAttackBaseDamage()
         {
+            // Arrange — ComboResult trae BaseDamage 99 (ataque); la tabla de escudo dice 4.
             var bh = new TestBehavior();
             var ctx = MakeCtx(bh);
-            ctx.ComboResult = ComboDetectionResult.Match(20, 2);
+            ctx.ComboResult = ComboDetectionResult.Match(99, 2);
+            ctx.KeptDice = new[] { 4, 4 };
+            RegisterHeroWithShieldTable(shieldBase: 4);
 
-            var eff = CreateComboEffect(1.5f);
+            var eff = CreateComboEffect(1.5f); // multiplier deprecado — no debe participar
 
+            // Act
             eff.ApplyEffect(ctx);
 
-            // 20 * 1.5 = 30
-            Assert.AreEqual(30, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            // Assert — 4 × multi 1.0 (sin dice service) = 4; jamás 99 ni 99×1.5
+            Assert.AreEqual(4, _attrManager.GetAttribute<Shield>(_sourceId).Value);
             Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
                 BehaviorValueKey.FloatingShield, out var list));
-            Assert.AreEqual(30f, list[0].Value);
+            Assert.AreEqual(4f, list[0].Value);
+        }
+
+        [Test]
+        public void ComboValue_NoShieldTableEntry_AddsZero()
+        {
+            // Arrange — combo matcheado pero la clase no define escudo para ese combo
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match(90, 5);
+            ctx.KeptDice = new[] { 4, 4 };
+            RegisterHeroWithShieldTable(shieldBase: null);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert — sin entrada = 0 escudo (fallback explícito, no deriva del daño)
+            Assert.IsTrue(result);
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_NeverExceedsShieldCap()
+        {
+            // Arrange — base tabla 50: 50 × 1.0 = 50 → cap
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match(50, 2);
+            ctx.KeptDice = new[] { 4, 4 };
+            RegisterHeroWithShieldTable(shieldBase: 50);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert
+            Assert.AreEqual(PlayerComboShield.ShieldCap,
+                _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_NoPlayerService_AddsZero()
+        {
+            // Arrange — sin IPlayerService no hay sheet → no hay tabla → 0
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match(20, 2);
+            ctx.KeptDice = new[] { 4, 4 };
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert
+            Assert.IsTrue(result, "Amount 0 is a no-op, not a chain failure");
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         // ComboValue sin combo matched → 0 (NO cae al _baseAmount): caer al base
@@ -190,18 +261,70 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void ComboValue_AddsToExistingShield()
         {
+            // Arrange
             _attrManager.SetAttributeValue<Shield, int>(_sourceId, 10);
             var ctx = MakeCtx();
             ctx.ComboResult = ComboDetectionResult.Match(15, 2);
+            ctx.KeptDice = new[] { 4, 4 };
+            RegisterHeroWithShieldTable(shieldBase: 5);
 
             var eff = CreateComboEffect(1f);
 
+            // Act
             eff.ApplyEffect(ctx);
 
-            Assert.AreEqual(25, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            // Assert — 10 existente + 5 de la tabla de escudo (no 15 del ataque)
+            Assert.AreEqual(15, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         // ── Helpers ─────────────────────────────────────────────────────
+
+        // Hero con contrato mínimo [Par] y (opcional) entrada de escudo para combo.par.
+        // Los SOs creados se destruyen en TearDown.
+        private void RegisterHeroWithShieldTable(int? shieldBase)
+        {
+            var par = ScriptableObject.CreateInstance<Combo_Par>();
+            SetField(par, "_comboId", "combo.par");
+            _createdObjects.Add(par);
+
+            var sheet = new ContractSheet();
+            sheet.Combos.Add(par);
+            // Ruido deliberado: la tabla de DAÑO siempre presente y alta, para que
+            // cualquier regresión que derive escudo del daño reviente estos tests.
+            sheet.BaseDamageTable.Add(new ComboBaseDamageEntry
+            {
+                ComboId = "combo.par", BaseDamage = 99,
+            });
+            if (shieldBase.HasValue)
+            {
+                sheet.ShieldBaseTable.Add(new ComboShieldBaseEntry
+                {
+                    ComboId = "combo.par", ShieldBase = shieldBase.Value,
+                });
+            }
+
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            hero.Sheet = sheet;
+            _createdObjects.Add(hero);
+
+            ServiceLocator.AddService<IPlayerService>(
+                new StubPlayerService { CurrentHero = hero }, ServiceScope.Run);
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public Rollgeon.Dice.DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(Rollgeon.Dice.DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+#pragma warning disable 67
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
+#pragma warning restore 67
+        }
 
         private EffAddShield CreateConstantEffect(int amount)
         {
