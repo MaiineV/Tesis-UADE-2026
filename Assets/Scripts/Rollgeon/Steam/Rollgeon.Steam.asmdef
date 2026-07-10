@@ -1,13 +1,11 @@
 {
-    "name": "Rollgeon.Editor",
-    "rootNamespace": "",
+    "name": "Rollgeon.Steam",
+    "rootNamespace": "Rollgeon.Steam",
     "references": [
         "Rollgeon",
-        "Rollgeon.Steam"
+        "com.rlabrecque.steamworks.net"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
