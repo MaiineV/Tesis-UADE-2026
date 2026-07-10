@@ -55,6 +55,8 @@ namespace Rollgeon.Economy
 
         public bool CanAfford(int amount) => amount <= 0 || _gold >= amount;
 
+        public void ResetTo(int amount) => SetGold(Mathf.Max(0, amount));
+
         // ---------------------------------------------------------------- run reset
 
         // Schema EventName.OnRunStart: args = [Guid runId, string rulesetId]

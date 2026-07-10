@@ -33,6 +33,13 @@ namespace Rollgeon.UI.HUD
 
         private IGameplayHotkeyService _hotkeys;
 
+        /// <summary>RectTransform del botón End Turn — anchor del overlay del tutorial.</summary>
+        public bool TryGetButtonRect(out RectTransform rect)
+        {
+            rect = _endTurnButton != null ? _endTurnButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         private void Awake()
         {
             if (_endTurnButton != null) _endTurnButton.onClick.AddListener(HandleClick);

@@ -77,6 +77,21 @@ namespace Rollgeon.Dungeon
         bool EnterRoomByInstanceId(Guid instanceId);
 
         /// <summary>
+        /// Gate externo (tutorial, boss key, evento): setea la <see cref="RoomState"/>
+        /// de una sala sin tocar sus <c>ObjectStates</c> (HP de enemigos y flags de
+        /// puertas sobreviven el toggle Locked↔Uncleared).
+        /// </summary>
+        /// <returns><c>false</c> si el instanceId no existe en el piso.</returns>
+        bool SetRoomState(Guid instanceId, RoomState state);
+
+        /// <summary>
+        /// Refresca visuales de puertas de una sala instanciada — llamar sobre la sala
+        /// cuyo prefab muestra la puerta cuando un gate externo cambió el estado de
+        /// una VECINA (ej. desbloquear la tienda del tutorial refresca la sala actual).
+        /// </summary>
+        void ResyncDoorVisuals(Guid instanceId);
+
+        /// <summary>
         /// Bounds combinados del piso actual — unión de los shells procedurales.
         /// Consumido por <see cref="CameraService"/> para clampear pan (§17.E.6)
         /// y dimensionar la floor view (§17.E.9). <c>size == Vector3.zero</c>

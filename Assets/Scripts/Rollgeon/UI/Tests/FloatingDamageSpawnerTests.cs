@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Entities;
 using Rollgeon.UI.HUD;
+using TMPro;
 using UnityEngine;
 
 namespace Rollgeon.UI.Tests
@@ -48,6 +49,12 @@ namespace Rollgeon.UI.Tests
             _prefabGO.SetActive(false);
             _prefabGO.AddComponent<CanvasGroup>();
             _prefab = _prefabGO.AddComponent<FloatingDamageInstance>();
+
+            // TMP hijo para poder inspeccionar el texto pintado (incoming vs outgoing).
+            var textGO = new GameObject("Text", typeof(RectTransform));
+            textGO.transform.SetParent(_prefabGO.transform, false);
+            var tmp = textGO.AddComponent<TextMeshProUGUI>();
+            AssignPrivate(_prefab, "_text", tmp);
 
             AssignPrivate(_spawner, "_instancePrefab", _prefab);
             AssignPrivate(_spawner, "_overlayContainer", _container);
@@ -140,12 +147,61 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(before + 1, _container.childCount);
         }
 
+        [Test]
+        public void DamageResolved_Incoming_TextHasMinusPrefix()
+        {
+            _spawner.Bind(_playerGuid);
+
+            var payload = new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid, // target == player => incoming
+                FinalDamage = 7,
+            };
+            TypedEvent<DamageResolvedPayload>.Raise(payload);
+
+            var spawned = _container.GetComponentInChildren<FloatingDamageInstance>();
+            Assert.IsNotNull(spawned, "Debe haberse instanciado un floating number.");
+
+            var tmp = GetPrivate<TextMeshProUGUI>(spawned, "_text");
+            Assert.AreEqual("-7", tmp.text,
+                "El daño incoming (target == player) debe mostrarse con prefijo '-'.");
+        }
+
+        [Test]
+        public void DamageResolved_Outgoing_TextHasNoPrefix()
+        {
+            _spawner.Bind(_playerGuid);
+
+            var payload = new DamageResolvedPayload
+            {
+                SourceGuid = _playerGuid,
+                TargetGuid = Guid.NewGuid(), // target != player => outgoing
+                FinalDamage = 7,
+            };
+            TypedEvent<DamageResolvedPayload>.Raise(payload);
+
+            var spawned = _container.GetComponentInChildren<FloatingDamageInstance>();
+            Assert.IsNotNull(spawned, "Debe haberse instanciado un floating number.");
+
+            var tmp = GetPrivate<TextMeshProUGUI>(spawned, "_text");
+            Assert.AreEqual("7", tmp.text, "El daño outgoing no debe llevar prefijo.");
+        }
+
         private static void AssignPrivate(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName,
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado.");
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivate<T>(object target, string fieldName) where T : class
+        {
+            var field = target.GetType().GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado.");
+            return field.GetValue(target) as T;
         }
     }
 }

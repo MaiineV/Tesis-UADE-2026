@@ -42,6 +42,9 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new EnergyCommand(infEnergy));
             r.Register(new SetDiceRollCommand());
 
+            // Steam
+            r.Register(new SteamCommand());
+
             // Help último — necesita el registry ya armado.
             r.Register(new HelpCommand(r));
             return r;

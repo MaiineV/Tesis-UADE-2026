@@ -25,7 +25,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 28358bd4a899ce54b918e3d20bb8089e, type: 2}
     - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
     - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
-    - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
+    - {fileID: 11400000, guid: 4400eee50af376345913e8827c1a428b, type: 2}
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
     - {fileID: 11400000, guid: 770d23ca67712434fba66c1720131b74, type: 2}
     - {fileID: 11400000, guid: 497954e0bde12fa43bd6148abb7e0fc3, type: 2}
@@ -64,6 +64,9 @@ MonoBehaviour:
     - {fileID: 11400000, guid: a4a86d95b69f49a48a419e0ea537bbee, type: 2}
     - {fileID: 11400000, guid: 7c55120d7c3341ed8103acd8ccdfae1a, type: 2}
     - {fileID: 11400000, guid: ea5940d0bc86fef4b8e91836b1e5be93, type: 2}
+    - {fileID: 11400000, guid: a79e9fad8d9a1ed4588e5ee2ec2e59d7, type: 2}
+    - {fileID: 11400000, guid: 60a5116217cf18b4eb4775b1e3c0bfbb, type: 2}
+    - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -109,7 +112,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 3
+      Data: 4
     - Name: 
       Entry: 10
       Data: 7
@@ -119,6 +122,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 9
+    - Name: 
+      Entry: 10
+      Data: 50
     - Name: 
       Entry: 13
       Data: 
@@ -131,7 +137,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 44
+      Data: 48
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -274,8 +280,26 @@ MonoBehaviour:
       Entry: 10
       Data: 47
     - Name: 
+      Entry: 10
+      Data: 48
+    - Name: 
+      Entry: 10
+      Data: 49
+    - Name: 
       Entry: 7
-      Data: 7|Patterns.Save.SaveSystemBootstrap, Rollgeon
+      Data: 7|Rollgeon.Steam.SteamServiceBootstrap, Rollgeon.Steam
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.Achievements.AchievementService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 9|Patterns.Save.SaveSystemBootstrap, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -296,5 +320,6 @@ MonoBehaviour:
   SettingsAssets:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
   - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
+  - {fileID: 11400000, guid: 4400eee50af376345913e8827c1a428b, type: 2}
   - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
   _nextSceneName: 01_MainMenu

@@ -28,6 +28,7 @@ namespace Rollgeon.Combat
         private readonly IEntityVisualService _visuals;
         private readonly IDungeonService _dungeon;
         private readonly IGridManager _grid;
+        private readonly IEnemyAIRegistry _aiRegistry;
 
         private readonly HashSet<Guid> _processed = new();
         private Action<DamageResolvedPayload> _handler;
@@ -39,7 +40,8 @@ namespace Rollgeon.Combat
             TurnOrderService turnOrder,
             IEntityVisualService visuals,
             IDungeonService dungeon,
-            IGridManager grid = null)
+            IGridManager grid = null,
+            IEnemyAIRegistry aiRegistry = null)
         {
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _signaller = signaller ?? throw new ArgumentNullException(nameof(signaller));
@@ -47,6 +49,7 @@ namespace Rollgeon.Combat
             _visuals = visuals;
             _dungeon = dungeon ?? throw new ArgumentNullException(nameof(dungeon));
             _grid = grid;
+            _aiRegistry = aiRegistry;
 
             _handler = OnDamageResolved;
             TypedEvent<DamageResolvedPayload>.Subscribe(_handler);
@@ -60,8 +63,9 @@ namespace Rollgeon.Combat
             ServiceLocator.TryGetService<IEntityVisualService>(out var visuals);
             var dungeon = ServiceLocator.GetService<IDungeonService>();
             ServiceLocator.TryGetService<IGridManager>(out var grid);
+            ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
 
-            var watcher = new CombatDeathWatcher(player, signaller, turnOrder, visuals, dungeon, grid);
+            var watcher = new CombatDeathWatcher(player, signaller, turnOrder, visuals, dungeon, grid, aiRegistry);
             ServiceLocator.AddService<ICombatDeathWatcher>(watcher, ServiceScope.Run);
             return watcher;
         }
@@ -115,6 +119,7 @@ namespace Rollgeon.Combat
             {
                 _visuals?.Despawn(deadGuid);
                 _grid?.Unregister(deadGuid);
+                _aiRegistry?.Unregister(deadGuid);
 
                 if (isFinalKill)
                     _signaller.NotifyCombatEnded(CombatOutcome.Victory);
@@ -126,6 +131,7 @@ namespace Rollgeon.Combat
             yield return new WaitForSeconds(DeathAnimationDelaySeconds);
             _visuals?.Despawn(deadGuid);
             _grid?.Unregister(deadGuid);
+            _aiRegistry?.Unregister(deadGuid);
             _signaller.NotifyCombatEnded(CombatOutcome.Victory);
         }
     }

@@ -127,11 +127,26 @@ namespace Rollgeon.Run
             var playerService = ServiceLocator.GetService<IPlayerService>();
             RegisterPlayer(playerService, registry, attributes);
 
-            // 3. Dungeon. En run nueva FloorIndex es 0 → layout = _defaultLayout y
-            //    seed = base (idéntico a antes). En resume, el RunContext ya restauró
-            //    FloorIndex (StartRun lo registra antes de disparar OnRunStart) y el
-            //    fast-forward de la cadena NextFloor + el seed derivado regeneran el
-            //    piso guardado idéntico.
+            // 3. Dungeon — el tutorial usa el piso fijo autorado (plan explícito);
+            //    el flujo normal, la topología random del layout default. Si el flag
+            //    viene seteado pero la config no está lanzable, degrada a run normal.
+            bool isTutorial = PendingRunRequest.IsTutorial;
+            Rollgeon.Tutorial.TutorialConfigSO tutorialConfig = null;
+            if (isTutorial
+                && (!ServiceLocator.TryGetService(out tutorialConfig)
+                    || tutorialConfig == null || !tutorialConfig.IsLaunchable))
+            {
+                Debug.LogWarning(
+                    "[RunController] PendingRunRequest.IsTutorial pero TutorialConfigSO no está " +
+                    "registrado/completo — degradando a run normal.");
+                isTutorial = false;
+            }
+
+            // En run nueva FloorIndex es 0 → layout = _defaultLayout y seed = base
+            // (idéntico a antes). En resume, el RunContext ya restauró FloorIndex
+            // (StartRun lo registra antes de disparar OnRunStart) y el fast-forward
+            // de la cadena NextFloor + el seed derivado regeneran el piso guardado
+            // idéntico.
             int startFloorIndex = ServiceLocator.TryGetService<IRunContextService>(out var runCtxForFloor)
                 ? runCtxForFloor.FloorIndex
                 : 0;
@@ -139,7 +154,15 @@ namespace Rollgeon.Run
             int startFloorSeed = startFloorIndex == 0
                 ? seed
                 : FloorProgressionService.DeriveSeed(seed, startFloorIndex);
-            DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
+
+            if (isTutorial)
+            {
+                DungeonManager.CreateAndRegisterFromPlan(tutorialConfig.FloorPlan.ToPlan());
+            }
+            else
+            {
+                DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
+            }
 
             // 3b. Floor shells visibility — toggles prefab vs shells según camera floor view.
             FloorShellVisibilityController.CreateAndRegister();
@@ -147,7 +170,12 @@ namespace Rollgeon.Run
             // 3c. Floor progression — orquesta la transición multi-piso (#158). Recibe el
             //     layout actual + el seed base de la run; deriva el seed de cada piso
             //     siguiente con el FloorIndex absoluto.
-            FloorProgressionService.CreateAndRegister(startLayout, seed);
+            //     En tutorial NO se registra: el fin de piso lo maneja TutorialFlowController
+            //     (teardown → fresh run) en vez de avanzar a otro piso.
+            if (!isTutorial)
+            {
+                FloorProgressionService.CreateAndRegister(startLayout, seed);
+            }
 
             // 4. Damage pipeline (parameterless ctor resolves from ServiceLocator)
             var damagePipeline = new DamagePipeline();
@@ -213,6 +241,14 @@ namespace Rollgeon.Run
             // 10. Begin exploration
             var exploration = ServiceLocator.GetService<IExplorationController>();
             exploration.BeginExploration();
+
+            // 11. Tutorial flow — se crea ÚLTIMO a propósito: sus handlers de eventos
+            //     (OnCombatEnd, OnRoomEntered) deben correr después de los del
+            //     DungeonManager (suscripto antes) para leer el estado ya actualizado.
+            if (isTutorial)
+            {
+                Rollgeon.Tutorial.TutorialFlowController.CreateAndRegister(tutorialConfig, runId);
+            }
 
             IsRunActive = true;
         }

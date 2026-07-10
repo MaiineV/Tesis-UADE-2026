@@ -34,6 +34,14 @@ namespace Rollgeon.Balance
         [PropertyRange(-10, 10)]
         public int FallbackInitiativeForMissingSpeed;
 
+        [Title("Pacing")]
+        [PropertyRange(0f, 3f)]
+        [SuffixLabel("s", overlay: true)]
+        [Tooltip("Grace period antes de CADA acción enemiga (CNF-006): le da al jugador un " +
+                 "instante para leer qué enemigo va a actuar antes de que el handler dispare. " +
+                 "0 = sin delay (comportamiento síncrono legacy).")]
+        public float EnemyActionDelaySeconds;
+
         /// <summary>
         /// Hook de validación — el Odin editor lo invoca en edit time, y
         /// <see cref="RulesetSO"/> lo llama desde su propio <c>OnValidate</c>.
@@ -47,6 +55,10 @@ namespace Rollgeon.Balance
             if (SpeedDieMax < SpeedDieMin)
             {
                 SpeedDieMax = SpeedDieMin;
+            }
+            if (EnemyActionDelaySeconds < 0f)
+            {
+                EnemyActionDelaySeconds = 0f;
             }
         }
     }

@@ -1,7 +1,9 @@
 using System;
 using Patterns;
+using Rollgeon.Economy;
 using Rollgeon.Grid;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,7 +13,7 @@ namespace Rollgeon.Upgrades.Dice
     /// <summary>
     /// MonoBehaviour del altar de la Sala de Encantamiento. Patrón calcado de
     /// <c>ShopItemPedestalInteractable</c>: input <c>F</c> + check de rango +
-    /// prompt visual auto-buildable + tooltip via
+    /// prompt 2D via <see cref="InteractionPromptView"/> + tooltip hover via
     /// <see cref="WorldTooltipTrigger"/>.
     /// </summary>
     /// <remarks>
@@ -36,14 +38,6 @@ namespace Rollgeon.Upgrades.Dice
         [SerializeField]
         private Key _interactKey = Key.F;
 
-        [Tooltip("Prompt opcional: GameObject hijo que se activa al entrar en rango. Si null, se auto-construye.")]
-        [SerializeField]
-        private GameObject _promptVisual;
-
-        [Tooltip("TMP opcional dentro del prompt. Si está cableado, se rellena con InteractLabel.")]
-        [SerializeField]
-        private TMPro.TextMeshProUGUI _promptLabel;
-
         [Tooltip("Tooltip trigger opcional. Si está, se rellena con el texto de costo para hover.")]
         [SerializeField]
         private WorldTooltipTrigger _tooltipTrigger;
@@ -53,6 +47,7 @@ namespace Rollgeon.Upgrades.Dice
         private IEnchantmentRoomService _service;
         private int _baseCost;
         private bool _playerInRangeLastTick;
+        private bool _lastCanAfford;
 
         /// <summary>Inicializa el altar. Lo llama el <see cref="EnchantmentRoomService"/> al instanciarlo.</summary>
         public void Configure(Guid roomInstanceId, string spawnPointId, IEnchantmentRoomService service, int baseCost)
@@ -63,7 +58,6 @@ namespace Rollgeon.Upgrades.Dice
             _baseCost = baseCost;
             InteractLabel = $"[{_interactKey}] Encantar Dado ({_baseCost}G)";
 
-            EnsurePromptRefs();
             EnsureTooltipRefs();
             UpdatePromptVisibility(false);
         }
@@ -97,6 +91,13 @@ namespace Rollgeon.Upgrades.Dice
                 _playerInRangeLastTick = inRange;
                 UpdatePromptVisibility(inRange);
             }
+            else if (inRange)
+            {
+                // El gold pudo cambiar estando en rango (ej. compró en otro pedestal) —
+                // re-Show refresca el color del costo sin esperar un cambio de rango.
+                bool canAfford = BuildPromptContent().CanAfford;
+                if (canAfford != _lastCanAfford) UpdatePromptVisibility(true);
+            }
 
             if (!inRange) return;
 
@@ -125,23 +126,6 @@ namespace Rollgeon.Upgrades.Dice
         // Prompt + tooltip setup
         // ====================================================================
 
-        private void EnsurePromptRefs()
-        {
-            if (_promptVisual == null)
-            {
-                var t = transform.Find("Prompt");
-                if (t != null) _promptVisual = t.gameObject;
-            }
-            if (_promptVisual == null)
-            {
-                _promptVisual = BuildAutoPrompt();
-            }
-            if (_promptLabel == null && _promptVisual != null)
-            {
-                _promptLabel = _promptVisual.GetComponentInChildren<TMPro.TextMeshProUGUI>(includeInactive: true);
-            }
-        }
-
         private void EnsureTooltipRefs()
         {
             if (_tooltipTrigger == null)
@@ -159,46 +143,40 @@ namespace Rollgeon.Upgrades.Dice
             return $"Altar de Encantamiento\nCosto base: {_baseCost} oro\nModifica las caras posibles de un dado.";
         }
 
-        private GameObject BuildAutoPrompt()
+        /// <summary>
+        /// Arma el contenido del <see cref="InteractionPromptView"/> — mismo patrón que
+        /// <c>ShopItemPedestalInteractable</c>: el costo se pinta rojo si el oro no alcanza.
+        /// </summary>
+        private InteractionPromptContent BuildPromptContent()
         {
-            var promptGo = new GameObject("Prompt");
-            promptGo.transform.SetParent(transform, worldPositionStays: false);
-            promptGo.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-            promptGo.transform.localRotation = Quaternion.identity;
-            promptGo.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+            bool canAfford = !ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null
+                || economy.CanAfford(_baseCost);
 
-            var canvas = promptGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = 1;
-            promptGo.AddComponent<UnityEngine.UI.CanvasScaler>();
-
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(promptGo.transform, worldPositionStays: false);
-            var rt = labelGo.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(400f, 80f);
-            rt.localPosition = Vector3.zero;
-
-            var tmp = labelGo.AddComponent<TMPro.TextMeshProUGUI>();
-            tmp.fontSize = 32f;
-            tmp.alignment = TMPro.TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.text = string.Empty;
-            tmp.raycastTarget = false;
-
-            promptGo.SetActive(false);
-            return promptGo;
+            return new InteractionPromptContent(
+                _interactKey.ToString(),
+                "Encantar Dado",
+                "Altar de Encantamiento",
+                "Modifica las caras posibles de un dado.",
+                _baseCost,
+                canAfford);
         }
 
         private void UpdatePromptVisibility(bool visible)
         {
-            if (_promptVisual != null) _promptVisual.SetActive(visible);
-            if (_promptLabel != null && visible) _promptLabel.text = InteractLabel ?? string.Empty;
+            if (!visible)
+            {
+                InteractionPromptView.Hide(GetInstanceID());
+                return;
+            }
+            var content = BuildPromptContent();
+            _lastCanAfford = content.CanAfford;
+            InteractionPromptView.Show(GetInstanceID(), content);
         }
 
         private void OnDisable()
         {
             _playerInRangeLastTick = false;
-            if (_promptVisual != null) _promptVisual.SetActive(false);
+            InteractionPromptView.Hide(GetInstanceID());
         }
     }
 }

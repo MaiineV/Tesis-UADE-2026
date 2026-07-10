@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Audio;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.UI.HUD;
 using UnityEngine;
@@ -235,6 +236,17 @@ namespace Rollgeon.Feedback
         {
             if (fn.Delay > 0f) yield return new WaitForSeconds(fn.Delay);
 
+            var type = KeyToFloatingNumberType(key);
+
+            // Dedup con la ruta A (DamagePipeline → TypedEvent<DamageResolvedPayload> →
+            // FloatingDamageSpawner): cuando hay un IDamagePipeline registrado, el daño ya
+            // se pintó por esa ruta y esta (ruta B, vía EffDealDamage + FeedbackDB) duplicaría
+            // el número. Sin pipeline (EditMode/escenas sin bootstrap) esta ruta queda como
+            // único fallback de display, así que no se suprime. Heal/Shield van SOLO por esta
+            // ruta (no hay pipeline de heal/shield todavía) — nunca se suprimen.
+            bool pipelinePresent = ServiceLocator.HasService<IDamagePipeline>();
+            if (ShouldSuppressFloatingNumber(type, pipelinePresent)) yield break;
+
             // Delegamos al spawner moderno (FloatingDamageSpawner) via el evento legacy.
             // Why: el path antiguo (Resources/FloatingNumber world-space + IPawnRegistry)
             // perdía el ancla cuando el target no estaba en el PawnRegistry, y aún cuando
@@ -242,7 +254,6 @@ namespace Rollgeon.Feedback
             // moderno ya tiene el fix RT→Screen y resuelve por IEntityPositionResolver +
             // IPawnRegistry como fallback. Misma estética en damage / heal / shield.
             var targetGuid = fn.TargetEntityGuid != Guid.Empty ? fn.TargetEntityGuid : request.TargetGuid;
-            var type = KeyToFloatingNumberType(key);
             EventManager.Trigger(EventName.OnFloatingNumberRequested, targetGuid, type, fn.Value, fn.Offset);
         }
 
@@ -253,6 +264,18 @@ namespace Rollgeon.Feedback
             BehaviorValueKey.FloatingShield => FloatingNumberType.Shield,
             _                               => FloatingNumberType.Damage,
         };
+
+        /// <summary>
+        /// Decide si la ruta B (BehaviorValue → evento legacy) debe saltear el spawn porque
+        /// la ruta A (TypedEvent&lt;DamageResolvedPayload&gt;) ya lo va a pintar. Extraído a
+        /// método puro (no <c>internal</c>: el assembly "Rollgeon" no tiene
+        /// InternalsVisibleTo("Rollgeon.Feedback.Tests")) para poder testearlo sin depender
+        /// del plumbing de corrutinas de <see cref="SpawnFloatingNumberDelayed"/>.
+        /// </summary>
+        public static bool ShouldSuppressFloatingNumber(FloatingNumberType type, bool pipelinePresent)
+        {
+            return type == FloatingNumberType.Damage && pipelinePresent;
+        }
 
         // ===================================================================
         // Animator floats — §10.10

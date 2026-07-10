@@ -180,6 +180,77 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(gHigh, _service.OrderForRound[1]);
         }
 
+        // --- Priority guid (CNF-006 — jugador siempre primero) ------------
+
+        [Test]
+        public void BuildForCombat_PriorityGuid_ForcedToFront_EvenWithLowestInitiative()
+        {
+            var fast = RegisterEntityWithSpeed(9);
+            var mid = RegisterEntityWithSpeed(5);
+            var slow = RegisterEntityWithSpeed(1); // priority target — la menor initiative.
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { fast, mid, slow }, priorityGuid: slow);
+
+            Assert.AreEqual(slow, _service.OrderForRound[0],
+                "priorityGuid debe ir primero pese a tener la menor initiative.");
+            Assert.AreEqual(fast, _service.OrderForRound[1],
+                "El resto conserva su orden desc relativo.");
+            Assert.AreEqual(mid, _service.OrderForRound[2]);
+            Assert.AreEqual(slow, _service.Current);
+        }
+
+        [Test]
+        public void BuildForCombat_PriorityGuid_AlreadyFastest_OrderUnchanged()
+        {
+            var fast = RegisterEntityWithSpeed(9);
+            var mid = RegisterEntityWithSpeed(5);
+            var slow = RegisterEntityWithSpeed(1);
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { fast, mid, slow }, priorityGuid: fast);
+
+            Assert.AreEqual(fast, _service.OrderForRound[0]);
+            Assert.AreEqual(mid, _service.OrderForRound[1]);
+            Assert.AreEqual(slow, _service.OrderForRound[2]);
+        }
+
+        [Test]
+        public void BuildForCombat_PriorityGuid_NotAParticipant_IsIgnoredSilently()
+        {
+            var fast = RegisterEntityWithSpeed(9);
+            var mid = RegisterEntityWithSpeed(5);
+            InstallProvider(1, 1);
+
+            var stranger = Guid.NewGuid();
+
+            Assert.DoesNotThrow(
+                () => _service.BuildForCombat(new[] { fast, mid }, priorityGuid: stranger));
+            Assert.AreEqual(fast, _service.OrderForRound[0]);
+            Assert.AreEqual(mid, _service.OrderForRound[1]);
+        }
+
+        [Test]
+        public void BuildForCombat_PriorityGuid_StaysFirstAfterRoundWraparound()
+        {
+            var fast = RegisterEntityWithSpeed(9);
+            var mid = RegisterEntityWithSpeed(5);
+            var slow = RegisterEntityWithSpeed(1);
+            InstallProvider(1, 1, 1);
+
+            _service.BuildForCombat(new[] { fast, mid, slow }, priorityGuid: slow);
+            Assert.AreEqual(slow, _service.Current);
+
+            _service.Advance(); // -> fast
+            _service.Advance(); // -> mid
+            var wrapped = _service.Advance(); // wrap -> slow otra vez, roundIndex++.
+
+            Assert.AreEqual(slow, wrapped);
+            Assert.AreEqual(slow, _service.OrderForRound[0],
+                "El orden del round persiste entre wrap-arounds; priority sigue primero.");
+            Assert.AreEqual(1, _service.RoundIndex);
+        }
+
         // --- Advance / wrap-around ----------------------------------------
 
         [Test]
