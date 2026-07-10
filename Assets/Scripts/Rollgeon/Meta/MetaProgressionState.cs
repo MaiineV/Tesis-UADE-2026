@@ -27,6 +27,12 @@ namespace Rollgeon.Meta
         /// <summary>Clases distintas jugadas entre runs (acumulación — nunca resetea).</summary>
         public HashSet<string> ClassesPlayed = new HashSet<string>();
 
+        /// <summary>
+        /// El jugador ya completó el tutorial. "Borrar partida" lo resetea →
+        /// la primera run tras el reset vuelve a arrancar por el tutorial.
+        /// </summary>
+        public bool TutorialCompleted;
+
         // ---------------------------------------------------------------- ISaveable
 
         /// <inheritdoc />
@@ -41,6 +47,7 @@ namespace Rollgeon.Meta
                 CompletedUnlockIds = new List<string>(CompletedUnlockIds),
                 ConsecutiveWins = ConsecutiveWins,
                 ClassesPlayed = new List<string>(ClassesPlayed),
+                TutorialCompleted = TutorialCompleted,
             };
         }
 
@@ -51,6 +58,7 @@ namespace Rollgeon.Meta
             CompletedUnlockIds.Clear();
             ClassesPlayed.Clear();
             ConsecutiveWins = 0;
+            TutorialCompleted = false;
 
             if (state is not MetaProgressionSnapshot snapshot) return;
 
@@ -79,6 +87,7 @@ namespace Rollgeon.Meta
             }
 
             ConsecutiveWins = snapshot.ConsecutiveWins;
+            TutorialCompleted = snapshot.TutorialCompleted;
         }
     }
 }

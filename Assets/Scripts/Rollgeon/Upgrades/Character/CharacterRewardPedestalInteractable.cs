@@ -4,6 +4,7 @@ using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Grid;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -30,8 +31,6 @@ namespace Rollgeon.Upgrades.Character
 
         [SerializeField] private float _interactRange = 1.5f;
         [SerializeField] private Key _interactKey = Key.F;
-        [SerializeField] private GameObject _promptVisual;
-        [SerializeField] private TMPro.TextMeshProUGUI _promptLabel;
         [SerializeField] private WorldTooltipTrigger _tooltipTrigger;
 
         private Guid _roomInstanceId;
@@ -48,9 +47,17 @@ namespace Rollgeon.Upgrades.Character
             _reward = reward;
             InteractLabel = BuildLabel(reward, _interactKey);
 
-            EnsurePromptRefs();
             EnsureTooltipRefs();
-            UpdatePromptVisibility(false);
+        }
+
+        /// <summary>Free pick — sin precio, <see cref="InteractionPromptContent.Price"/> = -1.</summary>
+        private InteractionPromptContent BuildPromptContent()
+        {
+            string title = _reward != null
+                ? (!string.IsNullOrEmpty(_reward.DisplayName) ? _reward.DisplayName : _reward.UpgradeId)
+                : string.Empty;
+            string description = _reward != null ? (_reward.Description ?? string.Empty) : string.Empty;
+            return new InteractionPromptContent(_interactKey.ToString(), "Tomar", title, description);
         }
 
         public void Interact()
@@ -126,20 +133,6 @@ namespace Rollgeon.Upgrades.Character
         // Prompt + tooltip
         // ====================================================================
 
-        private void EnsurePromptRefs()
-        {
-            if (_promptVisual == null)
-            {
-                var t = transform.Find("Prompt");
-                if (t != null) _promptVisual = t.gameObject;
-            }
-            if (_promptVisual == null) _promptVisual = BuildAutoPrompt();
-            if (_promptLabel == null && _promptVisual != null)
-            {
-                _promptLabel = _promptVisual.GetComponentInChildren<TMPro.TextMeshProUGUI>(includeInactive: true);
-            }
-        }
-
         private void EnsureTooltipRefs()
         {
             if (_tooltipTrigger == null) _tooltipTrigger = GetComponent<WorldTooltipTrigger>();
@@ -161,46 +154,22 @@ namespace Rollgeon.Upgrades.Character
             return $"[{key}] Tomar {name}";
         }
 
-        private GameObject BuildAutoPrompt()
-        {
-            var promptGo = new GameObject("Prompt");
-            promptGo.transform.SetParent(transform, worldPositionStays: false);
-            promptGo.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-            promptGo.transform.localRotation = Quaternion.identity;
-            promptGo.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-
-            var canvas = promptGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = 1;
-            promptGo.AddComponent<UnityEngine.UI.CanvasScaler>();
-
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(promptGo.transform, worldPositionStays: false);
-            var rt = labelGo.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(400f, 80f);
-            rt.localPosition = Vector3.zero;
-
-            var tmp = labelGo.AddComponent<TMPro.TextMeshProUGUI>();
-            tmp.fontSize = 32f;
-            tmp.alignment = TMPro.TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.text = string.Empty;
-            tmp.raycastTarget = false;
-
-            promptGo.SetActive(false);
-            return promptGo;
-        }
-
         private void UpdatePromptVisibility(bool visible)
         {
-            if (_promptVisual != null) _promptVisual.SetActive(visible);
-            if (_promptLabel != null && visible) _promptLabel.text = InteractLabel ?? string.Empty;
+            if (visible)
+            {
+                InteractionPromptView.Show(GetInstanceID(), BuildPromptContent());
+            }
+            else
+            {
+                InteractionPromptView.Hide(GetInstanceID());
+            }
         }
 
         private void OnDisable()
         {
             _playerInRangeLastTick = false;
-            if (_promptVisual != null) _promptVisual.SetActive(false);
+            InteractionPromptView.Hide(GetInstanceID());
         }
     }
 }

@@ -2697,13 +2697,8 @@ MonoBehaviour:
   _instancePrefab: {fileID: 4779872270796837339, guid: e28cafb257e25a34b8e3b9bcb4fbb1ca, type: 3}
   _overlayContainer: {fileID: 7544345580473373342}
   _uiCamera: {fileID: 0}
-  _outgoingTint: {r: 1, g: 0.94, b: 0.27, a: 1}
-  _incomingTint: {r: 1, g: 0.25, b: 0.25, a: 1}
-  _healTint: {r: 0.35, g: 1, b: 0.45, a: 1}
-  _goldTint: {r: 1, g: 0.85, b: 0.2, a: 1}
-  _shieldTint: {r: 0.6, g: 0.85, b: 1, a: 1}
   _screenOffset: {x: 0, y: 60, z: 0}
-  _staggerSeconds: 0.4
+  _staggerSeconds: 0.25
 --- !u!222 &3857362712486537773
 CanvasRenderer:
   m_ObjectHideFlags: 0

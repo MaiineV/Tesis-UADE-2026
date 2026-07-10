@@ -298,6 +298,8 @@ namespace Rollgeon.Combat.Tests
             public DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(DoorDirection direction) => false;
             public bool EnterRoomByInstanceId(Guid instanceId) => false;
+            public bool SetRoomState(Guid instanceId, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid instanceId) { }
             public UnityEngine.Bounds GetFloorBounds() => default;
             public System.Collections.Generic.IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() => Array.Empty<Rollgeon.GameCamera.WallOccluder>();
         }

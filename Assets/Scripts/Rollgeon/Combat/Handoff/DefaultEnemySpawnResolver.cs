@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
@@ -109,7 +110,7 @@ namespace Rollgeon.Combat.Handoff
                 var enemyData = planned.Enemy;
                 if (enemyData == null) continue;
 
-                var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, layout, rng);
+                var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, instance, layout, rng);
                 if (id != Guid.Empty)
                 {
                     result.Add((id, enemyData));
@@ -137,6 +138,14 @@ namespace Rollgeon.Combat.Handoff
 
         private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
         {
+            // Salas autoradas (tutorial): el setup del SO le gana a los
+            // SpawnPointConfig del prefab compartido.
+            if (room.ForcePossibleSetups)
+            {
+                var forced = BuildPlanFromSetups(room, rng);
+                if (forced != null) return forced;
+            }
+
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
             if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
             {
@@ -185,20 +194,8 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // Legacy path: PossibleSetups then EnemyPool.
-            if (room.PossibleSetups != null && room.PossibleSetups.Count > 0)
-            {
-                var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];
-                if (setup != null && setup.Slots != null && setup.Slots.Count > 0)
-                {
-                    var plan = new List<PlannedSpawn>(setup.Slots.Count);
-                    foreach (var slot in setup.Slots)
-                    {
-                        int tier = EnemyTierRoll.Roll(slot.TierWeights, slot.Enemy, rng);
-                        plan.Add(new PlannedSpawn(slot.Enemy, tier));
-                    }
-                    return plan;
-                }
-            }
+            var fromSetups = BuildPlanFromSetups(room, rng);
+            if (fromSetups != null) return fromSetups;
 
             int defaultCount = room.Type == RoomType.Boss
                 ? BossDefaultSpawnCount
@@ -217,9 +214,40 @@ namespace Rollgeon.Combat.Handoff
             return list;
         }
 
-        private Guid RegisterEnemy(EnemyDataSO enemyData, int tier, int spawnIndex, RoomLayout layout, System.Random rng)
+        /// <summary>
+        /// Plan desde <see cref="RoomSO.PossibleSetups"/> (uno al azar). <c>null</c>
+        /// si no hay setups usables — el caller sigue con su fallback.
+        /// </summary>
+        private static List<PlannedSpawn> BuildPlanFromSetups(RoomSO room, System.Random rng)
+        {
+            if (room.PossibleSetups == null || room.PossibleSetups.Count == 0) return null;
+
+            var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];
+            if (setup?.Slots == null || setup.Slots.Count == 0) return null;
+
+            var plan = new List<PlannedSpawn>(setup.Slots.Count);
+            foreach (var slot in setup.Slots)
+            {
+                int tier = EnemyTierRoll.Roll(slot.TierWeights, slot.Enemy, rng);
+                plan.Add(new PlannedSpawn(slot.Enemy, tier));
+            }
+            return plan;
+        }
+
+        private Guid RegisterEnemy(
+            EnemyDataSO enemyData, int tier, int spawnIndex,
+            RoomInstance instance, RoomLayout layout, System.Random rng)
         {
             var coord = ResolveSpawnCoord(layout, spawnIndex);
+
+            // Seam opcional (Tutorial Mode): redirigir la casilla del primer spawn.
+            if (ServiceLocator.TryGetService<IEnemySpawnCoordOverride>(out var coordOverride)
+                && coordOverride != null
+                && coordOverride.TryOverrideSpawnCoord(instance, spawnIndex, coord, out var overridden))
+            {
+                coord = overridden;
+            }
+
             return RegisterEnemyAtCoord(enemyData, coord, rng, state: null, tier: tier);
         }
 

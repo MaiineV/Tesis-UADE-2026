@@ -38,6 +38,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _resetSaveButton;
 
+        [Tooltip("Boton 'Tutorial'. Relanza el tutorial a demanda. Opcional — el tutorial " +
+                 "igual arranca solo en la primera run (meta save sin TutorialCompleted).")]
+        [SerializeField]
+        private Button _tutorialButton;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -71,6 +76,13 @@ namespace Rollgeon.UI.Screens
             {
                 _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             }
+
+            if (_tutorialButton != null)
+            {
+                _tutorialButton.onClick.AddListener(OnTutorialClicked);
+            }
+
+            ConsumePostTutorialRouting();
         }
 
         private void OnDisable()
@@ -79,6 +91,7 @@ namespace Rollgeon.UI.Screens
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
             if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
+            if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
         }
 
         /// <summary>
@@ -93,6 +106,17 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log(LogPrefix + "Play clicked.", this);
 
+            // FTUE: primera run de la partida → tutorial automático. Si el launcher
+            // no puede (config ausente/incompleta), degrada al flujo normal.
+            if (ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta)
+                && meta != null && !meta.IsTutorialCompleted
+                && Rollgeon.Tutorial.TutorialLauncher.CanLaunch())
+            {
+                Debug.Log(LogPrefix + "Primera run — arrancando tutorial.", this);
+                Rollgeon.Tutorial.TutorialLauncher.Launch();
+                return;
+            }
+
             if (!ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
                 Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado en ServiceLocator. " +
@@ -101,6 +125,40 @@ namespace Rollgeon.UI.Screens
             }
 
             screens.PushByStringId(ClassSelectionScreenId);
+        }
+
+        /// <summary>
+        /// Handler del boton "Tutorial". Relanza el tutorial a demanda (aunque ya
+        /// esté completado).
+        /// </summary>
+        private void OnTutorialClicked()
+        {
+            Debug.Log(LogPrefix + "Tutorial clicked.", this);
+            Rollgeon.Tutorial.TutorialLauncher.Launch();
+        }
+
+        /// <summary>
+        /// Al volver del tutorial completado, saltar directo a la selección de clase
+        /// para la primera run real (flag seteado por el teardown del tutorial).
+        /// Diferido un frame para que el ScreenHost termine de registrar screens.
+        /// </summary>
+        private void ConsumePostTutorialRouting()
+        {
+            if (!Rollgeon.Tutorial.PostTutorialRouting.AutoOpenClassSelection) return;
+            Rollgeon.Tutorial.PostTutorialRouting.AutoOpenClassSelection = false;
+
+            Rollgeon.Patterns.CoroutineHost.Run(PushClassSelectionNextFrame());
+        }
+
+        private System.Collections.IEnumerator PushClassSelectionNextFrame()
+        {
+            yield return null;
+
+            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                Debug.Log(LogPrefix + "Tutorial completado — abriendo selección de clase.");
+                screens.PushByStringId(ClassSelectionScreenId);
+            }
         }
 
         /// <summary>

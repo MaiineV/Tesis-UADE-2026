@@ -190,9 +190,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.FloatingDamageInstance
   _text: {fileID: 6337635522723321536}
   _canvasGroup: {fileID: 8658279054814319020}
-  _riseHeight: 50
-  _durationSeconds: 1.2
-  _fadeOutRatio: 0.6
+  _riseHeight: 56
+  _durationSeconds: 0.9
+  _fadeOutRatio: 0.55
 --- !u!225 &8658279054814319020
 CanvasGroup:
   m_ObjectHideFlags: 0

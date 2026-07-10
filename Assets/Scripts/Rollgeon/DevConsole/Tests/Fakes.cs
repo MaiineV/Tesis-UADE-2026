@@ -61,6 +61,7 @@ namespace Rollgeon.DevConsole.Tests
         public void Add(int amount) { if (amount > 0) CurrentGold += amount; }
         public bool Spend(int amount) { if (amount <= CurrentGold) { CurrentGold -= amount; return true; } return false; }
         public bool CanAfford(int amount) => amount <= CurrentGold;
+        public void ResetTo(int amount) { CurrentGold = amount < 0 ? 0 : amount; }
     }
 
     public sealed class FakeInventoryService : IInventoryService

@@ -176,6 +176,18 @@ namespace Rollgeon.Meta
         }
 
         /// <inheritdoc />
+        public bool IsTutorialCompleted => State.TutorialCompleted;
+
+        /// <inheritdoc />
+        public void MarkTutorialCompleted()
+        {
+            if (State.TutorialCompleted) return;
+            State.TutorialCompleted = true;
+            SaveNow();
+            Debug.Log(LogPrefix + "Tutorial completado — persiste en el save de meta-progresión.");
+        }
+
+        /// <inheritdoc />
         public void SaveNow()
         {
             _store?.Save((MetaProgressionSnapshot)State.CaptureState());
