@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combos.Counters;
 using Rollgeon.Dungeon;
@@ -147,6 +148,7 @@ namespace Rollgeon.Meta
             }
 
             ServiceLocator.AddService<RunUnlockState>(state, ServiceScope.Run);
+            SaveSystem.Register(state);
         }
 
         // Schema EventName.OnRunVictory: args = [Guid runId]

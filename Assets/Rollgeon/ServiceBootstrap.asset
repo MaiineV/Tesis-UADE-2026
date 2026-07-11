@@ -66,6 +66,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: ea5940d0bc86fef4b8e91836b1e5be93, type: 2}
     - {fileID: 11400000, guid: a79e9fad8d9a1ed4588e5ee2ec2e59d7, type: 2}
     - {fileID: 11400000, guid: 60a5116217cf18b4eb4775b1e3c0bfbb, type: 2}
+    - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -111,7 +112,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 3
+      Data: 4
     - Name: 
       Entry: 10
       Data: 7
@@ -121,6 +122,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 9
+    - Name: 
+      Entry: 10
+      Data: 50
     - Name: 
       Entry: 13
       Data: 
@@ -133,7 +137,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 47
+      Data: 48
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -294,6 +298,12 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: 9|Patterns.Save.SaveSystemBootstrap, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -311,4 +321,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
   - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
   - {fileID: 11400000, guid: 4400eee50af376345913e8827c1a428b, type: 2}
+  - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
   _nextSceneName: 01_MainMenu

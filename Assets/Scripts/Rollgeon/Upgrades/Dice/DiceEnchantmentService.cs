@@ -110,8 +110,17 @@ namespace Rollgeon.Upgrades.Dice
                 Debug.LogWarning(LogPrefix + "InitializeFromBag con DiceBagSO null/empty — no se inicializa.");
                 return;
             }
-            Bag = new RuntimeDiceBag(bag.Dice);
+            Bag = new RuntimeDiceBag(bag.Dice, ResolveEnchantmentById);
             ServiceLocator.AddService<RuntimeDiceBag>(Bag, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(Bag);
+        }
+
+        private static EnchantmentSO ResolveEnchantmentById(string upgradeId)
+        {
+            if (string.IsNullOrEmpty(upgradeId)) return null;
+            if (!ServiceLocator.TryGetService<EnchantmentCatalogSO>(out var catalog) || catalog == null)
+                return null;
+            return catalog.GetById(upgradeId);
         }
 
         private void EnsureInitializedFromPlayer()

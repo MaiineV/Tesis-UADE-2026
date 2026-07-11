@@ -14,7 +14,7 @@ namespace Rollgeon.Meta
     /// acá (ya los persiste <c>RunComboCounterState</c>).
     /// </summary>
     [Serializable]
-    public sealed class RunUnlockState : ISaveable
+    public sealed class RunUnlockState : ISaveable, IDisposable
     {
         public const string SaveKeyConst = "run.unlock_tracker";
 
@@ -120,6 +120,17 @@ namespace Rollgeon.Meta
             CombatsFled = snapshot.CombatsFled;
             BossesDefeated = snapshot.BossesDefeated;
             FloorsVisited = snapshot.FloorsVisited;
+        }
+
+        // ---------------------------------------------------------------- IDisposable
+
+        /// <summary>
+        /// Invocado por <c>ClearScope(Run)</c>. El Unregister explícito evita que dos
+        /// instancias con la misma SaveKey convivan en el registry entre runs.
+        /// </summary>
+        public void Dispose()
+        {
+            SaveSystem.Unregister(this);
         }
     }
 

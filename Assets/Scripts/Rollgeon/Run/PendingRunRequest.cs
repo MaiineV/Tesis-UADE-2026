@@ -24,6 +24,13 @@ namespace Rollgeon.Run
         public static bool HasRequest { get; private set; }
 
         /// <summary>
+        /// <c>true</c> cuando la request viene del botón Continue del menú: el
+        /// GameplayBootstrapper pasa <c>resume: true</c> a StartRun (no limpia el
+        /// cache del SaveSystem) y saltea los starting items (vienen del save).
+        /// </summary>
+        public static bool IsResume { get; private set; }
+
+        /// <summary>
         /// La run pendiente es el tutorial: <c>RunController.OnRunStart</c> genera el
         /// piso fijo del tutorial y crea el <c>TutorialFlowController</c> en vez de la
         /// progresión de pisos normal. Leído sincrónicamente durante <c>StartRun</c>,
@@ -37,6 +44,7 @@ namespace Rollgeon.Run
             string rulesetId,
             DiceBagSO builtDiceBag = null,
             IReadOnlyList<ItemSO> startingItems = null,
+            bool isResume = false,
             bool isTutorial = false)
         {
             SelectedHero = hero;
@@ -44,6 +52,7 @@ namespace Rollgeon.Run
             RulesetId = rulesetId;
             BuiltDiceBag = builtDiceBag;
             StartingItems = startingItems;
+            IsResume = isResume;
             IsTutorial = isTutorial;
             HasRequest = true;
         }
@@ -55,6 +64,7 @@ namespace Rollgeon.Run
             RulesetId = null;
             BuiltDiceBag = null;
             StartingItems = null;
+            IsResume = false;
             IsTutorial = false;
             HasRequest = false;
         }

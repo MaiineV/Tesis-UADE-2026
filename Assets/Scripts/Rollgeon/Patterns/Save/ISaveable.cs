@@ -1,18 +1,14 @@
 namespace Patterns.Save
 {
     /// <summary>
-    /// Superficie mínima del contrato <c>ISaveable</c> descripto en TECHNICAL.md §15 (Save System).
+    /// Contrato de persistencia del Save System (TECHNICAL.md §15). Los saveables se
+    /// registran en <see cref="SaveSystem"/> — creación → <c>Register</c>, disposal →
+    /// <c>Unregister</c> — y el sistema captura/restaura vía este contrato.
     /// <para>
-    /// <b>[STUB]</b> — el Save System real no está implementado en Sprint 03. Se expone esta
-    /// interface para que los services run-scoped (p.ej. <see cref="Rollgeon.Combos.Counters.RunComboCounterState"/>)
-    /// la implementen desde ya. Cuando el SaveSystem worktree la defina "final", las firmas
-    /// se reconcilian — <c>SaveKey</c>, <c>CaptureState</c> y <c>RestoreState</c> coinciden
-    /// con §15.
-    /// </para>
-    /// <para>
-    /// <b>Riesgo de colisión.</b> Si otro worktree concurrente también stubea esta interface,
-    /// el primero que mergea gana y los restantes reutilizan. No se duplica — si ya existe,
-    /// este archivo debe borrarse durante el merge.
+    /// <b>Rehidratación no-trivial.</b> Un ISaveable que contenga objetos que requieren
+    /// re-wire de eventos tras restore (canónicamente <c>Modifier&lt;T&gt;</c>, §3.5)
+    /// debe re-hookearlos dentro de su <see cref="RestoreState"/> — <c>SaveSystem</c>
+    /// no conoce los tipos concretos.
     /// </para>
     /// </summary>
     public interface ISaveable

@@ -43,6 +43,8 @@ namespace Rollgeon.Dungeon
         public RoomInstance CurrentRoomInstance =>
             _currentId != Guid.Empty && _instances.TryGetValue(_currentId, out var ri) ? ri : null;
 
+        public int CurrentFloorSeed { get; private set; }
+
         public DoorDirection? LastEntryDirection => _lastEntryDirection;
 
         public DungeonManager()
@@ -73,6 +75,7 @@ namespace Rollgeon.Dungeon
             if (plan == null) throw new ArgumentNullException(nameof(plan));
 
             ClearState();
+            CurrentFloorSeed = plan.Seed;
             _lastEntryDirection = null;
 
             if (plan.Warnings != null)

@@ -1012,7 +1012,9 @@ namespace Rollgeon.Tutorial
 
             // EndRun → ClearScope(Run): descarta inventario (item), RuntimeDiceBag
             // (encantamiento), combo passives, dungeon del tutorial y ESTE controller.
-            RunBootstrapper.EndRun(_runId);
+            // runCompleted: true — la run del tutorial es descartable; borra el save
+            // para que el Continue del menú no resuma un tutorial a medio desarmar.
+            RunBootstrapper.EndRun(_runId, runCompleted: true);
             loading?.ReportProgress(0.5f);
 
             // Reset Global explícito: el oro no es run-scoped.

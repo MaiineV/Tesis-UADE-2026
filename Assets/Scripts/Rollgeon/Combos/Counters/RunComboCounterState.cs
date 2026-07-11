@@ -12,14 +12,14 @@ namespace Rollgeon.Combos.Counters
     /// descartado automáticamente por <c>BootstrapHooks.OnRunEnd → ClearScope(Run)</c>.
     /// </para>
     /// <para>
-    /// <b>Save.</b> Implementa <see cref="ISaveable"/> (stub — §15 no está en el sprint).
+    /// <b>Save.</b> Implementa <see cref="ISaveable"/> (§15).
     /// <see cref="CaptureState"/> devuelve un clone del <see cref="Counts"/> para asegurar
     /// inmutabilidad del snapshot serializado. <see cref="RestoreState"/> acepta un
     /// <c>IDictionary&lt;string,int&gt;</c> (o <c>null</c> → reset).
     /// </para>
     /// </summary>
     [Serializable]
-    public sealed class RunComboCounterState : ISaveable
+    public sealed class RunComboCounterState : ISaveable, IDisposable
     {
         /// <summary>
         /// Clave estable para el contenedor de save (§15). Documentada en el brief de la tarea.
@@ -83,6 +83,17 @@ namespace Rollgeon.Combos.Counters
                     Counts[kvp.Key] = kvp.Value;
                 }
             }
+        }
+
+        // ---------------------------------------------------------------- IDisposable
+
+        /// <summary>
+        /// Invocado por <c>ClearScope(Run)</c>. El Unregister explícito evita que dos
+        /// instancias con la misma SaveKey convivan en el registry entre runs.
+        /// </summary>
+        public void Dispose()
+        {
+            SaveSystem.Unregister(this);
         }
     }
 }

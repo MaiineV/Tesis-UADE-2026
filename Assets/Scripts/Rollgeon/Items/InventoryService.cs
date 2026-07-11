@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
@@ -12,7 +13,7 @@ using UnityEngine;
 
 namespace Rollgeon.Items
 {
-    public sealed class InventoryService : IInventoryService, IDisposable
+    public sealed class InventoryService : IInventoryService, ISaveable, IDisposable
     {
         private readonly List<InventorySlot> _passiveItems = new();
         private readonly List<InventorySlot> _activeItems = new();
@@ -392,11 +393,28 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // ISaveable (§15) — el service vivo es lo que se registra; InventoryState
+        // queda como converter/DTO holder para los helpers de arriba y sus tests.
+        // ======================================================================
+
+        string ISaveable.SaveKey => "run.inventory";
+
+        object ISaveable.CaptureState() => CaptureState().CaptureState();
+
+        void ISaveable.RestoreState(object state)
+        {
+            var holder = new InventoryState();
+            holder.RestoreState(state);
+            RestoreState(holder);
+        }
+
+        // ======================================================================
         // Dispose
         // ======================================================================
 
         public void Dispose()
         {
+            SaveSystem.Unregister(this);
             ClearAllHooksAndModifiers();
             _passiveItems.Clear();
             _activeItems.Clear();
