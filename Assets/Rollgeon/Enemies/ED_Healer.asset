@@ -119,6 +119,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -310,6 +313,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -597,6 +603,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 2
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -765,6 +774,7 @@ MonoBehaviour:
   EntityId: healerEnemy
   DisplayName: Healer
   Description: 
+  Portrait: {fileID: 1966469057, guid: a2a466c1be56fb84584dafa752e02bef, type: 3}
   WeaknessComboId: combo.double_pair
   WeaknessMultiplierOverride: 0
   BaseHP: 10
@@ -772,6 +782,8 @@ MonoBehaviour:
   BaseHealStrength: 3
   BaseSpeed: 4
   MaxEnergy: 3
+  BaseAttackRange: 1
+  ExtraTiers: []
   VisualPrefab: {fileID: 8816966952657547766, guid: 2a28790685f10514085f46493a8c3ef2, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5

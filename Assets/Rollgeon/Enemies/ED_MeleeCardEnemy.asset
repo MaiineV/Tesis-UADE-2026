@@ -119,6 +119,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -325,6 +328,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -503,6 +509,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -641,6 +650,7 @@ MonoBehaviour:
   EntityId: Goblin01
   DisplayName: Goblin
   Description: 
+  Portrait: {fileID: 789460272, guid: 5a7f23fe35c7c8649854515601cc938d, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 20

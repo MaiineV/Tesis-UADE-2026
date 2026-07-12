@@ -119,6 +119,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -325,6 +328,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -503,6 +509,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -641,6 +650,7 @@ MonoBehaviour:
   EntityId: enemy_tutorial_melee_c
   DisplayName: "Mat\xF3n (Tutorial)"
   Description: 
+  Portrait: {fileID: 1966469057, guid: a2a466c1be56fb84584dafa752e02bef, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 30

@@ -59,6 +59,7 @@ MonoBehaviour:
   EntityId: Boss01
   DisplayName: Boss Test
   Description: 
+  Portrait: {fileID: -2114528188, guid: 05b0a715b01245d4087eaf3431f05722, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 100
@@ -66,6 +67,8 @@ MonoBehaviour:
   BaseHealStrength: 3
   BaseSpeed: 4
   MaxEnergy: 3
+  BaseAttackRange: 1
+  ExtraTiers: []
   VisualPrefab: {fileID: 5047352166231496340, guid: 3e4d4b17f413bf4498d0ca024d589f23, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5

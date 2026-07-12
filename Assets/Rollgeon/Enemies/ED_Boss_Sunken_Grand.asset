@@ -272,6 +272,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -442,6 +445,7 @@ MonoBehaviour:
     take a part of the equation out of it. He speaks during combat making cool statistical
     observations about the player''s roll. He''s not cruel, he''s an actuary who
     never learned to shut up.'
+  Portrait: {fileID: 1560523001, guid: cc329bd81daf80b459cfb7af1ad4c1f3, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200

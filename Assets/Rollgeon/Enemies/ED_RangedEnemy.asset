@@ -119,6 +119,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -307,6 +310,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -492,6 +498,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -633,6 +642,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -906,6 +918,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -1044,6 +1059,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -1170,6 +1188,7 @@ MonoBehaviour:
   EntityId: RangedEnemy01
   DisplayName: RangedEnemy
   Description: Goblin con ataque a distancia, dispara con una ballesta.
+  Portrait: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0.14
   BaseHP: 10
@@ -1177,6 +1196,8 @@ MonoBehaviour:
   BaseHealStrength: 5
   BaseSpeed: 5
   MaxEnergy: 2
+  BaseAttackRange: 1
+  ExtraTiers: []
   VisualPrefab: {fileID: 8816966952657547766, guid: d1bfc05133e86344e8c12884968c7854, type: 3}
   MinGoldDrop: 4
   MaxGoldDrop: 8

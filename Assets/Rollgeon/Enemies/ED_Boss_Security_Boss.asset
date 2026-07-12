@@ -239,6 +239,9 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -542,6 +545,7 @@ MonoBehaviour:
     action is recorded in his incident book. He detected thousands of cheaters in
     his lifetime and continues applying the same procedures even if there is no one
     left alive to protect. If the player repeats a move, he already has it recorded.
+  Portrait: {fileID: 1724498415, guid: 327c92b8d873b9141804fa818ecbcd6d, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
