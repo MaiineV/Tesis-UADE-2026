@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Entities.Portraits;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -95,11 +96,19 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            // Portraits — servicio run-scoped opcional: sin él (o sin sprite para un
+            // guid) el slot conserva el sprite default del prefab.
+            ServiceLocator.TryGetService<IEntityPortraitResolver>(out var portraits);
+
             for (int i = 0; i < order.Count; i++)
             {
                 var guid = order[i];
                 var slot = Instantiate(_slotPrefab, _container);
                 slot.Bind(guid, guid == _playerGuid, i);
+                if (portraits != null && portraits.TryGetPortrait(guid, out var sprite))
+                {
+                    slot.SetPortrait(sprite);
+                }
                 _slotsByGuid[guid] = slot;
             }
         }

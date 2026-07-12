@@ -11,6 +11,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dungeon;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.Exploration;
 using Rollgeon.Items;
 using Rollgeon.Player;
@@ -116,7 +117,13 @@ namespace Rollgeon.Run
                     "[RunController] IEconomyService no registrado — los enemigos no van a dropear oro este run.");
             }
 
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals, goldDrops);
+            // 2a-bis. Portraits — lookup guid→sprite para el turn order HUD (y futuras
+            //         UIs tipo bestiario). El resolver de spawn lo puebla por enemigo;
+            //         el player se resuelve lazy vía IPlayerService.
+            var portraits = EntityPortraitResolver.CreateAndRegister();
+
+            var resolver = new DefaultEnemySpawnResolver(
+                registry, attributes, aiRegistry, grid, visuals, goldDrops, portraits);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat

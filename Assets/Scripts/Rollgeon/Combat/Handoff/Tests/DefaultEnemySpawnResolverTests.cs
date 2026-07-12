@@ -7,6 +7,7 @@ using Rollgeon.Combat.Initiative;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Portraits;
 using UnityEngine;
 
 namespace Rollgeon.Combat.Handoff.Tests
@@ -231,6 +232,49 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.IsFalse(state.IsDead);
             Assert.AreEqual(25, state.CurrentHP);
             Assert.AreEqual(0, state.SpawnPointIndex);
+        }
+
+        [Test]
+        public void Resolve_WithPortraitResolver_RegistersPortraitPerSpawnedEnemy()
+        {
+            // Arrange
+            var texture = new Texture2D(2, 2);
+            _createdObjects.Add(texture);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, 2, 2), Vector2.zero);
+            _createdObjects.Add(sprite);
+
+            var enemy = CreateEnemy("Goblin");
+            enemy.Portrait = sprite;
+            var pool = CreatePool(enemy);
+            var instance = CreateInstance(pool);
+
+            var portraits = new RecordingPortraitResolver();
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes, portraits: portraits);
+
+            // Act
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            // Assert
+            Assert.AreEqual(result.Count, portraits.Registered.Count,
+                "Cada spawn debe registrar su portrait en el resolver.");
+            foreach (var (id, _) in result)
+            {
+                Assert.IsTrue(portraits.Registered.TryGetValue(id, out var registered));
+                Assert.AreSame(sprite, registered,
+                    $"El portrait registrado para {id} debe ser el del EnemyDataSO.");
+            }
+        }
+
+        /// <summary>Fake que captura las llamadas a Register para asserts.</summary>
+        private sealed class RecordingPortraitResolver : IEntityPortraitResolver
+        {
+            public readonly Dictionary<Guid, Sprite> Registered = new();
+            public void Register(Guid entityId, Sprite portrait) => Registered[entityId] = portrait;
+            public void Unregister(Guid entityId) => Registered.Remove(entityId);
+            public bool TryGetPortrait(Guid entityId, out Sprite portrait)
+                => Registered.TryGetValue(entityId, out portrait);
+            public void Clear() => Registered.Clear();
         }
 
         [Test]

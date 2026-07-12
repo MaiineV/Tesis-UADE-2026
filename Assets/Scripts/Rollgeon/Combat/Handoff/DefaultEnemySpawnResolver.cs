@@ -10,6 +10,7 @@ using Rollgeon.Dungeon.State;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 
@@ -44,6 +45,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly IGridManager _grid;
         private readonly IEntityVisualService _visuals;
         private readonly EnemyGoldDropService _goldDrops;
+        private readonly IEntityPortraitResolver _portraits;
 
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
@@ -51,7 +53,8 @@ namespace Rollgeon.Combat.Handoff
             IEnemyAIRegistry aiRegistry = null,
             IGridManager grid = null,
             IEntityVisualService visuals = null,
-            EnemyGoldDropService goldDrops = null)
+            EnemyGoldDropService goldDrops = null,
+            IEntityPortraitResolver portraits = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
@@ -59,6 +62,7 @@ namespace Rollgeon.Combat.Handoff
             _grid = grid;
             _visuals = visuals;
             _goldDrops = goldDrops;
+            _portraits = portraits;
         }
 
         public List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng)
@@ -264,6 +268,7 @@ namespace Rollgeon.Combat.Handoff
             var attrs = enemyData.CreateRuntimeStats(tier);
             _registry.Register(id, attrs);
             _attributes.Register(id, attrs);
+            if (_portraits != null) _portraits.Register(id, enemyData.Portrait);
 
             if (_aiRegistry != null)
             {
