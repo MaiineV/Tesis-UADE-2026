@@ -145,7 +145,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 3
     - Name: _comboMultiplier
       Entry: 4
       Data: 1

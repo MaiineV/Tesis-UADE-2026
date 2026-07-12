@@ -46,6 +46,40 @@ namespace Rollgeon.Entities.Behaviors
 
         public override string BehaviorName => ActionName;
 
+        [NonSerialized] private bool? _isEnergyBookkeeping;
+
+        /// <summary>
+        /// True si el behavior solo administra energía (Reset/Charge/Remove Energy en los
+        /// árboles): todos sus effects son <see cref="Effects.Concretes.EffModifyIntAttribute"/>
+        /// sobre <see cref="Rollgeon.Attributes.StatType.Energy"/>. Estos behaviors están
+        /// exentos de la regla "una acción por turno" — el While los re-ejecuta por iteración
+        /// para drenar el presupuesto.
+        /// </summary>
+        public bool IsEnergyBookkeeping
+        {
+            get
+            {
+                _isEnergyBookkeeping ??= ComputeIsEnergyBookkeeping();
+                return _isEnergyBookkeeping.Value;
+            }
+        }
+
+        private bool ComputeIsEnergyBookkeeping()
+        {
+            if (Effects == null) return true;
+            foreach (var ed in Effects)
+            {
+                if (ed?.Effects == null) continue;
+                foreach (var eff in ed.Effects)
+                {
+                    if (eff == null) continue;
+                    if (eff is not Rollgeon.Effects.Concretes.EffModifyIntAttribute mod) return false;
+                    if (mod.TargetStat != Rollgeon.Attributes.StatType.Energy) return false;
+                }
+            }
+            return true;
+        }
+
         // The tree decides when to fire this behavior — gate by tree PCs, not by trigger soft-check.
         public override bool CanExecute(BehaviorContext ctx) => true;
 

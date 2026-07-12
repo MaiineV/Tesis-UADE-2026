@@ -145,7 +145,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 3
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -647,7 +647,7 @@ MonoBehaviour:
   BaseAttack: 2
   BaseHealStrength: 5
   BaseSpeed: 4
-  MaxEnergy: 1
+  MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers:
   - Label: T2

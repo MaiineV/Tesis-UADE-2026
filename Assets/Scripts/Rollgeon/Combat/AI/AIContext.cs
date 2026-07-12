@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities;
@@ -52,5 +53,22 @@ namespace Rollgeon.Combat.AI
         /// El consumer (TickCoroutine) lo drena y luego lo resetea a null.
         /// </summary>
         [NonSerialized] public IEnumerator PendingWait;
+
+        /// <summary>
+        /// Keys de acciones ya ejecutadas este turno — regla "sin repetir acciones":
+        /// la energía es el presupuesto, pero cada acción corre a lo sumo una vez por
+        /// turno (como el player). El contexto se construye fresco por turno, así que
+        /// el set se resetea solo. Los behaviors de bookkeeping de energía están
+        /// exentos (ver <c>EnemyActionBehavior.IsEnergyBookkeeping</c>).
+        /// </summary>
+        public readonly HashSet<string> ExecutedActions = new HashSet<string>(StringComparer.Ordinal);
+
+        public bool HasExecuted(string actionKey) =>
+            actionKey != null && ExecutedActions.Contains(actionKey);
+
+        public void MarkExecuted(string actionKey)
+        {
+            if (actionKey != null) ExecutedActions.Add(actionKey);
+        }
     }
 }

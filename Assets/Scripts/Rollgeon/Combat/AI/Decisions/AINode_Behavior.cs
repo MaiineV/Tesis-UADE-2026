@@ -25,18 +25,32 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (context == null || Behavior == null) return AIResult.Failed;
 
+            // Regla "sin repetir acciones": skip transparente (Succeeded, no Failed — un
+            // Failed abortaría el Sequence/While padre y cortaría el turno entero).
+            bool countsAsAction = !Behavior.IsEnergyBookkeeping;
+            if (countsAsAction && context.HasExecuted(Behavior.BehaviorName))
+                return AIResult.Succeeded;
+
             var bctx = new EnemyAIBehaviorContext
             {
                 AI = context,
                 SourceEntity = context.Self,
             };
             Behavior.Execute(bctx);
+            if (countsAsAction) context.MarkExecuted(Behavior.BehaviorName);
             return AIResult.Succeeded;
         }
 
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (context == null || Behavior == null) { onResult?.Invoke(AIResult.Failed); yield break; }
+
+            bool countsAsAction = !Behavior.IsEnergyBookkeeping;
+            if (countsAsAction && context.HasExecuted(Behavior.BehaviorName))
+            {
+                onResult?.Invoke(AIResult.Succeeded);
+                yield break;
+            }
 
             var bctx = new EnemyAIBehaviorContext
             {
@@ -47,6 +61,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var co = Behavior.ExecuteCoroutine(bctx);
             while (co.MoveNext()) yield return co.Current;
 
+            if (countsAsAction) context.MarkExecuted(Behavior.BehaviorName);
             onResult?.Invoke(AIResult.Succeeded);
         }
     }

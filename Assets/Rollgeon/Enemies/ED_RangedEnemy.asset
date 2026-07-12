@@ -145,7 +145,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -1176,7 +1176,7 @@ MonoBehaviour:
   BaseAttack: 1
   BaseHealStrength: 5
   BaseSpeed: 5
-  MaxEnergy: 1
+  MaxEnergy: 2
   VisualPrefab: {fileID: 8816966952657547766, guid: d1bfc05133e86344e8c12884968c7854, type: 3}
   MinGoldDrop: 4
   MaxGoldDrop: 8
