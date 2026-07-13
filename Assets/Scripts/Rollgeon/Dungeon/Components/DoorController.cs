@@ -11,7 +11,7 @@ namespace Rollgeon.Dungeon.Components
     /// Se parentes bajo la sala instanciada (<see cref="RoomInstance.SpawnedPrefab"/>)
     /// por el <c>DungeonManager</c> cuando detecta que la <see cref="DoorSlotRef"/>
     /// del <see cref="RoomLayout"/> tiene vecino. Si la sala no conecta por esa
-    /// dirección, se activa el <see cref="DoorSlotRef.WallPlug"/> en su lugar.
+    /// dirección, el DoorRoot se apaga entero (CNF-012 v2: sin camino = sin puerta).
     /// </summary>
     [AddComponentMenu("Rollgeon/Dungeon/Door Controller")]
     public sealed class DoorController : MonoBehaviour
@@ -41,10 +41,11 @@ namespace Rollgeon.Dungeon.Components
         [Tooltip("Mesh + collider activos cuando la puerta está abierta.")]
         [SerializeField] private GameObject _meshOpen;
 
-        [Tooltip("Mesh + collider activos cuando la puerta está cerrada (lock combate o skill check).")]
+        [Tooltip("Puerta sólida cerrada. Sin estado asignado desde CNF-012 v2 (la reja " +
+                 "representa bloqueada) — SetState la fuerza off porque el prefab la trae activa.")]
         [SerializeField] private GameObject _meshClosed;
 
-        [Tooltip("Mesh de pared tapiada — cuando no hay vecino en esa dirección.")]
+        [Tooltip("La reja — visible cuando la puerta está bloqueada (lock combate o skill check).")]
         [SerializeField] private GameObject _wallPlug;
 
         public DoorVisualState CurrentState { get; private set; } = DoorVisualState.Open;
@@ -100,14 +101,17 @@ namespace Rollgeon.Dungeon.Components
         {
             CurrentState = state;
 
-            bool open    = state == DoorVisualState.Open;
-            bool locked  = state == DoorVisualState.LockedCombat
-                           || state == DoorVisualState.LockedSkillCheck;
-            bool tapiada = state == DoorVisualState.Tapiada;
+            bool open   = state == DoorVisualState.Open;
+            bool locked = state == DoorVisualState.LockedCombat
+                          || state == DoorVisualState.LockedSkillCheck;
 
+            // Mapa visual (CNF-012 v2, feedback 2026-07-13): abierta = mesh open;
+            // bloqueada/forzable = la reja; Tapiada (sin camino) = nada visible.
+            // La puerta sólida (_meshClosed) quedó sin estado — forzarla off pisa
+            // el default activo del prefab.
             if (_meshOpen   != null) _meshOpen.SetActive(open);
-            if (_meshClosed != null) _meshClosed.SetActive(locked);
-            if (_wallPlug   != null) _wallPlug.SetActive(tapiada);
+            if (_meshClosed != null) _meshClosed.SetActive(false);
+            if (_wallPlug   != null) _wallPlug.SetActive(locked);
 
             ApplyTooltipGate();
         }
@@ -138,7 +142,7 @@ namespace Rollgeon.Dungeon.Components
         /// <summary>Locked fuera de combate — sólo se abre con skill check exitoso.</summary>
         LockedSkillCheck = 2,
 
-        /// <summary>No hay vecino por esta dirección — pared tapiada.</summary>
+        /// <summary>No hay vecino por esta dirección — ningún mesh visible.</summary>
         Tapiada = 3,
     }
 }

@@ -7,11 +7,10 @@ namespace Rollgeon.Dungeon.Components
     /// Slot de puerta en un prefab de sala. TECHNICAL.md §13.3.
     /// <para>
     /// Cada <see cref="RoomLayout"/> expone 4 slots (N/S/E/W). Cuando el
-    /// <c>DungeonManager</c> arma la conectividad, el <see cref="DoorRoot"/>
-    /// queda siempre activo: con vecino se cablea el <c>DoorController</c> y se
-    /// desactiva <see cref="WallPlug"/>; sin vecino la puerta queda en estado
-    /// <c>Tapiada</c> — muestra la reja (<see cref="WallPlug"/>) y no es
-    /// interactuable (CNF-012).
+    /// <c>DungeonManager</c> arma la conectividad: con vecino activa el
+    /// <see cref="DoorRoot"/> y cablea el <c>DoorController</c> (visual Open =
+    /// abierta, Locked = reja); sin vecino apaga el <see cref="DoorRoot"/>
+    /// entero — sin camino no se ve puerta (CNF-012 v2).
     /// </para>
     /// </summary>
     [Serializable]
@@ -22,7 +21,8 @@ namespace Rollgeon.Dungeon.Components
         [Tooltip("Transform world donde se instancia el DoorPrefab (pose + rotación).")]
         public Transform Anchor;
 
-        [Tooltip("Pared tapiada. Se activa cuando el slot no conecta con un vecino.")]
+        [Tooltip("La reja (hijo del DoorRoot en los prefabs actuales). Visual de puerta " +
+                 "bloqueada — la administra DoorController.SetState, el slot no la togglea.")]
         public GameObject WallPlug;
 
         [Tooltip("Opcional: mesh/collider autorado de la puerta abierta si no se usa un DoorPrefab instanciado.")]

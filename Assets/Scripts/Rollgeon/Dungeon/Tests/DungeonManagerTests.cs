@@ -672,14 +672,15 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         // -----------------------------------------------------------------
-        // Puertas tapiadas — CNF-012
+        // Visuales de puerta — CNF-012 v2 (abierta / reja / apagada)
         // -----------------------------------------------------------------
 
         /// <summary>
         /// Prefab de sala espejo de los reales: cada DoorSlotRef tiene DoorRoot
-        /// (con DoorController) y un WallPlug que es HIJO del DoorRoot — la
-        /// estructura del Door.prefab anidado que disparó CNF-012. El root queda
-        /// inactivo para que Instantiate no dispare los Awake de tooltips en EditMode.
+        /// (con DoorController) y los tres meshes hijos ACTIVOS por default —
+        /// la estructura del Door.prefab anidado, donde el WallPlug (la reja)
+        /// es HIJO del DoorRoot. El root queda inactivo para que Instantiate
+        /// no dispare los Awake de tooltips en EditMode.
         /// </summary>
         private GameObject CreateRoomPrefabWithRejaDoors()
         {
@@ -695,22 +696,35 @@ namespace Rollgeon.Dungeon.Tests
                 var ctrl = doorRoot.AddComponent<DoorController>();
                 ctrl.Direction = dir;
 
-                var wallPlug = new GameObject("WallPlug");
-                wallPlug.transform.SetParent(doorRoot.transform, false);
-                wallPlug.SetActive(false);
+                var meshOpen   = CreateDoorChild(doorRoot, "MeshOpen");
+                var meshClosed = CreateDoorChild(doorRoot, "MeshClose");
+                var reja       = CreateDoorChild(doorRoot, "WallPlug");
+
+                SetPrivateField(ctrl, DoorController.EditorMeshOpenField, meshOpen);
+                SetPrivateField(ctrl, DoorController.EditorMeshClosedField, meshClosed);
+                SetPrivateField(ctrl, DoorController.EditorWallPlugField, reja);
 
                 layout.DoorSlots.Add(new DoorSlotRef
                 {
                     Direction = dir,
                     DoorRoot = doorRoot,
-                    WallPlug = wallPlug,
+                    WallPlug = reja,
                 });
             }
             return root;
         }
 
+        private static GameObject CreateDoorChild(GameObject parent, string name)
+        {
+            // Espejo del Door.prefab real: los meshes arrancan activos y es
+            // SetState quien los colapsa al estado correcto.
+            var child = new GameObject(name);
+            child.transform.SetParent(parent.transform, false);
+            return child;
+        }
+
         [Test]
-        public void GenerateFloor_SlotWithoutNeighbor_KeepsDoorRootActiveInTapiada()
+        public void GenerateFloor_SlotWithoutNeighbor_TurnsDoorFullyOff()
         {
             // Arrange
             var prefab = CreateRoomPrefabWithRejaDoors();
@@ -722,8 +736,8 @@ namespace Rollgeon.Dungeon.Tests
             // Act
             _manager.GenerateFloor(layout, 42);
 
-            // Assert — la dirección bloqueada muestra la reja: DoorRoot activo,
-            // estado Tapiada y el WallPlug (hijo del DoorRoot) prendido.
+            // Assert — sin camino no se ve puerta: DoorRoot apagado, estado
+            // Tapiada (para los checks de interacción) y ningún mesh prendido.
             int blockedChecked = 0;
             foreach (var instance in _manager.GetAllRoomInstances().Values)
             {
@@ -735,13 +749,13 @@ namespace Rollgeon.Dungeon.Tests
                     if (instance.Connections.ContainsKey(slot.Direction)) continue;
 
                     blockedChecked++;
-                    Assert.IsTrue(slot.DoorRoot.activeSelf,
-                        $"CNF-012: DoorRoot {slot.Direction} de '{instance.Template.RoomId}' " +
-                        "debe quedar activo para que la reja sea visible.");
+                    Assert.IsFalse(slot.DoorRoot.activeSelf,
+                        $"CNF-012 v2: DoorRoot {slot.Direction} de '{instance.Template.RoomId}' " +
+                        "sin vecino debe quedar apagado entero.");
                     Assert.AreEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
-                        $"CNF-012: puerta {slot.Direction} sin vecino debe quedar Tapiada.");
-                    Assert.IsTrue(slot.WallPlug.activeSelf,
-                        $"CNF-012: el WallPlug (reja) de {slot.Direction} debe quedar prendido.");
+                        $"Puerta {slot.Direction} sin vecino debe quedar Tapiada.");
+                    Assert.IsFalse(ctrl.EditorWallPlug.activeSelf,
+                        $"La reja de {slot.Direction} debe quedar apagada sin camino.");
                 }
             }
 
@@ -751,7 +765,7 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void GenerateFloor_SlotWithNeighbor_DoorIsNotTapiada()
+        public void GenerateFloor_SlotWithNeighbor_ShowsOpenMeshOrRejaByState()
         {
             // Arrange
             var prefab = CreateRoomPrefabWithRejaDoors();
@@ -763,8 +777,8 @@ namespace Rollgeon.Dungeon.Tests
             // Act
             _manager.GenerateFloor(layout, 42);
 
-            // Assert — la puerta conectada sigue siendo una puerta real: activa,
-            // sin reja y con estado Open/LockedCombat según la sala.
+            // Assert — puerta con vecino: abierta = mesh open, bloqueada = reja,
+            // y la puerta sólida (mesh closed) nunca se prende.
             int connectedChecked = 0;
             foreach (var instance in _manager.GetAllRoomInstances().Values)
             {
@@ -780,12 +794,56 @@ namespace Rollgeon.Dungeon.Tests
                         $"Puerta {slot.Direction} de '{instance.Template.RoomId}' con vecino debe estar activa.");
                     Assert.AreNotEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
                         $"Puerta {slot.Direction} con vecino no puede quedar Tapiada.");
-                    Assert.IsFalse(slot.WallPlug.activeSelf,
-                        $"El WallPlug (reja) de {slot.Direction} debe apagarse cuando hay vecino.");
+
+                    bool open   = ctrl.CurrentState == DoorVisualState.Open;
+                    bool locked = ctrl.CurrentState == DoorVisualState.LockedCombat
+                                  || ctrl.CurrentState == DoorVisualState.LockedSkillCheck;
+                    Assert.AreEqual(open, ctrl.EditorMeshOpen.activeSelf,
+                        $"Mesh open de {slot.Direction} debe seguir al estado Open.");
+                    Assert.AreEqual(locked, ctrl.EditorWallPlug.activeSelf,
+                        $"La reja de {slot.Direction} debe prenderse solo bloqueada (estado {ctrl.CurrentState}).");
+                    Assert.IsFalse(ctrl.EditorMeshClosed.activeSelf,
+                        $"La puerta sólida de {slot.Direction} no tiene estado asignado — siempre off.");
                 }
             }
 
             Assert.Greater(connectedChecked, 0, "El escenario debe producir puertas conectadas.");
+        }
+
+        [Test]
+        public void SetState_MapsVisuals_OpenMesh_RejaWhenLocked_NothingWhenTapiada()
+        {
+            // Arrange
+            var go = new GameObject("Door_VisualMap");
+            _createdObjects.Add(go);
+            var ctrl = go.AddComponent<DoorController>();
+            var meshOpen   = CreateDoorChild(go, "MeshOpen");
+            var meshClosed = CreateDoorChild(go, "MeshClose");
+            var reja       = CreateDoorChild(go, "WallPlug");
+            SetPrivateField(ctrl, DoorController.EditorMeshOpenField, meshOpen);
+            SetPrivateField(ctrl, DoorController.EditorMeshClosedField, meshClosed);
+            SetPrivateField(ctrl, DoorController.EditorWallPlugField, reja);
+
+            // Act + Assert — abierta: solo mesh open.
+            ctrl.SetState(DoorVisualState.Open);
+            Assert.IsTrue(meshOpen.activeSelf, "Open debe prender el mesh de puerta abierta.");
+            Assert.IsFalse(reja.activeSelf, "Open no muestra la reja.");
+            Assert.IsFalse(meshClosed.activeSelf, "La puerta sólida queda siempre off.");
+
+            // Bloqueada (forzable): solo la reja — tanto lock de combate como skill check.
+            ctrl.SetState(DoorVisualState.LockedCombat);
+            Assert.IsTrue(reja.activeSelf, "LockedCombat debe mostrar la reja.");
+            Assert.IsFalse(meshOpen.activeSelf, "LockedCombat no muestra la puerta abierta.");
+            Assert.IsFalse(meshClosed.activeSelf, "La puerta sólida queda siempre off.");
+
+            ctrl.SetState(DoorVisualState.LockedSkillCheck);
+            Assert.IsTrue(reja.activeSelf, "LockedSkillCheck debe mostrar la reja.");
+
+            // Sin camino: nada visible.
+            ctrl.SetState(DoorVisualState.Tapiada);
+            Assert.IsFalse(meshOpen.activeSelf, "Tapiada no muestra ningún mesh.");
+            Assert.IsFalse(meshClosed.activeSelf, "Tapiada no muestra ningún mesh.");
+            Assert.IsFalse(reja.activeSelf, "Tapiada no muestra ningún mesh.");
         }
 
         [Test]
@@ -800,7 +858,7 @@ namespace Rollgeon.Dungeon.Tests
             var trigger = go.GetComponent<WorldTooltipTrigger>();
             Assert.IsNotNull(trigger, "Awake debe auto-agregar el WorldTooltipTrigger.");
 
-            // Act + Assert — la reja no es una acción: sin tooltip de Forzar Puerta.
+            // Act + Assert — sin camino no hay acción: sin tooltip de Forzar Puerta.
             ctrl.SetState(DoorVisualState.Tapiada);
             Assert.IsFalse(trigger.enabled,
                 "CNF-012: Tapiada debe deshabilitar el tooltip de Forzar Puerta.");
@@ -815,6 +873,14 @@ namespace Rollgeon.Dungeon.Tests
             var awake = target.GetType().GetMethod("Awake",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             awake?.Invoke(target, null);
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
+            field.SetValue(target, value);
         }
     }
 }
