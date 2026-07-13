@@ -215,6 +215,7 @@ el arming de grab-to-reroll 2D se bloquea con `DiceOutroGate.OutroPending`.
 | `Dice/Throw/DiceThrowFeelMath.cs` | Mappings puros velocidad/impulso → volumen, pitch, intervalo de rattle, decay del spin — testeado (15). |
 | `UI/HUD/DiceThrowDieJuice.cs` | Players MMF per-dado en los prefabs de dado. El presenter lo llama DIRECTO (dueño del lifetime; eventos por índice serían dangling). `CaptureRestPose` en OnEnable — obligatorio en objetos instanciados en runtime. |
 | `UI/HUD/DiceThrowJuice.cs` | GO `DiceThrowJuice` en escena: TODO el audio de throw via `IAudioService`, hitstop del crit, duck de música con restore triple (reveal/abort/OnDisable). |
+| `UI/HUD/DiceThrowImpactBurst.cs` | Partículas UI 2D (pool de Images — el canvas Overlay no renderiza ParticleSystems encima): bursts direccionales en rebotes de borde, choques entre dados y polvillo del settle. En el GO `DiceThrowLayer`, prefab `Assets/Prefabs/UI/DiceThrowParticle.prefab`. Corre en tiempo escalado a propósito (el hitstop las congela). |
 
 **Eventos de presenters** (payload por índice, nunca views): 2D expone
 `DieGrabbed/DiceThrown/DieBounced/DieSettled`; 3D expone lo mismo +
@@ -240,6 +241,34 @@ sigue Busy → cero carreras; deadline failsafe — la resolución nunca cuelga)
 `Assets/Rollgeon/DiceTray.physicsMaterial` (bounciness 0.3 SOLO en el Floor,
 bounceCombine Maximum porque el dado no tiene material propio).
 
+## v2 — post-playtest (2026-07-13)
+
+Feedback del primer playtest: "no se siente la mayoría" + bug de selección en 2D.
+Auditoría: TODO estaba wireado y ejecutando — los bumps eran chicos (8–16 vs
+18–40 del Classic) sobre sprites chicos en movimiento rápido. Cambios:
+
+- **Fix click vs drag (2D)**: el arming de grab-to-reroll armaba en el press,
+  desactivaba el slot a mitad del click y el `Button.onClick` del hold nunca
+  disparaba → imposible marcar qué jugar. Ahora el press recién arma con
+  **intención de drag** (`DiceThrow2DMath.DragIntent`: moverse >
+  `GrabDragSlopPixels` o sostener > `GrabClickSeconds`); un click seco pasa al
+  slot y togglea el hold como en Classic.
+- **Empuje entre dados (2D)**: colisión círculo-círculo por pares
+  (`ResolveDiePair`/`ResolveDieStatic`/`SeparateOverlap`, testeadas). En vuelo
+  intercambian momento; los quietos reciben un empujón acotado (re-anclan su
+  reposo, clampeado a la mesa) y el choque squashea + suena por el mismo clack
+  coalescido de los bordes. Tuning en sección "2D — Colisiones entre dados";
+  no corre durante el align (los tweens son dueños ahí).
+- **Partículas**: `DiceThrowImpactBurst` (ver tabla). Gateadas por reduced motion.
+- **Exageración global**: bumps MMF ~2.2x en ambos prefabs (pickup 20–26,
+  squash −34/−26, settle 22–28, crit 38–48; 3D a la mitad), spin en vuelo 0.6
+  deg/(px/s) cap 1440, volúmenes SFX subidos (pickup 0.8, settle 1.0, nudge 0.7,
+  piso de impacto 0.4), hitstop crit 0.05→0.09s, duck 0.85→0.7, refs de impacto
+  más calientes (1200 px/s / impulso 3, mínimo 3D 0.5).
+- **`dicejuicelog on`** (DevConsole): loguea cada momento de juice en la consola
+  de Unity (`[DiceJuice] ...`, incluye players/clips faltantes) — evidencia dura
+  de qué se dispara durante un playtest.
+
 ## Reduced motion (`dicemotion off`)
 
 Apaga motion cosmético (rotación, drop-ins, scale-in/out, squash, pops) y el
@@ -251,9 +280,14 @@ físicos reales (la física es gameplay y no se apaga). Deuda anotada:
 
 1. `dicemode 2d` → Roll: los dados aparecen con drop-in sobre la mesa; agarrar
    (pop + rattle al mover rápido), flick (whoosh, giran en vuelo), rebotes
-   suenan y squashean, settle con pop+tick ascendente (cara 6 = hitstop),
-   align → los slots reales aparecen debajo. Hold eleva con wobble; confirm
-   lanza al centro con shake+thud. Grab-to-reroll con outro volando NO arma.
+   suenan, squashean y **tiran partículas en el borde**, los dados **se empujan
+   entre sí** (choque = squash + clack + partículas), settle con pop+tick
+   ascendente + polvillo (cara 6 = hitstop), align → los slots reales aparecen
+   debajo. Hold eleva con wobble; confirm lanza al centro con shake+thud.
+   Grab-to-reroll con outro volando NO arma.
+   **Selección**: click seco sobre un dado asentado togglea el hold (NO lo
+   agarra); agarrar requiere arrastrar (>14px) o mantener (>0.22s).
+   `dicejuicelog on` para ver en la consola qué momentos disparan.
 2. `dicemode 3d` → la bandeja aparece con scale-in; las colisiones CLATTEAN
    (no durante el carry), dado de canto hace tick al nudge, settle pop,
    scale-out antes de volver al HUD. Reroll por botón lockeado durante outro.
