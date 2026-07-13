@@ -8,6 +8,8 @@ using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Portraits;
+using Rollgeon.Heroes;
+using Rollgeon.Run;
 using UnityEngine;
 
 namespace Rollgeon.Combat.Handoff.Tests
@@ -275,6 +277,127 @@ namespace Rollgeon.Combat.Handoff.Tests
             public bool TryGetPortrait(Guid entityId, out Sprite portrait)
                 => Registered.TryGetValue(entityId, out portrait);
             public void Clear() => Registered.Clear();
+        }
+
+        // -------------------------------------------------------------------
+        // Tier determinístico por piso (Feature#0023)
+        // -------------------------------------------------------------------
+
+        /// <summary>Fake mínimo del run context — solo FloorIndex importa acá.</summary>
+        private sealed class FakeRunContext : IRunContextService
+        {
+            public Guid RunId { get; } = Guid.NewGuid();
+            public int FloorIndex { get; set; }
+            public ClassHeroSO SelectedHero => null;
+            public bool IsRunActive => true;
+            public void AdvanceFloor() => FloorIndex++;
+        }
+
+        /// <summary>Goblin 20 HP con T2 (HP ×2) autorado desde el piso 2.</summary>
+        private EnemyDataSO CreateTieredEnemy()
+        {
+            var enemy = CreateEnemy("Goblin", hp: 20);
+            enemy.ExtraTiers.Add(new EnemyTier
+            {
+                Label = "T2",
+                MinFloor = 2,
+                HP = new TierStat { Mode = StatMode.Multiplier, Multiplier = 2f },
+            });
+            return enemy;
+        }
+
+        [Test]
+        public void Resolve_Floor1_SpawnsTier1WithBaseHP()
+        {
+            // Arrange — pool de 1 enemigo (Boss room = 1 spawn) para determinismo.
+            var pool = CreatePool(CreateTieredEnemy());
+            var instance = CreateInstance(pool, RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes, runContext: new FakeRunContext { FloorIndex = 0 });
+
+            // Act
+            resolver.Resolve(instance, new System.Random(42));
+
+            // Assert
+            Assert.IsTrue(instance.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var state));
+            Assert.AreEqual(1, state.Tier, "piso 1 < MinFloor 2 ⇒ Tier 1");
+            Assert.AreEqual(20, state.CurrentHP);
+        }
+
+        [Test]
+        public void Resolve_Floor2_SpawnsHighestEligibleTier()
+        {
+            var pool = CreatePool(CreateTieredEnemy());
+            var instance = CreateInstance(pool, RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes, runContext: new FakeRunContext { FloorIndex = 1 });
+
+            resolver.Resolve(instance, new System.Random(42));
+
+            Assert.IsTrue(instance.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var state));
+            Assert.AreEqual(2, state.Tier, "piso 2 ⇒ T2 determinístico");
+            Assert.AreEqual(40, state.CurrentHP, "HP ×2 del T2");
+        }
+
+        [Test]
+        public void Resolve_NoRunContext_DefaultsToFloor1()
+        {
+            var pool = CreatePool(CreateTieredEnemy());
+            var instance = CreateInstance(pool, RoomType.Boss);
+
+            // _resolver del SetUp: sin IRunContextService (tests / tutorial).
+            _resolver.Resolve(instance, new System.Random(42));
+
+            Assert.IsTrue(instance.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var state));
+            Assert.AreEqual(1, state.Tier, "sin run context ⇒ piso 1 ⇒ Tier 1");
+        }
+
+        [Test]
+        public void Resolve_FloorAdvancesMidRun_ReadsFloorAtSpawnTime()
+        {
+            // El resolver vive toda la run — el piso debe leerse por spawn, no cachearse.
+            var runContext = new FakeRunContext { FloorIndex = 0 };
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes, runContext: runContext);
+            var pool = CreatePool(CreateTieredEnemy());
+
+            var roomFloor1 = CreateInstance(pool, RoomType.Boss);
+            resolver.Resolve(roomFloor1, new System.Random(42));
+
+            runContext.AdvanceFloor();
+            var roomFloor2 = CreateInstance(pool, RoomType.Boss);
+            resolver.Resolve(roomFloor2, new System.Random(43));
+
+            Assert.IsTrue(roomFloor1.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var s1));
+            Assert.IsTrue(roomFloor2.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var s2));
+            Assert.AreEqual(1, s1.Tier);
+            Assert.AreEqual(2, s2.Tier, "tras AdvanceFloor el mismo resolver spawnea T2");
+        }
+
+        [Test]
+        public void Resolve_Reentry_KeepsPersistedTierRegardlessOfFloor()
+        {
+            // Re-entry restaura el tier guardado — el piso actual no lo re-resuelve.
+            var pool = CreatePool(CreateTieredEnemy());
+            var instance = CreateInstance(pool);
+            instance.ObjectStates.Set("enemy_0", new EnemySpawnState
+            {
+                SpawnPointId = "enemy_0",
+                EnemyDataSOId = "enemy.goblin",
+                CurrentHP = 33,
+                IsDead = false,
+                SpawnPointIndex = 0,
+                Tier = 2,
+            });
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes, runContext: new FakeRunContext { FloorIndex = 0 });
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(1, result.Count);
+            var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(result[0].id);
+            Assert.IsNotNull(health);
+            Assert.AreEqual(33, health.Value, "re-entry respeta el HP del state (max 40 del T2 persistido)");
         }
 
         [Test]

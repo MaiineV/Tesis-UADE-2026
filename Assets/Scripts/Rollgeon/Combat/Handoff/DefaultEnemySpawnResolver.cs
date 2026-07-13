@@ -13,6 +13,7 @@ using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
+using Rollgeon.Run;
 
 namespace Rollgeon.Combat.Handoff
 {
@@ -31,7 +32,7 @@ namespace Rollgeon.Combat.Handoff
         private const int CombatDefaultSpawnCount = 2;
         private const int BossDefaultSpawnCount = 1;
 
-        /// <summary>Un enemigo planificado para spawn + su tier rolleado (#158).</summary>
+        /// <summary>Un enemigo planificado para spawn + su tier resuelto por piso (#158).</summary>
         private readonly struct PlannedSpawn
         {
             public readonly EnemyDataSO Enemy;
@@ -46,6 +47,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly IEntityVisualService _visuals;
         private readonly EnemyGoldDropService _goldDrops;
         private readonly IEntityPortraitResolver _portraits;
+        private readonly IRunContextService _runContext;
 
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
@@ -54,7 +56,8 @@ namespace Rollgeon.Combat.Handoff
             IGridManager grid = null,
             IEntityVisualService visuals = null,
             EnemyGoldDropService goldDrops = null,
-            IEntityPortraitResolver portraits = null)
+            IEntityPortraitResolver portraits = null,
+            IRunContextService runContext = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
@@ -63,7 +66,14 @@ namespace Rollgeon.Combat.Handoff
             _visuals = visuals;
             _goldDrops = goldDrops;
             _portraits = portraits;
+            _runContext = runContext;
         }
+
+        /// <summary>
+        /// Piso actual (1-based) leído en cada spawn — el resolver vive toda la run y
+        /// el piso avanza. Sin servicio (tests / tutorial sin progresión) ⇒ piso 1.
+        /// </summary>
+        private int CurrentFloorNumber => _runContext != null ? _runContext.FloorIndex + 1 : 1;
 
         public List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng)
         {
@@ -142,11 +152,13 @@ namespace Rollgeon.Combat.Handoff
 
         private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
         {
+            int floor = CurrentFloorNumber;
+
             // Salas autoradas (tutorial): el setup del SO le gana a los
             // SpawnPointConfig del prefab compartido.
             if (room.ForcePossibleSetups)
             {
-                var forced = BuildPlanFromSetups(room, rng);
+                var forced = BuildPlanFromSetups(room, rng, floor);
                 if (forced != null) return forced;
             }
 
@@ -179,8 +191,7 @@ namespace Rollgeon.Combat.Handoff
 
                         if (enemy != null)
                         {
-                            int tier = EnemyTierRoll.Roll(config.GetTierWeightsForSet(setIndex), enemy, rng);
-                            plan.Add(new PlannedSpawn(enemy, tier));
+                            plan.Add(new PlannedSpawn(enemy, enemy.ResolveTierForFloor(floor)));
                         }
                         else if (room.EnemyPool != null)
                         {
@@ -188,7 +199,7 @@ namespace Rollgeon.Combat.Handoff
                             if (idxs.Count > 0 && idxs[0] >= 0)
                             {
                                 var e = room.EnemyPool.Entries[idxs[0]].Item;
-                                int tier = EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idxs[0]), e, rng);
+                                int tier = e != null ? e.ResolveTierForFloor(floor) : 1;
                                 plan.Add(new PlannedSpawn(e, tier));
                             }
                         }
@@ -198,7 +209,7 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // Legacy path: PossibleSetups then EnemyPool.
-            var fromSetups = BuildPlanFromSetups(room, rng);
+            var fromSetups = BuildPlanFromSetups(room, rng, floor);
             if (fromSetups != null) return fromSetups;
 
             int defaultCount = room.Type == RoomType.Boss
@@ -212,7 +223,7 @@ namespace Rollgeon.Combat.Handoff
             foreach (var idx in rolledIndices)
             {
                 var e = idx >= 0 ? room.EnemyPool.Entries[idx].Item : null;
-                int tier = e != null ? EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idx), e, rng) : 1;
+                int tier = e != null ? e.ResolveTierForFloor(floor) : 1;
                 list.Add(new PlannedSpawn(e, tier));
             }
             return list;
@@ -222,7 +233,7 @@ namespace Rollgeon.Combat.Handoff
         /// Plan desde <see cref="RoomSO.PossibleSetups"/> (uno al azar). <c>null</c>
         /// si no hay setups usables — el caller sigue con su fallback.
         /// </summary>
-        private static List<PlannedSpawn> BuildPlanFromSetups(RoomSO room, System.Random rng)
+        private static List<PlannedSpawn> BuildPlanFromSetups(RoomSO room, System.Random rng, int floor)
         {
             if (room.PossibleSetups == null || room.PossibleSetups.Count == 0) return null;
 
@@ -232,7 +243,7 @@ namespace Rollgeon.Combat.Handoff
             var plan = new List<PlannedSpawn>(setup.Slots.Count);
             foreach (var slot in setup.Slots)
             {
-                int tier = EnemyTierRoll.Roll(slot.TierWeights, slot.Enemy, rng);
+                int tier = slot.Enemy != null ? slot.Enemy.ResolveTierForFloor(floor) : 1;
                 plan.Add(new PlannedSpawn(slot.Enemy, tier));
             }
             return plan;

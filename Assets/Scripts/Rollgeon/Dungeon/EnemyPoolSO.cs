@@ -9,8 +9,8 @@ namespace Rollgeon.Dungeon
     {
         public List<WeightedEntry<EnemyDataSO>> Entries = new();
 
-        [Tooltip("Distribucion de tier opcional por entry, alineada por indice con Entries (#158). " +
-                 "Vacio ⇒ Tier 1.")]
+        [Tooltip("RETIRED (Feature#0023): el tier ahora es deterministico por piso " +
+                 "(EnemyTier.MinFloor). Estos pesos ya no se consultan en spawn.")]
         public List<EnemyTierWeights> EntryTierWeights = new();
 
         /// <summary>Pesos de tier de un entry, o <c>null</c> si no hay (⇒ Tier 1).</summary>
