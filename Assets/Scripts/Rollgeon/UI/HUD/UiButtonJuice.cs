@@ -47,11 +47,16 @@ namespace Rollgeon.UI.HUD
             if (_availablePulsePlayer == null || _button == null) return;
             bool now = _button.interactable;
             if (now && !_lastInteractable)
-            {
-                if (_availablePulsePlayer.IsPlaying) _availablePulsePlayer.StopFeedbacks();
-                _availablePulsePlayer.PlayFeedbacks();
-            }
+                MmfJuice.Replay(_availablePulsePlayer);
             _lastInteractable = now;
+        }
+
+        private void OnDisable()
+        {
+            // Botón escondido a mitad del squash del press: devolver los springs a su
+            // reposo o queda achatado permanente (ver MmfJuice).
+            MmfJuice.Rest(_pressPlayer);
+            MmfJuice.Rest(_availablePulsePlayer);
         }
 
         private void OnDestroy()
@@ -61,11 +66,7 @@ namespace Rollgeon.UI.HUD
 
         private void HandleClick()
         {
-            if (_pressPlayer != null)
-            {
-                if (_pressPlayer.IsPlaying) _pressPlayer.StopFeedbacks();
-                _pressPlayer.PlayFeedbacks();
-            }
+            MmfJuice.Replay(_pressPlayer);
             if (_clickClip != null
                 && ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
             {

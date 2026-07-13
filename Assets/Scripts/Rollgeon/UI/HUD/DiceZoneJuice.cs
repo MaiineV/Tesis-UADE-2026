@@ -172,6 +172,12 @@ namespace Rollgeon.UI.HUD
             _slotsHooked = false;
             _lastComboId = string.Empty;
             SetHighlightVisible(false);
+            // Zona escondida a mitad de un shake: sin esto la RollArea queda corrida
+            // permanente (los springs re-basan su reposo al frenar — ver MmfJuice).
+            MmfJuice.Rest(_throwPreShakePlayer);
+            MmfJuice.Rest(_outroLandPlayer);
+            MmfJuice.Rest(_comboFlourishPlayer);
+            MmfJuice.Rest(_rollShakePlayer);
         }
 
         // ---- Handlers ----------------------------------------------------------
@@ -325,12 +331,7 @@ namespace Rollgeon.UI.HUD
 
         // ---- Helpers -----------------------------------------------------------
 
-        private static void Play(MMF_Player player)
-        {
-            if (player == null) return;
-            if (player.IsPlaying) player.StopFeedbacks();
-            player.PlayFeedbacks();
-        }
+        private static void Play(MMF_Player player) => MmfJuice.Replay(player);
 
         private static void PlaySfx(AudioClip clip, float volume = 1f, float pitch = 1f, bool isImportant = false)
         {

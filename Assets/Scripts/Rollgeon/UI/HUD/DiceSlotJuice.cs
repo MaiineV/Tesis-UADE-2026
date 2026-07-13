@@ -114,8 +114,8 @@ namespace Rollgeon.UI.HUD
                 _animator.DieDiscarded -= HandleDiscarded;
                 _animator = null;
             }
-            // ClearAll apaga el slot con feedbacks potencialmente a medias — los
-            // springs restauran sus valores iniciales al frenar.
+            // ClearAll apaga el slot con feedbacks potencialmente a medias — hay que
+            // devolver los springs a su reposo explícitamente (ver MmfJuice).
             StopAll();
             StopGlow();
         }
@@ -197,30 +197,18 @@ namespace Rollgeon.UI.HUD
         }
 
         private static void Play(MMF_Player player, float intensity = 1f)
-        {
-            if (player == null) return;
-            // Replay limpio: un feedback a medias (lock spameado) se corta antes de
-            // re-disparar, si no los springs acumulan.
-            if (player.IsPlaying) player.StopFeedbacks();
-            if (intensity != 1f) player.PlayFeedbacks(player.transform.position, intensity);
-            else player.PlayFeedbacks();
-        }
+            => MmfJuice.Replay(player, intensity);
 
         private void StopAll()
         {
-            Stop(_spinStartPlayer);
-            Stop(_revealPlayer);
-            Stop(_critRevealPlayer);
-            Stop(_lockPlayer);
-            Stop(_unlockPlayer);
-            Stop(_throwPlayer);
-            Stop(_discardPlayer);
-            Stop(_keptPulsePlayer);
-        }
-
-        private static void Stop(MMF_Player player)
-        {
-            if (player != null && player.IsPlaying) player.StopFeedbacks();
+            MmfJuice.Rest(_spinStartPlayer);
+            MmfJuice.Rest(_revealPlayer);
+            MmfJuice.Rest(_critRevealPlayer);
+            MmfJuice.Rest(_lockPlayer);
+            MmfJuice.Rest(_unlockPlayer);
+            MmfJuice.Rest(_throwPlayer);
+            MmfJuice.Rest(_discardPlayer);
+            MmfJuice.Rest(_keptPulsePlayer);
         }
     }
 }
