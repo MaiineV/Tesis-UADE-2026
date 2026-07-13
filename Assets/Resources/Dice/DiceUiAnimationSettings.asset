@@ -19,16 +19,23 @@ MonoBehaviour:
   SpinTurns: 2
   SpinEase: 9
   PreviewFaceMax: 6
+  SpinJumpHeight: 14
   RaiseOffsetY: 18
   RaiseSeconds: 0.12
   LowerSeconds: 0.1
-  RaiseEase: 9
+  RaiseEase: 27
+  HoldBobAmplitude: 3
+  HoldBobSeconds: 1.8
   ThrowSeconds: 0.35
   ThrowStaggerSeconds: 0.05
   ThrowEndScale: 0.6
   ThrowFadePortion: 0.5
   ThrowEase: 8
+  ThrowArcHeight: 40
+  ThrowSpinDegrees: 180
   DiscardSeconds: 0.25
   DiscardEndScale: 0.7
+  DiscardFallDistance: 30
+  DiscardSpinDegrees: -35
   DiscardEase: 5
   OutroHoldSeconds: 0.05
