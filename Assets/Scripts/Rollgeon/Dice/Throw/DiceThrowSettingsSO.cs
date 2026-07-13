@@ -52,6 +52,25 @@ namespace Rollgeon.Dice.Throw
         [Tooltip("Failsafe: un dado que siga volando pasado esto se asienta a la fuerza.")]
         public float MaxFlightSeconds = 5f;
 
+        [Header("2D — Juice (motion cosmético — gateado por dicemotion)")]
+        [Tooltip("Grados de giro del sprite por px/s de velocidad del flick. 0 = sin rotación en vuelo.")]
+        public float FlightSpinDegreesPerUnit = 0.35f;
+
+        [Tooltip("Tope de velocidad angular del sprite en vuelo (grados/s) para que no estrobe.")]
+        public float FlightSpinMaxDegreesPerSecond = 1080f;
+
+        [Tooltip("Decay exponencial por segundo de la rotación en vuelo (más alto = frena antes).")]
+        public float FlightSpinDecay = 1.4f;
+
+        [Tooltip("Tween de enderezado (rotación → 0) al asentarse. <= 0 = instantáneo.")]
+        public float SettleUprightSeconds = 0.12f;
+
+        [Tooltip("Drop-in al spawnear la sesión: scale 0→1 por dado. <= 0 = sin drop-in.")]
+        public float SpawnDropSeconds = 0.18f;
+
+        [Tooltip("Stagger entre dados del drop-in.")]
+        public float SpawnDropStagger = 0.04f;
+
         [Header("2D — Tweens de retorno/alineado")]
         [Tooltip("Duración del tween de vuelta al cancelar el grab. <= 0 = instantáneo (tests).")]
         public float ReturnSeconds = 0.2f;

@@ -76,8 +76,11 @@ namespace Rollgeon.Dice.Throw
             public float SettleHeld;
             public float FlightTime;
             public float FaceCycleAt;
+            public float AngularVel;   // rotación cosmética del sprite en vuelo (grados/s)
             public bool Returning;     // tween de vuelta en curso — no simular
             public Tween Tween;
+            public Tween RotTween;     // enderezado al settle
+            public Tween ScaleTween;   // drop-in de spawn
         }
 
         private IDiceThrowService _service;
@@ -99,6 +102,8 @@ namespace Rollgeon.Dice.Throw
         private bool _lmbWasPressed;
         private bool _aligning;
         private int _settleOrder;
+
+        private static bool ReducedMotion => Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion;
 
         // ---- Lifecycle -------------------------------------------------------
 
@@ -235,7 +240,17 @@ namespace Rollgeon.Dice.Throw
                 else
                 {
                     var pos = spotCenter + new Vector2((spot - (total - 1) * 0.5f) * spacing, 0f);
-                    _dice[i] = CreateDie(i, pos);
+                    var die = CreateDie(i, pos);
+                    _dice[i] = die;
+
+                    // Drop-in staggered — solo dados nuevos (los ghosts adoptados del
+                    // arming ya están visibles y a escala).
+                    if (!ReducedMotion && _cfg.SpawnDropSeconds > 0f)
+                    {
+                        die.View.Rect.localScale = Vector3.zero;
+                        die.ScaleTween = Tween.Scale(die.View.Rect, 1f, _cfg.SpawnDropSeconds,
+                            Ease.OutBack, startDelay: spot * _cfg.SpawnDropStagger);
+                    }
                 }
                 spot++;
             }
@@ -251,6 +266,7 @@ namespace Rollgeon.Dice.Throw
                 {
                     if (!_dice.TryGetValue(idx, out var die)) continue;
                     die.Vel = _transferVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
+                    die.AngularVel = FlickSpin(_transferVel);
                     die.FlightTime = 0f;
                     die.SettleHeld = 0f;
                     thrown++;
@@ -315,6 +331,11 @@ namespace Rollgeon.Dice.Throw
                     if ((die.View.Rect.anchoredPosition - _cursorLocal).sqrMagnitude > r2) continue;
                     if (!_service.TryGrab(die.Index)) continue;
                     if (die.Tween.isAlive) die.Tween.Stop();
+                    if (die.RotTween.isAlive) die.RotTween.Stop();
+                    if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
+                    // Agarrar endereza y normaliza (por si venía de un drop-in/upright a medias).
+                    die.View.Rect.localRotation = Quaternion.identity;
+                    die.View.Rect.localScale = Vector3.one;
                     die.Returning = false;
                     die.Vel = Vector2.zero;
                     DieGrabbed?.Invoke(die.Index);
@@ -348,6 +369,7 @@ namespace Rollgeon.Dice.Throw
             {
                 if (!_dice.TryGetValue(idx, out var die)) continue;
                 die.Vel = _mouseVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
+                die.AngularVel = FlickSpin(_mouseVel);
                 die.FlightTime = 0f;
                 die.SettleHeld = 0f;
                 thrown++;
@@ -402,7 +424,19 @@ namespace Rollgeon.Dice.Throw
                         die.Vel = vel;
                         die.View.Rect.anchoredPosition = pos;
                         die.FlightTime += dt;
-                        if (bounced) DieBounced?.Invoke(die.Index, preBounceSpeed);
+                        if (bounced)
+                        {
+                            DieBounced?.Invoke(die.Index, preBounceSpeed);
+                            die.AngularVel *= _cfg.Restitution; // el impacto come spin
+                        }
+
+                        // Rotación cosmética del sprite mientras vuela.
+                        if (die.AngularVel != 0f)
+                        {
+                            die.View.Rect.Rotate(0f, 0f, die.AngularVel * dt);
+                            die.AngularVel = DiceThrowFeelMath.SpinDecayStep(
+                                die.AngularVel, _cfg.FlightSpinDecay, dt);
+                        }
 
                         // Caras "rodando" mientras vuela — puro teatro.
                         if (Time.unscaledTime >= die.FaceCycleAt)
@@ -416,7 +450,9 @@ namespace Rollgeon.Dice.Throw
                         if (settled || die.FlightTime >= _cfg.MaxFlightSeconds)
                         {
                             die.Vel = Vector2.zero;
+                            die.AngularVel = 0f;
                             die.RestPos = die.View.Rect.anchoredPosition;
+                            SettleUpright(die);
                             int face = _service.PeekPendingFace(die.Index);
                             die.View.ShowFace(face);
                             _service.NotifyDieSettled(die.Index);
@@ -664,6 +700,8 @@ namespace Rollgeon.Dice.Throw
             foreach (var die in _dice.Values)
             {
                 if (die.Tween.isAlive) die.Tween.Stop();
+                if (die.RotTween.isAlive) die.RotTween.Stop();
+                if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
                 if (die.View != null) Destroy(die.View.gameObject);
             }
             _dice.Clear();
@@ -712,6 +750,29 @@ namespace Rollgeon.Dice.Throw
             if (anchor == null || _layer == null) return Vector2.zero;
             var world = anchor.TransformPoint(Vector3.zero);
             return (Vector2)_layer.InverseTransformPoint(world);
+        }
+
+        // Velocidad angular cosmética que el flick imprime al sprite (0 con reduced motion).
+        private float FlickSpin(Vector2 flickVel)
+        {
+            if (ReducedMotion) return 0f;
+            return DiceThrowFeelMath.FlickAngularVelocity(
+                       flickVel, _cfg.FlightSpinDegreesPerUnit, _cfg.FlightSpinMaxDegreesPerSecond)
+                   * Random.Range(0.8f, 1.2f);
+        }
+
+        // Endereza el ghost al asentarse — el "clac" visual, y deja el align invisible
+        // (el slot real debajo está siempre a 0°).
+        private void SettleUpright(DieVisual die)
+        {
+            if (die.RotTween.isAlive) die.RotTween.Stop();
+            if (_cfg.SettleUprightSeconds <= 0f || ReducedMotion)
+            {
+                die.View.Rect.localRotation = Quaternion.identity;
+                return;
+            }
+            die.RotTween = Tween.LocalRotation(die.View.Rect, Quaternion.identity,
+                _cfg.SettleUprightSeconds, Ease.OutBack);
         }
 
         // Offsets en anillo para que los dados agarrados orbiten el cursor sin apilarse.
