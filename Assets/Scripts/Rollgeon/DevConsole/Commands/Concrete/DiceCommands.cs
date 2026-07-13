@@ -168,6 +168,40 @@ namespace Rollgeon.DevConsole.Commands
         };
     }
 
+    public sealed class DiceMotionCommand : DevCommandBase
+    {
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("on|off", ArgKind.Choice, optional: true),
+        };
+
+        public override string Name => "dicemotion";
+        public override string Description =>
+            "Animaciones del panel de dados Classic: on = animado, off = reduced motion " +
+            "(instantáneo, accesibilidad). Sin args muestra el estado.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
+
+        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
+        {
+            if (args.Count == 0)
+                return CommandResult.Ok(Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion
+                    ? "Animaciones de dados: OFF (reduced motion)."
+                    : "Animaciones de dados: ON.");
+
+            switch (args[0].ToLowerInvariant())
+            {
+                case "on":
+                    Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion = false;
+                    return CommandResult.Ok("Animaciones de dados: ON.");
+                case "off":
+                    Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion = true;
+                    return CommandResult.Ok("Animaciones de dados: OFF (reduced motion).");
+                default:
+                    return CommandResult.Fail("Usá 'dicemotion on|off'.");
+            }
+        }
+    }
+
     public sealed class SetBagCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args =
