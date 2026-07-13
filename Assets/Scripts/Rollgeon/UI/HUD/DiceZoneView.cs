@@ -8,6 +8,7 @@ using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD.DiceAnim;
 using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -43,6 +44,15 @@ namespace Rollgeon.UI.HUD
         private DiceSlotView[] _resolvedSlots;
         private int[] _currentFaces;
         private bool[] _heldStates;
+        private DiceZoneAnimator _animator;
+
+        /// <summary>True mientras corre el spin del roll o el outro del confirm (modo
+        /// Classic). Las views de botones lo usan para lockear Roll/Confirm.</summary>
+        public bool IsDiceAnimating => _animator != null && (_animator.IsSpinning || _animator.IsOutroPlaying);
+
+        /// <summary>Se dispara cuando arranca/termina una animación de dados — las
+        /// views de botones re-gatean acá (espejo de <see cref="DiceZoneAnimator.AnimationStateChanged"/>).</summary>
+        public event Action DiceAnimationStateChanged;
 
         // ---- Public anchors (usados por T97c downstream si necesitan posicionar GOs) ---
 
@@ -133,6 +143,14 @@ namespace Rollgeon.UI.HUD
                 _resolvedSlots[i].OnToggled.AddListener(() => ToggleHold(captured));
             }
 
+            // Animación legacy (Classic). Vive como componente hermano agregado por
+            // código: sin cirugía de prefab, y si no está el servicio de throw o el
+            // modo no es Classic, todos sus TryBegin* devuelven false (path instantáneo).
+            _animator = GetComponent<DiceZoneAnimator>();
+            if (_animator == null) _animator = gameObject.AddComponent<DiceZoneAnimator>();
+            _animator.Bind(_resolvedSlots, _rollArea);
+            _animator.AnimationStateChanged += RaiseDiceAnimationStateChanged;
+
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
@@ -145,6 +163,11 @@ namespace Rollgeon.UI.HUD
         public void Unbind()
         {
             if (!_bound) return;
+            if (_animator != null)
+            {
+                _animator.AnimationStateChanged -= RaiseDiceAnimationStateChanged;
+                _animator.Unbind();
+            }
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
@@ -166,14 +189,30 @@ namespace Rollgeon.UI.HUD
             if (args[0] is not Guid guid || guid != _playerGuid) return;
             var faces = (IReadOnlyList<int>)args[1];
 
-            for (int i = 0; i < _resolvedSlots?.Length; i++)
+            // Un roll nuevo puede llegar con el outro del confirm anterior todavía en
+            // el aire (chain phases). Completar el teardown diferido ANTES de escribir
+            // el estado nuevo — su ClearAll pisaría las caras recién asignadas.
+            _animator?.CancelOutroAndComplete();
+
+            int count = _resolvedSlots?.Length ?? 0;
+            var willReveal = new bool[count];
+            for (int i = 0; i < count; i++)
             {
                 if (_heldStates != null && i < _heldStates.Length && _heldStates[i]) continue;
+                willReveal[i] = true;
                 _currentFaces[i] = i < faces.Count ? faces[i] : 0;
                 if (_resolvedSlots[i] != null) _resolvedSlots[i].gameObject.SetActive(true);
-                _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
                 _resolvedSlots[i]?.SetHeld(false);
             }
+
+            // Path animado (Classic): el spin cicla caras random y revela al final —
+            // ShowFace y el refresh de combo/bloqueos corren recién en el reveal, así
+            // la preview de combo no spoilea el resultado durante el giro.
+            if (_animator != null && _animator.TryBeginSpin(willReveal, _currentFaces, RefreshDiceBlock))
+                return;
+
+            for (int i = 0; i < count; i++)
+                if (willReveal[i]) _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
             RefreshDiceBlock();
         }
 
@@ -195,7 +234,12 @@ namespace Rollgeon.UI.HUD
             {
                 bool blocked = db != null && db.IsBlocked(i);
                 if (blocked && _heldStates != null && i < _heldStates.Length)
+                {
                     _heldStates[i] = false; // un dado bloqueado no puede quedar holdeado
+                    // El unhold forzado no pasa por SetHeld/ToggleHold — bajar el
+                    // raise explícitamente o el dado queda flotando bloqueado.
+                    _animator?.SetRaised(i, false);
+                }
                 _resolvedSlots[i]?.SetBlocked(blocked);
             }
             PropagateHoldsToActionRoll();
@@ -215,8 +259,23 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1) return;
             if (args[0] is not Guid guid || guid != _playerGuid) return;
+            // Path animado (Classic): los holdeados vuelan al centro de la mesa y los
+            // demás se descartan; el ClearAll corre diferido al terminar el outro.
+            if (_animator != null && _animator.TryBeginOutro(_heldStates, BuildActiveMask(), ClearAll))
+                return;
             ClearAll();
         }
+
+        private bool[] BuildActiveMask()
+        {
+            int count = _resolvedSlots?.Length ?? 0;
+            var active = new bool[count];
+            for (int i = 0; i < count; i++)
+                active[i] = _resolvedSlots[i] != null && _resolvedSlots[i].gameObject.activeSelf;
+            return active;
+        }
+
+        private void RaiseDiceAnimationStateChanged() => DiceAnimationStateChanged?.Invoke();
 
         // ---- Clear / reset --------------------------------------------------
 
@@ -227,6 +286,9 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void ClearAll()
         {
+            // Aborta cualquier animación en curso sin ejecutar callbacks diferidos
+            // (si ClearAll llegó como completion del outro, esto ya es no-op).
+            _animator?.ResetAll();
             if (_currentFaces != null)
                 Array.Clear(_currentFaces, 0, _currentFaces.Length);
             if (_heldStates != null)
@@ -294,8 +356,13 @@ namespace Rollgeon.UI.HUD
                 && db != null && db.IsBlocked(i))
                 return;
 
+            // Un dado que todavía gira no se holdea — el botón ya está deshabilitado
+            // durante el spin, esto cubre invocaciones programáticas (hotkeys, tests).
+            if (_animator != null && _animator.IsSlotSpinning(i)) return;
+
             _heldStates[i] = !_heldStates[i];
             _resolvedSlots[i]?.SetHeld(_heldStates[i]);
+            _animator?.SetRaised(i, _heldStates[i]);
             PropagateHoldsToActionRoll();
             RunComboDetection();
         }

@@ -57,6 +57,15 @@ namespace Rollgeon.Audio
         void PauseMusic();
         void ResumeMusic();
 
+        /// <summary>
+        /// Atenúa temporalmente la música a <paramref name="factor"/> × el volumen
+        /// del canal (duck) — p.e. durante un momento de gameplay que merece foco.
+        /// <c>factor = 1</c> restaura. Implementación default no-op para stubs.
+        /// </summary>
+        void DuckMusic(float factor, float fadeSeconds = 0.25f)
+        {
+        }
+
         // ====================================================================
         // Volume
         // ====================================================================

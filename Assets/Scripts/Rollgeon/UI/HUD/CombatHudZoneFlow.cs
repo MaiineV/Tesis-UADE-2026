@@ -1,5 +1,6 @@
 using Patterns;
 using PrimeTween;
+using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -56,6 +57,11 @@ namespace Rollgeon.UI.HUD
 
         private EventManager.EventReceiver _onFlowStart;
         private EventManager.EventReceiver _onFlowEnd;
+        private EventManager.EventReceiver _onFlowEndForced;
+
+        // El confirm en modo Classic difiere este exit hasta que el outro de dados
+        // termina (DiceOutroGate) — los chips no deben volver mientras los dados vuelan.
+        private bool _exitDeferred;
 
         public bool IsRolling => _rolling;
 
@@ -68,16 +74,21 @@ namespace Rollgeon.UI.HUD
                 _chipsGroup = _buttonsView.GetComponent<CanvasGroup>();
 
             _onFlowStart = _ => EnterRolling();
-            _onFlowEnd = _ => ExitRolling();
+            _onFlowEnd = _ => ExitRolling(force: false);
+            // Fin de combate / turno nuevo: restaurar SIEMPRE, aunque haya outro en el aire.
+            _onFlowEndForced = _ => ExitRolling(force: true);
             EventManager.Subscribe(EventName.OnChainStarted, _onFlowStart);
             EventManager.Subscribe(EventName.OnDiceRolled, _onFlowStart);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onFlowEnd);
-            EventManager.Subscribe(EventName.OnCombatEnd, _onFlowEnd);
-            EventManager.Subscribe(EventName.OnTurnStarted, _onFlowEnd);
+            EventManager.Subscribe(EventName.OnCombatEnd, _onFlowEndForced);
+            EventManager.Subscribe(EventName.OnTurnStarted, _onFlowEndForced);
+            DiceOutroGate.Changed += HandleOutroGateChanged;
         }
 
         private void OnDisable()
         {
+            DiceOutroGate.Changed -= HandleOutroGateChanged;
+            _exitDeferred = false;
             if (_onFlowStart != null)
             {
                 EventManager.UnSubscribe(EventName.OnChainStarted, _onFlowStart);
@@ -87,9 +98,13 @@ namespace Rollgeon.UI.HUD
             if (_onFlowEnd != null)
             {
                 EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onFlowEnd);
-                EventManager.UnSubscribe(EventName.OnCombatEnd, _onFlowEnd);
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _onFlowEnd);
                 _onFlowEnd = null;
+            }
+            if (_onFlowEndForced != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatEnd, _onFlowEndForced);
+                EventManager.UnSubscribe(EventName.OnTurnStarted, _onFlowEndForced);
+                _onFlowEndForced = null;
             }
 
             // Cierre del HUD a mitad de un roll: snap-restore inmediato para no dejar
@@ -107,6 +122,9 @@ namespace Rollgeon.UI.HUD
 
         private void EnterRolling()
         {
+            // Un roll nuevo puede llegar con el exit del confirm anterior todavía
+            // diferido (chain phases): ese exit ya no corresponde — seguimos rolling.
+            _exitDeferred = false;
             // Idempotente: OnChainStarted y el primer OnDiceRolled llegan seguidos.
             if (_rolling) return;
             _rolling = true;
@@ -115,13 +133,27 @@ namespace Rollgeon.UI.HUD
             SetChipsVisible(false, instant: _fadeSeconds <= 0f);
         }
 
-        private void ExitRolling()
+        private void ExitRolling(bool force)
         {
             if (!_rolling) return;
+            if (!force && DiceOutroGate.OutroPending)
+            {
+                // Los dados siguen volando al centro — los chips vuelven cuando el
+                // gate se libere (HandleOutroGateChanged).
+                _exitDeferred = true;
+                return;
+            }
+            _exitDeferred = false;
             _rolling = false;
 
             RestoreChip(instant: _chipMoveSeconds <= 0f);
             SetChipsVisible(true, instant: _fadeSeconds <= 0f);
+        }
+
+        private void HandleOutroGateChanged()
+        {
+            if (!_exitDeferred || DiceOutroGate.OutroPending) return;
+            ExitRolling(force: true);
         }
 
         private void SetChipsVisible(bool visible, bool instant)

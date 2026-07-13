@@ -1,6 +1,7 @@
 using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Phase;
+using Rollgeon.UI.HUD.DiceAnim;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -64,6 +65,10 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
             EventManager.Subscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
 
+            // El outro del confirm (modo Classic) corre DESPUÉS de OnBehaviorExecuted:
+            // la zona tiene que quedar visible hasta que los dados terminen de volar.
+            DiceOutroGate.Changed += Refresh;
+
             // El IActionRollService es Run-scoped (registered cuando arranca el Run).
             // Si OnEnable corre antes del bootstrap, _actionRoll queda null. Update()
             // retrieva hasta conseguirlo y se subscribe ahi.
@@ -123,6 +128,7 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
                 _onDiceFlowEnd = null;
             }
+            DiceOutroGate.Changed -= Refresh;
             _combatDiceFlowActive = false;
         }
 
@@ -135,8 +141,10 @@ namespace Rollgeon.UI.HUD
 
             // CNF-007 — Combat: visible solo durante el flujo de dados (la zona de chips
             // y la de dados se alternan). Action roll activo (Heal/ForceDoor) también
-            // muestra la zona, en cualquier fase.
-            ApplyVisible((inCombat && _combatDiceFlowActive) || actionRollActive);
+            // muestra la zona, en cualquier fase. Un outro pendiente (dados volando al
+            // centro tras el confirm) mantiene la zona visible hasta que termine.
+            ApplyVisible((inCombat && _combatDiceFlowActive) || actionRollActive
+                         || DiceOutroGate.OutroPending);
         }
 
         private void ApplyVisible(bool visible)

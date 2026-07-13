@@ -1,0 +1,68 @@
+using MoreMountains.Feedbacks;
+using Sirenix.OdinInspector;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace Rollgeon.UI.HUD
+{
+    /// <summary>
+    /// Hover feedback en un slot de dado lockeable: comunica "esto es clickeable"
+    /// antes del primer click. Gateado por el <see cref="Button"/> del slot — un dado
+    /// girando, bloqueado por boss o sin botón no reacciona. Players opcionales
+    /// (scale sutil del root: el hover solo ocurre con el dado interactable, es decir
+    /// fuera del spin/outro donde la motion toca el root).
+    /// </summary>
+    [AddComponentMenu("Rollgeon/UI/HUD/Dice Slot Hover Juice")]
+    public sealed class DiceSlotHoverJuice : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        [SerializeField, Optional, Tooltip("Scale-up sutil al entrar (≈1.05 en 0.08s).")]
+        private MMF_Player _hoverEnterPlayer;
+
+        [SerializeField, Optional, Tooltip("Vuelta a reposo al salir.")]
+        private MMF_Player _hoverExitPlayer;
+
+        private Button _button;
+        private bool _hovering;
+
+        private void Awake()
+        {
+            _button = GetComponent<Button>();
+        }
+
+        private void OnEnable()
+        {
+            MmfJuice.CaptureRestPose(_hoverEnterPlayer);
+            MmfJuice.CaptureRestPose(_hoverExitPlayer);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (_button == null || !_button.interactable) return;
+            _hovering = true;
+            Play(_hoverExitPlayer, stopOnly: true);
+            Play(_hoverEnterPlayer);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (!_hovering) return;
+            _hovering = false;
+            Play(_hoverEnterPlayer, stopOnly: true);
+            Play(_hoverExitPlayer);
+        }
+
+        private void OnDisable()
+        {
+            _hovering = false;
+            Play(_hoverEnterPlayer, stopOnly: true);
+            Play(_hoverExitPlayer, stopOnly: true);
+        }
+
+        private static void Play(MMF_Player player, bool stopOnly = false)
+        {
+            if (stopOnly) MmfJuice.Rest(player);
+            else MmfJuice.Replay(player);
+        }
+    }
+}

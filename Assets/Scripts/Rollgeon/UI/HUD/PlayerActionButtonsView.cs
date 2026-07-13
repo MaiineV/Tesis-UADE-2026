@@ -172,6 +172,9 @@ namespace Rollgeon.UI.HUD
             HookHotkeys(true);
 
             if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
+            // Spin/outro de dados en curso lockea el Confirm — re-gateamos en cada
+            // cambio de estado de animación (el hotkey ya respeta interactable).
+            if (_diceZone != null) _diceZone.DiceAnimationStateChanged += RecomputeButtonStates;
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
             {
@@ -242,6 +245,8 @@ namespace Rollgeon.UI.HUD
             TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(false);
+
+            if (_diceZone != null) _diceZone.DiceAnimationStateChanged -= RecomputeButtonStates;
 
             if (_movementService != null)
             {
@@ -517,9 +522,11 @@ namespace Rollgeon.UI.HUD
 
             // Confirm se habilita cuando hay dados rolleados AND el jugador holdeó
             // al menos un dado. Sin holds confirmar no tiene sentido (no hay combo
-            // posible), y el botón quedaría engañando al usuario.
+            // posible), y el botón quedaría engañando al usuario. Mientras los dados
+            // giran o vuelan (modo Classic) tampoco: el resultado aún no se reveló.
             if (_confirmButton != null)
-                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld();
+                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld()
+                                              && !(_diceZone != null && _diceZone.IsDiceAnimating);
         }
 
         private bool AnyDieHeld()

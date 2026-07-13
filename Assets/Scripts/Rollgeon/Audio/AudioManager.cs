@@ -301,6 +301,39 @@ namespace Rollgeon.Audio
                 _activeMusic.UnPause();
         }
 
+        // Duck multiplicativo sobre el volumen del canal — NO toca el valor que
+        // seteó el usuario (SetVolume), solo atenúa el source activo. Si un duck
+        // coincide con un crossfade (raro: la ventana es <1s), el último tween en
+        // escribir el frame gana — jitter menor y momentáneo, aceptado.
+        private Tween _duckTween;
+        private float _duckFactor = 1f;
+
+        public void DuckMusic(float factor, float fadeSeconds = 0.25f)
+        {
+            float target = Mathf.Clamp01(factor);
+            if (_duckTween.isAlive) _duckTween.Stop();
+
+            if (fadeSeconds <= 0f)
+            {
+                _duckFactor = target;
+                ApplyDuck();
+                return;
+            }
+
+            _duckTween = Tween.Custom(_duckFactor, target, fadeSeconds,
+                onValueChange: v =>
+                {
+                    _duckFactor = v;
+                    ApplyDuck();
+                });
+        }
+
+        private void ApplyDuck()
+        {
+            if (_activeMusic != null && _activeMusic.isPlaying)
+                _activeMusic.volume = GetVolume(AudioChannel.Music) * _duckFactor;
+        }
+
         // ====================================================================
         // IAudioService — Volume
         // ====================================================================
