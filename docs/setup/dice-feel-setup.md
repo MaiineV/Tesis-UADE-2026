@@ -1,0 +1,117 @@
+# Setup — Juice de dados legacy (Classic) con PrimeTween + Feel
+
+> Feature #0021: animaciones del panel de dados legacy — spin del Roll (0.5s
+> configurable), raise al holdear, throw al centro de la mesa + fade al confirmar,
+> fade + scale-down de los no usados — más capa de juice Feel (springs, flashes,
+> shakes) y hooks de audio.
+> Estado: código + wiring + feedbacks autorados por Unity MCP; **falta playtest
+> manual** y sourcear los SFX (solo hay 1 clip placeholder).
+
+## Qué se agregó
+
+**Código nuevo** (`Assets/Scripts/Rollgeon/UI/HUD/`):
+
+| Archivo | Rol |
+|---------|-----|
+| `DiceAnim/DiceUiAnimationSettingsSO.cs` | SO de tuning (duraciones, stagger, eases). Duración ≤ 0 = instantáneo (kill switch). |
+| `DiceAnim/DiceAnimChoreographer.cs` | Coreografía como data pura (planes de spin/outro, tick desacelerante, caras preview) — 100% testeada. |
+| `DiceAnim/DiceSlotAnimator.cs` | Motion PrimeTween por slot: spin+ciclado de caras, raise, throw/discard. Agregado por código en `Bind` — no vive en el prefab. |
+| `DiceAnim/DiceZoneAnimator.cs` | Coordinador: `TryBeginSpin`/`TryBeginOutro` (false ⇒ path instantáneo legacy), hooks para juice. Solo activo en modo `Classic`. |
+| `DiceAnim/DiceOutroGate.cs` | Latch estático que difiere el teardown de la zona mientras los dados vuelan. |
+| `DiceSlotJuice.cs` | Dispara los MMF_Player del slot por momento (spin-start, reveal ± crit, lock/unlock, throw, discard, kept-pulse). |
+| `DiceZoneJuice.cs` | Shakes de mesa, flourish de combo y TODO el audio (via `IAudioService`, con pitch ramps). |
+| `DiceSlotHoverJuice.cs` | Hover scale en dados lockeables (gateado por `Button.interactable`). |
+| `UiButtonJuice.cs` | Press squash + click SFX genérico para botones (Roll/Confirm). |
+
+**Modificados:** `DiceSlotView` (+`SetSpinPreviewFace`, `SetHoldInteractable`),
+`DiceZoneView` (integración animator), `PlayerActionButtonsView` / `RerollCountView`
+(lockout de Confirm/Roll durante animación), `CombatHudZoneFlow` /
+`ActionRollExplorationVisibility` (teardown diferido por `DiceOutroGate`),
+`Rollgeon.asmdef` (+`MoreMountains.Tools` — Feel compila ahí via los .asmref del
+vendor; **no crear asmdefs dentro de Assets/Feel**).
+
+**Tests EditMode** (verdes, suite completa 1963): `UI/Tests/DiceAnimChoreographerTests.cs`
+(16), `UI/Tests/DiceOutroGateTests.cs` (4).
+
+## Wiring (ya aplicado por Unity MCP)
+
+**Asset de tuning:** `Assets/Resources/Dice/DiceUiAnimationSettings.asset`
+(defaults de código: spin 0.5s, raise 18px/0.12s, throw 0.35s, discard 0.25s).
+Todo el feeling se tunea acá sin tocar código.
+
+**`Assets/Prefabs/UI/DiceSlotView.prefab`** (aditivo — se propaga a las 5 instancias
+de combate en `Canvas.prefab`):
+
+- Root: +`CanvasGroup` (fades), +`DiceSlotJuice`, +`DiceSlotHoverJuice` (refs wireadas).
+- Hijo `FlashOverlay`: Image blanca alpha 0, raycast off, stretch full (los flashes).
+- Hijo `Juice` con 10 GOs, cada uno con un `MMF_Player` autorado:
+
+| Player | Feedbacks autorados |
+|--------|--------------------|
+| `Juice_SpinStart` | SquashAndStretchSpring bump vertical −30/−20 (anticipación) |
+| `Juice_Reveal` | ScaleSpring bump 18–25 + Graphic flash blanco 0.6→0 (0.15s) |
+| `Juice_CritReveal` | ScaleSpring bump 30–40 + flash dorado 0.8→0 (0.25s) — cara ≥ 6 |
+| `Juice_Lock` | RotationSpring Z 600–900 + ScaleSpring 10–14 + flash cyan 0.5→0 |
+| `Juice_Unlock` | ScaleSpring dip −14/−10 + flash gris 0.25→0 |
+| `Juice_Throw` | Graphic flash blanco sutil 0.25→0 (la motion ya escala el root) |
+| `Juice_Discard` | Graphic del `DiceLabel` → gris 50% (0.2s) |
+| `Juice_KeptPulse` | ScaleSpring bump 8–12 ("este se queda" en rerolls / combo) |
+| `Juice_HoverEnter/Exit` | ScaleSpring MoveTo 1.05 / 1.0 |
+
+**`Assets/Prefabs/UI/Canvas.prefab`:**
+
+- `Canvas/DiceZoneView`: +`DiceZoneJuice` (refs + `SE-Collision_03` como thud
+  placeholder) e hijo `ZoneJuice` con `Juice_ThrowPreShake` / `Juice_OutroLand`
+  (PositionSpring bump de la `RollArea`) y `Juice_ComboFlourish` (ScaleSpring de
+  la zona).
+- Botón Roll (`RerollCountView`) y Confirm (`PlayerActionButtonsView`):
+  +`UiButtonJuice` con hijo `Juice_Press` (ScaleSpring squash −16/−10).
+
+## Contrato anti-conflicto motion ↔ juice
+
+La motion (PrimeTween) es dueña de: posición y alpha del root SIEMPRE, rotación
+durante el spin, escala durante el outro. El juice usa escala/rotación del root
+solo en fases sin overlap, y colores solo en `FlashOverlay`/`DiceLabel` — el color
+del background es de `DiceSlotView` (tints de hold/blocked). Si agregás feedbacks,
+respetá ese reparto.
+
+## SFX pendientes (sourcear, ej. Kenney Casino/UI Audio, CC0)
+
+Wirear en `DiceZoneJuice` (DiceZoneView) y `UiButtonJuice` — hoy están vacíos = mute:
+
+`sfx_dice_rattle` (≈0.5s), `sfx_dice_reveal_tick`, `sfx_dice_lock`,
+`sfx_dice_unlock`, `sfx_dice_throw_whoosh`, `sfx_dice_discard_poof`,
+`sfx_dice_land_thud` (placeholder: SE-Collision_03 ya wireado), `sfx_combo_chime`,
+click de botones. Import: Force Mono, Decompress On Load, Vorbis ~q0.7. Carpeta
+sugerida: `Assets/Sounds/Dice/`.
+
+## Cómo probar (playtest manual — el Play va a mano)
+
+1. `dicemode classic` en la DevConsole (F1) si no es el modo activo.
+2. **Roll:** los 5 dados giran ~0.5s ciclando caras (rápido→lento), revelan con
+   stagger + punch + flash; cara 6 = flash dorado. Roll/Confirm deshabilitados
+   durante el giro.
+3. **Lock:** click a un dado → se eleva 18px con wobble + flash cyan; re-click →
+   baja con dip. El tint azul de hold sigue funcionando.
+4. **Reroll:** solo giran los NO holdeados; los holdeados quedan elevados y hacen
+   un pulso de reaseguro.
+5. **Confirm:** los holdeados vuelan al centro de la mesa achicándose con fade;
+   los demás se desvanecen con scale-down; thump de la mesa al final; recién ahí
+   vuelven los chips de acciones.
+6. **Combo:** al formar un combo nuevo con los holds, bump escalonado de los
+   dados holdeados + bump de zona.
+7. **Regresión:** `dicemode 2d` y `3d` siguen igual que antes (presenters propios);
+   dados bloqueados por boss quedan grises con candado y no se pueden holdear ni
+   elevar; Heal/Forzar Puerta (action-rolls) animan igual que combate y el cancel
+   NO reproduce el outro; end-turn con dados en mesa reproduce el outro (quirk
+   conocido, barato de distinguir a futuro).
+8. Tuning: todo en `Assets/Resources/Dice/DiceUiAnimationSettings.asset`; poner
+   duraciones en 0 desactiva esa animación.
+
+## Backlog P2 (documentado, no implementado)
+
+- Slam del `LockIcon` al bloquear un dado (boss).
+- Idle micro-breathing en dados sin holdear (`MMF_Wiggle`, detrás de un toggle).
+- Partículas de polvo al aterrizar el throw (necesita asset de VFX).
+- Distinguir confirm vs end-turn en `OnRollResolved` para no reproducir el throw
+  en end-turn.

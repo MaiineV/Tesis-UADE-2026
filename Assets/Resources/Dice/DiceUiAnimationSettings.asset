@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c43ebd82e32d154a9c413cbba80e60b, type: 3}
+  m_Name: DiceUiAnimationSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceAnim.DiceUiAnimationSettingsSO
+  SpinSeconds: 0.5
+  SpinTickSeconds: 0.06
+  SpinDecelerationPower: 2
+  SpinStaggerSeconds: 0.05
+  SpinTurns: 2
+  SpinEase: 9
+  PreviewFaceMax: 6
+  RaiseOffsetY: 18
+  RaiseSeconds: 0.12
+  LowerSeconds: 0.1
+  RaiseEase: 9
+  ThrowSeconds: 0.35
+  ThrowStaggerSeconds: 0.05
+  ThrowEndScale: 0.6
+  ThrowFadePortion: 0.5
+  ThrowEase: 8
+  DiscardSeconds: 0.25
+  DiscardEndScale: 0.7
+  DiscardEase: 5
+  OutroHoldSeconds: 0.05
