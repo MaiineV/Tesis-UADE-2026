@@ -67,6 +67,15 @@ de combate en `Canvas.prefab`):
 - Botón Roll (`RerollCountView`) y Confirm (`PlayerActionButtonsView`):
   +`UiButtonJuice` con hijo `Juice_Press` (ScaleSpring squash −16/−10).
 
+## GOTCHA: los slots de combate NO son instancias del prefab
+
+Los 5 slots que usa `DiceZoneView._diceSlots` en `Canvas.prefab` son **copias
+manuales** de `DiceSlotView.prefab` (sin `PrefabInstance`) — autorar en el
+prefab base NO propaga. El kit de juice (overlays, Shadow, partículas, players
+MMF, componentes) está construido **directo en los 5 slots** del Canvas; para
+tunear feedbacks hay que tocar los 5 (o re-correr el script de authoring).
+Backlog: convertirlos a instancias reales del prefab.
+
 ## Contrato anti-conflicto motion ↔ juice
 
 La motion (PrimeTween) es dueña de: posición y alpha del root SIEMPRE, rotación
