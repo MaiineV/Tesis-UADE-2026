@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector.Editor;
@@ -16,11 +17,13 @@ namespace Rollgeon.Editor.Tools.Enemy
         EnemyDataSO _so;
         PropertyTree _tree;
         int _behaviorIdx = -1;
+        int _tierIdx = -1;
         Vector2 _scroll;
 
         // Foldout state
         bool _visualOpen = true;
         bool _statsOpen = true;
+        bool _tiersOpen = true;
         bool _weaknessOpen = true;
         bool _rewardsOpen = false;
 
@@ -29,6 +32,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             if (_so == so) return;
             _so = so;
             _behaviorIdx = -1;
+            _tierIdx = -1;
             RebuildTree();
         }
 
@@ -62,6 +66,8 @@ namespace Rollgeon.Editor.Tools.Enemy
             DrawVisual();
             EditorGUILayout.Space(8);
             DrawStats();
+            EditorGUILayout.Space(8);
+            DrawTiers();
             EditorGUILayout.Space(8);
             DrawWeakness();
             EditorGUILayout.Space(8);
@@ -120,6 +126,91 @@ namespace Rollgeon.Editor.Tools.Enemy
                 Prop("BaseHealStrength");
                 Prop("BaseSpeed");
                 Prop("MaxEnergy");
+            }
+        }
+
+        void DrawTiers()
+        {
+            _tiersOpen = EditorGUILayout.Foldout(_tiersOpen, "Tiers", toggleOnLabelClick: true);
+            if (!_tiersOpen) return;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.HelpBox(
+                    "En spawn se usa el tier más alto cuyo 'desde piso' <= piso actual. " +
+                    "Los tiers cambian solo stats — nunca behaviors ni AI tree.",
+                    MessageType.None);
+
+                EditorGUILayout.LabelField("Tier 1 — Base Stats (desde piso 1)", EditorStyles.miniBoldLabel);
+
+                var tiers = _so.ExtraTiers;
+                if (tiers != null)
+                {
+                    for (int i = 0; i < tiers.Count; i++)
+                    {
+                        int tierNumber = i + 2;
+                        var t = tiers[i];
+                        int effective = _so.EffectiveMinFloor(tierNumber);
+                        string floorText = t != null && t.MinFloor > 0
+                            ? $"desde piso {effective}"
+                            : $"desde piso {effective} — legacy, MinFloor sin autorar";
+                        string name = t != null && !string.IsNullOrEmpty(t.Label)
+                            ? $"Tier {tierNumber} — {t.Label}"
+                            : $"Tier {tierNumber}";
+                        bool isSel = i == _tierIdx;
+
+                        var prev = GUI.backgroundColor;
+                        if (isSel) GUI.backgroundColor = new Color(0.45f, 0.75f, 1f);
+                        EditorGUILayout.BeginHorizontal();
+                        if (GUILayout.Button($"{name}  ({floorText})", GUILayout.Height(22f)))
+                            _tierIdx = isSel ? -1 : i;
+                        if (GUILayout.Button("✕", GUILayout.Width(24f), GUILayout.Height(22f)))
+                        {
+                            Undo.RecordObject(_so, "Remove Tier");
+                            tiers.RemoveAt(i);
+                            EditorUtility.SetDirty(_so);
+                            _tierIdx = -1;
+                            RebuildTree();
+                            EditorGUILayout.EndHorizontal();
+                            GUI.backgroundColor = prev;
+                            return;
+                        }
+                        EditorGUILayout.EndHorizontal();
+                        GUI.backgroundColor = prev;
+                    }
+
+                    if (_tierIdx >= 0 && _tierIdx < tiers.Count)
+                    {
+                        EditorGUILayout.Space(6);
+                        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                        Prop($"ExtraTiers.${_tierIdx}");
+                        EditorGUILayout.EndVertical();
+                    }
+
+                    // Un tier con 'desde piso' efectivo <= al del anterior nunca deja
+                    // usarse al anterior (siempre gana el más alto elegible).
+                    for (int tierNumber = 2; tierNumber <= tiers.Count + 1; tierNumber++)
+                    {
+                        if (_so.EffectiveMinFloor(tierNumber) <= _so.EffectiveMinFloor(tierNumber - 1))
+                        {
+                            EditorGUILayout.HelpBox(
+                                "Los 'desde piso' efectivos no son estrictamente crecientes — " +
+                                "algún tier queda inalcanzable.",
+                                MessageType.Warning);
+                            break;
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(6);
+                if (GUILayout.Button("+ Add Tier", GUILayout.Height(24f)))
+                {
+                    Undo.RecordObject(_so, "Add Tier");
+                    if (_so.ExtraTiers == null) _so.ExtraTiers = new List<EnemyTier>();
+                    _so.ExtraTiers.Add(_so.CreateNextTierTemplate());
+                    EditorUtility.SetDirty(_so);
+                    _tierIdx = _so.ExtraTiers.Count - 1;
+                    RebuildTree();
+                }
             }
         }
 
