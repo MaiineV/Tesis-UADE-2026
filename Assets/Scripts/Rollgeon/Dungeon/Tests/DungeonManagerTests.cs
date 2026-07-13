@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -667,6 +669,152 @@ namespace Rollgeon.Dungeon.Tests
             // La boss room es dead-end (1 conexión), así que siempre hay
             // al menos 3 puertas sin vecino — el assert no puede ser vacuo.
             Assert.Greater(orphansChecked, 0, "El escenario debe producir puertas sin vecino.");
+        }
+
+        // -----------------------------------------------------------------
+        // Puertas tapiadas — CNF-012
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Prefab de sala espejo de los reales: cada DoorSlotRef tiene DoorRoot
+        /// (con DoorController) y un WallPlug que es HIJO del DoorRoot — la
+        /// estructura del Door.prefab anidado que disparó CNF-012. El root queda
+        /// inactivo para que Instantiate no dispare los Awake de tooltips en EditMode.
+        /// </summary>
+        private GameObject CreateRoomPrefabWithRejaDoors()
+        {
+            var root = new GameObject("RoomTemplate_RejaDoors");
+            root.SetActive(false);
+            _createdObjects.Add(root);
+
+            var layout = root.AddComponent<Components.RoomLayout>();
+            foreach (DoorDirection dir in Enum.GetValues(typeof(DoorDirection)))
+            {
+                var doorRoot = new GameObject($"Door_{dir}");
+                doorRoot.transform.SetParent(root.transform, false);
+                var ctrl = doorRoot.AddComponent<DoorController>();
+                ctrl.Direction = dir;
+
+                var wallPlug = new GameObject("WallPlug");
+                wallPlug.transform.SetParent(doorRoot.transform, false);
+                wallPlug.SetActive(false);
+
+                layout.DoorSlots.Add(new DoorSlotRef
+                {
+                    Direction = dir,
+                    DoorRoot = doorRoot,
+                    WallPlug = wallPlug,
+                });
+            }
+            return root;
+        }
+
+        [Test]
+        public void GenerateFloor_SlotWithoutNeighbor_KeepsDoorRootActiveInTapiada()
+        {
+            // Arrange
+            var prefab = CreateRoomPrefabWithRejaDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+
+            // Act
+            _manager.GenerateFloor(layout, 42);
+
+            // Assert — la dirección bloqueada muestra la reja: DoorRoot activo,
+            // estado Tapiada y el WallPlug (hijo del DoorRoot) prendido.
+            int blockedChecked = 0;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                var roomLayout = instance.SpawnedPrefab.GetComponent<Components.RoomLayout>();
+                foreach (var slot in roomLayout.DoorSlots)
+                {
+                    var ctrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                    if (ctrl.IsExit) continue; // salida de piso: canal propio (#158)
+                    if (instance.Connections.ContainsKey(slot.Direction)) continue;
+
+                    blockedChecked++;
+                    Assert.IsTrue(slot.DoorRoot.activeSelf,
+                        $"CNF-012: DoorRoot {slot.Direction} de '{instance.Template.RoomId}' " +
+                        "debe quedar activo para que la reja sea visible.");
+                    Assert.AreEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
+                        $"CNF-012: puerta {slot.Direction} sin vecino debe quedar Tapiada.");
+                    Assert.IsTrue(slot.WallPlug.activeSelf,
+                        $"CNF-012: el WallPlug (reja) de {slot.Direction} debe quedar prendido.");
+                }
+            }
+
+            // La boss room es dead-end (1 conexión + 1 exit), así que siempre
+            // hay al menos 2 puertas bloqueadas — el assert no puede ser vacuo.
+            Assert.Greater(blockedChecked, 0, "El escenario debe producir puertas bloqueadas.");
+        }
+
+        [Test]
+        public void GenerateFloor_SlotWithNeighbor_DoorIsNotTapiada()
+        {
+            // Arrange
+            var prefab = CreateRoomPrefabWithRejaDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+
+            // Act
+            _manager.GenerateFloor(layout, 42);
+
+            // Assert — la puerta conectada sigue siendo una puerta real: activa,
+            // sin reja y con estado Open/LockedCombat según la sala.
+            int connectedChecked = 0;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                var roomLayout = instance.SpawnedPrefab.GetComponent<Components.RoomLayout>();
+                foreach (var slot in roomLayout.DoorSlots)
+                {
+                    var ctrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                    if (ctrl.IsExit) continue;
+                    if (!instance.Connections.ContainsKey(slot.Direction)) continue;
+
+                    connectedChecked++;
+                    Assert.IsTrue(slot.DoorRoot.activeSelf,
+                        $"Puerta {slot.Direction} de '{instance.Template.RoomId}' con vecino debe estar activa.");
+                    Assert.AreNotEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
+                        $"Puerta {slot.Direction} con vecino no puede quedar Tapiada.");
+                    Assert.IsFalse(slot.WallPlug.activeSelf,
+                        $"El WallPlug (reja) de {slot.Direction} debe apagarse cuando hay vecino.");
+                }
+            }
+
+            Assert.Greater(connectedChecked, 0, "El escenario debe producir puertas conectadas.");
+        }
+
+        [Test]
+        public void SetState_Tapiada_DisablesForceDoorTooltip_AndOpenReenablesIt()
+        {
+            // Arrange — Awake por reflection (en EditMode no corre solo).
+            var go = new GameObject("Door_TooltipGate");
+            _createdObjects.Add(go);
+            var ctrl = go.AddComponent<DoorController>();
+            InvokeAwake(ctrl);
+
+            var trigger = go.GetComponent<WorldTooltipTrigger>();
+            Assert.IsNotNull(trigger, "Awake debe auto-agregar el WorldTooltipTrigger.");
+
+            // Act + Assert — la reja no es una acción: sin tooltip de Forzar Puerta.
+            ctrl.SetState(DoorVisualState.Tapiada);
+            Assert.IsFalse(trigger.enabled,
+                "CNF-012: Tapiada debe deshabilitar el tooltip de Forzar Puerta.");
+
+            ctrl.SetState(DoorVisualState.Open);
+            Assert.IsTrue(trigger.enabled,
+                "Volver a Open debe rehabilitar el tooltip.");
+        }
+
+        private static void InvokeAwake(object target)
+        {
+            var awake = target.GetType().GetMethod("Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            awake?.Invoke(target, null);
         }
     }
 }

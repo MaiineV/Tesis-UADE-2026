@@ -7,10 +7,11 @@ namespace Rollgeon.Dungeon.Components
     /// Slot de puerta en un prefab de sala. TECHNICAL.md §13.3.
     /// <para>
     /// Cada <see cref="RoomLayout"/> expone 4 slots (N/S/E/W). Cuando el
-    /// <c>DungeonManager</c> arma la conectividad, si el slot tiene vecino
-    /// instancia <see cref="DoorPrefab"/> sobre <see cref="Anchor"/> y desactiva
-    /// <see cref="WallPlug"/>; si no, activa <see cref="WallPlug"/> (tapiado)
-    /// y no instancia puerta.
+    /// <c>DungeonManager</c> arma la conectividad, el <see cref="DoorRoot"/>
+    /// queda siempre activo: con vecino se cablea el <c>DoorController</c> y se
+    /// desactiva <see cref="WallPlug"/>; sin vecino la puerta queda en estado
+    /// <c>Tapiada</c> — muestra la reja (<see cref="WallPlug"/>) y no es
+    /// interactuable (CNF-012).
     /// </para>
     /// </summary>
     [Serializable]

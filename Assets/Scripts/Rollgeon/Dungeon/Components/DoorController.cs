@@ -63,6 +63,9 @@ namespace Rollgeon.Dungeon.Components
         private void Awake()
         {
             EnsureTooltipComponents();
+            // SetState puede haber corrido con el GO inactivo (Sync usa
+            // includeInactive) — re-aplicar el gate ahora que el trigger existe.
+            ApplyTooltipGate();
         }
 
         // Auto-attach del tooltip de "Forzar Puerta": un solo WorldTooltipTrigger en el
@@ -105,6 +108,17 @@ namespace Rollgeon.Dungeon.Components
             if (_meshOpen   != null) _meshOpen.SetActive(open);
             if (_meshClosed != null) _meshClosed.SetActive(locked);
             if (_wallPlug   != null) _wallPlug.SetActive(tapiada);
+
+            ApplyTooltipGate();
+        }
+
+        // CNF-012: una puerta tapiada (reja) no es una acción — el tooltip de
+        // "Forzar Puerta" solo aplica a puertas reales. Null-safe: el trigger
+        // recién existe después del Awake (EnsureTooltipComponents).
+        private void ApplyTooltipGate()
+        {
+            var trigger = GetComponent<WorldTooltipTrigger>();
+            if (trigger != null) trigger.enabled = CurrentState != DoorVisualState.Tapiada;
         }
     }
 

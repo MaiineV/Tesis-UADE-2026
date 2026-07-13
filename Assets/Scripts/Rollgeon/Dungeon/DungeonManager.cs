@@ -366,10 +366,12 @@ namespace Rollgeon.Dungeon
 
         /// <summary>
         /// Por cada <see cref="DoorSlotRef"/> del prefab: si hay vecino en esa
-        /// dirección, activa la puerta (wallPlug off) y le cablea el
-        /// <see cref="DoorController"/> con <see cref="RoomInstance.InstanceId"/>
-        /// + dirección; si no, activa el wallPlug. El estado inicial (Open vs
-        /// LockedCombat) lo resuelve <see cref="SyncDoorVisualStates"/>.
+        /// dirección, cablea el <see cref="DoorController"/> con
+        /// <see cref="RoomInstance.InstanceId"/> + dirección; si no, la puerta
+        /// queda <see cref="DoorVisualState.Tapiada"/> (la reja visible, sin
+        /// interacción — CNF-012). El DoorRoot queda activo en ambos casos; el
+        /// estado inicial (Open vs LockedCombat) lo resuelve
+        /// <see cref="SyncDoorVisualStates"/>.
         /// </summary>
         private void ConfigureDoorSlots(RoomInstance instance)
         {
@@ -422,8 +424,13 @@ namespace Rollgeon.Dungeon
 
                 authored.Add(slot.Direction);
 
+                // CNF-012: el DoorRoot queda activo también sin vecino — la puerta
+                // muestra la reja (Tapiada, via SyncDoorVisualStates al final de este
+                // método) en vez de desaparecer. En los prefabs actuales el WallPlug
+                // del slot es un HIJO del DoorRoot: apagar el root dejaba la reja
+                // invisible aunque la línea de arriba la activara.
                 if (slot.WallPlug != null) slot.WallPlug.SetActive(!connected);
-                slot.DoorRoot.SetActive(connected);
+                slot.DoorRoot.SetActive(true);
 
                 if (!connected) continue;
 
