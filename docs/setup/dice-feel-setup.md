@@ -67,14 +67,23 @@ de combate en `Canvas.prefab`):
 - Botón Roll (`RerollCountView`) y Confirm (`PlayerActionButtonsView`):
   +`UiButtonJuice` con hijo `Juice_Press` (ScaleSpring squash −16/−10).
 
-## GOTCHA: los slots de combate NO son instancias del prefab
+## GOTCHA MAYOR: el HUD de runtime vive en la ESCENA, no en Canvas.prefab
 
-Los 5 slots que usa `DiceZoneView._diceSlots` en `Canvas.prefab` son **copias
-manuales** de `DiceSlotView.prefab` (sin `PrefabInstance`) — autorar en el
-prefab base NO propaga. El kit de juice (overlays, Shadow, partículas, players
-MMF, componentes) está construido **directo en los 5 slots** del Canvas; para
-tunear feedbacks hay que tocar los 5 (o re-correr el script de authoring).
-Backlog: convertirlos a instancias reales del prefab.
+**`Canvas.prefab` no se instancia en ninguna escena** — el canvas real es una
+copia desempaquetada dentro de `02_Gameplay.unity`. Cualquier authoring de UI
+tiene que hacerse en la ESCENA (o en prefabs que la escena realmente
+instancie). Estado actual:
+
+- Los 5 slots de combate de la escena SON instancias reales de
+  `DiceSlotView.prefab` (reemplazo manual, 2026-07-13) → autorar en el prefab
+  base propaga. El prefab trae el kit completo + Button + LockIcon.
+- La capa de zona (DiceZoneJuice, ZoneJuice players, RollAreaHighlight,
+  UiButtonJuice de Roll/Confirm, DiceImpactParticles en el root del canvas)
+  está autorada EN LA ESCENA.
+- Backlog: re-vincular el canvas de la escena a `Canvas.prefab` o borrar el
+  prefab muerto — mientras coexistan van a divergir.
+- Gotcha de authoring por código: `MMF_Player.FeedbacksList` es **null** en
+  players recién agregados — null-check antes de leer `.Count`.
 
 ## Contrato anti-conflicto motion ↔ juice
 
