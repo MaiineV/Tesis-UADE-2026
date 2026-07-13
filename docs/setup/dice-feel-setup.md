@@ -171,7 +171,8 @@ Force Mono + Decompress On Load, y re-wirear los campos en los prefabs.
    vuelven los chips de acciones.
 6. **Combo:** al formar un combo nuevo con los holds, bump escalonado de los
    dados holdeados + bump de zona.
-7. **Regresión:** `dicemode 2d` y `3d` siguen igual que antes (presenters propios);
+7. **Regresión:** `dicemode 2d` y `3d` tienen su propia capa de feel (ver
+   "Feel de los modos 2D/3D" abajo) y comparten la mitad post-reveal de esta;
    dados bloqueados por boss quedan grises con candado y no se pueden holdear ni
    elevar; Heal/Forzar Puerta (action-rolls) animan igual que combate y el cancel
    NO reproduce el outro; end-turn con dados en mesa reproduce el outro (quirk
@@ -186,3 +187,76 @@ Force Mono + Decompress On Load, y re-wirear los campos en los prefabs.
 - Partículas de polvo al aterrizar el throw (necesita asset de VFX).
 - Distinguir confirm vs end-turn en `OnRollResolved` para no reproducir el throw
   en end-turn.
+
+---
+
+# Feel de los modos 2D/3D (Feature#0022_ThrowDiceFeel)
+
+## Gate split (lo que los modos throw heredan del Classic)
+
+`DiceZoneAnimator.CanAnimate()` se partió en dos gates:
+
+- **`CanAnimateRoll()`** (spin de slots) — Classic-only: en 2D/3D la física ya
+  anima los dados y el reveal llega con los ghosts alineados sobre los slots.
+- **`CanAnimatePostReveal()`** (raise/outro) — TODOS los modos: post-reveal los
+  dados viven en los slots y se holdean/confirman igual. Esto activa en 2D/3D:
+  lock raise+wobble+flash, unlock dip, kept pulse, highlight del RollArea,
+  outro del confirm (throw al centro + discard), land shake+thud+hitstop,
+  combo flourish y el lockout de botones durante el outro.
+
+Guards nuevos (chains/reroll): `DiceZoneView.NotifyThrowSessionStarted()`
+(ambos presenters lo llaman al abrir sesión — completa un outro pendiente YA);
+el arming de grab-to-reroll 2D se bloquea con `DiceOutroGate.OutroPending`.
+
+## Código nuevo
+
+| Archivo | Rol |
+|---------|-----|
+| `Dice/Throw/DiceThrowFeelMath.cs` | Mappings puros velocidad/impulso → volumen, pitch, intervalo de rattle, decay del spin — testeado (15). |
+| `UI/HUD/DiceThrowDieJuice.cs` | Players MMF per-dado en los prefabs de dado. El presenter lo llama DIRECTO (dueño del lifetime; eventos por índice serían dangling). `CaptureRestPose` en OnEnable — obligatorio en objetos instanciados en runtime. |
+| `UI/HUD/DiceThrowJuice.cs` | GO `DiceThrowJuice` en escena: TODO el audio de throw via `IAudioService`, hitstop del crit, duck de música con restore triple (reveal/abort/OnDisable). |
+
+**Eventos de presenters** (payload por índice, nunca views): 2D expone
+`DieGrabbed/DiceThrown/DieBounced/DieSettled`; 3D expone lo mismo +
+`DieImpact(impulse)` (relay de `DiceThrow3DDie.Impacted`, que solo emite con
+`EmitImpacts` = en vuelo — carried se chocan entre sí y spamearían) y `DieNudged`.
+
+## Momentos (qué se siente y dónde se tunea)
+
+**2D** (`DiceThrowSettingsSO` sección "2D — Juice"): spawn drop-in staggered,
+pickup pop + tick, rotación cosmética del sprite en vuelo (velocidad angular
+del flick con decay; enderezado OutBack al settle), squash + clack en rebotes
+(coalescidos por frame — N rebotes = 1 clack más fuerte), settle pop con
+intensidad por cara + variante crit (cara 6 = hitstop chico), whoosh al flick,
+rattle de la mano (one-shots re-agendados por velocidad — no hay API de loop),
+cancel cue en `OnGrabCancelled`.
+
+**3D** (sección "3D — Juice"): clatter físico por colisión (volumen/pitch por
+`collision.impulse`, rate-limit por dado + coalesce global), squash per-die en
+impactos fuertes (reemplaza al camera-punch: el RT pixel-art de 320×180
+cuantizaría cualquier shake de cámara), nudge tick, settle pop + pitch ramp,
+scale-in staggered al spawn y scale-out ANTES de `CompleteReveal` (la sesión
+sigue Busy → cero carreras; deadline failsafe — la resolución nunca cuelga).
+`Assets/Rollgeon/DiceTray.physicsMaterial` (bounciness 0.3 SOLO en el Floor,
+bounceCombine Maximum porque el dado no tiene material propio).
+
+## Reduced motion (`dicemotion off`)
+
+Apaga motion cosmético (rotación, drop-ins, scale-in/out, squash, pops) y el
+hitstop en los 3 modos. Los SFX de throw SIGUEN sonando: mapean a eventos
+físicos reales (la física es gameplay y no se apaga). Deuda anotada:
+`ReducedMotion` podría forzar `WillDefer=false` (throw instantáneo total).
+
+## Cómo probar (2D/3D)
+
+1. `dicemode 2d` → Roll: los dados aparecen con drop-in sobre la mesa; agarrar
+   (pop + rattle al mover rápido), flick (whoosh, giran en vuelo), rebotes
+   suenan y squashean, settle con pop+tick ascendente (cara 6 = hitstop),
+   align → los slots reales aparecen debajo. Hold eleva con wobble; confirm
+   lanza al centro con shake+thud. Grab-to-reroll con outro volando NO arma.
+2. `dicemode 3d` → la bandeja aparece con scale-in; las colisiones CLATTEAN
+   (no durante el carry), dado de canto hace tick al nudge, settle pop,
+   scale-out antes de volver al HUD. Reroll por botón lockeado durante outro.
+3. `dicemode classic` → todo idéntico a #0021 (regresión).
+4. SFX placeholder sintetizados (`sfx_dice_bounce.wav`, `sfx_dice_clatter.wav`)
+   — reemplazables re-wireando `DiceThrowJuice` en la escena.
