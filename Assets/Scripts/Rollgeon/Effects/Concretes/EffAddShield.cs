@@ -1,11 +1,17 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Damage;
+using Rollgeon.Combos;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Player;
 using Rollgeon.UI.Tooltips;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -18,7 +24,8 @@ namespace Rollgeon.Effects.Concretes
     {
         [Title("Shield")]
         [SerializeField]
-        [Tooltip("Source: Constant uses _baseAmount, ComboValue uses the resolved combo's BaseDamage.")]
+        [Tooltip("Source: Constant usa _baseAmount; ComboValue usa la fórmula de Escudo v2 " +
+                 "(tabla escudo_combo_base del ContractSheet × multi de dados, cap duro).")]
         private DamageSource _shieldSource = DamageSource.Constant;
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.Constant)]
@@ -27,7 +34,8 @@ namespace Rollgeon.Effects.Concretes
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.ComboValue)]
         [MinValue(0.01f)]
-        [Tooltip("Multiplier applied to the combo's BaseDamage.")]
+        [Tooltip("DEPRECADO (Spec Escudo v2): ya no participa de la fórmula. Se conserva " +
+                 "solo para no romper assets serializados — remover tras migrarlos.")]
         private float _comboMultiplier = 1f;
 
         [OdinSerialize, SerializeReference]
@@ -58,9 +66,8 @@ namespace Rollgeon.Effects.Concretes
             switch (_shieldSource)
             {
                 case DamageSource.ComboValue:
-                    return Mathf.Approximately(_comboMultiplier, 1f)
-                        ? "Escudo: puntaje del combo"
-                        : "Escudo: puntaje del combo × " + _comboMultiplier.ToString("0.##");
+                    return "Escudo: base del combo × multi de dados (máx "
+                        + PlayerComboShield.ShieldCap + ")";
                 case DamageSource.FromReader when _reader != null:
                     return "Escudo: +" + Mathf.RoundToInt(
                         _reader.Read(context.ToReaderContext()) * _readerMultiplier);
@@ -75,8 +82,11 @@ namespace Rollgeon.Effects.Concretes
         {
             int amount = _shieldSource switch
             {
+                // Spec Escudo v2: el escudo NUNCA lee combo.BaseDamage (tabla de ATAQUE —
+                // causa raíz del bug de escudo trivial). Del ComboResult solo se usan los
+                // dados contribuyentes; la base sale de la tabla de escudo por clase.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                    => ResolveComboShield(context, combo),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
@@ -84,6 +94,33 @@ namespace Rollgeon.Effects.Concretes
                 _ => _baseAmount,
             };
             return new ShieldArgs { BaseAmount = amount };
+        }
+
+        // Sheet del player como fuente de verdad de la tabla de escudo — mismo criterio
+        // que ActionRollService. Un ComboId vacío (resultado sintético de action roll)
+        // significa "sin datos por combo": no genera escudo.
+        private static int ResolveComboShield(EffectContext context, ComboDetectionResult combo)
+        {
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            if (sheet == null || string.IsNullOrEmpty(combo.ComboId)) return 0;
+
+            return PlayerComboShield.Resolve(
+                sheet.GetShieldBase(combo.ComboId),
+                ResolveContributingDice(context, combo.ContributingIndices));
+        }
+
+        // Mismo mecanismo que EffDealDamage: DiceType reales de la bag para los índices
+        // que formaron el combo — el multi del escudo pondera ESOS dados.
+        private static IReadOnlyList<DiceType> ResolveContributingDice(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                || enchants?.Bag == null)
+                return null;
+            return ContributingDiceResolver.Resolve(
+                contributingIndices, context?.KeptDiceOriginalIndices, enchants.Bag.Dice);
         }
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;

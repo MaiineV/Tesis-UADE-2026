@@ -207,6 +207,7 @@ namespace Rollgeon.Heroes
             {
                 effCtx.DiceResult = heroCtx.DiceResult;
                 effCtx.KeptDice = heroCtx.KeptDice;
+                effCtx.KeptDiceOriginalIndices = heroCtx.KeptDiceOriginalIndices;
                 effCtx.ComboResult = heroCtx.MatchedComboResult;
                 effCtx.TargetGuid = heroCtx.TargetGuid;
                 effCtx.SelectionResult = heroCtx.SelectionResult;

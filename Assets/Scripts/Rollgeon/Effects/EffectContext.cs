@@ -51,6 +51,13 @@ namespace Rollgeon.Effects
         /// </summary>
         public IReadOnlyList<int> KeptDice;
 
+        /// <summary>
+        /// Índices de slot del bag (0-based) que corresponden 1:1 a cada entrada de
+        /// <see cref="KeptDice"/> — ej. holdear los dados 0, 2 y 3 de una bolsa de 5 da
+        /// <c>[0, 2, 3]</c>. Null = sin mapeo disponible.
+        /// </summary>
+        public IReadOnlyList<int> KeptDiceOriginalIndices;
+
         /// <summary>Resultado del combo matching via ContractSheet.MatchBest. Null si no hubo match.</summary>
         public ComboDetectionResult? ComboResult;
 

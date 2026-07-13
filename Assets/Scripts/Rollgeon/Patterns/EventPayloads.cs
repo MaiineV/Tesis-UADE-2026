@@ -89,5 +89,14 @@ namespace Patterns
 
         /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
         public int BaseDamage;
+
+        /// <summary>Multiplicador de daño por calidad de dados. 0 = no calculado (tratar como 1.0).</summary>
+        public float MultiDmgCombo;
+
+        /// <summary>
+        /// Escudo que generaría este combo (Spec Escudo v2: tabla por clase × multi, con cap).
+        /// 0 = el combo/clase no genera escudo o no se calculó.
+        /// </summary>
+        public int ShieldPreview;
     }
 }

@@ -9,6 +9,11 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// ambos cuentan x1.5 para el combo. Hook: <c>OnComboMatched</c>.
     /// Encantamiento "Gemelo".
     /// </summary>
+    /// <remarks>
+    /// Excepción autorada (Spec de Daño v2, D3): multiplica <c>daño_combo_base</c> directo vía
+    /// <c>ComboDamageMultiplier</c>. No usar como plantilla — encantamientos nuevos deben sumar
+    /// con <c>BonusComboDamage</c>, no multiplicar.
+    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class TwinBonus : IOnComboMatchedTrigger
     {

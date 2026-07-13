@@ -3,19 +3,16 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
+using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Dice;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="PlayerComboDamage.Resolve"/> — la fórmula unificada
-    /// (dañoBasePJ + bonosPJ + (comboBase + bonosCombo)) × multiplicador. Cubre: daño base del PJ
-    /// (stat Attack), el multiplicador escalando todo, los bonos de scratch y el multiplicador de
-    /// scratch (antes nunca consumido), y el block de daño.
-    /// </summary>
+    /// <summary>Tests de <see cref="PlayerComboDamage.Resolve"/>.</summary>
     [TestFixture]
     public class PlayerComboDamageTests
     {
@@ -37,39 +34,93 @@ namespace Rollgeon.Combat.Tests
             _attrs?.Dispose();
         }
 
-        private void RegisterPlayerAttack(int attack)
+        private void RegisterPlayerAttack(int baseValue)
         {
             var a = new ModifiableAttributes();
-            a.SetAttribute<Attack>(new Attack(attack));
+            a.SetAttribute<Attack>(new Attack(baseValue));
             _attrs.Register(_player, a);
             ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
         }
 
-        [Test]
-        public void Resolve_NoPlayerAttackNoScratch_ReturnsComboBaseTimesMultiplier()
+        private void RegisterPlayerAttackWithFlatBonus(int baseValue, int flatBonus)
         {
-            Assert.AreEqual(20, PlayerComboDamage.Resolve(_player, comboBaseDamage: 10, comboMultiplier: 2f));
+            RegisterPlayerAttack(baseValue);
+            var mod = new Modifier<int>(
+                amount: flatBonus, op: ModifierOperation.Add, duration: 0,
+                carrierId: _player, sourceId: Guid.Empty,
+                dir: ModifierDirection.Intrinsic,
+                lifetime: ModifierLifetime.Permanent,
+                tickEvent: EventName.OnTurnFinished);
+            _attrs.AddModifier<Attack, int>(_player, mod);
         }
 
         [Test]
-        public void Resolve_AddsPlayerAttackBaseDamage()
+        public void Resolve_NoAttackNoDice_ReturnsComboBaseOnly()
+        {
+            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, comboBaseDamage: 10, contributingDice: null));
+        }
+
+        [Test]
+        public void Resolve_AddsPlayerBaseAttack_WhenNoModifiers()
         {
             RegisterPlayerAttack(5);
 
-            Assert.AreEqual(15, PlayerComboDamage.Resolve(_player, 10, 1f));
+            Assert.AreEqual(15, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
         [Test]
-        public void Resolve_MultiplierScalesPlayerBaseAndCombo()
+        public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
+        {
+            RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
+            var dice = new[] { DiceType.D20 };
+
+            int result = PlayerComboDamage.Resolve(_player, comboBaseDamage: 10,
+                contributingDice: dice, abilityMultiplier: 2f);
+
+            // (5 + 3) + (10 × 3.0 × 2) = 68
+            Assert.AreEqual(68, result);
+        }
+
+        [Test]
+        public void Resolve_AbilityMultiplier_ScalesComboTermOnly_NotPlayerBase()
         {
             RegisterPlayerAttack(5);
 
-            // (5 + 10) * 2 = 30
-            Assert.AreEqual(30, PlayerComboDamage.Resolve(_player, 10, 2f));
+            // 5 + (10 × 1 × 2) = 25
+            Assert.AreEqual(25, PlayerComboDamage.Resolve(_player, 10, null, abilityMultiplier: 2f));
         }
 
         [Test]
-        public void Resolve_AddsScratchBonus_AndAppliesScratchMultiplier()
+        public void Resolve_MultiDmgCombo_AllD6_IsBaselineOne()
+        {
+            var dice = new[] { DiceType.D6, DiceType.D6 };
+            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, dice));
+        }
+
+        [Test]
+        public void Resolve_MultiDmgCombo_AllD20_TriplesComboTerm()
+        {
+            var dice = new[] { DiceType.D20, DiceType.D20 };
+            // 10 × (10.5/3.5) = 10 × 3.0 = 30
+            Assert.AreEqual(30, PlayerComboDamage.Resolve(_player, 10, dice));
+        }
+
+        [Test]
+        public void Resolve_MultiDmgCombo_MixedDice_AveragesExpectedValue()
+        {
+            var dice = new[] { DiceType.D6, DiceType.D20 };
+            // EV avg = (3.5 + 10.5) / 2 = 7.0 → 7.0/3.5 = 2.0 → 10 × 2.0 = 20
+            Assert.AreEqual(20, PlayerComboDamage.Resolve(_player, 10, dice));
+        }
+
+        [Test]
+        public void Resolve_NoContributingDice_DefaultsToNeutralMultiplier()
+        {
+            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, Array.Empty<DiceType>()));
+        }
+
+        [Test]
+        public void Resolve_BonoCombo_AddedAfterMultiplier_NotBefore()
         {
             var fake = new FakeComboPassiveService
             {
@@ -77,8 +128,8 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            // (0 + 10 + 4) * 1 * 2 = 28
-            Assert.AreEqual(28, PlayerComboDamage.Resolve(_player, 10, 1f));
+            // (10 × 2) + 4 = 24
+            Assert.AreEqual(24, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -90,7 +141,7 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, 5f));
+            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
         }
 
         // Fake mínimo: solo LastComboScratch importa para la fórmula.

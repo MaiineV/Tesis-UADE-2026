@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -23,5 +24,18 @@ namespace Rollgeon.Combos.Concretes
 
         /// <inheritdoc />
         protected override int GetCountUsed(int[] finalDice) => 4;
+
+        /// <inheritdoc />
+        protected override int[] GetContributingIndices(int[] finalDice)
+        {
+            if (finalDice == null) return Array.Empty<int>();
+            var group = finalDice
+                .Select((value, index) => (value, index))
+                .GroupBy(t => t.value)
+                .Where(g => g.Count() >= 4)
+                .OrderByDescending(g => g.Count())
+                .FirstOrDefault();
+            return group == null ? Array.Empty<int>() : group.Take(4).Select(t => t.index).ToArray();
+        }
     }
 }

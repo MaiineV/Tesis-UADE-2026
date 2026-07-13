@@ -123,13 +123,14 @@ namespace Rollgeon.Combat.ContractMod
 
             if (!TryGetBaseDamage(sheet, comboId, out int ownBase)) return;
 
-            // Vecino por daño base: el inmediatamente superior (dir>0) o inferior (dir<0).
+            // Vecino por daño base EFECTIVO de la clase (tabla por clase — Spec Daño v2):
+            // el inmediatamente superior (dir>0) o inferior (dir<0).
             int? neighborValue = null;
             int bestDelta = int.MaxValue;
             foreach (var combo in sheet.Combos)
             {
                 if (combo == null || combo.ComboId == comboId) continue;
-                int other = combo.BaseDamage;
+                int other = sheet.GetBaseDamage(combo);
                 if (direction > 0 && other > ownBase && (other - ownBase) < bestDelta)
                 {
                     bestDelta = other - ownBase;
@@ -171,7 +172,7 @@ namespace Rollgeon.Combat.ContractMod
             {
                 if (combo != null && combo.ComboId == comboId)
                 {
-                    baseDamage = combo.BaseDamage;
+                    baseDamage = sheet.GetBaseDamage(combo);
                     return true;
                 }
             }

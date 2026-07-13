@@ -8,6 +8,15 @@ namespace Rollgeon.Combos
     /// Heal) y cualquier consumer que necesite resolver "el mejor combo" sin reinventar
     /// el loop sobre <see cref="ComboCatalogSO"/>.
     /// </summary>
+    /// <remarks>
+    /// El spec de daño v2 (Santi) pide elegir el combo de mayor dmg, no el primero detectado.
+    /// No lo implementamos acá ni en <c>ContractSheet.MatchBest</c> (el path real en combate):
+    /// <c>ContractSheet.Validate</c> exige Generala al final con <c>Priority == int.MaxValue</c>,
+    /// y el bono de encantamientos se calcula reactivamente DESPUÉS de elegir ganador (con side
+    /// effects), así que no se puede evaluar "por candidato" sin re-disparar triggers. La
+    /// selección sigue por <c>Priority</c>; la fórmula v2 se aplica después, en
+    /// <see cref="Rollgeon.Combat.Damage.PlayerComboDamage"/>.
+    /// </remarks>
     public static class ComboResolver
     {
         /// <summary>

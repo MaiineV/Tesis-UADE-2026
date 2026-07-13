@@ -1,0 +1,43 @@
+using System.Collections.Generic;
+using Rollgeon.Dice;
+
+namespace Rollgeon.Combat.Damage
+{
+    /// <summary>
+    /// Mapea <see cref="Rollgeon.Combos.ComboDetectionResult.ContributingIndices"/> (relativos
+    /// al subset de dados holdeado) de vuelta al <see cref="DiceType"/> real de cada dado en el
+    /// bag del jugador. Compartido por <c>EffDealDamage</c> (resolución real de daño) y
+    /// <c>DiceZoneView</c> (preview de <c>multi_dmg_combo</c> en el HUD) para no duplicar la
+    /// lógica de mapeo índice↔slot.
+    /// </summary>
+    public static class ContributingDiceResolver
+    {
+        /// <param name="contributingIndices">Índices relativos al subset holdeado.</param>
+        /// <param name="keptDiceOriginalIndices">Mapeo subset→bag slot (ver
+        /// <c>EffectContext.KeptDiceOriginalIndices</c>). Null ⇒ se asume que
+        /// <paramref name="contributingIndices"/> ya son bag slots directos (ej. cuando no
+        /// hubo filtrado de holds).</param>
+        /// <param name="bagDice">Tipos de dado del bag, en orden de slot.</param>
+        public static IReadOnlyList<DiceType> Resolve(
+            IReadOnlyList<int> contributingIndices,
+            IReadOnlyList<int> keptDiceOriginalIndices,
+            IReadOnlyList<DiceType> bagDice)
+        {
+            if (contributingIndices == null || contributingIndices.Count == 0 || bagDice == null)
+                return null;
+
+            var result = new List<DiceType>(contributingIndices.Count);
+            for (int i = 0; i < contributingIndices.Count; i++)
+            {
+                int localIndex = contributingIndices[i];
+                int bagSlot = (keptDiceOriginalIndices != null
+                                && localIndex >= 0 && localIndex < keptDiceOriginalIndices.Count)
+                    ? keptDiceOriginalIndices[localIndex]
+                    : localIndex;
+                if (bagSlot < 0 || bagSlot >= bagDice.Count) continue;
+                result.Add(bagDice[bagSlot]);
+            }
+            return result.Count > 0 ? result : null;
+        }
+    }
+}

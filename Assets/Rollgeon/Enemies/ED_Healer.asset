@@ -777,7 +777,7 @@ MonoBehaviour:
   Portrait: {fileID: 1966469057, guid: a2a466c1be56fb84584dafa752e02bef, type: 3}
   WeaknessComboId: combo.double_pair
   WeaknessMultiplierOverride: 0
-  BaseHP: 10
+  BaseHP: 50
   BaseAttack: 2
   BaseHealStrength: 3
   BaseSpeed: 4

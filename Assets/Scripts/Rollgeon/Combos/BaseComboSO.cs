@@ -136,17 +136,27 @@ namespace Rollgeon.Combos
         public virtual int Priority => _baseDamage;
 
         /// <summary>
-        /// API tipada requerida por Content#0097a. Default: orquesta <see cref="Matches"/> +
-        /// <see cref="GetCountUsed"/> + <see cref="BaseDamage"/>. Combos con logica variable
-        /// (SumaX) overridean para calcular <c>BaseDamage</c> dinamico.
+        /// API tipada requerida por Content#0097a. Delega en la sobrecarga con override de base.
         /// </summary>
         /// <param name="diceValues">Valores de los dados. <c>null</c> o vacio devuelven <see cref="ComboDetectionResult.NoMatch"/>.</param>
-        public virtual ComboDetectionResult Detect(IReadOnlyList<int> diceValues)
+        public ComboDetectionResult Detect(IReadOnlyList<int> diceValues)
+            => Detect(diceValues, null);
+
+        /// <summary>
+        /// Default: orquesta <see cref="Matches"/> + <see cref="GetCountUsed"/> +
+        /// <see cref="BaseDamage"/>. Combos con logica variable (SumaX) overridean para
+        /// calcular <c>BaseDamage</c> dinamico.
+        /// </summary>
+        /// <param name="flatBaseOverride">Base plano de la tabla por clase (Spec Daño v2 —
+        /// <c>ContractSheet.BaseDamageTable</c>). <c>null</c> = usar el base propio del SO.
+        /// Reemplaza solo la parte plana; los combos dinamicos suman su parte variable encima.</param>
+        public virtual ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
         {
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();
             var arr = diceValues as int[] ?? diceValues.ToArray();
             if (!Matches(arr)) return ComboDetectionResult.NoMatch();
-            return ComboDetectionResult.Match(BaseDamage, GetCountUsed(arr));
+            return ComboDetectionResult.Match(
+                ComboId, flatBaseOverride ?? BaseDamage, GetCountUsed(arr), GetContributingIndices(arr));
         }
 
         /// <summary>
@@ -156,6 +166,19 @@ namespace Rollgeon.Combos
         /// </summary>
         protected virtual int GetCountUsed(int[] finalDice)
             => finalDice?.Length ?? 0;
+
+        /// <summary>
+        /// Índices (en <paramref name="finalDice"/>) de los dados que formaron el combo ganador.
+        /// Default: todos los índices. Combos de subconjunto menor (Par, Trio, Poker, Doble Par,
+        /// Suma X) overridean.
+        /// </summary>
+        protected virtual int[] GetContributingIndices(int[] finalDice)
+        {
+            if (finalDice == null) return Array.Empty<int>();
+            var indices = new int[finalDice.Length];
+            for (int i = 0; i < finalDice.Length; i++) indices[i] = i;
+            return indices;
+        }
 
         // ---- Odin dropdown source ---------------------------------------
 
@@ -172,6 +195,12 @@ namespace Rollgeon.Combos
         /// disponibles incluso sin un catalogo populado (plan §10.10).
         /// </para>
         /// </summary>
+        /// <summary>
+        /// Expone <see cref="GetComboIds"/> a otros drawers (ej. el <c>ValueDropdown</c> de
+        /// <c>ContractSheet.BaseDamageTable</c>) sin duplicar el escaneo de assets.
+        /// </summary>
+        public static IEnumerable<string> GetKnownComboIds() => GetComboIds();
+
         private static IEnumerable<string> GetComboIds()
         {
             if (Application.isPlaying)

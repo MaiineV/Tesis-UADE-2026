@@ -32,6 +32,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(10, result.BaseDamage);
             Assert.AreEqual(2, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
         }
 
         [Test]
@@ -40,6 +41,15 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 6, 1, 6, 2, 3 });
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(2, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 2 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void Par_PicksHighestValueGroup_WhenMultipleQualify_2_2_4_4_4()
+        {
+            var result = _sut.Detect(new[] { 2, 2, 4, 4, 4 });
+            Assert.IsTrue(result.IsMatch);
+            CollectionAssert.AreEqual(new[] { 2, 3 }, result.ContributingIndices);
         }
 
         [Test]
@@ -92,6 +102,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(18, result.BaseDamage);
             Assert.AreEqual(4, result.CountUsed);
+            CollectionAssert.AreEquivalent(new[] { 0, 1, 2, 3 }, result.ContributingIndices);
         }
 
         [Test]
@@ -100,6 +111,7 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 2, 2, 6, 6, 1 });
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(4, result.CountUsed);
+            CollectionAssert.AreEquivalent(new[] { 0, 1, 2, 3 }, result.ContributingIndices);
         }
 
         /// <summary>Disambiguator critico (hard rule #7): FullHouse NO debe matchear como DoblePar.</summary>
@@ -159,6 +171,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(28, result.BaseDamage);
             Assert.AreEqual(3, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
         }
 
         [Test]
@@ -167,6 +180,7 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 5, 5, 5, 5, 2 });
             Assert.IsTrue(result.IsMatch, "Poker matches as Trio (count >= 3). Resolucion via Priority downstream.");
             Assert.AreEqual(3, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
         }
 
         [Test]
@@ -211,6 +225,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(35, result.BaseDamage);
             Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
 
         [Test]
@@ -277,6 +292,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(40, result.BaseDamage);
             Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
 
         [Test]
@@ -328,6 +344,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(60, result.BaseDamage);
             Assert.AreEqual(4, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, result.ContributingIndices);
         }
 
         [Test]
@@ -335,6 +352,7 @@ namespace Rollgeon.Combos.Tests
         {
             var result = _sut.Detect(new[] { 5, 5, 5, 5, 5 });
             Assert.IsTrue(result.IsMatch, "Generala matches as Poker (count >= 4). Priority resolves.");
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, result.ContributingIndices);
         }
 
         [Test]
@@ -379,6 +397,7 @@ namespace Rollgeon.Combos.Tests
             Assert.IsTrue(result.IsMatch);
             Assert.AreEqual(100, result.BaseDamage);
             Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
 
         [Test]
@@ -449,6 +468,7 @@ namespace Rollgeon.Combos.Tests
             // 25 + (4 * 3) = 37
             Assert.AreEqual(37, result.BaseDamage);
             Assert.AreEqual(3, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 4 }, result.ContributingIndices);
         }
 
         [Test]
@@ -459,6 +479,7 @@ namespace Rollgeon.Combos.Tests
             // 25 + (4 * 1) = 29
             Assert.AreEqual(29, result.BaseDamage);
             Assert.AreEqual(1, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
         }
 
         [Test]
@@ -498,6 +519,7 @@ namespace Rollgeon.Combos.Tests
             // 25 + (6 * 3) = 43
             Assert.AreEqual(43, result.BaseDamage);
             Assert.AreEqual(3, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
         }
     }
 }

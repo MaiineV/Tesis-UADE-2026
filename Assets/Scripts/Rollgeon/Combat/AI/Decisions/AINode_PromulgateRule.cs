@@ -152,19 +152,31 @@ namespace Rollgeon.Combat.AI.Decisions
             return null;
         }
 
+        // Comparan por el base EFECTIVO de la clase (tabla por clase — Spec Daño v2),
+        // no por el base global del SO.
         private static string LowestBaseComboId(ContractSheet sheet)
         {
             BaseComboSO best = null;
+            int bestBase = 0;
             foreach (var c in sheet.Combos)
-                if (c != null && (best == null || c.BaseDamage < best.BaseDamage)) best = c;
+            {
+                if (c == null) continue;
+                int b = sheet.GetBaseDamage(c);
+                if (best == null || b < bestBase) { best = c; bestBase = b; }
+            }
             return best?.ComboId;
         }
 
         private static string HighestBaseComboId(ContractSheet sheet)
         {
             BaseComboSO best = null;
+            int bestBase = 0;
             foreach (var c in sheet.Combos)
-                if (c != null && (best == null || c.BaseDamage > best.BaseDamage)) best = c;
+            {
+                if (c == null) continue;
+                int b = sheet.GetBaseDamage(c);
+                if (best == null || b > bestBase) { best = c; bestBase = b; }
+            }
             return best?.ComboId;
         }
 

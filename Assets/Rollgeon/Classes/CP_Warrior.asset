@@ -33,7 +33,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Heroes.PassiveHook, Rollgeon
     - Name: TriggerEvent
       Entry: 3
-      Data: 7
+      Data: 8
     - Name: Effect
       Entry: 7
       Data: 2|Rollgeon.Effects.EffectData, Rollgeon
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 5|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+      Data: 5|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 6|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -96,7 +96,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _shieldSource
+    - Name: _healSource
       Entry: 3
       Data: 0
     - Name: _baseAmount
@@ -105,6 +105,42 @@ MonoBehaviour:
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _isPercentOfMax
+      Entry: 5
+      Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: false
+    - Name: _healThreshold
+      Entry: 3
+      Data: 30
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 1
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _energyCostInCombat
+      Entry: 3
+      Data: 2
+    - Name: _useDiceRoll
+      Entry: 5
+      Data: false
+    - Name: _diceCount
+      Entry: 3
+      Data: 1
+    - Name: _diceFaces
+      Entry: 3
+      Data: 10
+    - Name: _sourceTag
+      Entry: 1
+      Data: passive.warrior.heal_on_turn
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -130,7 +166,7 @@ MonoBehaviour:
   DisplayName: "Regeneraci\xF3n del Guerrero"
   Description: ' Al inicio de cada turno, el guerrero se cura 2 HP. '
   Hooks:
-  - TriggerEvent: 7
+  - TriggerEvent: 8
     Effect:
       Label: Effect Group
       PreConditions: []
@@ -140,7 +176,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 1893612545939341439
-      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -152,6 +188,18 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 0
           AutoAccept: 1
-        _shieldSource: 0
+        _healSource: 0
         _baseAmount: 2
         _comboMultiplier: 1
+        _readerMultiplier: 1
+        _isPercentOfMax: 0
+        _useBuildDice: 0
+        _healThreshold: 30
+        _healScaleFactor: 1
+        _healMaxCap: 0
+        _energyCostInCombat: 2
+        _useDiceRoll: 0
+        _diceCount: 1
+        _diceFaces: 10
+        _sourceTag: passive.warrior.heal_on_turn
+        _selfHealOnNoTarget: 1

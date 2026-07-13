@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -338,19 +341,45 @@ namespace Rollgeon.UI.HUD
                 ? sheet.MatchBest(keptDice)
                 : MatchBestFromCatalog(keptDice);
 
-            // Boss 3 (§4): la preview del daño refleja la capa de modificadores del Contrato.
-            int baseDmg = best?.BaseDamage ?? 0;
+            // Capa 1: base plano de la tabla por clase (Spec Daño v2). Capa 2 (Boss 3 §4):
+            // la preview del daño refleja la capa de modificadores del Contrato.
+            int baseDmg = best == null ? 0 : (sheet != null ? sheet.GetBaseDamage(best) : best.BaseDamage);
             if (best != null
                 && ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var cmods)
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
+
+            float multiDmgCombo = 1f;
+            int shieldPreview = 0;
+            if (best != null)
+            {
+                var comboResult = best.Detect(keptDice);
+                System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
+                if (comboResult.IsMatch
+                    && ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                    && enchants?.Bag != null)
+                {
+                    var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
+                    contributingDice = ContributingDiceResolver.Resolve(
+                        comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
+                    multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
+                }
+
+                // Preview del escudo (Spec Escudo v2) — mismos dados contribuyentes que
+                // el multi; sin sheet no hay tabla y el preview queda en 0.
+                if (comboResult.IsMatch && sheet != null)
+                    shieldPreview = PlayerComboShield.Resolve(
+                        sheet.GetShieldBase(best.ComboId), contributingDice);
+            }
 
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best?.DisplayName ?? string.Empty,
-                BaseDamage = baseDmg
+                BaseDamage = baseDmg,
+                MultiDmgCombo = multiDmgCombo,
+                ShieldPreview = shieldPreview,
             });
         }
 
