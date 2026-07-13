@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 712a444b89dfaa344b432487a5ba9008, type: 3}
+  m_Name: Combo_FuerzaBruta
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combos.Concretes.Combo_FuerzaBruta
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _extraEffects
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  _comboId: combo.brute_force
+  _displayName: Fuerza Bruta
+  _description: 'Suma los valores de todos los dados que cayeron en la mitad superior
+    de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12).'
+  _icon: {fileID: 0}
+  _baseDamage: 5
+  _valueMultipliers:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  _generalMultiplier: 1
+  _baseDamageConfigurable: 5

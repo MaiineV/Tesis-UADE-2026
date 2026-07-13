@@ -8,8 +8,8 @@ using UnityEngine;
 namespace Rollgeon.Combos.Tests
 {
     /// <summary>
-    /// Smoke del catalogo con los 8 concretos (plan §9.4):
-    /// <c>AllIds.Count() == 8</c>, <c>GetById</c> retorna tipado, <c>Contains</c> reconoce presentes/ausentes.
+    /// Smoke del catalogo con los 9 concretos (plan §9.4 + Fuerza Bruta):
+    /// <c>AllIds.Count() == 9</c>, <c>GetById</c> retorna tipado, <c>Contains</c> reconoce presentes/ausentes.
     /// </summary>
     [TestFixture]
     public class ComboCatalogTests
@@ -30,6 +30,7 @@ namespace Rollgeon.Combos.Tests
                 ComboTestUtils.CreateCombo<Combo_Poker>(ComboId.Poker, 60),
                 ComboTestUtils.CreateCombo<Combo_Generala>(ComboId.Generala, 100),
                 ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.SumX, 25),
+                ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5),
             };
 
             _catalog = ScriptableObject.CreateInstance<ComboCatalogSO>();
@@ -47,10 +48,10 @@ namespace Rollgeon.Combos.Tests
         }
 
         [Test]
-        public void Catalog_AllIds_Returns_Eight_Ids()
+        public void Catalog_AllIds_Returns_Nine_Ids()
         {
             var ids = _catalog.AllIds.ToList();
-            Assert.AreEqual(8, ids.Count);
+            Assert.AreEqual(9, ids.Count);
             CollectionAssert.Contains(ids, ComboId.Par);
             CollectionAssert.Contains(ids, ComboId.DoublePair);
             CollectionAssert.Contains(ids, ComboId.Triple);
@@ -59,6 +60,7 @@ namespace Rollgeon.Combos.Tests
             CollectionAssert.Contains(ids, ComboId.Poker);
             CollectionAssert.Contains(ids, ComboId.Generala);
             CollectionAssert.Contains(ids, ComboId.SumX);
+            CollectionAssert.Contains(ids, ComboId.BruteForce);
         }
 
         [Test]

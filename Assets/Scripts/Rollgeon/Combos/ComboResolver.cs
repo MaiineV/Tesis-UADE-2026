@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Rollgeon.Dice;
 
 namespace Rollgeon.Combos
 {
@@ -28,6 +29,14 @@ namespace Rollgeon.Combos
         /// <see cref="ComboDetectionResult.NoMatch"/> si ninguno matchea / catalog null.</returns>
         public static ComboDetectionResult DetectBest(ComboCatalogSO catalog,
             IReadOnlyList<int> dice, out BaseComboSO best)
+            => DetectBest(catalog, dice, null, out best);
+
+        /// <summary>
+        /// Overload con los tipos de dado alineados 1:1 a <paramref name="dice"/>. Null ⇒ los
+        /// combos que dependen del rango del dado (Fuerza Bruta) caen a su fallback d6.
+        /// </summary>
+        public static ComboDetectionResult DetectBest(ComboCatalogSO catalog,
+            IReadOnlyList<int> dice, IReadOnlyList<DiceType> diceTypes, out BaseComboSO best)
         {
             best = null;
             if (catalog == null || dice == null || dice.Count == 0)
@@ -41,7 +50,7 @@ namespace Rollgeon.Combos
             foreach (var combo in catalog.Entries)
             {
                 if (combo == null) continue;
-                var result = combo.Detect(diceArr);
+                var result = combo.Detect(diceArr, diceTypes, null);
                 if (result.IsMatch && combo.Priority > bestPriority)
                 {
                     bestPriority = combo.Priority;

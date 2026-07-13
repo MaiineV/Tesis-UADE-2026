@@ -39,5 +39,35 @@ namespace Rollgeon.Combat.Damage
             }
             return result.Count > 0 ? result : null;
         }
+
+        /// <summary>
+        /// Tipos de dado alineados 1:1 con el subset holdeado (caso identidad de
+        /// <see cref="Resolve"/>). Usado por los call sites de detección para pasar los tipos
+        /// a los overloads tipados de <c>BaseComboSO</c> (Fuerza Bruta necesita el rango de
+        /// cada dado ANTES de matchear, no después).
+        /// </summary>
+        /// <param name="keptDiceOriginalIndices">Mapeo subset→bag slot. Null ⇒ identidad
+        /// (el subset ya está en orden de slot).</param>
+        /// <param name="bagDice">Tipos de dado del bag, en orden de slot.</param>
+        /// <param name="keptCount">Cantidad de dados del subset (define el largo del resultado
+        /// cuando el mapeo es identidad).</param>
+        public static IReadOnlyList<DiceType> ResolveKept(
+            IReadOnlyList<int> keptDiceOriginalIndices,
+            IReadOnlyList<DiceType> bagDice,
+            int keptCount)
+        {
+            if (bagDice == null || keptCount <= 0) return null;
+
+            var result = new List<DiceType>(keptCount);
+            for (int i = 0; i < keptCount; i++)
+            {
+                int bagSlot = (keptDiceOriginalIndices != null && i < keptDiceOriginalIndices.Count)
+                    ? keptDiceOriginalIndices[i]
+                    : i;
+                if (bagSlot < 0 || bagSlot >= bagDice.Count) return null;
+                result.Add(bagDice[bagSlot]);
+            }
+            return result;
+        }
     }
 }

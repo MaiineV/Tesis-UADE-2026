@@ -165,6 +165,13 @@ namespace Rollgeon.Heroes
         /// Retorna <c>null</c> si no hay match (incluye input vacio/null).
         /// </summary>
         public BaseComboSO MatchBest(IReadOnlyList<int> dice)
+            => MatchBest(dice, null);
+
+        /// <summary>
+        /// Overload con los tipos de dado alineados 1:1 a <paramref name="dice"/>. Null ⇒ los
+        /// combos que dependen del rango del dado (Fuerza Bruta) caen a su fallback d6.
+        /// </summary>
+        public BaseComboSO MatchBest(IReadOnlyList<int> dice, IReadOnlyList<Rollgeon.Dice.DiceType> diceTypes)
         {
             if (dice == null || dice.Count == 0) return null;
             if (Combos == null || Combos.Count == 0) return null;
@@ -187,7 +194,7 @@ namespace Rollgeon.Heroes
                 if (combo == null) continue;
                 if (IsCrossed(combo)) continue;
                 if (blockService != null && blockService.IsBlocked(combo.ComboId)) continue;
-                if (!combo.Matches(arr)) continue;
+                if (!combo.Matches(arr, diceTypes)) continue;
                 if (combo.Priority > bestPriority)
                 {
                     best = combo;

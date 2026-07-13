@@ -332,14 +332,24 @@ namespace Rollgeon.UI.HUD
             }
 
             var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, comboKeep);
+            var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
+
+            // Fuerza Bruta matchea por rango del dado — los tipos entran a la detección
+            // misma, no solo al multi de daño de después.
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> keptTypes = null;
+            bool hasBag = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                          && enchants?.Bag != null;
+            if (hasBag)
+                keptTypes = ContributingDiceResolver.ResolveKept(
+                    keptOriginalIndices, enchants.Bag.Dice, keptDice.Length);
 
             // Preferimos el ContractSheet del hero (respeta priorities y el set
             // específico de combos que ese hero puede usar). Fallback: catálogo
             // global si el hero/contract no está disponible.
             var sheet = ResolvePlayerContractSheet();
             BaseComboSO best = sheet != null
-                ? sheet.MatchBest(keptDice)
-                : MatchBestFromCatalog(keptDice);
+                ? sheet.MatchBest(keptDice, keptTypes)
+                : MatchBestFromCatalog(keptDice, keptTypes);
 
             // Capa 1: base plano de la tabla por clase (Spec Daño v2). Capa 2 (Boss 3 §4):
             // la preview del daño refleja la capa de modificadores del Contrato.
@@ -353,13 +363,10 @@ namespace Rollgeon.UI.HUD
             int shieldPreview = 0;
             if (best != null)
             {
-                var comboResult = best.Detect(keptDice);
+                var comboResult = best.Detect(keptDice, keptTypes, null);
                 System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
-                if (comboResult.IsMatch
-                    && ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
-                    && enchants?.Bag != null)
+                if (comboResult.IsMatch && hasBag)
                 {
-                    var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
                     contributingDice = ContributingDiceResolver.Resolve(
                         comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
                     multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
@@ -390,7 +397,8 @@ namespace Rollgeon.UI.HUD
                 : null;
         }
 
-        private static BaseComboSO MatchBestFromCatalog(int[] keptDice)
+        private static BaseComboSO MatchBestFromCatalog(int[] keptDice,
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> keptTypes)
         {
             if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null) return null;
 
@@ -398,7 +406,7 @@ namespace Rollgeon.UI.HUD
             int bestPriority = -1;
             foreach (var combo in catalog.Entries)
             {
-                var result = combo.Detect(keptDice);
+                var result = combo.Detect(keptDice, keptTypes, null);
                 if (result.IsMatch && combo.Priority > bestPriority)
                 {
                     best = combo;

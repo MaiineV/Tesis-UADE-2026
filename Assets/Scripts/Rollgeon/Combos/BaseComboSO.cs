@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Effects;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -112,6 +113,16 @@ namespace Rollgeon.Combos
         public abstract bool Matches(int[] finalDice);
 
         /// <summary>
+        /// Overload con los tipos de dado alineados 1:1 a <paramref name="finalDice"/>. Default:
+        /// ignora los tipos y delega en <see cref="Matches(int[])"/> — solo los combos cuya regla
+        /// depende del rango del dado (Fuerza Bruta) overridean.
+        /// </summary>
+        /// <param name="diceTypes">Tipo de cada dado, mismo orden que <paramref name="finalDice"/>.
+        /// Puede venir null cuando el call site no tiene los tipos (paths legacy, tests).</param>
+        public virtual bool Matches(int[] finalDice, IReadOnlyList<DiceType> diceTypes)
+            => Matches(finalDice);
+
+        /// <summary>
         /// Formula §5.1.1: <c>ComputeCount = (Σ dado × ValueMultipliers[dado-1]) × GeneralMultiplier</c>.
         /// Usado por <c>AttackResolver</c> (§12) downstream para la formula completa de dano:
         /// <c>damage = BaseDamage + ComputeCount</c>.
@@ -158,6 +169,18 @@ namespace Rollgeon.Combos
             return ComboDetectionResult.Match(
                 ComboId, flatBaseOverride ?? BaseDamage, GetCountUsed(arr), GetContributingIndices(arr));
         }
+
+        /// <summary>
+        /// Overload con los tipos de dado alineados 1:1 a <paramref name="diceValues"/>. Default:
+        /// ignora los tipos y delega en <see cref="Detect(IReadOnlyList{int}, int?)"/> — solo los
+        /// combos cuya regla depende del rango del dado (Fuerza Bruta) overridean.
+        /// </summary>
+        /// <param name="diceTypes">Tipo de cada dado, mismo orden que <paramref name="diceValues"/>.
+        /// Null cuando el call site no tiene los tipos (paths legacy, tests).</param>
+        /// <param name="flatBaseOverride">Ver <see cref="Detect(IReadOnlyList{int}, int?)"/>.</param>
+        public virtual ComboDetectionResult Detect(IReadOnlyList<int> diceValues,
+            IReadOnlyList<DiceType> diceTypes, int? flatBaseOverride)
+            => Detect(diceValues, flatBaseOverride);
 
         /// <summary>
         /// Cantidad de dados consumidos cuando el combo matchea. Default: <c>finalDice.Length</c>.

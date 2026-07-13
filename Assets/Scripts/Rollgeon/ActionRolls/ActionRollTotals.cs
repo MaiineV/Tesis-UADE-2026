@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combos;
+using Rollgeon.Dice;
 
 namespace Rollgeon.ActionRolls
 {
@@ -33,11 +34,24 @@ namespace Rollgeon.ActionRolls
                 && ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog)
                 && catalog != null)
             {
-                var fallback = ComboResolver.DetectBest(catalog, dice, out _);
+                var fallback = ComboResolver.DetectBest(catalog, dice, ResolveSlotAlignedTypes(dice.Count), out _);
                 if (fallback.IsMatch) return fallback.BaseDamage;
             }
 
             return SumOf(dice);
+        }
+
+        // Fuerza Bruta necesita el rango de cada dado en la detección. El caller legacy pasa
+        // el roll COMPLETO en orden de slot (EffectContext.DiceResult) — solo cuando el count
+        // coincide con el bag la identidad dado↔slot es confiable. Un subset sin mapa ⇒ null
+        // y el combo cae a su fallback d6.
+        private static IReadOnlyList<DiceType> ResolveSlotAlignedTypes(int diceCount)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
+                || enchants?.Bag == null || enchants.Bag.Dice == null
+                || enchants.Bag.Dice.Count != diceCount)
+                return null;
+            return enchants.Bag.Dice;
         }
 
         public static int SumOf(IReadOnlyList<int> dice)

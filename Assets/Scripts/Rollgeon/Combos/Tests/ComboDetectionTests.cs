@@ -522,4 +522,115 @@ namespace Rollgeon.Combos.Tests
             CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
         }
     }
+
+    // =============================================================================
+    // Combo_FuerzaBruta (mitad superior relativa al dado: valor > MaxFace/2)
+    // =============================================================================
+    [TestFixture]
+    public class Combo_FuerzaBruta_Tests
+    {
+        private Combo_FuerzaBruta _sut;
+
+        [SetUp]
+        public void Setup()
+        {
+            _sut = ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5);
+            ComboTestUtils.SetField(_sut, "_baseDamageConfigurable", 5);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_sut);
+        }
+
+        [Test]
+        public void FuerzaBruta_Positive_Heterogeneo_5_2_6_3_6()
+        {
+            // d6=5 (>3) sí, d6=2 no, d8=6 (>4) sí, d4=3 (>2) sí, d12=6 no (necesita 7+).
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
+                Rollgeon.Dice.DiceType.D4, Rollgeon.Dice.DiceType.D12,
+            };
+            var result = _sut.Detect(new[] { 5, 2, 6, 3, 6 }, types, null);
+
+            Assert.IsTrue(result.IsMatch);
+            // 5 (piso) + 5 + 6 + 3 = 19
+            Assert.AreEqual(19, result.BaseDamage);
+            Assert.AreEqual(3, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 2, 3 }, result.ContributingIndices);
+            Assert.AreEqual(ComboId.BruteForce, result.ComboId);
+        }
+
+        [Test]
+        public void FuerzaBruta_Negative_TodosMitadInferior_1_2_3_2_1()
+        {
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            var result = _sut.Detect(new[] { 1, 2, 3, 2, 1 }, types, null);
+            Assert.IsFalse(result.IsMatch);
+            Assert.AreEqual(0, result.BaseDamage);
+        }
+
+        [Test]
+        public void FuerzaBruta_MitadEsRelativa_4EnD8_NoEntra()
+        {
+            // Disambiguator del fallback: 4 es mitad superior en d6 pero NO en d8 (necesita 5+).
+            var types = new[] { Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D8 };
+            var result = _sut.Detect(new[] { 4, 3 }, types, null);
+            Assert.IsFalse(result.IsMatch);
+        }
+
+        [Test]
+        public void FuerzaBruta_Bordes_D3Entra_D20No()
+        {
+            // d3=2 entra (midpoint 1); d20=10 no (necesita 11+).
+            var types = new[] { Rollgeon.Dice.DiceType.D3, Rollgeon.Dice.DiceType.D20 };
+            var result = _sut.Detect(new[] { 2, 10 }, types, null);
+
+            Assert.IsTrue(result.IsMatch);
+            // 5 (piso) + 2 = 7
+            Assert.AreEqual(7, result.BaseDamage);
+            Assert.AreEqual(1, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void FuerzaBruta_FallbackSinTipos_AsumeD6_4_4_1_2_3()
+        {
+            // Sin tipos (path legacy/tests) asume d6: 4 y 4 entran → 5 + 8 = 13.
+            var result = _sut.Detect(new[] { 4, 4, 1, 2, 3 });
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(13, result.BaseDamage);
+            Assert.AreEqual(2, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void FuerzaBruta_Matches_ConTipos_RespetaRango()
+        {
+            var typesD8 = new[] { Rollgeon.Dice.DiceType.D8 };
+            Assert.IsFalse(_sut.Matches(new[] { 4 }, typesD8), "4 en d8 es mitad inferior.");
+            Assert.IsTrue(_sut.Matches(new[] { 5 }, typesD8), "5 en d8 es mitad superior.");
+        }
+
+        [Test]
+        public void FuerzaBruta_Empty_NoMatch()
+        {
+            var result = _sut.Detect(new int[0]);
+            Assert.IsFalse(result.IsMatch);
+        }
+
+        [Test]
+        public void FuerzaBruta_Null_NoMatch()
+        {
+            var result = _sut.Detect(null);
+            Assert.IsFalse(result.IsMatch);
+        }
+    }
 }
