@@ -661,6 +661,7 @@ MonoBehaviour:
   BaseAttackRange: 1
   ExtraTiers:
   - Label: T2
+    MinFloor: 2
     HP:
       Mode: 0
       Multiplier: 1.3
