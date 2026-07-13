@@ -137,10 +137,26 @@ namespace Rollgeon.Run
             _transitioning = false;
         }
 
-        /// <summary>Seed determinista por piso para reproducibilidad (save/restore futuro).</summary>
-        private static int DeriveSeed(int baseSeed, int floorIndex)
+        /// <summary>Seed determinista por piso para reproducibilidad (save/restore).</summary>
+        public static int DeriveSeed(int baseSeed, int floorIndex)
         {
             unchecked { return baseSeed * 92821 + floorIndex; }
+        }
+
+        /// <summary>
+        /// Camina la cadena <see cref="FloorLayoutSO.NextFloor"/> desde
+        /// <paramref name="first"/> <paramref name="floorIndex"/> veces — usado por el
+        /// resume para arrancar la run en el piso guardado. Clampea al último piso
+        /// no-null si el índice excede la cadena (save de una build con más pisos).
+        /// </summary>
+        public static FloorLayoutSO ResolveLayoutForFloor(FloorLayoutSO first, int floorIndex)
+        {
+            var layout = first;
+            for (int i = 0; i < floorIndex && layout != null && layout.NextFloor != null; i++)
+            {
+                layout = layout.NextFloor;
+            }
+            return layout;
         }
     }
 }

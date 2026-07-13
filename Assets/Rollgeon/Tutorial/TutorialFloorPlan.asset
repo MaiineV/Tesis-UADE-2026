@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae8c9c1c2a219614bab6344c8cb6eeb7, type: 3}
+  m_Name: TutorialFloorPlan
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tutorial.TutorialFloorPlanSO
+  _entries:
+  - Cell: {x: 0, y: 0}
+    Room: {fileID: 11400000, guid: a63e4220a1403174b93cdbe6defdaf5c, type: 2}
+    StartLocked: 0
+  - Cell: {x: 0, y: 1}
+    Room: {fileID: 11400000, guid: 2a5391df100952a4d9a524464c52a061, type: 2}
+    StartLocked: 0
+  - Cell: {x: 0, y: 2}
+    Room: {fileID: 11400000, guid: e017c616842b87648a4bbebc0b150895, type: 2}
+    StartLocked: 0
+  - Cell: {x: -1, y: 1}
+    Room: {fileID: 11400000, guid: 007e05491eeab154fb09793b3b421981, type: 2}
+    StartLocked: 1
+  - Cell: {x: 1, y: 2}
+    Room: {fileID: 11400000, guid: 4027d317c77b20d40bef2ea0e662d2dc, type: 2}
+    StartLocked: 0

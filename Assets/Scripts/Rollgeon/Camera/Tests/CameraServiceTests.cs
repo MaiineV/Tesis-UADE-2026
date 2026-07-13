@@ -399,6 +399,8 @@ namespace Rollgeon.GameCamera.Tests
             }
             public bool EnterRoomByDoor(DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Occluders;
         }

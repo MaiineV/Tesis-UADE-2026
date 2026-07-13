@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce8c3bf7664f9d044a5f809fc700505d, type: 3}
+  m_Name: TutorialConfig
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tutorial.TutorialConfigSO
+  _tutorialHero: {fileID: 11400000, guid: 1814feba2e167d04ba6576f8021f22a3, type: 2}
+  _floorPlan: {fileID: 11400000, guid: 65502453d47d6714c9ce83cb395a89e7, type: 2}
+  _rulesetId: 
+  _shopConfig: {fileID: 11400000, guid: 9a7de36e5acec414d9acc724124644a5, type: 2}
+  _shopPool: {fileID: 11400000, guid: 8906b18a4735f634c9d8c27ef6171b36, type: 2}
+  _tutorialStartingGold: 0
+  _postTutorialStartingGold: 10

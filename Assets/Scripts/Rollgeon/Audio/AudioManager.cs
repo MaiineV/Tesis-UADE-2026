@@ -51,6 +51,7 @@ namespace Rollgeon.Audio
             BuildSfxPool();
             BuildMusicSources();
             ApplyDefaultVolumes();
+            SaveSystem.Register(this);
         }
 
         private void BuildSfxPool()
@@ -351,6 +352,7 @@ namespace Rollgeon.Audio
 
         private void OnDestroy()
         {
+            SaveSystem.Unregister(this);
             if (_crossfadeInTween.isAlive) _crossfadeInTween.Stop();
             if (_crossfadeOutTween.isAlive) _crossfadeOutTween.Stop();
         }

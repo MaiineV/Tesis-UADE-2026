@@ -106,7 +106,7 @@ namespace Rollgeon.UI.HUD
             }
         }
 
-        /// <summary>Hook opcional para que un futuro <c>IEntityPortraitResolver</c> setee el sprite.</summary>
+        /// <summary>Setea el portrait. Lo llama <see cref="TurnQueueView"/> resolviendo <c>IEntityPortraitResolver</c>.</summary>
         public void SetPortrait(Sprite portrait)
         {
             if (_portrait != null && portrait != null)

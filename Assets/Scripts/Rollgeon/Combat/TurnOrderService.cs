@@ -14,12 +14,13 @@ namespace Rollgeon.Combat
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Regla "jugador primero en su turno" (GDD §12.7).</b> Esta regla NO
-    /// se implementa acá: el servicio es agnóstico al rol. El jugador tiene
-    /// <c>Speed</c> como cualquier otra entidad, y su slot sale del roll de
-    /// initiative como los enemigos. "Primero en su turno" = dentro de su slot
-    /// individual (cuando es su turno, actúa el player, no hay nadie "antes"
-    /// en el mismo tick). No forzar al player al tope de la cola.
+    /// <b>Regla "el jugador siempre tiene el primer turno" (CNF-006).</b> El
+    /// servicio sigue siendo agnóstico al rol — no sabe qué es un "player" ni
+    /// un "enemy". Lo que expone es <c>priorityGuid</c>: un guid opcional que,
+    /// si está presente entre los participantes, se fuerza al frente de la
+    /// cola DESPUÉS de resolver el orden por initiative. La política de "quién
+    /// es prioritario" la decide el caller (<see cref="Rollgeon.Combat.FSM.States.CombatEnterState"/>
+    /// pasa <c>Context.PlayerId</c>) — el servicio sólo aplica el reorder.
     /// </para>
     /// <para>
     /// <b>Snapshot del orden.</b> Los eventos <c>OnTurnQueueBuilt</c> disparan
@@ -68,9 +69,17 @@ namespace Rollgeon.Combat
         /// resetea cursor/round y dispara <see cref="EventName.OnTurnQueueBuilt"/>.
         /// </summary>
         /// <param name="participants">Guids participantes. Debe contener al menos uno.</param>
+        /// <param name="priorityGuid">
+        /// Guid opcional (CNF-006) que se fuerza al índice 0 de la cola después del
+        /// sort por initiative — el resto de los participantes conserva su orden
+        /// relativo. <c>Guid.Empty</c> (default) desactiva el forcing. Si el guid
+        /// no está entre <paramref name="participants"/>, se ignora en silencio
+        /// (no tira excepción) — el servicio no valida membership de un guid ajeno
+        /// a este round.
+        /// </param>
         /// <exception cref="ArgumentNullException">Si <paramref name="participants"/> es null.</exception>
         /// <exception cref="InvalidOperationException">Si la lista queda vacía.</exception>
-        public void BuildForCombat(IEnumerable<Guid> participants)
+        public void BuildForCombat(IEnumerable<Guid> participants, Guid priorityGuid = default)
         {
             if (participants == null)
             {
@@ -100,6 +109,19 @@ namespace Rollgeon.Combat
             }
             _cursor = 0;
             _roundIndex = 0;
+
+            // CNF-006: forzar priorityGuid al frente ANTES de disparar
+            // OnTurnQueueBuilt — el HUD debe ver la cola ya reordenada.
+            if (priorityGuid != Guid.Empty)
+            {
+                int idx = _orderForRound.IndexOf(priorityGuid);
+                if (idx > 0)
+                {
+                    _orderForRound.RemoveAt(idx);
+                    _orderForRound.Insert(0, priorityGuid);
+                }
+                // idx == 0: ya está primero, no-op. idx < 0: no participa, se ignora.
+            }
 
             FireTurnQueueBuilt();
         }

@@ -18,12 +18,16 @@ namespace Rollgeon.Upgrades.Combos
         fileName = "ComboPassiveBootstrap")]
     public sealed class ComboPassiveBootstrap : ScriptableObject, IPreloadableService
     {
+        [Tooltip("Pool de pasivas — resolver UpgradeId → SO al restaurar un save. " +
+                 "Debe ser el mismo pool que rolea la tienda.")]
+        [SerializeField] private ComboPassivePoolSO _passivePool;
+
         public int Priority => 86;
         public ServiceScope Scope => ServiceScope.Global;
 
         public void Register()
         {
-            var service = new ComboPassiveService();
+            var service = new ComboPassiveService(_passivePool);
             service.Register();
         }
     }

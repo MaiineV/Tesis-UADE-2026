@@ -114,6 +114,54 @@ namespace Rollgeon.UI.Screens
         private bool _autoPopOnCombatEnd = true;
 
         // ======================================================================
+        // Tutorial anchors — mismo patrón que PlayerActionButtonsView.TryGetButtonRect
+        // ======================================================================
+
+        /// <summary>RectTransform de la barra de vida del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetHealthBarRect(out RectTransform rect)
+        {
+            rect = _healthBar != null ? _healthBar.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la barra de energía del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetEnergyBarRect(out RectTransform rect)
+        {
+            rect = _energyBar != null ? _energyBar.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la zona de dados (roll area) — anchor del overlay del tutorial.</summary>
+        public bool TryGetDiceZoneRect(out RectTransform rect)
+        {
+            rect = null;
+            if (_diceZone != null) rect = _diceZone.GetRollArea();
+            if (rect == null && _diceZone != null) rect = _diceZone.transform as RectTransform;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform del botón Roll/Reroll — anchor del overlay del tutorial.</summary>
+        public bool TryGetRollButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _rerollCount != null && _rerollCount.TryGetRollButtonRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _playerActionButtons != null && _playerActionButtons.TryGetConfirmRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
+        public bool TryGetEndTurnRect(out RectTransform rect)
+        {
+            rect = null;
+            return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
+        }
+
+        // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
 
@@ -150,6 +198,7 @@ namespace Rollgeon.UI.Screens
 
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Coroutine _flashCoroutine;
+        private bool _pushed;
 
         private void Awake()
         {
@@ -184,6 +233,11 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPushed(IScreenPayload payload)
         {
+            // ScreenManager no dedupea el stack: un doble push acumularía la suscripción
+            // del flash de daño y el safety-net de OnCombatEnd. Re-push → rebind limpio.
+            if (_pushed) OnPopped();
+            _pushed = true;
+
             ResolvePlayer();
 
             BindAll(_playerGuid);
@@ -201,6 +255,9 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPopped()
         {
+            if (!_pushed) return;
+            _pushed = false;
+
             UnbindAll();
 
             if (_onDamageResolved != null)

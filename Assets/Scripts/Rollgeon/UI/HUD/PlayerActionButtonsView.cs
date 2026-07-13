@@ -166,6 +166,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(true);
@@ -198,6 +199,30 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        /// <summary>
+        /// RectTransform del botón de un slot — usado por el overlay del tutorial
+        /// para recortar/señalar el botón. <c>false</c> si el slot no está cableado.
+        /// </summary>
+        public bool TryGetButtonRect(HeroBehaviorSlot slot, out RectTransform rect)
+        {
+            rect = null;
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                var button = _buttons[i];
+                if (button == null || button.Slot != slot) continue;
+                rect = button.transform as RectTransform;
+                return rect != null;
+            }
+            return false;
+        }
+
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmRect(out RectTransform rect)
+        {
+            rect = _confirmButton != null ? _confirmButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         public void Unbind()
         {
             if (!_bound) return;
@@ -213,6 +238,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(false);
@@ -345,6 +371,13 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        // Tutorial: un slot recién desbloqueado debe pasar de Locked a Available
+        // sin esperar otro evento de turno.
+        private void HandleTutorialActionUnlocked(params object[] args)
+        {
+            RecomputeButtonStates();
+        }
+
         private void HandleEntityMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
             // Cualquier movimiento puede cambiar la disponibilidad (range-based attack
@@ -383,6 +416,12 @@ namespace Rollgeon.UI.HUD
 
             _selectedSlot = index;
             RecomputeButtonStates();
+
+            // El botón solo es clickeable si su estado lo permite (gating incluido),
+            // así que esto anuncia una selección efectiva — el tutorial lo usa para
+            // encadenar el paso siguiente (p.e. señalar los dados).
+            if (index >= 0 && index < _buttons.Length && _buttons[index] != null)
+                EventManager.Trigger(EventName.OnHeroBehaviorClicked, _buttons[index].Slot);
         }
 
         // ======================================================================
@@ -499,6 +538,17 @@ namespace Rollgeon.UI.HUD
             // el bug de "botón sigue activo tras usar" y "boss: botones grises con energía".
             // Quitar estos Debug.Log una vez diagnosticado.
             if (!_isPlayerTurn)
+            {
+                return ActionButtonState.Locked;
+            }
+
+            // Tutorial: slots que el tutorial todavía no desbloqueó quedan Locked.
+            // Gate visual — el backstop de ejecución vive en
+            // TurnManager.IsForbiddenByRuleset (mismo servicio).
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null
+                && _buttons[slotIndex] != null
+                && tutorialGate.IsSlotLocked(_buttons[slotIndex].Slot))
             {
                 return ActionButtonState.Locked;
             }

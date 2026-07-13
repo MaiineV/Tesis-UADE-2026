@@ -62,15 +62,19 @@ namespace Rollgeon.Run
             //    Si no vino, el flujo cae al fallback de Fase 1 (StartingDiceBagRef o
             //    Resources/AD_Warrior_StartingBag) en CombatHandoffService.
             var builtBag = PendingRunRequest.BuiltDiceBag;
+            var isResume = PendingRunRequest.IsResume;
 
             // 3. Arrancar la run. El chain
             //    (RunController.OnRunStart → ExplorationController.BeginExploration →
             //    ProcessRoom) puede pushear CombatHUD con seguridad.
-            RunBootstrapper.StartRun(hero, ruleset, runId, builtBag);
-            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}, " +
+            //    En resume, StartRun NO limpia el cache del SaveSystem: los Register
+            //    de los servicios run-scoped auto-restauran el estado guardado.
+            RunBootstrapper.StartRun(hero, ruleset, runId, builtBag, isResume);
+            Debug.Log(LogPrefix + $"Run started. hero={hero.EntityId}, runId={runId}, resume={isResume}, " +
                       $"builtBag={(builtBag != null ? builtBag.Dice.Count + " dados" : "null (fallback)")}", this);
 
-            var startingItems = PendingRunRequest.StartingItems;
+            // En resume el inventario viene del save — re-aplicar duplicaría items.
+            var startingItems = isResume ? null : PendingRunRequest.StartingItems;
             if (startingItems != null && startingItems.Count > 0)
             {
                 if (ServiceLocator.TryGetService<IInventoryService>(out var inventory))

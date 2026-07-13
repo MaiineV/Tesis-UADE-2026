@@ -130,7 +130,7 @@ Material:
     - _MidThreshold: 0.533
     - _OcclusionStrength: 1
     - _OutlineWidth: 0
-    - _PaletteSlot: 29
+    - _PaletteSlot: 0
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1

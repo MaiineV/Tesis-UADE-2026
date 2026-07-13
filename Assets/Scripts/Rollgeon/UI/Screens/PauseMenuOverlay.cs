@@ -109,7 +109,7 @@ namespace Rollgeon.UI.Screens
             // End the current run if context is available
             if (ServiceLocator.TryGetService<IRunContextService>(out var runCtx))
             {
-                RunBootstrapper.EndRun(runCtx.RunId);
+                RunBootstrapper.EndRun(runCtx.RunId, runCompleted: false);
             }
             else
             {

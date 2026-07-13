@@ -58,6 +58,16 @@ namespace Rollgeon.Upgrades.Dice.UI
         [Title("Result feedback")]
         [SerializeField] private TextMeshProUGUI _resultLabel;
 
+        /// <summary>La pantalla se cerró con el botón — el tutorial encadena el paso siguiente.</summary>
+        public event Action OnPanelClosed;
+
+        /// <summary>RectTransform del botón de cerrar — anchor del overlay del tutorial.</summary>
+        public bool TryGetCloseButtonRect(out RectTransform rect)
+        {
+            rect = _closeButton != null ? _closeButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         // ----- Runtime state ----------------------------------------------------
         private bool _subscribed;
         private Guid _currentRoomInstanceId;
@@ -149,6 +159,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void HandleCloseClicked()
         {
             if (_panelRoot != null) _panelRoot.SetActive(false);
+            OnPanelClosed?.Invoke();
         }
 
         // ====================================================================
@@ -180,11 +191,14 @@ namespace Rollgeon.Upgrades.Dice.UI
                 int total = dice.MaxEnchantmentSlots();
                 int used = CountUsedSlots(bag, b);
 
+                var slots = bag.GetEnchantments(b);
+
                 var btn = Instantiate(_diceButtonPrefab, _diceContainer);
                 btn.Configure(
                     label: $"{dice} (slot {b + 1})",
                     subLabel: $"{used}/{total} cupos",
-                    onClick: () => HandleDiceClicked(bagIndex));
+                    onClick: () => HandleDiceClicked(bagIndex),
+                    tooltipProvider: () => BuildDiceTooltip(slots));
                 _diceButtons.Add(btn);
             }
         }
@@ -237,10 +251,56 @@ namespace Rollgeon.Upgrades.Dice.UI
                     ? $"Encantado: {existing.DisplayName}"
                     : "Vacío";
 
+                // Capturamos el SO (no el índice) para el tooltip — los botones se
+                // reconstruyen en cada Populate (incluido tras un apply), así que no
+                // hay riesgo de que quede stale apuntando a un encantamiento viejo.
+                Func<string> tooltipProvider = existing != null
+                    ? () => BuildEnchantmentTooltip(existing)
+                    : null;
+
                 var btn = Instantiate(_slotButtonPrefab, _slotContainer);
-                btn.Configure(label, subLabel, () => HandleSlotClicked(slotIndex));
+                btn.Configure(label, subLabel, () => HandleSlotClicked(slotIndex), tooltipProvider);
                 _slotButtons.Add(btn);
             }
+        }
+
+        // ====================================================================
+        // Tooltip text builders — puros y testeables sin UI real (CNF-011)
+        // ====================================================================
+
+        /// <summary>
+        /// Texto de hover para un slot con encantamiento aplicado: nombre en bold +
+        /// descripción reducida. <c>public</c> (no <c>internal</c>) porque el asmdef
+        /// de tests de Dice no tiene <c>InternalsVisibleTo</c> hacia el assembly
+        /// raíz — ver nota de deviation en el resumen de la tarea.
+        /// </summary>
+        public static string BuildEnchantmentTooltip(EnchantmentSO ench)
+        {
+            if (ench == null) return string.Empty;
+            string name = !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId;
+            return string.IsNullOrEmpty(ench.Description)
+                ? $"<b>{name}</b>"
+                : $"<b>{name}</b>\n<size=80%>{ench.Description}</size>";
+        }
+
+        /// <summary>
+        /// Texto de hover para un dado: una línea por cupo ocupado
+        /// ("• Nombre — Descripción"), o placeholder si no tiene ninguno.
+        /// </summary>
+        public static string BuildDiceTooltip(IReadOnlyList<EnchantmentSO> slots)
+        {
+            const string none = "Sin encantamientos";
+            if (slots == null || slots.Count == 0) return none;
+
+            var lines = new List<string>();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                var ench = slots[i];
+                if (ench == null) continue;
+                string name = !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId;
+                lines.Add($"• {name} — {ench.Description}");
+            }
+            return lines.Count > 0 ? string.Join("\n", lines) : none;
         }
 
         private void ClearSlotButtons()
@@ -366,10 +426,17 @@ namespace Rollgeon.Upgrades.Dice.UI
                 _resultLabel.text = $"<color=#ff8888>{result.ErrorMessage}</color>";
                 return;
             }
-            string name = result.RolledEnchantment?.DisplayName ?? result.RolledEnchantment?.UpgradeId ?? "?";
+            var rolled = result.RolledEnchantment;
+            string name = rolled?.DisplayName ?? rolled?.UpgradeId ?? "?";
             string faces = FormatFaces(result.ProjectedFaces);
+            // Descripción inline en el resultado (CNF-011) — el jugador ve qué hace el
+            // encantamiento sin tener que ir a buscarlo de nuevo en la lista de slots.
+            string descLine = string.IsNullOrEmpty(rolled?.Description)
+                ? string.Empty
+                : $"<size=80%><i>{rolled.Description}</i></size>\n";
             _resultLabel.text =
                 $"<color=#88ff88>Recibiste:</color> <b>{name}</b>\n" +
+                descLine +
                 $"Caras del dado: {faces}\n" +
                 $"Oro gastado: {result.GoldPaid}";
         }

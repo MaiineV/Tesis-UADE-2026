@@ -387,6 +387,7 @@ MonoBehaviour:
     up. He enforces them with complete conviction and full bureaucratic authority.
     Whether they benefit or harm the player is just an administrative detail that
     doesn\u2019t factor into his judgment."
+  Portrait: {fileID: -2114528188, guid: 05b0a715b01245d4087eaf3431f05722, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200

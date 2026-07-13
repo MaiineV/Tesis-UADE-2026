@@ -110,3 +110,6 @@ Rollgeon/.obsidian/core-plugins.json
 # Assets/Resources/ y los borra el postprocess; si la build falla quedan colgados.
 /[Aa]ssets/[Rr]esources/PerformanceTestRunInfo.json*
 /[Aa]ssets/[Rr]esources/PerformanceTestRunSettings.json*
+
+# Crash dumps de Git Bash en Windows
+*.stackdump

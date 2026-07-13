@@ -774,6 +774,7 @@ MonoBehaviour:
   EntityId: healerEnemy
   DisplayName: Healer
   Description: 
+  Portrait: {fileID: 1966469057, guid: a2a466c1be56fb84584dafa752e02bef, type: 3}
   WeaknessComboId: combo.double_pair
   WeaknessMultiplierOverride: 0
   BaseHP: 50

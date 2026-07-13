@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -33,6 +34,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         [SerializeField] private GameObject _selectedHighlight;
 
         private Action _onClick;
+        private UITooltipTrigger _tooltipTrigger;
 
         private void Awake()
         {
@@ -44,14 +46,39 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_button != null) _button.onClick.RemoveListener(HandleClicked);
         }
 
-        /// <summary>Configura el botón con texto + callback.</summary>
-        public void Configure(string label, string subLabel, Action onClick)
+        /// <summary>
+        /// Configura el botón con texto + callback. <paramref name="tooltipProvider"/>
+        /// es opcional (CNF-011) — hover sobre el botón muestra la descripción del
+        /// encantamiento/dado. Botones son reusados desde un pool entre populates, así
+        /// que sin provider hay que limpiar el tooltip de una config anterior en vez de
+        /// dejarlo colgado (ver <see cref="ConfigureTooltip"/>).
+        /// </summary>
+        public void Configure(string label, string subLabel, Action onClick, Func<string> tooltipProvider = null)
         {
             if (_label != null) _label.text = label ?? string.Empty;
             if (_subLabel != null) _subLabel.text = subLabel ?? string.Empty;
             _onClick = onClick;
             SetSelected(false);
             SetInteractable(true);
+            ConfigureTooltip(tooltipProvider);
+        }
+
+        private void ConfigureTooltip(Func<string> tooltipProvider)
+        {
+            if (tooltipProvider != null)
+            {
+                if (_tooltipTrigger == null) _tooltipTrigger = GetComponent<UITooltipTrigger>();
+                if (_tooltipTrigger == null) _tooltipTrigger = gameObject.AddComponent<UITooltipTrigger>();
+                _tooltipTrigger.TextProvider = tooltipProvider;
+                return;
+            }
+
+            // Sin provider — si el trigger ya existe (botón reusado que antes SÍ tenía
+            // tooltip), vaciar el texto en vez de dejar TextProvider null: null hace que
+            // UITooltipTrigger caiga a TooltipResolver.AutoResolve, que puede resolver un
+            // tooltip de otro componente del mismo GameObject.
+            if (_tooltipTrigger == null) _tooltipTrigger = GetComponent<UITooltipTrigger>();
+            if (_tooltipTrigger != null) _tooltipTrigger.TextProvider = () => string.Empty;
         }
 
         public void SetSelected(bool selected)

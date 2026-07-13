@@ -61,6 +61,13 @@ namespace Rollgeon.Dice.Throw
         private bool _lmbWasPressed;
         private bool _aligning;
 
+        private void OnEnable()
+        {
+            // La cámara de la bandeja arranca apagada aunque en la escena esté
+            // enabled — solo se prende mientras hay una sesión de throw activa.
+            SyncTrayCamera(false);
+        }
+
         private void OnDisable()
         {
             if (_service != null)
@@ -122,6 +129,15 @@ namespace Rollgeon.Dice.Throw
             svc.OnPhaseChanged -= HandlePhaseChanged;
         }
 
+        // La cámara overlay stackeada en la Main Camera renderiza la bandeja siempre
+        // que esté enabled — sin este gate el HUD 3D (piso de la bandeja) queda
+        // visible fuera de las sesiones de throw.
+        private void SyncTrayCamera(bool active)
+        {
+            if (_trayCamera != null && _trayCamera.enabled != active)
+                _trayCamera.enabled = active;
+        }
+
         // ---- Session ----------------------------------------------------------
 
         private void HandleSessionStarted()
@@ -133,6 +149,8 @@ namespace Rollgeon.Dice.Throw
                                  "la sesión seguirá sin visual 3D.", this);
                 return;
             }
+
+            SyncTrayCamera(true);
 
             var mask = _service.ThrownMask;
             int total = 0;
@@ -425,6 +443,7 @@ namespace Rollgeon.Dice.Throw
             _dice.Clear();
             _aligning = false;
             _inputScope.Release();
+            SyncTrayCamera(false);
         }
 
         private float DieHalfExtent()

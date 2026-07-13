@@ -93,6 +93,13 @@ namespace Rollgeon.UI.HUD
         private Action<ComboMatchedPayload> _onComboMatched;
         private IGameplayHotkeyService _hotkeys;
 
+        /// <summary>RectTransform del botón Roll/Reroll — anchor del overlay del tutorial.</summary>
+        public bool TryGetRollButtonRect(out RectTransform rect)
+        {
+            rect = _extraRollButton != null ? _extraRollButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         private void Awake()
         {
             if (_extraRollButton != null) _extraRollButton.onClick.AddListener(HandleExtraRollClick);
