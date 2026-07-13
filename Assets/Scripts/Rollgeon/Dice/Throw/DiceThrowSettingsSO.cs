@@ -25,6 +25,15 @@ namespace Rollgeon.Dice.Throw
         [Tooltip("Amortiguación del spring. Cerca de crítico (~2*sqrt(k)) = sin oscilación.")]
         public float SpringDamping = 18f;
 
+        [Tooltip("Distancia (px del canvas) que el cursor debe moverse con el botón apretado " +
+                 "para que el press del grab-to-reroll cuente como drag. Menos + soltar rápido " +
+                 "= click (pasa al slot: toggle hold).")]
+        public float GrabDragSlopPixels = 14f;
+
+        [Tooltip("Tiempo apretado desde el que el press cuenta como drag aunque no se mueva " +
+                 "(mantener = agarrar). Soltar antes sin moverse = click de selección.")]
+        public float GrabClickSeconds = 0.22f;
+
         [Header("2D — Flick (arrojar)")]
         [Tooltip("Constante de suavizado exponencial de la velocidad del mouse (segundos).")]
         public float VelocitySmoothTau = 0.05f;
@@ -52,24 +61,37 @@ namespace Rollgeon.Dice.Throw
         [Tooltip("Failsafe: un dado que siga volando pasado esto se asienta a la fuerza.")]
         public float MaxFlightSeconds = 5f;
 
+        [Header("2D — Colisiones entre dados")]
+        [Tooltip("Los dados se empujan entre sí (círculos). Off = se atraviesan como antes.")]
+        public bool DiceCollide = true;
+
+        [Tooltip("Rebote del choque entre dados en vuelo (0 = quedan pegados, 1 = elástico).")]
+        [Range(0f, 1f)] public float DieCollisionRestitution = 0.85f;
+
+        [Tooltip("Radio de colisión como fracción del half-size del dado (<1 deja que se acerquen).")]
+        public float DieCollisionRadiusScale = 0.9f;
+
+        [Tooltip("Velocidad relativa (px/s) desde la que el choque entre dados suena/squashea.")]
+        public float DieCollisionJuiceMinSpeed = 250f;
+
         [Header("2D — Juice (motion cosmético — gateado por dicemotion)")]
         [Tooltip("Grados de giro del sprite por px/s de velocidad del flick. 0 = sin rotación en vuelo.")]
-        public float FlightSpinDegreesPerUnit = 0.35f;
+        public float FlightSpinDegreesPerUnit = 0.6f;
 
         [Tooltip("Tope de velocidad angular del sprite en vuelo (grados/s) para que no estrobe.")]
-        public float FlightSpinMaxDegreesPerSecond = 1080f;
+        public float FlightSpinMaxDegreesPerSecond = 1440f;
 
         [Tooltip("Decay exponencial por segundo de la rotación en vuelo (más alto = frena antes).")]
-        public float FlightSpinDecay = 1.4f;
+        public float FlightSpinDecay = 1.1f;
 
         [Tooltip("Tween de enderezado (rotación → 0) al asentarse. <= 0 = instantáneo.")]
-        public float SettleUprightSeconds = 0.12f;
+        public float SettleUprightSeconds = 0.14f;
 
         [Tooltip("Drop-in al spawnear la sesión: scale 0→1 por dado. <= 0 = sin drop-in.")]
-        public float SpawnDropSeconds = 0.18f;
+        public float SpawnDropSeconds = 0.22f;
 
         [Tooltip("Stagger entre dados del drop-in.")]
-        public float SpawnDropStagger = 0.04f;
+        public float SpawnDropStagger = 0.05f;
 
         [Header("2D — Tweens de retorno/alineado")]
         [Tooltip("Duración del tween de vuelta al cancelar el grab. <= 0 = instantáneo (tests).")]
@@ -96,20 +118,20 @@ namespace Rollgeon.Dice.Throw
 
         [Header("3D — Juice")]
         [Tooltip("Impulso de referencia para volumen/pitch/squash del clatter de colisiones.")]
-        public float TrayImpactRefImpulse = 4f;
+        public float TrayImpactRefImpulse = 3f;
 
         [Tooltip("Impulsos por debajo de esto no suenan ni squashean (micro-contactos al rodar).")]
-        public float TrayImpactMinImpulse = 0.8f;
+        public float TrayImpactMinImpulse = 0.5f;
 
         [Tooltip("Scale-in staggered de los dados al abrir la sesión. <= 0 = aparición seca.")]
-        public float TrayScaleInSeconds = 0.15f;
+        public float TrayScaleInSeconds = 0.2f;
 
         [Tooltip("Stagger entre dados del scale-in.")]
-        public float TrayScaleInStagger = 0.04f;
+        public float TrayScaleInStagger = 0.05f;
 
         [Tooltip("Scale-out al cerrar el reveal (corre ANTES de CompleteReveal, con la " +
                  "sesión todavía Busy — la cámara overlay no puede fadear). <= 0 = corte seco.")]
-        public float TrayScaleOutSeconds = 0.12f;
+        public float TrayScaleOutSeconds = 0.15f;
 
         [Header("3D — Settle y lectura de cara")]
         [Tooltip("Dot mínimo de la normal superior contra Vector3.up para aceptar la cara. " +

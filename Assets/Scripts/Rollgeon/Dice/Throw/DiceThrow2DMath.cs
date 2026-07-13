@@ -38,18 +38,122 @@ namespace Rollgeon.Dice.Throw
         public static bool BounceInRect(ref Vector2 pos, ref Vector2 vel, Rect rect,
             float halfSize, float restitution)
         {
-            bool bounced = false;
+            return BounceInRect(ref pos, ref vel, rect, halfSize, restitution, out _);
+        }
+
+        /// <summary>
+        /// Variante que además devuelve la normal del impacto (hacia adentro del rect,
+        /// diagonal normalizada si pegó en una esquina) — para orientar partículas.
+        /// </summary>
+        public static bool BounceInRect(ref Vector2 pos, ref Vector2 vel, Rect rect,
+            float halfSize, float restitution, out Vector2 normal)
+        {
+            normal = Vector2.zero;
 
             float minX = rect.xMin + halfSize, maxX = rect.xMax - halfSize;
             float minY = rect.yMin + halfSize, maxY = rect.yMax - halfSize;
 
-            if (pos.x < minX) { pos.x = minX; vel.x = -vel.x * restitution; bounced = true; }
-            else if (pos.x > maxX) { pos.x = maxX; vel.x = -vel.x * restitution; bounced = true; }
+            if (pos.x < minX) { pos.x = minX; vel.x = -vel.x * restitution; normal.x = 1f; }
+            else if (pos.x > maxX) { pos.x = maxX; vel.x = -vel.x * restitution; normal.x = -1f; }
 
-            if (pos.y < minY) { pos.y = minY; vel.y = -vel.y * restitution; bounced = true; }
-            else if (pos.y > maxY) { pos.y = maxY; vel.y = -vel.y * restitution; bounced = true; }
+            if (pos.y < minY) { pos.y = minY; vel.y = -vel.y * restitution; normal.y = 1f; }
+            else if (pos.y > maxY) { pos.y = maxY; vel.y = -vel.y * restitution; normal.y = -1f; }
 
-            return bounced;
+            if (normal == Vector2.zero) return false;
+            normal.Normalize();
+            return true;
+        }
+
+        /// <summary>
+        /// Intención de drag de un press sostenido: true cuando el cursor se alejó más
+        /// del slop o el botón lleva apretado más que la ventana de click. Antes de eso
+        /// el press todavía puede ser un click (soltar = seleccionar, no agarrar).
+        /// </summary>
+        public static bool DragIntent(Vector2 pressPos, Vector2 currentPos, float heldSeconds,
+            float slopPixels, float clickSeconds)
+        {
+            if ((currentPos - pressPos).sqrMagnitude > slopPixels * slopPixels) return true;
+            return heldSeconds >= clickSeconds;
+        }
+
+        /// <summary>
+        /// Colisión círculo-círculo entre dos dados EN VUELO (masas iguales): separa la
+        /// superposición mitad y mitad e intercambia las componentes normales de
+        /// velocidad escaladas por <paramref name="restitution"/>, solo si se acercan.
+        /// Devuelve la velocidad relativa de aproximación (0 = sin contacto/alejándose)
+        /// para escalar el juice.
+        /// </summary>
+        public static float ResolveDiePair(ref Vector2 posA, ref Vector2 velA,
+            ref Vector2 posB, ref Vector2 velB, float radius, float restitution)
+        {
+            if (!Overlap(posA, posB, radius, out var normal, out float overlap)) return 0f;
+
+            posA -= normal * (overlap * 0.5f);
+            posB += normal * (overlap * 0.5f);
+
+            float approach = Vector2.Dot(velA - velB, normal);
+            if (approach <= 0f) return 0f;
+
+            float impulse = (1f + restitution) * 0.5f * approach;
+            velA -= normal * impulse;
+            velB += normal * impulse;
+            return approach;
+        }
+
+        /// <summary>
+        /// Dado en vuelo contra dado quieto (asentado o esperando en su spot): el que
+        /// vuela cede la superposición y rebota (masa "pesada" del quieto, escalado por
+        /// <paramref name="restitution"/>); el quieto recibe un empujón posicional
+        /// proporcional a la velocidad de aproximación, acotado por
+        /// <paramref name="maxShove"/>. Devuelve la velocidad de aproximación.
+        /// </summary>
+        public static float ResolveDieStatic(ref Vector2 posFly, ref Vector2 velFly,
+            ref Vector2 posStatic, float radius, float restitution,
+            float shovePerSpeed, float maxShove)
+        {
+            if (!Overlap(posFly, posStatic, radius, out var normal, out float overlap)) return 0f;
+
+            posFly -= normal * overlap;
+
+            float approach = Vector2.Dot(velFly, normal);
+            if (approach <= 0f) return 0f;
+
+            velFly -= normal * ((1f + restitution) * approach);
+            posStatic += normal * Mathf.Min(approach * shovePerSpeed, maxShove);
+            return approach;
+        }
+
+        /// <summary>
+        /// Separación simétrica de dos dados quietos superpuestos (sin velocidades).
+        /// Devuelve true si hizo falta separar.
+        /// </summary>
+        public static bool SeparateOverlap(ref Vector2 posA, ref Vector2 posB, float radius)
+        {
+            if (!Overlap(posA, posB, radius, out var normal, out float overlap)) return false;
+            posA -= normal * (overlap * 0.5f);
+            posB += normal * (overlap * 0.5f);
+            return true;
+        }
+
+        // Normal A→B y profundidad de la superposición de dos círculos de igual radio.
+        private static bool Overlap(Vector2 posA, Vector2 posB, float radius,
+            out Vector2 normal, out float overlap)
+        {
+            var delta = posB - posA;
+            float minDist = radius * 2f;
+            float distSq = delta.sqrMagnitude;
+            if (distSq >= minDist * minDist)
+            {
+                normal = Vector2.zero;
+                overlap = 0f;
+                return false;
+            }
+
+            float dist = Mathf.Sqrt(distSq);
+            // Dados exactamente superpuestos (spawn raro): separar por un eje fijo.
+            normal = dist > 0.0001f ? delta / dist : Vector2.right;
+            overlap = minDist - dist;
+            return true;
         }
 
         /// <summary>
