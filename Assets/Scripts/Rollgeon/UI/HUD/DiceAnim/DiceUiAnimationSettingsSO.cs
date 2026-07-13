@@ -4,10 +4,11 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD.DiceAnim
 {
     /// <summary>
-    /// Tuning de las animaciones del panel de dados legacy (modo Classic): spin del
-    /// roll, raise del hold y outro del confirm. Cualquier duración &lt;= 0 aplica el
-    /// cambio instantáneo (convención de la casa — permite tests EditMode y sirve de
-    /// kill switch). Los modos 2D/3D no usan este SO (sus presenters ya animan).
+    /// Tuning de las animaciones del panel de dados: spin del roll (solo Classic),
+    /// raise del hold y outro del confirm (todos los modos — post-reveal los dados
+    /// viven en los slots igual en Classic/2D/3D). Cualquier duración &lt;= 0 aplica
+    /// el cambio instantáneo (convención de la casa — permite tests EditMode y sirve
+    /// de kill switch). El vuelo de los modos 2D/3D se tunea en DiceThrowSettingsSO.
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/UI/Dice UI Animation Settings",
         fileName = "DiceUiAnimationSettings")]

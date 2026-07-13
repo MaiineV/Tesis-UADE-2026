@@ -16,6 +16,8 @@ MonoBehaviour:
   GrabRadius: 60
   SpringStiffness: 250
   SpringDamping: 18
+  GrabDragSlopPixels: 14
+  GrabClickSeconds: 0.22
   VelocitySmoothTau: 0.05
   FlickMinSpeed: 900
   ThrowGain: 1
@@ -24,6 +26,16 @@ MonoBehaviour:
   SettleSpeedEps: 25
   SettleHoldSeconds: 0.15
   MaxFlightSeconds: 5
+  DiceCollide: 1
+  DieCollisionRestitution: 0.85
+  DieCollisionRadiusScale: 0.9
+  DieCollisionJuiceMinSpeed: 250
+  FlightSpinDegreesPerUnit: 0.6
+  FlightSpinMaxDegreesPerSecond: 1440
+  FlightSpinDecay: 1.1
+  SettleUprightSeconds: 0.14
+  SpawnDropSeconds: 0.22
+  SpawnDropStagger: 0.05
   ReturnSeconds: 0.2
   AlignSeconds: 0.35
   AlignStagger: 0.04
@@ -31,6 +43,11 @@ MonoBehaviour:
   CarryHeight: 1.5
   FlickWorldGain: 0.02
   Tumble: 2.5
+  TrayImpactRefImpulse: 3
+  TrayImpactMinImpulse: 0.5
+  TrayScaleInSeconds: 0.2
+  TrayScaleInStagger: 0.05
+  TrayScaleOutSeconds: 0.15
   CockedDotThreshold: 0.92
   NudgeImpulse: 0.6
   MaxNudges: 2

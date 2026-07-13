@@ -65,7 +65,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
             EventManager.Subscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
 
-            // El outro del confirm (modo Classic) corre DESPUÉS de OnBehaviorExecuted:
+            // El outro del confirm (todos los modos) corre DESPUÉS de OnBehaviorExecuted:
             // la zona tiene que quedar visible hasta que los dados terminen de volar.
             DiceOutroGate.Changed += Refresh;
 

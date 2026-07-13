@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
 using Rollgeon.UI.HUD;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace Rollgeon.Dice.Throw
 {
@@ -47,18 +49,61 @@ namespace Rollgeon.Dice.Throw
                  "Autorado en la escena bajo el Canvas raíz.")]
         private RectTransform _layer;
 
+        [SerializeField, Tooltip("Partículas de impacto (bordes, choques entre dados, settle). " +
+                 "Opcional — sin wiring, sin partículas.")]
+        private DiceThrowImpactBurst _impactBurst;
+
+        // ---- Hooks para la capa de juice (DiceThrowJuice) ---------------------
+        // Payload plano por índice, NUNCA la view: el reveal destruye los ghosts el
+        // mismo frame (TickAlignCompletion) — una view en el evento sería dangling
+        // para cualquier consumidor que difiera (MMF, tweens, rate-limits).
+
+        /// <summary>Un dado entró al agarre (sesión o arming de reroll).</summary>
+        public event Action<int> DieGrabbed;
+
+        /// <summary>Flick soltó dados al vuelo (cantidad lanzada en la volea).</summary>
+        public event Action<int> DiceThrown;
+
+        /// <summary>(índice, velocidad px/s antes del impacto) — rebote contra un borde
+        /// o choque contra otro dado (velocidad relativa de aproximación).</summary>
+        public event Action<int, float> DieBounced;
+
+        /// <summary>(índice, cara, orden de settle en la volea) — para pitch ramps.</summary>
+        public event Action<int, int, int> DieSettled;
+
+        /// <summary>Hay dados en la mano ahora (agarre de sesión o arming de reroll) — para el rattle.</summary>
+        public bool IsCarryingDice
+        {
+            get
+            {
+                if (_armed.Count > 0) return true;
+                if (_service == null || !_service.IsBusy) return false;
+                foreach (var die in _dice.Values)
+                    if (_service.GetDieState(die.Index) == DieThrowState.Grabbed) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Velocidad suavizada del cursor en px del layer — densidad del rattle.</summary>
+        public Vector2 SmoothedCursorVelocity => _mouseVel;
+
         private sealed class DieVisual
         {
             public int Index;
             public DiceThrowDieView View;
+            public DiceThrowDieJuice Juice; // opcional en el prefab — llamadas directas (lifetime seguro)
             public Vector2 Vel;
             public Vector2 RestPos;    // último lugar quieto (spot inicial o settle)
             public Vector2 SpotPos;    // spot "sin tirar" / posición del slot de origen
             public float SettleHeld;
             public float FlightTime;
             public float FaceCycleAt;
+            public float AngularVel;   // rotación cosmética del sprite en vuelo (grados/s)
+            public bool FlyingNow;     // cache por-frame para el pase de colisiones
             public bool Returning;     // tween de vuelta en curso — no simular
             public Tween Tween;
+            public Tween RotTween;     // enderezado al settle
+            public Tween ScaleTween;   // drop-in de spawn
         }
 
         private IDiceThrowService _service;
@@ -79,6 +124,14 @@ namespace Rollgeon.Dice.Throw
         private bool _hasLastCursor;
         private bool _lmbWasPressed;
         private bool _aligning;
+        private int _settleOrder;
+
+        // Click vs drag del arming: el press recién arma con intención de drag.
+        private Vector2 _armPressPos;
+        private float _armPressAt;
+        private bool _armDragIntent;
+
+        private static bool ReducedMotion => Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion;
 
         // ---- Lifecycle -------------------------------------------------------
 
@@ -103,7 +156,10 @@ namespace Rollgeon.Dice.Throw
             if (dt <= 0f) return;
 
             bool sessionActive = _service.IsBusy && _dice.Count > 0;
-            bool canArm = _service.Mode == DiceThrowMode.TwoD && _service.CanGrabReroll;
+            // Con el outro del confirm en curso los slots están volando al centro o
+            // desvaneciéndose — armar un grab ahí agarraría dados en pleno teardown.
+            bool outroPending = Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending;
+            bool canArm = _service.Mode == DiceThrowMode.TwoD && _service.CanGrabReroll && !outroPending;
 
             if (!sessionActive && !canArm && _armed.Count == 0) return;
 
@@ -119,7 +175,14 @@ namespace Rollgeon.Dice.Throw
             }
             else if (canArm || _armed.Count > 0)
             {
-                if (!canArm) { CancelArmingReturn(); return; }
+                if (!canArm)
+                {
+                    // El confirm agarró un arming a medias: el tween de vuelta apuntaría
+                    // a un slot que el outro está animando/limpiando — cancel seco.
+                    if (outroPending) CancelArmingInstant();
+                    else CancelArmingReturn();
+                    return;
+                }
                 TickArmingInput();
                 TickArmingSimulation(dt);
             }
@@ -170,6 +233,10 @@ namespace Rollgeon.Dice.Throw
             ResolveZone();
             if (!EnsureLayer()) return;
 
+            // Chains: la sesión nueva puede abrir con el outro del confirm anterior
+            // todavía volando — completarlo YA, antes de esconder slots.
+            _diceZone?.NotifyThrowSessionStarted();
+
             // Sesión abierta desde afuera (ej. roll de la próxima fase del chain) con
             // un arming a medias: cancelarlo antes de arrancar limpio.
             if (_armed.Count > 0 && !_transferPending) CancelArmingInstant();
@@ -201,7 +268,17 @@ namespace Rollgeon.Dice.Throw
                 else
                 {
                     var pos = spotCenter + new Vector2((spot - (total - 1) * 0.5f) * spacing, 0f);
-                    _dice[i] = CreateDie(i, pos);
+                    var die = CreateDie(i, pos);
+                    _dice[i] = die;
+
+                    // Drop-in staggered — solo dados nuevos (los ghosts adoptados del
+                    // arming ya están visibles y a escala).
+                    if (!ReducedMotion && _cfg.SpawnDropSeconds > 0f)
+                    {
+                        die.View.Rect.localScale = Vector3.zero;
+                        die.ScaleTween = Tween.Scale(die.View.Rect, 1f, _cfg.SpawnDropSeconds,
+                            Ease.OutBack, startDelay: spot * _cfg.SpawnDropStagger);
+                    }
                 }
                 spot++;
             }
@@ -212,19 +289,24 @@ namespace Rollgeon.Dice.Throw
                 // del flick capturada durante el arming.
                 _transferPending = false;
                 foreach (var die in _dice.Values) _service.TryGrab(die.Index);
+                int thrown = 0;
                 foreach (var idx in _service.ReleaseGrabbed())
                 {
                     if (!_dice.TryGetValue(idx, out var die)) continue;
                     die.Vel = _transferVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
+                    die.AngularVel = FlickSpin(_transferVel);
                     die.FlightTime = 0f;
                     die.SettleHeld = 0f;
+                    thrown++;
                 }
+                if (thrown > 0) DiceThrown?.Invoke(thrown);
                 CancelArmingInstant(); // limpia ghosts armados que no entraron (no debería haber)
             }
 
             _mouseVel = Vector2.zero;
             _hasLastCursor = false;
             _aligning = false;
+            _settleOrder = 0;
             _inputScope.Acquire();
         }
 
@@ -277,8 +359,15 @@ namespace Rollgeon.Dice.Throw
                     if ((die.View.Rect.anchoredPosition - _cursorLocal).sqrMagnitude > r2) continue;
                     if (!_service.TryGrab(die.Index)) continue;
                     if (die.Tween.isAlive) die.Tween.Stop();
+                    if (die.RotTween.isAlive) die.RotTween.Stop();
+                    if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
+                    // Agarrar endereza y normaliza (por si venía de un drop-in/upright a medias).
+                    die.View.Rect.localRotation = Quaternion.identity;
+                    die.View.Rect.localScale = Vector3.one;
                     die.Returning = false;
                     die.Vel = Vector2.zero;
+                    die.Juice?.PlayPickup();
+                    DieGrabbed?.Invoke(die.Index);
                 }
             }
 
@@ -304,12 +393,20 @@ namespace Rollgeon.Dice.Throw
 
         private void ThrowSessionGrabbed()
         {
+            int thrown = 0;
             foreach (var idx in _service.ReleaseGrabbed())
             {
                 if (!_dice.TryGetValue(idx, out var die)) continue;
                 die.Vel = _mouseVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
+                die.AngularVel = FlickSpin(_mouseVel);
                 die.FlightTime = 0f;
                 die.SettleHeld = 0f;
+                thrown++;
+            }
+            if (thrown > 0)
+            {
+                _settleOrder = 0;
+                DiceThrown?.Invoke(thrown);
             }
         }
 
@@ -351,10 +448,28 @@ namespace Rollgeon.Dice.Throw
                     {
                         var pos = DiceThrow2DMath.FlightStep(die.View.Rect.anchoredPosition, ref die.Vel, _cfg.FlightDrag, dt);
                         var vel = die.Vel;
-                        DiceThrow2DMath.BounceInRect(ref pos, ref vel, rect, halfSize, _cfg.Restitution);
+                        float preBounceSpeed = vel.magnitude;
+                        bool bounced = DiceThrow2DMath.BounceInRect(
+                            ref pos, ref vel, rect, halfSize, _cfg.Restitution, out var bounceNormal);
                         die.Vel = vel;
                         die.View.Rect.anchoredPosition = pos;
                         die.FlightTime += dt;
+                        if (bounced)
+                        {
+                            float intensity = DiceThrowFeelMath.Intensity01(preBounceSpeed, _cfg.FlickMinSpeed);
+                            die.Juice?.PlayBounce(0.5f + 0.5f * intensity);
+                            _impactBurst?.Burst(pos - bounceNormal * halfSize, bounceNormal, intensity);
+                            DieBounced?.Invoke(die.Index, preBounceSpeed);
+                            die.AngularVel *= _cfg.Restitution; // el impacto come spin
+                        }
+
+                        // Rotación cosmética del sprite mientras vuela.
+                        if (die.AngularVel != 0f)
+                        {
+                            die.View.Rect.Rotate(0f, 0f, die.AngularVel * dt);
+                            die.AngularVel = DiceThrowFeelMath.SpinDecayStep(
+                                die.AngularVel, _cfg.FlightSpinDecay, dt);
+                        }
 
                         // Caras "rodando" mientras vuela — puro teatro.
                         if (Time.unscaledTime >= die.FaceCycleAt)
@@ -368,14 +483,116 @@ namespace Rollgeon.Dice.Throw
                         if (settled || die.FlightTime >= _cfg.MaxFlightSeconds)
                         {
                             die.Vel = Vector2.zero;
+                            die.AngularVel = 0f;
                             die.RestPos = die.View.Rect.anchoredPosition;
-                            die.View.ShowFace(_service.PeekPendingFace(die.Index));
+                            SettleUpright(die);
+                            int face = _service.PeekPendingFace(die.Index);
+                            die.View.ShowFace(face);
+                            die.Juice?.PlaySettle(face);
+                            _impactBurst?.Burst(die.RestPos + Vector2.down * (halfSize * 0.6f),
+                                Vector2.up, 0.25f);
                             _service.NotifyDieSettled(die.Index);
+                            DieSettled?.Invoke(die.Index, face, _settleOrder++);
                         }
                         break;
                     }
                 }
             }
+
+            // El empuje corre después de integrar todos — durante el align los tweens
+            // son dueños de las posiciones y separar acá pelearía con ellos.
+            if (!_aligning) ResolveDieCollisions(rect, halfSize);
+        }
+
+        // ---- Empuje entre dados (círculos de igual radio) --------------------------
+
+        private readonly List<DieVisual> _collidersScratch = new List<DieVisual>();
+
+        // Los que vuelan intercambian momento; los quietos (asentados o esperando en
+        // su spot) reciben un empujón posicional acotado y el que vuela rebota.
+        // Grabbed/Returning quedan afuera: el spring del cursor y los tweens de
+        // retorno son dueños de esas posiciones.
+        private void ResolveDieCollisions(Rect rect, float halfSize)
+        {
+            if (!_cfg.DiceCollide || _dice.Count < 2) return;
+
+            _collidersScratch.Clear();
+            foreach (var die in _dice.Values)
+            {
+                if (die.Returning) continue;
+                var state = _service.GetDieState(die.Index);
+                if (state != DieThrowState.Flying && state != DieThrowState.Settled &&
+                    state != DieThrowState.NotThrown) continue;
+                die.FlyingNow = state == DieThrowState.Flying;
+                _collidersScratch.Add(die);
+            }
+
+            float radius = halfSize * _cfg.DieCollisionRadiusScale;
+            for (int i = 0; i < _collidersScratch.Count; i++)
+            {
+                for (int j = i + 1; j < _collidersScratch.Count; j++)
+                {
+                    var a = _collidersScratch[i];
+                    var b = _collidersScratch[j];
+                    var posA = a.View.Rect.anchoredPosition;
+                    var posB = b.View.Rect.anchoredPosition;
+                    float approach = 0f;
+
+                    if (a.FlyingNow && b.FlyingNow)
+                    {
+                        approach = DiceThrow2DMath.ResolveDiePair(ref posA, ref a.Vel,
+                            ref posB, ref b.Vel, radius, _cfg.DieCollisionRestitution);
+                    }
+                    else if (a.FlyingNow || b.FlyingNow)
+                    {
+                        var fly = a.FlyingNow ? a : b;
+                        var still = a.FlyingNow ? b : a;
+                        var posFly = fly.View.Rect.anchoredPosition;
+                        var posStill = still.View.Rect.anchoredPosition;
+                        approach = DiceThrow2DMath.ResolveDieStatic(ref posFly, ref fly.Vel,
+                            ref posStill, radius, _cfg.DieCollisionRestitution,
+                            shovePerSpeed: 0.04f, maxShove: halfSize);
+                        if (approach > 0f)
+                        {
+                            // El empujón no lo saca de la mesa; un asentado re-ancla su
+                            // reposo (uno sin tirar conserva su spot como casa).
+                            posStill = ClampToRect(posStill, rect, halfSize);
+                            if (!still.FlyingNow &&
+                                _service.GetDieState(still.Index) == DieThrowState.Settled)
+                                still.RestPos = posStill;
+                        }
+                        if (a.FlyingNow) { posA = posFly; posB = posStill; }
+                        else { posA = posStill; posB = posFly; }
+                    }
+                    else if (DiceThrow2DMath.SeparateOverlap(ref posA, ref posB, radius))
+                    {
+                        // Dos quietos superpuestos (settle apretado): separar sin juice.
+                        posA = ClampToRect(posA, rect, halfSize);
+                        posB = ClampToRect(posB, rect, halfSize);
+                        if (_service.GetDieState(a.Index) == DieThrowState.Settled) a.RestPos = posA;
+                        if (_service.GetDieState(b.Index) == DieThrowState.Settled) b.RestPos = posB;
+                    }
+
+                    a.View.Rect.anchoredPosition = posA;
+                    b.View.Rect.anchoredPosition = posB;
+
+                    if (approach >= _cfg.DieCollisionJuiceMinSpeed)
+                    {
+                        float intensity = DiceThrowFeelMath.Intensity01(approach, _cfg.FlickMinSpeed);
+                        a.Juice?.PlayBounce(0.5f + 0.5f * intensity);
+                        b.Juice?.PlayBounce(0.5f + 0.5f * intensity);
+                        DieBounced?.Invoke(a.Index, approach); // clack coalescido en la capa de zona
+                        _impactBurst?.Burst((posA + posB) * 0.5f, (posA - posB).normalized, intensity);
+                    }
+                }
+            }
+        }
+
+        private static Vector2 ClampToRect(Vector2 pos, Rect rect, float halfSize)
+        {
+            pos.x = Mathf.Clamp(pos.x, rect.xMin + halfSize, rect.xMax - halfSize);
+            pos.y = Mathf.Clamp(pos.y, rect.yMin + halfSize, rect.yMax - halfSize);
+            return pos;
         }
 
         // ---- Grab-to-reroll (arming pre-sesión) --------------------------------------
@@ -387,7 +604,21 @@ namespace Rollgeon.Dice.Throw
 
             bool lmb = mouse.leftButton.isPressed;
 
-            if (lmb) TryArmSlotsUnderCursor();
+            // Click vs drag: armar recién con intención de drag (moverse más que el
+            // slop o sostener más que la ventana). Un click seco no toca el slot y su
+            // Button dispara el toggle de hold — armar en el press lo desactivaba a
+            // mitad del click y la selección nunca llegaba (bug "no puedo marcar").
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                _armPressPos = _cursorLocal;
+                _armPressAt = Time.unscaledTime;
+                _armDragIntent = false;
+            }
+            if (lmb && !_armDragIntent)
+                _armDragIntent = DiceThrow2DMath.DragIntent(_armPressPos, _cursorLocal,
+                    Time.unscaledTime - _armPressAt, _cfg.GrabDragSlopPixels, _cfg.GrabClickSeconds);
+
+            if (lmb && _armDragIntent) TryArmSlotsUnderCursor();
 
             if (mouse.rightButton.wasPressedThisFrame && _armed.Count > 0)
                 CancelArmingReturn();
@@ -432,6 +663,8 @@ namespace Rollgeon.Dice.Throw
                 ghost.SpotPos = slotPos;
                 slotView.gameObject.SetActive(false);
                 _armed[i] = ghost;
+                ghost.Juice?.PlayPickup();
+                DieGrabbed?.Invoke(i);
             }
         }
 
@@ -524,6 +757,10 @@ namespace Rollgeon.Dice.Throw
         {
             var slots = _diceZone != null ? _diceZone.GetDiceSlots() : null;
             if (slots == null || index >= slots.Count || slots[index] == null) return;
+            // Un ClearAll diferido (outro del confirm) pudo limpiar el slot mientras
+            // estaba armado: reactivarlo mostraría un slot vacío hasta el próximo roll.
+            var view = slots[index].GetComponent<DiceSlotView>();
+            if (view != null && view.CurrentFace <= 0) return;
             slots[index].gameObject.SetActive(true);
         }
 
@@ -587,6 +824,7 @@ namespace Rollgeon.Dice.Throw
             {
                 Index = index,
                 View = view,
+                Juice = view.GetComponent<DiceThrowDieJuice>(),
                 RestPos = pos,
                 SpotPos = pos,
             };
@@ -609,6 +847,8 @@ namespace Rollgeon.Dice.Throw
             foreach (var die in _dice.Values)
             {
                 if (die.Tween.isAlive) die.Tween.Stop();
+                if (die.RotTween.isAlive) die.RotTween.Stop();
+                if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
                 if (die.View != null) Destroy(die.View.gameObject);
             }
             _dice.Clear();
@@ -657,6 +897,29 @@ namespace Rollgeon.Dice.Throw
             if (anchor == null || _layer == null) return Vector2.zero;
             var world = anchor.TransformPoint(Vector3.zero);
             return (Vector2)_layer.InverseTransformPoint(world);
+        }
+
+        // Velocidad angular cosmética que el flick imprime al sprite (0 con reduced motion).
+        private float FlickSpin(Vector2 flickVel)
+        {
+            if (ReducedMotion) return 0f;
+            return DiceThrowFeelMath.FlickAngularVelocity(
+                       flickVel, _cfg.FlightSpinDegreesPerUnit, _cfg.FlightSpinMaxDegreesPerSecond)
+                   * Random.Range(0.8f, 1.2f);
+        }
+
+        // Endereza el ghost al asentarse — el "clac" visual, y deja el align invisible
+        // (el slot real debajo está siempre a 0°).
+        private void SettleUpright(DieVisual die)
+        {
+            if (die.RotTween.isAlive) die.RotTween.Stop();
+            if (_cfg.SettleUprightSeconds <= 0f || ReducedMotion)
+            {
+                die.View.Rect.localRotation = Quaternion.identity;
+                return;
+            }
+            die.RotTween = Tween.LocalRotation(die.View.Rect, Quaternion.identity,
+                _cfg.SettleUprightSeconds, Ease.OutBack);
         }
 
         // Offsets en anillo para que los dados agarrados orbiten el cursor sin apilarse.

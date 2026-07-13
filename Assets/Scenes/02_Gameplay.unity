@@ -496,6 +496,69 @@ MonoBehaviour:
         MoveToScaleMax: {x: 2, y: 2, z: 2}
         BumpScaleMin: {x: -16, y: -16, z: -16}
         BumpScaleMax: {x: -10, y: -10, z: -10}
+--- !u!1 &76764237
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 76764238}
+  - component: {fileID: 76764239}
+  m_Layer: 0
+  m_Name: DiceThrowJuice
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &76764238
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 76764237}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6408216767782424874}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &76764239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 76764237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17c1f30fa6d6d6d43a0123bb2f8540be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceThrowJuice
+  _presenter2D: {fileID: 726939618}
+  _presenter3D: {fileID: 259716132}
+  _pickupClip: {fileID: 8300000, guid: 058fec1520c23964381dba9814182895, type: 3}
+  _bounceClip: {fileID: 8300000, guid: 11b699aa88e0832499b22273716a2be2, type: 3}
+  _settleTickClip: {fileID: 8300000, guid: 2ece3328002c2154895e1d4b5e517390, type: 3}
+  _whooshClip: {fileID: 8300000, guid: b49f8d5f943e595409cf6a8bd1aeeea1, type: 3}
+  _cancelClip: {fileID: 8300000, guid: 7c539fdeac7e4b6439a1c351fded59d5, type: 3}
+  _rattleClip: {fileID: 8300000, guid: beb6fbade5cb7b0469edb82ff4721205, type: 3}
+  _clatterClip: {fileID: 8300000, guid: 852ba2c303a367847a0d83f534f813f5, type: 3}
+  _nudgeClip: {fileID: 8300000, guid: 058fec1520c23964381dba9814182895, type: 3}
+  _impactRefSpeed: 1200
+  _bounceMinSpeed: 120
+  _settlePitchStep: 0.08
+  _rattleMinSpeed: 250
+  _rattleRefSpeed: 1500
+  _impactRefImpulse: 3
+  _critFace: 6
+  _critHitstopSeconds: 0.09
+  _musicDuckFactor: 0.7
 --- !u!1 &162826241
 GameObject:
   m_ObjectHideFlags: 0
@@ -852,6 +915,7 @@ MonoBehaviour:
   _diePrefab: {fileID: 7631227875346631571, guid: 9ef97377d7b2865448ae147ebfded95f, type: 3}
   _trayCamera: {fileID: 2000675787}
   _trayCenter: {fileID: 40407981}
+  _diceZone: {fileID: 0}
 --- !u!1 &315195954
 GameObject:
   m_ObjectHideFlags: 0
@@ -1191,7 +1255,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 434787401}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 7f69c5d1e3c60de4b89864f15927ecbe, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2181,6 +2245,7 @@ MonoBehaviour:
   _diceZone: {fileID: 7832882399325725898}
   _diePrefab: {fileID: 4802173880582162208, guid: cabfae1b6cb79aa4685aca012136f93d, type: 3}
   _layer: {fileID: 1894434048}
+  _impactBurst: {fileID: 1894434050}
 --- !u!1 &818900992
 GameObject:
   m_ObjectHideFlags: 0
@@ -10543,6 +10608,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1894434048}
   - component: {fileID: 1894434049}
+  - component: {fileID: 1894434050}
   m_Layer: 0
   m_Name: DiceThrowLayer
   m_TagString: Untagged
@@ -10581,6 +10647,27 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &1894434050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894434047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9c678d2a8af131498ab3c4e9ad665de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceThrowImpactBurst
+  _particlePrefab: {fileID: 7451679274966253935, guid: d5d9d6a822e51314690d337b2b539b5d, type: 3}
+  _container: {fileID: 1894434048}
+  _countRange: {x: 4, y: 10}
+  _speedRange: {x: 260, y: 720}
+  _spreadDegrees: 140
+  _gravity: 1500
+  _lifeRange: {x: 0.22, y: 0.45}
+  _sizeRange: {x: 4, y: 9}
+  _maxAlive: 48
 --- !u!1001 &1915964054
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22563,6 +22650,7 @@ RectTransform:
   - {fileID: 726939617}
   - {fileID: 1894434048}
   - {fileID: 858514285}
+  - {fileID: 76764238}
   m_Father: {fileID: 2024317181}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

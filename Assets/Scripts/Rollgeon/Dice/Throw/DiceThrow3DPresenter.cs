@@ -1,8 +1,12 @@
+using System;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
+using Rollgeon.UI.HUD;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace Rollgeon.Dice.Throw
 {
@@ -34,19 +38,57 @@ namespace Rollgeon.Dice.Throw
         [SerializeField, Tooltip("Centro del piso de la bandeja — origen de spawns y alineado.")]
         private Transform _trayCenter;
 
+        [SerializeField, Optional, Tooltip("Zona de dados del HUD. Null = se resuelve por Find al abrir sesión.")]
+        private DiceZoneView _diceZone;
+
+        // ---- Hooks para la capa de juice (DiceThrowJuice) — payload por índice ----
+
+        /// <summary>Un dado entró al agarre.</summary>
+        public event Action<int> DieGrabbed;
+
+        /// <summary>Flick soltó dados al vuelo (cantidad de la volea).</summary>
+        public event Action<int> DiceThrown;
+
+        /// <summary>(índice, magnitud del impulso) — colisión física en vuelo.</summary>
+        public event Action<int, float> DieImpact;
+
+        /// <summary>(índice, cara, orden de settle en la volea) — para pitch ramps.</summary>
+        public event Action<int, int, int> DieSettled;
+
+        /// <summary>Empujoncito a un dado de canto.</summary>
+        public event Action<int> DieNudged;
+
+        /// <summary>Hay dados en la mano — para el rattle.</summary>
+        public bool IsCarryingDice
+        {
+            get
+            {
+                if (_service == null || !_service.IsBusy) return false;
+                foreach (var die in _dice.Values)
+                    if (_service.GetDieState(die.Index) == DieThrowState.Grabbed) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Velocidad del carry proyectada a px de pantalla — densidad del rattle (escala común con el 2D).</summary>
+        public float SmoothedCursorSpeedScreen => ScreenFlickSpeed();
+
         private sealed class Die3D
         {
             public int Index;
             public DiceThrow3DDie View;
+            public DiceThrowDieJuice Juice; // opcional en el prefab — llamadas directas
             public Vector3 SpotPos;      // spot "sin tirar"
             public Vector3 RestPos;      // última pose quieta
             public Quaternion RestRot;
+            public Vector3 BaseScale;    // escala del prefab (el scale-in/out la restaura)
             public float SettleHeld;
             public float FlightTime;
             public int Nudges;
             public bool Reported;        // ya notificó su settle al servicio
             public bool Returning;
             public Tween Tween;
+            public Tween ScaleTween;     // scale-in de spawn / scale-out pre-reveal
         }
 
         private IDiceThrowService _service;
@@ -60,6 +102,11 @@ namespace Rollgeon.Dice.Throw
         private bool _hasLastCarry;
         private bool _lmbWasPressed;
         private bool _aligning;
+        private bool _scalingOut;
+        private float _scaleOutDeadline;
+        private int _settleOrder;
+
+        private static bool ReducedMotion => Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion;
 
         private void OnEnable()
         {
@@ -143,6 +190,12 @@ namespace Rollgeon.Dice.Throw
         private void HandleSessionStarted()
         {
             EnsureCfg();
+
+            // Chains: la sesión nueva puede abrir con el outro del confirm anterior
+            // todavía volando en el HUD — completarlo YA (mismo guard que el 2D).
+            ResolveZone();
+            _diceZone?.NotifyThrowSessionStarted();
+
             if (_diePrefab == null || _trayCamera == null || _trayCenter == null)
             {
                 Debug.LogWarning("[DiceThrow3DPresenter] Wiring incompleto (prefab/cámara/bandeja) — " +
@@ -169,20 +222,38 @@ namespace Rollgeon.Dice.Throw
                 view.SnapUpright();
                 view.Body.isKinematic = true; // quieto en el spot hasta que lo agarren
 
-                _dice[i] = new Die3D
+                int idx = i;
+                view.Impacted += impulse => HandleDieImpact(idx, impulse);
+
+                var die = new Die3D
                 {
                     Index = i,
                     View = view,
+                    Juice = view.GetComponent<DiceThrowDieJuice>(),
                     SpotPos = pos,
                     RestPos = pos,
                     RestRot = view.transform.rotation,
+                    BaseScale = view.transform.localScale,
                 };
+                _dice[i] = die;
+
+                // Scale-in staggered — la cámara overlay prende en corte seco (compone
+                // dentro del RT del juego, no se puede fadear); esto lo disimula.
+                if (!ReducedMotion && _cfg.TrayScaleInSeconds > 0f)
+                {
+                    view.transform.localScale = Vector3.zero;
+                    die.ScaleTween = Tween.Scale(view.transform, die.BaseScale,
+                        _cfg.TrayScaleInSeconds, Ease.OutBack,
+                        startDelay: spot * _cfg.TrayScaleInStagger);
+                }
                 spot++;
             }
 
             _hasLastCarry = false;
             _carryVel = Vector3.zero;
             _aligning = false;
+            _scalingOut = false;
+            _settleOrder = 0;
             _inputScope.Acquire();
         }
 
@@ -237,9 +308,18 @@ namespace Rollgeon.Dice.Throw
                     if (!_service.TryGrab(die.Index)) continue;
 
                     if (die.Tween.isAlive) die.Tween.Stop();
+                    if (die.ScaleTween.isAlive)
+                    {
+                        // Agarre a mitad del scale-in: snapear o el dado queda enano.
+                        die.ScaleTween.Stop();
+                        die.View.transform.localScale = die.BaseScale;
+                    }
                     die.Returning = false;
                     die.View.Body.isKinematic = false;
                     die.View.Body.useGravity = false; // flota mientras está agarrado
+                    die.View.EmitImpacts = false;     // carried se chocan entre sí — sin clatter
+                    die.Juice?.PlayPickup();
+                    DieGrabbed?.Invoke(die.Index);
                 }
             }
 
@@ -280,6 +360,7 @@ namespace Rollgeon.Dice.Throw
 
         private void ThrowGrabbed()
         {
+            int thrown = 0;
             foreach (var idx in _service.ReleaseGrabbed())
             {
                 if (!_dice.TryGetValue(idx, out var die)) continue;
@@ -292,6 +373,13 @@ namespace Rollgeon.Dice.Throw
                 die.SettleHeld = 0f;
                 die.Nudges = 0;
                 die.Reported = false;
+                die.View.EmitImpacts = true; // en vuelo los golpes SÍ suenan
+                thrown++;
+            }
+            if (thrown > 0)
+            {
+                _settleOrder = 0;
+                DiceThrown?.Invoke(thrown);
             }
         }
 
@@ -367,6 +455,7 @@ namespace Rollgeon.Dice.Throw
                                     die.Nudges++;
                                     die.SettleHeld = 0f;
                                     die.View.Nudge(_cfg.NudgeImpulse);
+                                    DieNudged?.Invoke(die.Index);
                                     break;
                                 }
                                 die.View.SnapUpright();
@@ -390,9 +479,24 @@ namespace Rollgeon.Dice.Throw
         {
             die.Reported = true;
             die.View.Body.isKinematic = true;
+            die.View.EmitImpacts = false;
             die.RestPos = die.View.transform.position;
             die.RestRot = die.View.transform.rotation;
+            die.Juice?.PlaySettle(face);
             _service.NotifyDieSettled(die.Index, face);
+            DieSettled?.Invoke(die.Index, face, _settleOrder++);
+        }
+
+        // Colisiones físicas en vuelo: squash per-die (reemplaza al camera-punch —
+        // el RT pixel-art de 320x180 cuantizaría cualquier shake de cámara) + relay
+        // por índice para el clatter de la capa de zona.
+        private void HandleDieImpact(int index, float impulse)
+        {
+            if (impulse < _cfg.TrayImpactMinImpulse) return;
+            if (_dice.TryGetValue(index, out var die))
+                die.Juice?.PlayBounce(
+                    0.5f + 0.5f * DiceThrowFeelMath.Intensity01(impulse, _cfg.TrayImpactRefImpulse));
+            DieImpact?.Invoke(index, impulse);
         }
 
         // ---- Alineado -------------------------------------------------------------
@@ -423,9 +527,43 @@ namespace Rollgeon.Dice.Throw
 
         private void TickAlignCompletion()
         {
-            foreach (var die in _dice.Values)
-                if (die.Tween.isAlive) return;
+            if (!_scalingOut)
+            {
+                foreach (var die in _dice.Values)
+                    if (die.Tween.isAlive) return;
 
+                // Scale-out ANTES de CompleteReveal, con la sesión todavía Busy: nadie
+                // puede abrir otra sesión, el input scope sigue tomado y la cámara
+                // sigue prendida — cero carreras. Recién al terminar se revela.
+                float dur = ReducedMotion ? 0f : Mathf.Max(0f, _cfg.TrayScaleOutSeconds);
+                if (dur <= 0f)
+                {
+                    FinishReveal();
+                    return;
+                }
+                _scalingOut = true;
+                _scaleOutDeadline = Time.unscaledTime + dur + 0.25f;
+                foreach (var die in _dice.Values)
+                {
+                    if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
+                    die.ScaleTween = Tween.Scale(die.View.transform, Vector3.zero, dur, Ease.InBack);
+                }
+                return;
+            }
+
+            // Failsafe por deadline, no solo por tween — la resolución nunca cuelga
+            // (mismo principio que MaxSettleSeconds).
+            if (Time.unscaledTime < _scaleOutDeadline)
+            {
+                foreach (var die in _dice.Values)
+                    if (die.ScaleTween.isAlive) return;
+            }
+            FinishReveal();
+        }
+
+        private void FinishReveal()
+        {
+            _scalingOut = false;
             _aligning = false;
             _service.CompleteReveal();
             TeardownVisuals();
@@ -438,10 +576,12 @@ namespace Rollgeon.Dice.Throw
             foreach (var die in _dice.Values)
             {
                 if (die.Tween.isAlive) die.Tween.Stop();
+                if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
                 if (die.View != null) Destroy(die.View.gameObject);
             }
             _dice.Clear();
             _aligning = false;
+            _scalingOut = false;
             _inputScope.Release();
             SyncTrayCamera(false);
         }
@@ -457,6 +597,12 @@ namespace Rollgeon.Dice.Throw
             float angle = index * Mathf.PI * 2f / 5f;
             float radius = DieHalfExtent() * 2.2f;
             return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+        }
+
+        private void ResolveZone()
+        {
+            if (_diceZone == null)
+                _diceZone = FindFirstObjectByType<DiceZoneView>(FindObjectsInactive.Include);
         }
 
         private void EnsureCfg()
