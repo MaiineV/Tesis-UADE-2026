@@ -202,6 +202,41 @@ namespace Rollgeon.DevConsole.Commands
         }
     }
 
+    public sealed class DiceJuiceLogCommand : DevCommandBase
+    {
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("on|off", ArgKind.Choice, optional: true),
+        };
+
+        public override string Name => "dicejuicelog";
+        public override string Description =>
+            "Log verboso de cada momento de juice de los dados arrojables (pickup, bounce, " +
+            "settle, clatter, nudge) en la consola de Unity — para verificar qué se dispara. " +
+            "Sin args muestra el estado.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
+
+        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
+        {
+            if (args.Count == 0)
+                return CommandResult.Ok(Rollgeon.UI.HUD.DiceThrowJuice.VerboseLog
+                    ? "Juice log: ON."
+                    : "Juice log: OFF.");
+
+            switch (args[0].ToLowerInvariant())
+            {
+                case "on":
+                    Rollgeon.UI.HUD.DiceThrowJuice.VerboseLog = true;
+                    return CommandResult.Ok("Juice log: ON — mirá la consola de Unity ([DiceJuice]).");
+                case "off":
+                    Rollgeon.UI.HUD.DiceThrowJuice.VerboseLog = false;
+                    return CommandResult.Ok("Juice log: OFF.");
+                default:
+                    return CommandResult.Fail("Usá 'dicejuicelog on|off'.");
+            }
+        }
+    }
+
     public sealed class SetBagCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args =
