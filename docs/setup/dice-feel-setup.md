@@ -16,7 +16,7 @@
 | `DiceAnim/DiceUiAnimationSettingsSO.cs` | SO de tuning (duraciones, stagger, eases). Duración ≤ 0 = instantáneo (kill switch). |
 | `DiceAnim/DiceAnimChoreographer.cs` | Coreografía como data pura (planes de spin/outro, tick desacelerante, caras preview) — 100% testeada. |
 | `DiceAnim/DiceSlotAnimator.cs` | Motion PrimeTween por slot: spin+ciclado de caras, raise, throw/discard. Agregado por código en `Bind` — no vive en el prefab. |
-| `DiceAnim/DiceZoneAnimator.cs` | Coordinador: `TryBeginSpin`/`TryBeginOutro` (false ⇒ path instantáneo legacy), hooks para juice. Solo activo en modo `Classic`. |
+| `DiceAnim/DiceZoneAnimator.cs` | Coordinador: `TryBeginSpin`/`TryBeginOutro` (false ⇒ path instantáneo legacy), hooks para juice. El spin es Classic-only; raise/outro corren en TODOS los modos (gate partido en `CanAnimateRoll`/`CanAnimatePostReveal`). |
 | `DiceAnim/DiceOutroGate.cs` | Latch estático que difiere el teardown de la zona mientras los dados vuelan. |
 | `DiceSlotJuice.cs` | Dispara los MMF_Player del slot por momento (spin-start, reveal ± crit, lock/unlock, throw, discard, kept-pulse). |
 | `DiceZoneJuice.cs` | Shakes de mesa, flourish de combo y TODO el audio (via `IAudioService`, con pitch ramps). |

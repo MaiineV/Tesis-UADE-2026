@@ -8,11 +8,13 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD.DiceAnim
 {
     /// <summary>
-    /// Coordina la animación de los slots de dados legacy (modo Classic): spin del
-    /// roll, raise del hold y outro del confirm. <see cref="DiceZoneView"/> lo agrega
-    /// por código en <c>Bind</c> — si un <c>TryBegin*</c> devuelve <c>false</c> (modo
-    /// no Classic, sin slots, duraciones en 0), el caller ejecuta el path instantáneo
-    /// legacy, idéntico al comportamiento pre-animación.
+    /// Coordina la animación de los slots de dados: spin del roll (solo modo Classic —
+    /// en 2D/3D los presenters de throw animan los dados físicamente), y raise del
+    /// hold + outro del confirm (TODOS los modos: la UX post-reveal con dados en slots
+    /// es idéntica). <see cref="DiceZoneView"/> lo agrega por código en <c>Bind</c> —
+    /// si un <c>TryBegin*</c> devuelve <c>false</c> (sin slots, reduced motion,
+    /// duraciones en 0), el caller ejecuta el path instantáneo legacy, idéntico al
+    /// comportamiento pre-animación.
     /// </summary>
     public sealed class DiceZoneAnimator : MonoBehaviour
     {
@@ -86,7 +88,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
         /// </summary>
         public bool TryBeginSpin(IReadOnlyList<bool> willReveal, IReadOnlyList<int> finalFaces, Action onAllRevealed)
         {
-            if (!CanAnimate() || willReveal == null || finalFaces == null) return false;
+            if (!CanAnimateRoll() || willReveal == null || finalFaces == null) return false;
 
             var t = ResolveSettings().ToTimings();
             var plans = DiceAnimChoreographer.BuildSpinPlans(willReveal, t);
@@ -149,7 +151,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         public void SetRaised(int index, bool raised)
         {
-            if (!CanAnimate() || _slots == null || index < 0 || index >= _slots.Length) return;
+            if (!CanAnimatePostReveal() || _slots == null || index < 0 || index >= _slots.Length) return;
             _slots[index]?.SetRaised(raised);
         }
 
@@ -164,7 +166,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
         /// </summary>
         public bool TryBeginOutro(IReadOnlyList<bool> held, IReadOnlyList<bool> active, Action onFinished)
         {
-            if (!CanAnimate() || active == null || IsOutroPlaying) return false;
+            if (!CanAnimatePostReveal() || active == null || IsOutroPlaying) return false;
 
             var t = ResolveSettings().ToTimings();
             var positions = new Vector2[_slots.Length];
@@ -270,15 +272,26 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         // ---- Internals -----------------------------------------------------------
 
-        private bool CanAnimate()
+        // El spin del roll es Classic-only: en 2D/3D los presenters de throw ya animan
+        // los dados físicamente y el reveal llega con los ghosts alineados sobre los
+        // slots (un spin encima duplicaría la animación).
+        private bool CanAnimateRoll()
+        {
+            return CanAnimatePostReveal()
+                   && ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
+                   && t != null && t.Mode == Rollgeon.Dice.Throw.DiceThrowMode.Classic;
+        }
+
+        // Raise/outro corren en CUALQUIER modo: post-reveal los dados viven en los
+        // slots y se holdean/confirman igual en Classic/2D/3D. Sin servicio de throw
+        // registrado (tests, AI) queda el path instantáneo legacy.
+        private bool CanAnimatePostReveal()
         {
             if (!_bound || _slots == null || _slots.Length == 0) return false;
             // Accesibilidad: reduced motion apaga todo el sistema (path instantáneo).
             if (DiceUiMotionPrefs.ReducedMotion) return false;
-            // Solo el modo Classic anima acá — en 2D/3D los presenters de throw ya
-            // animan los dados físicamente (patrón RerollCountView.IsGrabRerollMode).
             return ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
-                   && t != null && t.Mode == Rollgeon.Dice.Throw.DiceThrowMode.Classic;
+                   && t != null;
         }
 
         /// <summary>

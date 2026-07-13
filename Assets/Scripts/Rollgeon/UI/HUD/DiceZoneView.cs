@@ -312,6 +312,18 @@ namespace Rollgeon.UI.HUD
         private bool[] _hiddenForThrow;
 
         /// <summary>
+        /// Una sesión de throw manual acaba de abrir (chains: puede pasar con el outro
+        /// del confirm anterior todavía volando — el <c>CancelOutroAndComplete</c> de
+        /// <see cref="HandleDiceRolled"/> no alcanza porque en 2D/3D el reveal llega
+        /// recién al settle). Completa YA el teardown diferido para que el gate no
+        /// quede pendiente durante la sesión nueva.
+        /// </summary>
+        public void NotifyThrowSessionStarted()
+        {
+            _animator?.CancelOutroAndComplete();
+        }
+
+        /// <summary>
         /// Oculta los slots cuyos dados van a volar en una sesión de throw manual —
         /// en un reroll seguían mostrando la cara vieja debajo de los dados voladores.
         /// <see cref="HandleDiceRolled"/> los reactiva solo en el reveal; si la sesión

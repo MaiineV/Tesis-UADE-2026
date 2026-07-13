@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
+using Rollgeon.UI.HUD;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -33,6 +35,9 @@ namespace Rollgeon.Dice.Throw
 
         [SerializeField, Tooltip("Centro del piso de la bandeja — origen de spawns y alineado.")]
         private Transform _trayCenter;
+
+        [SerializeField, Optional, Tooltip("Zona de dados del HUD. Null = se resuelve por Find al abrir sesión.")]
+        private DiceZoneView _diceZone;
 
         private sealed class Die3D
         {
@@ -143,6 +148,12 @@ namespace Rollgeon.Dice.Throw
         private void HandleSessionStarted()
         {
             EnsureCfg();
+
+            // Chains: la sesión nueva puede abrir con el outro del confirm anterior
+            // todavía volando en el HUD — completarlo YA (mismo guard que el 2D).
+            ResolveZone();
+            _diceZone?.NotifyThrowSessionStarted();
+
             if (_diePrefab == null || _trayCamera == null || _trayCenter == null)
             {
                 Debug.LogWarning("[DiceThrow3DPresenter] Wiring incompleto (prefab/cámara/bandeja) — " +
@@ -457,6 +468,12 @@ namespace Rollgeon.Dice.Throw
             float angle = index * Mathf.PI * 2f / 5f;
             float radius = DieHalfExtent() * 2.2f;
             return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+        }
+
+        private void ResolveZone()
+        {
+            if (_diceZone == null)
+                _diceZone = FindFirstObjectByType<DiceZoneView>(FindObjectsInactive.Include);
         }
 
         private void EnsureCfg()

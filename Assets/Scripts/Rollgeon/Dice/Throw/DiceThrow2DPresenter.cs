@@ -103,7 +103,10 @@ namespace Rollgeon.Dice.Throw
             if (dt <= 0f) return;
 
             bool sessionActive = _service.IsBusy && _dice.Count > 0;
-            bool canArm = _service.Mode == DiceThrowMode.TwoD && _service.CanGrabReroll;
+            // Con el outro del confirm en curso los slots están volando al centro o
+            // desvaneciéndose — armar un grab ahí agarraría dados en pleno teardown.
+            bool outroPending = Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending;
+            bool canArm = _service.Mode == DiceThrowMode.TwoD && _service.CanGrabReroll && !outroPending;
 
             if (!sessionActive && !canArm && _armed.Count == 0) return;
 
@@ -119,7 +122,14 @@ namespace Rollgeon.Dice.Throw
             }
             else if (canArm || _armed.Count > 0)
             {
-                if (!canArm) { CancelArmingReturn(); return; }
+                if (!canArm)
+                {
+                    // El confirm agarró un arming a medias: el tween de vuelta apuntaría
+                    // a un slot que el outro está animando/limpiando — cancel seco.
+                    if (outroPending) CancelArmingInstant();
+                    else CancelArmingReturn();
+                    return;
+                }
                 TickArmingInput();
                 TickArmingSimulation(dt);
             }
@@ -169,6 +179,10 @@ namespace Rollgeon.Dice.Throw
             EnsureCfg();
             ResolveZone();
             if (!EnsureLayer()) return;
+
+            // Chains: la sesión nueva puede abrir con el outro del confirm anterior
+            // todavía volando — completarlo YA, antes de esconder slots.
+            _diceZone?.NotifyThrowSessionStarted();
 
             // Sesión abierta desde afuera (ej. roll de la próxima fase del chain) con
             // un arming a medias: cancelarlo antes de arrancar limpio.
@@ -524,6 +538,10 @@ namespace Rollgeon.Dice.Throw
         {
             var slots = _diceZone != null ? _diceZone.GetDiceSlots() : null;
             if (slots == null || index >= slots.Count || slots[index] == null) return;
+            // Un ClearAll diferido (outro del confirm) pudo limpiar el slot mientras
+            // estaba armado: reactivarlo mostraría un slot vacío hasta el próximo roll.
+            var view = slots[index].GetComponent<DiceSlotView>();
+            if (view != null && view.CurrentFace <= 0) return;
             slots[index].gameObject.SetActive(true);
         }
 
