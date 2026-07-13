@@ -16,6 +16,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
     {
         // Hooks para la capa de juice (DiceSlotJuice). Sin tipos de Feel acá.
         public event Action SpinStarted;
+        public event Action PreviewTicked;
         public event Action<int> FaceRevealed;
         public event Action DieLocked;
         public event Action DieUnlocked;
@@ -39,6 +40,12 @@ namespace Rollgeon.UI.HUD.DiceAnim
         private Tween _moveTween;
         private Tween _scaleTween;
         private Tween _fadeTween;
+        private Tween _jumpTween;
+        private Tween _bobTween;
+
+        // Sombra opcional (hijo "Shadow" del prefab) que vende el salto del spin.
+        private Transform _shadow;
+        private Vector3 _shadowBaseScale;
 
         public void Init(DiceSlotView view, DiceUiAnimationSettingsSO settings)
         {
@@ -52,6 +59,12 @@ namespace Rollgeon.UI.HUD.DiceAnim
             {
                 _basePos = _rect.anchoredPosition;
                 _baseScale = _rect.localScale;
+                _shadow = transform.Find("Shadow");
+                if (_shadow != null)
+                {
+                    _shadowBaseScale = _shadow.localScale;
+                    _shadow.gameObject.SetActive(false);
+                }
                 _initialized = true;
             }
         }
@@ -96,6 +109,29 @@ namespace Rollgeon.UI.HUD.DiceAnim
                     if (_rect != null) _rect.localEulerAngles = new Vector3(0f, 0f, v);
                 });
 
+            // Salto parabólico + sombra que se achica: el dado "rueda en el aire" y
+            // aterriza en el reveal (la sombra es un hijo opcional del prefab).
+            if (_settings.SpinJumpHeight > 0f)
+            {
+                if (_jumpTween.isAlive) _jumpTween.Stop();
+                if (_shadow != null) _shadow.gameObject.SetActive(true);
+                Vector2 jumpBase = _basePos;
+                float jumpHeight = _settings.SpinJumpHeight;
+                _jumpTween = Tween.Custom(0f, 1f, plan.Duration, onValueChange: v =>
+                {
+                    float lift = DiceAnimChoreographer.ParabolaOffset(v, jumpHeight);
+                    if (_rect != null) _rect.anchoredPosition = new Vector2(jumpBase.x, jumpBase.y + lift);
+                    if (_shadow != null)
+                    {
+                        // A más altura, sombra más chica y tenue (solo escala — el
+                        // alpha lo maneja el color del sprite).
+                        float factor = 1f - 0.45f * (jumpHeight > 0f ? lift / jumpHeight : 0f);
+                        _shadow.localScale = new Vector3(
+                            _shadowBaseScale.x * factor, _shadowBaseScale.y * factor, _shadowBaseScale.z);
+                    }
+                });
+            }
+
             int faceRange = DiceAnimChoreographer.PreviewFaceRange(_settings.PreviewFaceMax, finalFace);
             var rng = new System.Random(unchecked(Environment.TickCount * 31 + GetInstanceID()));
             int previewFace = 0;
@@ -108,6 +144,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
                 {
                     previewFace = DiceAnimChoreographer.NextPreviewFace(rng, faceRange, previewFace);
                     _view.SetSpinPreviewFace(previewFace);
+                    PreviewTicked?.Invoke();
                     nextTick++;
                 }
                 yield return null;
@@ -115,7 +152,8 @@ namespace Rollgeon.UI.HUD.DiceAnim
             }
 
             if (_rotationTween.isAlive) _rotationTween.Stop();
-            if (_rect != null) _rect.localEulerAngles = Vector3.zero;
+            if (_jumpTween.isAlive) _jumpTween.Stop();
+            LandFromSpin();
 
             IsSpinning = false;
             _spinRoutine = null;
@@ -123,6 +161,20 @@ namespace Rollgeon.UI.HUD.DiceAnim
             _view.SetHoldInteractable(true);
             FaceRevealed?.Invoke(finalFace);
             onRevealed?.Invoke(finalFace);
+        }
+
+        private void LandFromSpin()
+        {
+            if (_rect != null && _initialized)
+            {
+                _rect.localEulerAngles = Vector3.zero;
+                _rect.anchoredPosition = _basePos;
+            }
+            if (_shadow != null)
+            {
+                _shadow.localScale = _shadowBaseScale;
+                _shadow.gameObject.SetActive(false);
+            }
         }
 
         private void StopSpin()
@@ -134,7 +186,8 @@ namespace Rollgeon.UI.HUD.DiceAnim
                 _spinRoutine = null;
             }
             if (_rotationTween.isAlive) _rotationTween.Stop();
-            if (_rect != null && _initialized) _rect.localEulerAngles = Vector3.zero;
+            if (_jumpTween.isAlive) _jumpTween.Stop();
+            LandFromSpin();
             IsSpinning = false;
             // Un spin cancelado no debe dejar el hold muerto (lo re-deshabilita el
             // próximo PlaySpin si corresponde).
@@ -150,15 +203,49 @@ namespace Rollgeon.UI.HUD.DiceAnim
             if (_rect == null || _settings == null) return;
 
             if (_raiseTween.isAlive) _raiseTween.Stop();
+            StopBob();
             var target = raised ? _basePos + new Vector2(0f, _settings.RaiseOffsetY) : _basePos;
             float seconds = raised ? _settings.RaiseSeconds : _settings.LowerSeconds;
             if (seconds <= 0f || !gameObject.activeInHierarchy)
+            {
                 _rect.anchoredPosition = target;
+                if (raised) StartBob(target);
+            }
             else
-                _raiseTween = Tween.UIAnchoredPosition(_rect, target, seconds, _settings.RaiseEase);
+            {
+                _raiseTween = Tween.UIAnchoredPosition(_rect, target, seconds, _settings.RaiseEase)
+                    .OnComplete(() =>
+                    {
+                        // El bob arranca recién cuando el raise asentó — y solo si el
+                        // dado sigue holdeado (pudo soltarse durante el tween).
+                        if (IsRaised) StartBob(target);
+                    });
+            }
 
             if (raised) DieLocked?.Invoke();
             else DieUnlocked?.Invoke();
+        }
+
+        // Bob flotante del dado holdeado: oscilación senoidal suave alrededor de la
+        // posición elevada — refuerza la lectura de "apartado de la mesa".
+        private void StartBob(Vector2 center)
+        {
+            if (_settings == null || _settings.HoldBobAmplitude <= 0f || _settings.HoldBobSeconds <= 0f) return;
+            if (!gameObject.activeInHierarchy) return;
+            StopBob();
+            float amplitude = _settings.HoldBobAmplitude;
+            _bobTween = Tween.Custom(0f, Mathf.PI * 2f, _settings.HoldBobSeconds,
+                cycles: -1, cycleMode: CycleMode.Restart, ease: Ease.Linear,
+                onValueChange: v =>
+                {
+                    if (_rect != null)
+                        _rect.anchoredPosition = new Vector2(center.x, center.y + Mathf.Sin(v) * amplitude);
+                });
+        }
+
+        private void StopBob()
+        {
+            if (_bobTween.isAlive) _bobTween.Stop();
         }
 
         // ---- Outro -------------------------------------------------------------
@@ -172,25 +259,59 @@ namespace Rollgeon.UI.HUD.DiceAnim
         {
             if (_rect == null || _settings == null || plan.Kind == DiceOutroKind.Skip) return;
 
+            StopBob();
             if (_moveTween.isAlive) _moveTween.Stop();
             if (_scaleTween.isAlive) _scaleTween.Stop();
             if (_fadeTween.isAlive) _fadeTween.Stop();
+            if (_rotationTween.isAlive) _rotationTween.Stop();
 
             switch (plan.Kind)
             {
                 case DiceOutroKind.Throw:
+                {
                     ThrowStarted?.Invoke();
-                    _moveTween = Tween.UIAnchoredPosition(_rect, plan.TargetPosition,
-                        plan.Duration, _settings.ThrowEase, startDelay: plan.Delay);
+                    // Vuelo en arco: lerp al centro + parábola vertical, con rotación
+                    // en el aire — el "lanzarse a la mesa" del brief.
+                    Vector2 from = _rect.anchoredPosition;
+                    Vector2 to = plan.TargetPosition;
+                    float arc = _settings.ThrowArcHeight;
+                    _moveTween = Tween.Custom(0f, 1f, plan.Duration, ease: _settings.ThrowEase,
+                        startDelay: plan.Delay, onValueChange: v =>
+                        {
+                            if (_rect == null) return;
+                            var p = Vector2.LerpUnclamped(from, to, v);
+                            p.y += DiceAnimChoreographer.ParabolaOffset(v, arc);
+                            _rect.anchoredPosition = p;
+                        });
+                    if (_settings.ThrowSpinDegrees != 0f)
+                        _rotationTween = Tween.Custom(0f, _settings.ThrowSpinDegrees, plan.Duration,
+                            ease: Ease.Linear, startDelay: plan.Delay, onValueChange: v =>
+                            {
+                                if (_rect != null) _rect.localEulerAngles = new Vector3(0f, 0f, v);
+                            });
                     _scaleTween = Tween.Scale(_rect, _baseScale * plan.EndScale,
                         plan.Duration, _settings.ThrowEase, startDelay: plan.Delay);
                     break;
+                }
 
                 case DiceOutroKind.Discard:
+                {
                     DieDiscarded?.Invoke();
+                    // Gravedad fake: los descartados caen rotando mientras se apagan.
+                    if (_settings.DiscardFallDistance > 0f)
+                        _moveTween = Tween.UIAnchoredPosition(_rect,
+                            plan.TargetPosition + Vector2.down * _settings.DiscardFallDistance,
+                            plan.Duration, _settings.DiscardEase, startDelay: plan.Delay);
+                    if (_settings.DiscardSpinDegrees != 0f)
+                        _rotationTween = Tween.Custom(0f, _settings.DiscardSpinDegrees, plan.Duration,
+                            ease: _settings.DiscardEase, startDelay: plan.Delay, onValueChange: v =>
+                            {
+                                if (_rect != null) _rect.localEulerAngles = new Vector3(0f, 0f, v);
+                            });
                     _scaleTween = Tween.Scale(_rect, _baseScale * plan.EndScale,
                         plan.Duration, _settings.DiscardEase, startDelay: plan.Delay);
                     break;
+                }
             }
 
             if (_canvasGroup != null && plan.FadeDuration > 0f)
@@ -215,6 +336,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
         public void StopAll()
         {
             StopSpin();
+            StopBob();
             if (_raiseTween.isAlive) _raiseTween.Stop();
             if (_moveTween.isAlive) _moveTween.Stop();
             if (_scaleTween.isAlive) _scaleTween.Stop();

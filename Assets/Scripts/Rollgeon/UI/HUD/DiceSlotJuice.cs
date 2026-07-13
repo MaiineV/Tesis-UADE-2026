@@ -1,7 +1,9 @@
 using MoreMountains.Feedbacks;
+using PrimeTween;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
@@ -46,11 +48,34 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Pulso de 'este se queda' cuando otros dados rerollean.")]
         private MMF_Player _keptPulsePlayer;
 
+        [Title("Held — Glow y partículas")]
+        [SerializeField, Optional, Tooltip("Overlay que pulsa (alpha yoyo) mientras el dado está holdeado.")]
+        private Graphic _glowOverlay;
+
+        [SerializeField, Optional, Tooltip("Sparkles idle mientras el dado está holdeado.")]
+        private ParticleSystem _holdSparkles;
+
+        [SerializeField, Optional, Tooltip("Puff al revelar la cara (aterrizaje del spin).")]
+        private ParticleSystem _revealPuff;
+
         [Title("Tuning")]
         [SerializeField, Tooltip("Cara que cuenta como crit para la variante dorada del reveal.")]
         private int _critFace = 6;
 
+        [SerializeField, Tooltip("Desde esta cara (sin llegar a crit) el reveal pega más fuerte.")]
+        private int _highFace = 4;
+
+        [SerializeField, Tooltip("Multiplicador de intensidad MMF para caras altas no-crit.")]
+        private float _highFaceIntensity = 1.3f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Alpha máximo del glow pulsante del held.")]
+        private float _glowMaxAlpha = 0.15f;
+
+        [SerializeField, Tooltip("Período (segundos) de medio ciclo del pulso de glow.")]
+        private float _glowPulseSeconds = 0.7f;
+
         private DiceSlotAnimator _animator;
+        private Tween _glowTween;
 
         private void OnEnable()
         {
@@ -92,6 +117,7 @@ namespace Rollgeon.UI.HUD
             // ClearAll apaga el slot con feedbacks potencialmente a medias — los
             // springs restauran sus valores iniciales al frenar.
             StopAll();
+            StopGlow();
         }
 
         /// <summary>Pulso de reaseguro en un reroll: "este dado se queda". Lo dispara <see cref="DiceZoneJuice"/>.</summary>
@@ -101,24 +127,83 @@ namespace Rollgeon.UI.HUD
 
         private void HandleFaceRevealed(int face)
         {
-            var player = face >= _critFace && _critRevealPlayer != null
-                ? _critRevealPlayer
-                : _revealPlayer;
-            Play(player);
+            if (_revealPuff != null) _revealPuff.Play();
+
+            if (face >= _critFace && _critRevealPlayer != null)
+            {
+                Play(_critRevealPlayer);
+                return;
+            }
+            // Escalera de impacto: las caras altas no-crit pegan más fuerte (la
+            // intensidad MMF multiplica los bumps de los springs y el flash).
+            float intensity = face >= _highFace ? _highFaceIntensity : 1f;
+            Play(_revealPlayer, intensity);
         }
 
-        private void HandleLocked() => Play(_lockPlayer);
-        private void HandleUnlocked() => Play(_unlockPlayer);
-        private void HandleThrow() => Play(_throwPlayer);
-        private void HandleDiscarded() => Play(_discardPlayer);
+        private void HandleLocked()
+        {
+            Play(_lockPlayer);
+            StartGlow();
+            if (_holdSparkles != null) _holdSparkles.Play();
+        }
 
-        private static void Play(MMF_Player player)
+        private void HandleUnlocked()
+        {
+            Play(_unlockPlayer);
+            StopGlow();
+        }
+
+        private void HandleThrow()
+        {
+            Play(_throwPlayer);
+            StopGlow();
+        }
+
+        private void HandleDiscarded()
+        {
+            Play(_discardPlayer);
+            StopGlow();
+        }
+
+        // Glow pulsante mientras el dado está holdeado — feedback constante de
+        // estado, complementa el tint azul del background (que es de DiceSlotView).
+        private void StartGlow()
+        {
+            if (_glowOverlay == null || _glowPulseSeconds <= 0f) return;
+            if (_glowTween.isAlive) _glowTween.Stop();
+            var overlay = _glowOverlay;
+            _glowTween = Tween.Custom(0f, _glowMaxAlpha, _glowPulseSeconds,
+                cycles: -1, cycleMode: CycleMode.Yoyo, ease: Ease.InOutSine,
+                onValueChange: a =>
+                {
+                    if (overlay == null) return;
+                    var c = overlay.color;
+                    c.a = a;
+                    overlay.color = c;
+                });
+        }
+
+        private void StopGlow()
+        {
+            if (_glowTween.isAlive) _glowTween.Stop();
+            if (_glowOverlay != null)
+            {
+                var c = _glowOverlay.color;
+                c.a = 0f;
+                _glowOverlay.color = c;
+            }
+            if (_holdSparkles != null)
+                _holdSparkles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        private static void Play(MMF_Player player, float intensity = 1f)
         {
             if (player == null) return;
             // Replay limpio: un feedback a medias (lock spameado) se corta antes de
             // re-disparar, si no los springs acumulan.
             if (player.IsPlaying) player.StopFeedbacks();
-            player.PlayFeedbacks();
+            if (intensity != 1f) player.PlayFeedbacks(player.transform.position, intensity);
+            else player.PlayFeedbacks();
         }
 
         private void StopAll()

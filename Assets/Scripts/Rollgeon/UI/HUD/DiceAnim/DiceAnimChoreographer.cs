@@ -247,5 +247,15 @@ namespace Rollgeon.UI.HUD.DiceAnim
         /// <summary>Rango de preview: cubre la cara real aunque supere el máximo configurado.</summary>
         public static int PreviewFaceRange(int configuredMax, int finalFace)
             => Mathf.Max(2, Mathf.Max(configuredMax, finalFace));
+
+        /// <summary>
+        /// Offset parabólico clásico (0 en los extremos, <paramref name="height"/> en
+        /// t=0.5). Sirve para el salto del spin y el arco del throw.
+        /// </summary>
+        public static float ParabolaOffset(float t, float height)
+        {
+            t = Mathf.Clamp01(t);
+            return height * 4f * t * (1f - t);
+        }
     }
 }

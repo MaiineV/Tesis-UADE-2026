@@ -36,6 +36,10 @@ namespace Rollgeon.UI.HUD.DiceAnim
                  "cara real supera esto, el rango se extiende hasta la cara real.")]
         [Min(2)] public int PreviewFaceMax = 6;
 
+        [Tooltip("Altura (px) del salto parabólico durante el giro — el dado 'rueda en " +
+                 "el aire'. 0 = sin salto.")]
+        public float SpinJumpHeight = 14f;
+
         [Header("Lock — Raise del dado holdeado")]
         [Tooltip("Cuánto se eleva el dado al holdearse (px del canvas).")]
         public float RaiseOffsetY = 18f;
@@ -46,6 +50,12 @@ namespace Rollgeon.UI.HUD.DiceAnim
         public float LowerSeconds = 0.10f;
 
         public Ease RaiseEase = Ease.OutCubic;
+
+        [Tooltip("Amplitud (px) del bob flotante del dado holdeado. 0 = sin bob.")]
+        public float HoldBobAmplitude = 3f;
+
+        [Tooltip("Período (segundos) de un ciclo completo del bob.")]
+        public float HoldBobSeconds = 1.8f;
 
         [Header("Confirm — Throw al centro de la mesa (holdeados)")]
         public float ThrowSeconds = 0.35f;
@@ -61,11 +71,23 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         public Ease ThrowEase = Ease.InCubic;
 
+        [Tooltip("Altura (px) del arco parabólico del vuelo. 0 = línea recta.")]
+        public float ThrowArcHeight = 40f;
+
+        [Tooltip("Grados de rotación Z durante el vuelo. 0 = sin rotación.")]
+        public float ThrowSpinDegrees = 180f;
+
         [Header("Confirm — Descarte (no usados)")]
         public float DiscardSeconds = 0.25f;
 
         [Tooltip("Escala final del scale-down del descarte.")]
         public float DiscardEndScale = 0.7f;
+
+        [Tooltip("Caída (px) hacia abajo durante el descarte — gravedad fake. 0 = en el lugar.")]
+        public float DiscardFallDistance = 30f;
+
+        [Tooltip("Rotación Z (grados) durante la caída del descarte.")]
+        public float DiscardSpinDegrees = -35f;
 
         public Ease DiscardEase = Ease.InQuad;
 

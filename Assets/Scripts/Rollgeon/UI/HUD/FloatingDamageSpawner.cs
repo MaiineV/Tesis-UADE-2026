@@ -81,6 +81,29 @@ namespace Rollgeon.UI.HUD
         // (damage + oro) se distribuyen en el tiempo y no se solapan visualmente.
         private float _nextSpawnTime;
 
+        // Mientras los dados vuelan al centro (outro del confirm Classic), los números
+        // se encolan y aparecen recién al aterrizar — el daño "llega" con los dados en
+        // vez de pisarles la animación. La posición se resuelve al ENCOLAR (el target
+        // puede despawnear si el golpe fue letal).
+        private readonly List<Action> _deferredSpawns = new List<Action>();
+
+        private bool DeferIfOutroPending(string text, Color tint, Vector3 screenPos,
+            float scale, FloatingMotion motion)
+        {
+            if (!Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending) return false;
+            _deferredSpawns.Add(() => SpawnAt(text, tint, screenPos, scale, motion));
+            return true;
+        }
+
+        private void FlushDeferredIfIdle()
+        {
+            if (Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending) return;
+            if (_deferredSpawns.Count == 0) return;
+            var pending = new List<Action>(_deferredSpawns);
+            _deferredSpawns.Clear();
+            foreach (var spawn in pending) spawn();
+        }
+
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
@@ -96,6 +119,7 @@ namespace Rollgeon.UI.HUD
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
 
             EventManager.Subscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed += FlushDeferredIfIdle;
             _bound = true;
         }
 
@@ -110,6 +134,8 @@ namespace Rollgeon.UI.HUD
             }
 
             EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed -= FlushDeferredIfIdle;
+            _deferredSpawns.Clear();
             ClearActiveInstances();
             _bound = false;
         }
@@ -223,7 +249,7 @@ namespace Rollgeon.UI.HUD
             if (payload.BlockedByShield)
             {
                 var blocked = FloatingNumberFormat.ShieldBlocked();
-                SpawnAt(blocked.Text, blocked.Tint, screenPos, blocked.Scale, blocked.Motion);
+                SpawnOrDefer(blocked.Text, blocked.Tint, screenPos, blocked.Scale, blocked.Motion);
                 return;
             }
 
@@ -235,11 +261,17 @@ namespace Rollgeon.UI.HUD
             if (payload.ShieldBroken && payload.FinalDamage > 0)
             {
                 var broken = FloatingNumberFormat.ShieldBroken();
-                SpawnAt(broken.Text, broken.Tint, screenPos, broken.Scale, broken.Motion);
+                SpawnOrDefer(broken.Text, broken.Tint, screenPos, broken.Scale, broken.Motion);
             }
 
             var style = FloatingNumberFormat.ForDamage(payload.FinalDamage, incoming, payload.WeaknessHit);
-            SpawnAt(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
+            SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
+        }
+
+        private void SpawnOrDefer(string text, Color tint, Vector3 screenPos, float scale, FloatingMotion motion)
+        {
+            if (DeferIfOutroPending(text, tint, screenPos, scale, motion)) return;
+            SpawnAt(text, tint, screenPos, scale, motion);
         }
 
         private void HandleFloatingNumberRequested(params object[] args)
@@ -253,7 +285,7 @@ namespace Rollgeon.UI.HUD
 
             var style = FloatingNumberFormat.ForType(type, value);
             var screenPos = ResolveScreenPos(target);
-            SpawnAt(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
+            SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
         }
 
         private Vector3 ResolveScreenPos(Guid entityGuid)

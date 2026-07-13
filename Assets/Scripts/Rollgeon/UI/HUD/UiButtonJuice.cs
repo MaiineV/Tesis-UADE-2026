@@ -20,6 +20,10 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Squash & stretch del press (MMF_ScaleSpring bump).")]
         private MMF_Player _pressPlayer;
 
+        [SerializeField, Optional, Tooltip("Pulso cuando el botón pasa de deshabilitado a habilitado — " +
+                 "'ahora podés apretar esto'.")]
+        private MMF_Player _availablePulsePlayer;
+
         [SerializeField, Optional, Tooltip("Click SFX (2D).")]
         private AudioClip _clickClip;
 
@@ -27,11 +31,27 @@ namespace Rollgeon.UI.HUD
         private float _clickVolume = 0.8f;
 
         private Button _button;
+        private bool _lastInteractable;
 
         private void Awake()
         {
             _button = GetComponent<Button>();
             _button.onClick.AddListener(HandleClick);
+            _lastInteractable = _button.interactable;
+        }
+
+        private void Update()
+        {
+            // Poll barato (2 botones): la transición off→on dispara el pulso de
+            // disponibilidad sin acoplar las views que recomputan interactable.
+            if (_availablePulsePlayer == null || _button == null) return;
+            bool now = _button.interactable;
+            if (now && !_lastInteractable)
+            {
+                if (_availablePulsePlayer.IsPlaying) _availablePulsePlayer.StopFeedbacks();
+                _availablePulsePlayer.PlayFeedbacks();
+            }
+            _lastInteractable = now;
         }
 
         private void OnDestroy()

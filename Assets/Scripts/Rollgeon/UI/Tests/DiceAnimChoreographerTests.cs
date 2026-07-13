@@ -215,6 +215,23 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(DiceOutroKind.Skip, plans[1].Kind);
         }
 
+        // ── ParabolaOffset ───────────────────────────────────────────────
+
+        [Test]
+        public void ParabolaOffset_IsZeroAtEndsAndPeaksAtMidpoint()
+        {
+            Assert.AreEqual(0f, DiceAnimChoreographer.ParabolaOffset(0f, 40f), 1e-5f);
+            Assert.AreEqual(0f, DiceAnimChoreographer.ParabolaOffset(1f, 40f), 1e-5f);
+            Assert.AreEqual(40f, DiceAnimChoreographer.ParabolaOffset(0.5f, 40f), 1e-5f);
+        }
+
+        [Test]
+        public void ParabolaOffset_ClampsTimeOutsideUnitRange()
+        {
+            Assert.AreEqual(0f, DiceAnimChoreographer.ParabolaOffset(-0.5f, 40f), 1e-5f);
+            Assert.AreEqual(0f, DiceAnimChoreographer.ParabolaOffset(1.5f, 40f), 1e-5f);
+        }
+
         // ── OutroTotalSeconds ────────────────────────────────────────────
 
         [Test]

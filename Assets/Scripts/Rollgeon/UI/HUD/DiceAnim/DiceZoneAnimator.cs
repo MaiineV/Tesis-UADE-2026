@@ -266,6 +266,8 @@ namespace Rollgeon.UI.HUD.DiceAnim
         private bool CanAnimate()
         {
             if (!_bound || _slots == null || _slots.Length == 0) return false;
+            // Accesibilidad: reduced motion apaga todo el sistema (path instantáneo).
+            if (DiceUiMotionPrefs.ReducedMotion) return false;
             // Solo el modo Classic anima acá — en 2D/3D los presenters de throw ya
             // animan los dados físicamente (patrón RerollCountView.IsGrabRerollMode).
             return ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
