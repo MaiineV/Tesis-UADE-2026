@@ -96,11 +96,15 @@ diferido hasta el aterrizaje de los dados, tick de audio por cara preview.
 PlayerPrefs) — off = todo instantáneo, path legacy. Exponer en la futura
 pantalla de opciones leyendo `DiceUiMotionPrefs.ReducedMotion`.
 
-**Partículas (BLOQUEADO)**: los hooks existen (`_holdSparkles`, `_revealPuff`
-en DiceSlotJuice; `_impactParticles` en DiceZoneJuice, todos `[Optional]`)
-pero el canvas del HUD es Screen Space **Overlay** — un ParticleSystem real no
-renderiza encima. Para activarlas: asset tipo "UI Particle" o pasar el canvas
-a Screen Space-Camera. Documentado como backlog.
+**Partículas (ACTIVAS via UIParticle)**: se instaló
+`com.coffee.ui-particle@4.13.3` (git, pinneado en el manifest) — renderiza
+ParticleSystems como geometría UI, compatible con el canvas Overlay. Wireadas:
+`HoldSparkles` (chispitas idle en holdeados) y `RevealPuff` (burst al revelar)
+en `DiceSlotView.prefab`, `ImpactParticles` (polvo al aterrizar el throw) bajo
+la RollArea en `Canvas.prefab`. Material placeholder: Default-ParticleSystem
+(círculo soft builtin) — reemplazable por sprites propios en el
+ParticleSystemRenderer. El `scale` del componente UIParticle está en 1
+(1 unidad de simulación = 1 px de canvas).
 
 ## SFX — placeholders sintetizados (reemplazar por assets sourceados)
 
