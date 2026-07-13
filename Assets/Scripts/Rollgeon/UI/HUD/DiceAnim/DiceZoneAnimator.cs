@@ -173,7 +173,8 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
             var plans = DiceAnimChoreographer.BuildOutroPlans(
                 held, active, positions, ComputeTableCenter(), t);
-            float total = DiceAnimChoreographer.OutroTotalSeconds(plans, t.OutroHoldSeconds);
+            float hold = Mathf.Max(0f, t.OutroHoldSeconds);
+            float total = DiceAnimChoreographer.OutroTotalSeconds(plans, hold);
             if (total <= 0f) return false;
 
             IsOutroPlaying = true;
@@ -188,14 +189,19 @@ namespace Rollgeon.UI.HUD.DiceAnim
             }
             if (anyThrow) ZoneThrowStarted?.Invoke();
 
-            _outroRoutine = StartCoroutine(OutroTimer(total));
+            _outroRoutine = StartCoroutine(OutroTimer(total - hold, hold));
             AnimationStateChanged?.Invoke();
             return true;
         }
 
-        private IEnumerator OutroTimer(float seconds)
+        private IEnumerator OutroTimer(float landSeconds, float holdSeconds)
         {
-            yield return new WaitForSeconds(seconds);
+            yield return new WaitForSeconds(landSeconds);
+            // Momento de ATERRIZAJE: el juice (shake, thud, partículas, hitstop)
+            // dispara acá, ANTES del hold — si saliera junto con el teardown, la
+            // zona se esconde el mismo frame y nada se alcanza a ver.
+            OutroFinished?.Invoke();
+            if (holdSeconds > 0f) yield return new WaitForSeconds(holdSeconds);
             _outroRoutine = null;
             CompleteOutro();
         }
@@ -218,6 +224,8 @@ namespace Rollgeon.UI.HUD.DiceAnim
         private void CompleteOutro()
         {
             // Flags primero: el onFinished típico es ClearAll, que re-entra por ResetAll.
+            // OutroFinished NO se dispara acá — sale en el momento de aterrizaje del
+            // timer (un cancel temprano se salta los visuales de landing, correcto).
             IsOutroPlaying = false;
             var onFinished = _onOutroFinished;
             _onOutroFinished = null;
@@ -228,7 +236,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
             onFinished?.Invoke();
             DiceOutroGate.End();
-            OutroFinished?.Invoke();
             AnimationStateChanged?.Invoke();
         }
 
