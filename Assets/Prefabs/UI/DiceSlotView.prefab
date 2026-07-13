@@ -5366,7 +5366,7 @@ MonoBehaviour:
   m_GroupMaxId: 0
   m_PositionMode: 0
   m_AutoScaling: 0
-  m_AutoScalingMode: 2
+  m_AutoScalingMode: 1
   m_UseCustomView: 0
   m_CustomViewSize: 10
   m_TimeScaleMultiplier: 1
@@ -11179,7 +11179,7 @@ MonoBehaviour:
   m_GroupMaxId: 0
   m_PositionMode: 0
   m_AutoScaling: 0
-  m_AutoScalingMode: 2
+  m_AutoScalingMode: 1
   m_UseCustomView: 0
   m_CustomViewSize: 10
   m_TimeScaleMultiplier: 1

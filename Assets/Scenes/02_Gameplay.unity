@@ -1927,30 +1927,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (2)
       objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2588,7 +2564,7 @@ MonoBehaviour:
   m_GroupMaxId: 0
   m_PositionMode: 0
   m_AutoScaling: 0
-  m_AutoScalingMode: 2
+  m_AutoScalingMode: 1
   m_UseCustomView: 0
   m_CustomViewSize: 10
   m_TimeScaleMultiplier: 1
@@ -3678,7 +3654,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.0001
+      repeatInterval: 0.01
       probability: 1
   SizeModule:
     enabled: 0
@@ -8134,30 +8110,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (3)
       objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9348,30 +9300,6 @@ PrefabInstance:
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_Name
       value: DiceSlotView
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10745,30 +10673,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11470,30 +11374,6 @@ PrefabInstance:
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_Name
       value: DiceSlotView (4)
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3701582256298772012, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6252706643513165080, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
