@@ -75,15 +75,41 @@ solo en fases sin overlap, y colores solo en `FlashOverlay`/`DiceLabel` — el c
 del background es de `DiceSlotView` (tints de hold/blocked). Si agregás feedbacks,
 respetá ese reparto.
 
-## SFX pendientes (sourcear, ej. Kenney Casino/UI Audio, CC0)
+## Capa v2 (segunda pasada — "todos los sugeridos")
 
-Wirear en `DiceZoneJuice` (DiceZoneView) y `UiButtonJuice` — hoy están vacíos = mute:
+**Motion** (tuning en el mismo SO): bob flotante del dado holdeado
+(`HoldBobAmplitude/Seconds`), salto parabólico con sombra durante el spin
+(`SpinJumpHeight` + hijo `Shadow` del prefab), vuelo en arco con rotación en el
+throw (`ThrowArcHeight/SpinDegrees`), caída con rotación en el descarte
+(`DiscardFallDistance/SpinDegrees`), raise con overshoot (`RaiseEase=OutBack`).
 
-`sfx_dice_rattle` (≈0.5s), `sfx_dice_reveal_tick`, `sfx_dice_lock`,
-`sfx_dice_unlock`, `sfx_dice_throw_whoosh`, `sfx_dice_discard_poof`,
-`sfx_dice_land_thud` (placeholder: SE-Collision_03 ya wireado), `sfx_combo_chime`,
-click de botones. Import: Force Mono, Decompress On Load, Vorbis ~q0.7. Carpeta
-sugerida: `Assets/Sounds/Dice/`.
+**Juice**: glow pulsante en holdeados (hijo `GlowOverlay`), pop del número al
+revelar (Label Pop en Juice_Reveal/CritReveal), intensidad del reveal escalonada
+por cara (`_highFace`/`_highFaceIntensity` en DiceSlotJuice), hitstop en crit y
+aterrizaje (`DiceHitstop`, tuning en DiceZoneJuice), borde dorado pulsante de la
+RollArea mientras hay holds esperando confirm, micro-shake de zona al rollear,
+pulso de disponibilidad del Confirm (`UiButtonJuice._availablePulsePlayer`),
+duck de música durante el outro (`IAudioService.DuckMusic`), floating damage
+diferido hasta el aterrizaje de los dados, tick de audio por cara preview.
+
+**Accesibilidad**: `dicemotion on|off` en la DevConsole (persistido en
+PlayerPrefs) — off = todo instantáneo, path legacy. Exponer en la futura
+pantalla de opciones leyendo `DiceUiMotionPrefs.ReducedMotion`.
+
+**Partículas (BLOQUEADO)**: los hooks existen (`_holdSparkles`, `_revealPuff`
+en DiceSlotJuice; `_impactParticles` en DiceZoneJuice, todos `[Optional]`)
+pero el canvas del HUD es Screen Space **Overlay** — un ParticleSystem real no
+renderiza encima. Para activarlas: asset tipo "UI Particle" o pasar el canvas
+a Screen Space-Camera. Documentado como backlog.
+
+## SFX — placeholders sintetizados (reemplazar por assets sourceados)
+
+`Assets/Sounds/Dice/` tiene 9 WAVs **procedurales** (generados por script,
+funcionales pero básicos): rattle, preview_tick, reveal_tick, lock, unlock,
+throw_whoosh, discard_poof, combo_chime, ui_click — ya wireados en
+`DiceZoneJuice`/`UiButtonJuice`; el thud sigue siendo `SE-Collision_03`.
+Para reemplazar: sourcear (ej. Kenney Casino/UI Audio, CC0), importar con
+Force Mono + Decompress On Load, y re-wirear los campos en los prefabs.
 
 ## Cómo probar (playtest manual — el Play va a mano)
 
