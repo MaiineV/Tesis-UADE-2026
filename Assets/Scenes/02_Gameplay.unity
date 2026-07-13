@@ -550,15 +550,15 @@ MonoBehaviour:
   _rattleClip: {fileID: 8300000, guid: beb6fbade5cb7b0469edb82ff4721205, type: 3}
   _clatterClip: {fileID: 8300000, guid: 852ba2c303a367847a0d83f534f813f5, type: 3}
   _nudgeClip: {fileID: 8300000, guid: 058fec1520c23964381dba9814182895, type: 3}
-  _impactRefSpeed: 1500
+  _impactRefSpeed: 1200
   _bounceMinSpeed: 120
-  _settlePitchStep: 0.06
+  _settlePitchStep: 0.08
   _rattleMinSpeed: 250
   _rattleRefSpeed: 1500
-  _impactRefImpulse: 4
+  _impactRefImpulse: 3
   _critFace: 6
-  _critHitstopSeconds: 0.05
-  _musicDuckFactor: 0.85
+  _critHitstopSeconds: 0.09
+  _musicDuckFactor: 0.7
 --- !u!1 &162826241
 GameObject:
   m_ObjectHideFlags: 0
@@ -2245,6 +2245,7 @@ MonoBehaviour:
   _diceZone: {fileID: 7832882399325725898}
   _diePrefab: {fileID: 4802173880582162208, guid: cabfae1b6cb79aa4685aca012136f93d, type: 3}
   _layer: {fileID: 1894434048}
+  _impactBurst: {fileID: 1894434050}
 --- !u!1 &818900992
 GameObject:
   m_ObjectHideFlags: 0
@@ -10607,6 +10608,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1894434048}
   - component: {fileID: 1894434049}
+  - component: {fileID: 1894434050}
   m_Layer: 0
   m_Name: DiceThrowLayer
   m_TagString: Untagged
@@ -10645,6 +10647,27 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &1894434050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894434047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9c678d2a8af131498ab3c4e9ad665de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceThrowImpactBurst
+  _particlePrefab: {fileID: 7451679274966253935, guid: d5d9d6a822e51314690d337b2b539b5d, type: 3}
+  _container: {fileID: 1894434048}
+  _countRange: {x: 4, y: 10}
+  _speedRange: {x: 260, y: 720}
+  _spreadDegrees: 140
+  _gravity: 1500
+  _lifeRange: {x: 0.22, y: 0.45}
+  _sizeRange: {x: 4, y: 9}
+  _maxAlive: 48
 --- !u!1001 &1915964054
 PrefabInstance:
   m_ObjectHideFlags: 0

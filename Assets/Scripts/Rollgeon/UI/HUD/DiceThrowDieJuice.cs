@@ -49,6 +49,7 @@ namespace Rollgeon.UI.HUD
         public void PlayPickup()
         {
             if (DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+            DiceThrowJuice.JuiceLog($"die pickup pop (player={(_pickupPopPlayer != null ? "ok" : "NULL")})");
             MmfJuice.Replay(_pickupPopPlayer);
         }
 
@@ -56,6 +57,8 @@ namespace Rollgeon.UI.HUD
         public void PlayBounce(float intensity)
         {
             if (DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+            DiceThrowJuice.JuiceLog(
+                $"die bounce squash i={intensity:F2} (player={(_bounceSquashPlayer != null ? "ok" : "NULL")})");
             MmfJuice.Replay(_bounceSquashPlayer, intensity);
         }
 
@@ -64,9 +67,12 @@ namespace Rollgeon.UI.HUD
             if (DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
             if (face >= _critFace && _critPopPlayer != null)
             {
+                DiceThrowJuice.JuiceLog($"die CRIT pop cara={face}");
                 MmfJuice.Replay(_critPopPlayer);
                 return;
             }
+            DiceThrowJuice.JuiceLog(
+                $"die settle pop cara={face} (player={(_settlePopPlayer != null ? "ok" : "NULL")})");
             MmfJuice.Replay(_settlePopPlayer, face >= _highFace ? _highFaceIntensity : 1f);
         }
     }

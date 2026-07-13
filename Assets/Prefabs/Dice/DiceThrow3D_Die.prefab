@@ -655,8 +655,8 @@ MonoBehaviour:
         Mode: 2
         MoveToScaleMin: {x: 1, y: 1, z: 1}
         MoveToScaleMax: {x: 2, y: 2, z: 2}
-        BumpScaleMin: {x: 4, y: 4, z: 4}
-        BumpScaleMax: {x: 5.5, y: 5.5, z: 5.5}
+        BumpScaleMin: {x: 10, y: 10, z: 10}
+        BumpScaleMax: {x: 13, y: 13, z: 13}
 --- !u!1 &3597172805629425103
 GameObject:
   m_ObjectHideFlags: 0
@@ -889,8 +889,8 @@ MonoBehaviour:
         Mode: 2
         MoveToScaleMin: {x: 1, y: 1, z: 1}
         MoveToScaleMax: {x: 2, y: 2, z: 2}
-        BumpScaleMin: {x: -8, y: -8, z: -8}
-        BumpScaleMax: {x: -6, y: -6, z: -6}
+        BumpScaleMin: {x: -17, y: -17, z: -17}
+        BumpScaleMax: {x: -13, y: -13, z: -13}
 --- !u!1 &3987631252460922063
 GameObject:
   m_ObjectHideFlags: 0
@@ -1227,8 +1227,8 @@ MonoBehaviour:
         Mode: 2
         MoveToScaleMin: {x: 1, y: 1, z: 1}
         MoveToScaleMax: {x: 2, y: 2, z: 2}
-        BumpScaleMin: {x: 9, y: 9, z: 9}
-        BumpScaleMax: {x: 12, y: 12, z: 12}
+        BumpScaleMin: {x: 19, y: 19, z: 19}
+        BumpScaleMax: {x: 24, y: 24, z: 24}
 --- !u!1 &6616777976185155773
 GameObject:
   m_ObjectHideFlags: 0
@@ -1565,8 +1565,8 @@ MonoBehaviour:
         Mode: 2
         MoveToScaleMin: {x: 1, y: 1, z: 1}
         MoveToScaleMax: {x: 2, y: 2, z: 2}
-        BumpScaleMin: {x: 5, y: 5, z: 5}
-        BumpScaleMax: {x: 7, y: 7, z: 7}
+        BumpScaleMin: {x: 11, y: 11, z: 11}
+        BumpScaleMax: {x: 14, y: 14, z: 14}
 --- !u!1 &7385013622137580507
 GameObject:
   m_ObjectHideFlags: 0

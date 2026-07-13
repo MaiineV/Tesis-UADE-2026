@@ -26,6 +26,17 @@ namespace Rollgeon.UI.HUD
     [AddComponentMenu("Rollgeon/UI/HUD/Dice Throw Juice")]
     public sealed class DiceThrowJuice : MonoBehaviour
     {
+        /// <summary>
+        /// Log verboso de cada momento de juice (toggle <c>dicejuicelog</c> en la
+        /// DevConsole) — evidencia de qué se dispara realmente durante un playtest.
+        /// </summary>
+        public static bool VerboseLog;
+
+        internal static void JuiceLog(string message)
+        {
+            if (VerboseLog) Debug.Log("[DiceJuice] " + message);
+        }
+
         [Title("Presenters")]
         [SerializeField, Optional]
         private DiceThrow2DPresenter _presenter2D;
@@ -61,13 +72,13 @@ namespace Rollgeon.UI.HUD
 
         [Title("Tuning")]
         [SerializeField, Tooltip("Velocidad de referencia (px/s) para volumen/pitch de impactos.")]
-        private float _impactRefSpeed = 1500f;
+        private float _impactRefSpeed = 1200f;
 
         [SerializeField, Tooltip("Rebotes por debajo de esta velocidad no suenan (dado moribundo).")]
         private float _bounceMinSpeed = 120f;
 
         [SerializeField, Tooltip("Paso de pitch por orden de settle (ramp ascendente).")]
-        private float _settlePitchStep = 0.06f;
+        private float _settlePitchStep = 0.08f;
 
         [SerializeField, Tooltip("Velocidad de cursor (px/s) desde la que la mano 'rattlea'.")]
         private float _rattleMinSpeed = 250f;
@@ -76,17 +87,17 @@ namespace Rollgeon.UI.HUD
         private float _rattleRefSpeed = 1500f;
 
         [SerializeField, Tooltip("Impulso de referencia para volumen/pitch del clatter 3D.")]
-        private float _impactRefImpulse = 4f;
+        private float _impactRefImpulse = 3f;
 
         [Title("Crit / Duck")]
         [SerializeField, Tooltip("Cara desde la que el settle cuenta como crit (hitstop).")]
         private int _critFace = 6;
 
         [SerializeField, Range(0f, 0.25f)]
-        private float _critHitstopSeconds = 0.05f;
+        private float _critHitstopSeconds = 0.09f;
 
         [SerializeField, Range(0.3f, 1f), Tooltip("Factor de duck de música durante la sesión de throw.")]
-        private float _musicDuckFactor = 0.85f;
+        private float _musicDuckFactor = 0.7f;
 
         private IDiceThrowService _service;
         private bool _ducked;
@@ -196,7 +207,8 @@ namespace Rollgeon.UI.HUD
 
         private void HandleGrabCancelled()
         {
-            PlaySfx(_cancelClip, volume: 0.5f, pitch: 0.9f);
+            JuiceLog("grab cancelado");
+            PlaySfx(_cancelClip, volume: 0.6f, pitch: 0.9f);
         }
 
         private void HandleSessionAborted() => RestoreDuck();
@@ -212,20 +224,23 @@ namespace Rollgeon.UI.HUD
 
         private void HandleDieGrabbed(int index)
         {
+            JuiceLog($"pickup dado {index}");
             // El grab acumulativo puede tragarse varios dados en frames seguidos —
             // un mínimo entre pops evita la ametralladora.
             if (Time.unscaledTime < _nextPickupAt) return;
             _nextPickupAt = Time.unscaledTime + 0.04f;
-            PlaySfx(_pickupClip, volume: 0.55f, pitch: Random.Range(0.95f, 1.1f));
+            PlaySfx(_pickupClip, volume: 0.8f, pitch: Random.Range(0.95f, 1.1f));
         }
 
         private void HandleDiceThrown(int count)
         {
-            PlaySfx(_whooshClip, volume: 0.9f, isImportant: true);
+            JuiceLog($"flick de {count} dado(s) — whoosh");
+            PlaySfx(_whooshClip, volume: 1f, isImportant: true);
         }
 
         private void HandleDieBounced(int index, float speed)
         {
+            JuiceLog($"bounce dado {index} speed={speed:F0}px/s");
             if (speed < _bounceMinSpeed) return;
             _pendingBounceCount++;
             _pendingBounceSpeed = Mathf.Max(_pendingBounceSpeed, speed);
@@ -237,10 +252,11 @@ namespace Rollgeon.UI.HUD
             if (Time.unscaledTime >= _nextClackAt)
             {
                 _nextClackAt = Time.unscaledTime + 0.05f;
-                float vol = DiceThrowFeelMath.ImpactVolume(_pendingBounceSpeed, _impactRefSpeed)
+                float vol = DiceThrowFeelMath.ImpactVolume(_pendingBounceSpeed, _impactRefSpeed, 0.4f)
                             * Mathf.Min(1.3f, 1f + 0.15f * (_pendingBounceCount - 1));
                 float pitch = DiceThrowFeelMath.ImpactPitch(_pendingBounceSpeed, _impactRefSpeed)
                               * Random.Range(0.96f, 1.04f);
+                JuiceLog($"clack coalescido x{_pendingBounceCount} vol={vol:F2}");
                 PlaySfx(_bounceClip, Mathf.Min(1f, vol), pitch);
             }
             _pendingBounceCount = 0;
@@ -251,6 +267,7 @@ namespace Rollgeon.UI.HUD
 
         private void HandleDieImpact(int index, float impulse)
         {
+            JuiceLog($"impacto 3D dado {index} impulse={impulse:F2}");
             _pendingImpactCount++;
             _pendingImpactImpulse = Mathf.Max(_pendingImpactImpulse, impulse);
         }
@@ -261,10 +278,11 @@ namespace Rollgeon.UI.HUD
             if (Time.unscaledTime >= _nextClatterAt)
             {
                 _nextClatterAt = Time.unscaledTime + 0.05f;
-                float vol = DiceThrowFeelMath.ImpactVolume(_pendingImpactImpulse, _impactRefImpulse)
+                float vol = DiceThrowFeelMath.ImpactVolume(_pendingImpactImpulse, _impactRefImpulse, 0.4f)
                             * Mathf.Min(1.3f, 1f + 0.15f * (_pendingImpactCount - 1));
                 float pitch = DiceThrowFeelMath.ImpactPitch(_pendingImpactImpulse, _impactRefImpulse)
                               * Random.Range(0.94f, 1.06f);
+                JuiceLog($"clatter coalescido x{_pendingImpactCount} vol={vol:F2}");
                 PlaySfx(_clatterClip, Mathf.Min(1f, vol), pitch);
             }
             _pendingImpactCount = 0;
@@ -273,12 +291,15 @@ namespace Rollgeon.UI.HUD
 
         private void HandleDieNudged(int index)
         {
-            PlaySfx(_nudgeClip, volume: 0.45f, pitch: 0.8f);
+            JuiceLog($"nudge dado {index}");
+            PlaySfx(_nudgeClip, volume: 0.7f, pitch: 0.8f);
         }
 
         private void HandleDieSettled(int index, int face, int order)
         {
-            PlaySfx(_settleTickClip, volume: 0.8f, pitch: 1f + _settlePitchStep * order);
+            JuiceLog($"settle dado {index} cara={face} orden={order}" +
+                     (face >= _critFace ? " CRIT (hitstop)" : ""));
+            PlaySfx(_settleTickClip, volume: 1f, pitch: 1f + _settlePitchStep * order);
             // Hitstop = política de zona (congelar el juego no es del dado individual).
             if (face >= _critFace && !DiceUiMotionPrefs.ReducedMotion)
                 DiceHitstop.Play(_critHitstopSeconds);
@@ -322,9 +343,15 @@ namespace Rollgeon.UI.HUD
 
         private static void PlaySfx(AudioClip clip, float volume = 1f, float pitch = 1f, bool isImportant = false)
         {
-            if (clip == null) return;
+            if (clip == null)
+            {
+                JuiceLog("PlaySfx: clip NULL (falta wiring)");
+                return;
+            }
             if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
                 audio.PlaySfx2D(clip, volume, pitch, isImportant);
+            else
+                JuiceLog($"PlaySfx: IAudioService no registrado (clip {clip.name})");
         }
 
         private static void DuckMusic(float factor, float fadeSeconds)
