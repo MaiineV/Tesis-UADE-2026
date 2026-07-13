@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
@@ -5,6 +6,7 @@ using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace Rollgeon.Dice.Throw
 {
@@ -39,10 +41,43 @@ namespace Rollgeon.Dice.Throw
         [SerializeField, Optional, Tooltip("Zona de dados del HUD. Null = se resuelve por Find al abrir sesión.")]
         private DiceZoneView _diceZone;
 
+        // ---- Hooks para la capa de juice (DiceThrowJuice) — payload por índice ----
+
+        /// <summary>Un dado entró al agarre.</summary>
+        public event Action<int> DieGrabbed;
+
+        /// <summary>Flick soltó dados al vuelo (cantidad de la volea).</summary>
+        public event Action<int> DiceThrown;
+
+        /// <summary>(índice, magnitud del impulso) — colisión física en vuelo.</summary>
+        public event Action<int, float> DieImpact;
+
+        /// <summary>(índice, cara, orden de settle en la volea) — para pitch ramps.</summary>
+        public event Action<int, int, int> DieSettled;
+
+        /// <summary>Empujoncito a un dado de canto.</summary>
+        public event Action<int> DieNudged;
+
+        /// <summary>Hay dados en la mano — para el rattle.</summary>
+        public bool IsCarryingDice
+        {
+            get
+            {
+                if (_service == null || !_service.IsBusy) return false;
+                foreach (var die in _dice.Values)
+                    if (_service.GetDieState(die.Index) == DieThrowState.Grabbed) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Velocidad del carry proyectada a px de pantalla — densidad del rattle (escala común con el 2D).</summary>
+        public float SmoothedCursorSpeedScreen => ScreenFlickSpeed();
+
         private sealed class Die3D
         {
             public int Index;
             public DiceThrow3DDie View;
+            public DiceThrowDieJuice Juice; // opcional en el prefab — llamadas directas
             public Vector3 SpotPos;      // spot "sin tirar"
             public Vector3 RestPos;      // última pose quieta
             public Quaternion RestRot;
@@ -65,6 +100,7 @@ namespace Rollgeon.Dice.Throw
         private bool _hasLastCarry;
         private bool _lmbWasPressed;
         private bool _aligning;
+        private int _settleOrder;
 
         private void OnEnable()
         {
@@ -180,10 +216,14 @@ namespace Rollgeon.Dice.Throw
                 view.SnapUpright();
                 view.Body.isKinematic = true; // quieto en el spot hasta que lo agarren
 
+                int idx = i;
+                view.Impacted += impulse => HandleDieImpact(idx, impulse);
+
                 _dice[i] = new Die3D
                 {
                     Index = i,
                     View = view,
+                    Juice = view.GetComponent<DiceThrowDieJuice>(),
                     SpotPos = pos,
                     RestPos = pos,
                     RestRot = view.transform.rotation,
@@ -194,6 +234,7 @@ namespace Rollgeon.Dice.Throw
             _hasLastCarry = false;
             _carryVel = Vector3.zero;
             _aligning = false;
+            _settleOrder = 0;
             _inputScope.Acquire();
         }
 
@@ -251,6 +292,9 @@ namespace Rollgeon.Dice.Throw
                     die.Returning = false;
                     die.View.Body.isKinematic = false;
                     die.View.Body.useGravity = false; // flota mientras está agarrado
+                    die.View.EmitImpacts = false;     // carried se chocan entre sí — sin clatter
+                    die.Juice?.PlayPickup();
+                    DieGrabbed?.Invoke(die.Index);
                 }
             }
 
@@ -291,6 +335,7 @@ namespace Rollgeon.Dice.Throw
 
         private void ThrowGrabbed()
         {
+            int thrown = 0;
             foreach (var idx in _service.ReleaseGrabbed())
             {
                 if (!_dice.TryGetValue(idx, out var die)) continue;
@@ -303,6 +348,13 @@ namespace Rollgeon.Dice.Throw
                 die.SettleHeld = 0f;
                 die.Nudges = 0;
                 die.Reported = false;
+                die.View.EmitImpacts = true; // en vuelo los golpes SÍ suenan
+                thrown++;
+            }
+            if (thrown > 0)
+            {
+                _settleOrder = 0;
+                DiceThrown?.Invoke(thrown);
             }
         }
 
@@ -378,6 +430,7 @@ namespace Rollgeon.Dice.Throw
                                     die.Nudges++;
                                     die.SettleHeld = 0f;
                                     die.View.Nudge(_cfg.NudgeImpulse);
+                                    DieNudged?.Invoke(die.Index);
                                     break;
                                 }
                                 die.View.SnapUpright();
@@ -401,9 +454,24 @@ namespace Rollgeon.Dice.Throw
         {
             die.Reported = true;
             die.View.Body.isKinematic = true;
+            die.View.EmitImpacts = false;
             die.RestPos = die.View.transform.position;
             die.RestRot = die.View.transform.rotation;
+            die.Juice?.PlaySettle(face);
             _service.NotifyDieSettled(die.Index, face);
+            DieSettled?.Invoke(die.Index, face, _settleOrder++);
+        }
+
+        // Colisiones físicas en vuelo: squash per-die (reemplaza al camera-punch —
+        // el RT pixel-art de 320x180 cuantizaría cualquier shake de cámara) + relay
+        // por índice para el clatter de la capa de zona.
+        private void HandleDieImpact(int index, float impulse)
+        {
+            if (impulse < _cfg.TrayImpactMinImpulse) return;
+            if (_dice.TryGetValue(index, out var die))
+                die.Juice?.PlayBounce(
+                    0.5f + 0.5f * DiceThrowFeelMath.Intensity01(impulse, _cfg.TrayImpactRefImpulse));
+            DieImpact?.Invoke(index, impulse);
         }
 
         // ---- Alineado -------------------------------------------------------------

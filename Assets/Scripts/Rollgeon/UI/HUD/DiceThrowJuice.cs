@@ -30,6 +30,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional]
         private DiceThrow2DPresenter _presenter2D;
 
+        [SerializeField, Optional]
+        private DiceThrow3DPresenter _presenter3D;
+
         [Title("SFX (2D)")]
         [SerializeField, Optional, Tooltip("Al agarrar un dado (sesión o arming de reroll).")]
         private AudioClip _pickupClip;
@@ -49,6 +52,13 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Rattle de dados en la mano (one-shots re-agendados).")]
         private AudioClip _rattleClip;
 
+        [Title("SFX (3D)")]
+        [SerializeField, Optional, Tooltip("Clatter de colisión física en la bandeja (volumen/pitch por impulso).")]
+        private AudioClip _clatterClip;
+
+        [SerializeField, Optional, Tooltip("Tick del nudge a un dado de canto.")]
+        private AudioClip _nudgeClip;
+
         [Title("Tuning")]
         [SerializeField, Tooltip("Velocidad de referencia (px/s) para volumen/pitch de impactos.")]
         private float _impactRefSpeed = 1500f;
@@ -64,6 +74,9 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, Tooltip("Velocidad de referencia del rattle (px/s) — más rápido = más denso.")]
         private float _rattleRefSpeed = 1500f;
+
+        [SerializeField, Tooltip("Impulso de referencia para volumen/pitch del clatter 3D.")]
+        private float _impactRefImpulse = 4f;
 
         [Title("Crit / Duck")]
         [SerializeField, Tooltip("Cara desde la que el settle cuenta como crit (hitstop).")]
@@ -82,6 +95,9 @@ namespace Rollgeon.UI.HUD
         private float _nextClackAt;
         private float _pendingBounceSpeed;
         private int _pendingBounceCount;
+        private float _nextClatterAt;
+        private float _pendingImpactImpulse;
+        private int _pendingImpactCount;
         private float _nextPickupAt;
 
         // ---- Lifecycle ---------------------------------------------------------
@@ -95,6 +111,14 @@ namespace Rollgeon.UI.HUD
                 _presenter2D.DieBounced += HandleDieBounced;
                 _presenter2D.DieSettled += HandleDieSettled;
             }
+            if (_presenter3D != null)
+            {
+                _presenter3D.DieGrabbed += HandleDieGrabbed;
+                _presenter3D.DiceThrown += HandleDiceThrown;
+                _presenter3D.DieImpact += HandleDieImpact;
+                _presenter3D.DieSettled += HandleDieSettled;
+                _presenter3D.DieNudged += HandleDieNudged;
+            }
         }
 
         private void OnDisable()
@@ -105,6 +129,14 @@ namespace Rollgeon.UI.HUD
                 _presenter2D.DiceThrown -= HandleDiceThrown;
                 _presenter2D.DieBounced -= HandleDieBounced;
                 _presenter2D.DieSettled -= HandleDieSettled;
+            }
+            if (_presenter3D != null)
+            {
+                _presenter3D.DieGrabbed -= HandleDieGrabbed;
+                _presenter3D.DiceThrown -= HandleDiceThrown;
+                _presenter3D.DieImpact -= HandleDieImpact;
+                _presenter3D.DieSettled -= HandleDieSettled;
+                _presenter3D.DieNudged -= HandleDieNudged;
             }
             UnhookService();
             // AudioManager es DontDestroyOnLoad: un duck colgado sobrevive la escena.
@@ -120,6 +152,7 @@ namespace Rollgeon.UI.HUD
         private void LateUpdate()
         {
             FlushBounceClack();
+            FlushImpactClatter();
         }
 
         // ---- Service (Run-scoped — polling como los presenters) -----------------
@@ -214,6 +247,35 @@ namespace Rollgeon.UI.HUD
             _pendingBounceSpeed = 0f;
         }
 
+        // ---- Momentos por dado (3D) ---------------------------------------------
+
+        private void HandleDieImpact(int index, float impulse)
+        {
+            _pendingImpactCount++;
+            _pendingImpactImpulse = Mathf.Max(_pendingImpactImpulse, impulse);
+        }
+
+        private void FlushImpactClatter()
+        {
+            if (_pendingImpactCount == 0) return;
+            if (Time.unscaledTime >= _nextClatterAt)
+            {
+                _nextClatterAt = Time.unscaledTime + 0.05f;
+                float vol = DiceThrowFeelMath.ImpactVolume(_pendingImpactImpulse, _impactRefImpulse)
+                            * Mathf.Min(1.3f, 1f + 0.15f * (_pendingImpactCount - 1));
+                float pitch = DiceThrowFeelMath.ImpactPitch(_pendingImpactImpulse, _impactRefImpulse)
+                              * Random.Range(0.94f, 1.06f);
+                PlaySfx(_clatterClip, Mathf.Min(1f, vol), pitch);
+            }
+            _pendingImpactCount = 0;
+            _pendingImpactImpulse = 0f;
+        }
+
+        private void HandleDieNudged(int index)
+        {
+            PlaySfx(_nudgeClip, volume: 0.45f, pitch: 0.8f);
+        }
+
         private void HandleDieSettled(int index, int face, int order)
         {
             PlaySfx(_settleTickClip, volume: 0.8f, pitch: 1f + _settlePitchStep * order);
@@ -226,10 +288,8 @@ namespace Rollgeon.UI.HUD
 
         private void TickRattle()
         {
-            if (_rattleClip == null || _presenter2D == null) return;
-            if (!_presenter2D.IsCarryingDice) return;
-
-            float speed = _presenter2D.SmoothedCursorVelocity.magnitude;
+            if (_rattleClip == null) return;
+            if (!TryGetCarrySpeed(out float speed)) return;
             if (speed < _rattleMinSpeed) return;
             if (Time.unscaledTime < _nextRattleAt) return;
 
@@ -238,6 +298,24 @@ namespace Rollgeon.UI.HUD
                 pitch: Random.Range(0.92f, 1.12f));
             _nextRattleAt = Time.unscaledTime
                             + DiceThrowFeelMath.RattleInterval(speed, _rattleRefSpeed);
+        }
+
+        // La mano puede estar en cualquiera de los dos presenters (coexisten en escena,
+        // cada uno atiende solo su modo). Ambas velocidades están en px de pantalla.
+        private bool TryGetCarrySpeed(out float speed)
+        {
+            if (_presenter2D != null && _presenter2D.IsCarryingDice)
+            {
+                speed = _presenter2D.SmoothedCursorVelocity.magnitude;
+                return true;
+            }
+            if (_presenter3D != null && _presenter3D.IsCarryingDice)
+            {
+                speed = _presenter3D.SmoothedCursorSpeedScreen;
+                return true;
+            }
+            speed = 0f;
+            return false;
         }
 
         // ---- Helpers -----------------------------------------------------------------

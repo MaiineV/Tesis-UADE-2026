@@ -541,17 +541,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceThrowJuice
   _presenter2D: {fileID: 726939618}
+  _presenter3D: {fileID: 259716132}
   _pickupClip: {fileID: 8300000, guid: 058fec1520c23964381dba9814182895, type: 3}
   _bounceClip: {fileID: 8300000, guid: 11b699aa88e0832499b22273716a2be2, type: 3}
   _settleTickClip: {fileID: 8300000, guid: 2ece3328002c2154895e1d4b5e517390, type: 3}
   _whooshClip: {fileID: 8300000, guid: b49f8d5f943e595409cf6a8bd1aeeea1, type: 3}
   _cancelClip: {fileID: 8300000, guid: 7c539fdeac7e4b6439a1c351fded59d5, type: 3}
   _rattleClip: {fileID: 8300000, guid: beb6fbade5cb7b0469edb82ff4721205, type: 3}
+  _clatterClip: {fileID: 8300000, guid: 852ba2c303a367847a0d83f534f813f5, type: 3}
+  _nudgeClip: {fileID: 8300000, guid: 058fec1520c23964381dba9814182895, type: 3}
   _impactRefSpeed: 1500
   _bounceMinSpeed: 120
   _settlePitchStep: 0.06
   _rattleMinSpeed: 250
   _rattleRefSpeed: 1500
+  _impactRefImpulse: 4
   _critFace: 6
   _critHitstopSeconds: 0.05
   _musicDuckFactor: 0.85

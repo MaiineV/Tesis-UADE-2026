@@ -94,6 +94,13 @@ namespace Rollgeon.Dice.Throw
         [Tooltip("Torque random proporcional a la velocidad del flick (tumbling).")]
         public float Tumble = 2.5f;
 
+        [Header("3D — Juice")]
+        [Tooltip("Impulso de referencia para volumen/pitch/squash del clatter de colisiones.")]
+        public float TrayImpactRefImpulse = 4f;
+
+        [Tooltip("Impulsos por debajo de esto no suenan ni squashean (micro-contactos al rodar).")]
+        public float TrayImpactMinImpulse = 0.8f;
+
         [Header("3D — Settle y lectura de cara")]
         [Tooltip("Dot mínimo de la normal superior contra Vector3.up para aceptar la cara. " +
                  "Menos que esto = dado de canto → nudge.")]
