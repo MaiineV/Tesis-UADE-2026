@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9defe0c7041303541a36e04ceab46d41, type: 3}
   m_Name: DiceThrowSettings
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.Throw.DiceThrowSettingsSO
-  DefaultMode: 1
+  DefaultMode: 0
   GrabRadius: 60
   SpringStiffness: 250
   SpringDamping: 18
