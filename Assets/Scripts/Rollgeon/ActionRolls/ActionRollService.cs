@@ -417,14 +417,26 @@ namespace Rollgeon.ActionRolls
             // Boss 1 (§2): los dados bloqueados quedan excluidos del combo aunque estén holdeados.
             ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var diceBlock);
 
+            // Fuerza Bruta necesita el rango de cada dado en la detección. Tipos por slot:
+            // el bag runtime (misma fuente que multi_dmg_combo); fallback al SO del bag.
+            IReadOnlyList<DiceType> slotTypes = null;
+            if (ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
+                && enchants?.Bag != null)
+                slotTypes = enchants.Bag.Dice;
+            else if (_bag != null)
+                slotTypes = _bag.Dice;
+
             var heldDice = new List<int>(_currentRoll.Length);
+            var heldTypes = slotTypes != null ? new List<DiceType>(_currentRoll.Length) : null;
             if (_currentHolds != null)
             {
                 int n = Mathf.Min(_currentHolds.Length, _currentRoll.Length);
                 for (int i = 0; i < n; i++)
                 {
                     if (diceBlock != null && diceBlock.IsBlocked(i)) continue;
-                    if (_currentHolds[i]) heldDice.Add(_currentRoll[i]);
+                    if (!_currentHolds[i]) continue;
+                    heldDice.Add(_currentRoll[i]);
+                    heldTypes?.Add(i < slotTypes.Count ? slotTypes[i] : DiceType.D6);
                 }
             }
 
@@ -444,7 +456,7 @@ namespace Rollgeon.ActionRolls
             if (ServiceLocator.TryGetService<IPlayerService>(out var ps)
                 && ps?.CurrentHero?.Sheet != null)
             {
-                fromSheet = ps.CurrentHero.Sheet.MatchBest(heldDice);
+                fromSheet = ps.CurrentHero.Sheet.MatchBest(heldDice, heldTypes);
             }
 
             if (fromSheet != null)
@@ -459,7 +471,7 @@ namespace Rollgeon.ActionRolls
             //    NO se usa para decidir éxito del action — los effects evalúan via combo no-null.
             if (_comboCatalog != null)
             {
-                var result = ComboResolver.DetectBest(_comboCatalog, heldDice, out var best);
+                var result = ComboResolver.DetectBest(_comboCatalog, heldDice, heldTypes, out var best);
                 if (result.IsMatch)
                 {
                     _currentCombo = best;

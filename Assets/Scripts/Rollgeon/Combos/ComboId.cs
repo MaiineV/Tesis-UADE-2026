@@ -34,5 +34,8 @@ namespace Rollgeon.Combos
 
         /// <summary>Suma X — combo parametrizado por valor objetivo (X=4 en Warrior).</summary>
         public const string SumX = "combo.sum_x";
+
+        /// <summary>Fuerza Bruta — suma los dados cuyo valor cae en la mitad superior de su propio rango.</summary>
+        public const string BruteForce = "combo.brute_force";
     }
 }

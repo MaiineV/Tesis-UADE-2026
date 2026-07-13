@@ -392,9 +392,10 @@ namespace Rollgeon.Combat.Handoff
                     var keepMask = KeepExcludingBlockedDice(hud.GetCurrentKeep(), _lastFaces.Length);
                     keptDice = FilterKeptDice(_lastFaces, keepMask);
                     keptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
-                    combo = hero.Sheet?.MatchBest(keptDice);
+                    var keptTypes = ResolveKeptTypes(keptDiceOriginalIndices, keptDice.Length);
+                    combo = hero.Sheet?.MatchBest(keptDice, keptTypes);
                     if (combo != null)
-                        comboResult = DetectWithContractMods(hero.Sheet, combo, keptDice);
+                        comboResult = DetectWithContractMods(hero.Sheet, combo, keptDice, keptTypes);
 
                     // Boss 2 (§3): registrar el combo ejecutado en el ataque del jugador. Si no
                     // hubo combo (daño mínimo / dado más alto), Record(null) loguea el marcador
@@ -871,9 +872,10 @@ namespace Rollgeon.Combat.Handoff
                 var keptDice = FilterKeptDice(_lastFaces, keepMask);
                 effCtx.KeptDice = keptDice;
                 effCtx.KeptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
-                var combo = hero.Sheet?.MatchBest(keptDice);
+                var keptTypes = ResolveKeptTypes(effCtx.KeptDiceOriginalIndices, keptDice.Length);
+                var combo = hero.Sheet?.MatchBest(keptDice, keptTypes);
                 if (combo != null)
-                    effCtx.ComboResult = DetectWithContractMods(hero.Sheet, combo, keptDice);
+                    effCtx.ComboResult = DetectWithContractMods(hero.Sheet, combo, keptDice, keptTypes);
             }
 
             var preCtx = new PreConditionContext
@@ -1263,10 +1265,11 @@ namespace Rollgeon.Combat.Handoff
         // (R01 ×2, R02 ×0.5, R03 prohibido → 0, R04/R05 valor del vecino). Devuelve el
         // ComboDetectionResult con el daño efectivo. Sin servicio/modificadores ⇒ el base de clase.
         private static ComboDetectionResult? DetectWithContractMods(
-            Heroes.ContractSheet sheet, BaseComboSO combo, int[] keptDice)
+            Heroes.ContractSheet sheet, BaseComboSO combo, int[] keptDice,
+            IReadOnlyList<DiceType> keptTypes)
         {
             if (combo == null) return null;
-            var detected = combo.Detect(keptDice, sheet?.GetBaseDamageOverride(combo.ComboId));
+            var detected = combo.Detect(keptDice, keptTypes, sheet?.GetBaseDamageOverride(combo.ComboId));
             if (!detected.IsMatch) return detected;
 
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
@@ -1282,6 +1285,19 @@ namespace Rollgeon.Combat.Handoff
                     detected.ComboId, eff, detected.CountUsed, detected.ContributingIndices);
             }
             return detected;
+        }
+
+        // Fuerza Bruta necesita el rango de cada dado DURANTE la detección (no después, como
+        // multi_dmg_combo): tipos del subset holdeado vía el bag runtime, alineados 1:1 con
+        // keptDice. Sin servicio/bag ⇒ null y el combo cae a su fallback d6.
+        private static IReadOnlyList<DiceType> ResolveKeptTypes(
+            IReadOnlyList<int> keptDiceOriginalIndices, int keptCount)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
+                || enchants?.Bag == null)
+                return null;
+            return Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveKept(
+                keptDiceOriginalIndices, enchants.Bag.Dice, keptCount);
         }
 
         // Boss 1 (§2): el dado bloqueado se ve pero queda EXCLUIDO del combo. Devuelve una
