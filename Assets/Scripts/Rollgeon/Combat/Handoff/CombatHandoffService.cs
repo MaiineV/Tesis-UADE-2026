@@ -1278,7 +1278,8 @@ namespace Rollgeon.Combat.Handoff
                 if (mods.IsForbidden(combo.ComboId))
                     return ComboDetectionResult.NoMatch();
                 int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
-                return ComboDetectionResult.Match(eff, detected.CountUsed, detected.ContributingIndices);
+                return ComboDetectionResult.Match(
+                    detected.ComboId, eff, detected.CountUsed, detected.ContributingIndices);
             }
             return detected;
         }

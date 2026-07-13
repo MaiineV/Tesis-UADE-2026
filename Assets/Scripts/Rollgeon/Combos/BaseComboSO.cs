@@ -156,7 +156,7 @@ namespace Rollgeon.Combos
             var arr = diceValues as int[] ?? diceValues.ToArray();
             if (!Matches(arr)) return ComboDetectionResult.NoMatch();
             return ComboDetectionResult.Match(
-                flatBaseOverride ?? BaseDamage, GetCountUsed(arr), GetContributingIndices(arr));
+                ComboId, flatBaseOverride ?? BaseDamage, GetCountUsed(arr), GetContributingIndices(arr));
         }
 
         /// <summary>

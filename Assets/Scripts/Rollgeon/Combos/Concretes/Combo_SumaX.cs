@@ -79,7 +79,7 @@ namespace Rollgeon.Combos.Concretes
             if (hitIndices.Count == 0) return ComboDetectionResult.NoMatch();
             int hits = hitIndices.Count;
             return ComboDetectionResult.Match(
-                (flatBaseOverride ?? _baseDamageConfigurable) + _x * hits, hits, hitIndices);
+                ComboId, (flatBaseOverride ?? _baseDamageConfigurable) + _x * hits, hits, hitIndices);
         }
     }
 }

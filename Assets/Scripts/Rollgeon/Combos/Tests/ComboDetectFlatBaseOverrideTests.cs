@@ -40,6 +40,8 @@ namespace Rollgeon.Combos.Tests
             Assert.AreEqual(42, result.BaseDamage);
             Assert.AreEqual(2, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
+            Assert.AreEqual("combo.par", result.ComboId,
+                "Detect debe transportar el ComboId — consumers por-combo (escudo) lo leen del result.");
         }
 
         [Test]

@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
@@ -85,7 +86,7 @@ namespace Rollgeon.Effects.Concretes
                 // causa raíz del bug de escudo trivial). Del ComboResult solo se usan los
                 // dados contribuyentes; la base sale de la tabla de escudo por clase.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => ResolveComboShield(context, combo.ContributingIndices),
+                    => ResolveComboShield(context, combo),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
@@ -95,22 +96,19 @@ namespace Rollgeon.Effects.Concretes
             return new ShieldArgs { BaseAmount = amount };
         }
 
-        // Re-matchea el combo sobre los dados de la tirada para conocer su ComboId
-        // (ComboDetectionResult no lo transporta). Sheet del player como fuente de
-        // verdad — mismo criterio que ActionRollService.
-        private static int ResolveComboShield(EffectContext context, IReadOnlyList<int> contributingIndices)
+        // Sheet del player como fuente de verdad de la tabla de escudo — mismo criterio
+        // que ActionRollService. Un ComboId vacío (resultado sintético de action roll)
+        // significa "sin datos por combo": no genera escudo.
+        private static int ResolveComboShield(EffectContext context, ComboDetectionResult combo)
         {
             var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
                 ? player?.CurrentHero?.Sheet
                 : null;
-            if (sheet == null) return 0;
-
-            var combo = sheet.MatchBest(context?.KeptDice ?? context?.DiceResult);
-            if (combo == null) return 0;
+            if (sheet == null || string.IsNullOrEmpty(combo.ComboId)) return 0;
 
             return PlayerComboShield.Resolve(
                 sheet.GetShieldBase(combo.ComboId),
-                ResolveContributingDice(context, contributingIndices));
+                ResolveContributingDice(context, combo.ContributingIndices));
         }
 
         // Mismo mecanismo que EffDealDamage: DiceType reales de la bag para los índices

@@ -157,8 +157,7 @@ namespace Rollgeon.Effects.Tests
             // Arrange — ComboResult trae BaseDamage 99 (ataque); la tabla de escudo dice 4.
             var bh = new TestBehavior();
             var ctx = MakeCtx(bh);
-            ctx.ComboResult = ComboDetectionResult.Match(99, 2);
-            ctx.KeptDice = new[] { 4, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 99, 2, null);
             RegisterHeroWithShieldTable(shieldBase: 4);
 
             var eff = CreateComboEffect(1.5f); // multiplier deprecado — no debe participar
@@ -178,8 +177,7 @@ namespace Rollgeon.Effects.Tests
         {
             // Arrange — combo matcheado pero la clase no define escudo para ese combo
             var ctx = MakeCtx();
-            ctx.ComboResult = ComboDetectionResult.Match(90, 5);
-            ctx.KeptDice = new[] { 4, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 90, 5, null);
             RegisterHeroWithShieldTable(shieldBase: null);
 
             var eff = CreateComboEffect(1f);
@@ -197,8 +195,7 @@ namespace Rollgeon.Effects.Tests
         {
             // Arrange — base tabla 50: 50 × 1.0 = 50 → cap
             var ctx = MakeCtx();
-            ctx.ComboResult = ComboDetectionResult.Match(50, 2);
-            ctx.KeptDice = new[] { 4, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 50, 2, null);
             RegisterHeroWithShieldTable(shieldBase: 50);
 
             var eff = CreateComboEffect(1f);
@@ -216,8 +213,26 @@ namespace Rollgeon.Effects.Tests
         {
             // Arrange — sin IPlayerService no hay sheet → no hay tabla → 0
             var ctx = MakeCtx();
-            ctx.ComboResult = ComboDetectionResult.Match(20, 2);
-            ctx.KeptDice = new[] { 4, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 20, 2, null);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert
+            Assert.IsTrue(result, "Amount 0 is a no-op, not a chain failure");
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_SyntheticResultWithoutComboId_AddsZero()
+        {
+            // Arrange — resultado sintético (factory legacy, ej. action rolls): sin ComboId
+            // no hay lookup en la tabla de escudo, aunque el hero la tenga configurada.
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match(30, 2);
+            RegisterHeroWithShieldTable(shieldBase: 4);
 
             var eff = CreateComboEffect(1f);
 
@@ -264,8 +279,7 @@ namespace Rollgeon.Effects.Tests
             // Arrange
             _attrManager.SetAttributeValue<Shield, int>(_sourceId, 10);
             var ctx = MakeCtx();
-            ctx.ComboResult = ComboDetectionResult.Match(15, 2);
-            ctx.KeptDice = new[] { 4, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 15, 2, null);
             RegisterHeroWithShieldTable(shieldBase: 5);
 
             var eff = CreateComboEffect(1f);

@@ -19,6 +19,10 @@ namespace Rollgeon.Combos
     /// dados recibido por <c>Detect</c>) de los dados que efectivamente formaron el combo
     /// ganador. Spec de Daño v2 (Santi): <c>multi_dmg_combo</c> se calcula SOLO sobre estos
     /// dados, no sobre todo el subset holdeado.</description></item>
+    /// <item><description><see cref="ComboId"/> — id del combo que produjo el match
+    /// (<c>BaseComboSO.ComboId</c>). Permite a consumers downstream (ej. la tabla de escudo
+    /// por clase de <c>EffAddShield</c>) resolver datos por combo sin re-matchear.
+    /// Vacío en resultados sintéticos (action rolls) y en <see cref="NoMatch"/>.</description></item>
     /// </list>
     /// </para>
     /// <para>
@@ -50,29 +54,39 @@ namespace Rollgeon.Combos
         /// </summary>
         public IReadOnlyList<int> ContributingIndices { get; }
 
+        /// <summary>
+        /// Id del combo que produjo el match (<c>BaseComboSO.ComboId</c>). Vacío cuando el
+        /// resultado es sintético (action rolls que solo transportan EffectiveTotal) o NoMatch.
+        /// </summary>
+        public string ComboId { get; }
+
         private static readonly int[] EmptyIndices = Array.Empty<int>();
 
-        private ComboDetectionResult(bool isMatch, int baseDamage, int countUsed, IReadOnlyList<int> contributingIndices)
+        private ComboDetectionResult(bool isMatch, string comboId, int baseDamage, int countUsed,
+            IReadOnlyList<int> contributingIndices)
         {
             IsMatch = isMatch;
+            ComboId = comboId ?? string.Empty;
             BaseDamage = baseDamage;
             CountUsed = countUsed;
             ContributingIndices = contributingIndices ?? EmptyIndices;
         }
 
-        /// <summary>Factory para resultado positivo con índices de dados contribuyentes.</summary>
-        public static ComboDetectionResult Match(int baseDamage, int countUsed, IReadOnlyList<int> contributingIndices)
-            => new ComboDetectionResult(true, baseDamage, countUsed, contributingIndices);
+        /// <summary>Factory para resultado positivo con id de combo e índices de dados contribuyentes.</summary>
+        public static ComboDetectionResult Match(string comboId, int baseDamage, int countUsed,
+            IReadOnlyList<int> contributingIndices)
+            => new ComboDetectionResult(true, comboId, baseDamage, countUsed, contributingIndices);
 
         /// <summary>
-        /// Overload legacy sin índices — usado solo por callers que todavía no necesitan
-        /// EV de dados (ej. tests de detección pura). <c>ContributingIndices</c> queda vacío.
+        /// Overload legacy sin id ni índices — para resultados sintéticos (action rolls) y tests
+        /// de detección pura. <c>ComboId</c> queda vacío y <c>ContributingIndices</c> vacío:
+        /// consumers por-combo (tabla de escudo) tratan estos resultados como "sin datos".
         /// </summary>
         public static ComboDetectionResult Match(int baseDamage, int countUsed)
-            => new ComboDetectionResult(true, baseDamage, countUsed, EmptyIndices);
+            => new ComboDetectionResult(true, string.Empty, baseDamage, countUsed, EmptyIndices);
 
-        /// <summary>Factory para resultado negativo (valores en 0, sin índices).</summary>
+        /// <summary>Factory para resultado negativo (valores en 0, sin id ni índices).</summary>
         public static ComboDetectionResult NoMatch()
-            => new ComboDetectionResult(false, 0, 0, EmptyIndices);
+            => new ComboDetectionResult(false, string.Empty, 0, 0, EmptyIndices);
     }
 }
