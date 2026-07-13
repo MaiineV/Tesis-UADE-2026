@@ -43,6 +43,10 @@ namespace Rollgeon.Dungeon.Tests
             foreach (var go in _objects)
                 if (go != null) Object.DestroyImmediate(go);
             _objects.Clear();
+            // El auto-populate pasa por el binder, que escribe en el Undo stack
+            // global — limpiar acá evita que un Ctrl+Z posterior resucite los GOs
+            // del test en la escena abierta (bug de los fantasmas en 00_Bootstrap).
+            UnityEditor.Undo.ClearAll();
         }
 
         [Test]
