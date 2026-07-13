@@ -79,6 +79,14 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
+            MmfJuice.CaptureRestPose(_spinStartPlayer);
+            MmfJuice.CaptureRestPose(_revealPlayer);
+            MmfJuice.CaptureRestPose(_critRevealPlayer);
+            MmfJuice.CaptureRestPose(_lockPlayer);
+            MmfJuice.CaptureRestPose(_unlockPlayer);
+            MmfJuice.CaptureRestPose(_throwPlayer);
+            MmfJuice.CaptureRestPose(_discardPlayer);
+            MmfJuice.CaptureRestPose(_keptPulsePlayer);
             TryHook();
         }
 

@@ -93,14 +93,21 @@ solo en fases sin overlap, y colores solo en `FlashOverlay`/`DiceLabel` — el c
 del background es de `DiceSlotView` (tints de hold/blocked). Si agregás feedbacks,
 respetá ese reparto.
 
-**Gotcha springs de Feel (bug del "primer dado squashado", 2026-07-13):**
-`StopFeedbacks()` a mitad de un spring re-basa su punto de reposo al valor
-desplazado del momento (`MMF_*Spring.CustomStopFeedback` hace
-`_targetValue = _currentValue`) — el target queda squashado/rotado permanente
-para el resto de la sesión. Pasa al replayear un player que sigue oscilando y
-al desactivar el GO (`StopFeedbacksOnDisable`). SIEMPRE disparar/frenar players
-via `MmfJuice.Replay`/`MmfJuice.Rest`, que llaman `RestoreInitialValues()` para
-devolver el reposo autorado.
+**Gotcha springs de Feel (bug del "primer dado squashado", 2026-07-13).**
+Dos vectores corrompen el punto de reposo de los springs:
+
+1. **Captura inicial a destiempo** (la causa del primer dado): el default
+   `InitializationMode = Start` captura los valores iniciales 1 frame después
+   de activarse la zona — el slot 0 gira sin stagger ese mismo frame
+   (1440°/s ⇒ ~45° al frame siguiente, + squash de anticipación activo), así
+   que su lock/reveal guardaban ese estado como "reposo". Los slots 1-4
+   zafaban por el stagger de 50ms+. Fix: `MmfJuice.CaptureRestPose` en el
+   `OnEnable` de cada componente de juice (activación = reposo garantizado;
+   pasa el player a modo Script para que su `Start()` no re-capture).
+2. **Stop a mitad de oscilación**: `StopFeedbacks()` re-basa el reposo al valor
+   desplazado del momento (`CustomStopFeedback: _targetValue = _currentValue`).
+   Fix: disparar/frenar SIEMPRE via `MmfJuice.Replay`/`Rest`
+   (`RestoreInitialValues()` antes de re-disparar y después de frenar).
 
 ## Capa v2 (segunda pasada — "todos los sugeridos")
 

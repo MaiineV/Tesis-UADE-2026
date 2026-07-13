@@ -12,6 +12,22 @@ namespace Rollgeon.UI.HUD
     /// </summary>
     internal static class MmfJuice
     {
+        /// <summary>
+        /// Captura el reposo de los springs YA, con el target quieto, y pasa el player
+        /// a modo Script para que su <c>Start()</c> no re-capture. El default
+        /// (InitializationMode.Start) corre 1 frame después de activarse la zona — el
+        /// slot 0 arranca a girar sin stagger ese mismo frame, así que su lock/reveal
+        /// capturaban ~45° de spin y el squash de anticipación como "reposo" (bug del
+        /// primer dado; los slots 1-4 zafaban por el stagger de 50ms+). Llamar desde
+        /// OnEnable: la activación siempre precede al roll dentro del frame.
+        /// </summary>
+        public static void CaptureRestPose(MMF_Player player)
+        {
+            if (player == null || player.FeedbacksList == null) return;
+            player.InitializationMode = MMFeedbacks.InitializationModes.Script;
+            player.Initialization();
+        }
+
         /// <summary>Replay limpio: corta lo que esté a medias, devuelve los springs a su reposo autorado y dispara.</summary>
         public static void Replay(MMF_Player player, float intensity = 1f)
         {

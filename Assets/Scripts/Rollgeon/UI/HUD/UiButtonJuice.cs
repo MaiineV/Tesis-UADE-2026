@@ -51,6 +51,12 @@ namespace Rollgeon.UI.HUD
             _lastInteractable = now;
         }
 
+        private void OnEnable()
+        {
+            MmfJuice.CaptureRestPose(_pressPlayer);
+            MmfJuice.CaptureRestPose(_availablePulsePlayer);
+        }
+
         private void OnDisable()
         {
             // Botón escondido a mitad del squash del press: devolver los springs a su

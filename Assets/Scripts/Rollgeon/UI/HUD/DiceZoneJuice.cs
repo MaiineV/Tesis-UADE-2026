@@ -102,6 +102,10 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
+            MmfJuice.CaptureRestPose(_throwPreShakePlayer);
+            MmfJuice.CaptureRestPose(_outroLandPlayer);
+            MmfJuice.CaptureRestPose(_comboFlourishPlayer);
+            MmfJuice.CaptureRestPose(_rollShakePlayer);
             _onComboMatched = HandleComboMatched;
             TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
             TryHook();

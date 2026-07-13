@@ -30,6 +30,12 @@ namespace Rollgeon.UI.HUD
             _button = GetComponent<Button>();
         }
 
+        private void OnEnable()
+        {
+            MmfJuice.CaptureRestPose(_hoverEnterPlayer);
+            MmfJuice.CaptureRestPose(_hoverExitPlayer);
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (_button == null || !_button.interactable) return;
@@ -55,9 +61,8 @@ namespace Rollgeon.UI.HUD
 
         private static void Play(MMF_Player player, bool stopOnly = false)
         {
-            if (player == null) return;
-            if (player.IsPlaying) player.StopFeedbacks();
-            if (!stopOnly) player.PlayFeedbacks();
+            if (stopOnly) MmfJuice.Rest(player);
+            else MmfJuice.Replay(player);
         }
     }
 }
