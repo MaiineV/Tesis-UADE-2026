@@ -66,10 +66,27 @@ namespace Rollgeon.Dice.Throw
         /// <summary>(índice, cara, orden de settle en la volea) — para pitch ramps.</summary>
         public event Action<int, int, int> DieSettled;
 
+        /// <summary>Hay dados en la mano ahora (agarre de sesión o arming de reroll) — para el rattle.</summary>
+        public bool IsCarryingDice
+        {
+            get
+            {
+                if (_armed.Count > 0) return true;
+                if (_service == null || !_service.IsBusy) return false;
+                foreach (var die in _dice.Values)
+                    if (_service.GetDieState(die.Index) == DieThrowState.Grabbed) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Velocidad suavizada del cursor en px del layer — densidad del rattle.</summary>
+        public Vector2 SmoothedCursorVelocity => _mouseVel;
+
         private sealed class DieVisual
         {
             public int Index;
             public DiceThrowDieView View;
+            public DiceThrowDieJuice Juice; // opcional en el prefab — llamadas directas (lifetime seguro)
             public Vector2 Vel;
             public Vector2 RestPos;    // último lugar quieto (spot inicial o settle)
             public Vector2 SpotPos;    // spot "sin tirar" / posición del slot de origen
@@ -338,6 +355,7 @@ namespace Rollgeon.Dice.Throw
                     die.View.Rect.localScale = Vector3.one;
                     die.Returning = false;
                     die.Vel = Vector2.zero;
+                    die.Juice?.PlayPickup();
                     DieGrabbed?.Invoke(die.Index);
                 }
             }
@@ -426,6 +444,8 @@ namespace Rollgeon.Dice.Throw
                         die.FlightTime += dt;
                         if (bounced)
                         {
+                            die.Juice?.PlayBounce(
+                                0.5f + 0.5f * DiceThrowFeelMath.Intensity01(preBounceSpeed, _cfg.FlickMinSpeed));
                             DieBounced?.Invoke(die.Index, preBounceSpeed);
                             die.AngularVel *= _cfg.Restitution; // el impacto come spin
                         }
@@ -455,6 +475,7 @@ namespace Rollgeon.Dice.Throw
                             SettleUpright(die);
                             int face = _service.PeekPendingFace(die.Index);
                             die.View.ShowFace(face);
+                            die.Juice?.PlaySettle(face);
                             _service.NotifyDieSettled(die.Index);
                             DieSettled?.Invoke(die.Index, face, _settleOrder++);
                         }
@@ -518,6 +539,7 @@ namespace Rollgeon.Dice.Throw
                 ghost.SpotPos = slotPos;
                 slotView.gameObject.SetActive(false);
                 _armed[i] = ghost;
+                ghost.Juice?.PlayPickup();
                 DieGrabbed?.Invoke(i);
             }
         }
@@ -678,6 +700,7 @@ namespace Rollgeon.Dice.Throw
             {
                 Index = index,
                 View = view,
+                Juice = view.GetComponent<DiceThrowDieJuice>(),
                 RestPos = pos,
                 SpotPos = pos,
             };
