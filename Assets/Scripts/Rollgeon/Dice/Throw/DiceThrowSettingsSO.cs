@@ -101,6 +101,16 @@ namespace Rollgeon.Dice.Throw
         [Tooltip("Impulsos por debajo de esto no suenan ni squashean (micro-contactos al rodar).")]
         public float TrayImpactMinImpulse = 0.8f;
 
+        [Tooltip("Scale-in staggered de los dados al abrir la sesión. <= 0 = aparición seca.")]
+        public float TrayScaleInSeconds = 0.15f;
+
+        [Tooltip("Stagger entre dados del scale-in.")]
+        public float TrayScaleInStagger = 0.04f;
+
+        [Tooltip("Scale-out al cerrar el reveal (corre ANTES de CompleteReveal, con la " +
+                 "sesión todavía Busy — la cámara overlay no puede fadear). <= 0 = corte seco.")]
+        public float TrayScaleOutSeconds = 0.12f;
+
         [Header("3D — Settle y lectura de cara")]
         [Tooltip("Dot mínimo de la normal superior contra Vector3.up para aceptar la cara. " +
                  "Menos que esto = dado de canto → nudge.")]

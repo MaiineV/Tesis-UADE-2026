@@ -81,12 +81,14 @@ namespace Rollgeon.Dice.Throw
             public Vector3 SpotPos;      // spot "sin tirar"
             public Vector3 RestPos;      // última pose quieta
             public Quaternion RestRot;
+            public Vector3 BaseScale;    // escala del prefab (el scale-in/out la restaura)
             public float SettleHeld;
             public float FlightTime;
             public int Nudges;
             public bool Reported;        // ya notificó su settle al servicio
             public bool Returning;
             public Tween Tween;
+            public Tween ScaleTween;     // scale-in de spawn / scale-out pre-reveal
         }
 
         private IDiceThrowService _service;
@@ -100,7 +102,11 @@ namespace Rollgeon.Dice.Throw
         private bool _hasLastCarry;
         private bool _lmbWasPressed;
         private bool _aligning;
+        private bool _scalingOut;
+        private float _scaleOutDeadline;
         private int _settleOrder;
+
+        private static bool ReducedMotion => Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion;
 
         private void OnEnable()
         {
@@ -219,7 +225,7 @@ namespace Rollgeon.Dice.Throw
                 int idx = i;
                 view.Impacted += impulse => HandleDieImpact(idx, impulse);
 
-                _dice[i] = new Die3D
+                var die = new Die3D
                 {
                     Index = i,
                     View = view,
@@ -227,13 +233,26 @@ namespace Rollgeon.Dice.Throw
                     SpotPos = pos,
                     RestPos = pos,
                     RestRot = view.transform.rotation,
+                    BaseScale = view.transform.localScale,
                 };
+                _dice[i] = die;
+
+                // Scale-in staggered — la cámara overlay prende en corte seco (compone
+                // dentro del RT del juego, no se puede fadear); esto lo disimula.
+                if (!ReducedMotion && _cfg.TrayScaleInSeconds > 0f)
+                {
+                    view.transform.localScale = Vector3.zero;
+                    die.ScaleTween = Tween.Scale(view.transform, die.BaseScale,
+                        _cfg.TrayScaleInSeconds, Ease.OutBack,
+                        startDelay: spot * _cfg.TrayScaleInStagger);
+                }
                 spot++;
             }
 
             _hasLastCarry = false;
             _carryVel = Vector3.zero;
             _aligning = false;
+            _scalingOut = false;
             _settleOrder = 0;
             _inputScope.Acquire();
         }
@@ -289,6 +308,12 @@ namespace Rollgeon.Dice.Throw
                     if (!_service.TryGrab(die.Index)) continue;
 
                     if (die.Tween.isAlive) die.Tween.Stop();
+                    if (die.ScaleTween.isAlive)
+                    {
+                        // Agarre a mitad del scale-in: snapear o el dado queda enano.
+                        die.ScaleTween.Stop();
+                        die.View.transform.localScale = die.BaseScale;
+                    }
                     die.Returning = false;
                     die.View.Body.isKinematic = false;
                     die.View.Body.useGravity = false; // flota mientras está agarrado
@@ -502,9 +527,43 @@ namespace Rollgeon.Dice.Throw
 
         private void TickAlignCompletion()
         {
-            foreach (var die in _dice.Values)
-                if (die.Tween.isAlive) return;
+            if (!_scalingOut)
+            {
+                foreach (var die in _dice.Values)
+                    if (die.Tween.isAlive) return;
 
+                // Scale-out ANTES de CompleteReveal, con la sesión todavía Busy: nadie
+                // puede abrir otra sesión, el input scope sigue tomado y la cámara
+                // sigue prendida — cero carreras. Recién al terminar se revela.
+                float dur = ReducedMotion ? 0f : Mathf.Max(0f, _cfg.TrayScaleOutSeconds);
+                if (dur <= 0f)
+                {
+                    FinishReveal();
+                    return;
+                }
+                _scalingOut = true;
+                _scaleOutDeadline = Time.unscaledTime + dur + 0.25f;
+                foreach (var die in _dice.Values)
+                {
+                    if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
+                    die.ScaleTween = Tween.Scale(die.View.transform, Vector3.zero, dur, Ease.InBack);
+                }
+                return;
+            }
+
+            // Failsafe por deadline, no solo por tween — la resolución nunca cuelga
+            // (mismo principio que MaxSettleSeconds).
+            if (Time.unscaledTime < _scaleOutDeadline)
+            {
+                foreach (var die in _dice.Values)
+                    if (die.ScaleTween.isAlive) return;
+            }
+            FinishReveal();
+        }
+
+        private void FinishReveal()
+        {
+            _scalingOut = false;
             _aligning = false;
             _service.CompleteReveal();
             TeardownVisuals();
@@ -517,10 +576,12 @@ namespace Rollgeon.Dice.Throw
             foreach (var die in _dice.Values)
             {
                 if (die.Tween.isAlive) die.Tween.Stop();
+                if (die.ScaleTween.isAlive) die.ScaleTween.Stop();
                 if (die.View != null) Destroy(die.View.gameObject);
             }
             _dice.Clear();
             _aligning = false;
+            _scalingOut = false;
             _inputScope.Release();
             SyncTrayCamera(false);
         }
