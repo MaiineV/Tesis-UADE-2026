@@ -134,5 +134,134 @@ namespace Rollgeon.Entities.Tests
         {
             Assert.AreEqual(20, _so.ResolveMaxHP(5), "sin extra tiers, cualquier tier ⇒ base");
         }
+
+        // -----------------------------------------------------------------
+        // Selección de tier por piso (Feature#0023).
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void ResolveTierForFloor_NoExtraTiers_ReturnsTier1()
+        {
+            Assert.AreEqual(1, _so.ResolveTierForFloor(1));
+            Assert.AreEqual(1, _so.ResolveTierForFloor(99));
+        }
+
+        [Test]
+        public void ResolveTierForFloor_Thresholds_PicksHighestEligible()
+        {
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 2 }); // T2
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 4 }); // T3
+
+            Assert.AreEqual(1, _so.ResolveTierForFloor(1));
+            Assert.AreEqual(2, _so.ResolveTierForFloor(2));
+            Assert.AreEqual(2, _so.ResolveTierForFloor(3));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(4));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(99), "piso 4 o más ⇒ último tier");
+        }
+
+        [Test]
+        public void ResolveTierForFloor_FloorBelowOne_TreatsAsFloor1()
+        {
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 2 });
+
+            Assert.AreEqual(1, _so.ResolveTierForFloor(0));
+            Assert.AreEqual(1, _so.ResolveTierForFloor(-7));
+        }
+
+        [Test]
+        public void ResolveTierForFloor_LegacyZeroMinFloor_FallsBackToTierNumber()
+        {
+            // Assets autorados antes de MinFloor deserializan 0 ⇒ efectivo = número de tier.
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 0 }); // T2 ⇒ efectivo piso 2
+
+            Assert.AreEqual(1, _so.ResolveTierForFloor(1));
+            Assert.AreEqual(2, _so.ResolveTierForFloor(2));
+        }
+
+        [Test]
+        public void ResolveTierForFloor_MixedLegacyAndAuthored_HighestEligibleWins()
+        {
+            // T2 autorado en piso 4; T3 legacy (efectivo 3). T3 tapa a T2 desde piso 3.
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 4 }); // T2
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 0 }); // T3 ⇒ efectivo 3
+
+            Assert.AreEqual(1, _so.ResolveTierForFloor(2));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(3));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(4), "T2 queda inalcanzable — gana el más alto elegible");
+        }
+
+        [Test]
+        public void ResolveTierForFloor_NonMonotonicAuthoring_HighestEligibleWins()
+        {
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 5 }); // T2
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 2 }); // T3
+
+            Assert.AreEqual(1, _so.ResolveTierForFloor(1));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(2));
+            Assert.AreEqual(3, _so.ResolveTierForFloor(5), "T3 elegible ⇒ T2 nunca gana");
+        }
+
+        [Test]
+        public void EffectiveMinFloor_NormalizesLegacyAndTier1()
+        {
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 0 }); // T2 legacy
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 7 }); // T3 autorado
+
+            Assert.AreEqual(1, _so.EffectiveMinFloor(1), "Tier 1 siempre piso 1");
+            Assert.AreEqual(2, _so.EffectiveMinFloor(2), "legacy 0 ⇒ número de tier");
+            Assert.AreEqual(7, _so.EffectiveMinFloor(3), "autorado se respeta");
+            Assert.AreEqual(1, _so.EffectiveMinFloor(9), "fuera de rango ⇒ 1 (base)");
+        }
+
+        // -----------------------------------------------------------------
+        // Template de tier nuevo (Feature#0023) — copia del último tier.
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void CreateNextTierTemplate_NoExtras_IsTier1CopyFromFloor2()
+        {
+            var template = _so.CreateNextTierTemplate();
+
+            Assert.AreEqual("T2", template.Label);
+            Assert.AreEqual(2, template.MinFloor);
+
+            _so.ExtraTiers.Add(template);
+            var attrs = _so.CreateRuntimeStats(2);
+            Assert.AreEqual(20, attrs.GetAttributeValue<Health, int>(), "copia de Tier 1 ⇒ stats base");
+            Assert.AreEqual(10, attrs.GetAttributeValue<Attack, int>());
+        }
+
+        [Test]
+        public void CreateNextTierTemplate_CopiesLastTierStatsAndBumpsMinFloor()
+        {
+            _so.ExtraTiers.Add(new EnemyTier
+            {
+                Label = "Elite",
+                MinFloor = 3,
+                HP = new TierStat { Mode = StatMode.Manual, ManualValue = 50 },
+                Attack = new TierStat { Mode = StatMode.Multiplier, Multiplier = 1.5f },
+            });
+
+            var template = _so.CreateNextTierTemplate();
+
+            Assert.AreEqual("T3", template.Label);
+            Assert.AreEqual(4, template.MinFloor, "efectivo del último + 1");
+            Assert.AreEqual(StatMode.Manual, template.HP.Mode);
+            Assert.AreEqual(50, template.HP.ManualValue);
+            Assert.AreEqual(StatMode.Multiplier, template.Attack.Mode);
+            Assert.AreEqual(1.5f, template.Attack.Multiplier);
+            Assert.AreEqual(1, _so.ExtraTiers.Count, "el template no se agrega solo");
+        }
+
+        [Test]
+        public void CreateNextTierTemplate_LegacyLastTier_UsesEffectiveMinFloorPlusOne()
+        {
+            _so.ExtraTiers.Add(new EnemyTier { MinFloor = 0 }); // T2 legacy ⇒ efectivo 2
+
+            var template = _so.CreateNextTierTemplate();
+
+            Assert.AreEqual("T3", template.Label);
+            Assert.AreEqual(3, template.MinFloor);
+        }
     }
 }

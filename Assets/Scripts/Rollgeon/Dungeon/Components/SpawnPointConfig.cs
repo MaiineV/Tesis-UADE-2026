@@ -13,8 +13,8 @@ namespace Rollgeon.Dungeon.Components
         [Tooltip("Each entry is one enemy set. All spawn points use the same set index chosen at room start.")]
         public List<EnemyDataSO> EnemySets = new List<EnemyDataSO>();
 
-        [Tooltip("Distribucion de tier por set, alineada por indice con EnemySets (#158). " +
-                 "Sin entry / vacio ⇒ Tier 1.")]
+        [Tooltip("RETIRED (Feature#0023): el tier ahora es deterministico por piso " +
+                 "(EnemyTier.MinFloor). Estos pesos ya no se consultan en spawn.")]
         public List<EnemyTierWeights> SetTierWeights = new List<EnemyTierWeights>();
 
         public int SetCount => EnemySets?.Count ?? 0;

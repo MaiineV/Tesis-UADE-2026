@@ -122,8 +122,12 @@ namespace Rollgeon.Run
             //         el player se resuelve lazy vía IPlayerService.
             var portraits = EntityPortraitResolver.CreateAndRegister();
 
+            // RunContext (registrado por RunBootstrapper antes de OnRunStart) alimenta
+            // el tier determinístico por piso del resolver y el layout inicial (abajo).
+            ServiceLocator.TryGetService<IRunContextService>(out var runContext);
+
             var resolver = new DefaultEnemySpawnResolver(
-                registry, attributes, aiRegistry, grid, visuals, goldDrops, portraits);
+                registry, attributes, aiRegistry, grid, visuals, goldDrops, portraits, runContext);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
@@ -154,9 +158,7 @@ namespace Rollgeon.Run
             // (StartRun lo registra antes de disparar OnRunStart) y el fast-forward
             // de la cadena NextFloor + el seed derivado regeneran el piso guardado
             // idéntico.
-            int startFloorIndex = ServiceLocator.TryGetService<IRunContextService>(out var runCtxForFloor)
-                ? runCtxForFloor.FloorIndex
-                : 0;
+            int startFloorIndex = runContext != null ? runContext.FloorIndex : 0;
             var startLayout = FloorProgressionService.ResolveLayoutForFloor(_defaultLayout, startFloorIndex);
             int startFloorSeed = startFloorIndex == 0
                 ? seed

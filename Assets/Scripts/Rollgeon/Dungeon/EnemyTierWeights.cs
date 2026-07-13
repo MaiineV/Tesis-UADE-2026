@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Rollgeon.Dungeon
 {
+    // retired by Feature#0023 — el tier ya no se rollea con pesos: se resuelve
+    // determinístico por piso (EnemyDataSO.ResolveTierForFloor / EnemyTier.MinFloor).
+    // Las clases y los campos autorados quedan dormidos para no romper assets/prefabs
+    // serializados. Follow-up de contenido: limpiar los pesos autorados (ej. EP_01).
+
     /// <summary>Peso de aparición de un tier (1-based) en un spawner. Ticket #158.</summary>
     [Serializable]
     public struct TierWeight
