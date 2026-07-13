@@ -60,6 +60,26 @@ namespace Rollgeon.UI.HUD
             _diceLabel?.SetText(face.ToString());
         }
 
+        /// <summary>
+        /// Cara transitoria durante el spin del roll. Solo pinta el label — no toca
+        /// <see cref="CurrentFace"/>, que debe seguir reflejando la última cara real
+        /// (la lee el presenter de throw para el ghost del grab-reroll).
+        /// </summary>
+        public void SetSpinPreviewFace(int face)
+        {
+            _diceLabel?.SetText(face.ToString());
+        }
+
+        /// <summary>
+        /// Habilita/deshabilita el toggle de hold sin pisar el estado de bloqueo
+        /// (un dado bloqueado por boss queda no-interactable aunque pidan true).
+        /// Lo usa la animación de spin: un dado que todavía rueda no se puede holdear.
+        /// </summary>
+        public void SetHoldInteractable(bool interactable)
+        {
+            if (_button != null) _button.interactable = interactable && !_blocked;
+        }
+
         /// <summary>Combat — toggle held visual (blue tint). Sin efecto si el dado está bloqueado.</summary>
         public void SetHeld(bool held)
         {

@@ -90,6 +90,7 @@ namespace Rollgeon.UI.HUD
         // BUG-014: cache de DiceZoneView para gatear el botón si todos los dados
         // están holdeados — se resuelve lazy en el primer refresh.
         private DiceZoneView _diceZone;
+        private bool _diceAnimHooked;
         private Action<ComboMatchedPayload> _onComboMatched;
         private IGameplayHotkeyService _hotkeys;
 
@@ -198,6 +199,9 @@ namespace Rollgeon.UI.HUD
                 _hotkeys = null;
             }
             _budget = null;
+            if (_diceZone != null && _diceAnimHooked)
+                _diceZone.DiceAnimationStateChanged -= RefreshButtonInteractable;
+            _diceAnimHooked = false;
             _diceZone = null;
             _bound = false;
         }
@@ -231,6 +235,10 @@ namespace Rollgeon.UI.HUD
 
         private void HandleExtraRollClick()
         {
+            // Dados girando o volando (modo Classic): el resultado aún no se reveló —
+            // un reroll acá pisaría la animación (backstop del gate de interactable).
+            if (ResolveDiceZone()?.IsDiceAnimating == true) return;
+
             // Si hay un ActionRoll activo (Heal / Forzar Puerta), Reroll = pagar 1 energía
             // y rerollear via service. El service usa _currentHolds (seteado por
             // DiceZoneView.ToggleHold → SetHolds) como keep mask.
@@ -351,6 +359,14 @@ namespace Rollgeon.UI.HUD
         {
             if (_extraRollButton == null) return;
 
+            // Spin/outro en curso (modo Classic): nada de re-rollear hasta que los
+            // dados terminen de revelarse / volar.
+            if (ResolveDiceZone()?.IsDiceAnimating == true)
+            {
+                _extraRollButton.interactable = false;
+                return;
+            }
+
             // Si hay un ActionRoll activo (Heal / Forzar Puerta), el budget de Generala
             // no aplica — el gating es por energía vía CanAffordReroll del service.
             // CanAffordReroll ya incluye el guard de "todos holdeados" (BUG-014).
@@ -403,6 +419,12 @@ namespace Rollgeon.UI.HUD
             // FindAnyObjectByType es válido en runtime; el HUD tiene exactamente uno.
             // Cache local para evitar el costo del find en cada toggle.
             _diceZone = UnityEngine.Object.FindAnyObjectByType<DiceZoneView>();
+            if (_diceZone != null && !_diceAnimHooked)
+            {
+                // El botón debe re-habilitarse solo cuando el spin/outro termina.
+                _diceZone.DiceAnimationStateChanged += RefreshButtonInteractable;
+                _diceAnimHooked = true;
+            }
             return _diceZone;
         }
 
