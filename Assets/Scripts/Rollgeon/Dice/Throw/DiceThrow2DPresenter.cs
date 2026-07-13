@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
 using Rollgeon.UI.HUD;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace Rollgeon.Dice.Throw
 {
@@ -47,6 +49,23 @@ namespace Rollgeon.Dice.Throw
                  "Autorado en la escena bajo el Canvas raíz.")]
         private RectTransform _layer;
 
+        // ---- Hooks para la capa de juice (DiceThrowJuice) ---------------------
+        // Payload plano por índice, NUNCA la view: el reveal destruye los ghosts el
+        // mismo frame (TickAlignCompletion) — una view en el evento sería dangling
+        // para cualquier consumidor que difiera (MMF, tweens, rate-limits).
+
+        /// <summary>Un dado entró al agarre (sesión o arming de reroll).</summary>
+        public event Action<int> DieGrabbed;
+
+        /// <summary>Flick soltó dados al vuelo (cantidad lanzada en la volea).</summary>
+        public event Action<int> DiceThrown;
+
+        /// <summary>(índice, velocidad px/s antes del impacto) — rebote contra un borde.</summary>
+        public event Action<int, float> DieBounced;
+
+        /// <summary>(índice, cara, orden de settle en la volea) — para pitch ramps.</summary>
+        public event Action<int, int, int> DieSettled;
+
         private sealed class DieVisual
         {
             public int Index;
@@ -79,6 +98,7 @@ namespace Rollgeon.Dice.Throw
         private bool _hasLastCursor;
         private bool _lmbWasPressed;
         private bool _aligning;
+        private int _settleOrder;
 
         // ---- Lifecycle -------------------------------------------------------
 
@@ -226,19 +246,23 @@ namespace Rollgeon.Dice.Throw
                 // del flick capturada durante el arming.
                 _transferPending = false;
                 foreach (var die in _dice.Values) _service.TryGrab(die.Index);
+                int thrown = 0;
                 foreach (var idx in _service.ReleaseGrabbed())
                 {
                     if (!_dice.TryGetValue(idx, out var die)) continue;
                     die.Vel = _transferVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
                     die.FlightTime = 0f;
                     die.SettleHeld = 0f;
+                    thrown++;
                 }
+                if (thrown > 0) DiceThrown?.Invoke(thrown);
                 CancelArmingInstant(); // limpia ghosts armados que no entraron (no debería haber)
             }
 
             _mouseVel = Vector2.zero;
             _hasLastCursor = false;
             _aligning = false;
+            _settleOrder = 0;
             _inputScope.Acquire();
         }
 
@@ -293,6 +317,7 @@ namespace Rollgeon.Dice.Throw
                     if (die.Tween.isAlive) die.Tween.Stop();
                     die.Returning = false;
                     die.Vel = Vector2.zero;
+                    DieGrabbed?.Invoke(die.Index);
                 }
             }
 
@@ -318,12 +343,19 @@ namespace Rollgeon.Dice.Throw
 
         private void ThrowSessionGrabbed()
         {
+            int thrown = 0;
             foreach (var idx in _service.ReleaseGrabbed())
             {
                 if (!_dice.TryGetValue(idx, out var die)) continue;
                 die.Vel = _mouseVel * _cfg.ThrowGain * Random.Range(0.9f, 1.1f);
                 die.FlightTime = 0f;
                 die.SettleHeld = 0f;
+                thrown++;
+            }
+            if (thrown > 0)
+            {
+                _settleOrder = 0;
+                DiceThrown?.Invoke(thrown);
             }
         }
 
@@ -365,10 +397,12 @@ namespace Rollgeon.Dice.Throw
                     {
                         var pos = DiceThrow2DMath.FlightStep(die.View.Rect.anchoredPosition, ref die.Vel, _cfg.FlightDrag, dt);
                         var vel = die.Vel;
-                        DiceThrow2DMath.BounceInRect(ref pos, ref vel, rect, halfSize, _cfg.Restitution);
+                        float preBounceSpeed = vel.magnitude;
+                        bool bounced = DiceThrow2DMath.BounceInRect(ref pos, ref vel, rect, halfSize, _cfg.Restitution);
                         die.Vel = vel;
                         die.View.Rect.anchoredPosition = pos;
                         die.FlightTime += dt;
+                        if (bounced) DieBounced?.Invoke(die.Index, preBounceSpeed);
 
                         // Caras "rodando" mientras vuela — puro teatro.
                         if (Time.unscaledTime >= die.FaceCycleAt)
@@ -383,8 +417,10 @@ namespace Rollgeon.Dice.Throw
                         {
                             die.Vel = Vector2.zero;
                             die.RestPos = die.View.Rect.anchoredPosition;
-                            die.View.ShowFace(_service.PeekPendingFace(die.Index));
+                            int face = _service.PeekPendingFace(die.Index);
+                            die.View.ShowFace(face);
                             _service.NotifyDieSettled(die.Index);
+                            DieSettled?.Invoke(die.Index, face, _settleOrder++);
                         }
                         break;
                     }
@@ -446,6 +482,7 @@ namespace Rollgeon.Dice.Throw
                 ghost.SpotPos = slotPos;
                 slotView.gameObject.SetActive(false);
                 _armed[i] = ghost;
+                DieGrabbed?.Invoke(i);
             }
         }
 
