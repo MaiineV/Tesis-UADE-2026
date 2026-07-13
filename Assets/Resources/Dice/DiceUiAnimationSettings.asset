@@ -38,4 +38,4 @@ MonoBehaviour:
   DiscardFallDistance: 30
   DiscardSpinDegrees: -35
   DiscardEase: 5
-  OutroHoldSeconds: 0.05
+  OutroHoldSeconds: 0.25
