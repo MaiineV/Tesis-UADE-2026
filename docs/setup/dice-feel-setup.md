@@ -93,6 +93,15 @@ solo en fases sin overlap, y colores solo en `FlashOverlay`/`DiceLabel` — el c
 del background es de `DiceSlotView` (tints de hold/blocked). Si agregás feedbacks,
 respetá ese reparto.
 
+**Gotcha springs de Feel (bug del "primer dado squashado", 2026-07-13):**
+`StopFeedbacks()` a mitad de un spring re-basa su punto de reposo al valor
+desplazado del momento (`MMF_*Spring.CustomStopFeedback` hace
+`_targetValue = _currentValue`) — el target queda squashado/rotado permanente
+para el resto de la sesión. Pasa al replayear un player que sigue oscilando y
+al desactivar el GO (`StopFeedbacksOnDisable`). SIEMPRE disparar/frenar players
+via `MmfJuice.Replay`/`MmfJuice.Rest`, que llaman `RestoreInitialValues()` para
+devolver el reposo autorado.
+
 ## Capa v2 (segunda pasada — "todos los sugeridos")
 
 **Motion** (tuning en el mismo SO): bob flotante del dado holdeado
@@ -123,6 +132,13 @@ la RollArea en `Canvas.prefab`. Material placeholder: Default-ParticleSystem
 (círculo soft builtin) — reemplazable por sprites propios en el
 ParticleSystemRenderer. El `scale` del componente UIParticle está en 1
 (1 unidad de simulación = 1 px de canvas).
+
+**Gotcha auto-scaling (2026-07-13)**: los UIParticle van con
+`AutoScalingMode.UIParticle` (compensa la escala del canvas en el mesh
+horneado). El default del package (`Transform`) escribe
+`transform.localScale = inverse(lossyScale del padre)` — bajo un padre
+tweeneado por la motion calculaba 0, quedaba GUARDADO en la escena y las
+partículas se volvían invisibles. No volver a `Transform`.
 
 ## SFX — placeholders sintetizados (reemplazar por assets sourceados)
 
