@@ -41,8 +41,8 @@ namespace Rollgeon.Effects.Concretes
 
         [Title("Umbral")]
         [SerializeField, MinValue(1)]
-        [Tooltip("HP en o por debajo de este valor activa el buff. GD: 3 (HP 1-3).")]
-        private int _hpThreshold = 3;
+        [Tooltip("HP en o por debajo de este valor activa el buff. GD: 5 (mitad de vida o menos).")]
+        private int _hpThreshold = 5;
 
         [Title("Bonus")]
         [SerializeField]

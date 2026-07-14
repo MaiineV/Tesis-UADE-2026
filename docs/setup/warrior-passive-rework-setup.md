@@ -38,7 +38,7 @@ Pasos:
    - **Effect** → dentro de `Effects` (lista polimórfica), agregar
      `EffLowHpAttackBuff` (nuevo effect en
      `Assets/Scripts/Rollgeon/Effects/Concretes/EffLowHpAttackBuff.cs`).
-     - `Hp Threshold`: 3 (default, no hace falta tocar).
+     - `Hp Threshold`: 5 (default, no hace falta tocar — mitad de vida o menos).
      - `Attack Bonus`: 5 (default, no hace falta tocar).
 3. Guardar (Ctrl+S).
 
@@ -90,9 +90,9 @@ turno siguiente.
 ## Verificación
 
 1. Entrar a un run con Warrior (5 daño base).
-2. Bajar la vida a 3 o menos (recibir daño) → el próximo Base Attack debe
+2. Bajar la vida a 5 o menos (recibir daño) → el próximo Base Attack debe
    pegar como si `Attack` fuera 10 (5 base + 5 del buff).
-3. Curarse a 4+ → el próximo ataque vuelve a pegar como si fuera 5.
+3. Curarse a 6+ → el próximo ataque vuelve a pegar como si fuera 5.
 4. Morir (o terminar la run) y arrancar de nuevo → el Warrior arranca en 5,
    nunca en 10 (esto es automático: `RunController` crea un `Attack` nuevo sin
    modifiers en cada `OnRunStart`, no depende de este setup).
@@ -100,8 +100,8 @@ turno siguiente.
    4,5,6,4,5) → debe activarse Fuerza Bruta. Un solo dado por debajo del
    umbral (ej. d6: 4,5,6,4,**2**) → NO debe activarse (antes con 1 solo dado
    ya alcanzaba).
-6. Con el paso 3 aplicado: bajar la vida a 3 o menos → el badge aparece al
-   lado de la vida. Curarse a 4+ → el badge desaparece. Reabrir el Combat HUD
+6. Con el paso 3 aplicado: bajar la vida a 5 o menos → el badge aparece al
+   lado de la vida. Curarse a 6+ → el badge desaparece. Reabrir el Combat HUD
    a mitad de combate con el buff ya activo → el badge aparece de entrada
    (no hace falta esperar el próximo cambio de HP).
 
