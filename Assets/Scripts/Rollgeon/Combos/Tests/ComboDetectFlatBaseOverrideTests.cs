@@ -92,32 +92,50 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void FuerzaBruta_Detect_NullOverride_UsesConfigurableFloorPlusDynamicPart()
         {
-            // d6=5, d8=6 y d12=7 — todos en mitad superior. Piso 5 + (5+6+7) = 23.
+            // Requiere los 5 dados de la bolsa (DiceBagSO.RequiredSize) — todos en mitad
+            // superior. Piso 5 + (5+6+7+5+6) = 34.
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
+            };
+            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, null);
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(34, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void FuerzaBruta_Detect_WithOverride_ReplacesFlatPartOnly()
+        {
+            // El override reemplaza solo el piso; la suma dinámica va encima: 40 + (5+6+7+5+6) = 69.
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
+            };
+            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, 40);
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(69, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+        }
+
+        [Test]
+        public void FuerzaBruta_Detect_SubsetOfThreeAllUpperHalf_NoMatch()
+        {
+            // Regresion Bocco (2026-07-14): un subset "kept" de 3 dados, todos en mitad
+            // superior, NO debe matchear — Fuerza Bruta exige la bolsa completa (5).
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
             };
             var result = _fuerzaBruta.Detect(new[] { 5, 6, 7 }, types, null);
 
-            Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(23, result.BaseDamage);
-            Assert.AreEqual(3, result.CountUsed);
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
-        }
-
-        [Test]
-        public void FuerzaBruta_Detect_WithOverride_ReplacesFlatPartOnly()
-        {
-            // El override reemplaza solo el piso; la suma dinámica va encima: 40 + (5+6+7) = 58.
-            var types = new[]
-            {
-                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
-            };
-            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7 }, types, 40);
-
-            Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(58, result.BaseDamage);
-            Assert.AreEqual(3, result.CountUsed);
+            Assert.IsFalse(result.IsMatch);
+            Assert.AreEqual(0, result.BaseDamage);
         }
     }
 }

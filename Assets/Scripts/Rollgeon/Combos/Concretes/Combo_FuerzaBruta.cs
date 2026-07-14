@@ -23,6 +23,13 @@ namespace Rollgeon.Combos.Concretes
     /// prioridad, asi solo gana cuando ningun combo de grupo matchea. El asset puede clonarse
     /// con otra base para clases que lo quieran mas arriba en la jerarquia.
     /// </para>
+    /// <para>
+    /// <b>Requiere los 5 dados de la bolsa, no un subset "kept".</b> A diferencia de Par/Trio/
+    /// Poker (que evaluan sobre <c>keptDice</c>, el subset que el jugador elige usar), Fuerza
+    /// Bruta exige el largo completo (<see cref="DiceBagSO.RequiredSize"/>) ademas de que todos
+    /// esten en mitad superior — si no, matcheaba con solo 3 dados "kept" en mitad alta (bug
+    /// reportado por Bocco, 2026-07-14).
+    /// </para>
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Combos/Fuerza Bruta", fileName = "Combo_FuerzaBruta")]
     public class Combo_FuerzaBruta : BaseComboSO
@@ -44,7 +51,7 @@ namespace Rollgeon.Combos.Concretes
         /// <inheritdoc />
         public override bool Matches(int[] finalDice, IReadOnlyList<DiceType> diceTypes)
         {
-            if (finalDice == null || finalDice.Length == 0) return false;
+            if (finalDice == null || finalDice.Length != DiceBagSO.RequiredSize) return false;
             for (int i = 0; i < finalDice.Length; i++)
             {
                 if (!IsUpperHalf(finalDice[i], TypeAt(diceTypes, i))) return false;
@@ -70,7 +77,7 @@ namespace Rollgeon.Combos.Concretes
         public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues,
             IReadOnlyList<DiceType> diceTypes, int? flatBaseOverride)
         {
-            if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();
+            if (diceValues == null || diceValues.Count != DiceBagSO.RequiredSize) return ComboDetectionResult.NoMatch();
             var hitIndices = new List<int>();
             int sum = 0;
             for (int i = 0; i < diceValues.Count; i++)
