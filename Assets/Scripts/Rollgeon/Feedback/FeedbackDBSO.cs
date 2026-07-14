@@ -14,9 +14,16 @@ namespace Rollgeon.Feedback
         [ListDrawerSettings(DraggableItems = true, ShowFoldout = true)]
         private List<FeedbackEntry> _entries = new List<FeedbackEntry>();
 
+        [SerializeField]
+        [ListDrawerSettings(DraggableItems = true, ShowFoldout = true)]
+        private List<FeedbackSequenceEntry> _sequences = new List<FeedbackSequenceEntry>();
+
         private readonly Dictionary<string, FeedbackEntry> _cache = new Dictionary<string, FeedbackEntry>();
+        private readonly Dictionary<string, FeedbackSequenceEntry> _sequenceCache =
+            new Dictionary<string, FeedbackSequenceEntry>();
 
         public IReadOnlyList<FeedbackEntry> Entries => _entries;
+        public IReadOnlyList<FeedbackSequenceEntry> Sequences => _sequences;
 
         private void OnEnable() => RebuildCache();
         private void OnValidate() => RebuildCache();
@@ -24,13 +31,45 @@ namespace Rollgeon.Feedback
         public void RebuildCache()
         {
             _cache.Clear();
-            if (_entries == null) return;
-            for (int i = 0; i < _entries.Count; i++)
+            if (_entries != null)
             {
-                var e = _entries[i];
-                if (e == null || string.IsNullOrEmpty(e.FeedbackId)) continue;
-                _cache[e.FeedbackId] = e;
+                for (int i = 0; i < _entries.Count; i++)
+                {
+                    var e = _entries[i];
+                    if (e == null || string.IsNullOrEmpty(e.FeedbackId)) continue;
+                    _cache[e.FeedbackId] = e;
+                }
             }
+
+            _sequenceCache.Clear();
+            if (_sequences == null) return;
+            for (int i = 0; i < _sequences.Count; i++)
+            {
+                var s = _sequences[i];
+                if (s == null || string.IsNullOrEmpty(s.SequenceId)) continue;
+                _sequenceCache[s.SequenceId] = s;
+            }
+        }
+
+        /// <summary>
+        /// Resuelve una secuencia autorada por id. Contraparte de <see cref="TryGetFeedback"/>
+        /// para los callers que disparan secuencias desde código (ej. la muerte de un enemigo,
+        /// que no nace de un <c>EffPlaySequence</c> autorado y por eso no trae steps inline).
+        /// </summary>
+        public bool TryGetSequence(string sequenceId, out List<FeedbackSequenceStep> steps)
+        {
+            steps = null;
+            if (string.IsNullOrEmpty(sequenceId)) return false;
+            if (_sequenceCache.Count == 0 && _sequences != null && _sequences.Count > 0) RebuildCache();
+            if (!_sequenceCache.TryGetValue(sequenceId, out var entry) || entry == null) return false;
+            steps = entry.Steps;
+            return steps != null && steps.Count > 0;
+        }
+
+        public IEnumerable<string> GetAllSequenceIds()
+        {
+            if (_sequenceCache.Count == 0 && _sequences != null && _sequences.Count > 0) RebuildCache();
+            return _sequenceCache.Keys;
         }
 
         public bool TryGetFeedback(string feedbackId, out FeedbackEntry entry)

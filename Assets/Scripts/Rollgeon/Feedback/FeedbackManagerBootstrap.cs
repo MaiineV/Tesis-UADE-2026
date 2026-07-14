@@ -36,6 +36,12 @@ namespace Rollgeon.Feedback
             _instance = go.AddComponent<FeedbackManager>();
             _instance.Configure(_db);
 
+            // Los feedbacks de hitstop de Feel (MMF_FreezeFrame / MMF_TimeModifier) son
+            // event-based: sin un MMTimeManager escuchando en algún lado, no hacen nada.
+            // Vive acá y no en la scene porque el pipeline de feedback es global y
+            // DontDestroyOnLoad — así el hitstop anda en cualquier scene, tests incluidos.
+            go.AddComponent<MoreMountains.Feedbacks.MMTimeManager>();
+
             ServiceLocator.AddService<IFeedbackService>(_instance, ServiceScope.Global);
         }
     }
