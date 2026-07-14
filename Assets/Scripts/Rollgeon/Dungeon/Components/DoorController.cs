@@ -11,7 +11,8 @@ namespace Rollgeon.Dungeon.Components
     /// Se parentes bajo la sala instanciada (<see cref="RoomInstance.SpawnedPrefab"/>)
     /// por el <c>DungeonManager</c> cuando detecta que la <see cref="DoorSlotRef"/>
     /// del <see cref="RoomLayout"/> tiene vecino. Si la sala no conecta por esa
-    /// dirección, el DoorRoot se apaga entero (CNF-012 v2: sin camino = sin puerta).
+    /// dirección, el DoorRoot queda activo y muestra el zócalo (<see cref="_meshWallFill"/>)
+    /// que completa la pared (CNF-012 v2 rev: sin camino = pared tapiada, no hueco).
     /// </summary>
     [AddComponentMenu("Rollgeon/Dungeon/Door Controller")]
     public sealed class DoorController : MonoBehaviour
@@ -48,17 +49,23 @@ namespace Rollgeon.Dungeon.Components
         [Tooltip("La reja — visible cuando la puerta está bloqueada (lock combate o skill check).")]
         [SerializeField] private GameObject _wallPlug;
 
+        [Tooltip("Zócalo que completa la pared cuando no hay camino (Tapiada). Único mesh " +
+                 "visible en ese estado — reemplaza el viejo comportamiento de apagar el DoorRoot.")]
+        [SerializeField] private GameObject _meshWallFill;
+
         public DoorVisualState CurrentState { get; private set; } = DoorVisualState.Open;
 
 #if UNITY_EDITOR
         /// <summary>Editor-only: nombre del campo serializado de meshOpen (para SerializedObject).</summary>
-        public const string EditorMeshOpenField  = nameof(_meshOpen);
-        public const string EditorMeshClosedField = nameof(_meshClosed);
-        public const string EditorWallPlugField   = nameof(_wallPlug);
+        public const string EditorMeshOpenField     = nameof(_meshOpen);
+        public const string EditorMeshClosedField   = nameof(_meshClosed);
+        public const string EditorWallPlugField     = nameof(_wallPlug);
+        public const string EditorMeshWallFillField = nameof(_meshWallFill);
 
-        public GameObject EditorMeshOpen   => _meshOpen;
-        public GameObject EditorMeshClosed => _meshClosed;
-        public GameObject EditorWallPlug   => _wallPlug;
+        public GameObject EditorMeshOpen     => _meshOpen;
+        public GameObject EditorMeshClosed   => _meshClosed;
+        public GameObject EditorWallPlug     => _wallPlug;
+        public GameObject EditorMeshWallFill => _meshWallFill;
 #endif
 
         private void Awake()
@@ -101,17 +108,19 @@ namespace Rollgeon.Dungeon.Components
         {
             CurrentState = state;
 
-            bool open   = state == DoorVisualState.Open;
-            bool locked = state == DoorVisualState.LockedCombat
-                          || state == DoorVisualState.LockedSkillCheck;
+            bool open    = state == DoorVisualState.Open;
+            bool locked  = state == DoorVisualState.LockedCombat
+                           || state == DoorVisualState.LockedSkillCheck;
+            bool tapiada = state == DoorVisualState.Tapiada;
 
-            // Mapa visual (CNF-012 v2, feedback 2026-07-13): abierta = mesh open;
-            // bloqueada/forzable = la reja; Tapiada (sin camino) = nada visible.
-            // La puerta sólida (_meshClosed) quedó sin estado — forzarla off pisa
+            // Mapa visual (CNF-012 v2 rev, feedback 2026-07-14): abierta = mesh open;
+            // bloqueada/forzable = la reja; Tapiada (sin camino) = el zócalo que completa
+            // la pared. La puerta sólida (_meshClosed) quedó sin estado — forzarla off pisa
             // el default activo del prefab.
-            if (_meshOpen   != null) _meshOpen.SetActive(open);
-            if (_meshClosed != null) _meshClosed.SetActive(false);
-            if (_wallPlug   != null) _wallPlug.SetActive(locked);
+            if (_meshOpen     != null) _meshOpen.SetActive(open);
+            if (_meshClosed   != null) _meshClosed.SetActive(false);
+            if (_wallPlug     != null) _wallPlug.SetActive(locked);
+            if (_meshWallFill != null) _meshWallFill.SetActive(tapiada);
 
             ApplyTooltipGate();
         }
@@ -142,7 +151,7 @@ namespace Rollgeon.Dungeon.Components
         /// <summary>Locked fuera de combate — sólo se abre con skill check exitoso.</summary>
         LockedSkillCheck = 2,
 
-        /// <summary>No hay vecino por esta dirección — ningún mesh visible.</summary>
+        /// <summary>No hay vecino por esta dirección — solo el zócalo (wall-fill) que completa la pared.</summary>
         Tapiada = 3,
     }
 }
