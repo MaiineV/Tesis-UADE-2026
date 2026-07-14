@@ -1104,7 +1104,11 @@ namespace Rollgeon.Combat.Handoff
                 OwnerGuid = playerGuid,
                 // CNF-002: selecciones de enemigo (elegir a quién atacar) se pintan con
                 // el estilo rojo "attack"; el resto conserva el celeste "move".
-                HighlightStyle = (settings.EntityFilter & EntityFilterMask.Enemies) != 0 ? "attack" : "move",
+                HighlightStyle = settings.TargetsEnemies ? "attack" : "move",
+                // Ataques: además del target rojo, pintar TODO el rango con el tinte base
+                // "range" por debajo (solo visual; no altera qué casillas son clickeables).
+                RangeTiles = settings.TargetsEnemies ? settings.ResolveRangeTiles(ownerPos, playerGuid) : null,
+                RangeHighlightStyle = "range",
             });
 
             // Selección interactiva abierta: el jugador debe clickear el target.

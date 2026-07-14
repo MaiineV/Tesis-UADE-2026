@@ -17,10 +17,18 @@ namespace Rollgeon.Effects.Selection
         // TileHighlightServiceBootstrap (rojo por default).
         private const string DoorHighlightStyle = "door";
 
+        // Estilo del underlay de rango de un ataque (todo el alcance). Se pinta DEBAJO de
+        // los targets seleccionables. Configurable via TileHighlightServiceBootstrap.
+        private const string RangeHighlightStyle = "range";
+
         private SelectionRequest _request;
         private List<TargetRef> _selected;
         private HashSet<GridCoord> _validCoords;
         private HashSet<GridCoord> _doorCoords;
+
+        // Rango geométrico completo del ataque (solo visual, NO clickeable). Se pinta
+        // debajo de _validCoords. Vacío para movimiento/heal/puertas.
+        private HashSet<GridCoord> _rangeCoords;
 
         // Cache del último coord hovered para evitar recomputar el A* cada frame cuando
         // el cursor está quieto. Null = sin hover (el mouse no está sobre un tile válido).
@@ -48,7 +56,10 @@ namespace Rollgeon.Effects.Selection
             if (!ServiceLocator.TryGetService<ITileHighlightService>(out var highlight)) return;
 
             if (!_suppressRange)
+            {
+                RepaintRange(highlight);
                 highlight.Highlight(_validCoords, _request.HighlightStyle ?? "move");
+            }
             RepaintDoors(highlight);
 
             // El path preview quedó borrado por el ClearAll ajeno; se recomputa en el
@@ -63,6 +74,7 @@ namespace Rollgeon.Effects.Selection
             _selected = new List<TargetRef>();
             _validCoords = new HashSet<GridCoord>();
             _doorCoords = new HashSet<GridCoord>();
+            _rangeCoords = new HashSet<GridCoord>();
             _lastHoveredCoord = null;
             _hasPathPreview = false;
             _suppressRange = request.SuppressRangeHighlight;
@@ -72,6 +84,14 @@ namespace Rollgeon.Effects.Selection
             {
                 foreach (var t in request.ValidTargets)
                     _validCoords.Add(t.Coord);
+            }
+
+            // El rango es solo visual: NO se agrega a _validCoords, así que clickear una
+            // casilla del rango sin target sigue siendo no-op (OnTargetClicked lo filtra).
+            if (request.RangeTiles != null)
+            {
+                foreach (var c in request.RangeTiles)
+                    _rangeCoords.Add(c);
             }
 
             // Las casillas de puerta son clickeables aunque queden fuera del rango de
@@ -92,7 +112,12 @@ namespace Rollgeon.Effects.Selection
                 // Con _suppressRange no se pinta el rango: el player ve la sala limpia y
                 // solo aparece el path verde al apuntar una casilla. Las puertas sí.
                 if (!_suppressRange)
+                {
+                    // Primero el underlay del rango completo (ataques), luego los targets
+                    // seleccionables por encima con su color propio.
+                    RepaintRange(highlight);
                     highlight.Highlight(_validCoords, request.HighlightStyle ?? "move");
+                }
                 RepaintDoors(highlight);
             }
             else
@@ -182,6 +207,14 @@ namespace Rollgeon.Effects.Selection
                 highlight.Highlight(_doorCoords, DoorHighlightStyle);
         }
 
+        // Pinta el underlay del rango completo (ataques). Se llama ANTES de _validCoords
+        // para que los targets seleccionables queden con su color por encima.
+        private void RepaintRange(ITileHighlightService highlight)
+        {
+            if (_rangeCoords != null && _rangeCoords.Count > 0)
+                highlight.Highlight(_rangeCoords, _request?.RangeHighlightStyle ?? RangeHighlightStyle);
+        }
+
         public void OnTargetClicked(TargetRef target)
         {
             if (_request == null || target == null)
@@ -235,6 +268,7 @@ namespace Rollgeon.Effects.Selection
             _selected = null;
             _validCoords = null;
             _doorCoords = null;
+            _rangeCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 
@@ -256,6 +290,7 @@ namespace Rollgeon.Effects.Selection
             _selected = null;
             _validCoords = null;
             _doorCoords = null;
+            _rangeCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 
