@@ -5,6 +5,7 @@ using Patterns;
 using Rollgeon.Audio;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.UI.HUD;
 using UnityEngine;
 
@@ -140,6 +141,12 @@ namespace Rollgeon.Feedback
                 case FeedbackType.FloatingNumber:
                     DispatchFloatingNumber(entry, request);
                     break;
+                case FeedbackType.Feel:
+                    DispatchFeel(entry, position);
+                    break;
+                case FeedbackType.PawnDeath:
+                    DispatchPawnDeath(entry, request, handle);
+                    break;
                 case FeedbackType.Wait:
                     // no-op — la duración la impone el timer/step
                     break;
@@ -172,6 +179,88 @@ namespace Rollgeon.Feedback
                 audio.PlaySfx(entry.AudioClip, position, entry.Volume);
             else
                 AudioSource.PlayClipAtPoint(entry.AudioClip, position, entry.Volume);
+        }
+
+        private void DispatchFeel(FeedbackEntry entry, Vector3 position)
+        {
+            if (entry.FeelPlayerPrefab == null) return;
+
+            var player = Instantiate(entry.FeelPlayerPrefab, position, Quaternion.identity);
+
+            // El default (InitializationMode.Start) inicializa recién en el Start del player —
+            // un frame después de este Instantiate, o sea DESPUÉS del PlayFeedbacks de abajo.
+            // CaptureRestPose lo pasa a modo Script e inicializa ya.
+            MmfJuice.CaptureRestPose(player);
+            MmfJuice.Replay(player, entry.FeelIntensity);
+
+            // El player instanciado no tiene dueño: no lo colgamos del PlaybackHandle porque
+            // el cleanup de ese path está atado a la semántica de ShouldDestroyOnParticleEnd
+            // de los VFX. Se auto-destruye cuando el más largo de los dos relojes terminó.
+            float life = Mathf.Max(entry.Duration, player.TotalDuration) + WatchdogSafetySeconds;
+            Destroy(player.gameObject, life);
+        }
+
+        /// <summary>
+        /// Tween de muerte sobre el transform del pawn target. Hecho desde código
+        /// (no hay clip de death) → una sola entry sirve para cualquier pawn.
+        /// </summary>
+        private void DispatchPawnDeath(FeedbackEntry entry, FeedbackRequest request, PlaybackHandle handle)
+        {
+            var pawn = FeedbackPositionResolver.ResolvePawnTransform(request.TargetGuid);
+            if (pawn == null) return;
+
+            if (entry.DeathHideHealthBar)
+            {
+                // La barra es hija del pawn: sin esto se encoge junto con él y queda un
+                // sprite de HP girando arriba del cadáver.
+                var owner = pawn.GetComponent<EntityPawn>();
+                if (owner != null && owner.HealthBar != null)
+                    owner.HealthBar.gameObject.SetActive(false);
+            }
+
+            var listener = pawn.GetComponent<FeedbackCallbackListener>();
+            if (listener == null) listener = pawn.gameObject.AddComponent<FeedbackCallbackListener>();
+            handle.Listener = listener;
+
+            // La coroutine corre en el manager, no en el pawn: el pawn se destruye ni bien
+            // esto completa, y una coroutine no sobrevive al Destroy de su propio host.
+            StartCoroutine(PawnDeathRoutine(pawn, entry, listener));
+        }
+
+        private IEnumerator PawnDeathRoutine(Transform pawn, FeedbackEntry entry, FeedbackCallbackListener listener)
+        {
+            float duration = Mathf.Max(0.05f, entry.Duration);
+            var startScale = pawn.localScale;
+            var endScale = startScale * Mathf.Clamp01(entry.DeathEndScale);
+            var startPos = pawn.position;
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                // El pawn puede morir dos veces (despawn de sala, restart de run) — si lo
+                // destruyeron abajo nuestro, cortamos y completamos igual para no colgar
+                // al caller que espera el callback.
+                if (pawn == null) break;
+
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Ease-in cúbico: se sostiene un instante y después colapsa de golpe.
+                // Un lerp lineal se lee como "se apagó", no como "lo reventaron".
+                float collapse = t * t * t;
+                pawn.localScale = Vector3.Lerp(startScale, endScale, collapse);
+                pawn.Rotate(0f, entry.DeathSpinDegrees * (Time.deltaTime / duration), 0f, Space.Self);
+
+                // Arco: sube y vuelve — sin(π·t) vale 0 en ambas puntas.
+                var pos = startPos;
+                pos.y += Mathf.Sin(t * Mathf.PI) * entry.DeathRiseHeight;
+                pawn.position = pos;
+
+                yield return null;
+            }
+
+            if (pawn != null) pawn.localScale = endScale;
+            listener.MarkCompleted();
         }
 
         private void DispatchAnimation(FeedbackEntry entry, FeedbackRequest request, PlaybackHandle handle)
@@ -310,7 +399,20 @@ namespace Rollgeon.Feedback
             var active = new ActiveFeedback { CompletionCallback = onComplete };
             _activeFeedbacks[instanceId] = active;
 
-            var steps = request.SequenceSteps ?? new List<FeedbackSequenceStep>();
+            var steps = request.SequenceSteps;
+
+            // Un request sin steps inline referencia una secuencia autorada en el DB por
+            // FeedbackId. Es el caso de las secuencias disparadas desde código (muerte de
+            // un enemigo), que no nacen de un EffPlaySequence y no tienen dónde autorar.
+            if ((steps == null || steps.Count == 0)
+                && !string.IsNullOrEmpty(request.FeedbackId)
+                && _db != null
+                && !_db.TryGetSequence(request.FeedbackId, out steps))
+            {
+                Debug.LogWarning($"[FeedbackManager] Sequence id '{request.FeedbackId}' not found in DB.");
+            }
+
+            steps ??= new List<FeedbackSequenceStep>();
             float budget = EstimateSequenceDuration(steps) + SequenceSafetySeconds;
 
             StartCoroutine(ExecuteLocalSequence(instanceId, steps, request));
@@ -454,7 +556,7 @@ namespace Rollgeon.Feedback
             return handle;
         }
 
-        private static float EstimateSequenceDuration(List<FeedbackSequenceStep> steps)
+        private float EstimateSequenceDuration(List<FeedbackSequenceStep> steps)
         {
             if (steps == null || steps.Count == 0) return 0f;
             float total = 0f;
@@ -466,12 +568,25 @@ namespace Rollgeon.Feedback
             return Mathf.Max(total, 2f);
         }
 
-        private static float GuessDuration(FeedbackSequenceStep step)
+        private float GuessDuration(FeedbackSequenceStep step)
         {
             if (step == null) return 0f;
             if (step.DurationOverride > 0f) return step.DurationOverride;
             if (step.Source == StepSource.InlineWait) return step.WaitDuration;
             if (step.EndMode == StepEndMode.Immediate) return 0f;
+
+            // Un step que referencia el DB ya trae su duración autorada en la entry. Sin esto
+            // caía siempre al estimate genérico de 5s, y como el TurnManager espera a la
+            // secuencia, cada golpe congelaba el turno 5 segundos.
+            if (step.Source == StepSource.FeedbackRef
+                && _db != null
+                && _db.TryGetFeedback(step.FeedbackRefId, out var entry)
+                && entry != null
+                && entry.Duration > 0f)
+            {
+                return entry.Duration;
+            }
+
             return UnknownStepDurationEstimate;
         }
 
@@ -504,7 +619,14 @@ namespace Rollgeon.Feedback
         {
             var t = FeedbackPositionResolver.ResolvePawnTransform(guid);
             if (t == null) return null;
-            return t.GetComponent<Animator>() ?? t.GetComponentInChildren<Animator>();
+
+            // Ojo: NO usar `??` acá. GetComponent devuelve un "fake null" (referencia C# viva
+            // que el operator== de Unity reporta como null), así que `??` se lo queda en vez de
+            // caer al fallback — y DispatchAnimation abortaba en silencio con los pawns que
+            // tienen el Animator en el hijo del modelo, que son todos.
+            var own = t.GetComponent<Animator>();
+            if (own != null) return own;
+            return t.GetComponentInChildren<Animator>(includeInactive: true);
         }
 
         private static void ApplyImpulse(Guid targetGuid, ImpulseBehaviorValue impulse)

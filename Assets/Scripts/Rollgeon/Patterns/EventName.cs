@@ -247,6 +247,8 @@ namespace Patterns
         OnEnchantmentRemoved,
         /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int baseCost]. El player presionó interact sobre el altar — la UI debe abrir la pantalla de selección de dado/slot.</summary>
         OnEnchantmentAltarActivated,
+        /// <summary>args: []. La pantalla del altar se cerró — el altar puede volver a mostrar su prompt de interacción.</summary>
+        OnEnchantmentAltarClosed,
 
         // --- Camera (§17.E) ----------------------------------------------------
         /// <summary>args: [Rollgeon.Camera.CameraFacing newFacing]. Yaw discreto cambió tras un RotateBy45 (§17.E.5).</summary>

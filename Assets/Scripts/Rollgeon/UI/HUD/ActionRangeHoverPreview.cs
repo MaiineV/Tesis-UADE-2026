@@ -77,19 +77,28 @@ namespace Rollgeon.UI.HUD
                 return;
 
             var validTiles = settings.ResolveValidTiles(ownerPos, playerService.PlayerGuid);
-            if (validTiles.Count == 0) return;
 
             if (!ServiceLocator.TryGetService<ITileHighlightService>(out var highlight)) return;
 
             // Misma regla que CombatHandoffService (CNF-002): selecciones de enemigo en
             // rojo "attack", el resto celeste "move". Para destinos vacíos (movimiento)
             // el EntityFilter no aplica, siempre "move".
-            var style = settings.SlotState != SlotState.Empty
-                        && (settings.EntityFilter & EntityFilterMask.Enemies) != 0
-                ? "attack"
-                : "move";
+            if (settings.TargetsEnemies)
+            {
+                // Ataque / ataque especial: pintar TODO el rango con el tinte base "range"
+                // y los enemigos targeteables con "attack" por encima. Aunque no haya
+                // ningún enemigo en rango, igual se muestra el alcance de la habilidad.
+                var rangeTiles = settings.ResolveRangeTiles(ownerPos, playerService.PlayerGuid);
+                if (rangeTiles.Count == 0 && validTiles.Count == 0) return;
 
-            highlight.Highlight(validTiles.Select(t => t.Coord), style);
+                highlight.Highlight(rangeTiles, "range");
+                highlight.Highlight(validTiles.Select(t => t.Coord), "attack");
+            }
+            else
+            {
+                if (validTiles.Count == 0) return;
+                highlight.Highlight(validTiles.Select(t => t.Coord), "move");
+            }
             _painted = true;
         }
 

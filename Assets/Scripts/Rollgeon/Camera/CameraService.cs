@@ -1,4 +1,6 @@
 using System;
+using MoreMountains.Feedbacks;
+using MoreMountains.Tools;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Dungeon;
@@ -47,7 +49,10 @@ namespace Rollgeon.GameCamera
         private Tween _rotationTween;
         private Tween _zoomTween;
         private Tween _recenterTween;
-        private Tween _shakeTween;
+
+        private float _shakeAmplitude;
+        private float _shakeDuration;
+        private float _shakeElapsed;
 
         private EventManager.EventReceiver _onRoomEnteredHandler;
 
@@ -121,6 +126,10 @@ namespace Rollgeon.GameCamera
             Initialize(config);
             ServiceLocator.AddService<ICameraService>(this, ServiceScope.Run);
         }
+
+        private void OnEnable() => MMCameraShakeEvent.Register(OnFeelCameraShake);
+
+        private void OnDisable() => MMCameraShakeEvent.Unregister(OnFeelCameraShake);
 
         private void OnDestroy()
         {
@@ -236,6 +245,9 @@ namespace Rollgeon.GameCamera
             // Pixel snap siempre al final, después de todo posicionamiento.
             if (_config.EnablePixelSnap)
                 ApplyPixelSnap();
+
+            // Después del snap: el shake es ruido deliberado, no queremos que el snap lo coma.
+            ApplyShake();
         }
 
         // Punto base sobre el que se encuadra la cámara. En modo follow = posición actual
@@ -612,7 +624,7 @@ namespace Rollgeon.GameCamera
         }
 
         // ------------------------------------------------------------------ //
-        // Shake (§17.E.10 — TODO v8 scaffold)                                //
+        // Shake (§17.E.10)                                                    //
         // ------------------------------------------------------------------ //
 
         public void Shake(float amplitude, float durationSeconds)
@@ -620,12 +632,43 @@ namespace Rollgeon.GameCamera
             if (_config == null || _rig == null) return;
             if (amplitude <= 0f || durationSeconds <= 0f) return;
 
-            if (_shakeTween.isAlive) _shakeTween.Stop();
+            // El shake más fuerte gana: un shake chico no debe pisar uno grande en curso.
+            float remaining = _shakeDuration - _shakeElapsed;
+            if (remaining > 0f && amplitude < _shakeAmplitude) return;
 
-            _shakeTween = Tween.ShakeLocalPosition(
-                _rig,
-                strength: Vector3.one * amplitude,
-                duration: durationSeconds);
+            _shakeAmplitude = amplitude;
+            _shakeDuration = durationSeconds;
+            _shakeElapsed = 0f;
+        }
+
+        /// <summary>
+        /// Offset de shake, aplicado DESPUÉS de <c>PlaceRigAt</c>. Un tween sobre el
+        /// transform no sirve: <see cref="LateUpdate"/> reescribe <c>_rig.position</c>
+        /// todos los frames y se comería el shake — por eso el offset se suma acá al final.
+        /// </summary>
+        private void ApplyShake()
+        {
+            if (_shakeDuration <= 0f || _shakeElapsed >= _shakeDuration) return;
+
+            // Unscaled: el shake va de la mano con el freeze frame (timeScale ~0) del
+            // impacto. Con deltaTime escalado, el shake se congelaría junto con el juego.
+            _shakeElapsed += Time.unscaledDeltaTime;
+
+            float decay = 1f - Mathf.Clamp01(_shakeElapsed / _shakeDuration);
+            if (decay <= 0f) { _shakeDuration = 0f; return; }
+
+            _rig.position += UnityEngine.Random.insideUnitSphere * (_shakeAmplitude * decay);
+        }
+
+        // Puente con Feel: cualquier MMF_CameraShake del proyecto entra por acá en vez de
+        // por un MMCameraShaker. La cámara la maneja este service (LateUpdate reescribe la
+        // posición), así que un shaker propio de MM sobre este mismo transform no se vería.
+        private void OnFeelCameraShake(
+            float duration, float amplitude, float frequency,
+            float amplitudeX, float amplitudeY, float amplitudeZ,
+            bool infinite = false, MMChannelData channelData = null, bool useUnscaledTime = false)
+        {
+            Shake(amplitude, duration);
         }
     }
 }

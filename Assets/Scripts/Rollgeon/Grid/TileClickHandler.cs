@@ -3,6 +3,7 @@ using Patterns;
 using Rollgeon.Effects.Selection;
 using Rollgeon.GameCamera;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace Rollgeon.Grid
@@ -23,6 +24,12 @@ namespace Rollgeon.Grid
         // por frame con coords idénticos — solo notifica cuando el cursor cruza un tile.
         // Tipo nullable: null = "el mouse no está sobre ningún tile válido".
         private GridCoord? _lastHoveredCoord;
+
+        // Cacheado en Update (fuera del event processing): IsPointerOverGameObject
+        // dentro de un callback de InputAction loguea warning y lee el frame anterior
+        // igual. Un click sobre UI (pantalla del altar, pause, HUD) NO debe atravesar
+        // hacia los tiles — sin esto, clickear la pantalla movía al player.
+        private bool _pointerOverUi;
 
         private void OnEnable()
         {
@@ -67,11 +74,13 @@ namespace Rollgeon.Grid
 
         private void Update()
         {
+            _pointerOverUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
             // Polling de hover: solo cuando hay una selección activa, para no quemar
             // raycasts cada frame en exploration libre. El raycast usa el mismo path
             // que OnClick (escalado RT→Screen incluido).
             if (!ServiceLocator.TryGetService<ISelectionController>(out var controller)) return;
-            if (!controller.IsSelecting)
+            if (!controller.IsSelecting || _pointerOverUi)
             {
                 if (_lastHoveredCoord != null)
                 {
@@ -126,6 +135,11 @@ namespace Rollgeon.Grid
         {
             Debug.Log("[TileClickHandler] OnClick fired");
 
+            if (_pointerOverUi)
+            {
+                Debug.Log("[TileClickHandler] Pointer over UI — ignoring click");
+                return;
+            }
             if (!ServiceLocator.TryGetService<ISelectionController>(out var controller))
             {
                 Debug.Log("[TileClickHandler] ISelectionController not registered");

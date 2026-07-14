@@ -159,6 +159,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void HandleCloseClicked()
         {
             if (_panelRoot != null) _panelRoot.SetActive(false);
+            EventManager.Trigger(EventName.OnEnchantmentAltarClosed);
             OnPanelClosed?.Invoke();
         }
 
@@ -431,14 +432,14 @@ namespace Rollgeon.Upgrades.Dice.UI
             string faces = FormatFaces(result.ProjectedFaces);
             // Descripción inline en el resultado (CNF-011) — el jugador ve qué hace el
             // encantamiento sin tener que ir a buscarlo de nuevo en la lista de slots.
-            string descLine = string.IsNullOrEmpty(rolled?.Description)
+            // Formato compacto en 2 líneas: el label vive al pie de un panel que ya
+            // ocupa la pantalla completa — 4 líneas desbordaban por debajo.
+            string descPart = string.IsNullOrEmpty(rolled?.Description)
                 ? string.Empty
-                : $"<size=80%><i>{rolled.Description}</i></size>\n";
+                : $" — <size=80%><i>{rolled.Description}</i></size>";
             _resultLabel.text =
-                $"<color=#88ff88>Recibiste:</color> <b>{name}</b>\n" +
-                descLine +
-                $"Caras del dado: {faces}\n" +
-                $"Oro gastado: {result.GoldPaid}";
+                $"<color=#88ff88>Recibiste:</color> <b>{name}</b>{descPart}\n" +
+                $"Caras del dado: {faces}  ·  Oro gastado: {result.GoldPaid}";
         }
     }
 }

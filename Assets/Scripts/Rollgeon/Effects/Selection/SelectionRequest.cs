@@ -12,6 +12,21 @@ namespace Rollgeon.Effects.Selection
         public string HighlightStyle;
 
         /// <summary>
+        /// Casillas del rango geométrico completo de un ataque, pintadas como underlay con
+        /// <see cref="RangeHighlightStyle"/> DEBAJO de <see cref="ValidTargets"/>. Son solo
+        /// visuales: NO se agregan a las casillas clickeables, así que un slot del rango sin
+        /// target sigue sin hacer nada. Null/empty = sin underlay (movimiento, heal, puertas
+        /// no lo setean → comportamiento intacto).
+        /// </summary>
+        public IReadOnlyCollection<GridCoord> RangeTiles;
+
+        /// <summary>
+        /// Estilo del underlay de rango (default "range" en el controller). Solo aplica si
+        /// <see cref="RangeTiles"/> tiene casillas.
+        /// </summary>
+        public string RangeHighlightStyle;
+
+        /// <summary>
         /// Casillas "frente a puerta" (Exploración). Se pintan con el estilo "door" y se
         /// tratan como targets válidos extra; al seleccionarlas el flujo de Exploración
         /// cruza a la sala vecina en vez de mover. Null/empty = sin puertas (combate y

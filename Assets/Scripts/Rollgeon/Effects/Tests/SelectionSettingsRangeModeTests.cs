@@ -63,6 +63,23 @@ namespace Rollgeon.Effects.Tests
             };
         }
 
+        private static SelectionSettings AttackSelection(int range)
+        {
+            return new SelectionSettings
+            {
+                SlotState = SlotState.Occupied,
+                EntityFilter = EntityFilterMask.Enemies,
+                Timing = SelectionTiming.BeforeRoll,
+                Range = range,
+                RangeMode = RangeMode.Manhattan,
+            };
+        }
+
+        private static bool Contains(System.Collections.Generic.List<GridCoord> tiles, int x, int z)
+        {
+            return tiles.Any(c => c == new GridCoord(x, z));
+        }
+
         private static bool Contains(System.Collections.Generic.List<TargetRef> tiles, int x, int z)
         {
             return tiles.Any(t => t.Coord == new GridCoord(x, z));
@@ -148,6 +165,81 @@ namespace Rollgeon.Effects.Tests
             // Assert
             Assert.IsTrue(Contains(tiles, 3, 1),
                 "Sin servicio de movimiento el fallback Manhattan mantiene el comportamiento previo.");
+        }
+
+        [Test]
+        public void ResolveRangeTiles_Manhattan_CoversWholeRangeExcludingOwner()
+        {
+            // Arrange — pasillo 5x1, owner en (0,0), rango Manhattan 3.
+            _grid.LoadRoom(NavGraph.Rect(5, 1));
+            _grid.Register(_owner, new GridCoord(0, 0));
+            RegisterGridServices();
+            var settings = AttackSelection(3);
+
+            // Act
+            var range = settings.ResolveRangeTiles(new GridCoord(0, 0), _owner);
+
+            // Assert — todo el alcance geométrico salvo el owner; (4,0) queda a Manhattan 4.
+            Assert.IsTrue(Contains(range, 1, 0));
+            Assert.IsTrue(Contains(range, 2, 0));
+            Assert.IsTrue(Contains(range, 3, 0));
+            Assert.IsFalse(Contains(range, 0, 0), "El owner nunca entra al rango.");
+            Assert.IsFalse(Contains(range, 4, 0), "Fuera del rango Manhattan no se incluye.");
+        }
+
+        [Test]
+        public void ResolveRangeTiles_ShowsFullRange_WhileValidTiles_OnlyEnemyOccupant()
+        {
+            // Arrange — un enemigo en (2,0); las demás celdas del rango están vacías.
+            _grid.LoadRoom(NavGraph.Rect(5, 1));
+            _grid.Register(_owner, new GridCoord(0, 0));
+            _grid.Register(Guid.NewGuid(), new GridCoord(2, 0));
+            RegisterGridServices();
+            var settings = AttackSelection(3);
+
+            // Act — rango completo vs targets clickeables.
+            var range = settings.ResolveRangeTiles(new GridCoord(0, 0), _owner);
+            var valid = settings.ResolveValidTiles(new GridCoord(0, 0), _owner);
+
+            // Assert — el rango cubre casillas vacías Y la del enemigo…
+            Assert.IsTrue(Contains(range, 1, 0), "El rango incluye casillas vacías dentro del alcance.");
+            Assert.IsTrue(Contains(range, 2, 0), "El rango incluye la casilla del enemigo.");
+            // …pero solo el enemigo es un target válido (clickeable).
+            Assert.AreEqual(1, valid.Count, "Solo el enemigo es target válido.");
+            Assert.IsTrue(valid.Any(t => t.Coord == new GridCoord(2, 0)));
+        }
+
+        [Test]
+        public void ResolveRangeTiles_Self_ReturnsEmpty()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(5, 1));
+            _grid.Register(_owner, new GridCoord(0, 0));
+            RegisterGridServices();
+            var settings = new SelectionSettings { SlotState = SlotState.Self };
+
+            // Act
+            var range = settings.ResolveRangeTiles(new GridCoord(0, 0), _owner);
+
+            // Assert — Self no pinta rango.
+            Assert.AreEqual(0, range.Count);
+        }
+
+        [Test]
+        public void TargetsEnemies_TrueForOccupiedEnemyFilter_FalseOtherwise()
+        {
+            // Assert — ataque/ataque especial (occupied + enemies) pinta rango completo.
+            Assert.IsTrue(AttackSelection(1).TargetsEnemies);
+            // Movimiento (slot vacío) no.
+            Assert.IsFalse(MovementSelection(RangeMode.Manhattan, 1).TargetsEnemies);
+            // Self no.
+            Assert.IsFalse(new SelectionSettings { SlotState = SlotState.Self }.TargetsEnemies);
+            // Occupied pero filtrando aliados (no enemigos) no.
+            Assert.IsFalse(new SelectionSettings
+            {
+                SlotState = SlotState.Occupied,
+                EntityFilter = EntityFilterMask.Allies,
+            }.TargetsEnemies);
         }
     }
 }
