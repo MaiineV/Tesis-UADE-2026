@@ -26,6 +26,10 @@ namespace Rollgeon.Grid
         [Tooltip("Celdas de enemigos targeteables por un ataque.")]
         [SerializeField] private Color _attackColor = new Color(1f, 0.3f, 0.3f, 0.6f);
 
+        [Tooltip("Rango geométrico completo de un ataque (rojo suave). Se pinta bajo las " +
+                 "celdas seleccionables, que llevan el color de ataque por encima.")]
+        [SerializeField] private Color _rangeColor = new Color(1f, 0.5f, 0.35f, 0.22f);
+
         [Tooltip("Celda seleccionada / hovereada por el drag (snap).")]
         [SerializeField] private Color _selectedColor = new Color(1f, 0.9f, 0.2f, 0.7f);
 
@@ -49,6 +53,7 @@ namespace Rollgeon.Grid
             {
                 { "move", _moveColor },
                 { "attack", _attackColor },
+                { "range", _rangeColor },
                 { "selected", _selectedColor },
                 { "path", _pathColor },
                 { "warning", _warningColor },

@@ -43,6 +43,11 @@ namespace Rollgeon.Grid
                 // claramente el destino al hacer hover.
                 { "move", new Color(0.3f, 0.8f, 1f, 0.28f) },
                 { "attack", new Color(1f, 0.3f, 0.3f, 0.6f) },
+                // Rango geométrico completo de un ataque: rojo suave, alpha bajo. Se pinta
+                // sobre TODO el alcance y los enemigos targeteables quedan con "attack"
+                // (rojo vívido) por encima, así el jugador ve el rango sin confundirlo con
+                // los slots seleccionables.
+                { "range", new Color(1f, 0.5f, 0.35f, 0.22f) },
                 { "selected", new Color(1f, 0.9f, 0.2f, 0.7f) },
                 // Verde brillante para el camino A* previewado durante hover. Se pinta
                 // sobre el rango "move" así que tiene que distinguirse claramente.

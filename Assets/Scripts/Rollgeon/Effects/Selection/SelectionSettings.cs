@@ -62,6 +62,16 @@ namespace Rollgeon.Effects.Selection
         private bool ShowRange => !IsSelf && !IsGlobal;
         private bool ShowAutoAccept => !IsSelf && !AutoResolve;
 
+        /// <summary>
+        /// True si la selección apunta a enemigos (ataque / ataque especial). Estos
+        /// pintan TODO el rango geométrico con el tinte base "range" y los slots
+        /// seleccionables (con enemigo) con "attack" por encima. Centraliza la condición
+        /// antes duplicada inline en el hover preview y en el chain de combate.
+        /// </summary>
+        public bool TargetsEnemies => SlotState != SlotState.Empty
+                                      && SlotState != SlotState.Self
+                                      && (EntityFilter & EntityFilterMask.Enemies) != 0;
+
         public int GetSelectionCount(ReadInfo info)
         {
             return SelectionCount;
@@ -133,6 +143,54 @@ namespace Rollgeon.Effects.Selection
                 }
             }
 
+            return result;
+        }
+
+        /// <summary>
+        /// Footprint geométrico completo del alcance: mismas casillas que recorre
+        /// <see cref="ResolveValidTiles"/> pero SIN aplicar <see cref="PassesSlotFilters"/> —
+        /// solo excluye la casilla del owner. Se usa para pintar TODO el rango de un
+        /// ataque (tinte "range") con los targets seleccionables por encima; no altera qué
+        /// casillas son clickeables (eso lo sigue definiendo <see cref="ResolveValidTiles"/>).
+        /// </summary>
+        public List<GridCoord> ResolveRangeTiles(GridCoord ownerPosition, Guid ownerGuid)
+        {
+            var result = new List<GridCoord>();
+
+            if (SlotState == SlotState.Self)
+                return result;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
+            {
+                Debug.LogWarning("[SelectionSettings] IGridManager not registered");
+                return result;
+            }
+
+            if (IsGlobal)
+            {
+                foreach (var coord in grid.Graph.AllCoords())
+                    if (coord != ownerPosition) result.Add(coord);
+                return result;
+            }
+
+            if (RangeMode == RangeMode.PathReachable
+                && ServiceLocator.TryGetService<IMovementService>(out var movement))
+            {
+                foreach (var coord in movement.GetReachableTiles(ownerPosition, Range))
+                    if (coord != ownerPosition) result.Add(coord);
+                return result;
+            }
+
+            if (RangeMode == RangeMode.PathReachable)
+                Debug.LogWarning("[SelectionSettings] IMovementService not registered — " +
+                                 "fallback a rango Manhattan");
+
+            foreach (var coord in grid.Graph.AllCoords())
+            {
+                if (coord == ownerPosition) continue;
+                if (ownerPosition.Manhattan(coord) > Range) continue;
+                result.Add(coord);
+            }
             return result;
         }
 
