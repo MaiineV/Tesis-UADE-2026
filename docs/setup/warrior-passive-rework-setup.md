@@ -67,6 +67,16 @@ Pasos:
 Si no se hace este paso, el badge simplemente no aparece — no rompe nada más
 (el campo es opcional, `CombatHUDView` chequea null antes de bindear).
 
+### 3.1 Overlay de debug (mientras el badge real no esté wireado)
+
+`Assets/Scripts/Rollgeon/UI/HUD/PassiveActiveDebugOverlay.cs` es un
+componente que se auto-crea solo al arrancar el juego (`RuntimeInitializeOnLoadMethod`,
+cero wiring, cero prefab) y dibuja un cartel amarillo "PASIVA ACTIVA - Furia
+del Guerrero" con `OnGUI` mientras el buff de HP bajo esté prendido en
+cualquier entidad. Sirve para testear el feature ya mismo, sin esperar el
+paso 3. **Borrarlo** una vez que el badge real esté wireado en el HUD (o
+dejarlo, es inofensivo, pero es redundante).
+
 ## Por qué `OnAttributeChanged` y no un evento de turno
 
 El bind pasa por `Entity.BindPassive` (`Assets/Scripts/Rollgeon/Entities/Entity.cs`),
