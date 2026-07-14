@@ -34,9 +34,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  PassiveId: passive.warrior.heal_on_turn
-  DisplayName: "Regeneraci\xF3n del Guerrero"
-  Description: ' Al inicio de cada turno, el guerrero se cura 2 HP. '
+  PassiveId: passive.warrior.low_hp_rage
+  DisplayName: "Furia del Guerrero"
+  Description: 'Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos. Al curarte por encima de ese umbral, vuelve a la normalidad.'
   Hooks: []
   references:
     version: 2
