@@ -20,9 +20,9 @@ namespace Rollgeon.Heroes
     /// punteros al catalogo (<see cref="ComboCatalogSO"/>) — estos SOs no se clonan.
     /// </para>
     /// <para>
-    /// <b>Validacion §5.4.</b> Para el contrato del Guerrero el <see cref="Validate"/> exige
-    /// 8 entradas no-nulas, sin <c>ComboId</c> duplicado, y la ultima debe ser
-    /// <c>Generala</c> (<see cref="BaseComboSO.Priority"/> == <see cref="int.MaxValue"/>).
+    /// <b>Validacion.</b> <see cref="Validate"/> exige al menos una entrada, sin nulls y sin
+    /// <c>ComboId</c> duplicado. La cantidad y el orden son libres — la resolucion usa
+    /// <see cref="BaseComboSO.Priority"/>, no la posicion en la lista.
     /// </para>
     /// </summary>
     [Serializable]
@@ -30,9 +30,8 @@ namespace Rollgeon.Heroes
     public class ContractSheet
     {
         [Title("Contract")]
-        [InfoBox("Lista de combos elegibles de la clase. Para Warrior: 8 entradas en el orden " +
-                 "[Par, DoblePar, SumaX, Trio, Escalera, FullHouse, Poker, Generala]. " +
-                 "Se evalua por Priority desc — el mayor que matchee gana.")]
+        [InfoBox("Lista de combos elegibles de la clase. Cantidad y orden libres — " +
+                 "se evalua por Priority desc, el mayor que matchee gana.")]
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
         [OdinSerialize]
         [Required]
@@ -63,8 +62,8 @@ namespace Rollgeon.Heroes
 
         /// <summary>
         /// Base plano de la tabla por clase para <paramref name="comboId"/>, o <c>null</c> si
-        /// esta clase no define entrada (fallback al base del SO). Scan lineal — la tabla tiene
-        /// ≤8 entradas.
+        /// esta clase no define entrada (fallback al base del SO). Scan lineal — la tabla es
+        /// chica (una entrada por combo del contrato).
         /// </summary>
         public int? GetBaseDamageOverride(string comboId)
         {
@@ -91,7 +90,7 @@ namespace Rollgeon.Heroes
         /// <summary>
         /// <c>escudo_combo_base</c> de esta clase para <paramref name="comboId"/>. Sin entrada
         /// ⇒ 0 — la clase no genera escudo con ese combo (fallback explícito, sin default
-        /// global). Scan lineal — la tabla tiene ≤8 entradas.
+        /// global). Scan lineal — la tabla es chica (una entrada por combo del contrato).
         /// </summary>
         public int GetShieldBase(string comboId)
         {
@@ -112,15 +111,16 @@ namespace Rollgeon.Heroes
         // ---- Validation -------------------------------------------------
 
         /// <summary>
-        /// Valida la hoja: 8 entradas no-nulas, sin duplicados por <see cref="BaseComboSO.ComboId"/>,
-        /// y la ultima entrada debe ser Generala (<c>Priority == int.MaxValue</c>).
+        /// Valida la hoja: al menos una entrada, sin nulls y sin duplicados por
+        /// <see cref="BaseComboSO.ComboId"/>. Cantidad y orden libres — la resolucion
+        /// (<see cref="MatchBest"/>) usa <see cref="BaseComboSO.Priority"/>, no la posicion.
         /// </summary>
         /// <param name="error">Mensaje humano-legible si retorna <c>false</c>.</param>
         public bool Validate(out string error)
         {
-            if (Combos == null || Combos.Count != 8)
+            if (Combos == null || Combos.Count == 0)
             {
-                error = $"ContractSheet must have exactly 8 combos (got {Combos?.Count ?? 0}).";
+                error = "ContractSheet must have at least one combo.";
                 return false;
             }
 
@@ -143,14 +143,6 @@ namespace Rollgeon.Heroes
                     error = $"ContractSheet has duplicate ComboId '{c.ComboId}' at index [{i}].";
                     return false;
                 }
-            }
-
-            var last = Combos[Combos.Count - 1];
-            if (last.Priority != int.MaxValue)
-            {
-                error = $"ContractSheet last entry must be Generala (Priority == int.MaxValue). " +
-                        $"Got '{last.ComboId}' with priority {last.Priority}.";
-                return false;
             }
 
             error = null;

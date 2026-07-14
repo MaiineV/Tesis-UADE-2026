@@ -37,9 +37,8 @@ namespace Rollgeon.Heroes
         public string Description;
 
         [Title("Contract (§5.3)")]
-        [InfoBox("Lista de 8 combos en orden de prioridad ascendente. Para Warrior: " +
-                 "[Par, DoblePar, SumaX, Trio, Escalera, FullHouse, Poker, Generala]. " +
-                 "Ver docs/setup/Content#0097b_WarriorContractAndWeakness.md.")]
+        [InfoBox("Lista de combos de la clase — cantidad y orden libres, la resolucion usa " +
+                 "Priority. Ver docs/setup/Content#0097b_WarriorContractAndWeakness.md.")]
         [OdinSerialize]
         [Required]
         public ContractSheet Sheet = new ContractSheet();

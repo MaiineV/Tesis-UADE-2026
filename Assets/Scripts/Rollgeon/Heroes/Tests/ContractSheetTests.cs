@@ -12,7 +12,7 @@ namespace Rollgeon.Heroes.Tests
     /// - MatchBest picks highest priority (Generala > Poker > ... > Par).
     /// - MatchBest returns null on empty/invalid/no-match dice.
     /// - CrossCombo makes a previously-matching combo invisible.
-    /// - Validate enforces the 8-entries + Generala-last rule.
+    /// - Validate enforces non-empty + no-null + no-duplicate entries (count and order free).
     /// </summary>
     [TestFixture]
     public class ContractSheetTests
@@ -159,20 +159,21 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void Validate_Wrong_Count_Fails()
+        public void Validate_Any_Count_Passes()
         {
+            // La sheet es libre: una clase puede tener 2, 8 o los combos que quiera.
             var sheet = new ContractSheet
             {
                 Combos = new List<BaseComboSO> { _par, _trio },
             };
             bool ok = sheet.Validate(out var error);
-            Assert.IsFalse(ok);
-            StringAssert.Contains("8", error);
+            Assert.IsTrue(ok, $"A 2-combo sheet should validate. Error: {error}");
         }
 
         [Test]
-        public void Validate_Last_Must_Be_Generala()
+        public void Validate_Order_Is_Free()
         {
+            // El orden de la lista no importa — MatchBest resuelve por Priority, no por posicion.
             var sheet = new ContractSheet
             {
                 Combos = new List<BaseComboSO>
@@ -181,8 +182,19 @@ namespace Rollgeon.Heroes.Tests
                 },
             };
             bool ok = sheet.Validate(out var error);
-            Assert.IsFalse(ok, "Sheet with Poker-last should fail (Generala must be last).");
-            StringAssert.Contains("Generala", error);
+            Assert.IsTrue(ok, $"Sheet order should not affect validation. Error: {error}");
+        }
+
+        [Test]
+        public void Validate_Empty_Sheet_Fails()
+        {
+            var sheet = new ContractSheet
+            {
+                Combos = new List<BaseComboSO>(),
+            };
+            bool ok = sheet.Validate(out var error);
+            Assert.IsFalse(ok, "An empty sheet is a config mistake — must fail validation.");
+            StringAssert.Contains("at least one", error);
         }
 
         [Test]
