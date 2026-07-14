@@ -647,8 +647,8 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  EntityId: Goblin01
-  DisplayName: Goblin
+  EntityId: CardEnemy01
+  DisplayName: CardEnemy
   Description: 
   Portrait: {fileID: 789460272, guid: 5a7f23fe35c7c8649854515601cc938d, type: 3}
   WeaknessComboId: 
@@ -663,16 +663,42 @@ MonoBehaviour:
   - Label: T2
     MinFloor: 2
     HP:
-      Mode: 0
-      Multiplier: 1.3
-      ManualValue: 0
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 150
     Attack:
-      Mode: 0
-      Multiplier: 1.2
-      ManualValue: 0
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 3
     Speed:
       Mode: 0
       Multiplier: 1.1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 0
+      ManualValue: 0
+  - Label: T3
+    MinFloor: 3
+    HP:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 300
+    Attack:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 4
+    Speed:
+      Mode: 0
+      Multiplier: 1.2
       ManualValue: 0
     Energy:
       Mode: 0

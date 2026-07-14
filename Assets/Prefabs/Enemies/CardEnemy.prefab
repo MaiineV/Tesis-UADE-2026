@@ -404,7 +404,7 @@ GameObject:
   - component: {fileID: -5253838994059866951}
   - component: {fileID: 6661013225928534313}
   m_Layer: 0
-  m_Name: Goblin
+  m_Name: CardEnemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

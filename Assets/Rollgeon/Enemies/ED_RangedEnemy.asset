@@ -1197,7 +1197,59 @@ MonoBehaviour:
   BaseSpeed: 5
   MaxEnergy: 2
   BaseAttackRange: 1
-  ExtraTiers: []
+  ExtraTiers:
+  - Label: T2
+    MinFloor: 2
+    HP:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 70
+    Attack:
+      Mode: 0
+      Multiplier: 2
+      ManualValue: 0
+    Speed:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+  - Label: T3
+    MinFloor: 3
+    HP:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 140
+    Attack:
+      Mode: 0
+      Multiplier: 2
+      ManualValue: 0
+    Speed:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
   VisualPrefab: {fileID: 8816966952657547766, guid: d1bfc05133e86344e8c12884968c7854, type: 3}
   MinGoldDrop: 4
   MaxGoldDrop: 8
