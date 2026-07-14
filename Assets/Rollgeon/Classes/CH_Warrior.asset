@@ -24,6 +24,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
     - {fileID: 11400000, guid: 7f06d84d69aa67e418408330684cd299, type: 2}
     - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -38,7 +39,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 8
+      Data: 9
     - Name: 
       Entry: 10
       Data: 0
@@ -63,6 +64,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 7
+    - Name: 
+      Entry: 10
+      Data: 8
     - Name: 
       Entry: 13
       Data: 
@@ -2178,6 +2182,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
     - {fileID: 11400000, guid: 7f06d84d69aa67e418408330684cd299, type: 2}
     - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
     _displayLabel: 
     BaseDamageTable: []
     ShieldBaseTable:
