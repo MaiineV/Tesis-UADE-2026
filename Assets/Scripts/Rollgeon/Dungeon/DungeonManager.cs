@@ -424,12 +424,12 @@ namespace Rollgeon.Dungeon
 
                 authored.Add(slot.Direction);
 
-                // CNF-012 v2: sin vecino la puerta se apaga ENTERA (sin mesh ni
-                // reja). La reja pasó a ser el visual de puerta bloqueada/forzable
-                // y la administra DoorController.SetState — acá ya no se togglea el
-                // WallPlug del slot (en los prefabs actuales es ese mismo GO, hijo
-                // del DoorRoot).
-                slot.DoorRoot.SetActive(connected);
+                // CNF-012 v2 rev: sin vecino el DoorRoot queda ACTIVO y muestra el zócalo
+                // (wall-fill) que completa la pared — lo prende DoorController.SetState(Tapiada)
+                // desde SyncDoorVisualStates. La reja es el visual de puerta bloqueada/forzable
+                // y también la administra SetState — acá ya no se togglea el WallPlug del slot
+                // (en los prefabs actuales es un GO hijo del DoorRoot).
+                slot.DoorRoot.SetActive(true);
 
                 if (!connected) continue;
 
@@ -470,8 +470,9 @@ namespace Rollgeon.Dungeon
                 }
                 else
                 {
+                    // Sin vecino: el GO queda activo para que el zócalo (wall-fill) de
+                    // SetState(Tapiada) complete la pared, igual que las puertas con slot.
                     controller.SetState(DoorVisualState.Tapiada);
-                    controller.gameObject.SetActive(false);
                 }
 
                 Debug.LogWarning(
