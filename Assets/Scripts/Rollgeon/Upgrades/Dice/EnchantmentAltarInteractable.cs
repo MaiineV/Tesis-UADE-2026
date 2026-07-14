@@ -48,6 +48,11 @@ namespace Rollgeon.Upgrades.Dice
         private int _baseCost;
         private bool _playerInRangeLastTick;
         private bool _lastCanAfford;
+        // La pantalla del altar está abierta — el prompt "[F] Encantar" es un overlay
+        // que dibuja SOBRE ella (sortingOrder 25000), así que mientras dure hay que
+        // ocultarlo y no re-disparar Interact con F.
+        private bool _panelOpen;
+        private bool _subscribed;
 
         /// <summary>Inicializa el altar. Lo llama el <see cref="EnchantmentRoomService"/> al instanciarlo.</summary>
         public void Configure(Guid roomInstanceId, string spawnPointId, IEnchantmentRoomService service, int baseCost)
@@ -80,10 +85,33 @@ namespace Rollgeon.Upgrades.Dice
         // Update loop (input + range)
         // ====================================================================
 
+        private void OnEnable()
+        {
+            if (_subscribed) return;
+            EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, HandleAltarPanelOpened);
+            EventManager.Subscribe(EventName.OnEnchantmentAltarClosed, HandleAltarPanelClosed);
+            _subscribed = true;
+        }
+
+        private void HandleAltarPanelOpened(params object[] args)
+        {
+            _panelOpen = true;
+            InteractionPromptView.Hide(GetInstanceID());
+        }
+
+        private void HandleAltarPanelClosed(params object[] args)
+        {
+            _panelOpen = false;
+            // Forzar re-evaluación de rango en el próximo tick — si el player sigue
+            // al lado del altar, el prompt reaparece.
+            _playerInRangeLastTick = false;
+        }
+
         private void Update()
         {
             if (_interactRange <= 0f) return;
             if (_service == null) return;
+            if (_panelOpen) return;
 
             bool inRange = IsPlayerInRange();
             if (inRange != _playerInRangeLastTick)
@@ -175,6 +203,12 @@ namespace Rollgeon.Upgrades.Dice
 
         private void OnDisable()
         {
+            if (_subscribed)
+            {
+                EventManager.UnSubscribe(EventName.OnEnchantmentAltarActivated, HandleAltarPanelOpened);
+                EventManager.UnSubscribe(EventName.OnEnchantmentAltarClosed, HandleAltarPanelClosed);
+                _subscribed = false;
+            }
             _playerInRangeLastTick = false;
             InteractionPromptView.Hide(GetInstanceID());
         }

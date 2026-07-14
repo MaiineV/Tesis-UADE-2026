@@ -21,6 +21,10 @@ namespace Rollgeon.UI.Tooltips
     {
         public static TooltipController Instance { get; private set; }
 
+        // Por encima de InteractionPromptView (25000) — el tooltip sigue al cursor,
+        // nada debería taparlo.
+        private const int OverlaySortingOrder = 30000;
+
         [Required("Arrastrar el RectTransform del panel visual (Image + TMP).")]
         [SerializeField] private RectTransform _root;
 
@@ -74,6 +78,26 @@ namespace Rollgeon.UI.Tooltips
 
             if (_hostCanvas == null) _hostCanvas = GetComponentInParent<Canvas>();
             _hostCanvasRect = _hostCanvas != null ? _hostCanvas.transform as RectTransform : null;
+
+            EnsureOverlaySorting();
+        }
+
+        // El orden de jerarquía dentro del canvas HUD dejaba el tooltip DEBAJO de
+        // pantallas hermanas (ej. el panel del Altar de Encantamiento). Un Canvas
+        // anidado con overrideSorting lo saca de esa pelea. Sin GraphicRaycaster
+        // a propósito: el tooltip nunca debe interceptar el mouse.
+        private void EnsureOverlaySorting()
+        {
+            if (_root == null) return;
+            if (!_root.TryGetComponent<Canvas>(out var rootCanvas))
+            {
+                // Solo en runtime — el preview de editor no debe dirty-ear la escena
+                // agregando componentes.
+                if (!Application.isPlaying) return;
+                rootCanvas = _root.gameObject.AddComponent<Canvas>();
+            }
+            rootCanvas.overrideSorting = true;
+            rootCanvas.sortingOrder = OverlaySortingOrder;
         }
 
         private void OnDestroy()
@@ -208,6 +232,9 @@ namespace Rollgeon.UI.Tooltips
         {
             _visible = visible;
             if (_root != null) _root.gameObject.SetActive(visible);
+            // overrideSorting no persiste si se seteó con el GO inactivo — re-aplicar
+            // con el panel ya activo.
+            if (visible) EnsureOverlaySorting();
         }
 
 #if UNITY_EDITOR
