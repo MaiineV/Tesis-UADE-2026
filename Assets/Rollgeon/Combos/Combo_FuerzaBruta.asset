@@ -39,7 +39,7 @@ MonoBehaviour:
   _description: 'Suma los valores de todos los dados que cayeron en la mitad superior
     de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12).'
   _icon: {fileID: 0}
-  _baseDamage: 5
+  _baseDamage: 30
   _valueMultipliers:
   - 0
   - 0
