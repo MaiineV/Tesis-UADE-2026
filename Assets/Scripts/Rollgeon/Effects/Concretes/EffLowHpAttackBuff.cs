@@ -35,8 +35,9 @@ namespace Rollgeon.Effects.Concretes
     public sealed class EffLowHpAttackBuff : BaseEffect
     {
         // GUID fijo de este effect — nunca el guid del target, para no pisar/confundirse con
-        // otros modifiers self-sourced sobre Attack.
-        private static readonly Guid PassiveSourceId = new Guid("8f2b1a3c-7d4e-4f5a-9c6b-1e2d3f4a5b6c");
+        // otros modifiers self-sourced sobre Attack. Publico: lo usa PassiveBadgeView (UI) para
+        // saber si el buff activo es el nuestro, sin duplicar el criterio de busqueda.
+        public static readonly Guid PassiveSourceId = new Guid("8f2b1a3c-7d4e-4f5a-9c6b-1e2d3f4a5b6c");
 
         [Title("Umbral")]
         [SerializeField, MinValue(1)]
@@ -69,16 +70,7 @@ namespace Rollgeon.Effects.Concretes
             if (health == null || attack == null) return false;
 
             bool shouldBuff = health.Value > 0 && health.Value <= _hpThreshold;
-
-            Guid existingModifierId = Guid.Empty;
-            foreach (var modifier in attack.GetRawModifiers())
-            {
-                if (modifier.SourceId == PassiveSourceId)
-                {
-                    existingModifierId = modifier.ModifierId;
-                    break;
-                }
-            }
+            Guid existingModifierId = FindOwnModifierId(attack);
             bool isBuffed = existingModifierId != Guid.Empty;
 
             if (shouldBuff && !isBuffed)
@@ -95,6 +87,27 @@ namespace Rollgeon.Effects.Concretes
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// True si <paramref name="entityId"/> tiene ahora mismo el modifier de esta pasiva
+        /// puesto sobre <see cref="Attack"/>. Usado por <c>PassiveBadgeView</c> (UI) para decidir
+        /// si mostrar el badge — no requiere estado propio, relee el stack de modifiers real.
+        /// </summary>
+        public static bool IsActiveFor(AttributesManager attrs, Guid entityId)
+        {
+            var attack = attrs?.GetAttribute<Attack>(entityId);
+            if (attack == null) return false;
+            return FindOwnModifierId(attack) != Guid.Empty;
+        }
+
+        private static Guid FindOwnModifierId(Attack attack)
+        {
+            foreach (var modifier in attack.GetRawModifiers())
+            {
+                if (modifier.SourceId == PassiveSourceId) return modifier.ModifierId;
+            }
+            return Guid.Empty;
         }
     }
 }

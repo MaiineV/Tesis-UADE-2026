@@ -105,6 +105,29 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void IsActiveFor_TrueWhileBuffed_FalseAfterHeal()
+        {
+            var eff = MakeEffect(hpThreshold: 3, attackBonus: 5);
+
+            Assert.IsFalse(EffLowHpAttackBuff.IsActiveFor(_attrManager, _entityId),
+                "Sin buff aplicado todavia, no deberia estar activo.");
+
+            _attrManager.SetAttributeValue<Health, int>(_entityId, 2);
+            eff.ApplyEffect(MakeCtx());
+            Assert.IsTrue(EffLowHpAttackBuff.IsActiveFor(_attrManager, _entityId));
+
+            _attrManager.SetAttributeValue<Health, int>(_entityId, 4);
+            eff.ApplyEffect(MakeCtx());
+            Assert.IsFalse(EffLowHpAttackBuff.IsActiveFor(_attrManager, _entityId));
+        }
+
+        [Test]
+        public void IsActiveFor_UnregisteredEntity_ReturnsFalse()
+        {
+            Assert.IsFalse(EffLowHpAttackBuff.IsActiveFor(_attrManager, Guid.NewGuid()));
+        }
+
+        [Test]
         public void NullContext_ReturnsFalse()
         {
             var eff = MakeEffect(hpThreshold: 3, attackBonus: 5);
