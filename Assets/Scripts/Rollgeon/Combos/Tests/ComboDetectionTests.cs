@@ -642,7 +642,7 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void FuerzaBruta_RequiereBolsaCompleta_SubsetDeTresTodosEnMitadSuperior_NoMatch()
         {
-            // Regresion Bocco (2026-07-14): con solo 3 dados "kept" (subset como Par/Trio/Poker),
+            // Regresión Bocco (2026-07-14): con solo 3 dados "kept" (subset como Par/Trío/Póker),
             // todos en mitad superior, el combo NO debe activarse — exige los 5 de la bolsa.
             var types = new[]
             {

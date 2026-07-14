@@ -6,28 +6,28 @@ using UnityEngine;
 namespace Rollgeon.Combos.Concretes
 {
     /// <summary>
-    /// Fuerza Bruta — matchea unicamente cuando <b>los 5 dados</b> de la tirada caen en la
+    /// Fuerza Bruta — matchea únicamente cuando <b>los 5 dados</b> de la tirada caen en la
     /// mitad superior de su propio rango (misma regla que <c>RelativeHalfFilter</c>:
     /// <c>valor &gt; MaxFace/2</c>; d6:{4,5,6}, d8:{5..8}, d12:{7..12}). No depende de
-    /// coincidencia (Par/Trio/Poker) ni de orden (Escalera) — depende pura y exclusivamente
-    /// de magnitud, spec de Santi (2026-07-13). Dano resultante:
+    /// coincidencia (Par/Trío/Póker) ni de orden (Escalera) — depende pura y exclusivamente
+    /// de magnitud, spec de Santi (2026-07-13). Daño resultante:
     /// <c>BaseDamage + Σ(los 5 valores)</c>. <c>CountUsed = 5</c> cuando matchea.
     /// <para>
-    /// Es el unico combo cuya regla depende del <see cref="DiceType"/> de cada dado, no solo
+    /// Es el único combo cuya regla depende del <see cref="DiceType"/> de cada dado, no solo
     /// del valor — usa los overloads tipados de <see cref="BaseComboSO"/>. <b>Fallback</b>:
     /// si el call site no provee tipos (paths legacy, tests), asume d6 (mitad superior = 4+),
     /// el dado baseline del juego.
     /// </para>
     /// <para>
     /// Rol de balance: combo "consuelo" — base plana baja (GD: 5) lo deja debajo de Par en
-    /// prioridad, asi solo gana cuando ningun combo de grupo matchea. El asset puede clonarse
-    /// con otra base para clases que lo quieran mas arriba en la jerarquia.
+    /// prioridad, así solo gana cuando ningún combo de grupo matchea. El asset puede clonarse
+    /// con otra base para clases que lo quieran más arriba en la jerarquía.
     /// </para>
     /// <para>
-    /// <b>Requiere los 5 dados de la bolsa, no un subset "kept".</b> A diferencia de Par/Trio/
-    /// Poker (que evaluan sobre <c>keptDice</c>, el subset que el jugador elige usar), Fuerza
-    /// Bruta exige el largo completo (<see cref="DiceBagSO.RequiredSize"/>) ademas de que todos
-    /// esten en mitad superior — si no, matcheaba con solo 3 dados "kept" en mitad alta (bug
+    /// <b>Requiere los 5 dados de la bolsa, no un subset "kept".</b> A diferencia de Par/Trío/
+    /// Póker (que evalúan sobre <c>keptDice</c>, el subset que el jugador elige usar), Fuerza
+    /// Bruta exige el largo completo (<see cref="DiceBagSO.RequiredSize"/>) además de que todos
+    /// estén en mitad superior — si no, matcheaba con solo 3 dados "kept" en mitad alta (bug
     /// reportado por Bocco, 2026-07-14).
     /// </para>
     /// </summary>

@@ -126,7 +126,7 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void FuerzaBruta_Detect_SubsetOfThreeAllUpperHalf_NoMatch()
         {
-            // Regresion Bocco (2026-07-14): un subset "kept" de 3 dados, todos en mitad
+            // Regresión Bocco (2026-07-14): un subset "kept" de 3 dados, todos en mitad
             // superior, NO debe matchear — Fuerza Bruta exige la bolsa completa (5).
             var types = new[]
             {
