@@ -143,7 +143,9 @@ namespace Rollgeon.GameCamera
             if (_service == null) return;
             float y = ctx.ReadValue<Vector2>().y;
             if (Mathf.Approximately(y, 0f)) return;
-            _service.ZoomBy(Mathf.Sign(y));
+            // Wheel up (+y) = acercar. ZoomBy positivo agranda el ortho size
+            // (aleja), así que se invierte el signo acá.
+            _service.ZoomBy(-Mathf.Sign(y));
         }
 
         private void OnRecenter(InputAction.CallbackContext _)

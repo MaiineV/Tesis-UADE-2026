@@ -38,6 +38,11 @@ namespace Rollgeon.GameCamera
         private bool _isPanning;
         private bool _isFloorView;
         private float _pendingDragPixels;
+        private float _lastRotationStepTime = float.NegativeInfinity;
+        // Pan suavizado: el input mueve _panTarget y _panOffset lo persigue con
+        // SmoothDamp en LateUpdate (PanLerpSeconds). Recenter/anclajes setean ambos.
+        private Vector3 _panTarget;
+        private Vector3 _panVelocity;
 
         private Tween _rotationTween;
         private Tween _zoomTween;
@@ -75,7 +80,7 @@ namespace Rollgeon.GameCamera
             _currentFacing = _config.StartingFacing;
             _currentZoom = Mathf.Clamp(_config.DefaultZoom, _config.ZoomMin, _config.ZoomMax);
             _targetZoom = _currentZoom;
-            _panOffset = HomeOffset;
+            SetPanImmediate(HomeOffset);
 
             ApplyInitialPose();
             ApplyZoomImmediate(_currentZoom);
@@ -159,7 +164,7 @@ namespace Rollgeon.GameCamera
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target;
-            _panOffset = HomeOffset;
+            SetPanImmediate(HomeOffset);
             _isPanning = false;
 
             if (target != null)
@@ -213,6 +218,8 @@ namespace Rollgeon.GameCamera
                 _hasStaticFocus = true;
                 _pendingStaticReanchor = false;
             }
+
+            SmoothPanOffset();
 
             if (_followTarget != null || _hasStaticFocus)
             {
@@ -328,23 +335,55 @@ namespace Rollgeon.GameCamera
 
         /// <summary>
         /// Drag accumulator (§17.E.4). Sumar pixeles de delta; dispara
-        /// <see cref="RotateBy45"/> cada <c>DragPixelsPerStep</c>.
+        /// <see cref="RotateBy45"/> cada <c>DragPixelsPerStep</c>, con un
+        /// mínimo de <c>RotationStepCooldownSeconds</c> entre pasos.
         /// </summary>
         public void AccumulateRotationDrag(float deltaPixels)
         {
             if (_config == null || !_config.EnableRotation) return;
             _pendingDragPixels += deltaPixels;
 
-            while (_pendingDragPixels >= _config.DragPixelsPerStep)
+            float step = _config.DragPixelsPerStep;
+            float cooldown = _config.RotationStepCooldownSeconds;
+
+            if (cooldown <= 0f)
+            {
+                while (_pendingDragPixels >= step)
+                {
+                    RotateBy45(clockwise: true);
+                    _pendingDragPixels -= step;
+                }
+                while (_pendingDragPixels <= -step)
+                {
+                    RotateBy45(clockwise: false);
+                    _pendingDragPixels += step;
+                }
+                return;
+            }
+
+            // Un flick violento no debe encolar una ráfaga de pasos diferidos:
+            // lo acumulado nunca supera un paso.
+            _pendingDragPixels = Mathf.Clamp(_pendingDragPixels, -step, step);
+
+            if (Time.unscaledTime - _lastRotationStepTime < cooldown) return;
+
+            if (_pendingDragPixels >= step)
             {
                 RotateBy45(clockwise: true);
-                _pendingDragPixels -= _config.DragPixelsPerStep;
             }
-            while (_pendingDragPixels <= -_config.DragPixelsPerStep)
+            else if (_pendingDragPixels <= -step)
             {
                 RotateBy45(clockwise: false);
-                _pendingDragPixels += _config.DragPixelsPerStep;
             }
+            else
+            {
+                return;
+            }
+
+            // Consumir TODO lo pendiente: el próximo paso exige un umbral entero
+            // de movimiento fresco — sensibilidad constante durante el drag.
+            _pendingDragPixels = 0f;
+            _lastRotationStepTime = Time.unscaledTime;
         }
 
         /// <summary>Resetea el accumulator de drag (al soltar el modifier).</summary>
@@ -364,19 +403,51 @@ namespace Rollgeon.GameCamera
             // Convertir delta de pantalla a world, relativo a los ejes del rig.
             // Mouse delta "arrastrar a la derecha" debe mover la cámara a la izquierda
             // del punto focal (pan natural).
-            var yaw = (float)_currentFacing;
+            var yaw = GetYawForFacing(_currentFacing);
             var worldRight = Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
             var worldForward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
 
+            // Con cámara orto la altura visible son 2×zoom world units repartidas en
+            // Screen.height pixeles: escalar por eso hace que el pan se sienta igual
+            // en pantalla a cualquier zoom (PanSpeed 1 = el piso acompaña al cursor 1:1).
+            float worldPerPixel = (_currentZoom * 2f) / Mathf.Max(1, Screen.height);
             var delta = (-screenDelta.x * worldRight - screenDelta.y * worldForward)
-                        * (_config.PanSpeed * Time.deltaTime);
+                        * (worldPerPixel * _config.PanSpeed);
 
-            _panOffset += delta;
+            _panTarget += delta;
 
             if (_config.PanClampToFloorBounds)
             {
-                _panOffset = ClampPanToFloor(_panOffset);
+                _panTarget = ClampPanToFloor(_panTarget);
             }
+        }
+
+        /// <summary>
+        /// Setea el pan sin suavizado: offset actual, target y velocity quedan
+        /// alineados. Para anclajes/recenter donde el smoothing no debe pelear.
+        /// </summary>
+        private void SetPanImmediate(Vector3 offset)
+        {
+            _panOffset = offset;
+            _panTarget = offset;
+            _panVelocity = Vector3.zero;
+        }
+
+        // _panOffset persigue a _panTarget con SmoothDamp. Unscaled time: el pan es
+        // input de UI de cámara y no debe congelarse durante hit-stops/timescale.
+        private void SmoothPanOffset()
+        {
+            if (_panOffset == _panTarget) return;
+
+            if (_config.PanLerpSeconds <= 0f)
+            {
+                SetPanImmediate(_panTarget);
+                return;
+            }
+
+            _panOffset = Vector3.SmoothDamp(
+                _panOffset, _panTarget, ref _panVelocity,
+                _config.PanLerpSeconds, Mathf.Infinity, Time.unscaledDeltaTime);
         }
 
         private Vector3 ClampPanToFloor(Vector3 offset)
@@ -470,7 +541,7 @@ namespace Rollgeon.GameCamera
         {
             if (_followTarget == null)
             {
-                _panOffset = HomeOffset;
+                SetPanImmediate(HomeOffset);
                 _isPanning = false;
                 return;
             }
@@ -489,7 +560,7 @@ namespace Rollgeon.GameCamera
                 // Reanclar diferido: capturamos la posición del player en el próximo
                 // LateUpdate, cuando ya fue reposicionado al spawn de la sala nueva.
                 _pendingStaticReanchor = true;
-                _panOffset = homeOffset;
+                SetPanImmediate(homeOffset);
                 _isPanning = false;
                 EventManager.Trigger(EventName.OnCameraRecentered, instant);
                 return;
@@ -497,7 +568,7 @@ namespace Rollgeon.GameCamera
 
             if (instant || _config == null || _config.RecenterTweenSeconds <= 0f)
             {
-                _panOffset = homeOffset;
+                SetPanImmediate(homeOffset);
                 _isPanning = false;
             }
             else
@@ -507,7 +578,10 @@ namespace Rollgeon.GameCamera
                     startValue: 0f,
                     endValue: 1f,
                     duration: _config.RecenterTweenSeconds,
-                    onValueChange: t => _panOffset = Vector3.LerpUnclamped(startOffset, homeOffset, t),
+                    // El tween manda: target y velocity se mantienen alineados para
+                    // que el SmoothDamp del LateUpdate no pelee contra el recenter.
+                    onValueChange: t => SetPanImmediate(
+                        Vector3.LerpUnclamped(startOffset, homeOffset, t)),
                     ease: _config.RecenterEase);
                 _isPanning = false;
             }

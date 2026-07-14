@@ -108,6 +108,48 @@ namespace Rollgeon.GameCamera.Tests
             Assert.AreEqual(start, _service.CurrentFacing);
         }
 
+        [Test]
+        public void AccumulateRotationDrag_FastFlick_FiresSingleStep()
+        {
+            // Arrange — un flick violento acumula muchos umbrales en un solo evento.
+            var start = _service.CurrentFacing;
+
+            // Act
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep * 5f);
+
+            // Assert — con cooldown activo dispara UN paso, no una ráfaga (el
+            // temblor del bug original).
+            Assert.AreEqual(WrapFacing((int)start + 45), _service.CurrentFacing);
+        }
+
+        [Test]
+        public void AccumulateRotationDrag_SecondCallDuringCooldown_NoSecondStep()
+        {
+            // Arrange
+            var start = _service.CurrentFacing;
+
+            // Act — dos umbrales completos en el mismo instante (elapsed = 0 < cooldown).
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep);
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep);
+
+            // Assert
+            Assert.AreEqual(WrapFacing((int)start + 45), _service.CurrentFacing);
+        }
+
+        [Test]
+        public void AccumulateRotationDrag_ZeroCooldown_FiresAllAccumulatedSteps()
+        {
+            // Arrange — cooldown 0 = comportamiento legacy (todos los pasos acumulados).
+            _config.RotationStepCooldownSeconds = 0f;
+            var start = _service.CurrentFacing;
+
+            // Act
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep * 3f);
+
+            // Assert
+            Assert.AreEqual(WrapFacing((int)start + 135), _service.CurrentFacing);
+        }
+
         // ------------------------------------------------------------------ //
         // Pan                                                                 //
         // ------------------------------------------------------------------ //

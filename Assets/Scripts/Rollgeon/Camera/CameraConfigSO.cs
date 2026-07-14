@@ -44,16 +44,27 @@ namespace Rollgeon.GameCamera
         [Title("Rotation")]
         [ToggleGroup(nameof(EnableRotation))] public bool EnableRotation = true;
         [ToggleGroup(nameof(EnableRotation))] public float RotationStepDegrees = 45f;
-        [ToggleGroup(nameof(EnableRotation))] public float DragPixelsPerStep = 50f;
+        [ToggleGroup(nameof(EnableRotation))] public float DragPixelsPerStep = 140f;
         [ToggleGroup(nameof(EnableRotation))] public float RotationTweenSeconds = 0.25f;
         [ToggleGroup(nameof(EnableRotation))] public Ease RotationEase = Ease.OutQuad;
+        [ToggleGroup(nameof(EnableRotation))]
+        [Tooltip("Tiempo mínimo entre pasos de 45° durante el rotate-drag. Un flick rápido " +
+                 "de mouse dispara UN paso, no una ráfaga (que se veía como temblor). " +
+                 "0 = sin límite (comportamiento legacy).")]
+        public float RotationStepCooldownSeconds = 0.2f;
 
         // === Pan =============================================================
         [Title("Pan")]
         [ToggleGroup(nameof(EnablePan))] public bool EnablePan = true;
-        [ToggleGroup(nameof(EnablePan))] public float PanSpeed = 18f;
+        [ToggleGroup(nameof(EnablePan))]
+        [Tooltip("Multiplicador sobre el mapeo 1:1 pixel→world (que ya escala con el zoom " +
+                 "actual). 1 = el punto del piso bajo el cursor acompaña al cursor.")]
+        public float PanSpeed = 1f;
         [ToggleGroup(nameof(EnablePan))] public bool PanClampToFloorBounds = true;
-        [ToggleGroup(nameof(EnablePan))] public float PanLerpSeconds = 0.08f;
+        [ToggleGroup(nameof(EnablePan))]
+        [Tooltip("SmoothDamp time del pan: el offset persigue al target con esta inercia. " +
+                 "0 = sin suavizado (respuesta cruda).")]
+        public float PanLerpSeconds = 0.08f;
 
         // === Zoom ============================================================
         [Title("Zoom")]
