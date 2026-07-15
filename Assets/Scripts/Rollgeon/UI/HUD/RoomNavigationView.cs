@@ -132,10 +132,12 @@ namespace Rollgeon.UI.HUD
                 _roomNameLabel.text = room != null ? LocalizedContent.Name(room.RoomId, room.DisplayName) : "???";
 
             if (_roomProgressLabel != null)
-                _roomProgressLabel.text = $"Rooms {cleared}/{total}";
+                _roomProgressLabel.text = $"{LocalizedContent.Ui("nav.rooms", "Rooms")} {cleared}/{total}";
 
             if (_roomTypeLabel != null)
-                _roomTypeLabel.text = room?.Type.ToString() ?? "";
+                _roomTypeLabel.text = room != null
+                    ? LocalizedContent.Ui("room.type." + room.Type.ToString().ToLowerInvariant(), room.Type.ToString())
+                    : "";
 
             if (_proceedButton != null)
                 _proceedButton.interactable = false;

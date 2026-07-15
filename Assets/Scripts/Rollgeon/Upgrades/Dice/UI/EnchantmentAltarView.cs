@@ -249,8 +249,8 @@ namespace Rollgeon.Upgrades.Dice.UI
 
                 string label = $"Cupo {s + 1}";
                 string subLabel = existing != null
-                    ? $"Encantado: {Rollgeon.Localization.LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}"
-                    : "Vacío";
+                    ? $"{Rollgeon.Localization.LocalizedContent.Ui("altar.enchanted", "Encantado")}: {Rollgeon.Localization.LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}"
+                    : Rollgeon.Localization.LocalizedContent.Ui("altar.empty", "Vacío");
 
                 // Capturamos el SO (no el índice) para el tooltip — los botones se
                 // reconstruyen en cada Populate (incluido tras un apply), así que no
@@ -335,13 +335,13 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_costLabel != null)
             {
                 _costLabel.text = _selectedBagIndex >= 0 && _selectedSlotIndex >= 0
-                    ? $"Costo: {cost} oro"
-                    : "Costo: —";
+                    ? $"{Rollgeon.Localization.LocalizedContent.Ui("altar.cost", "Costo")}: {cost} {Rollgeon.Localization.LocalizedContent.Ui("gold.unit", "oro")}"
+                    : $"{Rollgeon.Localization.LocalizedContent.Ui("altar.cost", "Costo")}: —";
             }
             if (_facesPreviewLabel != null)
             {
                 _facesPreviewLabel.text = _selectedBagIndex >= 0
-                    ? "Caras actuales: " + FormatFaces(ComputeAllowedFacesForSelection())
+                    ? Rollgeon.Localization.LocalizedContent.Ui("altar.current_faces", "Caras actuales") + ": " + FormatFaces(ComputeAllowedFacesForSelection())
                     : string.Empty;
             }
         }
@@ -351,7 +351,7 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_goldLabel == null) return;
             if (ServiceLocator.TryGetService<IEconomyService>(out var economy) && economy != null)
             {
-                _goldLabel.text = $"Oro: {economy.CurrentGold}";
+                _goldLabel.text = $"{Rollgeon.Localization.LocalizedContent.Ui("altar.gold", "Oro")}: {economy.CurrentGold}";
             }
         }
 

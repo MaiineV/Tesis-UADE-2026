@@ -166,6 +166,70 @@ MonoBehaviour:
     m_Localized: Pass Door
     m_Metadata:
       m_Items: []
+  - m_Id: 35553817686016
+    m_Localized: 'Tutorial: ON'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794880
+    m_Localized: 'Tutorial: OFF'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794881
+    m_Localized: Enchanted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794882
+    m_Localized: Empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794883
+    m_Localized: Cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794884
+    m_Localized: gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794885
+    m_Localized: Current faces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794886
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134464
+    m_Localized: Rooms
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134465
+    m_Localized: Floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134466
+    m_Localized: Start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134467
+    m_Localized: Combat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134468
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134469
+    m_Localized: Shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134470
+    m_Localized: Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134471
+    m_Localized: Enchantment
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

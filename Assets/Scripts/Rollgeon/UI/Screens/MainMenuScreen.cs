@@ -281,7 +281,9 @@ namespace Rollgeon.UI.Screens
             if (_tutorialToggleLabel == null) return;
 
             bool enabled = !ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) || meta == null || meta.IsTutorialEnabled;
-            _tutorialToggleLabel.text = enabled ? "Tutorial: ON" : "Tutorial: OFF";
+            _tutorialToggleLabel.text = enabled
+                ? Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_on", "Tutorial: ON")
+                : Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_off", "Tutorial: OFF");
         }
 
         /// <summary>

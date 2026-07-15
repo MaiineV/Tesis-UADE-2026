@@ -166,6 +166,70 @@ MonoBehaviour:
     m_Localized: Cruzar puerta
     m_Metadata:
       m_Items: []
+  - m_Id: 35553817686016
+    m_Localized: "Tutorial: S\xCD"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794880
+    m_Localized: 'Tutorial: NO'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794881
+    m_Localized: Encantado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794882
+    m_Localized: "Vac\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794883
+    m_Localized: Costo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794884
+    m_Localized: oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794885
+    m_Localized: Caras actuales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794886
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134464
+    m_Localized: Salas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134465
+    m_Localized: Piso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134466
+    m_Localized: Inicio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134467
+    m_Localized: Combate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134468
+    m_Localized: Jefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134469
+    m_Localized: Tienda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134470
+    m_Localized: "Poci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134471
+    m_Localized: Encantamiento
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

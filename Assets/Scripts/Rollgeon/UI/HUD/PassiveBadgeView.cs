@@ -109,7 +109,7 @@ namespace Rollgeon.UI.HUD
 
             var passive = ps.CurrentHero?.Passive;
             if (passive != null && !string.IsNullOrEmpty(passive.DisplayName))
-                _text.text = passive.DisplayName;
+                _text.text = Rollgeon.Localization.LocalizedContent.Name(passive.PassiveId, passive.DisplayName);
         }
     }
 }
