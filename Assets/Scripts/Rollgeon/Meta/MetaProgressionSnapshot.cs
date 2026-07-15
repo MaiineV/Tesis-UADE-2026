@@ -26,5 +26,8 @@ namespace Rollgeon.Meta
 
         /// <summary>El jugador ya completó el tutorial — Play va directo al flujo normal.</summary>
         public bool TutorialCompleted;
+
+        /// <summary>El jugador apagó el tutorial desde el toggle del main menu.</summary>
+        public bool TutorialDisabled;
     }
 }

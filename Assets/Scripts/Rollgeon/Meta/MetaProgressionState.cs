@@ -33,6 +33,13 @@ namespace Rollgeon.Meta
         /// </summary>
         public bool TutorialCompleted;
 
+        /// <summary>
+        /// El jugador apagó el tutorial desde el toggle del main menu. Se guarda como
+        /// "Disabled" (no "Enabled") para que el default de C# (<c>false</c>) signifique
+        /// habilitado — así los saves viejos sin este campo no necesitan migración.
+        /// </summary>
+        public bool TutorialDisabled;
+
         // ---------------------------------------------------------------- ISaveable
 
         /// <inheritdoc />
@@ -48,6 +55,7 @@ namespace Rollgeon.Meta
                 ConsecutiveWins = ConsecutiveWins,
                 ClassesPlayed = new List<string>(ClassesPlayed),
                 TutorialCompleted = TutorialCompleted,
+                TutorialDisabled = TutorialDisabled,
             };
         }
 
@@ -59,6 +67,7 @@ namespace Rollgeon.Meta
             ClassesPlayed.Clear();
             ConsecutiveWins = 0;
             TutorialCompleted = false;
+            TutorialDisabled = false;
 
             if (state is not MetaProgressionSnapshot snapshot) return;
 
@@ -88,6 +97,7 @@ namespace Rollgeon.Meta
 
             ConsecutiveWins = snapshot.ConsecutiveWins;
             TutorialCompleted = snapshot.TutorialCompleted;
+            TutorialDisabled = snapshot.TutorialDisabled;
         }
     }
 }

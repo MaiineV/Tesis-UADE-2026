@@ -7,6 +7,7 @@ using Rollgeon.Heroes;
 using Rollgeon.Meta;
 using Rollgeon.Run;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -55,6 +56,15 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _tutorialButton;
 
+        [Tooltip("Boton toggle 'Tutorial: ON/OFF'. Prende/apaga el auto-launch del tutorial " +
+                 "(persiste en el save de meta-progresión). Opcional.")]
+        [SerializeField]
+        private Button _tutorialToggleButton;
+
+        [Tooltip("Label del boton toggle — se actualiza a 'Tutorial: ON' / 'Tutorial: OFF'.")]
+        [SerializeField]
+        private TMP_Text _tutorialToggleLabel;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -100,6 +110,12 @@ namespace Rollgeon.UI.Screens
                 _tutorialButton.onClick.AddListener(OnTutorialClicked);
             }
 
+            if (_tutorialToggleButton != null)
+            {
+                _tutorialToggleButton.onClick.AddListener(OnTutorialToggleClicked);
+                RefreshTutorialToggleLabel();
+            }
+
             ConsumePostTutorialRouting();
         }
 
@@ -111,6 +127,7 @@ namespace Rollgeon.UI.Screens
             if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
+            if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
         }
 
         /// <summary>
@@ -241,6 +258,30 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log(LogPrefix + "Tutorial clicked.", this);
             Rollgeon.Tutorial.TutorialLauncher.Launch();
+        }
+
+        /// <summary>
+        /// Handler del boton toggle. Invierte <see cref="IMetaProgressionService.IsTutorialEnabled"/>
+        /// y persiste — gatea tanto el auto-launch de la primera run como el boton "Tutorial".
+        /// </summary>
+        private void OnTutorialToggleClicked()
+        {
+            if (!ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) || meta == null)
+            {
+                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — no se puede togglear el tutorial.", this);
+                return;
+            }
+
+            meta.SetTutorialEnabled(!meta.IsTutorialEnabled);
+            RefreshTutorialToggleLabel();
+        }
+
+        private void RefreshTutorialToggleLabel()
+        {
+            if (_tutorialToggleLabel == null) return;
+
+            bool enabled = !ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) || meta == null || meta.IsTutorialEnabled;
+            _tutorialToggleLabel.text = enabled ? "Tutorial: ON" : "Tutorial: OFF";
         }
 
         /// <summary>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rollgeon — Item &amp; Upgrade Balance Reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#f7f7f9; --panel:#ffffff; --text:#1b1e23; --muted:#5b6270; --border:#dde1e7;
+    --accent:#7a3cff; --accent-bg:#efe7ff; --mono-bg:#f0f1f4; --table-stripe:#f3f4f7;
+    --warn-bg:#fff4e0; --warn-border:#e8b34d; --warn-text:#7a5200;
+    --good-bg:#e8f7ee; --good-text:#1d6b3d;
+    --tag-bg:#eef0f4; --tag-text:#43485533;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161b; --panel:#1c1f26; --text:#e7e9ee; --muted:#9aa1b0; --border:#2c303a;
+      --accent:#b48bff; --accent-bg:#2a2140; --mono-bg:#20232b; --table-stripe:#20232c;
+      --warn-bg:#3a2c10; --warn-border:#a97a1f; --warn-text:#f0c368;
+      --good-bg:#123423; --good-text:#7fd8a3;
+      --tag-bg:#252a34; --tag-text:#b8bfcc;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161b; --panel:#1c1f26; --text:#e7e9ee; --muted:#9aa1b0; --border:#2c303a;
+    --accent:#b48bff; --accent-bg:#2a2140; --mono-bg:#20232b; --table-stripe:#20232c;
+    --warn-bg:#3a2c10; --warn-border:#a97a1f; --warn-text:#f0c368;
+    --good-bg:#123423; --good-text:#7fd8a3;
+    --tag-bg:#252a34; --tag-text:#b8bfcc;
+  }
+  :root[data-theme="light"]{
+    --bg:#f7f7f9; --panel:#ffffff; --text:#1b1e23; --muted:#5b6270; --border:#dde1e7;
+    --accent:#7a3cff; --accent-bg:#efe7ff; --mono-bg:#f0f1f4; --table-stripe:#f3f4f7;
+    --warn-bg:#fff4e0; --warn-border:#e8b34d; --warn-text:#7a5200;
+    --good-bg:#e8f7ee; --good-text:#1d6b3d;
+    --tag-bg:#eef0f4; --tag-text:#43485533;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; padding:24px 32px 80px; max-width:1280px; margin:0 auto;
+  }
+  h1{font-size:1.7rem; margin-bottom:4px;}
+  h2{font-size:1.3rem; margin-top:48px; padding-bottom:8px; border-bottom:2px solid var(--border); display:flex; align-items:center; gap:10px;}
+  h3{font-size:1.05rem; margin-top:28px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:.8rem;}
+  .subtitle{color:var(--muted); margin-top:0; font-size:.95rem;}
+  .gen-note{color:var(--muted); font-size:.8rem; margin-top:2px;}
+  .intro{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:18px 22px; margin:20px 0 28px;
+  }
+  .intro p{margin:.5em 0;}
+  .intro code, code{
+    background:var(--mono-bg); padding:1px 6px; border-radius:5px; font-size:.85em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  .pricing-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:14px;}
+  @media (max-width:900px){ .pricing-grid{grid-template-columns:1fr;} }
+  .pricing-card{
+    background:var(--mono-bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px;
+  }
+  .pricing-card h4{margin:0 0 6px; font-size:.9rem; color:var(--accent);}
+  .pricing-card p{margin:.3em 0; font-size:.85rem;}
+  #search-box{
+    width:100%; padding:10px 14px; font-size:.95rem; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text);
+    margin:18px 0 8px; position:sticky; top:10px; z-index:5;
+  }
+  .search-wrap{position:sticky; top:0; background:var(--bg); padding:10px 0 0; z-index:10;}
+  .count-note{font-size:.78rem; color:var(--muted); margin-bottom:10px;}
+  table{
+    width:100%; border-collapse:collapse; background:var(--panel);
+    border:1px solid var(--border); border-radius:8px; overflow:hidden; font-size:.85rem;
+  }
+  caption{caption-side:top; text-align:left; color:var(--muted); font-size:.8rem; padding:6px 2px 10px;}
+  th, td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  th{background:var(--accent-bg); color:var(--text); font-weight:600; position:sticky; top:41px;}
+  tbody tr:nth-child(even){background:var(--table-stripe);}
+  tbody tr.hidden-row{display:none;}
+  .table-scroll{overflow-x:auto; border-radius:8px;}
+  .id{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.78rem; color:var(--muted); white-space:nowrap;}
+  .empty{color:var(--muted); font-style:italic;}
+  .tag{
+    display:inline-block; background:var(--tag-bg); border-radius:5px; padding:1px 6px;
+    font-size:.72rem; margin:1px 3px 1px 0; white-space:nowrap;
+  }
+  .trig-name{font-weight:600;}
+  .trig-params{color:var(--muted); font-size:.8rem;}
+  .flag-warn{
+    display:inline-block; background:var(--warn-bg); border:1px solid var(--warn-border);
+    color:var(--warn-text); border-radius:6px; padding:1px 8px; font-size:.72rem; font-weight:600;
+  }
+  .flag-good{
+    display:inline-block; background:var(--good-bg); color:var(--good-text);
+    border-radius:6px; padding:1px 8px; font-size:.72rem; font-weight:600;
+  }
+  .note{font-size:.8rem; color:var(--muted); margin-top:10px;}
+  .glossary{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:8px 18px;
+    margin:10px 0 6px; font-size:.82rem;
+  }
+  .glossary div{padding:6px 0; border-bottom:1px dashed var(--border);}
+  .glossary b{color:var(--accent);}
+  a{color:var(--accent);}
+  footer{margin-top:60px; color:var(--muted); font-size:.78rem; border-top:1px solid var(--border); padding-top:16px;}
+  .toc{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:.85rem; margin:10px 0 0;}
+  .toc a{text-decoration:none; padding:4px 10px; background:var(--panel); border:1px solid var(--border); border-radius:20px;}
+</style>
+</head>
+<body>
+
+<h1>Rollgeon — Item &amp; Upgrade Balance Reference</h1>
+<p class="subtitle">Referencia completa de valores para retuneo en el Inspector. Generado leyendo directamente los <code>.asset</code> y las clases C# del proyecto — ningún valor fue inventado o estimado.</p>
+<p class="gen-note">Última generación: 2026-07-14 · rama <code>sprint04/feature/warrior-passive-rework</code></p>
+
+<div class="toc">
+  <a href="#pricing">Pricing</a>
+  <a href="#enchantments">Dice Enchantments (33)</a>
+  <a href="#combo-passives">Combo Passives (2)</a>
+  <a href="#char-rewards">Character Rewards (4)</a>
+  <a href="#items">Items / Consumables (5)</a>
+  <a href="#unlocks">Meta Unlocks (4)</a>
+  <a href="#combos">Combos (9)</a>
+</div>
+
+<div class="intro" id="pricing">
+  <p><b>Hay 3 sistemas de pricing independientes en el juego.</b> No se pisan entre sí — cada uno vive en un config/pool distinto:</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <h4>1. Altar de Encantamiento</h4>
+      <p><code>EnchantmentConfig.asset</code> (<code>EnchantmentConfigSO</code>)</p>
+      <p><code>_baseCost</code> = <b>15</b></p>
+      <p><code>_reEnchantCostMultiplier</code> = <b>1.5</b></p>
+      <p><code>_minFacesAfterApply</code> = <b>1</b></p>
+      <p>Fórmula: <code>cost = ceil(baseCost × multiplier^rerollCount)</code>. Ej: 1° encanto 15G, 1° re-roll 23G, 2° re-roll 34G, 3° re-roll 51G. El contador es per-(dado, slot). No aplica a items ni combo passives.</p>
+    </div>
+    <div class="pricing-card">
+      <h4>2. Tienda (Shop)</h4>
+      <p><code>ShopPool.asset</code> tiene el <code>BasePrice</code> por entry (no vive en el asset del item). <code>ShopConfig.asset</code> aplica los globals.</p>
+      <p><code>PriceMultiplier</code> = <b>1.0</b>, <code>PriceVariance</code> = <b>0.1</b>, <code>MaxItemSlots</code> = <b>3</b></p>
+      <p>Fórmula: <code>finalPrice = round(basePrice × PriceMultiplier × rng(0.9, 1.1))</code>. Ver tabla de Items para el <code>BasePrice</code> de cada entry.</p>
+    </div>
+    <div class="pricing-card">
+      <h4>3. Combo Passive — costo propio</h4>
+      <p>Campo <code>_shopCost</code> en el propio asset del <code>ComboPassiveSO</code> — <b>independiente</b> del BasePrice de la Shop Pool.</p>
+      <p>Ambas Combo Passives actuales están wireadas en <code>ShopPool.asset</code> también, y en ambos casos el <code>_shopCost</code> propio coincide numéricamente con el <code>BasePrice</code> de la pool (30G y 20G) — pero son dos campos separados; si se edita uno, hay que revisar el otro a mano.</p>
+    </div>
+  </div>
+  <p>Para <b>rareza / probabilidad de aparición</b> (no hay campo <code>Rarity</code> explícito salvo en <code>ItemSO</code>): se usa el <code>Weight</code> + <code>MinFloorDepth</code> del pool correspondiente (<code>EnchantmentPool</code>, <code>CharacterRewardPool</code>, <code>ComboPassivePool</code>, <code>ShopPool</code>). Todas las 33 enchantments, las 4 character rewards y las 2 combo passives están actualmente con <code>Weight=1</code> y <code>MinFloorDepth=0</code> — o sea, sin diferenciación de rareza real todavía (todo el pool es uniforme).</p>
+</div>
+
+<div class="search-wrap">
+  <input id="search-box" type="text" placeholder="Filtrar todas las tablas por texto (id, nombre, trigger, combo...)">
+</div>
+<p class="count-note" id="count-note"></p>
+
+<h2 id="enchantments">1. Dice Enchantments <span class="tag">33 assets</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Upgrades/Dice/Enchantments/*.asset</code> · Clase: <code>EnchantmentSO</code> (Odin). Todos con <code>Weight=1</code>, <code>MinFloorDepth=0</code> en <code>EnchantmentPool.asset</code> (33/33 assets están en el pool).</p>
+
+<h3>Glosario de Triggers (efecto real, en código)</h3>
+<div class="glossary">
+  <div><b>ClampMinToHalfMax</b> — el resultado mínimo del dado se clampea a ceil(maxFace/2).</div>
+  <div><b>AnchorAccumulate</b> — +1 por roll holdeado consecutivo, tope <code>MaxAccumulation</code>. <span class="flag-warn">Phase 4 pendiente</span> (hold-detection no wireada aún — no-op en la práctica).</div>
+  <div><b>ModifyResourceTrigger</b> — genérico: Add/Subtract/Multiply/Set sobre Gold o un Stat, disparado por ComboMatched/RollResolved/DiceRolled, con filtro opcional de combo id y condición extra (NoComboMatched / DieOnMaxFace).</div>
+  <div><b>RerollKeepHighest</b> — una vez por combate, reroll y queda con el mayor. <span class="flag-warn">MVP placeholder</span> (solo trackea el "usado", el reroll real no está wireado).</div>
+  <div><b>ChanceToNotCount</b> — % chance de que el dado no cuente para el combo (<code>FailChance</code>).</div>
+  <div><b>WildcardForCombo</b> — el dado cuenta como cualquier valor para combos. <span class="flag-warn">Stub Phase 4</span> (ContractSheet aún no lo consume).</div>
+  <div><b>EscaladorStep</b> — cuenta como su valor y valor+1 para escaleras. <span class="flag-warn">Stub Phase 4</span>.</div>
+  <div><b>InvertResult</b> — resultado = maxFace+1−resultado.</div>
+  <div><b>DoubleMaxZeroMin</b> — duplica el resultado si sale el máximo; lo anula (0) si sale el mínimo (1).</div>
+  <div><b>SubtractFromResult</b> — resta <code>Amount</code> del resultado (aplicado como penalidad de daño de combo).</div>
+  <div><b>AddFlatToResult</b> — suma <code>Bonus</code> al resultado (aplicado como bonus de daño de combo).</div>
+  <div><b>TwinBonus</b> — si comparte valor con otro dado, ambos multiplican el daño del combo por <code>BonusMultiplier</code>. <span class="flag-warn">Excepción autorada</span> — multiplicativo, no sumar como plantilla.</div>
+  <div><b>ParityScoreMultiplier</b> — multiplica el daño de combo según paridad del dado carrier (<code>MultiplierOdd</code>/<code>MultiplierEven</code>). <span class="flag-warn">Excepción autorada</span> — multiplicativo.</div>
+  <div><b>ResonantDoubleCount</b> — si 2+ dados comparten valor, este dado suma su valor otra vez al combo.</div>
+  <div><b>SpendGoldOnComboParticipation</b> — gasta <code>Cost</code> de oro cada vez que participa en combo; si no alcanza, bloquea el daño del combo.</div>
+  <div><b>ForceRerollOnTurn</b> — fuerza reroll completo en <code>TriggerOnTurn</code>. <span class="flag-warn">Stub Phase 4</span> (solo loguea un warning).</div>
+  <div><b>PreventHolding</b> — el dado no puede holdearse. <span class="flag-warn">Stub Phase 4</span> (marcador, el roll service aún no lo aplica).</div>
+  <div><b>MimeticCopy</b> — copia el resultado del último dado rerolled. <span class="flag-warn">Stub Phase 4</span> (falta historial de rerolls).</div>
+</div>
+
+<h3>Glosario de Face Filters</h3>
+<div class="glossary">
+  <div><b>ParityFilter</b> — solo caras pares o solo impares (<code>Allowed</code>).</div>
+  <div><b>RelativeHalfFilter</b> — mitad superior o inferior del rango del dado (<code>Side</code>).</div>
+  <div><b>CenterQuartersFilter</b> — bloquea el cuarto inferior y superior, deja el 50% central.</div>
+  <div><b>ExtremesFilter</b> — inverso: deja solo el cuarto inferior y superior.</div>
+  <div><b>MultipleOfNFilter</b> — solo múltiplos de <code>N</code>.</div>
+  <div><b>OnlyPrimesFilter</b> — solo caras primas.</div>
+  <div><b>NotPrimesFilter</b> — solo caras no primas (incluye el 1).</div>
+</div>
+
+<div class="table-scroll">
+<table id="tbl-enchantments">
+<thead><tr>
+  <th>ID</th><th>Nombre</th><th>Descripción</th><th>Dados permitidos</th><th>Face Filter</th><th>Triggers</th>
+</tr></thead>
+<tbody>
+
+<tr><td class="id">ench.afilado</td><td>Afilado</td><td>El resultado minimo es siempre la mitad del maximo redondeado arriba. Un d6 afilado nunca saca menos de 3.</td><td><span class="tag">D4</span><span class="tag">D6</span></td><td class="empty">—</td><td><span class="trig-name">ClampMinToHalfMax</span></td></tr>
+
+<tr><td class="id">ench.ancla</td><td>Ancla</td><td>Si este dado se holdea entre rolls, su resultado aumenta +1 por roll holdeado (max +3).</td><td><span class="tag">D6</span><span class="tag">D10</span></td><td class="empty">—</td><td><span class="trig-name">AnchorAccumulate</span> <span class="trig-params">(MaxAccumulation=3)</span> <span class="flag-warn">Phase 4 pendiente</span></td></tr>
+
+<tr><td class="id">ench.avaro</td><td>Avaro</td><td>Otorga 3 de oro extra al completar un combo de trio o superior.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=ComboMatched, Combos=[trio, poker, generala], Target=Gold, Op=Add, Amount=3)</span></td></tr>
+
+<tr><td class="id">ench.caras_centrales</td><td>Caras Centrales</td><td>Bloquea el cuarto superior e inferior. d8:{3,4,5,6} d12:{4,5,6,7,8,9}</td><td><span class="tag">D8</span><span class="tag">D10</span><span class="tag">D12</span></td><td>CenterQuartersFilter</td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.cargado</td><td>Cargado</td><td>Una vez por combate podes relanzar este dado y quedarte con el mayor resultado.</td><td><span class="tag">D12</span><span class="tag">D20</span></td><td class="empty">—</td><td><span class="trig-name">RerollKeepHighest</span> <span class="flag-warn">MVP placeholder — reroll no wireado</span></td></tr>
+
+<tr><td class="id">ench.codicioso</td><td>Codicioso</td><td>El dado participa en cualquier combo y suma +3 de oro.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=ComboMatched, Combos=Any, Target=Gold, Op=Add, Amount=3)</span></td></tr>
+
+<tr><td class="id">ench.comodin</td><td>Comodín</td><td>Este dado cuenta como cualquier numero para propositos de combo (escaleras, trio, generala).</td><td><span class="tag">D3</span><span class="tag">D4</span></td><td class="empty">—</td><td><span class="trig-name">WildcardForCombo</span> <span class="flag-warn">Stub Phase 4</span></td></tr>
+
+<tr><td class="id">ench.escalador</td><td>Escalador</td><td>Para escaleras, este dado cuenta como su valor y como valor+1 simultaneamente.</td><td><span class="tag">D4</span><span class="tag">D6</span></td><td class="empty">—</td><td><span class="trig-name">EscaladorStep</span> <span class="flag-warn">Stub Phase 4</span></td></tr>
+
+<tr><td class="id">ench.escudado</td><td>Escudado</td><td>Si se utiliza en un combo de full house da 2 mas de escudo.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=ComboMatched, Combos=[full_house], Target=Stat:Shield, Op=Add, Amount=2)</span></td></tr>
+
+<tr><td class="id">ench.extremos</td><td>Extremos</td><td>Solo muestra el cuarto superior e inferior. d8:{1,2,7,8} d12:{1,2,3,10,11,12}</td><td><span class="tag">D8</span><span class="tag">D10</span><span class="tag">D12</span></td><td>ExtremesFilter</td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.fortaleza</td><td>Fortaleza</td><td>El dado muestra su valor maximo y participa en combo, genera 2 puntos de escudo.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=ComboMatched, Combos=Any, Target=Stat:Shield, Op=Add, Amount=2, Condition=DieOnMaxFace)</span></td></tr>
+
+<tr><td class="id">ench.fragil</td><td>Frágil</td><td>50% de chance de que el dado no cuente para el combo.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ChanceToNotCount</span> <span class="trig-params">(FailChance=0.5)</span></td></tr>
+
+<tr><td class="id">ench.gemelo</td><td>Gemelo</td><td>Si este dado muestra el mismo numero que otro en la tirada, ambos valen x1.5 para el combo.</td><td><span class="tag">D6</span><span class="tag">D8</span></td><td class="empty">—</td><td><span class="trig-name">TwinBonus</span> <span class="trig-params">(BonusMultiplier=1.5)</span> <span class="flag-warn">multiplicativo — excepción autorada</span></td></tr>
+
+<tr><td class="id">ench.gold_on_roll</td><td>Greed</td><td>If the dice is not in a combo, win 2 gold.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=RollResolved, Target=Gold, Op=Add, Amount=2, Condition=NoComboMatched)</span></td></tr>
+
+<tr><td class="id">ench.impar</td><td>Impar</td><td>Solo muestra caras impares. d6:{1,3,5} d8:{1,3,5,7} d12:{1,3,5,7,9,11}</td><td><span class="tag">D6</span><span class="tag">D8</span><span class="tag">D12</span></td><td>ParityFilter <span class="trig-params">(Allowed=Odd)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.invertido</td><td>Invertido</td><td>El resultado es maximo+1 menos resultado. Un d6 que saca 1 cuenta como 6.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">InvertResult</span></td></tr>
+
+<tr><td class="id">ench.lento</td><td>Lento</td><td>Este dado no se puede holdear entre rolls.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">PreventHolding</span> <span class="flag-warn">Stub Phase 4</span></td></tr>
+
+<tr><td class="id">ench.mercader</td><td>Mercader</td><td>Otorga 5 de oro al completar una escalera.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ModifyResourceTrigger</span> <span class="trig-params">(When=ComboMatched, Combos=[ladder], Target=Gold, Op=Add, Amount=5)</span></td></tr>
+
+<tr><td class="id">ench.mimetico</td><td>Mimético</td><td>Copia el resultado del ultimo dado rerolled en esta tirada para propositos de combo.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">MimeticCopy</span> <span class="flag-warn">Stub Phase 4</span></td></tr>
+
+<tr><td class="id">ench.mitad_inferior</td><td>Mitad Inferior</td><td>Solo muestra la mitad inferior del dado. d6:{1,2,3} d8:{1,2,3,4} d12:{1,2,3,4,5,6}</td><td><span class="tag">D6</span><span class="tag">D8</span><span class="tag">D12</span></td><td>RelativeHalfFilter <span class="trig-params">(Side=Lower)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.mitad_superior</td><td>Mitad Superior</td><td>Solo muestra la mitad superior del dado. d6:{4,5,6} d8:{5,6,7,8} d12:{7,8,9,10,11,12}</td><td><span class="tag">D6</span><span class="tag">D8</span><span class="tag">D12</span></td><td>RelativeHalfFilter <span class="trig-params">(Side=Upper)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.multiplo_de_3</td><td>Multiplo de 3</td><td>Solo muestra multiplos de 3. d12:{3,6,9,12}</td><td><span class="tag">D6</span><span class="tag">D12</span></td><td>MultipleOfNFilter <span class="trig-params">(N=3)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.no_primo</td><td>No Primo</td><td>Solo muestra numeros no primos (incluye el 1). d8:{1,4,6,8}</td><td><span class="tag">D8</span></td><td>NotPrimesFilter</td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.only_evens</td><td>Only Evens</td><td>This Dice only rolls Even numbers.</td><td class="empty">— (todos)</td><td>ParityFilter <span class="trig-params">(Allowed=Even)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.oxidado</td><td>Oxidado</td><td>El dado pierde 1 de su resultado final (minimo 1).</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">SubtractFromResult</span> <span class="trig-params">(Amount=1)</span></td></tr>
+
+<tr><td class="id">ench.par</td><td>Par</td><td>Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}</td><td><span class="tag">D6</span><span class="tag">D8</span><span class="tag">D12</span></td><td>ParityFilter <span class="trig-params">(Allowed=Even)</span></td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.parity_gamble</td><td>Parity Gamble</td><td>If this dice rolls an Odd number multiplies x3, if not x0</td><td><span class="tag">D6</span><span class="tag">D8</span><span class="tag">D10</span><span class="tag">D12</span><span class="tag">D20</span></td><td class="empty">—</td><td><span class="trig-name">ParityScoreMultiplier</span> <span class="trig-params">(MultiplierOdd=3, MultiplierEven=0)</span> <span class="flag-warn">multiplicativo — excepción autorada</span></td></tr>
+
+<tr><td class="id">ench.pesado</td><td>Pesado</td><td>Suma +2 al resultado final del dado.</td><td><span class="tag">D4</span><span class="tag">D6</span></td><td class="empty">—</td><td><span class="trig-name">AddFlatToResult</span> <span class="trig-params">(Bonus=2)</span></td></tr>
+
+<tr><td class="id">ench.primo</td><td>Primo</td><td>Solo muestra numeros primos. d12:{2,3,5,7,11}</td><td><span class="tag">D8</span><span class="tag">D10</span><span class="tag">D12</span></td><td>OnlyPrimesFilter</td><td class="empty">—</td></tr>
+
+<tr><td class="id">ench.resonante</td><td>Resonante</td><td>Si 2+ dados muestran el mismo numero en la tirada final, este dado suma su valor dos veces al combo.</td><td><span class="tag">D8</span><span class="tag">D12</span></td><td class="empty">—</td><td><span class="trig-name">ResonantDoubleCount</span></td></tr>
+
+<tr><td class="id">ench.sediento</td><td>Sediento</td><td>Cada vez que participa en combo consume 2 de oro. Sin oro no puede participar.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">SpendGoldOnComboParticipation</span> <span class="trig-params">(Cost=2)</span></td></tr>
+
+<tr><td class="id">ench.torpe</td><td>Torpe</td><td>Fuerza un reroll completo en el turno 2 del combate.</td><td class="empty">— (todos)</td><td class="empty">—</td><td><span class="trig-name">ForceRerollOnTurn</span> <span class="trig-params">(TriggerOnTurn=2)</span> <span class="flag-warn">Stub Phase 4 — solo loguea</span></td></tr>
+
+<tr><td class="id">ench.volatil</td><td>Volatil</td><td>Al sacar el maximo el resultado se duplica. Al sacar el minimo vale 0.</td><td><span class="tag">D12</span><span class="tag">D20</span></td><td class="empty">—</td><td><span class="trig-name">DoubleMaxZeroMin</span></td></tr>
+
+</tbody>
+</table>
+</div>
+<p class="note">"Dados permitidos" vacío = el encantamiento aplica a cualquier <code>DiceType</code> (sin restricción en <code>_allowedDiceTypes</code>). Varios triggers (marcados <span class="flag-warn">Phase 4 / Stub</span>) existen en el SO y compilan, pero su efecto mecánico real todavía no está wireado al roll/combo service — hoy son no-ops o solo loguean. Chequear el código fuente en <code>Assets/Scripts/Rollgeon/Upgrades/Dice/Triggers/Concretes/</code> antes de asumir que un cambio de valor en el Inspector tiene efecto in-game para esos casos.</p>
+
+<h2 id="combo-passives">2. Combo Passives <span class="tag">2 assets</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Upgrades/Combos/Passives/*.asset</code> · Clase: <code>ComboPassiveSO</code>. Se aplican al <code>_targetComboId</code>; <code>_flatDamageBonus</code> es un bonus plano de daño al matchear ese combo, sumado a <code>_extraTriggers</code> opcionales.</p>
+<div class="table-scroll">
+<table id="tbl-combopassives">
+<thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Combo target</th><th>Flat Damage Bonus</th><th>Extra Triggers</th><th>_shopCost</th><th>Shop Pool BasePrice</th></tr></thead>
+<tbody>
+<tr><td class="id">combo.pass.gold_on_ladder</td><td>Greed on Ladder</td><td>Each Ladder combo gives gold</td><td class="id">combo.ladder</td><td class="empty">— (null)</td><td><span class="trig-name">AddGoldOnComboMatch</span> <span class="trig-params">(Amount=3 gold)</span></td><td>30</td><td>30 <span class="flag-good">coincide</span></td></tr>
+<tr><td class="id">combo_pass.pair_plus_50</td><td>Pair Bonus</td><td>+50 damage when matching Pair</td><td class="id">combo.pair</td><td>ReadConstantInt = 50</td><td class="empty">—</td><td>20</td><td>20 <span class="flag-good">coincide</span></td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Ambas están además en <code>ComboPassivePool.asset</code> con <code>Weight=1</code>, <code>MinFloorDepth=0</code> cada una (pool de aparición, uniforme). El trigger <code>AddGoldOnComboMatch</code> suma oro (<code>Scratch.BonusGold</code>), no daño — la pasiva "Greed on Ladder" no tiene <code>_flatDamageBonus</code> (queda null) y todo su efecto vive en el extra trigger.</p>
+
+<h2 id="char-rewards">3. Character Rewards <span class="tag">4 assets</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Upgrades/Character/Rewards/*.asset</code> · Clase: <code>CharacterRewardSO</code>. Se entregan al clarear un boss (elegís 1 de 3 en pedestales); el bonus es permanente para la run (<code>ModifierLifetime.Run</code>, operación Add).</p>
+<div class="table-scroll">
+<table id="tbl-charrewards">
+<thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Target Stat</th><th>Amount</th><th>Pool Weight / MinFloorDepth</th></tr></thead>
+<tbody>
+<tr><td class="id">char_rew.hp_plus_5</td><td>Max Health</td><td class="empty">(vacío)</td><td>Health</td><td>5</td><td>1 / 0</td></tr>
+<tr><td class="id">char_rew.energy_plus_1</td><td>Energy+</td><td class="empty">(vacío)</td><td>Energy</td><td>1</td><td>1 / 0</td></tr>
+<tr><td class="id">char_rew.speed_plus_2</td><td>Speed+</td><td class="empty">(vacío)</td><td>Speed</td><td>2</td><td>1 / 0</td></tr>
+<tr><td class="id">char_rew.attack_plus_3</td><td>Attack+</td><td class="empty">(vacío)</td><td>Attack</td><td>3</td><td>1 / 0</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note"><b>Data quality:</b> las 4 rewards tienen <code>_description</code> vacío — solo tienen <code>_displayName</code>. No hay texto de tooltip para el jugador todavía en ninguna de las 4.</p>
+
+<h2 id="items">4. Items / Consumables <span class="tag">5 assets</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Rooms/Shop/Items/*.asset</code> — mezcla de <code>ItemSO</code> (lógica de efecto real) y <code>ShopItemDef</code> (identidad vendible en tienda). Solo <code>ShopItemDef</code> puede entrar en <code>ShopPool.asset</code> junto con <code>ComboPassiveSO</code>.</p>
+<div class="table-scroll">
+<table id="tbl-items">
+<thead><tr><th>Asset</th><th>Clase</th><th>ItemId</th><th>DisplayName</th><th>Descripción</th><th>Datos de efecto / notas</th><th>En ShopPool</th></tr></thead>
+<tbody>
+<tr><td>D20Die.asset</td><td>ShopItemDef</td><td class="id">Item01</td><td>D20 DIE</td><td class="empty">(vacío)</td><td class="empty">— sin efecto propio (solo identidad de shop)</td><td><span class="flag-warn">NO</span> — huérfano, no referenciado en ShopPool</td></tr>
+<tr><td>D20DieEnchantmentPlus.asset</td><td>ShopItemDef</td><td class="id">Item01</td><td>D20 DIE</td><td class="empty">(vacío)</td><td class="empty">—</td><td><span class="flag-warn">NO</span> — huérfano, no referenciado en ShopPool</td></tr>
+<tr><td>D20DieEnhancent.asset</td><td>ShopItemDef</td><td class="id">Item01</td><td>D20 DIE</td><td class="empty">(vacío)</td><td class="empty">—</td><td><span class="flag-warn">NO</span> — huérfano, no referenciado en ShopPool</td></tr>
+<tr><td>Item_HealingPotion.asset</td><td>ItemSO</td><td class="id">potion.healing</td><td>Potion</td><td class="empty">(vacío)</td><td>Rarity=Common, Type=Active, Cooldown=0, ConsumedOnUse=true, ConsumesAction=false. Efecto <code>EffHeal</code>: <code>_baseAmount=10</code> pero <code>_useDiceRoll=true</code> (1d10) — <b>la tirada de dado reemplaza por completo el base amount</b>, no lo suma (ver nota abajo).</td><td class="empty">no directamente (ver ShopItem_HealingPotion)</td></tr>
+<tr><td>ShopItem_HealingPotion.asset</td><td>ShopItemDef</td><td class="id">potion.healing</td><td>Potion</td><td class="empty">(vacío)</td><td>Wrapper de tienda para el mismo <code>ItemId</code> que Item_HealingPotion (misma identidad, dos assets: uno declara el efecto, el otro la venta).</td><td><span class="flag-good">SÍ</span> — Weight=4, BasePrice=8, MinFloorDepth=0</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note"><span class="flag-warn">Data quality — placeholders/duplicados:</span> <code>D20Die</code>, <code>D20DieEnchantmentPlus</code> y <code>D20DieEnhancent</code> son 3 assets distintos con el <b>mismo</b> <code>ItemId="Item01"</code>, mismo <code>DisplayName</code>, mismo ícono y <code>Description</code> vacía — no son 3 items reales, son restos de experimentación. Ninguno de los 3 está referenciado en <code>ShopPool.asset</code>, así que hoy no aparecen en la tienda. Recomendación: quedarse con uno solo (o borrar los 3 si el D20 ya no es un item vendible) antes de que alguien los cargue por error a un pool.</p>
+<p class="note"><b>Nota de balance:</b> en <code>EffHeal</code>, cuando <code>_useDiceRoll=true</code> el código descarta <code>_baseAmount</code> y devuelve directo la suma de la tirada (<code>Nd(faces)</code>) — así que el "10" configurado en <code>_baseAmount</code> de la Potion no tiene efecto mientras <code>_useDiceRoll</code> siga en true; el heal real es 1d10 (rango 1–10). Confirmar con programación si esto es intencional antes de subir/bajar el <code>_baseAmount</code> esperando que cambie algo.</p>
+
+<h2 id="unlocks">5. Meta Unlocks <span class="tag">4 assets</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Meta/Unlocks/*.asset</code> · Clase: <code>UnlockDefinitionSO</code>. La condición se arma con bloques <code>IUnlockCondition</code> (Odin polimórfico).</p>
+<div class="table-scroll">
+<table id="tbl-unlocks">
+<thead><tr><th>UnlockId</th><th>DisplayName</th><th>Category</th><th>TargetId</th><th>Descripción</th><th>HintText</th><th>AppliesTo</th><th>Condición</th></tr></thead>
+<tbody>
+<tr><td class="id">unlock.class.berserker</td><td>Berserker</td><td>HeroClass</td><td class="id">Berserker</td><td>El Berserker queda seleccionable en la pantalla de selección de personaje.</td><td>Demostrá fuerza de ocho caras: llevá el dado nuevo a una victoria.</td><td>Won</td><td><b>DiceCountOfTypeCondition</b>: Type=D8, Count=1, Comparison=AtLeast (al menos 1 D8 en la build)</td></tr>
+<tr><td class="id">unlock.class.gambler</td><td>Gambler</td><td>HeroClass</td><td class="id">Gambler</td><td>El Gambler queda seleccionable en la pantalla de selección de personaje.</td><td>Un verdadero apostador no deja ninguna jugada del Contrato sin cobrar.</td><td>Won</td><td><b>AllContractCombosExecutedCondition</b> (sin parámetros — todos los combos del Contrato de la clase jugada ejecutados al menos 1 vez)</td></tr>
+<tr><td class="id">unlock.dice.d10</td><td>Dado D10</td><td>Dice</td><td class="id">D10</td><td>El D10 queda disponible en la pantalla de armado de build.</td><td>Hay una receta exacta de dados que abre esta puerta. Experimentá con la mezcla.</td><td>Won</td><td><b>DiceCombinationCondition</b>: Combination=[D4, D4, D6, D6, D8] (multiset exacto, 5 dados, orden no importa)</td></tr>
+<tr><td class="id">unlock.dice.d8</td><td>Dado D8</td><td>Dice</td><td class="id">D8</td><td>El D8 queda disponible en la pantalla de armado de build.</td><td>Dominá el dado estándar: ganá una run confiando solo en el clásico de seis caras.</td><td>Won</td><td><b>DiceCountOfTypeCondition</b>: Type=D6, Count=5, Comparison=Exactly (build de exactamente 5 D6)</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">AppliesTo=Won en las 4 — ninguna es evaluable con derrota ni mid-run (solo <code>Any</code> permitiría notificación inmediata). Notar que <code>unlock.dice.d10</code> exige una build <i>sin</i> D10 (5 dados D4/D4/D6/D6/D8) — el desbloqueo de D10 no depende de usar D10.</p>
+
+<h2 id="combos">6. Combos <span class="tag">9 assets (8 combos + 1 catálogo)</span></h2>
+<p>Fuente: <code>Assets/Rollgeon/Combos/*.asset</code> · Clase base: <code>BaseComboSO</code> (no Odin para los campos core — <code>_comboId</code>, <code>_baseDamage</code>, <code>_valueMultipliers[6]</code>, <code>_generalMultiplier</code> son YAML plano). No son comprables — están acá de referencia porque las Combo Passives (sección 2) apuntan a un <code>_targetComboId</code> de esta tabla. <code>ComboCatalog.asset</code> referencia los 9 combos (incluido Combo_HighNumber).</p>
+<div class="table-scroll">
+<table id="tbl-combos">
+<thead><tr><th>Asset / Clase</th><th>ComboId</th><th>Nombre</th><th>Descripción</th><th>BaseDamage</th><th>ValueMultipliers[1..6]</th><th>GeneralMultiplier</th><th>Notas</th></tr></thead>
+<tbody>
+<tr><td>Combo_Par (Combo_Par)</td><td class="id">combo.pair</td><td>Par</td><td>2 dados del mismo valor</td><td>8</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_DoblePar (Combo_DoblePar)</td><td class="id">combo.double_pair</td><td>Doble Par</td><td>2 dados del mismo valor</td><td>15</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_Trio (Combo_Trio)</td><td class="id">combo.trio</td><td>Trio</td><td>3 dados del mismo valor</td><td>22</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_FullHouse (Combo_FullHouse)</td><td class="id">combo.full_house</td><td>FullHouse</td><td>2 dados de un valor y 3 de otro</td><td>35</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_Escalera (Combo_Escalera)</td><td class="id">combo.ladder</td><td>Escalera</td><td>Dados en escalera</td><td>40</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_Poker (Combo_Poker)</td><td class="id">combo.poker</td><td>Poker</td><td>4 dados del mismo valor</td><td>55</td><td>0,0,0,0,0,0</td><td>1</td><td class="empty">—</td></tr>
+<tr><td>Combo_Generala (Combo_Generala)</td><td class="id">combo.generala</td><td>Generala</td><td>5 dados del mismo valor</td><td>90</td><td>0,0,0,0,0,0</td><td>1</td><td>Priority = int.MaxValue (siempre gana el desempate)</td></tr>
+<tr><td>Combo_FuerzaBruta (Combo_FuerzaBruta)</td><td class="id">combo.brute_force</td><td>Fuerza Bruta</td><td>Se activa cuando los 5 dados de tu tirada caen en la mitad superior de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12, etc.). Dano = piso + suma de los 5 valores.</td><td>30 (campo base, no usado — ver BaseDamageConfigurable)</td><td>0,0,0,0,0,0</td><td>1</td><td><code>_baseDamageConfigurable=5</code> — daño real = 5 + Σ(los 5 valores). Único combo que depende del <code>DiceType</code>, no solo del valor.</td></tr>
+<tr><td>Combo_HighNumber (Combo_SumaX)</td><td class="id">combo.higher_number</td><td>Higher Number</td><td>Dado mas alto</td><td>5 (campo base, no usado — ver BaseDamageConfigurable)</td><td>0,0,0,0,0,0</td><td>1</td><td><code>_x=4</code>, <code>_baseDamageConfigurable=10</code> — daño real = 10 + 4×hits (hits = dados que muestran 4). <span class="flag-warn">Unlinked from Warrior — legacy/placeholder combo, kept for other classes if needed.</span></td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Los 6 combos "estándar" (Par, DoblePar, Trio, FullHouse, Escalera, Poker, Generala) tienen <code>_valueMultipliers</code> en 0 — hoy el daño es 100% el <code>_baseDamage</code> plano, la fórmula <code>ComputeCount</code> (Σ pip×multiplier × generalMultiplier) no aporta nada mientras los multipliers sigan en 0. Fuerza Bruta y Higher Number (Combo_SumaX) tienen su propia lógica de <code>Detect()</code> override que suma dinámicamente encima del piso configurable — no usan <code>_valueMultipliers</code> tampoco.</p>
+
+<footer>
+  Generado leyendo <code>.asset</code> (Odin <code>SerializationNodes</code> + YAML plano) y las clases C# fuente bajo <code>Assets/Scripts/Rollgeon/</code>. Ningún valor numérico fue estimado — si un campo aparece vacío en el juego, se muestra "—" o "(vacío)" acá también.
+</footer>
+
+<script>
+(function(){
+  var box = document.getElementById('search-box');
+  var tables = Array.prototype.slice.call(document.querySelectorAll('table[id^="tbl-"]'));
+  var countNote = document.getElementById('count-note');
+
+  function applyFilter(){
+    var q = box.value.trim().toLowerCase();
+    var totalVisible = 0, totalRows = 0;
+    tables.forEach(function(t){
+      var rows = t.tBodies[0] ? Array.prototype.slice.call(t.tBodies[0].rows) : [];
+      rows.forEach(function(r){
+        totalRows++;
+        var text = r.textContent.toLowerCase();
+        var show = q === '' || text.indexOf(q) !== -1;
+        r.classList.toggle('hidden-row', !show);
+        if (show) totalVisible++;
+      });
+    });
+    countNote.textContent = q === ''
+      ? ('Total de filas en todas las tablas: ' + totalRows)
+      : ('Mostrando ' + totalVisible + ' de ' + totalRows + ' filas para "' + q + '"');
+  }
+
+  box.addEventListener('input', applyFilter);
+  applyFilter();
+})();
+</script>
+</body>
+</html>

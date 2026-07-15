@@ -188,6 +188,19 @@ namespace Rollgeon.Meta
         }
 
         /// <inheritdoc />
+        public bool IsTutorialEnabled => !State.TutorialDisabled;
+
+        /// <inheritdoc />
+        public void SetTutorialEnabled(bool enabled)
+        {
+            bool disabled = !enabled;
+            if (State.TutorialDisabled == disabled) return;
+            State.TutorialDisabled = disabled;
+            SaveNow();
+            Debug.Log(LogPrefix + $"Tutorial {(enabled ? "habilitado" : "deshabilitado")} — persiste en el save de meta-progresión.");
+        }
+
+        /// <inheritdoc />
         public void SaveNow()
         {
             _store?.Save((MetaProgressionSnapshot)State.CaptureState());

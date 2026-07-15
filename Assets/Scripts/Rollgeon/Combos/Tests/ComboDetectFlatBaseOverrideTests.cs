@@ -92,32 +92,50 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void FuerzaBruta_Detect_NullOverride_UsesConfigurableFloorPlusDynamicPart()
         {
-            // d6=5 y d8=6 en mitad superior; d12=6 no. Piso 5 + (5+6) = 16.
+            // Requiere los 5 dados de la bolsa (DiceBagSO.RequiredSize) — todos en mitad
+            // superior. Piso 5 + (5+6+7+5+6) = 34.
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
             };
-            var result = _fuerzaBruta.Detect(new[] { 5, 6, 6 }, types, null);
+            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, null);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(16, result.BaseDamage);
-            Assert.AreEqual(2, result.CountUsed);
-            CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
+            Assert.AreEqual(34, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
 
         [Test]
         public void FuerzaBruta_Detect_WithOverride_ReplacesFlatPartOnly()
         {
-            // El override reemplaza solo el piso; la suma dinámica va encima: 40 + (5+6) = 51.
+            // El override reemplaza solo el piso; la suma dinámica va encima: 40 + (5+6+7+5+6) = 69.
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
+            };
+            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, 40);
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(69, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+        }
+
+        [Test]
+        public void FuerzaBruta_Detect_SubsetOfThreeAllUpperHalf_NoMatch()
+        {
+            // Regresión Bocco (2026-07-14): un subset "kept" de 3 dados, todos en mitad
+            // superior, NO debe matchear — Fuerza Bruta exige la bolsa completa (5).
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
             };
-            var result = _fuerzaBruta.Detect(new[] { 5, 6, 6 }, types, 40);
+            var result = _fuerzaBruta.Detect(new[] { 5, 6, 7 }, types, null);
 
-            Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(51, result.BaseDamage);
-            Assert.AreEqual(2, result.CountUsed);
+            Assert.IsFalse(result.IsMatch);
+            Assert.AreEqual(0, result.BaseDamage);
         }
     }
 }
