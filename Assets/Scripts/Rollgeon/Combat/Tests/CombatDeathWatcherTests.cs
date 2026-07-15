@@ -12,6 +12,7 @@ using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
@@ -186,7 +187,62 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(CombatOutcome.Victory, _signaller.LastOutcome);
         }
 
+        [Test]
+        public void FinalKill_Deferred_WhenRoomUnchanged_TriggersVictory()
+        {
+            // Con feedback service, la Victory se difiere hasta que la animación de muerte
+            // termina. Si el combate no cambió de sala, el callback cierra normalmente.
+            UseDeferredFeedback(out var feedback);
+
+            var enemyId = Guid.NewGuid();
+            SetupRoom(enemyId);
+
+            RaiseLethal(_player.PlayerGuid, enemyId);
+            Assert.IsNull(_signaller.LastOutcome, "Victory debe diferirse hasta completar el feedback.");
+
+            feedback.CompleteAll();
+
+            Assert.AreEqual(CombatOutcome.Victory, _signaller.LastOutcome);
+        }
+
+        [Test]
+        public void FinalKill_Deferred_WhenRoomChangedBeforeComplete_DoesNotTriggerVictory()
+        {
+            // Regresión "combate colgado": el callback diferido llega tarde, ya en OTRO combate
+            // (otra sala). No debe cerrar el combate vigente — sería un OnCombatEnd espurio que
+            // sobre-popea la exploración.
+            UseDeferredFeedback(out var feedback);
+
+            var enemyId = Guid.NewGuid();
+            SetupRoom(enemyId); // sala R1
+
+            RaiseLethal(_player.PlayerGuid, enemyId);
+            Assert.IsNull(_signaller.LastOutcome);
+
+            // El player ya está en otro combate en otra sala cuando el callback llega.
+            _dungeon.Room = new RoomInstance
+            {
+                InstanceId = Guid.NewGuid(),
+                State = RoomState.Uncleared,
+            };
+
+            feedback.CompleteAll();
+
+            Assert.IsNull(_signaller.LastOutcome,
+                "Una victoria diferida de otro combate no debe cerrar el combate actual.");
+        }
+
         // ---- Helpers ----
+
+        // Reemplaza el watcher sin-feedback del SetUp por uno con un feedback que difiere el
+        // callback, para poder interponer un cambio de sala entre el golpe letal y FinishDeath.
+        private void UseDeferredFeedback(out DeferredFeedback feedback)
+        {
+            _watcher.Dispose();
+            feedback = new DeferredFeedback();
+            _watcher = new CombatDeathWatcher(
+                _player, _signaller, _turnOrder, _visuals, _dungeon, feedback: feedback);
+        }
 
         private void RaiseLethal(Guid source, Guid target)
         {
@@ -272,6 +328,25 @@ namespace Rollgeon.Combat.Tests
             public CombatOutcome? LastOutcome { get; private set; }
             public void SignalEnemyDone() { }
             public void NotifyCombatEnded(CombatOutcome outcome) => LastOutcome = outcome;
+        }
+
+        // Feedback service que NO invoca el callback inline: lo guarda hasta CompleteAll(),
+        // simulando la coroutine diferida del FeedbackManager real.
+        private class DeferredFeedback : IFeedbackService
+        {
+            private readonly List<Action> _pending = new();
+
+            public void RequestFeedbackBlocking(FeedbackRequest request, Action onComplete)
+            {
+                if (onComplete != null) _pending.Add(onComplete);
+            }
+
+            public void CompleteAll()
+            {
+                var copy = new List<Action>(_pending);
+                _pending.Clear();
+                foreach (var cb in copy) cb();
+            }
         }
 
         private class SpyVisuals : IEntityVisualService

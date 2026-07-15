@@ -122,11 +122,19 @@ namespace Rollgeon.Combat
                 && room.State == RoomState.Uncleared
                 && room.SpawnedEnemies.Count == 0;
 
+            // Token del combate en curso. El cierre por Victory se difiere hasta que termina
+            // la animación de muerte (callback abajo), y esa coroutine del FeedbackManager no
+            // se cancela. Si el combate se cerró por otra vía (Defeat simultáneo, EffForceDoor)
+            // y el callback llega tarde —ya en OTRO combate en otra sala— cerrar acá dispararía
+            // un OnCombatEnd espurio sobre la FSM equivocada y el ScreenManager sobre-popearía
+            // la exploración (HUD colgado). Comparamos la sala vigente en FinishDeath.
+            var combatRoomId = room?.InstanceId ?? Guid.Empty;
+
             // Sin feedback service (EditMode tests, escenas sin bootstrap) no hay animación
             // que esperar: el enemigo se va de un frame al otro, como antes.
             if (_feedback == null)
             {
-                FinishDeath(deadGuid, isFinalKill);
+                FinishDeath(deadGuid, isFinalKill, combatRoomId);
                 return;
             }
 
@@ -145,15 +153,21 @@ namespace Rollgeon.Combat
             _feedback.RequestFeedbackBlocking(request, () =>
             {
                 _turn?.OnFeedbackComplete();
-                FinishDeath(deadGuid, isFinalKill);
+                FinishDeath(deadGuid, isFinalKill, combatRoomId);
             });
         }
 
-        private void FinishDeath(Guid deadGuid, bool isFinalKill)
+        private void FinishDeath(Guid deadGuid, bool isFinalKill, Guid combatRoomId)
         {
             _visuals?.Despawn(deadGuid);
-            if (isFinalKill)
-                _signaller.NotifyCombatEnded(CombatOutcome.Victory);
+            if (!isFinalKill) return;
+
+            // Descarta el cierre si el combate ya cambió de sala entre el golpe letal y este
+            // callback diferido: sería un OnCombatEnd contra un combate distinto (ver arriba).
+            var current = _dungeon.CurrentRoomInstance;
+            if (current == null || current.InstanceId != combatRoomId) return;
+
+            _signaller.NotifyCombatEnded(CombatOutcome.Victory);
         }
     }
 }

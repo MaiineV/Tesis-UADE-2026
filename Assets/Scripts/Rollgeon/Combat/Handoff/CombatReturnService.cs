@@ -13,10 +13,14 @@ namespace Rollgeon.Combat.Handoff
     /// </summary>
     public sealed class CombatReturnService : ICombatReturnService
     {
-        // String id de la VictoryScreen (ver VictoryScreen.ScreenStringId). Lo consultamos
-        // para no popear la pantalla de victoria si ya quedó al top del stack durante el
-        // mismo OnCombatEnd (floor cerrado de inmediato).
-        private const string VictoryScreenId = "VictoryScreen";
+        // String id de la CombatHUD (ver CombatHUDView.ScreenStringId). El pop de OnCombatEnd
+        // debe sacar EXACTAMENTE la CombatHUD y nunca la screen de abajo (ExplorationHUD, que
+        // no se re-pushea: reaparece solo porque PopCurrent la re-activa). Un OnCombatEnd
+        // duplicado o tardío — p.ej. la victoria diferida de la secuencia de muerte que
+        // sobrevive al cierre y llega ya en otro combate — encontraría otra screen al top
+        // (ExplorationHUD, o la VictoryScreen del floor cerrado). Sin este guard, PopCurrent
+        // sacaría esa screen y el juego queda colgado con todo apagado.
+        private const string CombatHudScreenId = "CombatHUD";
 
         private readonly IExplorationController _exploration;
         private readonly IScreenManager _screenManager;
@@ -89,26 +93,32 @@ namespace Rollgeon.Combat.Handoff
 
         private void HandleVictory(Guid roomInstanceId)
         {
-            // Si durante este mismo OnCombatEnd ya se pusheó la VictoryScreen (el floor se
-            // cerró de inmediato: boss sin rewards para ofrecer, o build sin el canal de
-            // Character Rewards), NO la popeamos: PopCurrent la sacaría del top y el jugador
-            // no la vería.
-            //
-            // En el flujo normal post-boss, la victoria se DIFIERE hasta que el player elige
-            // una reward en los pedestales, así que acá el top sigue siendo el CombatHUD: lo
-            // popeamos y volvemos a exploración para que pueda caminar a los pedestales —
-            // igual que en cualquier sala clareada (las puertas quedan abiertas).
-            var top = _screenManager.Current;
-            if (top != null && top.ScreenStringId == VictoryScreenId) return;
-
-            _screenManager.PopCurrent();
+            // Solo popeamos+resumimos si el CombatHUD es el top actual (ver TryPopCombatHud).
+            // En el flujo normal post-boss la victoria se DIFIERE hasta que el player elige una
+            // reward en los pedestales, así que acá el top sigue siendo el CombatHUD: lo
+            // popeamos y volvemos a exploración para que pueda caminar a los pedestales — igual
+            // que en cualquier sala clareada. Si el floor se cerró de inmediato (VictoryScreen
+            // ya al top) o el HUD ya se popeó por un OnCombatEnd previo, no tocamos el stack.
+            if (!TryPopCombatHud()) return;
             _exploration.ResumeAfterCombat();
         }
 
         private void HandleDefeat()
         {
-            _screenManager.PopCurrent();
+            if (!TryPopCombatHud()) return;
             EventManager.Trigger(EventName.OnPlayerDefeated, _player.RunId);
+        }
+
+        // Popea la CombatHUD solo si es el top actual del stack. Devuelve true si popeó.
+        // Blinda contra un OnCombatEnd duplicado/tardío que, de otro modo, sacaría del stack
+        // la ExplorationHUD (o la VictoryScreen) dejando el juego colgado.
+        private bool TryPopCombatHud()
+        {
+            var top = _screenManager.Current;
+            if (top == null || top.ScreenStringId != CombatHudScreenId) return false;
+
+            _screenManager.PopCurrent();
+            return true;
         }
     }
 }
