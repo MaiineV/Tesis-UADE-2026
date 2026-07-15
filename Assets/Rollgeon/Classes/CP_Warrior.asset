@@ -101,7 +101,7 @@ MonoBehaviour:
       Data: 
     - Name: _hpThreshold
       Entry: 3
-      Data: 5
+      Data: 3
     - Name: _attackBonus
       Entry: 3
       Data: 5
@@ -139,7 +139,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 1476178260465550265
+      - rid: 8131243969780646858
       TargetSelector:
         rid: -2
   references:
@@ -147,7 +147,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 1476178260465550265
+    - rid: 8131243969780646858
       type: {class: EffLowHpAttackBuff, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -161,5 +161,5 @@ MonoBehaviour:
           SelectionCount: 1
           AutoResolve: 0
           AutoAccept: 1
-        _hpThreshold: 5
+        _hpThreshold: 3
         _attackBonus: 5
