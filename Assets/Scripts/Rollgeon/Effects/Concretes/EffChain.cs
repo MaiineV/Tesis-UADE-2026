@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Effects.Selection;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -25,6 +26,38 @@ namespace Rollgeon.Effects.Concretes
         public int PhaseCount => Phases?.Count ?? 0;
 
         public override string GetEffectName() => "Chain";
+
+        /// <summary>
+        /// Selección efectiva de la fase 0 — la que el handoff usa de verdad para apuntar.
+        /// El gate del botón y el hover preview pre-roll deben mirar acá, no la selection
+        /// heredada del chain (oculta por <see cref="ShowSelection"/> y sin autoría posible).
+        /// </summary>
+        public SelectionSettings GetPhase0SelectionAt(SelectionTiming timing)
+        {
+            if (Phases == null || Phases.Count == 0) return null;
+            return FindPhaseSelectionAt(Phases[0], timing);
+        }
+
+        /// <summary>
+        /// Primera selección interactiva de una fase en el timing pedido. Recursa en
+        /// chains anidados (mismo criterio que la búsqueda de EffDealDamage para la
+        /// fórmula de daño). Null si ningún efecto de la fase pide selección.
+        /// </summary>
+        public static SelectionSettings FindPhaseSelectionAt(ChainPhase phase, SelectionTiming timing)
+        {
+            if (phase?.Effects?.Effects == null) return null;
+            foreach (var eff in phase.Effects.Effects)
+            {
+                if (eff == null) continue;
+                if (eff.RequiresSelectionAt(timing)) return eff.GetSelection();
+                if (eff is EffChain nested)
+                {
+                    var inner = nested.GetPhase0SelectionAt(timing);
+                    if (inner != null) return inner;
+                }
+            }
+            return null;
+        }
 
         public override bool ApplyEffect(EffectContext context)
         {

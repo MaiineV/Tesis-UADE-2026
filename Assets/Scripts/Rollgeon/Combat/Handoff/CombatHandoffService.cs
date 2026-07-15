@@ -1033,16 +1033,11 @@ namespace Rollgeon.Combat.Handoff
         // Chain — per-phase selection
         // ======================================================================
 
+        // Delegado a EffChain para compartir la MISMA búsqueda con el gate del botón
+        // (HeroActionBehavior.HasUsableEffectGroup) y el hover preview — si divergieran,
+        // el botón podría gatear con una selección distinta a la que el chain usa al jugar.
         private static SelectionSettings FindPhaseSelectionAt(ChainPhase phase, SelectionTiming timing)
-        {
-            if (phase?.Effects?.Effects == null) return null;
-            foreach (var eff in phase.Effects.Effects)
-            {
-                if (eff != null && eff.RequiresSelectionAt(timing))
-                    return eff.GetSelection();
-            }
-            return null;
-        }
+            => EffChain.FindPhaseSelectionAt(phase, timing);
 
         private void BeginChainSelection(SelectionSettings settings, Guid playerGuid, Action onComplete)
         {
