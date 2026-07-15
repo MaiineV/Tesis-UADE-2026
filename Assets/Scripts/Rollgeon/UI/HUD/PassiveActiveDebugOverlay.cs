@@ -59,7 +59,7 @@ namespace Rollgeon.UI.HUD
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = Color.yellow }
             };
-            GUI.Box(new Rect(20, 20, 260, 60), "PASIVA ACTIVA\nFuria del Guerrero", style);
+            GUI.Box(new Rect(20, 220, 260, 60), "PASIVA ACTIVA\nFuria del Guerrero", style);
         }
     }
 }
