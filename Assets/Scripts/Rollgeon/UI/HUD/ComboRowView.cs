@@ -1,5 +1,6 @@
 using Patterns;
 using Rollgeon.Combos;
+using Rollgeon.Localization;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -58,14 +59,15 @@ namespace Rollgeon.UI.HUD
             if (_nameLabel != null)
             {
                 var name = combo.DisplayName;
-                _nameLabel.text = string.IsNullOrEmpty(name) ? (combo.ComboId ?? string.Empty) : name;
+                var fallback = string.IsNullOrEmpty(name) ? (combo.ComboId ?? string.Empty) : name;
+                _nameLabel.text = LocalizedContent.Name(combo.ComboId, fallback);
             }
 
             RefreshDamage();
 
             if (_descriptionLabel != null)
             {
-                _descriptionLabel.text = combo.Description ?? string.Empty;
+                _descriptionLabel.text = LocalizedContent.Description(combo.ComboId, combo.Description ?? string.Empty);
             }
 
             if (_iconImage != null)

@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: UI_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 5089735e86d021d4f932cffd19d7f524, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2083988992000
+    m_Localized: Play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084072878080
+    m_Localized: Continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072384
+    m_Localized: Unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072385
+    m_Localized: Delete Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072386
+    m_Localized: Tutorial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084081266688
+    m_Localized: Quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643793694720
+    m_Localized: Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643860803584
+    m_Localized: Back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997888
+    m_Localized: Clear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997889
+    m_Localized: No dice bag configured
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997890
+    m_Localized: UNLOCKS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6240405843968
+    m_Localized: Unlocked!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056374784000
+    m_Localized: Warrior
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366912
+    m_Localized: Rogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366913
+    m_Localized: Mage
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

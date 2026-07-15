@@ -5,6 +5,7 @@ using System.Linq;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.Run;
 using Rollgeon.UI;
@@ -88,9 +89,9 @@ namespace Rollgeon.UI.Screens
 
             // Populate hero info
             if (_heroNameLabel != null && _selectedHero != null)
-                _heroNameLabel.text = _selectedHero.DisplayName ?? "";
+                _heroNameLabel.text = LocalizedContent.Name(_selectedHero.EntityId, _selectedHero.DisplayName ?? "");
             if (_heroDescriptionLabel != null && _selectedHero != null)
-                _heroDescriptionLabel.text = _selectedHero.Description ?? "";
+                _heroDescriptionLabel.text = LocalizedContent.Description(_selectedHero.EntityId, _selectedHero.Description ?? "");
             if (_heroPortrait != null && _selectedHero != null && _selectedHero.Portrait != null)
                 _heroPortrait.sprite = _selectedHero.Portrait;
 

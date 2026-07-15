@@ -1,0 +1,548 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Content Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Content
+  m_TableCollectionNameGuidString: 2bbd99212b054c54da253d71aabc13ca
+  m_Entries:
+  - m_Id: 5318321664000
+    m_Key: Warrior.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024128
+    m_Key: warrior_tutorial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024129
+    m_Key: passive.warrior.heal_on_turn.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024130
+    m_Key: passive.warrior.heal_on_turn.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024131
+    m_Key: combo.double_pair.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024132
+    m_Key: combo.double_pair.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024133
+    m_Key: combo.ladder.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024134
+    m_Key: combo.ladder.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024135
+    m_Key: combo.brute_force.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024136
+    m_Key: combo.brute_force.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024137
+    m_Key: combo.full_house.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024138
+    m_Key: combo.full_house.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024139
+    m_Key: combo.generala.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024140
+    m_Key: combo.generala.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024141
+    m_Key: combo.higher_number.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024142
+    m_Key: combo.higher_number.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024143
+    m_Key: combo.pair.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024144
+    m_Key: combo.pair.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024145
+    m_Key: combo.poker.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024146
+    m_Key: combo.poker.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024147
+    m_Key: combo.trio.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024148
+    m_Key: combo.trio.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024149
+    m_Key: potion.healing.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024150
+    m_Key: unlock.class.berserker.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024151
+    m_Key: unlock.class.berserker.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024152
+    m_Key: unlock.class.gambler.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024153
+    m_Key: unlock.class.gambler.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024154
+    m_Key: unlock.dice.d8.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024155
+    m_Key: unlock.dice.d8.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024156
+    m_Key: unlock.dice.d10.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024157
+    m_Key: unlock.dice.d10.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151808
+    m_Key: Boss01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151809
+    m_Key: healerEnemy.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151810
+    m_Key: CardEnemy01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151811
+    m_Key: RangedEnemy01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151812
+    m_Key: RangedEnemy01.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151813
+    m_Key: enemy_tutorial_melee_b.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151814
+    m_Key: enemy_tutorial_melee_c.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151815
+    m_Key: boss.general_director.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151816
+    m_Key: boss.general_director.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151817
+    m_Key: boss.security_boss.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151818
+    m_Key: boss.security_boss.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151819
+    m_Key: boss.sunken_grand.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151820
+    m_Key: boss.sunken_grand.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623680
+    m_Key: char_rew.attack_plus_3.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623681
+    m_Key: char_rew.energy_plus_1.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623682
+    m_Key: char_rew.hp_plus_5.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623683
+    m_Key: char_rew.speed_plus_2.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623684
+    m_Key: combo.pass.gold_on_ladder.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623685
+    m_Key: combo.pass.gold_on_ladder.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623686
+    m_Key: combo_pass.pair_plus_50.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623687
+    m_Key: combo_pass.pair_plus_50.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623688
+    m_Key: ench.afilado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623689
+    m_Key: ench.afilado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623690
+    m_Key: ench.ancla.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623691
+    m_Key: ench.ancla.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623692
+    m_Key: ench.avaro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623693
+    m_Key: ench.avaro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623694
+    m_Key: ench.caras_centrales.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623695
+    m_Key: ench.caras_centrales.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623696
+    m_Key: ench.cargado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623697
+    m_Key: ench.cargado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623698
+    m_Key: ench.codicioso.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623699
+    m_Key: ench.codicioso.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623700
+    m_Key: ench.comodin.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623701
+    m_Key: ench.comodin.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623702
+    m_Key: ench.escalador.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623703
+    m_Key: ench.escalador.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623704
+    m_Key: ench.escudado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623705
+    m_Key: ench.escudado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623706
+    m_Key: ench.extremos.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623707
+    m_Key: ench.extremos.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623708
+    m_Key: ench.fortaleza.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623709
+    m_Key: ench.fortaleza.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623710
+    m_Key: ench.fragil.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623711
+    m_Key: ench.fragil.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623712
+    m_Key: ench.gemelo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623713
+    m_Key: ench.gemelo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623714
+    m_Key: ench.gold_on_roll.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623715
+    m_Key: ench.gold_on_roll.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623716
+    m_Key: ench.impar.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623717
+    m_Key: ench.impar.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623718
+    m_Key: ench.invertido.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623719
+    m_Key: ench.invertido.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623720
+    m_Key: ench.lento.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623721
+    m_Key: ench.lento.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623722
+    m_Key: ench.mercader.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623723
+    m_Key: ench.mercader.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623724
+    m_Key: ench.mimetico.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623725
+    m_Key: ench.mimetico.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623726
+    m_Key: ench.mitad_inferior.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623727
+    m_Key: ench.mitad_inferior.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623728
+    m_Key: ench.mitad_superior.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623729
+    m_Key: ench.mitad_superior.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623730
+    m_Key: ench.multiplo_de_3.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623731
+    m_Key: ench.multiplo_de_3.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623732
+    m_Key: ench.no_primo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623733
+    m_Key: ench.no_primo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623734
+    m_Key: ench.only_evens.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623735
+    m_Key: ench.only_evens.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817984
+    m_Key: ench.oxidado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817985
+    m_Key: ench.oxidado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817986
+    m_Key: ench.par.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817987
+    m_Key: ench.par.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817988
+    m_Key: ench.parity_gamble.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817989
+    m_Key: ench.parity_gamble.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817990
+    m_Key: ench.pesado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817991
+    m_Key: ench.pesado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817992
+    m_Key: ench.primo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817993
+    m_Key: ench.primo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817994
+    m_Key: ench.resonante.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817995
+    m_Key: ench.resonante.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817996
+    m_Key: ench.sediento.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817997
+    m_Key: ench.sediento.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817998
+    m_Key: ench.torpe.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817999
+    m_Key: ench.torpe.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818000
+    m_Key: ench.volatil.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818001
+    m_Key: ench.volatil.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315456
+    m_Key: CombatBoss.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315457
+    m_Key: RoomCombat01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315458
+    m_Key: RoomCombat02.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315459
+    m_Key: RoomCombat03.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315460
+    m_Key: RoomCombatFloorTwo01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531983704064
+    m_Key: Enchantment.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590144
+    m_Key: Potion01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590145
+    m_Key: Shop01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590146
+    m_Key: Start01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590147
+    m_Key: Start02.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590148
+    m_Key: room_tutorial_combat_b.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590149
+    m_Key: room_tutorial_combat_c.name
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 344360784723181986
+  references:
+    version: 2
+    RefIds:
+    - rid: 344360784723181986
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1784096189245

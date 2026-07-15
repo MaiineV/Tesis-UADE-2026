@@ -5,7 +5,8 @@
         "Unity.TextMeshPro",
         "PrimeTween.Runtime",
         "Unity.InputSystem",
-        "MoreMountains.Tools"
+        "MoreMountains.Tools",
+        "Unity.Localization"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

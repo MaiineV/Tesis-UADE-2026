@@ -54,9 +54,9 @@ namespace Rollgeon.Upgrades.Character
         private InteractionPromptContent BuildPromptContent()
         {
             string title = _reward != null
-                ? (!string.IsNullOrEmpty(_reward.DisplayName) ? _reward.DisplayName : _reward.UpgradeId)
+                ? Rollgeon.Localization.LocalizedContent.Name(_reward.UpgradeId, !string.IsNullOrEmpty(_reward.DisplayName) ? _reward.DisplayName : _reward.UpgradeId)
                 : string.Empty;
-            string description = _reward != null ? (_reward.Description ?? string.Empty) : string.Empty;
+            string description = _reward != null ? Rollgeon.Localization.LocalizedContent.Description(_reward.UpgradeId, _reward.Description ?? string.Empty) : string.Empty;
             return new InteractionPromptContent(_interactKey.ToString(), "Tomar", title, description);
         }
 
@@ -142,15 +142,15 @@ namespace Rollgeon.Upgrades.Character
         private string BuildTooltipText()
         {
             if (_reward == null) return string.Empty;
-            string name = !string.IsNullOrEmpty(_reward.DisplayName) ? _reward.DisplayName : _reward.UpgradeId;
-            string desc = _reward.Description ?? string.Empty;
+            string name = Rollgeon.Localization.LocalizedContent.Name(_reward.UpgradeId, !string.IsNullOrEmpty(_reward.DisplayName) ? _reward.DisplayName : _reward.UpgradeId);
+            string desc = Rollgeon.Localization.LocalizedContent.Description(_reward.UpgradeId, _reward.Description ?? string.Empty);
             return $"<b>{name}</b>\n<size=80%>{desc}</size>";
         }
 
         private static string BuildLabel(CharacterRewardSO reward, Key key)
         {
             if (reward == null) return $"[{key}] Tomar";
-            string name = !string.IsNullOrEmpty(reward.DisplayName) ? reward.DisplayName : reward.UpgradeId;
+            string name = Rollgeon.Localization.LocalizedContent.Name(reward.UpgradeId, !string.IsNullOrEmpty(reward.DisplayName) ? reward.DisplayName : reward.UpgradeId);
             return $"[{key}] Tomar {name}";
         }
 

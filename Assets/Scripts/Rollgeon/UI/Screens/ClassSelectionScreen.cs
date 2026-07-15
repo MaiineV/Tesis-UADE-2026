@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
@@ -279,7 +280,9 @@ namespace Rollgeon.UI.Screens
 
             if (_passiveDisplay != null)
             {
-                _passiveDisplay.text = hero.Passive != null ? hero.Passive.Description : "Pasiva: TBD";
+                _passiveDisplay.text = hero.Passive != null
+                    ? LocalizedContent.Description(hero.Passive.PassiveId, hero.Passive.Description)
+                    : "Pasiva: TBD";
             }
 
             if (_warriorSelectionIndicator != null)

@@ -73,8 +73,8 @@ namespace Rollgeon.UI.Screens
                 bool unlocked = meta.IsDefinitionCompleted(def);
                 var row = Instantiate(_entryRowPrefab, _entriesContainer);
                 row.Bind(
-                    def.DisplayName,
-                    unlocked ? def.Description : def.HintText,
+                    Rollgeon.Localization.LocalizedContent.Name(def.UnlockId, def.DisplayName),
+                    unlocked ? Rollgeon.Localization.LocalizedContent.Description(def.UnlockId, def.Description) : def.HintText,
                     locked: !unlocked);
                 _rows.Add(row);
             }

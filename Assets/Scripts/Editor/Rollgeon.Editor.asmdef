@@ -3,7 +3,10 @@
     "rootNamespace": "",
     "references": [
         "Rollgeon",
-        "Rollgeon.Steam"
+        "Rollgeon.Steam",
+        "Unity.Localization",
+        "Unity.Localization.Editor",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

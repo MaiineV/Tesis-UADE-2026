@@ -149,7 +149,7 @@ namespace Rollgeon.Meta
                 UnlockId = definition.UnlockId,
                 Category = definition.Category,
                 TargetId = definition.TargetId,
-                DisplayName = definition.DisplayName,
+                DisplayName = Rollgeon.Localization.LocalizedContent.Name(definition.UnlockId, definition.DisplayName),
                 DuringRun = duringRun,
             });
             return true;

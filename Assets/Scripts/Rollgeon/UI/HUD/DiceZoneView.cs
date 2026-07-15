@@ -462,7 +462,7 @@ namespace Rollgeon.UI.HUD
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
-                DisplayName = best?.DisplayName ?? string.Empty,
+                DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
                 BaseDamage = baseDmg,
                 MultiDmgCombo = multiDmgCombo,
                 ShieldPreview = shieldPreview,

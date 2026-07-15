@@ -42,8 +42,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _Float1: 0
-    - _Opacidad: 1
+    - _Float1: 2.5
+    - _Opacidad: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0

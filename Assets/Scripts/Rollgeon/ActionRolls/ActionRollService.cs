@@ -497,7 +497,7 @@ namespace Rollgeon.ActionRolls
             {
                 SourceGuid = _playerGuid,
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
-                DisplayName = _currentCombo != null ? _currentCombo.DisplayName : string.Empty,
+                DisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
                 BaseDamage = EffectiveBase(_currentCombo),
             });
         }
@@ -557,7 +557,7 @@ namespace Rollgeon.ActionRolls
                 PassedThreshold = _currentEffectiveTotal >= _spec.Threshold,
                 RollsUsed = _rollIndex,
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
-                ComboDisplayName = _currentCombo != null ? _currentCombo.DisplayName : string.Empty,
+                ComboDisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
                 HasCombo = _currentCombo != null,
             };
 

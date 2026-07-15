@@ -249,7 +249,7 @@ namespace Rollgeon.Upgrades.Dice.UI
 
                 string label = $"Cupo {s + 1}";
                 string subLabel = existing != null
-                    ? $"Encantado: {existing.DisplayName}"
+                    ? $"Encantado: {Rollgeon.Localization.LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}"
                     : "Vacío";
 
                 // Capturamos el SO (no el índice) para el tooltip — los botones se
@@ -278,10 +278,11 @@ namespace Rollgeon.Upgrades.Dice.UI
         public static string BuildEnchantmentTooltip(EnchantmentSO ench)
         {
             if (ench == null) return string.Empty;
-            string name = !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId;
-            return string.IsNullOrEmpty(ench.Description)
+            string name = Rollgeon.Localization.LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId);
+            string desc = Rollgeon.Localization.LocalizedContent.Description(ench.UpgradeId, ench.Description);
+            return string.IsNullOrEmpty(desc)
                 ? $"<b>{name}</b>"
-                : $"<b>{name}</b>\n<size=80%>{ench.Description}</size>";
+                : $"<b>{name}</b>\n<size=80%>{desc}</size>";
         }
 
         /// <summary>
@@ -298,8 +299,8 @@ namespace Rollgeon.Upgrades.Dice.UI
             {
                 var ench = slots[i];
                 if (ench == null) continue;
-                string name = !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId;
-                lines.Add($"• {name} — {ench.Description}");
+                string name = Rollgeon.Localization.LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId);
+                lines.Add($"• {name} — {Rollgeon.Localization.LocalizedContent.Description(ench.UpgradeId, ench.Description)}");
             }
             return lines.Count > 0 ? string.Join("\n", lines) : none;
         }
@@ -428,15 +429,16 @@ namespace Rollgeon.Upgrades.Dice.UI
                 return;
             }
             var rolled = result.RolledEnchantment;
-            string name = rolled?.DisplayName ?? rolled?.UpgradeId ?? "?";
+            string name = rolled != null ? Rollgeon.Localization.LocalizedContent.Name(rolled.UpgradeId, rolled.DisplayName ?? rolled.UpgradeId) : "?";
             string faces = FormatFaces(result.ProjectedFaces);
             // Descripción inline en el resultado (CNF-011) — el jugador ve qué hace el
             // encantamiento sin tener que ir a buscarlo de nuevo en la lista de slots.
             // Formato compacto en 2 líneas: el label vive al pie de un panel que ya
             // ocupa la pantalla completa — 4 líneas desbordaban por debajo.
-            string descPart = string.IsNullOrEmpty(rolled?.Description)
+            string rolledDesc = rolled != null ? Rollgeon.Localization.LocalizedContent.Description(rolled.UpgradeId, rolled.Description) : string.Empty;
+            string descPart = string.IsNullOrEmpty(rolledDesc)
                 ? string.Empty
-                : $" — <size=80%><i>{rolled.Description}</i></size>";
+                : $" — <size=80%><i>{rolledDesc}</i></size>";
             _resultLabel.text =
                 $"<color=#88ff88>Recibiste:</color> <b>{name}</b>{descPart}\n" +
                 $"Caras del dado: {faces}  ·  Oro gastado: {result.GoldPaid}";

@@ -286,7 +286,7 @@ namespace Rollgeon.UI.HUD
             string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
 
             if (combo != null)
-                _formulaLabel.text = $"{actionTag} - {combo.DisplayName} ({effective})";
+                _formulaLabel.text = $"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})";
             else
                 _formulaLabel.text = $"{actionTag} - seleccioná los dados de tu combo";
             return true;

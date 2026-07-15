@@ -313,7 +313,7 @@ namespace Rollgeon.UI.HUD
             // puede splittear esto en dos GO con TMP en el inspector si quiere.
             if (_rerollSummaryLabel != null)
             {
-                string comboName = combo != null ? combo.DisplayName : "Sin combo";
+                string comboName = combo != null ? Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName) : "Sin combo";
                 string thresholdColor = currentTotal >= threshold ? "#88ff88" : "#ffcc66";
                 string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
 
@@ -356,7 +356,7 @@ namespace Rollgeon.UI.HUD
             int threshold = spec.Threshold;
             bool passed = total >= threshold;
             var combo = _service.CurrentCombo;
-            string comboTag = combo != null ? combo.DisplayName : "sin combo";
+            string comboTag = combo != null ? Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName) : "sin combo";
 
             // Curarse no tiene "fallo" — bajo el umbral igual cura el monto base.
             // Forzar Puerta sí: bajo umbral = energía perdida + sigue en sala.

@@ -1,0 +1,572 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Content_es
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: es
+  m_SharedData: {fileID: 11400000, guid: 2bbd99212b054c54da253d71aabc13ca, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5318321664000
+    m_Localized: Guerrero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024128
+    m_Localized: Guerrero (Tutorial)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024129
+    m_Localized: "Regeneraci\xF3n del Guerrero"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024130
+    m_Localized: Al inicio de cada turno, el guerrero se cura 2 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024131
+    m_Localized: Doble Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024132
+    m_Localized: 2 dados del mismo valor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024133
+    m_Localized: Escalera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024134
+    m_Localized: Dados en escalera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024135
+    m_Localized: Fuerza Bruta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024136
+    m_Localized: 'Suma los valores de todos los dados que cayeron en la mitad superior
+      de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12).'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024137
+    m_Localized: Full House
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024138
+    m_Localized: 2 dados de un valor y 3 de otro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024139
+    m_Localized: Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024140
+    m_Localized: 5 dados del mismo valor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024141
+    m_Localized: "N\xFAmero Mayor"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024142
+    m_Localized: "Dado m\xE1s alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024143
+    m_Localized: Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024144
+    m_Localized: 2 dados del mismo valor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024145
+    m_Localized: "P\xF3ker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024146
+    m_Localized: 4 dados del mismo valor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024147
+    m_Localized: "Tr\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024148
+    m_Localized: 3 dados del mismo valor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024149
+    m_Localized: "Poci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024150
+    m_Localized: Berserker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024151
+    m_Localized: "El Berserker queda seleccionable en la pantalla de selecci\xF3n
+      de personaje."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024152
+    m_Localized: Gambler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024153
+    m_Localized: "El Gambler queda seleccionable en la pantalla de selecci\xF3n de
+      personaje."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024154
+    m_Localized: Dado D8
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024155
+    m_Localized: El D8 queda disponible en la pantalla de armado de build.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024156
+    m_Localized: Dado D10
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024157
+    m_Localized: El D10 queda disponible en la pantalla de armado de build.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151808
+    m_Localized: Jefe de Prueba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151809
+    m_Localized: Sanador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151810
+    m_Localized: Enemigo Carta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151811
+    m_Localized: Enemigo a Distancia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151812
+    m_Localized: Goblin con ataque a distancia, dispara con una ballesta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151813
+    m_Localized: Recluta (Tutorial)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151814
+    m_Localized: "Mat\xF3n (Tutorial)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151815
+    m_Localized: Director General
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151816
+    m_Localized: "El m\xE1s viejo de todos. Ha estado solo en el piso superior tanto
+      tiempo que ya no recuerda con certeza cu\xE1les eran las reglas originales
+      del casino. En alg\xFAn momento dej\xF3 de buscarlas en el manual y empez\xF3
+      a inventarlas. Las hace cumplir con total convicci\xF3n y plena autoridad burocr\xE1tica.
+      Que beneficien o perjudiquen al jugador es apenas un detalle administrativo
+      que no influye en su juicio."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151817
+    m_Localized: Jefe de Seguridad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151818
+    m_Localized: "Ha pasado siglos revisando los protocolos de seguridad del casino.
+      Cada acci\xF3n queda registrada en su libro de incidentes. Detect\xF3 a miles
+      de tramposos en su vida y sigue aplicando los mismos procedimientos aunque
+      no quede nadie vivo a quien proteger. Si el jugador repite una jugada, \xE9l
+      ya la tiene anotada."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151819
+    m_Localized: El Gran Hundido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151820
+    m_Localized: "Lleva siglos calculando probabilidades en el casino. No necesita
+      adivinar qu\xE9 combo va a sacar el jugador: le basta con quitar una parte
+      de la ecuaci\xF3n. Habla durante el combate haciendo observaciones estad\xEDsticas
+      presumidas sobre la tirada del jugador. No es cruel, es un actuario que nunca
+      aprendi\xF3 a callarse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623680
+    m_Localized: Attack+
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623681
+    m_Localized: Energy+
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623682
+    m_Localized: Max Health
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623683
+    m_Localized: Speed+
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623684
+    m_Localized: Greed on Ladder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623685
+    m_Localized: Each Ladder combo gives gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623686
+    m_Localized: Pair Bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623687
+    m_Localized: +50 damage when matching Pair
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623688
+    m_Localized: Afilado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623689
+    m_Localized: El resultado minimo es siempre la mitad del maximo redondeado arriba.
+      Un d6 afilado nunca saca menos de 3.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623690
+    m_Localized: Ancla
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623691
+    m_Localized: Si este dado se holdea entre rolls, su resultado aumenta +1 por
+      roll holdeado (max +3).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623692
+    m_Localized: Avaro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623693
+    m_Localized: Otorga 3 de oro extra al completar un combo de trio o superior.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623694
+    m_Localized: Caras Centrales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623695
+    m_Localized: Bloquea el cuarto superior e inferior. d8:{3,4,5,6} d12:{4,5,6,7,8,9}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623696
+    m_Localized: Cargado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623697
+    m_Localized: Una vez por combate podes relanzar este dado y quedarte con el mayor
+      resultado.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623698
+    m_Localized: Codicioso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623699
+    m_Localized: El dado participa en cualquier combo y suma +3 de oro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623700
+    m_Localized: "Comod\xEDn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623701
+    m_Localized: Este dado cuenta como cualquier numero para propositos de combo
+      (escaleras, trio, generala).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623702
+    m_Localized: Escalador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623703
+    m_Localized: Para escaleras, este dado cuenta como su valor y como valor+1 simultaneamente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623704
+    m_Localized: Escudado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623705
+    m_Localized: Si se utiliza en un combo de full house da 2 mas de escudo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623706
+    m_Localized: Extremos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623707
+    m_Localized: Solo muestra el cuarto superior e inferior. d8:{1,2,7,8} d12:{1,2,3,10,11,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623708
+    m_Localized: Fortaleza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623709
+    m_Localized: El dado muestra su valor maximo y participa en combo, genera 2 puntos
+      de escudo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623710
+    m_Localized: "Fr\xE1gil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623711
+    m_Localized: 50% de chance de que el dado no cuente para el combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623712
+    m_Localized: Gemelo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623713
+    m_Localized: Si este dado muestra el mismo numero que otro en la tirada, ambos
+      valen x1.5 para el combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623714
+    m_Localized: Greed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623715
+    m_Localized: If the dice is not in a combo, win 2 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623716
+    m_Localized: Impar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623717
+    m_Localized: Solo muestra caras impares. d6:{1,3,5} d8:{1,3,5,7} d12:{1,3,5,7,9,11}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623718
+    m_Localized: Invertido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623719
+    m_Localized: El resultado es maximo+1 menos resultado. Un d6 que saca 1 cuenta
+      como 6.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623720
+    m_Localized: Lento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623721
+    m_Localized: Este dado no se puede holdear entre rolls.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623722
+    m_Localized: Mercader
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623723
+    m_Localized: Otorga 5 de oro al completar una escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623724
+    m_Localized: "Mim\xE9tico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623725
+    m_Localized: Copia el resultado del ultimo dado rerolled en esta tirada para
+      propositos de combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623726
+    m_Localized: Mitad Inferior
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623727
+    m_Localized: Solo muestra la mitad inferior del dado. d6:{1,2,3} d8:{1,2,3,4}
+      d12:{1,2,3,4,5,6}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623728
+    m_Localized: Mitad Superior
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623729
+    m_Localized: Solo muestra la mitad superior del dado. d6:{4,5,6} d8:{5,6,7,8}
+      d12:{7,8,9,10,11,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623730
+    m_Localized: Multiplo de 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623731
+    m_Localized: Solo muestra multiplos de 3. d12:{3,6,9,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623732
+    m_Localized: No Primo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623733
+    m_Localized: Solo muestra numeros no primos (incluye el 1). d8:{1,4,6,8}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623734
+    m_Localized: Only Evens
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623735
+    m_Localized: This Dice only rolls Even numbers.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817984
+    m_Localized: Oxidado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817985
+    m_Localized: El dado pierde 1 de su resultado final (minimo 1).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817986
+    m_Localized: Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817987
+    m_Localized: Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817988
+    m_Localized: Parity Gamble
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817989
+    m_Localized: If this dice rolls an Odd number multiplies x3, if not x0
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817990
+    m_Localized: Pesado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817991
+    m_Localized: Suma +2 al resultado final del dado.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817992
+    m_Localized: Primo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817993
+    m_Localized: Solo muestra numeros primos. d12:{2,3,5,7,11}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817994
+    m_Localized: Resonante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817995
+    m_Localized: Si 2+ dados muestran el mismo numero en la tirada final, este dado
+      suma su valor dos veces al combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817996
+    m_Localized: Sediento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817997
+    m_Localized: Cada vez que participa en combo consume 2 de oro. Sin oro no puede
+      participar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817998
+    m_Localized: Torpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817999
+    m_Localized: Fuerza un reroll completo en el turno 2 del combate.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818000
+    m_Localized: Volatil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818001
+    m_Localized: Al sacar el maximo el resultado se duplica. Al sacar el minimo vale
+      0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315456
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315457
+    m_Localized: RoomCombat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315458
+    m_Localized: RoomCombat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315459
+    m_Localized: RoomCombat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315460
+    m_Localized: RoomCombat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531983704064
+    m_Localized: Enchantment Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590144
+    m_Localized: Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590145
+    m_Localized: Shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590146
+    m_Localized: Start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590147
+    m_Localized: Start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590148
+    m_Localized: "Tutorial \u2014 Combate 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590149
+    m_Localized: "Tutorial \u2014 Combate 2"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

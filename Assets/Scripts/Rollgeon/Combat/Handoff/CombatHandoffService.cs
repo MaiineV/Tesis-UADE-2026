@@ -183,7 +183,7 @@ namespace Rollgeon.Combat.Handoff
                     new CombatHUDPayload
                     {
                         RoomInstanceId = roomInstanceId,
-                        EncounterDisplayName = room.DisplayName
+                        EncounterDisplayName = Rollgeon.Localization.LocalizedContent.Name(room.RoomId, room.DisplayName)
                     });
 
                 // Cablea delegates del HUD contra IPlayerCombatActions + reroll budget

@@ -74,9 +74,9 @@ namespace Rollgeon.Shop
         private InteractionPromptContent BuildPromptContent()
         {
             string title = _slot?.Item != null
-                ? (!string.IsNullOrEmpty(_slot.Item.DisplayName) ? _slot.Item.DisplayName : _slot.Item.EntryId)
+                ? Rollgeon.Localization.LocalizedContent.Name(_slot.Item.EntryId, !string.IsNullOrEmpty(_slot.Item.DisplayName) ? _slot.Item.DisplayName : _slot.Item.EntryId)
                 : string.Empty;
-            string description = _slot?.Item != null ? (_slot.Item.Description ?? string.Empty) : string.Empty;
+            string description = _slot?.Item != null ? Rollgeon.Localization.LocalizedContent.Description(_slot.Item.EntryId, _slot.Item.Description ?? string.Empty) : string.Empty;
             int price = _slot?.Price ?? 0;
 
             bool canAfford = !ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null
@@ -210,8 +210,8 @@ namespace Rollgeon.Shop
             EventManager.Trigger(
                 EventName.OnShopItemTargetChanged,
                 true,
-                _slot.Item.DisplayName,
-                _slot.Item.Description,
+                Rollgeon.Localization.LocalizedContent.Name(_slot.Item.EntryId, _slot.Item.DisplayName),
+                Rollgeon.Localization.LocalizedContent.Description(_slot.Item.EntryId, _slot.Item.Description),
                 _slot.Price,
                 _slot.Item.Icon);
         }
@@ -230,9 +230,9 @@ namespace Rollgeon.Shop
         private static string BuildLabel(ShopSlot slot)
         {
             if (slot == null || slot.Item == null) return "[F] Comprar";
-            string name = !string.IsNullOrEmpty(slot.Item.DisplayName)
+            string name = Rollgeon.Localization.LocalizedContent.Name(slot.Item.EntryId, !string.IsNullOrEmpty(slot.Item.DisplayName)
                 ? slot.Item.DisplayName
-                : slot.Item.EntryId;
+                : slot.Item.EntryId);
             return $"[F] Comprar {name} ({slot.Price}G)";
         }
 

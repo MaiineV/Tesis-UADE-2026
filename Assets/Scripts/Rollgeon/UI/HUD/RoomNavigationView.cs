@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Exploration;
+using Rollgeon.Localization;
 using Rollgeon.UI.Screens;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -128,7 +129,7 @@ namespace Rollgeon.UI.HUD
             }
 
             if (_roomNameLabel != null)
-                _roomNameLabel.text = room?.DisplayName ?? "???";
+                _roomNameLabel.text = room != null ? LocalizedContent.Name(room.RoomId, room.DisplayName) : "???";
 
             if (_roomProgressLabel != null)
                 _roomProgressLabel.text = $"Rooms {cleared}/{total}";
