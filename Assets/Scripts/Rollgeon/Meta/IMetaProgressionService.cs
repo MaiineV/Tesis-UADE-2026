@@ -52,6 +52,16 @@ namespace Rollgeon.Meta
         /// <summary>Marca el tutorial como completado y persiste a disco. Idempotente.</summary>
         void MarkTutorialCompleted();
 
+        /// <summary>
+        /// <c>true</c> por default. Con <c>false</c> (toggle del main menu), el tutorial
+        /// no se dispara ni por auto-launch ni por el botón "Tutorial" — el juego siempre
+        /// degrada al flujo normal.
+        /// </summary>
+        bool IsTutorialEnabled { get; }
+
+        /// <summary>Prende/apaga el tutorial y persiste a disco.</summary>
+        void SetTutorialEnabled(bool enabled);
+
         /// <summary>Fuerza un write-through del estado actual.</summary>
         void SaveNow();
 

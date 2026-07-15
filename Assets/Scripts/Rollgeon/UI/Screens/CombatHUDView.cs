@@ -82,6 +82,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ShieldBarView _shieldBar;
 
+        [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
+                 "hero (ej. Furia del Guerrero) está activa.")]
+        [SerializeField]
+        private PassiveBadgeView _passiveBadge;
+
         [Tooltip("Opcional — muestra la fase actual de un EffChain.")]
         [SerializeField]
         private ChainPhaseIndicatorView _chainPhaseIndicator;
@@ -315,6 +320,7 @@ namespace Rollgeon.UI.Screens
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
             if (_shieldBar != null) _shieldBar.Bind(playerGuid);
+            if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
@@ -334,6 +340,7 @@ namespace Rollgeon.UI.Screens
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_shieldBar != null) _shieldBar.Unbind();
+            if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             _subViewsBound = false;

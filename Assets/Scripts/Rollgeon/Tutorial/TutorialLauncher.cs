@@ -22,18 +22,38 @@ namespace Rollgeon.Tutorial
         private const string LogPrefix = "[TutorialLauncher] ";
 
         /// <summary>
-        /// <c>true</c> si hay un <see cref="TutorialConfigSO"/> registrado y completo —
-        /// sin él, el caller debe caer al flujo normal.
+        /// Degrada a "habilitado" si <see cref="Rollgeon.Meta.IMetaProgressionService"/> no
+        /// está registrado — el toggle es una preferencia, no un requisito de arranque.
+        /// </summary>
+        private static bool IsEnabled()
+        {
+            return !ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta)
+                   || meta == null
+                   || meta.IsTutorialEnabled;
+        }
+
+        /// <summary>
+        /// <c>true</c> si el tutorial está habilitado (toggle del main menu) y hay un
+        /// <see cref="TutorialConfigSO"/> registrado y completo — sin cualquiera de los
+        /// dos, el caller debe caer al flujo normal.
         /// </summary>
         public static bool CanLaunch()
         {
+            if (!IsEnabled()) return false;
+
             return ServiceLocator.TryGetService<TutorialConfigSO>(out var config)
                    && config != null && config.IsLaunchable;
         }
 
-        /// <returns><c>false</c> si no hay config lanzable — el caller decide el fallback.</returns>
+        /// <returns><c>false</c> si el tutorial está deshabilitado o no hay config lanzable — el caller decide el fallback.</returns>
         public static bool Launch()
         {
+            if (!IsEnabled())
+            {
+                Debug.Log(LogPrefix + "Tutorial deshabilitado por el toggle del main menu — no se lanza.");
+                return false;
+            }
+
             if (!ServiceLocator.TryGetService<TutorialConfigSO>(out var config)
                 || config == null || !config.IsLaunchable)
             {

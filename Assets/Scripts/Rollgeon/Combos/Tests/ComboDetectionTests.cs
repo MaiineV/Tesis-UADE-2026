@@ -524,7 +524,9 @@ namespace Rollgeon.Combos.Tests
     }
 
     // =============================================================================
-    // Combo_FuerzaBruta (mitad superior relativa al dado: valor > MaxFace/2)
+    // Combo_FuerzaBruta (spec Santi 2026-07-13: matchea solo si TODOS los dados caen
+    // en la mitad superior de su propio rango — valor > MaxFace/2. No hay subconjunto
+    // parcial: un solo dado por debajo del umbral anula el combo entero.)
     // =============================================================================
     [TestFixture]
     public class Combo_FuerzaBruta_Tests
@@ -545,22 +547,38 @@ namespace Rollgeon.Combos.Tests
         }
 
         [Test]
-        public void FuerzaBruta_Positive_Heterogeneo_5_2_6_3_6()
+        public void FuerzaBruta_Positive_TodosEnMitadSuperior_Heterogeneo()
         {
-            // d6=5 (>3) sí, d6=2 no, d8=6 (>4) sí, d4=3 (>2) sí, d12=6 no (necesita 7+).
+            // d6=5 (>3), d8=6 (>4), d4=3 (>2), d12=7 (>6), d20=11 (>10) — todos entran.
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D4,
+                Rollgeon.Dice.DiceType.D12, Rollgeon.Dice.DiceType.D20,
+            };
+            var result = _sut.Detect(new[] { 5, 6, 3, 7, 11 }, types, null);
+
+            Assert.IsTrue(result.IsMatch);
+            // 5 (piso) + 5 + 6 + 3 + 7 + 11 = 37
+            Assert.AreEqual(37, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
+            Assert.AreEqual(ComboId.BruteForce, result.ComboId);
+        }
+
+        [Test]
+        public void FuerzaBruta_Negative_UnSoloDadoDebajoDelUmbral_AnulaElCombo()
+        {
+            // Los primeros 4 entran; el d12=6 (necesita 7+) no. Un solo fallo anula todo.
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8,
                 Rollgeon.Dice.DiceType.D4, Rollgeon.Dice.DiceType.D12,
             };
-            var result = _sut.Detect(new[] { 5, 2, 6, 3, 6 }, types, null);
+            var result = _sut.Detect(new[] { 5, 4, 6, 3, 6 }, types, null);
 
-            Assert.IsTrue(result.IsMatch);
-            // 5 (piso) + 5 + 6 + 3 = 19
-            Assert.AreEqual(19, result.BaseDamage);
-            Assert.AreEqual(3, result.CountUsed);
-            CollectionAssert.AreEqual(new[] { 0, 2, 3 }, result.ContributingIndices);
-            Assert.AreEqual(ComboId.BruteForce, result.ComboId);
+            Assert.IsFalse(result.IsMatch);
+            Assert.AreEqual(0, result.BaseDamage);
+            Assert.AreEqual(0, result.CountUsed);
         }
 
         [Test]
@@ -580,43 +598,107 @@ namespace Rollgeon.Combos.Tests
         public void FuerzaBruta_MitadEsRelativa_4EnD8_NoEntra()
         {
             // Disambiguator del fallback: 4 es mitad superior en d6 pero NO en d8 (necesita 5+).
-            var types = new[] { Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D8 };
-            var result = _sut.Detect(new[] { 4, 3 }, types, null);
+            // Los otros 4 dados entran para aislar el disambiguator (bolsa completa de 5).
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D6,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            var result = _sut.Detect(new[] { 4, 5, 4, 4, 4 }, types, null);
             Assert.IsFalse(result.IsMatch);
         }
 
         [Test]
-        public void FuerzaBruta_Bordes_D3Entra_D20No()
+        public void FuerzaBruta_Bordes_TodosEnElUmbralExacto_Match()
         {
-            // d3=2 entra (midpoint 1); d20=10 no (necesita 11+).
-            var types = new[] { Rollgeon.Dice.DiceType.D3, Rollgeon.Dice.DiceType.D20 };
-            var result = _sut.Detect(new[] { 2, 10 }, types, null);
+            // d3=2 (umbral 2, entra), d20=11 (umbral 11, entra), + 3 d6=4 (umbral 4, entra).
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D3, Rollgeon.Dice.DiceType.D20, Rollgeon.Dice.DiceType.D6,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            var result = _sut.Detect(new[] { 2, 11, 4, 4, 4 }, types, null);
 
             Assert.IsTrue(result.IsMatch);
-            // 5 (piso) + 2 = 7
-            Assert.AreEqual(7, result.BaseDamage);
-            Assert.AreEqual(1, result.CountUsed);
-            CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
+            // 5 (piso) + 2 + 11 + 4 + 4 + 4 = 30
+            Assert.AreEqual(30, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
 
         [Test]
-        public void FuerzaBruta_FallbackSinTipos_AsumeD6_4_4_1_2_3()
+        public void FuerzaBruta_Bordes_UnoDebajoDelUmbralExacto_NoMatch()
         {
-            // Sin tipos (path legacy/tests) asume d6: 4 y 4 entran → 5 + 8 = 13.
-            var result = _sut.Detect(new[] { 4, 4, 1, 2, 3 });
+            // d3=2 entra; d20=10 no entra (necesita 11+, un punto debajo del umbral).
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D3, Rollgeon.Dice.DiceType.D20, Rollgeon.Dice.DiceType.D6,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            var result = _sut.Detect(new[] { 2, 10, 4, 4, 4 }, types, null);
+            Assert.IsFalse(result.IsMatch);
+        }
+
+        [Test]
+        public void FuerzaBruta_RequiereBolsaCompleta_SubsetDeTresTodosEnMitadSuperior_NoMatch()
+        {
+            // Regresión Bocco (2026-07-14): con solo 3 dados "kept" (subset como Par/Trío/Póker),
+            // todos en mitad superior, el combo NO debe activarse — exige los 5 de la bolsa.
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            var result = _sut.Detect(new[] { 5, 6, 4 }, types, null);
+
+            Assert.IsFalse(result.IsMatch);
+            Assert.AreEqual(0, result.BaseDamage);
+            Assert.AreEqual(0, result.CountUsed);
+        }
+
+        [Test]
+        public void FuerzaBruta_Matches_RequiereBolsaCompleta_SubsetDeTres_NoMatch()
+        {
+            // Mismo caso via Matches() (el path que usa ContractSheet.MatchBest en combate).
+            var types = new[]
+            {
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            Assert.IsFalse(_sut.Matches(new[] { 5, 6, 4 }, types));
+        }
+
+        [Test]
+        public void FuerzaBruta_FallbackSinTipos_AsumeD6_TodosEntran()
+        {
+            // Sin tipos (path legacy/tests) asume d6: los 5 valores en {4,5,6} entran.
+            var result = _sut.Detect(new[] { 4, 4, 5, 6, 4 });
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(13, result.BaseDamage);
-            Assert.AreEqual(2, result.CountUsed);
-            CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
+            // 5 (piso) + 4+4+5+6+4 = 28
+            Assert.AreEqual(28, result.BaseDamage);
+            Assert.AreEqual(5, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void FuerzaBruta_FallbackSinTipos_AsumeD6_UnoDebajoAnula()
+        {
+            // Sin tipos asume d6: el 3 no entra (necesita 4+) y anula el combo entero.
+            var result = _sut.Detect(new[] { 4, 4, 1, 2, 3 });
+            Assert.IsFalse(result.IsMatch);
         }
 
         [Test]
         public void FuerzaBruta_Matches_ConTipos_RespetaRango()
         {
-            var typesD8 = new[] { Rollgeon.Dice.DiceType.D8 };
-            Assert.IsFalse(_sut.Matches(new[] { 4 }, typesD8), "4 en d8 es mitad inferior.");
-            Assert.IsTrue(_sut.Matches(new[] { 5 }, typesD8), "5 en d8 es mitad superior.");
+            // Bolsa completa de 5 (D8 primero, 4 dados de relleno en mitad superior) para aislar
+            // el disambiguator d8 en el primer slot.
+            var typesD8 = new[]
+            {
+                Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+                Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D6,
+            };
+            Assert.IsFalse(_sut.Matches(new[] { 4, 4, 4, 4, 4 }, typesD8), "4 en d8 es mitad inferior.");
+            Assert.IsTrue(_sut.Matches(new[] { 5, 4, 4, 4, 4 }, typesD8), "5 en d8 es mitad superior.");
         }
 
         [Test]
