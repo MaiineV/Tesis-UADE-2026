@@ -265,6 +265,38 @@ namespace Rollgeon.Run.Tests
             }
         }
 
+        // ----------------------------------------------------------------
+        // Regresión: boss no spawnea en la 2ª run. Si un camino al menú saltea
+        // EndRun, los servicios Run-scoped de la run previa sobreviven en el
+        // ServiceLocator estático y duplican suscripciones al EventManager (ej.
+        // CombatHandoffService resuelve contra su dungeon con el boss room ya
+        // Cleared, y bloquea el combate real). StartRun debe disponerlos.
+        // ----------------------------------------------------------------
+
+        [Test]
+        public void StartRun_DisposesLeftoverRunScopedServices_WhenPreviousEndRunSkipped()
+        {
+            // Arrange: simula un servicio Run-scoped que sobrevivió porque la run anterior
+            // no llamó EndRun (SceneSwitcher de dev, quit sin IRunContextService, etc.).
+            var leftover = new DisposableRunStub();
+            ServiceLocator.AddService<DisposableRunStub>(leftover, ServiceScope.Run);
+
+            // Act
+            RunBootstrapper.StartRun(_hero, null, Guid.NewGuid());
+
+            // Assert
+            Assert.IsTrue(leftover.Disposed,
+                "StartRun no dispuso el servicio Run-scoped leftover de la run anterior.");
+            Assert.IsFalse(ServiceLocator.HasService<DisposableRunStub>(),
+                "El servicio leftover debe quedar desregistrado tras StartRun.");
+        }
+
+        private sealed class DisposableRunStub : IDisposable
+        {
+            public bool Disposed { get; private set; }
+            public void Dispose() => Disposed = true;
+        }
+
         private sealed class RunScopedStub : IPreloadableService
         {
             public int RegisterCount { get; private set; }

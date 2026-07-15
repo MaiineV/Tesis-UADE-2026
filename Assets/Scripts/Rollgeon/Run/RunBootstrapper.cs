@@ -49,6 +49,19 @@ namespace Rollgeon.Run
 
             IsResuming = resume;
 
+            // Defensa: disponer cualquier servicio Run-scoped que haya sobrevivido de una run
+            // anterior. Los servicios run-scoped (DungeonManager, CombatHandoffService,
+            // ExplorationController, resolver, ...) viven en el ServiceLocator estático —
+            // independiente de las escenas, así que recargar 01_MainMenu NO los limpia. Solo
+            // EndRun → ClearScope(Run) los dispone. Si algún camino al menú saltea EndRun (ej.
+            // el SceneSwitcher de editor, o el quit-desde-pausa sin IRunContextService), esos
+            // servicios quedan suscriptos al EventManager estático y duplican handlers: en la
+            // próxima run, el CombatHandoffService viejo resuelve contra su dungeon (con el
+            // boss room ya Cleared) y arranca un combate vacío que bloquea al real (guard de
+            // combate único). Limpiar acá hace el arranque de run auto-defensivo e idempotente
+            // (si EndRun ya corrió, el scope está vacío y esto es no-op).
+            ServiceLocator.ClearScope(ServiceScope.Run);
+
             // Run nueva = cache de save vacío. Debe correr ANTES de crear RunContext y
             // de RegisterRunScoped(): SaveSystem.Register auto-restaura desde cache, y
             // sin este Clear la run heredaría floor/inventario/counters de la anterior.
