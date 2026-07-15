@@ -21,6 +21,10 @@ namespace Rollgeon.Effects.Selection
         // los targets seleccionables. Configurable via TileHighlightServiceBootstrap.
         private const string RangeHighlightStyle = "range";
 
+        // Estilo del área AoE previewada al hovear un ancla válida (TargetMode.Aoe).
+        // Configurable via TileHighlightServiceBootstrap.
+        private const string AoeHighlightStyle = "aoe";
+
         private SelectionRequest _request;
         private List<TargetRef> _selected;
         private HashSet<GridCoord> _validCoords;
@@ -143,6 +147,40 @@ namespace Rollgeon.Effects.Selection
             // heal) usan estilos distintos y no tienen sentido como "camino A*".
             var style = _request.HighlightStyle ?? "move";
 
+            // Preview del área AoE: al apuntar un ancla válida se pinta el área que sería
+            // afectada. El área puede exceder el rango pintado (clipea a grilla, no al
+            // Range del caster), así que tanto el repintado como la limpieza hacen
+            // ClearAll — repintar solo _validCoords dejaría celdas del tinte AoE pegadas
+            // fuera del rango.
+            var settings = _request.Settings;
+            if (settings != null && settings.TargetMode == TargetMode.Aoe)
+            {
+                if (!coord.HasValue || !_validCoords.Contains(coord.Value))
+                {
+                    ClearAoePreview(style);
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<ITileHighlightService>(out var hl))
+                {
+                    hl.ClearAll();
+                    if (!_suppressRange)
+                    {
+                        RepaintRange(hl);
+                        hl.Highlight(_validCoords, style);
+                    }
+
+                    var area = settings.ExpandAoe(coord.Value, _request.OwnerGuid);
+                    var areaCoords = new List<GridCoord>(area.Count);
+                    foreach (var t in area) areaCoords.Add(t.Coord);
+                    hl.Highlight(areaCoords, AoeHighlightStyle);
+
+                    RepaintDoors(hl);
+                    _hasPathPreview = true; // mismo flag: "hay overlay de hover que limpiar"
+                }
+                return;
+            }
+
             // La casilla "frente a puerta" también previewa camino: el héroe CAMINA
             // hasta ella antes de cruzar (CrossDoorAfterArrival), así que el A* aplica
             // igual que en un move normal. RepaintDoors la mantiene roja por encima.
@@ -183,6 +221,25 @@ namespace Rollgeon.Effects.Selection
                 RepaintDoors(highlight); // las puertas quedan rojas por encima del rango/path
                 _hasPathPreview = true;
             }
+        }
+
+        // Limpia el overlay AoE de un hover anterior. A diferencia de ClearPathPreview,
+        // SIEMPRE hace ClearAll: el área AoE puede exceder _rangeCoords/_validCoords y
+        // repintar solo esos sets dejaría celdas naranjas pegadas.
+        private void ClearAoePreview(string rangeStyle)
+        {
+            if (!_hasPathPreview) return;
+            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+            {
+                highlight.ClearAll();
+                if (!_suppressRange)
+                {
+                    RepaintRange(highlight);
+                    highlight.Highlight(_validCoords, rangeStyle);
+                }
+                RepaintDoors(highlight);
+            }
+            _hasPathPreview = false;
         }
 
         private void ClearPathPreview(string rangeStyle)
@@ -248,7 +305,7 @@ namespace Rollgeon.Effects.Selection
             var settings = _request.Settings;
             if (settings != null && settings.AutoAccept)
             {
-                int required = settings.GetSelectionCount(default);
+                int required = settings.GetSelectionCount(new ReadInfo { ownerGuid = _request.OwnerGuid });
                 UnityEngine.Debug.Log($"[SelectionController] AutoAccept check — selected={_selected.Count} required={required}");
                 if (_selected.Count >= required)
                     Complete();
@@ -280,10 +337,20 @@ namespace Rollgeon.Effects.Selection
             UnityEngine.Debug.Log($"[SelectionController] Complete — {_selected.Count} targets selected");
             ClearHighlights();
 
+            // Único punto de expansión AoE del flujo manual: los consumidores (FSM, chain,
+            // exploración, drag-drop) reciben SelectedTargets ya expandidos (ancla + área
+            // filtrada contra la grilla viva) sin cambios en su código.
+            var settings = _request?.Settings;
+            var selected = settings != null
+                           && settings.TargetMode == TargetMode.Aoe
+                           && _selected.Count > 0
+                ? settings.ExpandAoe(_selected[0].Coord, _request.OwnerGuid)
+                : new List<TargetRef>(_selected);
+
             var result = new TargetSelectionResult
             {
                 WasCompleted = true,
-                SelectedTargets = new List<TargetRef>(_selected),
+                SelectedTargets = selected,
             };
 
             _request = null;

@@ -8,15 +8,17 @@ using Rollgeon.Phase;
 using Rollgeon.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Al hoverear un botón de acción con elección de target, pinta el rango/targets
     /// válidos en el grid (BFS o Manhattan según el <see cref="SelectionSettings.RangeMode"/>
-    /// del effect). Acciones sin selección (ForceDoor, Heal self) no pintan nada — el
-    /// gate es <see cref="HeroActionBehavior.HasEffectsWithSelectionAt"/>.
+    /// del effect). Acciones sin selección (ForceDoor, Heal self) no pintan nada. La
+    /// selección se resuelve con <see cref="HeroActionBehavior.ResolveEffectiveBeforeRollSelection"/>
+    /// (para chains, la de la fase 0). El preview se muestra AUNQUE el botón esté
+    /// deshabilitado (sin energía / sin targets en rango): ver el alcance es justamente
+    /// lo que explica por qué no se puede usar.
     /// Convive con <c>UITooltipTrigger</c> en el mismo GO: Unity despacha los pointer
     /// callbacks a todos los handlers.
     /// </summary>
@@ -44,7 +46,6 @@ namespace Rollgeon.UI.HUD
         private void TryShowPreview()
         {
             if (_painted) return;
-            if (TryGetComponent<Button>(out var button) && !button.interactable) return;
 
             // No pisar una selección activa con rango visible (en Exploración el
             // movimiento armado tiene el rango suprimido, así que el hover sí pinta).
@@ -61,15 +62,16 @@ namespace Rollgeon.UI.HUD
                 return;
 
             var behavior = playerService.CurrentHero.ResolveBaseBehavior(slot, _phase);
-            if (behavior == null
-                || !behavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll))
-                return;
+            if (behavior == null) return;
 
+            // Selección efectiva: la propia del efecto, o la de la fase 0 si es un chain
+            // (Special Attack — la selection del chain está oculta y la real vive en la
+            // fase). Null en todos los efectos = acción sin selección, no hay preview.
             var settings = behavior.Effects?
                 .Where(g => g?.Effects != null)
                 .SelectMany(g => g.Effects)
-                .FirstOrDefault(e => e != null && e.RequiresSelectionAt(SelectionTiming.BeforeRoll))
-                ?.GetSelection();
+                .Select(HeroActionBehavior.ResolveEffectiveBeforeRollSelection)
+                .FirstOrDefault(s => s != null);
             if (settings == null || settings.SlotState == SlotState.Self) return;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid)

@@ -5,6 +5,7 @@ using Rollgeon.Entities;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Selection
@@ -38,14 +39,53 @@ namespace Rollgeon.Effects.Selection
         public RangeMode RangeMode = RangeMode.Manhattan;
 
         [HideIf(nameof(IsSelf))]
+        [InfoBox("AoE con SlotState.Empty expande celdas vacías; los efectos de movimiento " +
+                 "solo usan el ancla.", InfoMessageType.Warning, nameof(ShowAoeMovementWarning))]
+        [Tooltip("Single: N picks individuales (SelectionCount). " +
+                 "Aoe: se elige UNA celda ancla y el efecto se expande alrededor.")]
+        public TargetMode TargetMode = TargetMode.Single;
+
+        [ShowIf(nameof(IsAoe))]
+        [Tooltip("Radius: diamante Manhattan alrededor del ancla. Custom: patrón bool-grid " +
+                 "relativo al ancla.")]
+        public AoeShape AoeShape = AoeShape.Radius;
+
+        [ShowIf(nameof(ShowAoeRadius))]
+        [MinValue(1), MaxValue(10)]
+        [Tooltip("Celdas a distancia Manhattan <= radio del ancla. El área se clipea a la " +
+                 "grilla, NO al Range del caster, y re-aplica SlotState + EntityFilter.")]
+        public int AoeRadius = 1;
+
+        [ShowIf(nameof(ShowAoePattern))]
+        [MinValue(1), MaxValue(11)]
+        public int PatternRows = 1;
+
+        [ShowIf(nameof(ShowAoePattern))]
+        [MinValue(1), MaxValue(11)]
+        public int PatternCols = 1;
+
+        [ShowIf(nameof(ShowAoePattern))]
+        [Tooltip("Celda del patrón que se apoya sobre el ancla: x = columna (+X), y = fila (+Y).")]
+        public Vector2Int PatternCenter = new Vector2Int(0, 0);
+
+        [ShowIf(nameof(ShowAoePattern))]
+        [BoolGrid(nameof(PatternRows), nameof(PatternCols), nameof(PatternCenter))]
+        public bool[] PatternFlat = { true };
+
+        [ShowIf(nameof(ShowCount))]
         [Tooltip("true → la cantidad de targets es literalmente SelectionCount. " +
-                 "false → se resuelve dinámicamente via reader (TODO downstream).")]
+                 "false → se resuelve dinámicamente via SelectionCountReader.")]
         public bool IsConstantSelectionCount = true;
 
-        [HideIf(nameof(IsSelf))]
+        [ShowIf(nameof(ShowConstantCount))]
         [MinValue(1), MaxValue(16)]
         [Tooltip("Cantidad de targets requeridos cuando IsConstantSelectionCount == true.")]
         public int SelectionCount = 1;
+
+        [ShowIf(nameof(ShowDynamicCount))]
+        [OdinSerialize, SerializeReference]
+        [Tooltip("Reader polimórfico que resuelve la cantidad de targets en runtime. Null => 1.")]
+        public ISelectionCountReader SelectionCountReader;
 
         [HideIf(nameof(IsSelf))]
         [ToggleLeft]
@@ -61,6 +101,14 @@ namespace Rollgeon.Effects.Selection
         private bool ShowEntityFilter => SlotState == SlotState.Occupied || SlotState == SlotState.Both;
         private bool ShowRange => !IsSelf && !IsGlobal;
         private bool ShowAutoAccept => !IsSelf && !AutoResolve;
+        private bool IsAoe => !IsSelf && TargetMode == TargetMode.Aoe;
+        private bool ShowAoeRadius => IsAoe && AoeShape == AoeShape.Radius;
+        private bool ShowAoePattern => IsAoe && AoeShape == AoeShape.Custom;
+        private bool ShowAoeMovementWarning => IsAoe && SlotState == SlotState.Empty;
+        // En AoE el count no aplica: siempre se elige 1 ancla y el área define el resto.
+        private bool ShowCount => !IsSelf && !IsAoe;
+        private bool ShowConstantCount => ShowCount && IsConstantSelectionCount;
+        private bool ShowDynamicCount => ShowCount && !IsConstantSelectionCount;
 
         /// <summary>
         /// True si la selección apunta a enemigos (ataque / ataque especial). Estos
@@ -72,9 +120,16 @@ namespace Rollgeon.Effects.Selection
                                       && SlotState != SlotState.Self
                                       && (EntityFilter & EntityFilterMask.Enemies) != 0;
 
+        /// <summary>
+        /// Cantidad de PICKS que debe hacer el jugador (no de targets finales): en AoE
+        /// siempre 1 — el ancla — y la expansión del área ocurre después, en
+        /// <see cref="ExpandAoe"/>. Con count dinámico, un reader null cae a 1.
+        /// </summary>
         public int GetSelectionCount(ReadInfo info)
         {
-            return SelectionCount;
+            if (IsAoe) return 1;
+            if (IsConstantSelectionCount) return SelectionCount;
+            return SelectionCountReader?.Read(info) ?? 1;
         }
 
         public bool NeedsPlayerInteraction()
@@ -194,10 +249,97 @@ namespace Rollgeon.Effects.Selection
             return result;
         }
 
+        /// <summary>
+        /// Expande el ancla AoE al set final de targets. El área se clipea a la grilla
+        /// (InBounds), NO al Range del caster — una explosión en el borde del alcance
+        /// derrama más allá. Cada celda expandida re-aplica <see cref="PassesSlotFilters"/>
+        /// (SlotState + EntityFilter, sin constraint de rango); el ancla entra siempre
+        /// (ya salió de <see cref="ResolveValidTiles"/>). En Single devuelve solo el ancla.
+        /// </summary>
+        public List<TargetRef> ExpandAoe(GridCoord anchor, Guid ownerGuid)
+        {
+            var result = new List<TargetRef> { TargetRef.At(anchor) };
+
+            if (!IsAoe) return result;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid))
+            {
+                Debug.LogWarning("[SelectionSettings] IGridManager not registered");
+                return result;
+            }
+
+            // Sin posición del owner (tests/exploración) se usa un sentinel fuera de
+            // grilla: PassesSlotFilters excluye la celda del owner y (0,0) no debe
+            // quedar excluida por accidente.
+            if (!grid.TryGetPosition(ownerGuid, out var ownerPos))
+                ownerPos = new GridCoord(int.MinValue, int.MinValue);
+
+            foreach (var coord in EnumerateAoeArea(anchor))
+            {
+                if (coord == anchor) continue;
+                if (!grid.InBounds(coord)) continue;
+                if (!PassesSlotFilters(grid, coord, ownerPos, ownerGuid)) continue;
+                result.Add(TargetRef.At(coord));
+            }
+
+            return result;
+        }
+
+        private IEnumerable<GridCoord> EnumerateAoeArea(GridCoord anchor)
+        {
+            if (AoeShape == AoeShape.Radius)
+            {
+                for (int dx = -AoeRadius; dx <= AoeRadius; dx++)
+                for (int dy = -AoeRadius; dy <= AoeRadius; dy++)
+                {
+                    if (Math.Abs(dx) + Math.Abs(dy) > AoeRadius) continue;
+                    yield return new GridCoord(anchor.X + dx, anchor.Y + dy);
+                }
+                yield break;
+            }
+
+            // Custom: patrón bool-grid relativo al ancla (port de PatternUtil de Bot-Game,
+            // sin flipY — acá no hay espejo por jugador — ni modo Absolute). Guard de
+            // índice por si PatternFlat quedó desincronizado con Rows/Cols (el drawer
+            // auto-resizea recién al dibujarse).
+            if (PatternFlat == null || PatternFlat.Length == 0) yield break;
+
+            for (int r = 0; r < PatternRows; r++)
+            for (int c = 0; c < PatternCols; c++)
+            {
+                int idx = r * PatternCols + c;
+                if (idx >= PatternFlat.Length || !PatternFlat[idx]) continue;
+                yield return new GridCoord(
+                    anchor.X + (c - PatternCenter.x),
+                    anchor.Y + (r - PatternCenter.y));
+            }
+        }
+
         public TargetSelectionResult AutoResolveTargets(GridCoord ownerPosition, Guid ownerGuid)
         {
             var valid = ResolveValidTiles(ownerPosition, ownerGuid);
-            var count = Math.Min(GetSelectionCount(default), valid.Count);
+
+            if (IsAoe)
+            {
+                if (valid.Count == 0)
+                {
+                    return new TargetSelectionResult
+                    {
+                        WasCompleted = false,
+                        SelectedTargets = new List<TargetRef>(),
+                    };
+                }
+
+                var anchor = valid[new System.Random().Next(valid.Count)].Coord;
+                var expanded = ExpandAoe(anchor, ownerGuid);
+                return new TargetSelectionResult
+                {
+                    WasCompleted = expanded.Count > 0,
+                    SelectedTargets = expanded,
+                };
+            }
+
+            var count = Math.Min(GetSelectionCount(new ReadInfo { ownerGuid = ownerGuid }), valid.Count);
 
             var rng = new System.Random();
             for (int i = valid.Count - 1; i > 0; i--)

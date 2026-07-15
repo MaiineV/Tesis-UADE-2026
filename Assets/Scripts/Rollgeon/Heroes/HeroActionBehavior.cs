@@ -109,6 +109,20 @@ namespace Rollgeon.Heroes
             return false;
         }
 
+        /// <summary>
+        /// Selección BeforeRoll efectiva de un efecto para el gate del botón y el hover
+        /// preview: la propia si la expone, o la de la fase 0 si es un <see cref="EffChain"/>
+        /// (su selection heredada está oculta — <c>ShowSelection == false</c> — y la real
+        /// vive dentro de la fase). Null = el efecto no pide selección pre-roll.
+        /// </summary>
+        public static SelectionSettings ResolveEffectiveBeforeRollSelection(IEffect eff)
+        {
+            if (eff == null) return null;
+            if (eff.RequiresSelectionAt(SelectionTiming.BeforeRoll)) return eff.GetSelection();
+            if (eff is EffChain chain) return chain.GetPhase0SelectionAt(SelectionTiming.BeforeRoll);
+            return null;
+        }
+
         public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason)
         {
             reason = null;
@@ -150,8 +164,11 @@ namespace Rollgeon.Heroes
                 {
                     foreach (var eff in group.Effects)
                     {
-                        if (eff == null) continue;
-                        if (!eff.RequiresSelectionAt(SelectionTiming.BeforeRoll)) continue;
+                        // Selección efectiva: para un chain es la de su fase 0 (la que el
+                        // handoff usa al jugar) — gatear con la selection oculta del chain
+                        // deshabilitaba el botón con un rango que nadie autoró.
+                        var selection = ResolveEffectiveBeforeRollSelection(eff);
+                        if (selection == null) continue;
 
                         if (!hasOwnerPos)
                         {
@@ -159,7 +176,7 @@ namespace Rollgeon.Heroes
                             break;
                         }
 
-                        var targets = eff.GetSelection().ResolveValidTiles(ownerPos, ownerGuid);
+                        var targets = selection.ResolveValidTiles(ownerPos, ownerGuid);
                         if (targets == null || targets.Count == 0)
                         {
                             groupUsable = false;

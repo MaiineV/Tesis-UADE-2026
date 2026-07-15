@@ -3549,28 +3549,67 @@ public class TargetSelectionResult
 
 ### 11.2 `SelectionSettings`
 
+> Forma real post-rework Feature#0026 (la implementación reemplazó la `BaseTargetQuery`
+> del diseño original de §11.2b por los filtros directos `SlotState` + `EntityFilterMask`).
+
 ```csharp
 [Serializable]
 public class SelectionSettings
 {
-    public bool RequiresSelection;
-    public SelectionTiming Timing;
+    public SlotState SlotState;             // Self | Occupied | Empty | Both
+    public SelectionTiming Timing;          // BeforeRoll | AfterRoll
+    public EntityFilterMask EntityFilter;   // filtro de facción (si Occupied/Both)
+    public bool IsGlobal;                   // toda la sala vs Range desde el owner
+    public int Range;                       // 1..20
+    public RangeMode RangeMode;             // Manhattan | PathReachable
+
+    public TargetMode TargetMode;           // Single | Aoe (default Single)
+    public AoeShape AoeShape;               // Radius | Custom (solo Aoe)
+    public int AoeRadius;                   // diamante Manhattan desde el ancla
+    public int PatternRows, PatternCols;    // patrón bool-grid (AoeShape.Custom)
+    public Vector2Int PatternCenter;        // celda del patrón apoyada en el ancla
+    [BoolGrid(...)] public bool[] PatternFlat;
+
     public bool IsConstantSelectionCount;
-    public int SelectionCount;
-    public bool IsSkippable;
-    public bool RequireEmptySlot;
-    public bool RequireOccupiedSlot;        // excluyentes — validado
-
+    public int SelectionCount;              // count constante (1..16)
     [OdinSerialize, SerializeReference]
-    [HideReferenceObjectPicker]
-    public BaseTargetQuery TargetQuery;     // inline polimórfico — ver §11.2b
+    public ISelectionCountReader SelectionCountReader;  // count dinámico (patrón §13.6.1)
 
-    public int GetSelectionCount(ReadInfo info);
+    public bool AutoResolve;                // random entre válidos, sin interacción
+    public bool AutoAccept;                 // auto-confirma al llegar al count
+
+    public int GetSelectionCount(ReadInfo info);   // PICKS requeridos (Aoe => 1)
     public bool NeedsSelectionAt(SelectionTiming t);
+    public List<TargetRef> ResolveValidTiles(GridCoord ownerPos, Guid ownerGuid);
+    public List<GridCoord> ResolveRangeTiles(GridCoord ownerPos, Guid ownerGuid);
+    public List<TargetRef> ExpandAoe(GridCoord anchor, Guid ownerGuid);
+    public TargetSelectionResult AutoResolveTargets(GridCoord ownerPos, Guid ownerGuid);
 }
 ```
 
-`BaseTargetQuery` define la query lógica inline (qué casillas/entidades son válidas). Cada efecto configura su propia instancia — no es un SO compartido. Ver §11.2b.
+**TargetMode (rework Feature#0026).** `Single` = N picks individuales (comportamiento
+histórico). `Aoe` = se elige UNA celda ancla entre las válidas y el efecto se expande
+alrededor (`AoeShape.Radius` = diamante Manhattan ≤ `AoeRadius`; `AoeShape.Custom` =
+patrón bool-grid relativo al ancla, drawer `BoolGridAttributeDrawer`). Reglas del área:
+se clipea a la grilla (`InBounds`), **NO al `Range` del caster**; cada celda re-aplica
+los filtros `SlotState` + `EntityFilter` (un heal AoE no incluye enemigos); el ancla
+entra siempre; la celda del owner nunca.
+
+**Puntos de expansión AoE (exactamente 2).** `SelectionController.Complete()` (flujo
+manual) y `SelectionSettings.AutoResolveTargets()` (flujo auto), ambos vía `ExpandAoe`.
+Los consumidores (`PlayerSelectingSubState`, chain de combate, `EffDealDamage`, drag-drop)
+reciben `SelectedTargets` ya expandidos sin cambios.
+
+**Count dinámico.** `GetSelectionCount(ReadInfo)` significa "picks requeridos": `Aoe` → 1
+(el ancla); constante → `SelectionCount`; dinámico → `SelectionCountReader?.Read(info) ?? 1`.
+Readers concretos: `StatCountReader` (stat del owner, clamp Min/Max) y
+`AliveEnemiesCountReader` (enemigos vivos con tope). Contrato defensivo: con `ReadInfo`
+default o servicios sin registrar devuelven su mínimo seguro (hay call sites sin owner,
+ej. `ActionDragPolicy`).
+
+**UI.** El hover de un ancla válida pinta el área con el estilo `"aoe"` (naranja,
+configurable en `TileHighlightServiceBootstrap`). Como el área puede exceder el rango
+pintado, la limpieza del overlay usa `ClearAll` + repintado.
 
 ### 11.2b `BaseTargetQuery`
 
