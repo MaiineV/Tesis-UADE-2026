@@ -23,12 +23,15 @@ que mantenerlo**. No hacer ningún cambio en `Sheet.Combos` ni
 `Assets/Rollgeon/Classes/CP_Warrior.asset` tiene `PassiveId`, `DisplayName`,
 `Description` y ahora también `Hooks` con un elemento:
 - **Trigger Event**: `OnAttributeChanged`.
-- **Effect** → `EffLowHpAttackBuff` (`Hp Threshold: 5`, `Attack Bonus: 5`,
+- **Effect** → `EffLowHpAttackBuff` (`Hp Threshold: 3`, `Attack Bonus: 5`,
   ambos default).
 
 Aplicado vía Unity MCP (`manage_scriptable_object`) y verificado leyendo el
 `.asset` directo del disco — confirmado `Hooks[0].TriggerEvent: 39` (=
-`OnAttributeChanged`) y el effect con `_hpThreshold: 5`, `_attackBonus: 5`.
+`OnAttributeChanged`) y el effect con `_hpThreshold: 3`, `_attackBonus: 5`.
+El umbral es **3** por pedido de GD (2026-07-15): con vida en 3 o menos se
+activa, al curarse a 4+ se desactiva — coincide con la `Description` del
+asset.
 
 ## 3. Badge "pasiva activa" en el HUD de combate — HECHO
 
@@ -44,16 +47,13 @@ Aplicado vía Unity MCP (`manage_prefabs` + `manage_gameobject` +
 `manage_components`, prefab stage guardado con `save_prefab_stage`) y
 verificado en el `.prefab` en disco.
 
-### 3.1 Overlay de debug (redundante ahora que el badge real está wireado)
+### 3.1 Overlay de debug — ELIMINADO
 
-`Assets/Scripts/Rollgeon/UI/HUD/PassiveActiveDebugOverlay.cs` es un
-componente que se auto-crea solo al arrancar el juego (`RuntimeInitializeOnLoadMethod`,
-cero wiring, cero prefab) y dibuja un cartel amarillo "PASIVA ACTIVA - Furia
-del Guerrero" con `OnGUI` mientras el buff de HP bajo esté prendido en
-cualquier entidad. Se agregó para testear antes de que el badge real
-estuviera wireado (sección 3) — ahora que ya está, queda **redundante**;
-inofensivo si se deja, se puede borrar cuando se confirme que el badge real
-anda bien en juego.
+`PassiveActiveDebugOverlay.cs` (un `OnGUI` auto-bootstrapeado vía
+`RuntimeInitializeOnLoadMethod` para testear la pasiva antes de que el badge
+real estuviera wireado) se eliminó de la rama (2026-07-15): como no tenía
+gate de `UNITY_EDITOR`/`DEVELOPMENT_BUILD`, se colaba también en builds de
+release. El badge real de la sección 3 lo reemplaza por completo.
 
 ## Por qué `OnAttributeChanged` y no un evento de turno
 
@@ -68,9 +68,9 @@ turno siguiente.
 ## Verificación
 
 1. Entrar a un run con Warrior (5 daño base).
-2. Bajar la vida a 5 o menos (recibir daño) → el próximo Base Attack debe
+2. Bajar la vida a 3 o menos (recibir daño) → el próximo Base Attack debe
    pegar como si `Attack` fuera 10 (5 base + 5 del buff).
-3. Curarse a 6+ → el próximo ataque vuelve a pegar como si fuera 5.
+3. Curarse a 4+ → el próximo ataque vuelve a pegar como si fuera 5.
 4. Morir (o terminar la run) y arrancar de nuevo → el Warrior arranca en 5,
    nunca en 10 (esto es automático: `RunController` crea un `Attack` nuevo sin
    modifiers en cada `OnRunStart`, no depende de este setup).
@@ -78,8 +78,8 @@ turno siguiente.
    4,5,6,4,5) → debe activarse Fuerza Bruta. Un solo dado por debajo del
    umbral (ej. d6: 4,5,6,4,**2**) → NO debe activarse (antes con 1 solo dado
    ya alcanzaba).
-6. Bajar la vida a 5 o menos → el badge real (`PassiveBadgeView`, al lado de
-   la vida) aparece. Curarse a 6+ → el badge desaparece. Reabrir el Combat
+6. Bajar la vida a 3 o menos → el badge real (`PassiveBadgeView`, al lado de
+   la vida) aparece. Curarse a 4+ → el badge desaparece. Reabrir el Combat
    HUD a mitad de combate con el buff ya activo → el badge aparece de
    entrada (no hace falta esperar el próximo cambio de HP).
 
@@ -92,6 +92,5 @@ turno siguiente.
 - `Assets/Scripts/Rollgeon/Effects/Tests/EffLowHpAttackBuffTests.cs` (incluye
   `IsActiveFor_TrueWhileBuffed_FalseAfterHeal`, el helper que usa el badge).
 
-Correr EditMode desde el Test Runner de Unity (`Window → General → Test
-Runner`) — no se pudieron correr desde esta sesión porque el MCP de Unity no
-tenía sus tools expuestas.
+Suite EditMode completa corrida vía Unity MCP el 2026-07-15: **2052/2052
+verdes** (incluye los tres archivos de arriba).
