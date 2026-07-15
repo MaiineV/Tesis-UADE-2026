@@ -90,13 +90,17 @@ payload): `BuildSelectionScreen`, `ClassSelectionScreen` (pasiva), `ComboRowView
 queda cubierto porque lee el payload ya localizado. Los botones de clase
 (Warrior/Rogue/Mage) se localizan por `LocalizeStringEvent` → `UI/class.*`.
 
-## Alcance / pendientes
+## Chrome de gameplay (Canvas prefabs)
 
-- **Chrome dentro de la escena `02_Gameplay`** (HUD estático, pausa, victoria, derrota,
-  floor transition, tooltips que vivan inline en esa escena): **NO tocado a propósito**
-  para no chocar con la rama que trabaja en esa escena. Patrón cuando se retome:
-  `LocalizationSetupTools.BindTMP(tmp, "UI", key)` + `UpsertEntry("UI", key, es, en)`.
-  Los prefabs de UI standalone sí se pueden hacer sin abrir la escena 02.
+La UI de gameplay vive en prefabs (`Assets/Prefabs/UI/Canvas/Canvas_*.prefab`), no
+inline en `02_Gameplay.unity`. Localizado a nivel **prefab** (con
+`PrefabUtility.LoadPrefabContents`, sin abrir ni modificar la escena): PauseMenu,
+Victory, Defeat, FloorTransition, ActionRoll, EnchantmentAltar (headers/botones),
+CombatHUD y ExplorationHUD (botones de acción, End Turn, Pass). Los labels
+dinámicos/code-set (números de vida/energía/oro, costos, hotkeys `(Q)`, room
+name/progress/type, tooltips, toasts, formula de daño) quedan fuera a propósito.
+
+## Alcance / pendientes
 - **Traducción EN del contenido masivo** (enchantments/salas): hoy ES=EN. Pulir con
   `UpsertEntry("Content", "<id>.name"|".desc", es, en)`.
 - **Strings de chrome hardcodeados menores** en algunos views (`"Encantado:"`, `"Tomar"`,
