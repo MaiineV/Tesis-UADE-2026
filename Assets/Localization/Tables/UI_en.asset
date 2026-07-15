@@ -78,6 +78,94 @@ MonoBehaviour:
     m_Localized: Mage
     m_Metadata:
       m_Items: []
+  - m_Id: 32518357938176
+    m_Localized: Resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435648
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435649
+    m_Localized: Quit Run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629952
+    m_Localized: Victory!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629953
+    m_Localized: Defeat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629954
+    m_Localized: Return to Menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629955
+    m_Localized: Continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629956
+    m_Localized: Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629957
+    m_Localized: Enchantment Altar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629958
+    m_Localized: 'Selected die slots:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629959
+    m_Localized: 'Your dice:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629960
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629961
+    m_Localized: Proceed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629962
+    m_Localized: Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929280
+    m_Localized: Attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929281
+    m_Localized: Move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929282
+    m_Localized: Special Attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929283
+    m_Localized: Force Door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929284
+    m_Localized: Heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123584
+    m_Localized: End Turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123585
+    m_Localized: Pass
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123586
+    m_Localized: Pass Door
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

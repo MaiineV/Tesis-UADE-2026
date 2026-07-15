@@ -75,6 +75,94 @@ MonoBehaviour:
     m_Key: class.mage
     m_Metadata:
       m_Items: []
+  - m_Id: 32518357938176
+    m_Key: pause.resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435648
+    m_Key: pause.settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435649
+    m_Key: pause.quit_run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629952
+    m_Key: victory.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629953
+    m_Key: defeat.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629954
+    m_Key: screen.return_to_menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629955
+    m_Key: floor.continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629956
+    m_Key: actionroll.roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629957
+    m_Key: altar.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629958
+    m_Key: altar.slot_header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629959
+    m_Key: altar.dice_header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629960
+    m_Key: altar.close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629961
+    m_Key: nav.proceed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629962
+    m_Key: nav.pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929280
+    m_Key: action.attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929281
+    m_Key: action.move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929282
+    m_Key: action.special_attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929283
+    m_Key: action.force_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929284
+    m_Key: action.heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123584
+    m_Key: action.end_turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123585
+    m_Key: action.pass
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123586
+    m_Key: action.pass_door
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

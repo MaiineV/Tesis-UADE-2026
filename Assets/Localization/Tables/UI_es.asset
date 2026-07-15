@@ -78,6 +78,94 @@ MonoBehaviour:
     m_Localized: Mago
     m_Metadata:
       m_Items: []
+  - m_Id: 32518357938176
+    m_Localized: Reanudar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435648
+    m_Localized: Opciones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435649
+    m_Localized: Abandonar run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629952
+    m_Localized: "\xA1Victoria!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629953
+    m_Localized: Derrota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629954
+    m_Localized: "Volver al men\xFA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629955
+    m_Localized: Continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629956
+    m_Localized: Tirar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629957
+    m_Localized: Altar de Encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629958
+    m_Localized: 'Cupos del dado seleccionado:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629959
+    m_Localized: 'Tus dados:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629960
+    m_Localized: Cerrar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629961
+    m_Localized: Avanzar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629962
+    m_Localized: Pausa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929280
+    m_Localized: Atacar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929281
+    m_Localized: Mover
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929282
+    m_Localized: Ataque especial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929283
+    m_Localized: Forzar puerta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929284
+    m_Localized: Curar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123584
+    m_Localized: Terminar turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123585
+    m_Localized: Pasar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123586
+    m_Localized: Cruzar puerta
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
