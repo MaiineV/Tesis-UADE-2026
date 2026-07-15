@@ -100,12 +100,25 @@ CombatHUD y ExplorationHUD (botones de acción, End Turn, Pass). Los labels
 dinámicos/code-set (números de vida/energía/oro, costos, hotkeys `(Q)`, room
 name/progress/type, tooltips, toasts, formula de daño) quedan fuera a propósito.
 
+## Labels code-set (seteados por código)
+
+Enrutados por `LocalizedContent` en el código que asigna el texto (no llevan
+`LocalizeStringEvent`): toggle de tutorial del menú, badge de pasiva (nombre),
+prefijos del altar (Costo/Oro/Caras actuales/Encantado/Vacío), progreso y tipo de
+sala (`RoomNavigationView` — con keys `room.type.*`), y el label de piso
+(`FloorTransitionScreen`). Los tests que asertaban strings exactos
+(`RoomNavigationViewTests`, `FloorTransitionScreenTests`) se actualizaron para
+asertar contra el mismo resolver (deterministas por locale). No se hot-refrescan al
+cambiar idioma en caliente: se re-localizan en el próximo update del label (aceptable
+para HUD/pantallas transitorias).
+
 ## Alcance / pendientes
 - **Traducción EN del contenido masivo** (enchantments/salas): hoy ES=EN. Pulir con
   `UpsertEntry("Content", "<id>.name"|".desc", es, en)`.
-- **Strings de chrome hardcodeados menores** en algunos views (`"Encantado:"`, `"Tomar"`,
-  `"Rooms {n}/{m}"`, etc.): quedan en español; localizar con `LocalizedContent.Ui(key, fb)`
-  + `UpsertEntry("UI", ...)` si se quiere cobertura total.
+- **Strings hardcodeados residuales**: el verbo `"Tomar"` de los prompts de interacción
+  (CharacterReward/Shop pedestals) y los tooltips de acción que arma
+  `HeroActionTooltip` por código (`"Costo: X de energía"`, `"Daño: …"`). Localizar con
+  `LocalizedContent.Ui(key, fb)` + `UpsertEntry("UI", ...)` si se quiere cobertura total.
 
 ## Nota de testing (editor)
 
