@@ -39,6 +39,9 @@ namespace Rollgeon.Grid
         [Tooltip("Área telegráfica de los Bosses (daño entrante el próximo turno).")]
         [SerializeField] private Color _warningColor = new Color(1f, 0.55f, 0.1f, 0.65f);
 
+        [Tooltip("Área AoE previewada al hovear/elegir un ancla (TargetMode.Aoe).")]
+        [SerializeField] private Color _aoeColor = new Color(1f, 0.6f, 0.1f, 0.55f);
+
         [Header("Tinte (shader _HitFlash* de PaletteCelFloor)")]
         [Tooltip("Fuerza global del tinte de highlight sobre los tiles. Escala el alpha " +
                  "de cada estilo: 1 = como autoría, hacia 0 = más sutil (se ve más piso).")]
@@ -57,6 +60,7 @@ namespace Rollgeon.Grid
                 { "selected", _selectedColor },
                 { "path", _pathColor },
                 { "warning", _warningColor },
+                { "aoe", _aoeColor },
                 { "door", _doorTileColor },
             };
             var textureOverrides = new Dictionary<string, Texture>();
