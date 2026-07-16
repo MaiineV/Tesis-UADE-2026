@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Combat.Pipelines;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
-using Rollgeon.Upgrades.Combos;
-using Rollgeon.Upgrades.Dice;
 using TMPro;
 using UnityEngine;
 
@@ -34,9 +35,14 @@ namespace Rollgeon.UI.HUD
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
-        private float _lastMultiDmgCombo = 1f;
         private int _lastShieldPreview;
+        private IReadOnlyList<DiceType> _lastContributingDice;
         private Action<ComboMatchedPayload> _onComboMatched;
+
+        // Enemigo objetivo elegido antes de tirar (CNF-002). Guid.Empty = sin target →
+        // el preview muestra el daño pre-mitigación. Con target, aplica weakness + escudo real.
+        private Guid _currentTargetGuid;
+        private EventManager.EventReceiver _onCombatTargetChanged;
         private IActionRollService _actionRollService;
         private Action<ActionRollPhase> _onActionRollPhase;
 
@@ -103,6 +109,16 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
 
+            // args: [playerGuid, targetGuid]. Cachear el enemigo apuntado y refrescar la
+            // fórmula para que el preview refleje weakness/escudo aunque no cambie la tirada.
+            _onCombatTargetChanged = args =>
+            {
+                if (args.Length < 2 || (Guid)args[0] != _playerGuid) return;
+                _currentTargetGuid = (Guid)args[1];
+                UpdateFormula();
+            };
+            EventManager.Subscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
+
             _bound = true;
             ClearFormula();
             HideThreshold();
@@ -140,12 +156,18 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
                 _onChainCompleted = null;
             }
+            if (_onCombatTargetChanged != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
+                _onCombatTargetChanged = null;
+            }
             _currentBehavior = null;
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
-            _lastMultiDmgCombo = 1f;
             _lastShieldPreview = 0;
+            _lastContributingDice = null;
+            _currentTargetGuid = Guid.Empty;
             _inDefensePhase = false;
             _bound = false;
             _bindCount = 0;
@@ -165,8 +187,8 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
-            _lastMultiDmgCombo = 1f;
             _lastShieldPreview = 0;
+            _lastContributingDice = null;
             _inDefensePhase = false;
             ClearFormula();
             HideThreshold();
@@ -178,8 +200,8 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = payload.DisplayName;
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
-            _lastMultiDmgCombo = payload.MultiDmgCombo > 0f ? payload.MultiDmgCombo : 1f;
             _lastShieldPreview = payload.ShieldPreview;
+            _lastContributingDice = payload.ContributingDice;
             UpdateFormula();
         }
 
@@ -228,44 +250,38 @@ namespace Rollgeon.UI.HUD
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
-            float totalMultiplier = _lastMultiDmgCombo * dmgEff.ComboMultiplier;
-            int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * totalMultiplier);
-            int bonus = ResolveComboBonusDamage(_lastComboId);
-            int total = comboPart + bonus;
 
-            // Resumen completo en el formula label: combo + daño base, multiplicador (si
-            // ≠ 1), agregados de mejoras (si los hay) y el total final. Mismo cálculo que
-            // EffDealDamage.ResolveArgs (pre-mitigación). Ejemplos:
-            //   "Par: 50"                  (sin multiplicador ni mejoras)
-            //   "Par: 50 + 60 = 110"       (mejora de +60)
-            //   "Par: 50 × 2 = 100"        (multiplicador 2)
-            //   "Par: 50 × 2 + 60 = 160"   (ambos)
-            bool hasMultiplier = !Mathf.Approximately(totalMultiplier, 1f);
-            string formula = $"{comboName}: {_lastComboBaseDamage}";
-            if (hasMultiplier) formula += $" × {totalMultiplier:0.##}";
-            if (bonus > 0) formula += $" + {bonus}";
-            if (hasMultiplier || bonus > 0) formula += $" = {total}";
-            _formulaLabel.text = formula;
-        }
+            // Daño pre-mitigación EXACTO: misma función que el golpe real, así el número
+            // arrastra ATQ base del PJ, scratchMultiplier de encantamientos y el bono de
+            // combo sin re-derivar la fórmula acá (era la causa del desfase reportado).
+            // Nota de orden: Resolve lee LastComboScratch de los services de passives/
+            // enchants, que se pueblan al procesar el MISMO ComboMatchedPayload — depende de
+            // que esos services estén suscriptos antes que esta view (misma dependencia que
+            // tenía el viejo ResolveComboBonusDamage).
+            int preMitigation = PlayerComboDamage.Resolve(
+                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier);
 
-        // Suma los bonuses de combo passives (tienda) y dice enchantments igual que
-        // EffDealDamage.ResolveArgs — así el total mostrado coincide con el golpe real
-        // (antes de mitigación del pipeline, que depende del target). GetBonusDamage es
-        // una query sin side-effects; el scratch de enchantments ya quedó computado por
-        // su service al procesar el mismo ComboMatchedPayload.
-        private int ResolveComboBonusDamage(string comboId)
-        {
-            int bonus = 0;
-            if (!string.IsNullOrEmpty(comboId)
-                && ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
-                && passives != null)
-                bonus += passives.GetBonusDamage(comboId);
+            // Con enemigo apuntado (elegido antes de tirar), aplicar la mitigación real
+            // (weakness + escudo) SIN side-effects para que el label == golpe que va a recibir.
+            int shown = preMitigation;
+            if (_currentTargetGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline)
+                && pipeline != null)
+            {
+                var ctx = new DamageContext
+                {
+                    SourceId = _playerGuid,
+                    TargetId = _currentTargetGuid,
+                    BaseDamage = preMitigation,
+                    ComboId = _lastComboId,
+                    // Enemigos sin debilidad ("None") resuelven a ×1.0 dentro del Preview.
+                    IsWeaknessHit = !string.IsNullOrEmpty(_lastComboId),
+                };
+                pipeline.Preview(ctx);
+                shown = ctx.FinalDamage;
+            }
 
-            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
-                && enchants?.LastComboScratch != null)
-                bonus += enchants.LastComboScratch.BonusComboDamage;
-
-            return bonus;
+            _formulaLabel.text = $"{comboName}: {shown}";
         }
 
         private bool TryShowActionRollMode()

@@ -90,23 +90,21 @@ namespace Rollgeon.Combat.Pipelines
 
             // ── 4. Shield absorption ─────────────────────────────────────
             bool shieldBroken = false;
-            var shieldAttr = _attributes.GetAttribute<Shield>(ctx.TargetId);
-            if (shieldAttr != null && shieldAttr.Value > 0)
+            int shieldBefore = ReadShield(ctx.TargetId);
+            int absorbed = ComputeShieldAbsorbed(shieldBefore, damage);
+            if (absorbed > 0)
             {
-                int shield = shieldAttr.Value;
-                int absorbed = Mathf.Min(shield, damage);
                 damage -= absorbed;
-                int newShield = shield - absorbed;
+                int newShield = shieldBefore - absorbed;
                 _attributes.SetAttributeValue<Shield, int>(ctx.TargetId, newShield);
                 ctx.ShieldAbsorbed = absorbed;
 
                 // Shield "broken" = estaba arriba (>0) y quedó en 0 tras absorber. Lo
                 // exponemos en el payload para que la UI pueda spawnear un "Broken Shield"
                 // junto con el número de daño residual (si hay).
-                shieldBroken = absorbed > 0 && newShield == 0;
+                shieldBroken = newShield == 0;
 
-                if (absorbed > 0)
-                    EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, newShield);
+                EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, newShield);
             }
 
             ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
@@ -165,6 +163,57 @@ namespace Rollgeon.Combat.Pipelines
             });
 
             return ctx;
+        }
+
+        /// <inheritdoc />
+        public DamageContext Preview(DamageContext ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            int damage = ctx.BaseDamage;
+            if (damage <= 0)
+            {
+                ctx.FinalDamage = 0;
+                ctx.WeaknessMultiplier = 1f;
+                ctx.ShieldAbsorbed = 0;
+                ctx.BlockedByShield = false;
+                return ctx;
+            }
+
+            // Stage 2 — weakness (read-only: PeekMultiplier NO dispara OnWeaknessHit).
+            float weakMult = 1f;
+            if (ctx.IsWeaknessHit && _weaknessChecker != null)
+            {
+                weakMult = _weaknessChecker.PeekMultiplier(ctx.SourceId, ctx.TargetId, ctx.ComboId);
+                if (weakMult > 1f) damage = Mathf.RoundToInt(damage * weakMult);
+            }
+            ctx.WeaknessMultiplier = weakMult;
+
+            // Stage 4 — shield absorption (computar, NO escribir Shield ni disparar eventos).
+            int absorbed = ComputeShieldAbsorbed(ReadShield(ctx.TargetId), damage);
+            if (absorbed > 0)
+            {
+                damage -= absorbed;
+                ctx.ShieldAbsorbed = absorbed;
+            }
+            ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
+            ctx.FinalDamage = damage;
+            return ctx;
+        }
+
+        private int ReadShield(Guid targetId)
+        {
+            var shieldAttr = _attributes.GetAttribute<Shield>(targetId);
+            return shieldAttr != null ? shieldAttr.Value : 0;
+        }
+
+        // Cuánto absorbe el escudo actual de un golpe — aritmética compartida entre Resolve
+        // (que además escribe y emite el evento) y Preview (solo computa). Único source of
+        // truth para que preview y golpe real nunca driftéen.
+        private static int ComputeShieldAbsorbed(int shieldValue, int damage)
+        {
+            if (shieldValue <= 0 || damage <= 0) return 0;
+            return Mathf.Min(shieldValue, damage);
         }
     }
 }

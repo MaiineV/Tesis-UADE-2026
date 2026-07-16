@@ -190,6 +190,10 @@ namespace Rollgeon.Effects.Concretes
                         TargetId = targetGuid,
                         BaseDamage = amount,
                         Kind = _attackKind,
+                        // Combo → habilita la etapa de weakness del pipeline. El combo que
+                        // matcheó decide qué debilidad del target dispara (o ninguna → ×1.0).
+                        ComboId = context.ComboResult?.ComboId,
+                        IsWeaknessHit = context.ComboResult?.IsMatch ?? false,
                     };
                     pipeline.Resolve(dmgCtx);
                     resolvedDamage = dmgCtx.FinalDamage;

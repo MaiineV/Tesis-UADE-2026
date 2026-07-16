@@ -1157,6 +1157,9 @@ namespace Rollgeon.Combat.Handoff
 
             _creaseTargetGuid = occupant;
             PawnMaterialFeedback.SetSelectedFor(occupant, true);
+
+            // El HUD previsualiza la mitigación real (weakness + escudo) del enemigo apuntado.
+            EventManager.Trigger(EventName.OnCombatTargetChanged, _player.PlayerGuid, occupant);
         }
 
         private void ClearAttackTargetCrease()
@@ -1164,6 +1167,7 @@ namespace Rollgeon.Combat.Handoff
             if (_creaseTargetGuid == Guid.Empty) return;
             PawnMaterialFeedback.SetSelectedFor(_creaseTargetGuid, false);
             _creaseTargetGuid = Guid.Empty;
+            EventManager.Trigger(EventName.OnCombatTargetChanged, _player.PlayerGuid, Guid.Empty);
         }
 
         private void PrepareNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)

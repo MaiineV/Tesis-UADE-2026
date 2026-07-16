@@ -38,6 +38,11 @@ namespace Patterns
         OnCombatEnd,
         /// <summary>args: [Guid runId]</summary>
         OnPlayerDefeated,
+        /// <summary>args: [Guid playerGuid, Guid targetGuid]. El jugador eligió (o limpió) el
+        /// enemigo objetivo del ataque antes de tirar. targetGuid == Guid.Empty significa
+        /// "sin target". Lo consume el HUD para previsualizar la mitigación real (weakness +
+        /// escudo del enemigo apuntado) en la fórmula de daño.</summary>
+        OnCombatTargetChanged,
 
         // --- Damage pipeline ----------------------------------------------------
         /// <summary>args: [Guid sourceGuid, Guid targetGuid, int baseDamage]</summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Patterns
 {
@@ -98,5 +99,12 @@ namespace Patterns
         /// 0 = el combo/clase no genera escudo o no se calculó.
         /// </summary>
         public int ShieldPreview;
+
+        /// <summary>
+        /// Dados que contribuyen al combo, para que el preview del HUD recompute el daño real
+        /// con <c>PlayerComboDamage.Resolve</c> (misma fórmula que el golpe) en vez de una copia
+        /// paralela. <c>null</c> = sin combo o sin bag disponible.
+        /// </summary>
+        public IReadOnlyList<Rollgeon.Dice.DiceType> ContributingDice;
     }
 }
