@@ -1864,7 +1864,7 @@ MonoBehaviour:
     HP:
       Mode: 1
       Multiplier: 1
-      ManualValue: 170
+      ManualValue: 115
     Attack:
       Mode: 0
       Multiplier: 1

@@ -122,12 +122,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -170,6 +203,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -331,12 +367,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -367,6 +436,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -512,12 +584,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -618,12 +723,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -690,12 +828,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -1056,7 +1227,7 @@ MonoBehaviour:
     HP:
       Mode: 1
       Multiplier: 1
-      ManualValue: 300
+      ManualValue: 180
     Attack:
       Mode: 1
       Multiplier: 1
