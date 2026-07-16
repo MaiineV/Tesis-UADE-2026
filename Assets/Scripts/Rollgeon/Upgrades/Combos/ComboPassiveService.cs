@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.FSM;
 using Rollgeon.Combos;
 using Rollgeon.Economy;
 using Rollgeon.Effects;
@@ -14,7 +15,10 @@ namespace Rollgeon.Upgrades.Combos
     /// Service Global del Canal Combos. Mantiene el <see cref="RunComboPassivesState"/>
     /// run-scoped, expone <see cref="Apply"/> para tienda + <see cref="GetBonusDamage"/>
     /// para el damage pipeline, y dispatcha extras (<see cref="IOnComboPassiveMatchedTrigger"/>)
-    /// vía <c>TypedEvent&lt;ComboMatchedPayload&gt;</c>.
+    /// vía <c>TypedEvent&lt;ComboMatchedPayload&gt;</c>. Además dispatcha los hooks
+    /// genéricos (<c>IOn*PassiveTrigger</c>) a TODAS las pasivas de la run — mismo
+    /// esquema multi-evento que <c>DiceEnchantmentService</c>: scratch fresco por
+    /// evento, aplicado de inmediato vía <see cref="EnchantmentScratchApplier"/>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -34,6 +38,12 @@ namespace Rollgeon.Upgrades.Combos
         private readonly ComboPassivePoolSO _pool;
         private bool _subscribed;
         private IReadOnlyList<int> _lastFinalRoll;
+
+        // Guard de reentrada: aplicar un scratch puede mover oro (EnchantmentScratchApplier
+        // → economy.Add → OnGoldChanged) — sin este flag, una pasiva que da oro en
+        // OnGoldChanged recursa infinito. Los cambios de oro causados por pasivas no
+        // re-disparan pasivas.
+        private bool _applyingScratch;
 
         /// <param name="pool">
         /// Pool de pasivas — usado como resolver UpgradeId → SO al restaurar un save.
@@ -71,7 +81,15 @@ namespace Rollgeon.Upgrades.Combos
             EventManager.Subscribe(EventName.OnRunStart, OnRunStartHandler);
             EventManager.Subscribe(EventName.OnRunEnd, OnRunEndHandler);
             EventManager.Subscribe(EventName.OnRollResolved, OnRollResolvedHandler);
+            EventManager.Subscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
+            EventManager.Subscribe(EventName.OnTurnStarted, OnTurnStartedHandler);
+            EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
+            EventManager.Subscribe(EventName.OnRoomEntered, OnRoomEnteredHandler);
+            EventManager.Subscribe(EventName.OnCombatStart, OnCombatStartHandler);
+            EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.Subscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatched);
+            TypedEvent<DamageResolvedPayload>.Subscribe(OnDamageResolvedHandler);
             _subscribed = true;
         }
 
@@ -81,7 +99,15 @@ namespace Rollgeon.Upgrades.Combos
             EventManager.UnSubscribe(EventName.OnRunStart, OnRunStartHandler);
             EventManager.UnSubscribe(EventName.OnRunEnd, OnRunEndHandler);
             EventManager.UnSubscribe(EventName.OnRollResolved, OnRollResolvedHandler);
+            EventManager.UnSubscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
+            EventManager.UnSubscribe(EventName.OnTurnStarted, OnTurnStartedHandler);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
+            EventManager.UnSubscribe(EventName.OnRoomEntered, OnRoomEnteredHandler);
+            EventManager.UnSubscribe(EventName.OnCombatStart, OnCombatStartHandler);
+            EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.UnSubscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatched);
+            TypedEvent<DamageResolvedPayload>.Unsubscribe(OnDamageResolvedHandler);
             _subscribed = false;
         }
 
@@ -168,7 +194,124 @@ namespace Rollgeon.Upgrades.Combos
         {
             if (args == null || args.Length < 2) return;
             if (!(args[1] is IReadOnlyList<int> faces)) return;
+            // Cachear ANTES de dispatchar — los readers de los triggers deben ver este roll.
             _lastFinalRoll = faces;
+
+            var sourceGuid = args[0] is Guid guid ? guid : Guid.Empty;
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = sourceGuid, DiceResult = faces });
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnRollResolvedPassiveTrigger h) h.OnRollResolved(c);
+            });
+        }
+
+        private void OnDiceRolledHandler(params object[] args)
+        {
+            if (args == null || args.Length < 2) return;
+            if (!(args[0] is Guid sourceGuid)) return;
+            if (!(args[1] is IReadOnlyList<int> faces)) return;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = sourceGuid, DiceResult = faces });
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnDiceRolledPassiveTrigger h) h.OnDiceRolled(c);
+            });
+        }
+
+        private void OnTurnStartedHandler(params object[] args)
+        {
+            if (!TryGetPlayerTurnGuid(args, out var playerGuid)) return;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = playerGuid, DiceResult = _lastFinalRoll });
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnTurnStartedPassiveTrigger h) h.OnTurnStarted(c);
+            });
+        }
+
+        private void OnTurnFinishedHandler(params object[] args)
+        {
+            if (!TryGetPlayerTurnGuid(args, out var playerGuid)) return;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = playerGuid, DiceResult = _lastFinalRoll });
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnTurnFinishedPassiveTrigger h) h.OnTurnFinished(c);
+            });
+        }
+
+        private void OnRoomEnteredHandler(params object[] args)
+        {
+            // Defensivo: hay tests que disparan OnRoomEntered sin args.
+            if (args == null || args.Length < 1 || !(args[0] is Guid roomInstanceId)) return;
+            string roomId = args.Length >= 2 && args[1] is string s ? s : string.Empty;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = ResolvePlayerGuid() });
+            ctx.RoomInstanceId = roomInstanceId;
+            ctx.RoomId = roomId;
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnRoomEnteredPassiveTrigger h) h.OnRoomEntered(c);
+            });
+        }
+
+        private void OnCombatStartHandler(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid roomInstanceId)) return;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = ResolvePlayerGuid() });
+            ctx.RoomInstanceId = roomInstanceId;
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnCombatStartPassiveTrigger h) h.OnCombatStart(c);
+            });
+        }
+
+        private void OnCombatEndHandler(params object[] args)
+        {
+            // Varios tests disparan OnCombatEnd con 0/1 args o outcome mal tipado —
+            // se dispatcha igual con defaults (Outcome = None sentinel).
+            var roomInstanceId = args != null && args.Length >= 1 && args[0] is Guid g ? g : Guid.Empty;
+            var outcome = args != null && args.Length >= 2 && args[1] is CombatOutcome o ? o : CombatOutcome.None;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = ResolvePlayerGuid() });
+            ctx.RoomInstanceId = roomInstanceId;
+            ctx.Outcome = outcome;
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnCombatEndPassiveTrigger h) h.OnCombatEnd(c);
+            });
+        }
+
+        private void OnGoldChangedHandler(params object[] args)
+        {
+            // Oro movido por la aplicación de un scratch de pasiva NO re-dispara pasivas.
+            if (_applyingScratch) return;
+            if (args == null || args.Length < 2) return;
+            if (!(args[0] is int total) || !(args[1] is int delta)) return;
+
+            var ctx = BuildGenericContext(new EffectContext { SourceGuid = ResolvePlayerGuid() });
+            ctx.GoldTotal = total;
+            ctx.GoldDelta = delta;
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnGoldChangedPassiveTrigger h) h.OnGoldChanged(c);
+            });
+        }
+
+        private void OnDamageResolvedHandler(DamageResolvedPayload payload)
+        {
+            var ctx = BuildGenericContext(new EffectContext
+            {
+                SourceGuid = payload.SourceGuid,
+                TargetGuid = payload.TargetGuid,
+                DiceResult = _lastFinalRoll,
+            });
+            ctx.Damage = payload;
+            DispatchGeneric(ctx, static (t, c) =>
+            {
+                if (t is IOnDamageResolvedPassiveTrigger h) h.OnDamageResolved(c);
+            });
         }
 
         private void OnComboMatched(ComboMatchedPayload payload)
@@ -217,9 +360,70 @@ namespace Rollgeon.Upgrades.Combos
             ApplyScratchSideEffects(scratch);
         }
 
-        private static void ApplyScratchSideEffects(EnchantmentScratch scratch)
+        private void ApplyScratchSideEffects(EnchantmentScratch scratch)
         {
-            EnchantmentScratchApplier.Apply(scratch, ResolvePlayerGuid());
+            _applyingScratch = true;
+            try
+            {
+                EnchantmentScratchApplier.Apply(scratch, ResolvePlayerGuid());
+            }
+            finally
+            {
+                _applyingScratch = false;
+            }
+        }
+
+        // ====================================================================
+        // Generic hook dispatch
+        // ====================================================================
+
+        /// <summary>
+        /// Dispatch de un hook genérico a TODAS las pasivas de la run (sin importar
+        /// <c>TargetComboId</c> — ese filtro solo aplica a <see cref="OnComboMatched"/>).
+        /// Aplica los side effects del scratch al final, igual que el path de combo,
+        /// pero NO toca <see cref="LastComboScratch"/> (contrato del damage pipeline).
+        /// </summary>
+        private void DispatchGeneric(ComboPassiveContext ctx, Action<IComboPassiveTrigger, ComboPassiveContext> dispatch)
+        {
+            if (!ServiceLocator.TryGetService<RunComboPassivesState>(out var state) || state == null) return;
+            var all = state.GetAll();
+            if (all.Count == 0) return;
+
+            for (int i = 0; i < all.Count; i++)
+            {
+                var triggers = all[i]?.ExtraTriggers;
+                if (triggers == null) continue;
+                for (int t = 0; t < triggers.Count; t++)
+                {
+                    if (triggers[t] != null) dispatch(triggers[t], ctx);
+                }
+            }
+
+            ApplyScratchSideEffects(ctx.Scratch);
+        }
+
+        private static ComboPassiveContext BuildGenericContext(EffectContext effectCtx)
+        {
+            return new ComboPassiveContext
+            {
+                Effect = effectCtx,
+                ComboId = null,
+                Scratch = new EnchantmentScratch(),
+            };
+        }
+
+        /// <summary>Filtro de turnos: solo dispatchamos turnos del player (no enemigos).</summary>
+        private static bool TryGetPlayerTurnGuid(object[] args, out Guid playerGuid)
+        {
+            playerGuid = Guid.Empty;
+            if (args == null || args.Length < 1) return false;
+            if (!(args[0] is Guid entityGuid)) return false;
+
+            var resolved = ResolvePlayerGuid();
+            if (resolved == Guid.Empty || resolved != entityGuid) return false;
+
+            playerGuid = entityGuid;
+            return true;
         }
 
         // ====================================================================

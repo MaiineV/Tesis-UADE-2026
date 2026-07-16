@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.UI.HUD
 {
@@ -70,8 +72,21 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public static void Show(int ownerId, in InteractionPromptContent content)
         {
+            Show(ownerId, in content, null);
+        }
+
+        /// <summary>
+        /// Variante con acción de confirmación: el footer se renderiza como un botón
+        /// clickeable ("[KEY] Verbo") con el precio al lado, y clickearlo invoca
+        /// <paramref name="onConfirm"/> — equivalente a presionar la tecla física
+        /// (el caller conecta ambos paths al mismo handler). Con
+        /// <c>onConfirm == null</c> el panel se comporta como siempre: footer de
+        /// texto, cero raycasts.
+        /// </summary>
+        public static void Show(int ownerId, in InteractionPromptContent content, Action onConfirm)
+        {
             EnsureInstance();
-            _instance.ShowContent(ownerId, in content);
+            _instance.ShowContent(ownerId, in content, onConfirm);
         }
 
         /// <summary>Oculta el panel SOLO si <paramref name="ownerId"/> es el dueño actual.</summary>
@@ -116,11 +131,26 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public static string BuildFooter(string keyHint, string verb, int price, bool canAfford)
         {
-            string keyPart = $"<color=#FFD75A>[{keyHint}]</color> {verb}";
+            string keyPart = BuildConfirmLabel(keyHint, verb);
             if (price < 0) return keyPart;
+            return $"{keyPart}   {BuildPriceLabel(price, canAfford)}";
+        }
 
+        /// <summary>Label del botón de confirmación: "[KEY] Verbo" con la key en amarillo. Pura.</summary>
+        public static string BuildConfirmLabel(string keyHint, string verb)
+        {
+            return $"<color=#FFD75A>[{keyHint}]</color> {verb}";
+        }
+
+        /// <summary>
+        /// Segmento de precio "N G" coloreado por affordability. <paramref name="price"/>
+        /// &lt; 0 → string vacío. Pura.
+        /// </summary>
+        public static string BuildPriceLabel(int price, bool canAfford)
+        {
+            if (price < 0) return string.Empty;
             string priceColor = canAfford ? "#FFC533" : "#FF6B6B";
-            return $"{keyPart}   <color={priceColor}>{price} G</color>";
+            return $"<color={priceColor}>{price} G</color>";
         }
 
         private static void EnsureInstance()
@@ -146,6 +176,9 @@ namespace Rollgeon.UI.HUD
             private const float HideDurationSeconds = 0.10f;
             private const float SlideOffsetPixels = 12f;
 
+            private static readonly Color ButtonColor = new Color(0.165f, 0.165f, 0.235f);       // #2A2A3C
+            private static readonly Color ButtonHighlight = new Color(0.235f, 0.235f, 0.33f);    // #3C3C54
+
             private GameObject _panelGO;
             private RectTransform _panelRect;
             private CanvasGroup _canvasGroup;
@@ -153,6 +186,10 @@ namespace Rollgeon.UI.HUD
             private GameObject _descGO;
             private TextMeshProUGUI _descText;
             private TextMeshProUGUI _footerText;
+            private GameObject _confirmGO;
+            private Button _confirmButton;
+            private TextMeshProUGUI _confirmText;
+            private Action _confirmCallback;
 
             private Vector2 _shownAnchoredPos;
             private Vector2 _hiddenAnchoredPos;
@@ -172,6 +209,12 @@ namespace Rollgeon.UI.HUD
                 scaler.referenceResolution = ReferenceResolution;
                 scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
+
+                // Sin GraphicRaycaster el canvas no recibe clicks — necesario para el
+                // botón de confirmación. Los prompts sin botón siguen sin interceptar
+                // nada: todos sus graphics tienen raycastTarget=false y el CanvasGroup
+                // apaga blocksRaycasts salvo cuando hay confirm activo.
+                gameObject.AddComponent<GraphicRaycaster>();
 
                 BuildPanel();
             }
@@ -228,7 +271,49 @@ namespace Rollgeon.UI.HUD
                 _footerText.alignment = TextAlignmentOptions.Center;
                 _footerText.richText = true;
 
+                BuildConfirmButton();
+
                 _panelGO.SetActive(false);
+            }
+
+            private void BuildConfirmButton()
+            {
+                _confirmGO = new GameObject("ConfirmButton", typeof(RectTransform));
+                _confirmGO.transform.SetParent(_panelRect, worldPositionStays: false);
+
+                var image = _confirmGO.AddComponent<Image>();
+                image.color = ButtonColor;
+                image.raycastTarget = true; // único graphic clickeable de todo el prompt.
+
+                _confirmButton = _confirmGO.AddComponent<Button>();
+                _confirmButton.targetGraphic = image;
+                var colors = _confirmButton.colors;
+                colors.highlightedColor = ButtonHighlight;
+                colors.pressedColor = ButtonHighlight;
+                _confirmButton.colors = colors;
+                _confirmButton.onClick.AddListener(HandleConfirmClicked);
+
+                var layoutElement = _confirmGO.AddComponent<LayoutElement>();
+                layoutElement.preferredHeight = 44f;
+
+                _confirmText = BuildTmpChild(_confirmGO.transform, "Label", 24f, FontStyles.Bold, Color.white, wrap: false);
+                _confirmText.alignment = TextAlignmentOptions.Center;
+                _confirmText.richText = true;
+
+                // El label llena el rect del botón (el botón no tiene layout group propio).
+                var labelRect = (RectTransform)_confirmText.transform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+
+                _confirmGO.SetActive(false);
+            }
+
+            private void HandleConfirmClicked()
+            {
+                if (!_hasOwner) return;
+                _confirmCallback?.Invoke();
             }
 
             private static TextMeshProUGUI BuildTmpChild(Transform parent, string name, float fontSize,
@@ -245,10 +330,11 @@ namespace Rollgeon.UI.HUD
                 return tmp;
             }
 
-            public void ShowContent(int ownerId, in InteractionPromptContent content)
+            public void ShowContent(int ownerId, in InteractionPromptContent content, Action onConfirm)
             {
                 _currentOwnerId = ownerId;
                 _hasOwner = true;
+                _confirmCallback = onConfirm;
 
                 _titleText.text = content.Title ?? string.Empty;
 
@@ -256,7 +342,28 @@ namespace Rollgeon.UI.HUD
                 _descGO.SetActive(hasDesc);
                 if (hasDesc) _descText.text = content.Description;
 
-                _footerText.text = BuildFooter(content.KeyHint, content.Verb, content.Price, content.CanAfford);
+                bool hasConfirm = onConfirm != null;
+                _confirmGO.SetActive(hasConfirm);
+                // El CanvasGroup sólo bloquea raycasts cuando hay botón — un prompt
+                // informativo no debe robarle clicks al mundo (contrato original).
+                _canvasGroup.blocksRaycasts = hasConfirm;
+                _canvasGroup.interactable = hasConfirm;
+
+                if (hasConfirm)
+                {
+                    _confirmText.text = BuildConfirmLabel(content.KeyHint, content.Verb);
+                    _confirmButton.interactable = content.Price < 0 || content.CanAfford;
+
+                    // Con botón, el footer de texto queda sólo para el precio.
+                    bool hasPrice = content.Price >= 0;
+                    _footerText.gameObject.SetActive(hasPrice);
+                    if (hasPrice) _footerText.text = BuildPriceLabel(content.Price, content.CanAfford);
+                }
+                else
+                {
+                    _footerText.gameObject.SetActive(true);
+                    _footerText.text = BuildFooter(content.KeyHint, content.Verb, content.Price, content.CanAfford);
+                }
 
                 // El toggle de _descGO y el texto nuevo cambian la altura preferida —
                 // forzar el rebuild ahora para que el layout/tamaño final ya esté
@@ -287,6 +394,10 @@ namespace Rollgeon.UI.HUD
             public void HideImmediateOrAnimated()
             {
                 _hasOwner = false;
+                _confirmCallback = null;
+                // Apagar raycasts ya mismo — el fade-out no debe seguir comiendo clicks.
+                _canvasGroup.blocksRaycasts = false;
+                _canvasGroup.interactable = false;
                 CancelActiveRoutine();
 
                 if (!Application.isPlaying)

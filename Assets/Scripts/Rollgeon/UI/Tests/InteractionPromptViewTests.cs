@@ -152,6 +152,107 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual("<color=#FFD75A>[F]</color> Tomar", footer);
         }
 
+        [Test]
+        public void BuildConfirmLabel_FormatsKeyAndVerb()
+        {
+            string label = InteractionPromptView.BuildConfirmLabel("F", "Comprar");
+
+            Assert.AreEqual("<color=#FFD75A>[F]</color> Comprar", label);
+        }
+
+        [Test]
+        public void BuildPriceLabel_NegativePrice_ReturnsEmpty()
+        {
+            Assert.AreEqual(string.Empty, InteractionPromptView.BuildPriceLabel(-1, canAfford: true));
+        }
+
+        // --------------------------------------------------------------
+        // Confirm button (Show con callback)
+        // --------------------------------------------------------------
+
+        [Test]
+        public void Show_WithConfirmCallback_ActivatesButtonAndBlocksRaycasts()
+        {
+            var content = new InteractionPromptContent("F", "Comprar", "Poción", string.Empty, 8, true);
+
+            InteractionPromptView.Show(1, in content, () => { });
+
+            var runtime = GetRuntimeInstance();
+            var confirmGO = GetPrivate<GameObject>(runtime, "_confirmGO");
+            var canvasGroup = GetPrivate<CanvasGroup>(runtime, "_canvasGroup");
+
+            Assert.IsTrue(confirmGO.activeSelf, "Con callback, el botón de confirmación debe estar activo.");
+            Assert.IsTrue(canvasGroup.blocksRaycasts, "Con callback, el CanvasGroup debe bloquear raycasts para que el botón sea clickeable.");
+        }
+
+        [Test]
+        public void Show_WithoutConfirmCallback_KeepsButtonHiddenAndRaycastsOff()
+        {
+            var content = new InteractionPromptContent("F", "Tomar", "Espada", string.Empty);
+
+            InteractionPromptView.Show(1, in content);
+
+            var runtime = GetRuntimeInstance();
+            var confirmGO = GetPrivate<GameObject>(runtime, "_confirmGO");
+            var canvasGroup = GetPrivate<CanvasGroup>(runtime, "_canvasGroup");
+
+            Assert.IsFalse(confirmGO.activeSelf, "Sin callback, el botón no debe aparecer.");
+            Assert.IsFalse(canvasGroup.blocksRaycasts, "Sin callback, el prompt no debe interceptar clicks (contrato original).");
+        }
+
+        [Test]
+        public void Show_WithConfirmAndPrice_FooterShowsOnlyPriceAndButtonShowsKeyVerb()
+        {
+            var content = new InteractionPromptContent("F", "Comprar", "Poción", string.Empty, 8, true);
+
+            InteractionPromptView.Show(1, in content, () => { });
+
+            var runtime = GetRuntimeInstance();
+            var footerText = GetPrivate<TextMeshProUGUI>(runtime, "_footerText");
+            var confirmText = GetPrivate<TextMeshProUGUI>(runtime, "_confirmText");
+
+            Assert.AreEqual("<color=#FFC533>8 G</color>", footerText.text);
+            Assert.AreEqual("<color=#FFD75A>[F]</color> Comprar", confirmText.text);
+        }
+
+        [Test]
+        public void Show_WithConfirmAndCannotAfford_ButtonNotInteractable()
+        {
+            var content = new InteractionPromptContent("F", "Comprar", "Poción", string.Empty, 999, canAfford: false);
+
+            InteractionPromptView.Show(1, in content, () => { });
+
+            var confirmButton = GetPrivate<UnityEngine.UI.Button>(GetRuntimeInstance(), "_confirmButton");
+            Assert.IsFalse(confirmButton.interactable, "Sin oro suficiente el botón debe verse deshabilitado.");
+        }
+
+        [Test]
+        public void ConfirmButtonClick_InvokesCallback()
+        {
+            int calls = 0;
+            var content = new InteractionPromptContent("F", "Comprar", "Poción", string.Empty, 8, true);
+            InteractionPromptView.Show(1, in content, () => calls++);
+
+            var confirmButton = GetPrivate<UnityEngine.UI.Button>(GetRuntimeInstance(), "_confirmButton");
+            confirmButton.onClick.Invoke();
+
+            Assert.AreEqual(1, calls, "El click del botón debe invocar el callback de confirmación.");
+        }
+
+        [Test]
+        public void ConfirmButtonClick_AfterHide_DoesNotInvokeCallback()
+        {
+            int calls = 0;
+            var content = new InteractionPromptContent("F", "Comprar", "Poción", string.Empty, 8, true);
+            InteractionPromptView.Show(1, in content, () => calls++);
+            InteractionPromptView.Hide(1);
+
+            var confirmButton = GetPrivate<UnityEngine.UI.Button>(GetRuntimeInstance(), "_confirmButton");
+            confirmButton.onClick.Invoke();
+
+            Assert.AreEqual(0, calls, "Tras Hide, el callback quedó limpio — un click fantasma no debe comprar.");
+        }
+
         // --------------------------------------------------------------
         // Reflection helpers — InteractionPromptView no expone accessors
         // públicos sólo-para-tests (ver remarks de la clase).

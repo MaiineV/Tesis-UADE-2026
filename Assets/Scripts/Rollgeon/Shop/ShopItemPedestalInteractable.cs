@@ -279,7 +279,8 @@ namespace Rollgeon.Shop
             }
             var content = BuildPromptContent();
             _lastCanAfford = content.CanAfford;
-            InteractionPromptView.Show(GetInstanceID(), content);
+            // El botón "[F] Comprar" del prompt y la tecla física convergen en Interact().
+            InteractionPromptView.Show(GetInstanceID(), content, Interact);
         }
 
         private void OnDisable()

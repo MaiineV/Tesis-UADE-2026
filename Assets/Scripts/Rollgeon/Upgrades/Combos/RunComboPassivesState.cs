@@ -27,8 +27,19 @@ namespace Rollgeon.Upgrades.Combos
         public const string SaveKeyConst = "run.combo_passives";
         private const string LogPrefix = "[RunComboPassivesState] ";
 
+        /// <summary>
+        /// Bucket reservado para pasivas sin <c>TargetComboId</c> (puramente genéricas:
+        /// solo hooks de evento, sin afinidad de combo). Nunca colisiona con un combo
+        /// real — los ids canónicos son 'combo.&lt;snake_case&gt;'.
+        /// </summary>
+        private const string GenericBucketKey = "__generic";
+
         private readonly Dictionary<string, List<ComboPassiveSO>> _passivesByCombo
             = new Dictionary<string, List<ComboPassiveSO>>();
+
+        // Vista plana para el dispatch de hooks genéricos (todas las pasivas, sin
+        // importar el combo target) — mantenida en Add para no alocar por evento.
+        private readonly List<ComboPassiveSO> _allPassives = new List<ComboPassiveSO>();
 
         private readonly Func<string, ComboPassiveSO> _resolveById;
 
@@ -37,18 +48,26 @@ namespace Rollgeon.Upgrades.Combos
             _resolveById = resolveById;
         }
 
-        /// <summary>Suma una pasiva al stack del combo target. Permite repetidos.</summary>
+        /// <summary>
+        /// Suma una pasiva al stack del combo target. Permite repetidos. Pasivas sin
+        /// <c>TargetComboId</c> (genéricas) van al bucket reservado — participan del
+        /// dispatch de hooks de evento pero nunca de <see cref="Get"/> por combo.
+        /// </summary>
         public void Add(ComboPassiveSO passive)
         {
             if (passive == null) return;
-            if (string.IsNullOrEmpty(passive.TargetComboId)) return;
 
-            if (!_passivesByCombo.TryGetValue(passive.TargetComboId, out var list))
+            string key = string.IsNullOrEmpty(passive.TargetComboId)
+                ? GenericBucketKey
+                : passive.TargetComboId;
+
+            if (!_passivesByCombo.TryGetValue(key, out var list))
             {
                 list = new List<ComboPassiveSO>();
-                _passivesByCombo[passive.TargetComboId] = list;
+                _passivesByCombo[key] = list;
             }
             list.Add(passive);
+            _allPassives.Add(passive);
         }
 
         /// <summary>Lista de pasivas activas para un combo. Empty si no hay ninguna.</summary>
@@ -60,16 +79,14 @@ namespace Rollgeon.Upgrades.Combos
                 : (IReadOnlyList<ComboPassiveSO>)Array.Empty<ComboPassiveSO>();
         }
 
+        /// <summary>
+        /// Todas las pasivas de la run (incluidas las genéricas), en orden de adquisición.
+        /// Consumida por el dispatch de hooks genéricos de <see cref="ComboPassiveService"/>.
+        /// </summary>
+        public IReadOnlyList<ComboPassiveSO> GetAll() => _allPassives;
+
         /// <summary>Total de pasivas activas (todos los combos sumados). Diagnóstico / UI.</summary>
-        public int TotalCount
-        {
-            get
-            {
-                int total = 0;
-                foreach (var kv in _passivesByCombo) total += kv.Value.Count;
-                return total;
-            }
-        }
+        public int TotalCount => _allPassives.Count;
 
         // ---------------------------------------------------------------- ISaveable
 
@@ -78,13 +95,10 @@ namespace Rollgeon.Upgrades.Combos
         public object CaptureState()
         {
             var ids = new List<string>();
-            foreach (var kv in _passivesByCombo)
+            foreach (var passive in _allPassives)
             {
-                foreach (var passive in kv.Value)
-                {
-                    if (passive != null && !string.IsNullOrEmpty(passive.UpgradeId))
-                        ids.Add(passive.UpgradeId);
-                }
+                if (passive != null && !string.IsNullOrEmpty(passive.UpgradeId))
+                    ids.Add(passive.UpgradeId);
             }
             return ids;
         }
@@ -92,6 +106,7 @@ namespace Rollgeon.Upgrades.Combos
         public void RestoreState(object state)
         {
             _passivesByCombo.Clear();
+            _allPassives.Clear();
             if (state is not List<string> ids || ids.Count == 0) return;
 
             if (_resolveById == null)

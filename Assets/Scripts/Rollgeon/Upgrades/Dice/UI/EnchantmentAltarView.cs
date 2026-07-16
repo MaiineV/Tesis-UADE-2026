@@ -94,7 +94,27 @@ namespace Rollgeon.Upgrades.Dice.UI
         }
 
         private void OnEnable() => Subscribe();
-        private void OnDisable() => Unsubscribe();
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+            NotifyClosedIfPanelOpen();
+        }
+
+        /// <summary>
+        /// Si el view muere con el panel abierto (cambio de escena, run end) sin pasar
+        /// por el botón de cerrar, los suscriptores de <c>OnEnchantmentAltarClosed</c>
+        /// (ej. el gate de movimiento de <c>TileClickHandler</c>) quedarían bloqueados
+        /// para siempre — este safety emite el Closed que el flujo normal emitiría.
+        /// No invoca <see cref="OnPanelClosed"/>: ese callback es exclusivo del cierre
+        /// explícito (encadena pasos de tutorial).
+        /// </summary>
+        private void NotifyClosedIfPanelOpen()
+        {
+            if (_panelRoot == null || !_panelRoot.activeSelf) return;
+            _panelRoot.SetActive(false);
+            EventManager.Trigger(EventName.OnEnchantmentAltarClosed);
+        }
 
         private void Subscribe()
         {

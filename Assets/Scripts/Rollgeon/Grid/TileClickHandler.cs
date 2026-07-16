@@ -31,8 +31,18 @@ namespace Rollgeon.Grid
         // hacia los tiles — sin esto, clickear la pantalla movía al player.
         private bool _pointerOverUi;
 
+        // El altar de encantamiento es un panel centrado (no BaseScreen, no full-screen
+        // raycast blocker) — clickear FUERA del panel no cuenta como "pointer over UI",
+        // así que sin este gate el click atraviesa hacia los tiles y mueve al player
+        // con la pantalla abierta. Los eventos OnEnchantmentAltarActivated/Closed son
+        // la única señal global de ese estado (mismo patrón que EnchantmentAltarInteractable).
+        private bool _modalBlocked;
+
         private void OnEnable()
         {
+            EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, OnModalOpened);
+            EventManager.Subscribe(EventName.OnEnchantmentAltarClosed, OnModalClosed);
+
             if (_actions == null
                 && ServiceLocator.TryGetService<CameraInputConfig>(out var inputCfg))
             {
@@ -65,12 +75,19 @@ namespace Rollgeon.Grid
 
         private void OnDisable()
         {
+            EventManager.UnSubscribe(EventName.OnEnchantmentAltarActivated, OnModalOpened);
+            EventManager.UnSubscribe(EventName.OnEnchantmentAltarClosed, OnModalClosed);
+
             if (_clickAction != null)
                 _clickAction.performed -= OnClick;
 
             _map?.Disable();
             _lastHoveredCoord = null;
+            _modalBlocked = false;
         }
+
+        private void OnModalOpened(params object[] args) => _modalBlocked = true;
+        private void OnModalClosed(params object[] args) => _modalBlocked = false;
 
         private void Update()
         {
@@ -80,7 +97,7 @@ namespace Rollgeon.Grid
             // raycasts cada frame en exploration libre. El raycast usa el mismo path
             // que OnClick (escalado RT→Screen incluido).
             if (!ServiceLocator.TryGetService<ISelectionController>(out var controller)) return;
-            if (!controller.IsSelecting || _pointerOverUi)
+            if (!controller.IsSelecting || _pointerOverUi || _modalBlocked)
             {
                 if (_lastHoveredCoord != null)
                 {
@@ -138,6 +155,11 @@ namespace Rollgeon.Grid
             if (_pointerOverUi)
             {
                 Debug.Log("[TileClickHandler] Pointer over UI — ignoring click");
+                return;
+            }
+            if (_modalBlocked)
+            {
+                Debug.Log("[TileClickHandler] Modal open (enchantment altar) — ignoring click");
                 return;
             }
             if (!ServiceLocator.TryGetService<ISelectionController>(out var controller))
