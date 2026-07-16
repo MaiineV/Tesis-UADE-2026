@@ -60,13 +60,24 @@ namespace Rollgeon.Combat.Damage
                 block |= enchants.LastComboScratch.BlockComboDamage;
             }
 
-            if (block) return 0;
+            if (block)
+            {
+                DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
+                    1f, abilityMultiplier, scratchMultiplier, bonoCombo, blocked: true, finalBase: 0);
+                return 0;
+            }
 
             float multiDmgCombo = ComputeMultiDmgCombo(contributingDice);
             float comboTerm = comboBaseDamage * multiDmgCombo * abilityMultiplier * scratchMultiplier;
             float total = dmgBasePJ + bonosPJ + comboTerm + bonoCombo;
             int dmg = Mathf.RoundToInt(total);
-            return dmg < 0 ? 0 : dmg;
+            int clamped = dmg < 0 ? 0 : dmg;
+
+            DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
+                multiDmgCombo, abilityMultiplier, scratchMultiplier, bonoCombo,
+                blocked: false, finalBase: clamped);
+
+            return clamped;
         }
 
         /// <summary>

@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Weakness;
 using UnityEngine;
 
@@ -113,6 +114,9 @@ namespace Rollgeon.Combat.Pipelines
             int finalDamage = damage;
             ctx.FinalDamage = finalDamage;
 
+            int hpBefore = -1;
+            int hpAfter = -1;
+
             if (finalDamage > 0)
             {
                 var health = _attributes.GetAttribute<Health>(ctx.TargetId);
@@ -132,6 +136,9 @@ namespace Rollgeon.Combat.Pipelines
                         newHp = 1;
                         ctx.FinalDamage = currentHp - newHp;
                     }
+
+                    hpBefore = currentHp;
+                    hpAfter = newHp;
 
                     _attributes.SetAttributeValue<Health, int>(ctx.TargetId, newHp);
                     ctx.WasLethal = newHp <= 0;
@@ -161,6 +168,8 @@ namespace Rollgeon.Combat.Pipelines
                 BlockedByShield = ctx.BlockedByShield,
                 ShieldBroken = shieldBroken,
             });
+
+            DamageDebugLogger.LogApplication(ctx, shieldBefore, hpBefore, hpAfter);
 
             return ctx;
         }
