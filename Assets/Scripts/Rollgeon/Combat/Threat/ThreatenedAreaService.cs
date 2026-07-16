@@ -110,6 +110,13 @@ namespace Rollgeon.Combat.Threat
         /// <inheritdoc />
         public void ClearAll() => Pending.Clear();
 
+        /// <summary>
+        /// Snapshot de las áreas pendientes para persistencia (Feature#0028 Fase 4). Se restaura
+        /// vía <see cref="Mark"/> con los mismos datos (el <c>SourceGuid</c> del boss se preserva
+        /// en resume). No consume.
+        /// </summary>
+        public IReadOnlyList<ThreatenedArea> SnapshotPending() => new List<ThreatenedArea>(Pending.Values);
+
         // ======================================================================
         // Event handlers
         // ======================================================================

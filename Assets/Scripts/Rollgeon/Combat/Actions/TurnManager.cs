@@ -360,6 +360,12 @@ namespace Rollgeon.Combat.Actions
         /// <summary>Cantidad de acciones unicas marcadas usadas en el turno actual.</summary>
         public int UsedActionsCount => _actionsUsedThisTurn.Count;
 
+        /// <summary>
+        /// Snapshot de las acciones usadas en el turno actual (Feature#0028 Fase 3) — read-side
+        /// para capturar el estado de combate. El restore usa <see cref="MarkBehaviorUsed"/>.
+        /// </summary>
+        public IReadOnlyCollection<string> UsedActionsThisTurn => _actionsUsedThisTurn;
+
         // ======================================================================
         // Event handlers
         // ======================================================================

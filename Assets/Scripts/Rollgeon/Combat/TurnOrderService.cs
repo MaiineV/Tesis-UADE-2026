@@ -199,6 +199,29 @@ namespace Rollgeon.Combat
             _roundIndex = 0;
         }
 
+        /// <summary>
+        /// Restaura la cola de turno exacta desde un save (Feature#0028 Fase 3) — a diferencia
+        /// de <see cref="BuildForCombat"/> NO re-rollea iniciativa ni aplica el reorder CNF-006:
+        /// asigna la lista/cursor/round guardados tal cual y dispara <c>OnTurnQueueBuilt</c> para
+        /// que el HUD dibuje la cola y el slot activo restaurados. El caller ya filtró
+        /// <paramref name="order"/> a los participantes vivos y clampeó <paramref name="cursor"/>.
+        /// </summary>
+        public void RestoreState(IReadOnlyList<Guid> order, int cursor, int roundIndex)
+        {
+            if (order == null || order.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "[TurnOrderService] RestoreState requires a non-empty order.");
+            }
+
+            _orderForRound.Clear();
+            for (int i = 0; i < order.Count; i++) _orderForRound.Add(order[i]);
+            _cursor = Math.Clamp(cursor, 0, _orderForRound.Count - 1);
+            _roundIndex = Math.Max(0, roundIndex);
+
+            FireTurnQueueBuilt();
+        }
+
         // --- Internals ----------------------------------------------------
 
         private void FireTurnQueueBuilt()

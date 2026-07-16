@@ -8,6 +8,7 @@ using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Portraits;
+using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Run;
 using UnityEngine;
@@ -428,6 +429,71 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             Assert.AreEqual(1, result.Count,
                 "Solo re-spawnea los !IsDead del ObjectStates.");
+        }
+
+        // -------------------------------------------------------------------
+        // Resume desde save (#0028 Fase 2): posición + GUID preservados
+        // -------------------------------------------------------------------
+
+        private EnemySpawnState SavedState(Guid guid, GridCoord cell) => new EnemySpawnState
+        {
+            SpawnPointId = "enemy_0",
+            EnemyDataSOId = "enemy.goblin",
+            CurrentHP = 7,
+            IsDead = false,
+            SpawnPointIndex = 0,
+            Tier = 1,
+            HasLastCell = true,
+            LastCell = cell,
+            Guid = guid.ToString(),
+        };
+
+        [Test]
+        public void Resolve_ResumeFromSaveNextSpawn_UsesSavedCoordAndGuid()
+        {
+            var grid = new GridManager();
+            var pool = CreatePool(CreateEnemy("Goblin", hp: 20));
+            var instance = CreateInstance(pool);
+            var savedGuid = Guid.NewGuid();
+            instance.ObjectStates.Set("enemy_0", SavedState(savedGuid, new GridCoord(5, 7)));
+
+            var resolver = new DefaultEnemySpawnResolver(_registry, _attributes, grid: grid)
+            {
+                ResumeFromSaveNextSpawn = true,
+            };
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(savedGuid, result[0].id, "resume preserva el GUID guardado");
+            Assert.IsTrue(grid.TryGetPosition(savedGuid, out var coord));
+            Assert.AreEqual(new GridCoord(5, 7), coord, "resume spawnea en la tile guardada");
+
+            var health = _attributes.GetAttribute<Rollgeon.Attributes.Stats.Health>(savedGuid);
+            Assert.AreEqual(7, health.Value, "HP guardado restaurado");
+
+            Assert.IsFalse(resolver.ResumeFromSaveNextSpawn, "el flag es one-shot");
+        }
+
+        [Test]
+        public void Resolve_Reentry_WithoutResumeFlag_IgnoresSavedGuidAndCell()
+        {
+            // Sin el flag (re-entry normal dentro de la sesión): GUID nuevo, posición
+            // no forzada a la guardada — preserva el diseño GD de reposición random.
+            var grid = new GridManager();
+            var pool = CreatePool(CreateEnemy("Goblin", hp: 20));
+            var instance = CreateInstance(pool);
+            var savedGuid = Guid.NewGuid();
+            instance.ObjectStates.Set("enemy_0", SavedState(savedGuid, new GridCoord(5, 7)));
+
+            var resolver = new DefaultEnemySpawnResolver(_registry, _attributes, grid: grid);
+            // NO seteamos ResumeFromSaveNextSpawn.
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreNotEqual(savedGuid, result[0].id,
+                "sin resume el GUID es nuevo (no se preserva el guardado)");
         }
     }
 }

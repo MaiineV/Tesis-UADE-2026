@@ -49,6 +49,16 @@ namespace Rollgeon.Combat.Handoff
         private readonly IEntityPortraitResolver _portraits;
         private readonly IRunContextService _runContext;
 
+        /// <summary>
+        /// One-shot: cuando es <c>true</c>, el próximo re-spawn desde estado guardado usa
+        /// la tile y el GUID persistidos (<see cref="EnemySpawnState.LastCell"/>/<c>Guid</c>)
+        /// en vez de reposicionar random. Lo prende <c>RunController</c> tras
+        /// <c>DungeonManager.ResumeFromSave</c> y se consume en el primer <see cref="Resolve"/>.
+        /// El re-entry normal (dentro de la sesión) queda con <c>false</c> ⇒ posición random
+        /// (diseño GD). (#0028 Fase 2)
+        /// </summary>
+        public bool ResumeFromSaveNextSpawn { get; set; }
+
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
             AttributesManager attributes,
@@ -90,10 +100,15 @@ namespace Rollgeon.Combat.Handoff
             var existingStates = CollectEnemyStates(instance);
             if (existingStates.Count > 0)
             {
-                // En re-entry, los enemigos vivos reaparecen en posiciones aleatorias —
-                // no en sus spawn points originales — para que la sala no se sienta
-                // estática al volver. Excluimos tiles de puerta (no caer encima) y los
-                // ya ocupados (player + otros enemigos del batch). Si no hay grid (tests
+                // Resume desde save (#0028): un solo spawn respeta la tile y el GUID
+                // guardados; el re-entry normal reposiciona random para que la sala no se
+                // sienta estática (diseño GD). Flag one-shot.
+                bool resume = ResumeFromSaveNextSpawn;
+                ResumeFromSaveNextSpawn = false;
+
+                // En re-entry normal, los enemigos vivos reaparecen en posiciones
+                // aleatorias. Excluimos tiles de puerta (no caer encima) y los ya
+                // ocupados (player + otros enemigos del batch). Si no hay grid (tests
                 // sin layout) o no hay candidatos válidos, caemos al spawn point legacy.
                 var forbidden = CollectDoorCoords(layout);
                 foreach (var state in existingStates)
@@ -102,10 +117,26 @@ namespace Rollgeon.Combat.Handoff
                     var data = LookupEnemyData(room, state.EnemyDataSOId);
                     if (data == null) continue;
 
-                    var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
-                    var id = randomCoord.HasValue
-                        ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier)
-                        : RegisterEnemyFromState(data, state, layout, rng);
+                    Guid? presetId = null;
+                    if (resume && !string.IsNullOrEmpty(state.Guid)
+                        && Guid.TryParse(state.Guid, out var savedGuid))
+                    {
+                        presetId = savedGuid;
+                    }
+
+                    Guid id;
+                    if (resume && state.HasLastCell)
+                    {
+                        // Posición exacta guardada.
+                        id = RegisterEnemyAtCoord(data, state.LastCell, rng, state, state.Tier, presetId);
+                    }
+                    else
+                    {
+                        var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
+                        id = randomCoord.HasValue
+                            ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier, presetId)
+                            : RegisterEnemyFromState(data, state, layout, rng, presetId);
+                    }
 
                     if (id != Guid.Empty)
                     {
@@ -272,9 +303,12 @@ namespace Rollgeon.Combat.Handoff
         /// gold drops). Si <paramref name="state"/> no es null, restaura el HP del state.
         /// </summary>
         private Guid RegisterEnemyAtCoord(
-            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state, int tier)
+            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state, int tier,
+            Guid? presetId = null)
         {
-            var id = Guid.NewGuid();
+            // presetId != null en resume (#0028): preserva el GUID guardado para que la
+            // cola de turnos / modifiers restaurados referencien la misma entidad.
+            var id = presetId ?? Guid.NewGuid();
             int maxHp = enemyData.ResolveMaxHP(tier);
             var attrs = enemyData.CreateRuntimeStats(tier);
             _registry.Register(id, attrs);
@@ -334,10 +368,11 @@ namespace Rollgeon.Combat.Handoff
         }
 
         private Guid RegisterEnemyFromState(
-            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng)
+            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng,
+            Guid? presetId = null)
         {
             var coord = ResolveSpawnCoord(layout, state.SpawnPointIndex);
-            return RegisterEnemyAtCoord(enemyData, coord, rng, state, state.Tier);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state, state.Tier, presetId);
         }
 
         /// <summary>

@@ -3,6 +3,8 @@ using Patterns;
 using Patterns.Save;
 using Rollgeon.Balance;
 using Rollgeon.Dice;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.State;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -64,7 +66,25 @@ namespace Rollgeon.Run
             SaveSystem.Register(context);
 
             var playerService = ServiceLocator.GetService<IPlayerService>();
-            playerService.SetPlayer(selected, runId);
+
+            // Resume (#0028): preservar el PlayerGuid guardado (en run.dungeon_state) para que
+            // la cola de turnos y la posición del combate restaurado referencien la misma entidad.
+            Guid restoredPlayerGuid = Guid.Empty;
+            if (resume && SaveSystem.TryGetCached(DungeonManager.SaveKeyConst, out var dungeonObj)
+                && dungeonObj is DungeonSnapshot dungeonSnap
+                && Guid.TryParse(dungeonSnap.PlayerGuid, out var savedPlayerGuid))
+            {
+                restoredPlayerGuid = savedPlayerGuid;
+            }
+
+            if (restoredPlayerGuid != Guid.Empty && playerService is PlayerService concretePlayer)
+            {
+                concretePlayer.SetPlayer(selected, runId, restoredPlayerGuid);
+            }
+            else
+            {
+                playerService.SetPlayer(selected, runId);
+            }
 
             // La build elegida debe pisar el StartingDiceBagRef del hero ANTES de
             // disparar OnRunStart: los servicios run-scoped que siembran estado desde
@@ -103,12 +123,23 @@ namespace Rollgeon.Run
                 ((RunContext)ctx).EndRun();
             }
 
+            // #0028: capturar el estado completo con el player TODAVÍA válido. El capture de
+            // OnRunEnd corre después de ClearPlayer (abajo) y de RunController.OnRunEnd (que
+            // desregistra los attrs del player), así que sin esto la posición y la energía del
+            // player no se persisten en un quit-desde-pausa (quedaban en default: centro / 0).
+            // En run terminada el save se borra igual, así que solo importa cuando se conserva.
+            if (!runCompleted)
+            {
+                SaveSystem.CaptureAll();
+            }
+
             if (ServiceLocator.TryGetService<IPlayerService>(out var playerService))
             {
                 playerService.ClearPlayer();
             }
 
-            // El handler de SaveSystemBootstrap captura + flushea acá (RunEnd).
+            // El handler de SaveSystemBootstrap captura + flushea acá (RunEnd). Las capturas
+            // de dungeon/combate preservan los campos del player si el guid ya fue limpiado.
             EventManager.Trigger(EventName.OnRunEnd, runId, (object)null);
 
             if (runCompleted)

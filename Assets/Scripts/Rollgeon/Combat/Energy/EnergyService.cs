@@ -221,6 +221,24 @@ namespace Rollgeon.Combat.EnergyLib
             return _ruleset != null ? _ruleset.Energy.EnergyMax : 0;
         }
 
+        /// <summary>
+        /// Setea la energía actual a un valor guardado (Feature#0028 Fase 3) — sobrescribe el
+        /// reset-a-max de <c>OnCombatStart</c> en un resume. Clampea a [0, max] y dispara
+        /// <c>OnEnergyChanged</c>/<c>OnPlayerEnergyChanged</c> para refrescar el HUD.
+        /// </summary>
+        public void RestoreCurrent(Guid entityId, int value)
+        {
+            if (entityId == Guid.Empty || _attributes == null || _ruleset == null) return;
+            if (!_attributes.IsRegistered(entityId)) return;
+            var attrs = _attributes.GetAttributes(entityId);
+            if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
+
+            int max = _ruleset.Energy.EnergyMax;
+            int clamped = Math.Clamp(value, 0, max);
+            _attributes.SetAttributeValue<EnergyStat, int>(entityId, clamped);
+            TriggerEnergyChanged(entityId, clamped, max);
+        }
+
         // ======================================================================
         // Event handlers
         // ======================================================================

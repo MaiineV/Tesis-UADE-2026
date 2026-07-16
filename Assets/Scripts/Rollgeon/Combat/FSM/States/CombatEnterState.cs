@@ -1,5 +1,6 @@
 using Patterns;
 using Patterns.FSM;
+using Rollgeon.Combat.Resume;
 
 namespace Rollgeon.Combat.FSM.States
 {
@@ -42,6 +43,16 @@ namespace Rollgeon.Combat.FSM.States
                 UnityEngine.Debug.LogError(
                     "[CombatEnterState] CachedParticipants is null/empty. " +
                     "Call CombatTurnFSM.SetParticipants(...) before Start().");
+                return;
+            }
+
+            // Resume desde save (#0028 Fase 3): si hay estado de combate stageado para esta
+            // sala, restaura la cola/cursor/round/energía exactos y NO armamos una fresca.
+            // El coordinator ya filtró la cola a los participantes vivos.
+            if (ServiceLocator.TryGetService<ICombatResumeCoordinator>(out var resume)
+                && resume != null
+                && resume.TryBeginResume(Context.TurnOrder, Context.CachedParticipants, Context.PlayerId))
+            {
                 return;
             }
 

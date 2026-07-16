@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Dungeon.Components;
+using Rollgeon.Grid;
 
 namespace Rollgeon.Dungeon.State
 {
@@ -52,6 +53,22 @@ namespace Rollgeon.Dungeon.State
         /// enemigo conserve el mismo tier. Default 1 ⇒ states viejos = Tier 1.
         /// </summary>
         public int Tier = 1;
+
+        /// <summary>
+        /// Tile de grilla donde estaba el enemigo al capturar el save (#0028). Solo se
+        /// respeta en el spawn de <b>resume</b> (el re-entry normal reposiciona random,
+        /// diseño GD). Válida solo si <see cref="HasLastCell"/>.
+        /// </summary>
+        public GridCoord LastCell;
+
+        public bool HasLastCell;
+
+        /// <summary>
+        /// GUID preservado del enemigo (#0028). Se re-inyecta en el spawn de resume para
+        /// que la cola de turnos / modifiers guardados (que referencian este GUID) matcheen.
+        /// Vacío ⇒ spawn normal con GUID nuevo.
+        /// </summary>
+        public string Guid;
     }
 
     /// <summary>Cofre — stub, sin consumidor hoy. Cierra la jerarquía (§13.6.1).</summary>
