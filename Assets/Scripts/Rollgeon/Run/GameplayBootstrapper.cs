@@ -112,7 +112,15 @@ namespace Rollgeon.Run
             if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon)) return;
 
             var instance = dungeon.CurrentRoomInstance;
-            var spawnCoord = ResolveSpawnCoord(instance, grid);
+
+            // En resume, DungeonManager.ResumeFromSave ya ubicó al player en su tile guardada
+            // (#0028) — respetarla en vez de re-resolver al PlayerSpawnPoint del layout, que la
+            // pisaría. Fresh run: usar el spawn point del layout como siempre.
+            GridCoord spawnCoord =
+                RunBootstrapper.IsResuming
+                && grid.TryGetPosition(playerService.PlayerGuid, out var savedCoord)
+                    ? savedCoord
+                    : ResolveSpawnCoord(instance, grid);
 
             grid.Register(playerService.PlayerGuid, spawnCoord);
 

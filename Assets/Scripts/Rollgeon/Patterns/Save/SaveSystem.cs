@@ -35,7 +35,9 @@ namespace Patterns.Save
         /// migration paths en fase de diseño (§15.3).
         /// </summary>
         // v2: RunContext pasó de boxed int a RunContextSnapshot {FloorIndex, RunId}.
-        public const int CurrentSchemaVersion = 2;
+        // v3: persistencia de dungeon (run.dungeon_state) + combate en curso
+        //     (run.combat_state) — sala/posición/enemigos/turno (Feature#0028).
+        public const int CurrentSchemaVersion = 3;
 
         private static readonly Dictionary<string, object> _cache = new();
         private static readonly List<WeakReference<ISaveable>> _registered = new();

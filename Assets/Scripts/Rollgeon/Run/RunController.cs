@@ -164,14 +164,37 @@ namespace Rollgeon.Run
                 ? seed
                 : FloorProgressionService.DeriveSeed(seed, startFloorIndex);
 
+            DungeonManager dungeon;
             if (isTutorial)
             {
-                DungeonManager.CreateAndRegisterFromPlan(tutorialConfig.FloorPlan.ToPlan());
+                dungeon = DungeonManager.CreateAndRegisterFromPlan(tutorialConfig.FloorPlan.ToPlan());
             }
             else
             {
-                DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
+                dungeon = DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
             }
+
+            // 3a-bis. Persistencia de dungeon (#0028): el DungeonManager es ISaveable.
+            //   En resume, Register auto-stagea el snapshot cacheado (LoadFromDisk lo
+            //   pobló en el menú) y ResumeFromSave lo aplica sobre la topología ya
+            //   generada (match por GridCell) + reubica al player. Tutorial no resume.
+            global::Patterns.Save.SaveSystem.Register(dungeon);
+            if (RunBootstrapper.IsResuming && !isTutorial)
+            {
+                dungeon.ResumeFromSave();
+                // El próximo spawn de la sala actual (cuando arranque el combate) usa las
+                // posiciones + GUIDs guardados en vez de reposicionar random (#0028 Fase 2).
+                resolver.ResumeFromSaveNextSpawn = true;
+            }
+
+            // 3a-ter. Estado de combate en curso (#0028 Fase 3): el CombatResumeService es el
+            //   ISaveable (run.combat_state) y el ICombatResumeCoordinator que CombatEnterState
+            //   consulta al arrancar el combate. En resume, Register auto-stagea el snapshot;
+            //   TryBeginResume lo aplica cuando la FSM levanta la pelea de la sala guardada.
+            var combatResume = new CombatResumeService();
+            ServiceLocator.AddService<Rollgeon.Combat.Resume.ICombatResumeCoordinator>(
+                combatResume, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(combatResume);
 
             // 3b. Floor shells visibility — toggles prefab vs shells según camera floor view.
             FloorShellVisibilityController.CreateAndRegister();

@@ -527,5 +527,41 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(0, _service.RoundIndex);
             Assert.Throws<InvalidOperationException>(() => { var _ = _service.Current; });
         }
+
+        // --- RestoreState (#0028 Fase 3) ----------------------------------
+
+        [Test]
+        public void RestoreState_SetsExactOrderCursorAndRound_WithoutReroll()
+        {
+            var a = Guid.NewGuid();
+            var b = Guid.NewGuid();
+            var c = Guid.NewGuid();
+
+            // Sin InstallProvider: RestoreState no debe tocar la iniciativa.
+            _service.RestoreState(new[] { a, b, c }, cursor: 1, roundIndex: 3);
+
+            Assert.AreEqual(3, _service.ParticipantCount);
+            CollectionAssert.AreEqual(new[] { a, b, c }, _service.OrderForRound);
+            Assert.AreEqual(b, _service.Current, "cursor 1 → segundo de la cola");
+            Assert.AreEqual(3, _service.RoundIndex);
+        }
+
+        [Test]
+        public void RestoreState_ClampsCursorIntoRange()
+        {
+            var a = Guid.NewGuid();
+            var b = Guid.NewGuid();
+
+            _service.RestoreState(new[] { a, b }, cursor: 99, roundIndex: 0);
+
+            Assert.AreEqual(b, _service.Current, "cursor fuera de rango se clampea al último slot");
+        }
+
+        [Test]
+        public void RestoreState_EmptyOrder_Throws()
+        {
+            Assert.Throws<InvalidOperationException>(
+                () => _service.RestoreState(Array.Empty<Guid>(), 0, 0));
+        }
     }
 }

@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.GameCamera;
+using Rollgeon.Grid;
+using Rollgeon.Player;
 using Rollgeon.Upgrades.Character;
 using UnityEngine;
 
@@ -21,8 +25,11 @@ namespace Rollgeon.Dungeon
     /// resto existe como nodos + shells procedurales para el floor view.
     /// </para>
     /// </summary>
-    public sealed class DungeonManager : IDungeonService, IDisposable
+    public sealed class DungeonManager : IDungeonService, ISaveable, IDisposable
     {
+        /// <summary>SaveKey del estado espacial del piso (Feature#0028).</summary>
+        public const string SaveKeyConst = "run.dungeon_state";
+
         private const float DefaultTileSize = 1f;
         private const float MinShellSize = 6f;
         private const float CellSpacing = 0f;
@@ -34,6 +41,20 @@ namespace Rollgeon.Dungeon
         private Guid _currentId = Guid.Empty;
         private DoorDirection? _lastEntryDirection;
         private Vector3 _stepSize = new(10f, 0f, 10f);
+
+        /// <summary>
+        /// Snapshot cacheado por el auto-restore de <see cref="SaveSystem.Register"/> en
+        /// un resume. No se aplica en el acto (la topología no existe todavía cuando el
+        /// Register corre en <c>RunController.OnRunStart</c>): lo consume
+        /// <see cref="ResumeFromSave"/> tras la generación. (Feature#0028)
+        /// </summary>
+        private DungeonSnapshot _pendingRestore;
+
+        // Últimos guid/tile válidos del player — se reusan si el capture corre con el player
+        // ya limpiado (EndRun llama ClearPlayer antes del capture de OnRunEnd, #0028).
+        private string _lastPlayerGuid;
+        private GridCoord _lastPlayerCoord;
+        private bool _hasLastPlayer;
 
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onEntityDestroyedHandler;
@@ -270,6 +291,10 @@ namespace Rollgeon.Dungeon
                 _onEntityDestroyedHandler = null;
             }
 
+            // Captura el estado final al cache y suelta la registration — sin esto la
+            // próxima run registraría un 2do DungeonManager con la misma SaveKey (#0028).
+            SaveSystem.Unregister(this);
+
             ClearState();
         }
 
@@ -318,6 +343,145 @@ namespace Rollgeon.Dungeon
         {
             if (_instances.TryGetValue(instanceId, out var instance))
                 SyncDoorVisualStates(instance);
+        }
+
+        // -----------------------------------------------------------------
+        // ISaveable (#0028) — estado espacial del piso
+        // -----------------------------------------------------------------
+
+        public string SaveKey => SaveKeyConst;
+
+        /// <summary>
+        /// Snapshot del estado espacial: sala actual + dirección de entrada, tile/GUID del
+        /// player, y por cada sala <see cref="RoomState"/> + <c>Visited</c> +
+        /// <see cref="RoomInstance.ObjectStates"/>. Indexado por <see cref="RoomInstance.GridCell"/>
+        /// (estable), no por <see cref="RoomInstance.InstanceId"/> (se regenera).
+        /// </summary>
+        public object CaptureState()
+        {
+            var snap = new DungeonSnapshot { LastEntryDirection = _lastEntryDirection };
+
+            var current = CurrentRoomInstance;
+            if (current != null)
+            {
+                snap.CurrentCell = current.GridCell;
+                // Vuelca HP/tile/GUID vivos del cuarto actual a sus EnemySpawnState — el HP
+                // mid-combate solo vive en el stat runtime hasta acá (#0028 Fase 2).
+                RoomEnemyStateSync.SnapshotLiveEnemies(current);
+            }
+
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
+                && player != null && player.PlayerGuid != Guid.Empty)
+            {
+                snap.PlayerGuid = player.PlayerGuid.ToString();
+                _lastPlayerGuid = snap.PlayerGuid;
+
+                if (ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null
+                    && grid.TryGetPosition(player.PlayerGuid, out var pcoord))
+                {
+                    snap.PlayerCoord = pcoord;
+                    _lastPlayerCoord = pcoord;
+                }
+                else if (_hasLastPlayer)
+                {
+                    snap.PlayerCoord = _lastPlayerCoord;
+                }
+                _hasLastPlayer = true;
+            }
+            else if (_hasLastPlayer)
+            {
+                // Player ya limpiado (teardown de EndRun): preservar los últimos valores
+                // válidos en vez de defaultear a centro/empty (#0028).
+                snap.PlayerGuid = _lastPlayerGuid;
+                snap.PlayerCoord = _lastPlayerCoord;
+            }
+
+            foreach (var inst in _instances.Values)
+            {
+                var rs = new RoomSnapshot
+                {
+                    Cell = inst.GridCell,
+                    State = inst.State,
+                    Visited = inst.Visited,
+                };
+                foreach (var kv in inst.ObjectStates.Enumerate())
+                    rs.ObjectStates[kv.Key] = kv.Value;
+                snap.Rooms.Add(rs);
+            }
+
+            return snap;
+        }
+
+        /// <summary>
+        /// Sólo <b>stagea</b> el snapshot — la aplicación real ocurre en
+        /// <see cref="ResumeFromSave"/> una vez generada la topología.
+        /// </summary>
+        public void RestoreState(object state)
+        {
+            if (state is DungeonSnapshot snap) _pendingRestore = snap;
+        }
+
+        /// <summary>
+        /// Aplica el snapshot stageado sobre la topología ya generada: pisa
+        /// <c>State</c>/<c>Visited</c>/<c>ObjectStates</c> por <see cref="RoomInstance.GridCell"/>,
+        /// restaura la sala actual + dirección de entrada, re-dispara
+        /// <see cref="EventName.OnRoomEntered"/> (carga grilla + ubica al player en el spawn/puerta)
+        /// y finalmente pisa la tile del player con la guardada. One-shot: consume el snapshot.
+        /// No-op si no hay restore pendiente (run nueva). (Feature#0028)
+        /// </summary>
+        public void ResumeFromSave()
+        {
+            if (_pendingRestore == null) return;
+            var snap = _pendingRestore;
+            _pendingRestore = null;
+
+            // 1. Pisa el estado por celda (match por GridCell — InstanceId se regenera).
+            foreach (var rs in snap.Rooms)
+            {
+                if (rs == null) continue;
+                if (!_cellIndex.TryGetValue(rs.Cell, out var id)) continue;
+                if (!_instances.TryGetValue(id, out var inst)) continue;
+
+                inst.State = rs.State;
+                inst.Visited = rs.Visited;
+                inst.ObjectStates.Clear();
+                if (rs.ObjectStates != null)
+                {
+                    foreach (var kv in rs.ObjectStates)
+                        if (kv.Value != null) inst.ObjectStates.Set(kv.Key, kv.Value);
+                }
+            }
+
+            // 2. Sala actual + dirección de entrada.
+            if (_cellIndex.TryGetValue(snap.CurrentCell, out var currentId))
+                _currentId = currentId;
+            _lastEntryDirection = snap.LastEntryDirection;
+
+            // 3. Visibilidad + visuales de puerta de la sala actual (el estado que
+            //    ConfigureDoorSlots sincronizó con el default quedó stale tras el pisón).
+            RefreshRoomVisibility();
+            var currentInst = CurrentRoomInstance;
+            if (currentInst != null) SyncDoorVisualStates(currentInst);
+
+            // 4. Re-entrar la sala guardada: RoomGridLoader (80) carga la grilla y
+            //    PlayerRoomTransitioner (82) ubica al player en el spawn/puerta.
+            EventManager.Trigger(EventName.OnRoomEntered, _currentId,
+                CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
+
+            // 5. Override de la tile exacta del player (post grid-load). Usa el GUID VIVO
+            //    del player — la preservación del GUID guardado la maneja el restore de
+            //    combate (#0028 Fase 3) para que la cola de turnos matchee.
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
+                && player != null && player.PlayerGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null)
+            {
+                grid.Register(player.PlayerGuid, snap.PlayerCoord);
+                if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals)
+                    && visuals != null && visuals.TryGetPawn(player.PlayerGuid, out var pawn))
+                {
+                    pawn.SnapToGrid(grid, snap.PlayerCoord);
+                }
+            }
         }
 
         // -----------------------------------------------------------------
