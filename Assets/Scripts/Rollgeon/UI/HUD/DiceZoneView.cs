@@ -194,6 +194,10 @@ namespace Rollgeon.UI.HUD
             // el estado nuevo — su ClearAll pisaría las caras recién asignadas.
             _animator?.CancelOutroAndComplete();
 
+            // Antes del loop de reveal: la silueta tiene que ser la correcta mientras el dado
+            // gira, no recién al frenar.
+            RefreshDiceShapes();
+
             int count = _resolvedSlots?.Length ?? 0;
             var willReveal = new bool[count];
             for (int i = 0; i < count; i++)
@@ -214,6 +218,27 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < count; i++)
                 if (willReveal[i]) _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
             RefreshDiceBlock();
+        }
+
+        /// <summary>
+        /// Pinta la silueta de cada slot según el tipo de dado que tiene en el bag. El índice de
+        /// slot mapea 1:1 al del bag (<see cref="RunComboDetection"/> ya lo asume).
+        /// </summary>
+        /// <remarks>
+        /// No se llama desde <c>Bind</c>: el bag es run-scoped y ahí todavía es null. Un roll no
+        /// puede ocurrir antes de que exista, así que engancharlo al roll alcanza. Idempotente y
+        /// gratis — el setter de <c>Image.sprite</c> early-outea si no cambió.
+        /// </remarks>
+        private void RefreshDiceShapes()
+        {
+            if (_resolvedSlots == null) return;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return;
+            if (enchants == null || !enchants.IsReady) return;
+
+            var bag = enchants.Bag.Dice;
+            int count = Mathf.Min(_resolvedSlots.Length, bag.Count);
+            for (int i = 0; i < count; i++)
+                _resolvedSlots[i]?.SetDiceType(bag[i]);
         }
 
         // Boss 1 (§2): refleja el estado de IDiceBlockService en los slots — grayed + candado,

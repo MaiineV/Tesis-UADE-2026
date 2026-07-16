@@ -1,4 +1,5 @@
 using TMPro;
+using Rollgeon.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -16,7 +17,15 @@ namespace Rollgeon.UI.HUD
 
         [Title("Combat — Hold toggle")]
         [SerializeField, Optional] private Button _button;
-        [SerializeField, Optional] private Graphic _background;
+
+        [Tooltip("Cuerpo del dado: lleva la silueta del tipo y recibe los tints de hold/blocked.")]
+        [SerializeField, Optional] private Image _background;
+
+        [Title("Forma por tipo de dado")]
+        [SerializeField, Optional]
+        [Tooltip("Catálogo de siluetas. Si queda vacío se resuelve desde " +
+                 "Resources/Dice/DiceShapeCatalog.")]
+        private DiceShapeCatalogSO _shapeCatalog;
 
         [Title("Dice block")]
         [SerializeField, Optional]
@@ -30,6 +39,9 @@ namespace Rollgeon.UI.HUD
         private Color _defaultColor;
         private bool _blocked;
         private bool _held;
+
+        private DiceShapeCatalogSO _resolvedCatalog;
+        private bool _catalogResolved;
 
         private void Awake()
         {
@@ -47,6 +59,33 @@ namespace Rollgeon.UI.HUD
         {
             if (_diceLabel != null)
                 _diceLabel.text = diceTypeName;
+        }
+
+        /// <summary>Build selection — etiqueta y silueta del tipo de dado.</summary>
+        public void Bind(DiceType type)
+        {
+            Bind(type.ToString());
+            SetDiceType(type);
+        }
+
+        /// <summary>
+        /// Pinta la silueta del tipo de dado; el número TMP se dibuja encima. Sin catálogo o sin
+        /// entrada, el sprite queda en null y el <see cref="Image"/> dibuja el cuadrado de color
+        /// plano de siempre — por eso esto es seguro antes de que exista el arte.
+        /// </summary>
+        public void SetDiceType(DiceType type)
+        {
+            if (_background == null) return;
+            var catalog = ResolveCatalog();
+            _background.sprite = catalog != null ? catalog.GetShape(type) : null;
+        }
+
+        private DiceShapeCatalogSO ResolveCatalog()
+        {
+            if (_catalogResolved) return _resolvedCatalog;
+            _resolvedCatalog = DiceShapeCatalogSO.Resolve(_shapeCatalog);
+            _catalogResolved = true;
+            return _resolvedCatalog;
         }
 
         /// <summary>Última cara mostrada (0 = sin tirada). Lo lee el presenter de
