@@ -51,6 +51,64 @@ BOOLEAN, `app_version` STRING.
 | `active_item_used` | `item_id` S, `floor_index` INT |
 | `unlock_achieved` | `unlock_id` S, `category` S, `during_run` B |
 
+### Descripciones de eventos (para pegar en el Event Manager)
+
+| Evento | Descripción |
+|---|---|
+| `run_started` | Arranca una run (o se reanuda desde Continue). Base del funnel de runs. |
+| `run_ended` | Termina una run con outcome (victory/defeat/abandon) y los agregados de toda la run. Una sola vez por run por sesión. |
+| `floor_reached` | El jugador entra a un piso nuevo, con HP y oro al momento de entrar. Curva de dificultad y economía por piso. |
+| `combat_ended` | Cierra un combate con sus agregados (turnos, daño, rerolls, energía, combos). El evento central de balance. |
+| `player_death` | El jugador murió: piso, tipo de sala, turnos que aguantó y fase del boss. |
+| `combo_matched` | El jugador matcheó un combo al resolver una tirada. Pick-rate y daño por combo. |
+| `shop_purchase` | Compra en la tienda: qué ítem, a qué precio y con cuánto oro quedó. |
+| `item_obtained` | El jugador obtuvo un ítem (pickup, recompensa o compra). |
+| `active_item_used` | El jugador usó un ítem activo. |
+| `unlock_achieved` | Se cumplió un unlock de meta-progresión. |
+
+### Descripciones de parámetros (se crean una vez, globales)
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `run_id` | STRING | Guid de la run (formato "N", sin guiones). Agrupa todos los eventos de una misma run; en resumes se repite entre sesiones. |
+| `is_editor` | BOOLEAN | true si el evento salió del editor de Unity. Filtrar false para datos de playtest. |
+| `app_version` | STRING | Application.version de la build que envió el evento. |
+| `hero_id` | STRING | Id canónico de la clase héroe (ej. "hero.warrior"). |
+| `ruleset_id` | STRING | Ruleset de la run; "default" si no se especificó. |
+| `is_continue` | BOOLEAN | true si la run se reanudó desde el botón Continue (agregados parciales). |
+| `seed` | INT | Seed de generación del dungeon (hash del run_id). Para reproducir una run. |
+| `floor_index` | INT | Piso actual (0-based) donde ocurrió el evento. |
+| `outcome` | STRING | Resultado: victory/defeat/abandon en run_ended; Victory/Defeat/Aborted en combat_ended. |
+| `floors_cleared` | INT | Pisos completados en la run (segmento de sesión si was_resumed). |
+| `duration_sec` | FLOAT | Duración en segundos (de la run o del combate según el evento). |
+| `combats_won` | INT | Combates ganados en la run. |
+| `gold_earned` | INT | Oro total ganado en la run. |
+| `gold_spent` | INT | Oro total gastado en la run. |
+| `combos_matched` | INT | Combos matcheados en la run. |
+| `was_resumed` | BOOLEAN | true si la run vino de un save: los agregados cubren solo el último segmento (cota inferior). |
+| `hp_at_entry` | INT | HP del jugador al entrar al piso. |
+| `gold_at_entry` | INT | Oro del jugador al entrar al piso. |
+| `room_type` | STRING | Tipo de sala (Start/Combat/Boss/Shop/Potion/Enchantment). |
+| `turn_count` | INT | Turnos del jugador en el combate. |
+| `damage_dealt` | INT | Daño infligido por el jugador en el combate (incluye lo absorbido por escudos). |
+| `damage_taken` | INT | Daño recibido por el jugador en el combate (incluye lo absorbido por escudos). |
+| `rerolls_used` | INT | Rerolls usados por el jugador en el combate. |
+| `energy_spent` | INT | Energía gastada por el jugador en el combate (solo decrementos; refills no cuentan). |
+| `hp_remaining` | INT | HP del jugador al terminar el combate. |
+| `top_combos` | STRING | Combos del combate como "id:count,id:count" (desc por uso, máx 100 chars). |
+| `boss_phase_reached` | INT | Fase máxima de boss vista en el combate (1-based). 0 = sin boss. |
+| `boss_phase` | INT | Fase del boss al morir el jugador. 0 = sin boss. |
+| `combo_id` | STRING | Id del combo matcheado (clave del catálogo de combos). |
+| `base_damage` | INT | Daño base del combo antes de mitigaciones/multiplicadores. |
+| `multiplier` | FLOAT | Multiplicador de daño por calidad de dados (1.0 = sin cálculo). |
+| `item_id` | STRING | Id del ítem (rewardId en compras). |
+| `price` | INT | Precio pagado en oro. |
+| `gold_remaining` | INT | Oro restante tras la compra. |
+| `source` | STRING | Origen del ítem: tipo de la sala en curso (proxy). |
+| `unlock_id` | STRING | Id de la definición de unlock cumplida. |
+| `category` | STRING | Categoría del elemento desbloqueado. |
+| `during_run` | BOOLEAN | true si el unlock se logró a mitad de run; false al cierre. |
+
 Notas de semántica:
 
 - **Outcome derivado**: `OnRunEnd` no trae outcome (args[1]=null). `run_ended`
