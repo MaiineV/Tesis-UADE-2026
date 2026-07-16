@@ -61,8 +61,17 @@ namespace Rollgeon.Exploration
             _isExploring = true;
             UnityEngine.Debug.Log("[ExplorationController] ResumeAfterCombat — _isExploring=true, cambiando fase a Exploration.");
             _phase.ReplacePhase(GamePhase.Exploration);
-            // Con el sistema de puertas, la sala ya quedó Cleared y el player
-            // sigue in-place. No advance — se espera un EnterRoomByDoor.
+
+            // En victoria normal la sala actual quedó Cleared y ProcessRoom
+            // hace early-return: no-op. Pero al FORZAR una puerta en combate, el
+            // EffForceDoor cruza a la sala nueva ANTES de abortar el combate — su
+            // OnRoomEntered llega con _isExploring==false y se ignora, así que la
+            // sala nueva nunca se procesó. Sin este ProcessRoom quedaría Uncleared
+            // con las puertas en LockedCombat pero sin enemigos (nunca dispara
+            // OnCombatTriggered ni el OnCombatEnd(Victory) que las reabre). Al
+            // reprocesarla acá, una sala de combate nueva arranca su combate y una
+            // ya cleareada/no-combate no hace nada.
+            ProcessRoom(_dungeon.CurrentRoomInstance);
         }
 
         public void Dispose()

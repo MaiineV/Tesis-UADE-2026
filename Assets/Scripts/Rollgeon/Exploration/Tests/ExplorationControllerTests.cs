@@ -262,12 +262,63 @@ namespace Rollgeon.Exploration.Tests
         [Test]
         public void ResumeAfterCombat_RestoresExplorationPhase()
         {
-            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
+            // Flujo de victoria normal: al terminar el combate la sala quedó
+            // Cleared (OnCombatEnd la marca) antes de que se llame ResumeAfterCombat.
+            var room = CreateInstance("combat_0", RoomType.Combat);
+            SetCurrent(room);
             _controller.BeginExploration();
             Assert.AreEqual(GamePhase.Combat, _stubPhase.CurrentBase);
 
+            room.State = RoomState.Cleared;
             _controller.ResumeAfterCombat();
 
+            Assert.AreEqual(GamePhase.Exploration, _stubPhase.CurrentBase);
+            Assert.IsTrue(_controller.IsExploring);
+        }
+
+        [Test]
+        public void ResumeAfterCombat_UnclearedCombatRoom_TriggersCombat()
+        {
+            // Regresión: forzar puerta en combate cruza a la sala nueva mientras
+            // _isExploring==false, por lo que su OnRoomEntered se ignora. Al abortar
+            // el combate, ResumeAfterCombat debe reprocesar la sala actual — si es
+            // una sala de combate sin clearear, tiene que disparar combate ahí
+            // (evita el limbo "sala sin enemigos con todas las puertas trabadas").
+            SetCurrent(CreateInstance("start_0", RoomType.Start, RoomState.Cleared));
+            _controller.BeginExploration();
+
+            var forcedInto = CreateInstance("combat_forced", RoomType.Combat, RoomState.Uncleared);
+            SetCurrent(forcedInto);
+
+            bool combatFired = false;
+            EventManager.Subscribe(EventName.OnCombatTriggered, args => combatFired = true);
+
+            _controller.ResumeAfterCombat();
+
+            Assert.IsTrue(combatFired,
+                "Resumir en una sala de combate sin clearear debe disparar combate");
+            Assert.AreEqual(GamePhase.Combat, _stubPhase.CurrentBase);
+            Assert.IsFalse(_controller.IsExploring);
+        }
+
+        [Test]
+        public void ResumeAfterCombat_ClearedRoom_DoesNotTriggerCombat()
+        {
+            // Flujo de victoria normal: la sala quedó Cleared, ResumeAfterCombat
+            // no debe re-disparar combate ni sacar al player de exploración.
+            SetCurrent(CreateInstance("combat_0", RoomType.Combat));
+            _controller.BeginExploration();
+
+            var cleared = CreateInstance("combat_0", RoomType.Combat, RoomState.Cleared);
+            SetCurrent(cleared);
+
+            bool combatFired = false;
+            EventManager.Subscribe(EventName.OnCombatTriggered, args => combatFired = true);
+
+            _controller.ResumeAfterCombat();
+
+            Assert.IsFalse(combatFired,
+                "Resumir en una sala ya cleareada no debe re-disparar combate");
             Assert.AreEqual(GamePhase.Exploration, _stubPhase.CurrentBase);
             Assert.IsTrue(_controller.IsExploring);
         }
