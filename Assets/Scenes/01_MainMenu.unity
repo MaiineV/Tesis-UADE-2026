@@ -3167,6 +3167,7 @@ MonoBehaviour:
   - {fileID: 513645678}
   - {fileID: 827294615}
   - {fileID: 1024818461}
+  - {fileID: 1745864880}
   _buttonsFadeDuration: 0.6
   _buttonsFadeDelay: 8
   _buttonsFadeEase: 4
