@@ -21,5 +21,12 @@ namespace Rollgeon.Combat.Weakness
     {
         /// <summary>Ver contract en el type summary. Default behavior: return 1.0f.</summary>
         float GetMultiplier(Guid attacker, Guid target, string matchedComboId);
+
+        /// <summary>
+        /// Igual cálculo que <see cref="GetMultiplier"/> pero <b>sin side-effects</b>: no dispara
+        /// <see cref="Patterns.EventName.OnWeaknessHit"/>. Para previews del HUD (el número real
+        /// del golpe no debe adelantar el evento de weakness). Default: return 1.0f.
+        /// </summary>
+        float PeekMultiplier(Guid attacker, Guid target, string matchedComboId);
     }
 }

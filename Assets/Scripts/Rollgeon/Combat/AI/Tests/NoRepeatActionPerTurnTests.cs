@@ -385,6 +385,12 @@ namespace Rollgeon.Combat.AI.Tests
                 ctx.FinalDamage = ctx.BaseDamage;
                 return ctx;
             }
+
+            public DamageContext Preview(DamageContext ctx)
+            {
+                ctx.FinalDamage = ctx.BaseDamage;
+                return ctx;
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
+using Rollgeon.Combat.Weakness;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
@@ -307,8 +308,21 @@ namespace Rollgeon.Combat.Handoff
             }
 
             ApplyComboImmunities(enemyData);
+            RegisterWeakness(id, enemyData);
 
             return id;
+        }
+
+        /// <summary>
+        /// Registra la debilidad del enemigo (combo → multiplicador) para que el
+        /// <see cref="Rollgeon.Combat.Pipelines.DamagePipeline"/> la aplique al pegarle con ese
+        /// combo. Sin <c>WeaknessComboId</c> ("None") no se registra ⇒ el checker resuelve ×1.0.
+        /// </summary>
+        private static void RegisterWeakness(Guid id, EnemyDataSO enemyData)
+        {
+            if (enemyData == null || string.IsNullOrEmpty(enemyData.WeaknessComboId)) return;
+            if (ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) && registry != null)
+                registry.SetWeakness(id, enemyData.WeaknessComboId, enemyData.WeaknessMultiplierOverride);
         }
 
         /// <summary>

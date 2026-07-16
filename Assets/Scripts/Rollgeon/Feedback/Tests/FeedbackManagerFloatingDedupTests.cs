@@ -23,6 +23,7 @@ namespace Rollgeon.Feedback.Tests
         private sealed class FakeDamagePipeline : IDamagePipeline
         {
             public DamageContext Resolve(DamageContext ctx) => ctx;
+            public DamageContext Preview(DamageContext ctx) => ctx;
         }
 
         private GameObject _go;

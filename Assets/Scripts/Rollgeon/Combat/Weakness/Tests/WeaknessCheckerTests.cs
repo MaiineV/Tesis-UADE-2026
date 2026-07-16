@@ -192,5 +192,43 @@ namespace Rollgeon.Combat.Weakness.Tests
             _registry.SetWeakness(Guid.Empty, ComboId.Par, 0f);
             Assert.IsFalse(_registry.TryGet(Guid.Empty, out _));
         }
+
+        // ---- PeekMultiplier (read-only, para previews) ------------------
+
+        [Test]
+        public void PeekMultiplier_Returns_Same_Value_As_GetMultiplier_For_Matching_Combo()
+        {
+            var attacker = Guid.NewGuid();
+            var target = Guid.NewGuid();
+            _registry.SetWeakness(target, ComboId.Poker, 3.0f);
+
+            float peek = _sut.PeekMultiplier(attacker, target, ComboId.Poker);
+
+            Assert.AreEqual(3.0f, peek, 0.0001f,
+                "PeekMultiplier debe devolver el mismo multiplicador que GetMultiplier.");
+        }
+
+        [Test]
+        public void PeekMultiplier_Does_Not_Fire_OnWeaknessHit()
+        {
+            var attacker = Guid.NewGuid();
+            var target = Guid.NewGuid();
+            _registry.SetWeakness(target, ComboId.FullHouse, 0f);
+
+            _sut.PeekMultiplier(attacker, target, ComboId.FullHouse);
+
+            Assert.AreEqual(0, _eventFireCount,
+                "PeekMultiplier NO debe disparar OnWeaknessHit (es solo preview).");
+        }
+
+        [Test]
+        public void PeekMultiplier_Returns_One_For_Unregistered_Target()
+        {
+            // Enemigo "None": sin debilidad registrada ⇒ ×1.0 sin evento.
+            float peek = _sut.PeekMultiplier(Guid.NewGuid(), Guid.NewGuid(), ComboId.Par);
+
+            Assert.AreEqual(1.0f, peek, 0.0001f);
+            Assert.AreEqual(0, _eventFireCount);
+        }
     }
 }

@@ -440,10 +440,12 @@ namespace Rollgeon.UI.HUD
 
             float multiDmgCombo = 1f;
             int shieldPreview = 0;
+            // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
+            // recomputar el daño real vía PlayerComboDamage.Resolve).
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
             if (best != null)
             {
                 var comboResult = best.Detect(keptDice, keptTypes, null);
-                System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
                 if (comboResult.IsMatch && hasBag)
                 {
                     contributingDice = ContributingDiceResolver.Resolve(
@@ -466,6 +468,7 @@ namespace Rollgeon.UI.HUD
                 BaseDamage = baseDmg,
                 MultiDmgCombo = multiDmgCombo,
                 ShieldPreview = shieldPreview,
+                ContributingDice = contributingDice,
             });
         }
 

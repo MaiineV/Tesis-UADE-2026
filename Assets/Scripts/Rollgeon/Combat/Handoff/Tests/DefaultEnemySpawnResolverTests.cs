@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Patterns;
 using Rollgeon.Attributes;
+using Rollgeon.Combat.Weakness;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
@@ -176,6 +178,55 @@ namespace Rollgeon.Combat.Handoff.Tests
             {
                 Assert.IsTrue(_registry.TryGetAttributes(id, out _),
                     $"Enemy {id} debe registrarse en entity registry");
+            }
+        }
+
+        [Test]
+        public void Resolve_RegistersEnemyWeakness_WhenConfigured()
+        {
+            var weaknessRegistry = new WeaknessRegistry();
+            ServiceLocator.AddService<IWeaknessRegistry>(weaknessRegistry);
+            try
+            {
+                var enemy = CreateEnemy("Goblin");
+                enemy.WeaknessComboId = "combo.par";
+                enemy.WeaknessMultiplierOverride = 2f;
+                var instance = CreateInstance(CreatePool(enemy), RoomType.Boss);
+
+                var result = _resolver.Resolve(instance, new System.Random(42));
+
+                Assert.AreEqual(1, result.Count);
+                Assert.IsTrue(weaknessRegistry.TryGet(result[0].id, out var data),
+                    "El enemigo con debilidad configurada debe registrarse en el WeaknessRegistry.");
+                Assert.AreEqual("combo.par", data.comboId);
+                Assert.AreEqual(2f, data.mult, 0.0001f);
+            }
+            finally
+            {
+                ServiceLocator.RemoveService<IWeaknessRegistry>();
+            }
+        }
+
+        [Test]
+        public void Resolve_DoesNotRegisterWeakness_ForNoneEnemy()
+        {
+            var weaknessRegistry = new WeaknessRegistry();
+            ServiceLocator.AddService<IWeaknessRegistry>(weaknessRegistry);
+            try
+            {
+                // Enemigo "None": sin WeaknessComboId ⇒ no se registra ⇒ checker resuelve ×1.0.
+                var enemy = CreateEnemy("Slime");
+                var instance = CreateInstance(CreatePool(enemy), RoomType.Boss);
+
+                var result = _resolver.Resolve(instance, new System.Random(42));
+
+                Assert.AreEqual(1, result.Count);
+                Assert.IsFalse(weaknessRegistry.TryGet(result[0].id, out _),
+                    "Enemigo sin debilidad no debe quedar registrado.");
+            }
+            finally
+            {
+                ServiceLocator.RemoveService<IWeaknessRegistry>();
             }
         }
 
