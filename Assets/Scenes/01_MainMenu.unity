@@ -2101,6 +2101,7 @@ GameObject:
   - component: {fileID: 513645677}
   - component: {fileID: 513645676}
   - component: {fileID: 513645675}
+  - component: {fileID: 513645678}
   m_Layer: 0
   m_Name: TutorialToggleButton
   m_TagString: Untagged
@@ -2210,6 +2211,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 513645673}
   m_CullTransparentMesh: 1
+--- !u!225 &513645678
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 513645673}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &585979932
 GameObject:
   m_ObjectHideFlags: 0
@@ -2643,6 +2656,11 @@ MonoBehaviour:
   - {fileID: 1422831527}
   - {fileID: 471749175}
   - {fileID: 2120411724}
+  - {fileID: 699408410}
+  - {fileID: 1137696861}
+  - {fileID: 513645678}
+  - {fileID: 827294615}
+  - {fileID: 1024818461}
   _buttonsFadeDuration: 0.6
   _buttonsFadeDelay: 8
   _buttonsFadeEase: 4
@@ -4919,6 +4937,7 @@ GameObject:
   - component: {fileID: 1137696860}
   - component: {fileID: 1137696859}
   - component: {fileID: 1137696858}
+  - component: {fileID: 1137696861}
   m_Layer: 0
   m_Name: DeleteProgressButton
   m_TagString: Untagged
@@ -5028,6 +5047,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1137696856}
   m_CullTransparentMesh: 1
+--- !u!225 &1137696861
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1137696856}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1176143483
 GameObject:
   m_ObjectHideFlags: 0
