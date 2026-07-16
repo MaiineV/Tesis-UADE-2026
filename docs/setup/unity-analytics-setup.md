@@ -149,6 +149,7 @@ Notas de semántica:
 | `sink ready: False` con init OK | Consentimiento denied o sin decidir (`analytics opt-in`) |
 | Eventos no aparecen en dashboards agregados | Delay normal (~horas). El Event Browser es la fuente rápida (~minutos) |
 | Datos de editor mezclados con playtest | Filtrar por environment `production` + `is_editor=false` |
+| Eventos enviados + flush pero nunca llegan | Revocar el consent (opt-out) justo después del `Flush()` descarta el batch antes del upload (el flush del SDK es async). Dejar el consent otorgado hasta que suba — si la sesión se corta, el SDK persiste el buffer a disco y re-sube en la próxima mientras el consent siga granted |
 
 ## Privacidad (GDPR)
 
