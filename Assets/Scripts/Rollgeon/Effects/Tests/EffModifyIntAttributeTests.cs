@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI;
 using Rollgeon.Combos;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
@@ -199,6 +200,74 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(5, _attrManager.GetAttributeValue<Energy, int>(_sourceId), "Energy no debe cambiar.");
         }
 
+        // ── Clamp a max HP (anti-overheal del Healer) ──────────────────
+
+        [Test]
+        public void Add_Health_ClampToMax_CapsAtMaxHp()
+        {
+            // 9/10 + 4 debe quedar 10/10, no 13.
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 9);
+            RegisterAiMaxHp(_sourceId, 10);
+
+            var eff = MakeConstant(StatType.Health, IntOperation.Add, 4);
+            SetField(eff, "_clampHealthToMax", true);
+            eff.ApplyEffect(MakeCtx());
+
+            Assert.AreEqual(10, _attrManager.GetAttributeValue<Health, int>(_sourceId));
+        }
+
+        [Test]
+        public void Add_Health_NoClamp_Overheals()
+        {
+            // Sin el flag, comportamiento previo intacto: 9 + 4 = 13.
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 9);
+            RegisterAiMaxHp(_sourceId, 10);
+
+            var eff = MakeConstant(StatType.Health, IntOperation.Add, 4);
+            eff.ApplyEffect(MakeCtx());
+
+            Assert.AreEqual(13, _attrManager.GetAttributeValue<Health, int>(_sourceId));
+        }
+
+        [Test]
+        public void Set_Health_ClampToMax_CapsAtMaxHp()
+        {
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 5);
+            RegisterAiMaxHp(_sourceId, 10);
+
+            var eff = MakeConstant(StatType.Health, IntOperation.Set, 99);
+            SetField(eff, "_clampHealthToMax", true);
+            eff.ApplyEffect(MakeCtx());
+
+            Assert.AreEqual(10, _attrManager.GetAttributeValue<Health, int>(_sourceId));
+        }
+
+        [Test]
+        public void Add_Health_ClampToMax_NoRegistry_DoesNotClamp()
+        {
+            // Sin max HP conocido (no hay IEnemyAIRegistry) no capeamos: 9 + 4 = 13.
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 9);
+
+            var eff = MakeConstant(StatType.Health, IntOperation.Add, 4);
+            SetField(eff, "_clampHealthToMax", true);
+            eff.ApplyEffect(MakeCtx());
+
+            Assert.AreEqual(13, _attrManager.GetAttributeValue<Health, int>(_sourceId));
+        }
+
+        [Test]
+        public void Add_Energy_ClampFlagIgnored_ForNonHealthStat()
+        {
+            // El clamp solo aplica a Health; Energy no se ve afectada aunque el flag esté on.
+            RegisterAiMaxHp(_sourceId, 10);
+
+            var eff = MakeConstant(StatType.Energy, IntOperation.Add, 3);
+            SetField(eff, "_clampHealthToMax", true);
+            eff.ApplyEffect(MakeCtx());
+
+            Assert.AreEqual(8, _attrManager.GetAttributeValue<Energy, int>(_sourceId));
+        }
+
         // ── Pipeline contract ──────────────────────────────────────────
 
         [Test]
@@ -244,6 +313,16 @@ namespace Rollgeon.Effects.Tests
             SetField(eff, "_amountSource", DamageSource.ComboValue);
             SetField(eff, "_comboMultiplier", comboMultiplier);
             return eff;
+        }
+
+        private static void RegisterAiMaxHp(Guid id, int maxHp)
+        {
+            if (!ServiceLocator.TryGetService<IEnemyAIRegistry>(out var reg) || reg == null)
+            {
+                reg = new EnemyAIRegistry();
+                ServiceLocator.AddService<IEnemyAIRegistry>(reg, ServiceScope.Run);
+            }
+            reg.Register(id, root: null, maxHp: maxHp);
         }
 
         private static void SetField(object obj, string fieldName, object value)

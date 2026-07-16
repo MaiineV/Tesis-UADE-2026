@@ -2,8 +2,10 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -64,6 +66,13 @@ namespace Rollgeon.Effects.Concretes
         [MinValue(0.01f)]
         [Tooltip("Multiplicador aplicado al resultado del reader.")]
         private float _readerMultiplier = 1f;
+
+        [Title("Clamp")]
+        [SerializeField, ShowIf(nameof(TargetStat), StatType.Health)]
+        [Tooltip("Si true (solo Health), el resultado se capea a la vida máxima del target. " +
+                 "Evita overheal: curar a un aliado en 9/10 con +4 lo deja en 10/10, no 13/10. " +
+                 "El max HP se resuelve via IEnemyAIRegistry (enemigos) o el hero del player.")]
+        private bool _clampHealthToMax;
 
         public override string GetEffectName() => $"Modify {TargetStat} ({Operation})";
 
@@ -131,8 +140,46 @@ namespace Rollgeon.Effects.Concretes
                 case IntOperation.Set:      next = amount; break;
                 default:                    return true;
             }
+
+            // Clamp opcional a la vida máxima del target (solo Health). Evita overheal
+            // cuando el Healer cura aliados por encima de su tope.
+            if (_clampHealthToMax && TargetStat == StatType.Health)
+            {
+                int maxHp = ResolveMaxHp(target);
+                if (next > maxHp) next = maxHp;
+                if (next < 0) next = 0;
+            }
+
             attrs.SetAttributeValue<TAttr, int>(target, next);
             return true;
+        }
+
+        /// <summary>
+        /// Max HP de referencia del target: enemigos via <see cref="IEnemyAIRegistry"/>
+        /// (lo registra el spawn resolver), player via <c>CurrentHero.BaseMaxHp</c>. Sin
+        /// fuente conocida ⇒ <see cref="int.MaxValue"/> (no capea). Mismo criterio que
+        /// <c>RunController.BuildMaxHpResolver</c>.
+        /// </summary>
+        private static int ResolveMaxHp(Guid target)
+        {
+            if (ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry)
+                && aiRegistry != null
+                && aiRegistry.TryGet(target, out _, out var maxHp)
+                && maxHp > 0)
+            {
+                return maxHp;
+            }
+
+            if (ServiceLocator.TryGetService<IPlayerService>(out var players)
+                && players != null
+                && players.PlayerGuid == target
+                && players.CurrentHero != null
+                && players.CurrentHero.BaseMaxHp > 0)
+            {
+                return players.CurrentHero.BaseMaxHp;
+            }
+
+            return int.MaxValue;
         }
     }
 }
