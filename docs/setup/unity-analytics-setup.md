@@ -118,11 +118,18 @@ Notas de semántica:
   e `is_continue=true`; los agregados de una fila `was_resumed=true` cubren solo
   el último segmento de sesión (cota inferior). Analizar por `run_id` distinct.
 - **Tutorial**: no trackea nada (gate por `PendingRunRequest.IsTutorial`).
-- **Editor vs build**: separación primaria por environment (`development` /
-  `production`); cinturón extra: filtrar `is_editor=false` en dashboards.
+- **Editor vs build**: el editor **no envía nada por default** — el tick
+  `Send From Editor` (`ServiceBootstrap.asset` → ExtraServices →
+  `UgsAnalyticsBootstrap`) arranca OFF y solo se prende para smokes del
+  pipeline; las builds envían siempre. Capas extra por si el tick está ON:
+  environment `development` (editor) vs `production` (build), y el param
+  `is_editor` para filtrar en dashboards.
 
 ## Smoke test (editor)
 
+0. Prender el tick **`Send From Editor`** en `ServiceBootstrap.asset` →
+   ExtraServices → `UgsAnalyticsBootstrap` (default OFF: sin él, el editor no
+   inicializa UGS y no envía nada). **Apagarlo al terminar el smoke.**
 1. **Play** desde `00_Bootstrap` → consola: `[Analytics] UGS init OK
    (env=development, consent=sin decidir).` (sin link a Unity Cloud: warning
    único `Init de UGS falló` y el juego sigue — es la degradación esperada).
@@ -142,6 +149,7 @@ Notas de semántica:
 
 | Síntoma | Causa probable |
 |---|---|
+| `[Analytics] Envío desde editor deshabilitado` y nada llega desde el editor | Comportamiento default — prender `Send From Editor` en `ServiceBootstrap.asset` solo para smokes (las builds no pasan por este gate) |
 | `Init de UGS falló … UnityProjectNotLinkedException` | Proyecto sin linkear (Project Settings → Services) |
 | `Init de UGS falló` con proyecto linkeado | Environment `development` no existe en Unity Cloud, o sin red |
 | Eventos llegan como *invalid* | Evento/parámetro no declarado en el Event Manager, o tipo distinto al de la tabla |

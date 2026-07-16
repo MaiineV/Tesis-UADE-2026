@@ -36,6 +36,15 @@ namespace Rollgeon.Analytics.Ugs
         private static UgsAnalyticsSink s_sink;
         private static bool s_initStarted;
 
+        // Default false a propósito (y es el default CLR — sin field initializer,
+        // compatible con el gotcha de Odin): el editor NO envía telemetría salvo
+        // opt-in explícito del equipo. Las builds ignoran este tick y envían siempre.
+        [Tooltip("Enviar telemetría desde el EDITOR. OFF por default para no spamear datos " +
+                 "de desarrollo — prenderlo solo para smokes del pipeline. Las builds " +
+                 "SIEMPRE envían (este tick no aplica fuera del editor).")]
+        [SerializeField]
+        private bool _sendFromEditor;
+
         [NonSerialized] private bool _registered;
 
         /// <inheritdoc />
@@ -65,6 +74,17 @@ namespace Rollgeon.Analytics.Ugs
             s_sink = sink;
             ServiceLocator.AddService<IAnalyticsSink>(sink, ServiceScope.Global);
             ServiceLocator.AddService<IAnalyticsGateway>(sink, ServiceScope.Global);
+
+            // Editor sin opt-in → UGS ni se inicializa: el sink queda mudo
+            // (Initialized=false) y todo dropea. La UI de consent sigue viva —
+            // la decisión se persiste y aplica cuando el envío esté habilitado.
+            if (Application.isEditor && !_sendFromEditor)
+            {
+                Debug.Log("[Analytics] Envío desde editor deshabilitado — prender el tick " +
+                          "'Send From Editor' en ServiceBootstrap.asset → ExtraServices → " +
+                          "UgsAnalyticsBootstrap para habilitarlo. Las builds envían siempre.");
+                return;
+            }
 
             if (s_initStarted) return;
             s_initStarted = true;
