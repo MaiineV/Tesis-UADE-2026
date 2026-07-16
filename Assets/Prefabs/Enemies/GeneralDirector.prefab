@@ -123,8 +123,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 0/0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: -6320739639602577290, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -509,6 +509,9 @@ MonoBehaviour:
   _selectedCreaseThreshold: 1
   _selectedCreaseSmooth: 0.3
   _selectedCreaseAlpha: 0.52
+  _glowPulseSeconds: 0.9
+  _glowAlphaMin: 0.3
+  _glowAlphaMax: 0.7
   _renderers:
   - {fileID: 4161732024664342645}
   - {fileID: 3483803288976001758}
