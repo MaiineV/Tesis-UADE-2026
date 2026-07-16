@@ -13,11 +13,18 @@ namespace Rollgeon.Dice.Throw
     [AddComponentMenu("Rollgeon/Dice/Dice Throw Die View")]
     public sealed class DiceThrowDieView : MonoBehaviour
     {
-        [SerializeField, Tooltip("Fondo del dado (para tints futuros).")]
+        [SerializeField, Tooltip("Cuerpo del dado: lleva la silueta del tipo.")]
         private Image _background;
 
         [SerializeField, Tooltip("Número de la cara.")]
         private TextMeshProUGUI _label;
+
+        [SerializeField, Tooltip("Catálogo de siluetas. Vacío = se resuelve desde " +
+                                 "Resources/Dice/DiceShapeCatalog.")]
+        private DiceShapeCatalogSO _shapeCatalog;
+
+        private DiceShapeCatalogSO _resolvedCatalog;
+        private bool _catalogResolved;
 
         public RectTransform Rect => (RectTransform)transform;
 
@@ -29,5 +36,24 @@ namespace Rollgeon.Dice.Throw
         public void ShowFace(int face) => _label?.SetText(face.ToString());
 
         public void ShowText(string text) => _label?.SetText(text);
+
+        /// <summary>
+        /// Pinta la silueta del tipo de dado; el número se dibuja encima. Mismo catálogo que
+        /// <c>DiceSlotView</c> para que el 2D no se despegue del modo classic.
+        /// </summary>
+        public void SetDiceType(DiceType type)
+        {
+            if (_background == null) return;
+            var catalog = ResolveCatalog();
+            _background.sprite = catalog != null ? catalog.GetShape(type) : null;
+        }
+
+        private DiceShapeCatalogSO ResolveCatalog()
+        {
+            if (_catalogResolved) return _resolvedCatalog;
+            _resolvedCatalog = DiceShapeCatalogSO.Resolve(_shapeCatalog);
+            _catalogResolved = true;
+            return _resolvedCatalog;
+        }
     }
 }
