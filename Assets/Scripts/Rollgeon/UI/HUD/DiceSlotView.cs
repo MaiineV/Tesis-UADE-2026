@@ -27,6 +27,11 @@ namespace Rollgeon.UI.HUD
                  "Resources/Dice/DiceShapeCatalog.")]
         private DiceShapeCatalogSO _shapeCatalog;
 
+        [SerializeField, Optional]
+        [Tooltip("Overlays que se recortan con la silueta del dado (glow, flash). Sin el sprite " +
+                 "quedan como cuadrados llenos sobre una forma que no lo es.")]
+        private Image[] _shapedOverlays;
+
         [Title("Dice block")]
         [SerializeField, Optional]
         [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
@@ -73,11 +78,20 @@ namespace Rollgeon.UI.HUD
         /// entrada, el sprite queda en null y el <see cref="Image"/> dibuja el cuadrado de color
         /// plano de siempre — por eso esto es seguro antes de que exista el arte.
         /// </summary>
+        /// <remarks>
+        /// Los overlays llevan la misma silueta: el juice solo les anima el alfa, así que sin
+        /// sprite el glow y el flash se dibujarían como cuadrados sobre un dado que no lo es.
+        /// </remarks>
         public void SetDiceType(DiceType type)
         {
-            if (_background == null) return;
             var catalog = ResolveCatalog();
-            _background.sprite = catalog != null ? catalog.GetShape(type) : null;
+            var shape = catalog != null ? catalog.GetShape(type) : null;
+
+            if (_background != null) _background.sprite = shape;
+
+            if (_shapedOverlays == null) return;
+            for (int i = 0; i < _shapedOverlays.Length; i++)
+                if (_shapedOverlays[i] != null) _shapedOverlays[i].sprite = shape;
         }
 
         private DiceShapeCatalogSO ResolveCatalog()
