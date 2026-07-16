@@ -47,7 +47,8 @@ namespace Rollgeon.UI.Screens
         private Button _unlocksButton;
 
         [Tooltip("Boton 'Borrar partida' (#164). Resetea la meta-progresion al estado inicial " +
-                 "(borra el save y los pools se actualizan al instante). Opcional.")]
+                 "(borra el save y los pools se actualizan al instante) y elimina la run en curso " +
+                 "guardada, apagando el Continue. Opcional.")]
         [SerializeField]
         private Button _resetSaveButton;
 
@@ -325,20 +326,31 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Handler del boton "Borrar partida" (#164). Resetea la meta-progresión al
-        /// estado inicial (Guerrero + D3/D4/D6): borra el save file y limpia el
-        /// estado en memoria — los pools y screens se actualizan al instante.
+        /// Handler del boton "Borrar partida" (#164). Borra TODO el progreso:
+        /// (1) resetea la meta-progresión al estado inicial (Guerrero + D3/D4/D6),
+        /// y (2) elimina la run en curso guardada (<c>run.*</c> save file + cache) y
+        /// apaga el Continue. Sin este paso 2 el botón Continue seguiría reanudando
+        /// una partida que el usuario acaba de borrar (los dos saves son independientes:
+        /// meta-progresión vs run).
         /// </summary>
         private void OnResetSaveClicked()
         {
-            if (!ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta) || meta == null)
+            if (ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta) && meta != null)
             {
-                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — no hay save que borrar.", this);
-                return;
+                meta.ResetProgression();
+            }
+            else
+            {
+                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — " +
+                                 "se borra solo la run en curso, no la meta-progresion.", this);
             }
 
-            meta.ResetProgression();
-            Debug.Log(LogPrefix + "Partida guardada borrada — meta-progresion en estado inicial.", this);
+            // La run en curso vive en un save aparte (SaveSystem, run.* keys); borrarlo y
+            // refrescar apaga el Continue para no reanudar una partida ya eliminada.
+            SaveSystem.DeleteSave();
+            RefreshContinueButton();
+
+            Debug.Log(LogPrefix + "Partida borrada — meta-progresion en estado inicial y run en curso eliminada.", this);
         }
 
         /// <summary>
