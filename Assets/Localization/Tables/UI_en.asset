@@ -230,6 +230,35 @@ MonoBehaviour:
     m_Localized: Enchantment
     m_Metadata:
       m_Items: []
+  - m_Id: 296236889440256
+    m_Localized: 'Analytics: ON'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160512
+    m_Localized: 'Analytics: OFF'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160513
+    m_Localized: Anonymous gameplay data
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160514
+    m_Localized: Help us balance the game? We send anonymous gameplay data (combats,
+      gold, combos). No personal data. You can change this anytime from the menu.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160515
+    m_Localized: Accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160516
+    m_Localized: Decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160517
+    m_Localized: Privacy policy
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

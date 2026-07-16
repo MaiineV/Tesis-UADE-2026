@@ -66,6 +66,16 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private TMP_Text _tutorialToggleLabel;
 
+        [Tooltip("Boton toggle 'Telemetría: ON/OFF' (Feature#0029). Prende/apaga el envío de " +
+                 "datos anónimos de gameplay. Persiste en PlayerPrefs — a diferencia del toggle " +
+                 "de tutorial, sobrevive al 'Borrar partida'. Opcional.")]
+        [SerializeField]
+        private Button _analyticsToggleButton;
+
+        [Tooltip("Label del boton toggle de telemetría — 'Telemetría: ON' / 'Telemetría: OFF'.")]
+        [SerializeField]
+        private TMP_Text _analyticsToggleLabel;
+
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -117,7 +127,14 @@ namespace Rollgeon.UI.Screens
                 RefreshTutorialToggleLabel();
             }
 
+            if (_analyticsToggleButton != null)
+            {
+                _analyticsToggleButton.onClick.AddListener(OnAnalyticsToggleClicked);
+                RefreshAnalyticsToggleLabel();
+            }
+
             ConsumePostTutorialRouting();
+            TryShowAnalyticsConsent();
         }
 
         private void OnDisable()
@@ -129,6 +146,7 @@ namespace Rollgeon.UI.Screens
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
+            if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.RemoveListener(OnAnalyticsToggleClicked);
         }
 
         /// <summary>
@@ -285,6 +303,76 @@ namespace Rollgeon.UI.Screens
             _tutorialToggleLabel.text = enabled
                 ? Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_on", "Tutorial: ON")
                 : Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_off", "Tutorial: OFF");
+        }
+
+        // ================================================================
+        // Telemetría (Feature#0029)
+        // ================================================================
+
+        /// <summary>
+        /// Handler del toggle de telemetría. Invierte el consentimiento vía
+        /// <see cref="Rollgeon.Analytics.IAnalyticsConsentService"/> (persiste en
+        /// PlayerPrefs y se aplica al SDK si ya inicializó).
+        /// </summary>
+        private void OnAnalyticsToggleClicked()
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent) || consent == null)
+            {
+                Debug.LogWarning(LogPrefix + "IAnalyticsConsentService no esta registrado — no se puede togglear la telemetría.", this);
+                return;
+            }
+
+            consent.SetConsent(!consent.IsGranted);
+            RefreshAnalyticsToggleLabel();
+        }
+
+        private void RefreshAnalyticsToggleLabel()
+        {
+            if (_analyticsToggleLabel == null) return;
+
+            bool granted = ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent)
+                           && consent != null && consent.IsGranted;
+            _analyticsToggleLabel.text = granted
+                ? Rollgeon.Localization.LocalizedContent.Ui("menu.analytics_on", "Telemetría: ON")
+                : Rollgeon.Localization.LocalizedContent.Ui("menu.analytics_off", "Telemetría: OFF");
+        }
+
+        /// <summary>
+        /// Primera ejecución sin decisión de consentimiento → abre el popup
+        /// opt-in (GDPR). Diferido un frame para que el ScreenHost termine de
+        /// registrar screens (mismo patrón que <see cref="ConsumePostTutorialRouting"/>).
+        /// </summary>
+        private void TryShowAnalyticsConsent()
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent) || consent == null) return;
+            if (consent.HasDecision) return;
+
+            Rollgeon.Patterns.CoroutineHost.Run(PushAnalyticsConsentNextFrame());
+        }
+
+        private System.Collections.IEnumerator PushAnalyticsConsentNextFrame()
+        {
+            yield return null;
+
+            // Re-chequeo: el jugador pudo decidir mientras tanto (o el popup ya abrió).
+            if (ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent)
+                && consent != null && !consent.HasDecision
+                && ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                // Overlay no-destructivo: el menú queda vivo detrás (sin churn de
+                // OnDisable/OnEnable que replaye la intro). El bloqueo de input lo
+                // aporta el fondo full-screen raycast del propio overlay.
+                screens.PushOverlay<AnalyticsConsentOverlay>();
+            }
+        }
+
+        /// <summary>
+        /// El popup de consentimiento (overlay no-destructivo) se cierra con pop —
+        /// el menú recupera foco sin re-enable, así que el toggle se refresca acá.
+        /// </summary>
+        protected override void OnGainFocus()
+        {
+            RefreshAnalyticsToggleLabel();
         }
 
         /// <summary>

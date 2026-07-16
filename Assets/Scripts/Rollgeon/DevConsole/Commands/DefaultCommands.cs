@@ -47,6 +47,9 @@ namespace Rollgeon.DevConsole.Commands
             // Steam
             r.Register(new SteamCommand());
 
+            // Telemetría (Feature#0029)
+            r.Register(new AnalyticsCommand());
+
             // Help último — necesita el registry ya armado.
             r.Register(new HelpCommand(r));
             return r;

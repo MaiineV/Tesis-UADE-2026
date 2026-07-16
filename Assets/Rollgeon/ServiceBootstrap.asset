@@ -137,7 +137,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 49
+      Data: 51
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -306,6 +306,18 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 10|Rollgeon.Localization.LocalizationServiceBootstrap, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 11|Rollgeon.Analytics.Ugs.UgsAnalyticsBootstrap, Rollgeon.Analytics.Ugs
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 12|Rollgeon.Analytics.AnalyticsTrackerService, Rollgeon
     - Name: 
       Entry: 8
       Data: 
