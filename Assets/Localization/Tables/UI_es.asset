@@ -230,6 +230,36 @@ MonoBehaviour:
     m_Localized: Encantamiento
     m_Metadata:
       m_Items: []
+  - m_Id: 296236889440256
+    m_Localized: "Telemetr\xEDa: ON"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160512
+    m_Localized: "Telemetr\xEDa: OFF"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160513
+    m_Localized: "Datos de juego an\xF3nimos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160514
+    m_Localized: "\xBFNos ayud\xE1s a balancear el juego? Enviamos datos an\xF3nimos
+      de tus partidas (combates, oro, combos). Sin datos personales. Pod\xE9s cambiarlo
+      cuando quieras desde el men\xFA."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160515
+    m_Localized: Aceptar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160516
+    m_Localized: Rechazar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160517
+    m_Localized: "Pol\xEDtica de privacidad"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

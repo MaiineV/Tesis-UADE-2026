@@ -227,6 +227,34 @@ MonoBehaviour:
     m_Key: room.type.enchantment
     m_Metadata:
       m_Items: []
+  - m_Id: 296236889440256
+    m_Key: menu.analytics_on
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160512
+    m_Key: menu.analytics_off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160513
+    m_Key: menu.analytics_consent_title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160514
+    m_Key: menu.analytics_consent_body
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160515
+    m_Key: menu.analytics_consent_accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160516
+    m_Key: menu.analytics_consent_decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160517
+    m_Key: menu.analytics_consent_privacy
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
