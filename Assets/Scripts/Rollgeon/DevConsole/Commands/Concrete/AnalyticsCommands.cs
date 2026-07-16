@@ -34,7 +34,7 @@ namespace Rollgeon.DevConsole.Commands
                 case "status": return Status(ctx);
                 case "opt-in": return SetConsent(ctx, granted: true);
                 case "opt-out": return SetConsent(ctx, granted: false);
-                case "reset": return ResetDecision();
+                case "reset": return ResetDecision(ctx);
                 case "delete": return Delete(ctx);
                 case "test": return SendTest(ctx);
                 default: return CommandResult.Fail($"Subcomando desconocido '{args[0]}'. Usá status|opt-in|opt-out|reset|delete|test.");
@@ -68,8 +68,16 @@ namespace Rollgeon.DevConsole.Commands
                 : "Consentimiento revocado — no se envía más telemetría.");
         }
 
-        private static CommandResult ResetDecision()
+        private static CommandResult ResetDecision(IDevConsoleContext ctx)
         {
+            // También revocar a nivel SDK: sin esto el engine seguiría con el
+            // consent anterior (persistido por EndUserConsent) hasta la próxima
+            // decisión, y el SDK recolectaría sus eventos default sin decisión vigente.
+            if (ctx.TryResolve<IAnalyticsGateway>(out var gateway) && gateway != null && gateway.Initialized)
+            {
+                gateway.ApplyConsent(false);
+            }
+
             AnalyticsPrefs.ClearDecision();
             return CommandResult.Ok("Decisión de consentimiento borrada — el popup re-pregunta al volver al menú.");
         }
