@@ -43,7 +43,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 5
+      Data: 6
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
@@ -160,7 +160,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 3
     - Name: 
       Entry: 7
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
@@ -271,16 +271,49 @@ MonoBehaviour:
       Data: false
     - Name: Range
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -354,6 +387,36 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Node
+      Entry: 7
+      Data: 30|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 0
+    - Name: Size
+      Entry: 3
+      Data: 2
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 8
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -373,20 +436,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 30|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 31|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 32|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 32|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+      Data: 33|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -404,7 +467,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 0
@@ -416,7 +479,7 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 0
@@ -426,6 +489,27 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 1
+    - Name: Size
+      Entry: 3
+      Data: 1
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 4
+    - Name: Kind
+      Entry: 3
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
