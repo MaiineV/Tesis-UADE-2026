@@ -31,9 +31,10 @@ namespace Rollgeon.EditorTools.Menu
         private static readonly Color AccentColor = new Color32(0xE0, 0xC0, 0xA9, 0xFF);
         private static readonly Color PausePanelColor = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.85f);
 
-        // Stack vertical más compacto y por debajo del arte del título
-        // (que ocupa y≈175..400): top edge en 67.5, sin superposición.
-        private static readonly float[] StackY = { 30f, -45f, -120f, -195f, -270f };
+        // Stack vertical compacto y bien por debajo del arte del título
+        // (ajustado -100px en playtest: el logo baja más de lo que ocupa
+        // su rect y pisaba el tope del stack).
+        private static readonly float[] StackY = { -70f, -145f, -220f, -295f, -370f };
         private static readonly Vector2 ButtonSize = new Vector2(300f, 75f);
 
         [MenuItem("Rollgeon/Juicy Menu/Setup All")]
