@@ -237,48 +237,28 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         // ---- arbitrary node (graph side panel) -----------------------------
 
         /// <summary>
-        /// Draws whatever block the canvas has selected, whatever its type — an effect group, a
-        /// dice-enchantment trigger, a chain phase, a reader.
+        /// Draws the fields that belong to the block the canvas has selected — and only those.
         /// </summary>
         /// <remarks>
-        /// Effects keep the exact rendering the enemy tool has always had (Odin draws the whole
-        /// effect, plus the conditional reader picker). Everything else gets the generic treatment,
-        /// which is what makes an enchantment's <c>Cost</c> reader authorable at all — Odin hides
-        /// that picker, so without this the panel would show a slot no one can fill.
+        /// <para>
+        /// <b>Anything the graph already draws as its own node is skipped here.</b> An effect group's
+        /// effects and preconditions are nodes to its right, so re-serialising them in the panel
+        /// shows the same data twice and buries the group's own fields; on an <c>EffChain</c> it's
+        /// worse, because the panel renders the whole nested tree that the canvas is already
+        /// showing. Structure is edited on the canvas (right-click a node); the panel edits values.
+        /// </para>
+        /// <para>
+        /// The exception is a slot that is <b>null</b>: it produces no node, so the panel has to
+        /// offer its picker or there'd be no way to fill it.
+        /// </para>
         /// </remarks>
         public static void DrawNode(PolymorphicAuthoringContext ctx, object value, string path, Options opts)
         {
             if (value == null) return;
 
-            if (value is EffectData group)
-            {
-                DrawEffectData(ctx, group, path, opts, 0);
-                return;
-            }
-
-            if (value is IEffect)
-            {
-                DrawBlockBody(ctx, value, path, opts, 0);
-                DrawReaderPickers(ctx, value, path);
-                return;
-            }
-
-            DrawGenericBody(ctx, value, path, opts, 0);
-        }
-
-        /// <summary>Odin draws the plain fields; we own every polymorphic slot and container.</summary>
-        static void DrawGenericBody(
-            PolymorphicAuthoringContext ctx, object value, string path, Options opts, int depth)
-        {
             var type = value.GetType();
             var pickers = PolymorphicMemberScanner.Scan(type);
             var blocks = PolymorphicMemberScanner.BlockMembersOf(type);
-
-            if ((pickers.Count == 0 && blocks.Count == 0) || depth >= MAX_DEPTH)
-            {
-                ctx.Draw(path);
-                return;
-            }
 
             var prop = ctx.At(path);
             if (prop == null)
@@ -287,44 +267,48 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 return;
             }
 
+            bool drewAnything = false;
+
             for (int i = 0; i < prop.Children.Count; i++)
             {
                 var child = prop.Children[i];
-                if (IsBlockNamed(pickers, child.Name) || IsBlockNamed(blocks, child.Name)) continue;
+                if (IsBlockNamed(blocks, child.Name)) continue;   // graphed
+                if (IsBlockNamed(pickers, child.Name)) continue;  // graphed, or handled below
                 child.Draw();
+                drewAnything = true;
             }
 
+            // Null single slots have no node, so they'd be unreachable without a picker here.
             foreach (var picker in pickers)
-                DrawPickerMember(ctx, picker, value, path, opts, depth);
-
-            foreach (var block in blocks)
-                DrawBlockMember(ctx, block, value, path, opts, depth);
-        }
-
-        static void DrawPickerMember(
-            PolymorphicAuthoringContext ctx, PolymorphicMember member,
-            object owner, string ownerPath, Options opts, int depth)
-        {
-            string memberPath = ownerPath + "." + member.Name;
-            var raw = member.Field.GetValue(owner);
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField(member.Title, EditorStyles.miniBoldLabel);
-
-            if (!member.IsList)
             {
-                var captured = member;
+                if (picker.IsList) continue;
+                if (IsHiddenTargetSelector(picker, opts)) continue;
+                var current = picker.Field.GetValue(value);
+                if (current != null) continue;
+
+                var captured = picker;
+                EditorGUILayout.Space(4);
+                EditorGUILayout.LabelField(picker.Title, EditorStyles.miniBoldLabel);
                 DrawSingleSlot(
-                    ctx, "Type", member.BaseType, raw, memberPath,
-                    v => captured.Field.SetValue(owner, v),
-                    "Change " + member.Title);
-                return;
+                    ctx, "Type", picker.BaseType, null, path + "." + picker.Name,
+                    v => captured.Field.SetValue(value, v),
+                    "Assign " + picker.Title);
+                drewAnything = true;
             }
 
-            if (!(raw is IList list)) return;
-            DrawPolymorphicListItems(ctx, list, memberPath, member.BaseType.Name);
-            DrawAddButton(ctx, member.BaseType.Name, member.BaseType, list);
+            if (!drewAnything)
+                EditorGUILayout.HelpBox(
+                    "This block has no fields of its own — everything it holds is a node on the canvas. " +
+                    "Right-click it there to add or remove.",
+                    MessageType.Info);
         }
+
+        /// <summary>
+        /// Only <c>EnemyActionBehavior</c> reads <see cref="EffectData.TargetSelector"/>. Offering it
+        /// in the item or hero hosts would let an author configure something that never runs.
+        /// </summary>
+        static bool IsHiddenTargetSelector(PolymorphicMember member, Options opts) =>
+            !opts.ShowTargetSelector && member.BaseType == typeof(BaseEnemyTargetSelector);
 
         // ---- recursion into nested containers ------------------------------
 

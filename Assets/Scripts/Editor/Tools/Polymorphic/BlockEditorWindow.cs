@@ -86,7 +86,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             // orphaned — rebuild rather than trying to patch.
             _ctx.Bind(_selected);
             _selectedNode = null;
-            _graph?.Bind(_selected);
+            _graph?.Bind(_selected, _ctx);
             _leftPanel?.MarkDirtyRepaint();
             _sidePanel?.MarkDirtyRepaint();
         }
@@ -119,6 +119,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             {
                 _selectedNode = node;
                 _sidePanel?.MarkDirtyRepaint();
+            };
+            _graph.OnStructureChanged += () =>
+            {
+                _sidePanel?.MarkDirtyRepaint();
+                _dataPanel?.MarkDirtyRepaint();
             };
 
             _sidePanel = new IMGUIContainer(DrawSidePanel)
@@ -223,7 +228,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             _selected = asset;
             _selectedNode = null;
             _ctx.Bind(asset);
-            _graph.Bind(asset);
+            _graph.Bind(asset, _ctx);
             _graph.FrameGraph();
             _sidePanel?.MarkDirtyRepaint();
             _dataPanel?.MarkDirtyRepaint();
@@ -257,9 +262,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             }
             else
             {
-                EditorGUILayout.LabelField(_selectedNode.Title, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField(_selectedNode.Subtitle, EditorStyles.miniLabel);
-                EditorGUILayout.Space(6);
+                BlockPanelStyles.DrawNodeHeader(_selectedNode);
 
                 // The cached path goes stale whenever a list shifts — re-resolve against the live
                 // object before drawing, or the panel would edit the wrong element.
@@ -277,8 +280,17 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                     _selectedNode.Path = repaired;
                 }
 
-                PolymorphicBlockDrawer.DrawNode(
-                    _ctx, _selectedNode.Value, _selectedNode.Path, PolymorphicBlockDrawer.Options.Default);
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    PolymorphicBlockDrawer.DrawNode(
+                        _ctx, _selectedNode.Value, _selectedNode.Path, PolymorphicBlockDrawer.Options.Default);
+                }
+
+                if (_selectedNode.Children.Count > 0)
+                {
+                    EditorGUILayout.Space(6);
+                    BlockPanelStyles.DrawChildrenSummary(_selectedNode);
+                }
             }
 
             EditorGUILayout.EndScrollView();

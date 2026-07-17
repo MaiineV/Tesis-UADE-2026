@@ -40,8 +40,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             if (model.Kind == BlockNodeKind.Root) InputPort.style.visibility = Visibility.Hidden;
             if (model.Children.Count == 0) OutputPort.style.visibility = Visibility.Hidden;
 
-            var accent = AccentOf(model.Kind);
-            titleContainer.style.backgroundColor = accent;
+            titleContainer.style.backgroundColor = BlockPanelStyles.AccentOf(model.Kind);
 
             var subtitle = new Label(model.Subtitle)
             {
@@ -67,24 +66,15 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             mainContainer.Add(kindTag);
 
             style.width = BlockGraphLayout.NODE_WIDTH;
+            // Pin the height to the pitch the layout assumes. Left to auto-size, a node grows past
+            // its allotted row (long titles wrap) and overlaps the one below — and the layout has no
+            // way to know, because it runs before anything is measured.
+            style.height = BlockGraphLayout.NODE_HEIGHT;
+            style.overflow = Overflow.Hidden;
+
             RefreshExpandedState();
             RefreshPorts();
         }
 
-        /// <summary>Colour carries the category so the eye can group a big graph without reading it.</summary>
-        static Color AccentOf(BlockNodeKind kind)
-        {
-            switch (kind)
-            {
-                case BlockNodeKind.Root:      return new Color(0.20f, 0.28f, 0.42f);
-                case BlockNodeKind.Hook:      return new Color(0.42f, 0.30f, 0.15f);
-                case BlockNodeKind.Group:     return new Color(0.18f, 0.34f, 0.30f);
-                case BlockNodeKind.Condition: return new Color(0.40f, 0.34f, 0.12f);
-                case BlockNodeKind.Effect:    return new Color(0.24f, 0.24f, 0.42f);
-                case BlockNodeKind.Trigger:   return new Color(0.38f, 0.22f, 0.36f);
-                case BlockNodeKind.Reader:    return new Color(0.16f, 0.30f, 0.36f);
-                default:                      return new Color(0.24f, 0.24f, 0.26f);
-            }
-        }
     }
 }

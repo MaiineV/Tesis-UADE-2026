@@ -33,6 +33,21 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         public object Value;
         public int Column;
         public readonly List<BlockGraphNode> Children = new List<BlockGraphNode>();
+
+        /// <summary>Null on the root.</summary>
+        public BlockGraphNode Parent;
+
+        /// <summary>Which member of <see cref="Parent"/> holds this value. Null on the root.</summary>
+        public PolymorphicMember? SourceMember;
+
+        /// <summary>Index within <see cref="SourceMember"/> when it's a list; -1 for single slots.</summary>
+        public int SourceIndex = -1;
+
+        /// <summary>The object that owns <see cref="SourceMember"/> — what a removal mutates.</summary>
+        public object Owner;
+
+        /// <summary>True when this node can be removed (it lives in a list, or fills a single slot).</summary>
+        public bool CanRemove => SourceMember.HasValue && Owner != null;
     }
 
     /// <summary>
@@ -109,7 +124,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
             if (!member.IsList)
             {
-                AddNode(raw, parent, memberPath, member, -1, depth, result, visited);
+                AddNode(raw, owner, parent, memberPath, member, -1, depth, result, visited);
                 return;
             }
 
@@ -117,12 +132,13 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             for (int i = 0; i < list.Count; i++)
             {
                 if (list[i] == null) continue;
-                AddNode(list[i], parent, memberPath + ".$" + i, member, i, depth, result, visited);
+                AddNode(list[i], owner, parent, memberPath + ".$" + i, member, i, depth, result, visited);
             }
         }
 
-        static void AddNode(object value, BlockGraphNode parent, string path, PolymorphicMember member,
-                            int index, int depth, Result result, HashSet<object> visited)
+        static void AddNode(object value, object owner, BlockGraphNode parent, string path,
+                            PolymorphicMember member, int index, int depth, Result result,
+                            HashSet<object> visited)
         {
             var node = new BlockGraphNode
             {
@@ -132,6 +148,10 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                 Kind = KindFor(value, member),
                 Value = value,
                 Column = parent.Column + 1,
+                Parent = parent,
+                Owner = owner,
+                SourceMember = member,
+                SourceIndex = index,
             };
             parent.Children.Add(node);
             result.AllNodes.Add(node);

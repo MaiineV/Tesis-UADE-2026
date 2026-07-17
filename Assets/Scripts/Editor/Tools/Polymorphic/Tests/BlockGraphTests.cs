@@ -206,6 +206,58 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             }
         }
 
+        /// <summary>
+        /// The layout's row pitch has to be at least the node's real rendered height, or boxes
+        /// overlap on screen while the maths says they don't. BlockNodeView pins its height to this
+        /// constant precisely so the two can't drift; this guards the constant staying sane.
+        /// </summary>
+        [Test]
+        public void NodeHeight_LeavesRoomForTitleSubtitleAndPorts()
+        {
+            Assert.GreaterOrEqual(BlockGraphLayout.NODE_HEIGHT, 90f,
+                "a GraphView node renders a title bar, a subtitle, a kind tag and port rows");
+            Assert.Greater(BlockGraphLayout.V_SPACING, 0f);
+        }
+
+        // ---- structural edits from the canvas -------------------------------
+
+        [Test]
+        public void Build_RecordsWhereEachNodeCameFrom_SoItCanBeRemoved()
+        {
+            var item = NewActiveItem();
+            item.OnActivate.Effects.Add(new EffHeal());
+
+            var model = BlockGraphModel.Build(item);
+            var effect = model.Root.Children[0].Children[0];
+
+            Assert.IsTrue(effect.CanRemove);
+            Assert.AreEqual(0, effect.SourceIndex, "it's element 0 of the Effects list");
+            Assert.AreEqual("Effects", effect.SourceMember.Value.Name);
+            Assert.AreSame(item.OnActivate, effect.Owner, "removal mutates the group's list");
+        }
+
+        [Test]
+        public void Build_Root_CannotBeRemoved()
+        {
+            var model = BlockGraphModel.Build(NewActiveItem());
+
+            Assert.IsFalse(model.Root.CanRemove);
+            Assert.IsNull(model.Root.Parent);
+        }
+
+        [Test]
+        public void Build_SourceIndex_IsMinusOneForSingleSlots()
+        {
+            var item = NewActiveItem();
+            item.OnActivate.Effects.Add(new EffHeal());
+
+            var model = BlockGraphModel.Build(item);
+            var group = model.Root.Children[0];
+
+            Assert.AreEqual(-1, group.SourceIndex, "OnActivate is a single slot, not a list element");
+            Assert.AreSame(item, group.Owner);
+        }
+
         [Test]
         public void Compute_ColumnsAreEvenlySpacedByDepth()
         {

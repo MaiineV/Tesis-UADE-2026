@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
@@ -29,11 +30,15 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         readonly Label _emptyHint;
 
         UnityEngine.Object _asset;
+        PolymorphicAuthoringContext _ctx;
         BlockGraphModel.Result _model;
         bool _suppressSelectionEvents;
 
         /// <summary>Fires with the selected node's absolute Odin path, or null when cleared.</summary>
         public event Action<BlockGraphNode> OnNodeSelected;
+
+        /// <summary>Fires after a structural edit made from the canvas, so hosts can repaint.</summary>
+        public event Action OnStructureChanged;
 
         public BlockGraphView()
         {
@@ -65,9 +70,98 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
             => new List<Port>();
 
-        public void Bind(UnityEngine.Object asset)
+        public void Bind(UnityEngine.Object asset, PolymorphicAuthoringContext ctx = null)
         {
             _asset = asset;
+            _ctx = ctx;
+            Rebuild();
+        }
+
+        // ---- structural editing from the canvas ----------------------------
+
+        /// <summary>
+        /// Right-click menu: add to any list this block owns, or remove the block itself.
+        /// </summary>
+        /// <remarks>
+        /// This is where structure is edited, because the panel deliberately doesn't show the lists
+        /// — their contents are already nodes on the canvas, and drilling into a serialised list to
+        /// add one entry is the thing this tool exists to replace.
+        /// </remarks>
+        public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+        {
+            var node = (evt.target as BlockNodeView)
+                       ?? (evt.target as VisualElement)?.GetFirstAncestorOfType<BlockNodeView>();
+            if (node == null || _ctx == null) return;
+
+            AppendAddItems(evt.menu, node);
+
+            if (node.Model.CanRemove)
+            {
+                evt.menu.AppendSeparator();
+                evt.menu.AppendAction($"Remove '{node.Model.Title}'", _ => Remove(node.Model));
+            }
+        }
+
+        void AppendAddItems(DropdownMenu menu, BlockNodeView node)
+        {
+            var value = node.Model.Value;
+            if (value == null) return;
+            var type = value.GetType();
+
+            foreach (var member in PolymorphicMemberScanner.Scan(type))
+            {
+                if (!member.IsList) continue;
+                if (!(member.Field.GetValue(value) is IList list)) continue;
+
+                foreach (var concrete in PolymorphicPicker.ConcreteSubtypesOf(member.BaseType))
+                {
+                    var capturedList = list;
+                    var capturedType = concrete;
+                    var label = member.Title;
+                    menu.AppendAction(
+                        $"Add {label}/{concrete.Name}",
+                        _ => Add(capturedList, capturedType, label));
+                }
+            }
+
+            foreach (var member in PolymorphicMemberScanner.BlockMembersOf(type))
+            {
+                if (!member.IsList) continue;
+                if (!(member.Field.GetValue(value) is IList list)) continue;
+
+                var capturedList = list;
+                var capturedType = member.BaseType;
+                var label = member.Title;
+                menu.AppendAction($"Add {label}/{member.BaseType.Name}",
+                    _ => Add(capturedList, capturedType, label));
+            }
+        }
+
+        void Add(IList list, Type concrete, string label)
+        {
+            _ctx.Mutate($"Add {label}", () => list.Add(Activator.CreateInstance(concrete)));
+            OnStructureChanged?.Invoke();
+            Rebuild();
+        }
+
+        void Remove(BlockGraphNode node)
+        {
+            var member = node.SourceMember.Value;
+            _ctx.Mutate($"Remove {node.Title}", () =>
+            {
+                if (node.SourceIndex >= 0)
+                {
+                    if (member.Field.GetValue(node.Owner) is IList list
+                        && node.SourceIndex < list.Count)
+                        list.RemoveAt(node.SourceIndex);
+                }
+                else
+                {
+                    member.Field.SetValue(node.Owner, null);
+                }
+            });
+            OnNodeSelected?.Invoke(null);
+            OnStructureChanged?.Invoke();
             Rebuild();
         }
 

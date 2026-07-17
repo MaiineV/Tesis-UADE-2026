@@ -17,9 +17,17 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
     public static class BlockGraphLayout
     {
         public const float NODE_WIDTH = 210f;
-        public const float NODE_HEIGHT = 62f;
-        public const float H_SPACING = 90f;
-        public const float V_SPACING = 18f;
+
+        /// <summary>
+        /// Row pitch. Must be at least the node's real rendered height or boxes overlap on screen —
+        /// <see cref="BlockNodeView"/> pins its height to this so the two can't drift apart. A
+        /// GraphView node auto-sizes to title + subtitle + kind tag + port rows, which is well over
+        /// the 62px this used to assume.
+        /// </summary>
+        public const float NODE_HEIGHT = 104f;
+
+        public const float H_SPACING = 130f;
+        public const float V_SPACING = 34f;
 
         public static Dictionary<BlockGraphNode, Vector2> Compute(BlockGraphModel.Result model)
         {
