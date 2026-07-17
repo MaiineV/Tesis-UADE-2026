@@ -10,7 +10,12 @@ namespace Rollgeon.Items
     [Serializable, HideReferenceObjectPicker]
     public class PassiveItemHook
     {
-        [InfoBox("Evento que dispara el efecto pasivo. Ej: OnTurnStarted, OnComboMatched, OnDamageResolved.")]
+        [InfoBox("Evento del bus que dispara el efecto. Usables: OnTurnStarted, OnTurnFinished, " +
+                 "OnRollStarted, OnDiceRolled, OnRollResolved, OnDamageIncoming, OnDamageOutgoing, " +
+                 "OnComboCrossed, OnWeaknessHit, OnPlayerHealthChanged.")]
+        [InfoBox("El hook filtra por args[0] == Guid del jugador (convención §18). Un evento que NO " +
+                 "arranca con un Guid dispara siempre — no hay a quién comparar.",
+                 InfoMessageType.Warning)]
         public EventName TriggerEvent;
 
         [OdinSerialize]
