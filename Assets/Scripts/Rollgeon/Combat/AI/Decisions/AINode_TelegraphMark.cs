@@ -28,7 +28,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public ThreatShape Shape = ThreatShape.SquareAroundPlayer;
 
         [Tooltip("Radio para Square (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column (1 ⇒ línea del jugador), " +
-                 "o medio-ancho de la banda perpendicular para DirectionalBand (1 ⇒ 3 casillas de ancho). Ignorado en HalfRoom.")]
+                 "medio-ancho de la banda perpendicular para DirectionalBand (1 ⇒ 3 casillas de ancho), " +
+                 "o ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2). Ignorado en HalfRoom.")]
         [MinValue(0)]
         public int Size = 1;
 
@@ -36,6 +37,11 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(1)]
         [ShowIf(nameof(Shape), ThreatShape.DirectionalBand)]
         public int Depth = 2;
+
+        [Tooltip("Cantidad de cuadrados independientes, anclados al azar en la sala. Solo para ScatteredSquares.")]
+        [MinValue(1)]
+        [ShowIf(nameof(Shape), ThreatShape.ScatteredSquares)]
+        public int Count = 3;
 
         [Tooltip("Eje de corte para HalfRoom: Vertical ⇒ izquierda/derecha, Horizontal ⇒ abajo/arriba.")]
         [ShowIf(nameof(Shape), ThreatShape.HalfRoom)]
@@ -56,16 +62,22 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var grid = context.Grid;
             if (grid == null) return AIResult.Failed;
-            if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
             HashSet<GridCoord> tiles;
             if (Shape == ThreatShape.DirectionalBand)
             {
+                if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
                 if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
                 tiles = ThreatAreaShape.ComputeDirectionalBand(grid, selfCoord, playerCoord, Size, Depth);
             }
+            else if (Shape == ThreatShape.ScatteredSquares)
+            {
+                var rng = context.Rng ?? new System.Random();
+                tiles = ThreatAreaShape.ComputeScatteredSquares(grid, rng, Count, Size);
+            }
             else
             {
+                if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
                 tiles = ThreatAreaShape.Compute(grid, playerCoord, Shape, Size, HalfAxis);
             }
             if (tiles.Count == 0)

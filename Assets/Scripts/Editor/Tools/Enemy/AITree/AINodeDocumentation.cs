@@ -77,8 +77,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "Shape=DirectionalBand: el área sale del propio enemigo (no del jugador) — " +
                 "banda perpendicular de 2·Size+1 casillas, centrada en su coordenada, " +
                 "extendida Depth casillas en la dirección cardinal dominante hacia el " +
-                "jugador. Las demás shapes (Square/Row/Column/HalfRoom) se centran en el " +
-                "jugador como siempre.",
+                "jugador.\n\n" +
+                "Shape=ScatteredSquares: Count cuadrados independientes de Size×Size, " +
+                "anclados al azar (AIContext.Rng) en tiles de la sala — ni el jugador ni " +
+                "el enemigo son el centro. Requiere una sala con bounds reales.\n\n" +
+                "Las demás shapes (Square/Row/Column/HalfRoom) se centran en el jugador " +
+                "como siempre.",
 
             [typeof(AINode_Behavior)] =
                 "Behavior: ejecuta un EnemyActionBehavior — la unidad reusable de combate " +

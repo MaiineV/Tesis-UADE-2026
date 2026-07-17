@@ -152,5 +152,77 @@ namespace Rollgeon.Combat.Tests
 
             Assert.AreEqual(0, tiles.Count);
         }
+
+        [Test]
+        public void ComputeScatteredSquares_ReturnsAtMostCountTimesWidthSquaredTiles()
+        {
+            // Arrange — sala grande, sin recorte esperable contra el borde.
+            _grid.LoadRoom(NavGraph.Rect(20, 20));
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(1), count: 3, squareWidth: 2);
+
+            // Assert
+            Assert.Greater(tiles.Count, 0);
+            Assert.LessOrEqual(tiles.Count, 3 * 2 * 2);
+        }
+
+        [Test]
+        public void ComputeScatteredSquares_AllTilesAreWithinGridBounds()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(7), count: 5, squareWidth: 2);
+
+            // Assert
+            foreach (var c in tiles)
+            {
+                Assert.IsTrue(c.X >= 0 && c.X < 9 && c.Y >= 0 && c.Y < 9,
+                    $"Tile {c} cayó fuera de la grilla 9x9.");
+            }
+        }
+
+        [Test]
+        public void ComputeScatteredSquares_SameSeed_ProducesSameTiles()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+
+            // Act
+            var first = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(42), count: 3, squareWidth: 2);
+            var second = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(42), count: 3, squareWidth: 2);
+
+            // Assert
+            CollectionAssert.AreEquivalent(first, second);
+        }
+
+        [Test]
+        public void ComputeScatteredSquares_ZeroCount_ReturnsEmpty()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(1), count: 0, squareWidth: 2);
+
+            Assert.AreEqual(0, tiles.Count);
+        }
+
+        [Test]
+        public void ComputeScatteredSquares_EmptyRoomGraph_ReturnsEmpty()
+        {
+            // _grid nunca cargó una sala (stub "infinito", sin tiles para enumerar).
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(1), count: 3, squareWidth: 2);
+
+            Assert.AreEqual(0, tiles.Count);
+        }
+
+        [Test]
+        public void ComputeScatteredSquares_NullGrid_ReturnsEmpty()
+        {
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(null, new System.Random(1), count: 3, squareWidth: 2);
+
+            Assert.AreEqual(0, tiles.Count);
+        }
     }
 }

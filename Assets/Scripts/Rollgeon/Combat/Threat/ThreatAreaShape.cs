@@ -24,6 +24,13 @@ namespace Rollgeon.Combat.Threat
         /// del jugador. Ver <see cref="ThreatAreaShape.ComputeDirectionalBand"/>.
         /// </summary>
         DirectionalBand,
+
+        /// <summary>
+        /// Varios cuadrados independientes en posiciones erráticas de la sala — Boss 1
+        /// (lluvia de zonas). Ni el jugador ni el boss son el centro; ver
+        /// <see cref="ThreatAreaShape.ComputeScatteredSquares"/>.
+        /// </summary>
+        ScatteredSquares,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -126,6 +133,38 @@ namespace Rollgeon.Combat.Threat
                     var c = advancesOnX
                         ? new GridCoord(originX, originY + off)
                         : new GridCoord(originX + off, originY);
+                    if (IsValidTile(grid, c)) result.Add(c);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// <paramref name="count"/> cuadrados de <paramref name="squareWidth"/>·<paramref name="squareWidth"/>
+        /// casillas, anclados en tiles al azar de la sala (vía <paramref name="rng"/>) — ni el
+        /// jugador ni el boss son el centro. Requiere una sala con bounds reales (como
+        /// <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/>/<see cref="ThreatShape.HalfRoom"/>);
+        /// grafo vacío ⇒ vacío. Los cuadrados pueden solaparse entre sí, se fusionan en el
+        /// mismo <c>HashSet</c> sin duplicar.
+        /// </summary>
+        public static HashSet<GridCoord> ComputeScatteredSquares(
+            IGridManager grid, System.Random rng, int count, int squareWidth)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null || rng == null || count <= 0) return result;
+
+            int w = squareWidth < 1 ? 1 : squareWidth;
+            var room = new List<GridCoord>(RoomTiles(grid));
+            if (room.Count == 0) return result;
+
+            for (int i = 0; i < count; i++)
+            {
+                var anchor = room[rng.Next(room.Count)];
+                for (int dx = 0; dx < w; dx++)
+                for (int dy = 0; dy < w; dy++)
+                {
+                    var c = new GridCoord(anchor.X + dx, anchor.Y + dy);
                     if (IsValidTile(grid, c)) result.Add(c);
                 }
             }
