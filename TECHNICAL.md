@@ -7543,6 +7543,25 @@ public class PersistentModifierDef
 | "Bomba de humo" | Active | `OnActivate`: `EffAddStatusEffect(Invisible, 2 turnos)`, Cooldown = 5 |
 | "Poción de furia" | Active | `OnActivate`: `EffAddFloatModifier(OutgoingDamageMultiplier, ×1.5, 3 turnos)`, Cooldown = 8 |
 
+#### 18.2.1 Invariante de bind/unbind
+
+**Regla.** `InventoryService._hookHandlers` guarda `(itemId, evt, handler)` y
+`UnbindPassiveHooks` desengancha **matcheando por `itemId`** — misma clave que
+`_appliedModifierIds`, así los dos tratan igual a un item.
+
+**Por qué importa.** Matchear por `TriggerEvent` parece equivalente y no lo es: dos pasivas colgadas
+del mismo evento producen handlers indistinguibles en una lista plana, y sacar "el que matchea" saca
+uno cualquiera. La versión original recorría LIFO, así que **quitar la pasiva A desenganchaba la de B
+y dejaba viva la de A** — el resultado exactamente invertido. Con un solo item autorado era
+invisible; aparece apenas hay dos.
+
+**Corolario.** El unbind **no** recorre `item.PassiveHooks` para decidir qué sacar: desengancha lo que
+efectivamente enganchó. Si el SO se re-autora entre el bind y el unbind (posible con las tools de
+§26.13), mirar los hooks de ahora dejaría suscripciones colgadas de un item que ya no está en el
+inventario.
+
+Cubierto por `Rollgeon.Items.Tests.PassiveHookBindingTests`.
+
 ### 18.3 `IInventoryService`
 
 ```csharp
