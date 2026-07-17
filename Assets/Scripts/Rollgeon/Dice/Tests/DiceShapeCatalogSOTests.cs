@@ -6,9 +6,11 @@ using UnityEngine;
 namespace Rollgeon.Dice.Tests
 {
     /// <summary>
-    /// Cubre <see cref="DiceShapeCatalogSO"/>: lookup por tipo, fallback, los rechazos de
-    /// <see cref="DiceShapeCatalogSO.Validate"/> (vacío, duplicado, sprite null, tipo faltante)
-    /// y <see cref="DiceShapeCatalogSO.Resolve"/>.
+    /// Cubre <see cref="DiceShapeCatalogSO"/>: lookup por tipo y por rol, la cadena de
+    /// degradación (rol → frontal → fallback), los rechazos de
+    /// <see cref="DiceShapeCatalogSO.Validate"/> (vacío, duplicado, sprite null, tipo faltante),
+    /// los de <see cref="DiceShapeCatalogSO.ValidateRoles"/> (set incompleto) y
+    /// <see cref="DiceShapeCatalogSO.Resolve"/>.
     /// </summary>
     [TestFixture]
     public class DiceShapeCatalogSOTests
@@ -48,15 +50,37 @@ namespace Rollgeon.Dice.Tests
             return catalog;
         }
 
+        /// <summary>Entrada con SOLO el frontal — el resto de los roles quedan sin arte.</summary>
         private DiceShapeEntry Entry(DiceType type, Sprite shape) =>
-            new DiceShapeEntry { Type = type, Shape = shape };
+            new DiceShapeEntry { Type = type, Front = shape };
 
-        /// <summary>Catálogo válido: una entrada con sprite real por cada <see cref="DiceType"/>.</summary>
+        /// <summary>Entrada con los 5 roles en sprites distintos, para distinguirlos al asertar.</summary>
+        private DiceShapeEntry FullEntry(DiceType type) =>
+            new DiceShapeEntry
+            {
+                Type = type,
+                Front = MakeSprite(),
+                SideA = MakeSprite(),
+                SideB = MakeSprite(),
+                Hover = MakeSprite(),
+                Selected = MakeSprite(),
+            };
+
+        /// <summary>Catálogo válido: una entrada con frontal real por cada <see cref="DiceType"/>.</summary>
         private DiceShapeCatalogSO MakeFullCatalog()
         {
             var entries = new List<DiceShapeEntry>();
             foreach (DiceType type in Enum.GetValues(typeof(DiceType)))
                 entries.Add(Entry(type, MakeSprite()));
+            return MakeCatalog(entries.ToArray());
+        }
+
+        /// <summary>Catálogo con los 5 roles autorados en cada <see cref="DiceType"/>.</summary>
+        private DiceShapeCatalogSO MakeFullRoleCatalog()
+        {
+            var entries = new List<DiceShapeEntry>();
+            foreach (DiceType type in Enum.GetValues(typeof(DiceType)))
+                entries.Add(FullEntry(type));
             return MakeCatalog(entries.ToArray());
         }
 
@@ -134,6 +158,68 @@ namespace Rollgeon.Dice.Tests
 
             // Assert
             Assert.AreSame(first, result);
+        }
+
+        // -------------------------------------------------------------------
+        // GetShape — roles
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void GetShape_ReturnsSpriteOfTheRequestedRole()
+        {
+            // Arrange
+            var entry = FullEntry(DiceType.D6);
+            var catalog = MakeCatalog(entry);
+
+            // Act & Assert — cada rol devuelve SU sprite, no el de al lado.
+            Assert.AreSame(entry.Front, catalog.GetShape(DiceType.D6, DiceShapeRole.Front));
+            Assert.AreSame(entry.SideA, catalog.GetShape(DiceType.D6, DiceShapeRole.SideA));
+            Assert.AreSame(entry.SideB, catalog.GetShape(DiceType.D6, DiceShapeRole.SideB));
+            Assert.AreSame(entry.Hover, catalog.GetShape(DiceType.D6, DiceShapeRole.Hover));
+            Assert.AreSame(entry.Selected, catalog.GetShape(DiceType.D6, DiceShapeRole.Selected));
+        }
+
+        [Test]
+        public void GetShape_DefaultsToFront_WhenRoleIsNotGiven()
+        {
+            // Arrange
+            var entry = FullEntry(DiceType.D8);
+            var catalog = MakeCatalog(entry);
+
+            // Act — el call-site que no conoce roles (DiceThrowDieView).
+            var result = catalog.GetShape(DiceType.D8);
+
+            // Assert
+            Assert.AreSame(entry.Front, result);
+        }
+
+        [Test]
+        public void GetShape_FallsBackToFront_WhenRoleHasNoSprite()
+        {
+            // Arrange — catálogo autorado antes de que existieran los roles.
+            var front = MakeSprite();
+            var catalog = MakeCatalog(Entry(DiceType.D6, front));
+
+            // Act
+            var result = catalog.GetShape(DiceType.D6, DiceShapeRole.Hover);
+
+            // Assert — degrada al frontal, no al cuadrado plano.
+            Assert.AreSame(front, result);
+        }
+
+        [Test]
+        public void GetShape_FallsBackToFallbackShape_WhenNeitherRoleNorFrontExist()
+        {
+            // Arrange
+            var fallback = MakeSprite();
+            var catalog = MakeCatalog(Entry(DiceType.D6, null));
+            catalog.FallbackShape = fallback;
+
+            // Act
+            var result = catalog.GetShape(DiceType.D6, DiceShapeRole.SideA);
+
+            // Assert
+            Assert.AreSame(fallback, result);
         }
 
         // -------------------------------------------------------------------
@@ -219,6 +305,62 @@ namespace Rollgeon.Dice.Tests
         }
 
         // -------------------------------------------------------------------
+        // ValidateRoles
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void ValidateRoles_AcceptsCatalogWithEveryRoleAuthored()
+        {
+            // Arrange
+            var catalog = MakeFullRoleCatalog();
+
+            // Act
+            bool valid = catalog.ValidateRoles(out var error);
+
+            // Assert
+            Assert.IsTrue(valid, "Expected valid; error='{0}'", error);
+            Assert.IsNull(error);
+        }
+
+        [Test]
+        public void ValidateRoles_RejectsEntryMissingASideSprite()
+        {
+            // Arrange — el caso real: se autoró el frontal y se olvidó el resto del set.
+            var catalog = MakeFullRoleCatalog();
+            var entry = catalog.Shapes[0];
+            entry.SideB = null;
+            catalog.Shapes[0] = entry;
+
+            // Act
+            bool valid = catalog.ValidateRoles(out var error);
+
+            // Assert
+            Assert.IsFalse(valid);
+            StringAssert.Contains(nameof(DiceShapeRole.SideB), error);
+        }
+
+        /// <summary>
+        /// ValidateRoles delega en Validate primero: un tipo sin entrada tiene que reportarse
+        /// como tipo faltante y no como "sin sprite para el rol Front", que mandaría a buscar
+        /// el bug al lado equivocado.
+        /// </summary>
+        [Test]
+        public void ValidateRoles_ReportsMissingType_BeforeMissingRoles()
+        {
+            // Arrange
+            var catalog = MakeFullRoleCatalog();
+            var dropped = catalog.Shapes[catalog.Shapes.Count - 1].Type;
+            catalog.Shapes.RemoveAt(catalog.Shapes.Count - 1);
+
+            // Act
+            bool valid = catalog.ValidateRoles(out var error);
+
+            // Assert
+            Assert.IsFalse(valid);
+            StringAssert.Contains(dropped.ToString(), error);
+        }
+
+        // -------------------------------------------------------------------
         // Resolve
         // -------------------------------------------------------------------
 
@@ -269,6 +411,27 @@ namespace Rollgeon.Dice.Tests
 
             // Assert
             Assert.IsTrue(valid, "Catálogo shippeado inválido: {0}", error);
+        }
+
+        /// <summary>
+        /// La red que avisa cuando llega un dado nuevo y solo se autoró su frontal: sin el set
+        /// completo el dado se vería quieto durante el giro y sin feedback de hover/held, que es
+        /// un bug silencioso. Se arregla corriendo
+        /// <c>Tools/Rollgeon/Dice/Author Shape Catalog From Sheet</c>.
+        /// </summary>
+        [Test]
+        public void EveryDiceType_HasEveryRole_InShippedResourcesCatalog()
+        {
+            // Arrange
+            var shipped = Resources.Load<DiceShapeCatalogSO>(DiceShapeCatalogSO.ResourcePath);
+            if (shipped == null)
+                Assert.Ignore($"No hay catálogo en Resources/{DiceShapeCatalogSO.ResourcePath} todavía.");
+
+            // Act
+            bool valid = shipped.ValidateRoles(out var error);
+
+            // Assert
+            Assert.IsTrue(valid, "Catálogo shippeado sin el set completo: {0}", error);
         }
     }
 }

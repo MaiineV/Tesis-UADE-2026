@@ -28,13 +28,21 @@ namespace Rollgeon.UI.HUD.DiceAnim
         [Tooltip("Delay entre slots para que no revelen todos juntos.")]
         public float SpinStaggerSeconds = 0.05f;
 
-        [Tooltip("Vueltas completas (Z) que da el sprite durante el giro.")]
-        public float SpinTurns = 2f;
+        [Tooltip("Vueltas completas (Z) que da el sprite durante el giro. 0 = sin rotación: el " +
+                 "ciclado de sprites laterales del set ya lee como giro y sumarle rotación hace " +
+                 "que el dado gire dos veces a la vez.")]
+        public float SpinTurns;
 
         public Ease SpinEase = Ease.OutCubic;
 
+        [Tooltip("Mostrar números random en el label mientras el dado gira. Apagado, el label " +
+                 "queda vacío hasta el reveal: el ciclado de sprites del set ya comunica el " +
+                 "giro, y el número parpadeando encima compite con él.")]
+        public bool ShowPreviewFacesDuringSpin;
+
         [Tooltip("Cara máxima mostrada como preview durante el giro (d6 = 6). Si la " +
-                 "cara real supera esto, el rango se extiende hasta la cara real.")]
+                 "cara real supera esto, el rango se extiende hasta la cara real. " +
+                 "Sin efecto si ShowPreviewFacesDuringSpin está apagado.")]
         [Min(2)] public int PreviewFaceMax = 6;
 
         [Tooltip("Altura (px) del salto parabólico durante el giro — el dado 'rueda en " +
@@ -103,7 +111,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
             SpinTickSeconds = SpinTickSeconds,
             SpinDecelerationPower = SpinDecelerationPower,
             SpinStaggerSeconds = SpinStaggerSeconds,
-            SpinTurns = SpinTurns,
             PreviewFaceMax = PreviewFaceMax,
             RaiseOffsetY = RaiseOffsetY,
             RaiseSeconds = RaiseSeconds,

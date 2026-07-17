@@ -15,7 +15,7 @@ namespace Rollgeon.UI.HUD
     /// escala durante el outro): los feedbacks de scale/rotación del root solo se
     /// disparan en fases sin overlap (spin-start, reveal, lock/unlock, kept-pulse);
     /// los flashes van al hijo FlashOverlay y el desaturado al DiceLabel. Nadie toca
-    /// el color del background — es de <see cref="DiceSlotView"/>. Todos los campos
+    /// el color ni el sprite del background — son de <see cref="DiceSlotView"/>. Todos los campos
     /// son opcionales: sin wiring, no-op. El audio NO vive acá — lo centraliza
     /// <see cref="DiceZoneJuice"/> vía <c>IAudioService</c> (TECHNICAL.md §17), que
     /// además necesita estado de zona para los pitch ramps.
@@ -173,8 +173,9 @@ namespace Rollgeon.UI.HUD
             StopGlow();
         }
 
-        // Glow pulsante mientras el dado está holdeado — feedback constante de
-        // estado, complementa el tint azul del background (que es de DiceSlotView).
+        // Glow pulsante mientras el dado está holdeado — feedback constante de estado,
+        // complementa el sprite Selected del set (que lo pinta DiceSlotView; antes era un
+        // tint azul sobre el background).
         private void StartGlow()
         {
             if (_glowOverlay == null || _glowPulseSeconds <= 0f) return;

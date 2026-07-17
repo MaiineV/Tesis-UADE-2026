@@ -64,6 +64,27 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Por qué importa ahora**: hasta el PR #48 había **1 solo item autorado**, así que estas rutas casi no corrían. Con las tools de autoría (§26.13/§26.14) el contenido va a crecer y estas rutas pasan a ser calientes.
 - **Estado**: abierto. Anotado al cerrar Feature#0032 (PR #48).
 
+### PUL-008 — El D3 se ve idéntico al D4 (el sheet de dados no trae su fila)
+- **Área**: UI / Dice / Arte
+- `Assets/Art/UI/Dices/Dices.png` trae 6 filas (D4, D6, D8, D10, D12, D20). El **D3** es el 7º valor de `DiceType` — llegó con el pack de Encantamientos, después de que se pintara el sheet. Para que el catálogo valide, `DiceShapeCatalogAuthoring` le asigna la fila del **D4** (decisión explícita, ver `TypeRows`).
+- **Riesgo**: un jugador con D3 y D4 en la bolsa no los distingue salvo por el número. `Validate`/`ValidateRoles` chequean **tipo** duplicado, no **sprite** duplicado, así que nada lo atrapa automáticamente.
+- **Fix**: pedirle al artista la fila del D3 (5 columnas: frontal, 2 laterales, hover, selected). Al llegar, solo se re-slicea el sheet y se corre `Tools/Rollgeon/Dice/Author Shape Catalog From Sheet` — cero código.
+- **Estado**: abierto. Decidido al implementar Feature#0033.
+
+### PUL-009 — El throw 2D/3D no cicla los sprites laterales del set
+- **Área**: UI / Dice
+- `DiceThrowDieView.SetDiceType` (`:44-49`) toma el **frontal** del set vía el default de `GetShape` y nada más: en modo throw el dado rota de verdad en vuelo (`DiceThrow2DPresenter.cs:935`), así que el ciclado 0-1-0-2 del modo Classic no aplica tal cual.
+- **Consecuencia**: el hover/selected/laterales del arte nuevo solo se ven en el HUD Classic. Si el juego shippea en modo throw, media inversión del sheet no se usa.
+- **Fix**: decidir con arte/diseño si el dado volador debe cambiar de sprite según su rotación (leer el ángulo y mapearlo a frontal/lateral) o quedarse con el frontal.
+- **Estado**: abierto. Alcance excluido a propósito en Feature#0033, no olvido.
+
+### PUL-010 — El último tick del spin nunca dispara (off-by-one)
+- **Área**: UI / Dice / Anim
+- Con el tuning shippeado `TickCount(0.5, 0.06)` = **8**, pero `TickTime(8, 8, …)` devuelve exactamente `0.5` = la duración, y el loop de `DiceSlotAnimator.SpinRoutine` corre `while (elapsed < plan.Duration)`. El tick 8 nunca entra: se ven **7 de 8** cambios de cara.
+- **Hoy es benigno**: 7 u 8 parpadeos de número random en 0.5s es imperceptible, y el ciclado de sprites de Feature#0033 está construido para aterrizar bien igual (el tick 7 es impar ⇒ frontal, y `LandFromSpin` suelta el rol pase lo que pase).
+- **Cuidado si se toca**: `DiceAnimChoreographerTests.SpinRole_LastReachableTick_IsFront_WithShippedTuning` documenta y asierta este comportamiento — arreglar el off-by-one cambia cuál es el último tick y hay que revisar en qué rol aterriza.
+- **Estado**: abierto. Detectado al implementar Feature#0033.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana

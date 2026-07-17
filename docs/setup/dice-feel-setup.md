@@ -163,7 +163,8 @@ Force Mono + Decompress On Load, y re-wirear los campos en los prefabs.
    stagger + punch + flash; cara 6 = flash dorado. Roll/Confirm deshabilitados
    durante el giro.
 3. **Lock:** click a un dado → se eleva 18px con wobble + flash cyan; re-click →
-   baja con dip. El tint azul de hold sigue funcionando.
+   baja con dip. El dado holdeado muestra el sprite `Selected` de su set (desde
+   Feature#0033 reemplaza al tint azul, que peleaba con el ColorTint del Button).
 4. **Reroll:** solo giran los NO holdeados; los holdeados quedan elevados y hacen
    un pulso de reaseguro.
 5. **Confirm:** los holdeados vuelan al centro de la mesa achicándose con fade;

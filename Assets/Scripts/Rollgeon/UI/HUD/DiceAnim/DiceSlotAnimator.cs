@@ -100,14 +100,20 @@ namespace Rollgeon.UI.HUD.DiceAnim
             SpinStarted?.Invoke();
 
             // Rotación por Custom: los tweens de Quaternion toman el camino corto y
-            // no sirven para vueltas completas.
-            float totalDegrees = 360f * _settings.SpinTurns;
-            if (_rotationTween.isAlive) _rotationTween.Stop();
-            _rotationTween = Tween.Custom(0f, totalDegrees, plan.Duration, ease: _settings.SpinEase,
-                onValueChange: v =>
-                {
-                    if (_rect != null) _rect.localEulerAngles = new Vector3(0f, 0f, v);
-                });
+            // no sirven para vueltas completas. Con SpinTurns = 0 no se arranca el tween en
+            // vez de correrlo de 0 a 0: escribiría localEulerAngles cada frame por dado y
+            // mantendría viva la claim de la capa de motion sobre la rotación (ver el
+            // contrato en DiceSlotJuice).
+            if (_settings.SpinTurns != 0f)
+            {
+                float totalDegrees = 360f * _settings.SpinTurns;
+                if (_rotationTween.isAlive) _rotationTween.Stop();
+                _rotationTween = Tween.Custom(0f, totalDegrees, plan.Duration, ease: _settings.SpinEase,
+                    onValueChange: v =>
+                    {
+                        if (_rect != null) _rect.localEulerAngles = new Vector3(0f, 0f, v);
+                    });
+            }
 
             // Salto parabólico + sombra que se achica: el dado "rueda en el aire" y
             // aterriza en el reveal (la sombra es un hijo opcional del prefab).
@@ -134,6 +140,15 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
             int faceRange = DiceAnimChoreographer.PreviewFaceRange(_settings.PreviewFaceMax, finalFace);
             var rng = new System.Random(unchecked(Environment.TickCount * 31 + GetInstanceID()));
+            // Con qué lateral arranca el ciclado. Se tira una vez por spin: dos dados que giran
+            // juntos no van en fase, y el resto de la secuencia es determinista.
+            int sideSeed = rng.Next(2);
+            bool showPreviewFaces = _settings.ShowPreviewFacesDuringSpin;
+            // El label arrastra la cara del roll anterior: hay que vaciarlo al arrancar, no en
+            // el primer tick, o el número viejo se queda quieto hasta entonces y se lee como
+            // resultado.
+            if (!showPreviewFaces) _view.ClearSpinPreview();
+
             int previewFace = 0;
             int nextTick = 1;
             float elapsed = 0f;
@@ -142,8 +157,14 @@ namespace Rollgeon.UI.HUD.DiceAnim
                 if (nextTick <= plan.TickCount && elapsed >= DiceAnimChoreographer.TickTime(
                         nextTick, plan.TickCount, plan.Duration, _settings.SpinDecelerationPower))
                 {
-                    previewFace = DiceAnimChoreographer.NextPreviewFace(rng, faceRange, previewFace);
-                    _view.SetSpinPreviewFace(previewFace);
+                    if (showPreviewFaces)
+                    {
+                        previewFace = DiceAnimChoreographer.NextPreviewFace(rng, faceRange, previewFace);
+                        _view.SetSpinPreviewFace(previewFace);
+                    }
+                    _view.SetSpinRole(DiceAnimChoreographer.SpinRole(nextTick, sideSeed));
+                    // Sigue latiendo con el número apagado: el tick ahora también es el cambio
+                    // de sprite, y de él cuelga el SFX del ciclado.
                     PreviewTicked?.Invoke();
                     nextTick++;
                 }
@@ -165,6 +186,10 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         private void LandFromSpin()
         {
+            // Soltar el rol del ciclado devuelve el slot a su sprite de reposo (frontal, hover o
+            // selected según corresponda). Es el backstop de corrección: pase lo que pase con el
+            // último tick, o si el spin se cancela a mitad, el dado no queda con un lateral.
+            _view?.SetSpinRole(null);
             if (_rect != null && _initialized)
             {
                 _rect.localEulerAngles = Vector3.zero;
