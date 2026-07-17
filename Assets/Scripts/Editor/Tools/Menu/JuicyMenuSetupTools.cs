@@ -549,19 +549,15 @@ namespace Rollgeon.EditorTools.Menu
             // aplica a ninguno.
             introSo.FindProperty("_buttonsToFadeIn").arraySize = 0;
 
-            // La entrada arranca recién cuando el intro terminó de asentarse
-            // (título push y fade son los últimos beats) — recalculado desde los
-            // valores serializados para resistir retunes del intro.
-            float settle = Mathf.Max(
-                introSo.FindProperty("_tituloPushDelay").floatValue
-                    + introSo.FindProperty("_tituloPushDuration").floatValue,
-                introSo.FindProperty("_buttonsFadeDelay").floatValue
-                    + introSo.FindProperty("_buttonsFadeDuration").floatValue);
+            // La entrada arranca junto con el push del logo (el beat en que el
+            // título sube): los botones hacen fade-in mientras el logo se mueve.
+            // Leído del valor serializado para resistir retunes del intro.
+            float logoRise = introSo.FindProperty("_tituloPushDelay").floatValue;
             introSo.ApplyModifiedProperties();
 
             var groupSo = new SerializedObject(group);
             groupSo.FindProperty("_waitForIntro").objectReferenceValue = intro.gameObject;
-            groupSo.FindProperty("_introDelay").floatValue = settle + 0.1f;
+            groupSo.FindProperty("_introDelay").floatValue = logoRise;
             groupSo.FindProperty("_playEntranceOnEnable").boolValue = true;
             groupSo.ApplyModifiedProperties();
         }

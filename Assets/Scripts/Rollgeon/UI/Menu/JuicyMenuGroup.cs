@@ -37,9 +37,6 @@ namespace Rollgeon.UI.Menu
 
         [SerializeField] private float _introDelay = 1.2f;
 
-        // Instancia, no serializado: se resetea con cada carga de escena — que es
-        // exactamente cuando el intro vuelve a reproducirse.
-        private bool _introDelayConsumed;
 
         private JuicyMenuButton _current;
         private Image _leftDiamondImage;
@@ -74,16 +71,16 @@ namespace Rollgeon.UI.Menu
 
             if (_playEntranceOnEnable)
             {
-                // No mirar activeSelf del intro: el orden de OnEnable tras la
-                // reactivación del ScreenHost no garantiza padre-antes-que-hijo,
-                // y el intro se auto-desactiva en su OnEnable — si corre antes
-                // que este, activeSelf ya es false y el delay se perdería.
-                float baseDelay = 0f;
-                if (!_introDelayConsumed)
-                {
-                    _introDelayConsumed = true;
-                    if (_waitForIntro != null) baseDelay = _introDelay;
-                }
+                // El delay se ancla al reloj de la escena, no a estados de otros
+                // objetos: activeSelf del intro depende del orden de OnEnable (no
+                // garantizado) y un flag "primer enable" se consume de más si un
+                // overlay churnea la screen durante la carga. Con el reloj, la
+                // entrada cae en Intro Delay desde el load sin importar cuántas
+                // veces se habilite el grupo; al volver al menú más tarde,
+                // timeSinceLevelLoad ya superó el delay y la entrada es inmediata.
+                float baseDelay = _waitForIntro != null
+                    ? Mathf.Max(0f, _introDelay - Time.timeSinceLevelLoad)
+                    : 0f;
                 PlayEntrance(baseDelay);
             }
         }
