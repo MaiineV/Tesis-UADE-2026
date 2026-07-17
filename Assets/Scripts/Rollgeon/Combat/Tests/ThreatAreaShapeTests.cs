@@ -229,8 +229,10 @@ namespace Rollgeon.Combat.Tests
         public void ComputeScatteredSquares_AnchorsStayWithinCentralHalfOfRoom()
         {
             // Arrange — sala 20x20 (X,Y en [0,19]): margen 25% por lado ⇒ pool central
-            // en X,Y ∈ [5,14]. Con squareWidth=2 el cuadrado puede extenderse 1 casilla
-            // más allá del pool, así que el rango válido de tiles es [5,15].
+            // en X,Y ∈ [5,14]. El ancla es la esquina inferior-izquierda del cuadrado, así
+            // que con squareWidth=2 el límite superior del pool de anclaje se recorta a 13
+            // (14-1) — el cuadrado entero (ancla + 1) queda siempre dentro de [5,14], sin
+            // sobresalir hacia el borde.
             _grid.LoadRoom(NavGraph.Rect(20, 20));
 
             // Act
@@ -240,7 +242,7 @@ namespace Rollgeon.Combat.Tests
             Assert.Greater(tiles.Count, 0);
             foreach (var c in tiles)
             {
-                Assert.IsTrue(c.X >= 5 && c.X <= 15 && c.Y >= 5 && c.Y <= 15,
+                Assert.IsTrue(c.X >= 5 && c.X <= 14 && c.Y >= 5 && c.Y <= 14,
                     $"Tile {c} cayó fuera del 50% central de la sala (zonas no deberían pegarse a las paredes).");
             }
         }

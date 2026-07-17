@@ -159,7 +159,7 @@ namespace Rollgeon.Combat.Threat
             var room = new List<GridCoord>(RoomTiles(grid));
             if (room.Count == 0) return result;
 
-            var anchorPool = CenterAnchorPool(room);
+            var anchorPool = CenterAnchorPool(room, w);
 
             for (int i = 0; i < count; i++)
             {
@@ -177,8 +177,11 @@ namespace Rollgeon.Combat.Threat
 
         // Recorta un margen del 25% por lado, dejando el 50% central de la sala como pool
         // de anclaje — así las zonas erráticas caen "en el medio del mapa", nunca pegadas
-        // al borde. Sala minúscula donde el margen vacía el pool ⇒ fallback a la sala entera.
-        private static List<GridCoord> CenterAnchorPool(List<GridCoord> room)
+        // al borde. El ancla es la esquina inferior-izquierda del cuadrado (crece hacia
+        // +X/+Y), así que además recortamos (squareWidth-1) del límite superior para que el
+        // cuadrado entero quede adentro del pool central, sin sobresalir hacia el borde.
+        // Sala/pool minúsculos donde el recorte vacía el pool ⇒ fallback en cascada.
+        private static List<GridCoord> CenterAnchorPool(List<GridCoord> room, int squareWidth)
         {
             int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
             foreach (var c in room)
@@ -194,11 +197,17 @@ namespace Rollgeon.Combat.Threat
             int loX = minX + marginX, hiX = maxX - marginX;
             int loY = minY + marginY, hiY = maxY - marginY;
 
-            var pool = new List<GridCoord>();
+            int fit = squareWidth - 1;
+            var fitted = new List<GridCoord>();
             foreach (var c in room)
-                if (c.X >= loX && c.X <= hiX && c.Y >= loY && c.Y <= hiY) pool.Add(c);
+                if (c.X >= loX && c.X <= hiX - fit && c.Y >= loY && c.Y <= hiY - fit) fitted.Add(c);
+            if (fitted.Count > 0) return fitted;
 
-            return pool.Count > 0 ? pool : room;
+            var unfitted = new List<GridCoord>();
+            foreach (var c in room)
+                if (c.X >= loX && c.X <= hiX && c.Y >= loY && c.Y <= hiY) unfitted.Add(c);
+
+            return unfitted.Count > 0 ? unfitted : room;
         }
 
         private static (int dx, int dy) DirectionStep(Cardinal dir) => dir switch
