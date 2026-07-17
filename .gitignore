@@ -113,3 +113,4 @@ Rollgeon/.obsidian/core-plugins.json
 
 # Crash dumps de Git Bash en Windows
 *.stackdump
+/video/
