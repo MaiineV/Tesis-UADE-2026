@@ -85,6 +85,15 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Cuidado si se toca**: `DiceAnimChoreographerTests.SpinRole_LastReachableTick_IsFront_WithShippedTuning` documenta y asierta este comportamiento — arreglar el off-by-one cambia cuál es el último tick y hay que revisar en qué rol aterriza.
 - **Estado**: abierto. Detectado al implementar Feature#0033.
 
+### PUL-011 — La generación conecta salas sin validar que el prefab tenga puerta en esa dirección
+- **Área**: Dungeon / Generación
+- `DungeonManager.GenerateFloor` cablea `RoomInstance.Connections` por pura adyacencia de grilla (N/S/E/W del vecino que exista) y elige prefab por `RoomType`, sin ningún paso que garantice que el prefab asignado tenga un `DoorController` para cada dirección conectada. El minimapa/fog lee ese grafo lógico; el paso físico lee las puertas autoradas del prefab. Si divergen, hay conexión en el mapa pero no puerta cruzable.
+- **Cómo se manifestó**: `Start_Room01.prefab` era la única sala sin puerta Este (arreglado en `Fix#0034`, commit `d5c036a0`). Al estar en la celda (0,0), la topología podía poner una sala al Este del spawn → conexión visible, sala inalcanzable.
+- **Hoy es benigno**: tras el fix, **las 21 salas de piso tienen las 4 puertas** `[N,S,E,O]`, así que ninguna divergencia es posible con el contenido actual. El runtime ya **detecta** el mismatch (`DungeonManager.cs` loguea "tiene Connection al {dir} pero el prefab no tiene DoorSlotRef" desde ambos lados de la reciprocidad) pero **solo avisa, no repara**.
+- **Riesgo a futuro**: cualquier sala nueva autorada sin las 4 puertas reintroduce el bug en silencio (solo un warning en consola). El usuario declinó el guard de generación en `Fix#0034` a propósito (alcance).
+- **Fix**: un paso de validación/reparación en generación (o un test de assets que recorra `Assets/Prefabs/Rooms/**` y falle si un `RoomLayout` no tiene los 4 `DoorSlots`). El tool `Rollgeon/Tools/Diagnose Room Doors` ya hace el diagnóstico manual.
+- **Estado**: abierto. Detectado y acotado al arreglar el bug de puertas en `Fix#0034`.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
