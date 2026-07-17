@@ -551,7 +551,7 @@ namespace Rollgeon.EditorTools.Menu
 
             // La entrada se ancla al push del logo (leído del intro serializado
             // para resistir retunes) más un respiro extra pedido en playtest.
-            const float extraDelayAfterLogoRise = 6f;
+            const float extraDelayAfterLogoRise = 8f;
             float logoRise = introSo.FindProperty("_tituloPushDelay").floatValue;
             introSo.ApplyModifiedProperties();
 
