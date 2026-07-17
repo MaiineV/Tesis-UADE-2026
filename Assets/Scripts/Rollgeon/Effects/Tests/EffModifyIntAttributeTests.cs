@@ -47,6 +47,8 @@ namespace Rollgeon.Effects.Tests
             _attrManager.Dispose();
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
+            TypedEvent<HealResolvedPayload>.Clear();
+            TypedEvent<DamageResolvedPayload>.Clear();
         }
 
         // ── Operations × Constant source ───────────────────────────────
@@ -285,6 +287,110 @@ namespace Rollgeon.Effects.Tests
             LogAssert.Expect(LogType.Warning, new Regex(".*AttributesManager not registered.*"));
             bool result = eff.ApplyEffect(MakeCtx());
             Assert.IsFalse(result);
+        }
+
+        // ── Payload de vida para las vistas (fix del Healer) ───────────
+        // El Healer curaba con este effect, que escribe Health directo y solo disparaba
+        // OnAttributeChanged. Las barras (carta, ficha voladora) y el número flotante solo
+        // escuchan HealResolvedPayload/DamageResolvedPayload, así que el heal era invisible.
+
+        [Test]
+        public void Add_Health_RaisesHealResolvedPayload_WithRealDelta()
+        {
+            HealResolvedPayload? received = null;
+            void Handler(HealResolvedPayload p) => received = p;
+            TypedEvent<HealResolvedPayload>.Subscribe(Handler);
+            try
+            {
+                MakeConstant(StatType.Health, IntOperation.Add, 7).ApplyEffect(MakeCtx());
+            }
+            finally { TypedEvent<HealResolvedPayload>.Unsubscribe(Handler); }
+
+            Assert.IsTrue(received.HasValue, "Un heal por este effect debe emitir HealResolvedPayload.");
+            Assert.AreEqual(_sourceId, received.Value.TargetGuid);
+            Assert.AreEqual(7, received.Value.FinalHeal);
+        }
+
+        [Test]
+        public void Add_Health_ClampToMax_HealPayloadUsesClampedDelta()
+        {
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 9);
+            RegisterAiMaxHp(_sourceId, 10);
+
+            HealResolvedPayload? received = null;
+            void Handler(HealResolvedPayload p) => received = p;
+            TypedEvent<HealResolvedPayload>.Subscribe(Handler);
+            try
+            {
+                var eff = MakeConstant(StatType.Health, IntOperation.Add, 4);
+                SetField(eff, "_clampHealthToMax", true);
+                eff.ApplyEffect(MakeCtx());
+            }
+            finally { TypedEvent<HealResolvedPayload>.Unsubscribe(Handler); }
+
+            // 9→10 tras clamp: el "+N" debe reflejar el delta REAL (1), no el crudo (4).
+            Assert.IsTrue(received.HasValue);
+            Assert.AreEqual(1, received.Value.FinalHeal);
+        }
+
+        [Test]
+        public void Subtract_Health_RaisesDamageResolvedPayload()
+        {
+            DamageResolvedPayload? received = null;
+            void Handler(DamageResolvedPayload p) => received = p;
+            TypedEvent<DamageResolvedPayload>.Subscribe(Handler);
+            try
+            {
+                MakeConstant(StatType.Health, IntOperation.Subtract, 10).ApplyEffect(MakeCtx());
+            }
+            finally { TypedEvent<DamageResolvedPayload>.Unsubscribe(Handler); }
+
+            Assert.IsTrue(received.HasValue, "Bajar Health por este effect debe emitir DamageResolvedPayload.");
+            Assert.AreEqual(_sourceId, received.Value.TargetGuid);
+            Assert.AreEqual(10, received.Value.FinalDamage);
+        }
+
+        [Test]
+        public void Modify_NonHealthStat_DoesNotRaiseHealOrDamage()
+        {
+            int heals = 0, damages = 0;
+            void H(HealResolvedPayload _) => heals++;
+            void D(DamageResolvedPayload _) => damages++;
+            TypedEvent<HealResolvedPayload>.Subscribe(H);
+            TypedEvent<DamageResolvedPayload>.Subscribe(D);
+            try
+            {
+                MakeConstant(StatType.Energy, IntOperation.Add, 3).ApplyEffect(MakeCtx());
+            }
+            finally
+            {
+                TypedEvent<HealResolvedPayload>.Unsubscribe(H);
+                TypedEvent<DamageResolvedPayload>.Unsubscribe(D);
+            }
+
+            Assert.AreEqual(0, heals, "Modificar Energy no debe emitir eventos de vida.");
+            Assert.AreEqual(0, damages);
+        }
+
+        [Test]
+        public void Add_Health_NoActualChange_DoesNotRaisePayload()
+        {
+            // En el tope con clamp: 10/10 + 4 → sigue 10, delta 0 → sin payload (sin "+0").
+            _attrManager.SetAttributeValue<Health, int>(_sourceId, 10);
+            RegisterAiMaxHp(_sourceId, 10);
+
+            int heals = 0;
+            void H(HealResolvedPayload _) => heals++;
+            TypedEvent<HealResolvedPayload>.Subscribe(H);
+            try
+            {
+                var eff = MakeConstant(StatType.Health, IntOperation.Add, 4);
+                SetField(eff, "_clampHealthToMax", true);
+                eff.ApplyEffect(MakeCtx());
+            }
+            finally { TypedEvent<HealResolvedPayload>.Unsubscribe(H); }
+
+            Assert.AreEqual(0, heals, "Un overheal que no cambia el HP no debe emitir payload.");
         }
 
         // ── Helpers ────────────────────────────────────────────────────

@@ -290,22 +290,19 @@ namespace Rollgeon.UI.HUD.DragDrop
                 }
             }
 
-            if (!Physics.Raycast(ray, out var hit, 100f, _tileLayer))
+            // El piso es un único plano (GridCoord 2D). Intersectar contra el plano en vez
+            // de los colliders de los tiles evita que el collider de 1u de alto de un tile
+            // de adelante tape al de atrás desde la cámara en ángulo. Mismo criterio que
+            // TileClickHandler.ResolveCoordUnderCursor.
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
                 return false;
 
-            var marker = hit.collider.GetComponentInParent<TileMarker>();
-            if (marker != null)
-            {
-                coord = marker.Coord;
-                return true;
-            }
+            var floor = new Plane(Vector3.up, grid.GridOrigin);
+            if (!floor.Raycast(ray, out float enter))
+                return false;
 
-            if (ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null)
-            {
-                coord = grid.WorldToGrid(hit.point);
-                return true;
-            }
-            return false;
+            coord = grid.WorldToGrid(ray.GetPoint(enter));
+            return grid.InBounds(coord);
         }
 
         // ---- Ghost ----------------------------------------------------------

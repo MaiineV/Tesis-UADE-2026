@@ -30,8 +30,12 @@ namespace Rollgeon.Effects.Concretes
     /// </para>
     /// <para>
     /// <b>Eventos:</b> <c>AttributesManager.SetAttributeValue</c> dispara <c>OnAttributeChanged</c>
-    /// automáticamente. No emitimos eventos stat-específicos (a diferencia de <c>EffAddShield</c>
-    /// que dispara <c>OnShieldChanged</c>) — ese ducting se hace en effects dedicados.
+    /// automáticamente. Para <see cref="StatType.Health"/> además emitimos el payload resuelto
+    /// (<c>HealResolvedPayload</c> si sube, <c>DamageResolvedPayload</c> si baja) y guardamos el
+    /// número flotante — porque las barras de vida y el spawner de números solo escuchan esos
+    /// canales, no <c>OnAttributeChanged</c>. Para el resto de los stats no emitimos eventos
+    /// stat-específicos (a diferencia de <c>EffAddShield</c> → <c>OnShieldChanged</c>); ese
+    /// ducting se hace en effects dedicados.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -95,7 +99,7 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
-            return ApplyToStat(attrs, target, amount);
+            return ApplyToStat(attrs, target, amount, context);
         }
 
         private int ResolveAmount(EffectContext context) => _amountSource switch
@@ -109,18 +113,18 @@ namespace Rollgeon.Effects.Concretes
             _ => _baseAmount,
         };
 
-        private bool ApplyToStat(AttributesManager attrs, Guid target, int amount) => TargetStat switch
+        private bool ApplyToStat(AttributesManager attrs, Guid target, int amount, EffectContext context) => TargetStat switch
         {
-            StatType.Health       => Apply<Health>(attrs, target, amount),
-            StatType.Attack       => Apply<Attack>(attrs, target, amount),
-            StatType.Speed        => Apply<Speed>(attrs, target, amount),
-            StatType.Energy       => Apply<Energy>(attrs, target, amount),
-            StatType.Shield       => Apply<Shield>(attrs, target, amount),
-            StatType.HealStrength => Apply<HealStrength>(attrs, target, amount),
+            StatType.Health       => Apply<Health>(attrs, target, amount, context),
+            StatType.Attack       => Apply<Attack>(attrs, target, amount, context),
+            StatType.Speed        => Apply<Speed>(attrs, target, amount, context),
+            StatType.Energy       => Apply<Energy>(attrs, target, amount, context),
+            StatType.Shield       => Apply<Shield>(attrs, target, amount, context),
+            StatType.HealStrength => Apply<HealStrength>(attrs, target, amount, context),
             _                     => true,
         };
 
-        private bool Apply<TAttr>(AttributesManager attrs, Guid target, int amount)
+        private bool Apply<TAttr>(AttributesManager attrs, Guid target, int amount, EffectContext context)
             where TAttr : class, IModifiable<int>
         {
             int current = attrs.GetAttributeValue<TAttr, int>(target);
@@ -151,7 +155,52 @@ namespace Rollgeon.Effects.Concretes
             }
 
             attrs.SetAttributeValue<TAttr, int>(target, next);
+
+            // Este effect escribe Health directo (sin IHealPipeline/IDamagePipeline), pero las
+            // barras de vida (carta y ficha voladora) y el número flotante solo escuchan los
+            // payloads resueltos de heal/daño. Sin emitirlos, un heal por este effect (el del
+            // Healer) mutaba el dato pero ninguna vista se enteraba. Se emite con el delta REAL
+            // (post-clamp), así el overheal no infla el "+N".
+            if (TargetStat == StatType.Health)
+                RaiseHealthDelta(context, target, before: current, after: next);
+
             return true;
+        }
+
+        private static void RaiseHealthDelta(EffectContext context, Guid target, int before, int after)
+        {
+            int delta = after - before;
+            if (delta == 0) return;
+
+            Guid source = context?.SourceGuid ?? Guid.Empty;
+
+            if (delta > 0)
+            {
+                TypedEvent<HealResolvedPayload>.Raise(new HealResolvedPayload
+                {
+                    SourceGuid = source,
+                    TargetGuid = target,
+                    FinalHeal = delta,
+                    WasPercentBased = false,
+                });
+                context?.SourceBehavior?.SetBehaviorValue(
+                    BehaviorValueKey.FloatingHeal,
+                    new FloatingNumberBehaviorValue { Value = delta, TargetEntityGuid = target });
+            }
+            else
+            {
+                int dmg = -delta;
+                TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+                {
+                    SourceGuid = source,
+                    TargetGuid = target,
+                    FinalDamage = dmg,
+                    WasLethal = after <= 0,
+                });
+                context?.SourceBehavior?.SetBehaviorValue(
+                    BehaviorValueKey.FloatingDamage,
+                    new FloatingNumberBehaviorValue { Value = dmg, TargetEntityGuid = target });
+            }
         }
 
         /// <summary>
