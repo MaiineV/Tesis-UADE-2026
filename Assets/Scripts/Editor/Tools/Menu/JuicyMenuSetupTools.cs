@@ -483,14 +483,16 @@ namespace Rollgeon.EditorTools.Menu
             {
                 label.fontSharedMaterial = outlineMat;
 
-                // El label llena el botón: rects fijos heredados de layouts viejos
-                // (ej. el Settings de pausa era un ícono 100x100) acomodan el texto
-                // distinto al resto del stack.
+                // El label llena el botón y centra el texto: rects/alineaciones
+                // heredados de layouts viejos (ej. el Settings de pausa era un
+                // ícono 100x100 con texto arriba-izquierda) desalinean el texto,
+                // el subrayado y los rombos, que se centran en el rect.
                 var labelRect = (RectTransform)label.transform;
                 labelRect.anchorMin = Vector2.zero;
                 labelRect.anchorMax = Vector2.one;
                 labelRect.anchoredPosition = Vector2.zero;
                 labelRect.sizeDelta = Vector2.zero;
+                label.alignment = TextAlignmentOptions.Center;
                 EditorUtility.SetDirty(label);
             }
 
