@@ -4811,6 +4811,38 @@ public void RoomObjectState_Polymorphism_SurvivesRoundTrip()
 
 **Anti‑patrón.** Usar `[SerializeField]` en lugar de `[SerializeReference]`: `[SerializeField]` es value‑type serialization y **no** soporta polimorfismo. El doc lo aclara porque es el error más común cuando alguien "tipea rápido" el atributo.
 
+#### 13.6.1a Autorar data de Odin — `PropertyTree`, nunca `SerializedProperty`
+
+**Regla.** Toda tool que edite un `SerializedScriptableObject` lo hace con un Odin `PropertyTree`
+ruteado en el asset, y graba undo con `Undo.RecordObject` **del objeto completo**. `SerializedObject`
+/ `SerializedProperty` **no sirven acá** — y fallan en silencio, que es lo peligroso.
+
+**Por qué.** Verificado leyendo los `.asset` en disco. `Item_HealingPotion.asset` guarda los datos
+**dos veces**: el blob `serializationData.SerializationNodes` de Odin *y* el bloque nativo
+`references:`/`rid:` de `[SerializeReference]`. Pero `SerializedScriptableObject` implementa
+`ISerializationCallbackReceiver`, y su `OnAfterDeserialize` repuebla todo campo `[OdinSerialize]`
+desde el blob **después** del pase nativo de Unity. `ApplyModifiedProperties()` escribe estado nativo
+pero no toca `serializationData` → **la edición se revierte al próximo reload**, sin warning ni
+excepción. `Undo.RecordObject` sí funciona porque el undo serializa el objeto, lo que dispara
+`OnBeforeSerialize` y regenera el blob desde el estado vivo. **No hay undo granular disponible; no
+diseñar para uno.**
+
+`ED_Healer.asset` lo confirma desde el otro lado: 1890 líneas y **cero `rid`**, porque
+`EnemyDataSO.AIRoot` es `[OdinSerialize]` sin `[SerializeReference]` — o sea el `EffectData` de los
+enemigos es directamente invisible a `SerializedObject`. Mismo caso: `EnemyCatalogSO` (ver el
+comentario en `EnemyEditorWindow`) y `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
+sin `[SerializeField]`).
+
+**Deuda: el racional de "doble cobertura" es inventado.** El docstring de `EffectData.cs` dice que
+`[OdinSerialize]` + `[SerializeReference]` da "doble cobertura (Odin + Unity native)". §13.6.1 nunca
+mandó `[OdinSerialize]` — pide *abstract base + `[Serializable]` en los subtipos + `[SerializeReference]`
+en el contenedor*. En la práctica el par produce almacenamiento duplicado donde **la mitad de Unity
+es vestigial**: se escribe, nadie la lee, y engorda el `.asset`. **No cambiar las anotaciones** —
+reescribiría 26 assets por cero beneficio de gameplay. Queda registrado para que el próximo que lea
+`EffectData.cs:20-22` no se lo crea.
+
+**Cross‑ref §26.12** — el motor de autoría polimórfica que implementa esta regla.
+
 **Lifecycle**:
 
 1. `DungeonManager.EnterRoom(roomId)` — si es la primera vez, recorre los spawn points del prefab (`RoomLayout` component del §13.3) y por cada uno crea el `RoomObjectState` del subtipo correcto:
@@ -8892,6 +8924,99 @@ Menú `Assets > Create > Rollgeon > Templates >` con presets:
 | "Active Item" | `ItemSO` | Type = Active, 1 effect vacío, cooldown 5 |
 
 **Cross‑ref §26.** Todos los sistemas del proyecto — cada tool opera sobre sus SOs respectivos.
+
+### 26.12 Polymorphic Content Authoring (motor compartido)
+
+**Estado: implementado.** `Assets/Scripts/Editor/Tools/Polymorphic/`, namespace
+`Rollgeon.Editor.Tools.Polymorphic`.
+
+#### El problema que resuelve
+
+La regla §13.6.1 obliga a marcar toda base polimórfica con `[HideReferenceObjectPicker]` — hoy lo
+llevan **120 tipos**. Ese atributo le apaga a Odin el selector de tipo, y **Odin lo apaga según el
+tipo *declarado* del campo**, no según el valor:
+
+| Slot | Tipo declarado | ¿Odin da picker? |
+|---|---|---|
+| `EffectData.PreConditions.$i` | `BasePreCondition` (abstract + atributo) | **No** |
+| `EffectData.TargetSelector` | `BaseEnemyTargetSelector` | **No** |
+| `ComboPassiveSO._flatDamageBonus` | `EffectIntReader` | **No** |
+| `EffectData.Effects.$i` (null) | `IEffect` (interfaz, sin atributo) | Sí |
+| `EnchantmentSO._triggers.$i` (null) | `IEnchantmentTrigger` | Sí |
+| Cualquier slot **ya asignado** | el concreto (todos llevan el atributo) | **No** |
+
+O sea: **las precondiciones, los target selectors y los readers no se podían autorar en ningún
+lado** salvo la tool de enemigos, que se construyó dropdowns propios. Y nada se podía **re-tipar**
+una vez asignado. Eso explica por qué ningún encantamiento tiene precondiciones y por qué el pipeline
+de efectos de `CH_Warrior` se sembró por código.
+
+#### El seam
+
+El motor es genérico sobre **miembros con picker oculto**, no sobre `EffectData`. La diferencia no es
+académica: `ComboPassiveSO → _extraTriggers → ExecuteEffectsOnEvent → List<EffectData>` llega a
+`EffectData` **transitivamente**, así que un drawer atado a `EffectData` necesitaría un caso especial
+para ese puente. Atado a los pickers ocultos, sale gratis y a profundidad arbitraria.
+
+| Pieza | Rol |
+|---|---|
+| `PolymorphicAuthoringContext` | Asset raíz + `PropertyTree` + undo. `Mutate()` hace record → mutar → dirty → notify, en el único orden que funciona |
+| `PolymorphicMemberScanner` | `Scan()` = dónde va un picker (tipo declarado abstract/interface). `BlockMembersOf()` = por dónde caminar (contenedores concretos con un picker oculto abajo) |
+| `PolymorphicBlockDrawer` | Dibuja solo el picker; Odin dibuja el contenido. Recursivo, depth cap 6 |
+| `PolymorphicPicker` | Dropdown por reflexión (`TypeCache`) — ya es el registry |
+| `Graph/BlockGraphModel` + `BlockGraphLayout` | Proyección izq→der. Puros, testeables |
+| `Graph/BlockGraphView` + `BlockNodeView` | Canvas. Navega; **no** edita |
+| `BlockEditorWindow<T>` | Shell: lista + búsqueda + CRUD + tabs + panel |
+
+**Hosts:** `EnemyEditorWindow` (AI tree), `HeroClassEditorWindow`, `ItemEditorWindow` (§26.13),
+`EnchantmentEditorWindow`.
+
+#### Reglas que hay que respetar
+
+1. **`PropertyTree` ruteado en el `UnityEngine.Object`, nunca en el POCO.** Rutearlo en un POCO hace
+   que Odin resuelva con `SerializationBackend.None` y **descarte en silencio** todo campo tipado por
+   interfaz — justo los que estas tools existen para autorar.
+2. **Undo de objeto completo. No hay granular.** Ver §13.6.1a.
+3. **La topología es derivada.** Todo padre/hijo sale de un campo o un índice de lista. Por eso el
+   grafo no persiste posiciones (a diferencia del AI tree, donde son intención real de autoría): una
+   posición guardada podría desincronizarse del orden de la lista, y un grafo que miente sobre el
+   orden de ejecución es peor que no tener grafo.
+4. **Un path cacheado no se confía** después de un edit estructural — re-resolver con `FindPathTo`.
+5. **`BlockMembersOf` testea "tiene un picker *oculto* abajo"**, no "tiene un slot polimórfico".
+   `SelectionSettings` tiene un `ISelectionCountReader` que Odin dibuja bien; con la regla laxa todos
+   los efectos pasarían a dibujarse campo por campo y cambiaría la apariencia de las tools que
+   funcionan. Hay un test que lo fija.
+6. **Nunca IMGUI adentro de un nodo de GraphView** — ver el comentario de `AIDecisionTreeGraphView`.
+
+#### Deuda conocida
+
+`PolymorphicBlockDrawer.DrawReaderPickers` sabe una regla de negocio que la reflexión no puede
+inferir: el reader solo aplica cuando un campo `DamageSource` vale `FromReader`. Expresarlo como
+`[ShowIf]` en el campo de runtime dejaría que Odin lo gatee y borraría el método. Es el precio de la
+abstracción — chico, real, y va a repetirse.
+
+### 26.13 Item Editor
+
+`Tools/Item Editor` — cierra el hueco que §26.1 promete ("un diseñador crea … un item … sin escribir
+una línea de C#") y que §26.2–26.11 nunca cubrieron. Hosteado sobre §26.12.
+
+Avisa cuando el `ItemId` no está en `ItemCatalog`: la shop, `EffAddItemToInventory` y `giveitem`
+resuelven **todos** por el catálogo, así que olvidarlo hace el item silenciosamente inentregable.
+
+### 26.14 Enchantment Editor
+
+`Tools/Enchantment Editor` — 33 assets autorados que hasta ahora se editaban con el inspector crudo.
+`EnchantmentSO` (`IFaceFilter` + `List<IEnchantmentTrigger>`) es **isomorfo** a `EffectData`
+(listas polimórficas + un slot simple opcional sobre un blob de Odin), así que el host costó casi
+nada sobre §26.12.
+
+**Validación de no-ops.** Lee `Rollgeon.Attributes.NotYetWiredAttribute` y avisa cuando un trigger
+compila y se configura pero no hace nada in-game (falta hold-detection, historial de rerolls, o que
+`ContractSheet` lea el flag). Hoy marca 7 de 33: Ancla, Cargado, Comodín, Escalador, Lento, Mimético,
+Torpe — exactamente los que `docs/balance/item-inventory.html` trackeaba a mano.
+
+**Aplicar el marker con criterio:** un `TODO Phase 4` en el código **no** alcanza.
+`LuckyChanceComboBonus` y `ChanceToNotCount` tienen uno (por el seed determinístico) pero sí aplican
+su efecto; marcarlos sería mentir. El test es si el jugador nota la diferencia.
 
 ---
 
