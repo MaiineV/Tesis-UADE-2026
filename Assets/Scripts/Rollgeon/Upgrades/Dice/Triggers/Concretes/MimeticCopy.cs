@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -22,6 +23,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// de rerolls.
     /// </para>
     /// </remarks>
+    [NotYetWired("El roll service todavia no expone historial de rerolls, asi que no hay de donde copiar.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class MimeticCopy : IOnRollResolvedTrigger
     {

@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// los triggers del dado antes de permitir lock.
     /// </para>
     /// </remarks>
+    [NotYetWired("Marcador nomas: el roll service todavia no consulta esta restriccion al holdear.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class PreventHolding : IOnEnchantmentAppliedTrigger
     {

@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Patterns;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// en Phase 4.
     /// </para>
     /// </remarks>
+    [NotYetWired("El roll service todavia no expone hold-detection, asi que el contador nunca sube. Configurable pero sin efecto.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class AnchorAccumulate
         : IOnEnchantmentAppliedTrigger,

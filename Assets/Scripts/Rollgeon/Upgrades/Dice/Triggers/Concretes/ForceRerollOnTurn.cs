@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Patterns;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -21,6 +22,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// efectivamente. Actualmente solo loguea un warning cuando el turno coincide.
     /// </para>
     /// </remarks>
+    [NotYetWired("No integrado con el roll service: solo loguea un warning, no fuerza el reroll.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class ForceRerollOnTurn
         : IOnEnchantmentAppliedTrigger,

@@ -1,17 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
+using Rollgeon.Editor.Tools.Polymorphic;
 using Rollgeon.Effects;
-using Rollgeon.Effects.Concretes;
-using Rollgeon.Effects.Readers;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.PreConditions;
-using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -23,14 +19,19 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
     /// AI node. Crucially, the PropertyTree is rooted on the <see cref="EnemyDataSO"/>
     /// (a Unity Object) instead of on the polymorphic node directly — this is what makes
     /// Odin's polymorphic pickers (e.g. "+ Add Condition" on AINode_If) commit correctly.
+    /// <para>
+    /// The tree, undo and the EffectData drawers live in
+    /// <see cref="Rollgeon.Editor.Tools.Polymorphic"/> — this class keeps only what is
+    /// AI-specific: node selection, path resolution and the per-subtype layouts.
+    /// </para>
     /// </summary>
     public sealed class AIDecisionTreeInspector
     {
         public VisualElement Root { get; }
 
         readonly Action _onChanged;
+        readonly PolymorphicAuthoringContext _ctx = new PolymorphicAuthoringContext();
         EnemyDataSO _enemy;
-        PropertyTree _soTree;
         AIDecisionNode _selected;
         string _selectedPath;
         Vector2 _bodyScroll;
@@ -42,6 +43,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         public AIDecisionTreeInspector(Action onChanged)
         {
             _onChanged = onChanged;
+            _ctx.Changed += NotifyChanged;
 
             Root = new VisualElement
             {
@@ -86,7 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         public void Bind(EnemyDataSO enemy)
         {
-            DisposeTree();
+            _ctx.Bind(enemy);
             _enemy = enemy;
             _selected = null;
             _selectedPath = null;
@@ -105,8 +107,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 return;
             }
 
-            EnsureTree();
-            _selectedPath = FindPathTo(node);
+            _selectedPath = _ctx.FindPathTo(node);
             UpdateHeader();
             _body.MarkDirtyRepaint();
         }
@@ -118,7 +119,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         public void Dispose()
         {
-            DisposeTree();
+            _ctx.Dispose();
         }
 
         // ---- IMGUI body --------------------------------------------------
@@ -126,10 +127,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         void DrawBody()
         {
             if (_selected == null || _enemy == null) return;
-            EnsureTree();
-            if (_soTree == null) return;
+            if (_ctx.Tree == null) return;
 
-            _soTree.UpdateTree();
+            _ctx.UpdateTree();
 
             // Refactor a if/else (en vez de early-return en el warning) para mantener balanceados
             // los pares Begin/EndScrollView en el mismo frame IMGUI.
@@ -145,8 +145,8 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             }
 
             // Path cache may go stale across topology edits — re-resolve and verify.
-            if (string.IsNullOrEmpty(_selectedPath) || !PathStillPointsToSelection())
-                _selectedPath = FindPathTo(_selected);
+            if (string.IsNullOrEmpty(_selectedPath) || !_ctx.PathPointsTo(_selectedPath, _selected))
+                _selectedPath = _ctx.FindPathTo(_selected);
             if (string.IsNullOrEmpty(_selectedPath))
             {
                 EditorGUILayout.HelpBox(
@@ -186,7 +186,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                         break;
                 }
 
-                _soTree.ApplyChanges();
+                _ctx.ApplyChanges();
 
                 if (EditorGUI.EndChangeCheck() || GUI.changed)
                 {
@@ -223,35 +223,19 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             // Target Selector
             EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
-            PolymorphicPicker.DrawSingle(
-                "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Target Selector");
-                    node.TargetSelector = (BaseEnemyTargetSelector)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-            if (node.TargetSelector != null)
-            {
-                EditorGUI.indentLevel++;
-                DrawOdinProp("TargetSelector");
-                EditorGUI.indentLevel--;
-            }
+            PolymorphicBlockDrawer.DrawSingleSlot(
+                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                Abs("TargetSelector"),
+                v => node.TargetSelector = (BaseEnemyTargetSelector)v,
+                "Change Target Selector");
 
             EditorGUILayout.Space(8);
 
             // Conditions list (AND-evaluated)
             EditorGUILayout.LabelField("Conditions (AND)", EditorStyles.boldLabel);
             if (node.Conditions == null) node.Conditions = new List<BasePreCondition>();
-            DrawPolymorphicListItems(node.Conditions, "Conditions", "Condition");
-            PolymorphicPicker.DrawAddButton(
-                "Condition", typeof(BasePreCondition), node.Conditions,
-                () =>
-                {
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
+            PolymorphicBlockDrawer.DrawPolymorphicListItems(_ctx, node.Conditions, Abs("Conditions"), "Condition");
+            PolymorphicBlockDrawer.DrawAddButton(_ctx, "Condition", typeof(BasePreCondition), node.Conditions);
         }
 
         /// <summary>
@@ -262,74 +246,25 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             // Target Selector (mismo patrón que DrawIfNode)
             EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
-            PolymorphicPicker.DrawSingle(
-                "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Target Selector");
-                    node.TargetSelector = (BaseEnemyTargetSelector)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-            if (node.TargetSelector != null)
-            {
-                EditorGUI.indentLevel++;
-                DrawOdinProp("TargetSelector");
-                EditorGUI.indentLevel--;
-            }
+            PolymorphicBlockDrawer.DrawSingleSlot(
+                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                Abs("TargetSelector"),
+                v => node.TargetSelector = (BaseEnemyTargetSelector)v,
+                "Change Target Selector");
 
             EditorGUILayout.Space(8);
 
             // Conditions list (AND-evaluated, looped each iteration)
             EditorGUILayout.LabelField("Conditions (AND, looped)", EditorStyles.boldLabel);
             if (node.Conditions == null) node.Conditions = new List<BasePreCondition>();
-            DrawPolymorphicListItems(node.Conditions, "Conditions", "Condition");
-            PolymorphicPicker.DrawAddButton(
-                "Condition", typeof(BasePreCondition), node.Conditions,
-                () =>
-                {
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
+            PolymorphicBlockDrawer.DrawPolymorphicListItems(_ctx, node.Conditions, Abs("Conditions"), "Condition");
+            PolymorphicBlockDrawer.DrawAddButton(_ctx, "Condition", typeof(BasePreCondition), node.Conditions);
 
             EditorGUILayout.Space(8);
 
             // MaxIterations safeguard
             EditorGUILayout.LabelField("Safeguard", EditorStyles.boldLabel);
             DrawOdinProp("MaxIterations");
-        }
-
-        /// <summary>
-        /// Generic polymorphic list renderer: header row with concrete-type label + ✕ button,
-        /// then Odin draws the item's inner fields. Used for AINode_If's Conditions and for
-        /// EffectData's PreConditions / Effects from inside DrawEffectData.
-        /// </summary>
-        void DrawPolymorphicListItems(IList list, string listRelativePath, string undoLabel)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        var item = list[i];
-                        EditorGUILayout.LabelField(
-                            item != null ? item.GetType().Name : "(null)",
-                            EditorStyles.miniBoldLabel);
-                        GUILayout.FlexibleSpace();
-                        if (PolymorphicPicker.DrawClearButton())
-                        {
-                            Undo.RecordObject(_enemy, "Remove " + undoLabel);
-                            list.RemoveAt(i);
-                            EditorUtility.SetDirty(_enemy);
-                            NotifyChanged();
-                            return;
-                        }
-                    }
-                    if (list[i] != null)
-                        DrawOdinProp(listRelativePath + ".$" + i);
-                }
-            }
         }
 
         /// <summary>
@@ -343,13 +278,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             EditorGUILayout.LabelField("Behavior", EditorStyles.boldLabel);
             PolymorphicPicker.DrawSingle(
                 "Type", typeof(EnemyActionBehavior), node.Behavior,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Behavior");
-                    node.Behavior = (EnemyActionBehavior)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
+                newInstance => _ctx.Mutate(
+                    "Change Behavior",
+                    () => node.Behavior = (EnemyActionBehavior)newInstance));
 
             if (node.Behavior == null) return;
             var behavior = node.Behavior;
@@ -371,56 +302,31 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             // Target Selector — same picker pattern as DrawIfNode
             EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
-            PolymorphicPicker.DrawSingle(
-                "Type", typeof(BaseEnemyTargetSelector), behavior.TargetSelector,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Behavior Target Selector");
-                    behavior.TargetSelector = (BaseEnemyTargetSelector)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-            if (behavior.TargetSelector != null)
-            {
-                EditorGUI.indentLevel++;
-                DrawOdinProp("Behavior.TargetSelector");
-                EditorGUI.indentLevel--;
-            }
+            PolymorphicBlockDrawer.DrawSingleSlot(
+                _ctx, "Type", typeof(BaseEnemyTargetSelector), behavior.TargetSelector,
+                Abs("Behavior.TargetSelector"),
+                v => behavior.TargetSelector = (BaseEnemyTargetSelector)v,
+                "Change Behavior Target Selector");
 
             EditorGUILayout.Space(6);
 
             // Effects (List<EffectData>) — EffectData is concrete + has [HideReferenceObjectPicker]
             EditorGUILayout.LabelField("Effect Pipeline", EditorStyles.boldLabel);
             if (behavior.Effects == null) behavior.Effects = new List<EffectData>();
-            DrawEffectsList(behavior.Effects);
-            PolymorphicPicker.DrawAddButton(
-                "Effect Group", typeof(EffectData), behavior.Effects,
-                () =>
-                {
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
+            PolymorphicBlockDrawer.DrawEffectDataList(
+                _ctx, behavior.Effects, Abs("Behavior.Effects"), PolymorphicBlockDrawer.Options.Enemy);
+            PolymorphicBlockDrawer.DrawAddButton(_ctx, "Effect Group", typeof(EffectData), behavior.Effects);
         }
 
         void DrawMoveNode(AINode_Move node)
         {
             // Target Selector (mismo patrón que DrawIfNode). Null = player.
             EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
-            PolymorphicPicker.DrawSingle(
-                "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Target Selector");
-                    node.TargetSelector = (BaseEnemyTargetSelector)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-            if (node.TargetSelector != null)
-            {
-                EditorGUI.indentLevel++;
-                DrawOdinProp("TargetSelector");
-                EditorGUI.indentLevel--;
-            }
+            PolymorphicBlockDrawer.DrawSingleSlot(
+                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                Abs("TargetSelector"),
+                v => node.TargetSelector = (BaseEnemyTargetSelector)v,
+                "Change Target Selector");
 
             EditorGUILayout.Space(8);
 
@@ -483,169 +389,18 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             PolymorphicPicker.DrawSingle(
                 label, typeof(AIIntReader), current,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change " + label);
-                    setter((AIIntReader)newInstance);
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-        }
-
-        void DrawEffectsList(List<EffectData> list)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        var item = list[i];
-                        string label = item != null && !string.IsNullOrEmpty(item.Label)
-                            ? item.Label
-                            : (item != null ? item.GetType().Name : "(null)");
-                        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
-                        GUILayout.FlexibleSpace();
-                        if (PolymorphicPicker.DrawClearButton())
-                        {
-                            Undo.RecordObject(_enemy, "Remove Effect Group");
-                            list.RemoveAt(i);
-                            EditorUtility.SetDirty(_enemy);
-                            NotifyChanged();
-                            return;
-                        }
-                    }
-                    if (list[i] != null)
-                        DrawEffectData(list[i], "Behavior.Effects.$" + i);
-                }
-            }
+                newInstance => _ctx.Mutate(
+                    "Change " + label,
+                    () => setter((AIIntReader)newInstance)));
         }
 
         /// <summary>
-        /// Renders one <see cref="EffectData"/> with custom pickers for its three
-        /// polymorphic fields whose base types all carry [HideReferenceObjectPicker]:
-        /// <see cref="EffectData.PreConditions"/>, <see cref="EffectData.Effects"/>,
-        /// <see cref="EffectData.TargetSelector"/>. Inner fields of each item are still
-        /// drawn by Odin via <see cref="DrawPolymorphicListItems"/>.
+        /// Absolute Odin path for a field of the selected node. The shared drawers take absolute
+        /// paths — relativity to the selection is this inspector's concern, not theirs.
         /// </summary>
-        void DrawEffectData(EffectData item, string basePath)
-        {
-            DrawOdinProp(basePath + ".Label");
+        string Abs(string relativePath) => _selectedPath + "." + relativePath;
 
-            EditorGUILayout.Space(4);
-
-            // PreConditions
-            EditorGUILayout.LabelField("PreConditions (AND)", EditorStyles.miniBoldLabel);
-            if (item.PreConditions == null) item.PreConditions = new List<BasePreCondition>();
-            DrawPolymorphicListItems(item.PreConditions, basePath + ".PreConditions", "PreCondition");
-            PolymorphicPicker.DrawAddButton(
-                "PreCondition", typeof(BasePreCondition), item.PreConditions,
-                () => { EditorUtility.SetDirty(_enemy); NotifyChanged(); });
-
-            EditorGUILayout.Space(4);
-
-            // Effects (List<IEffect>)
-            EditorGUILayout.LabelField("Effects", EditorStyles.miniBoldLabel);
-            if (item.Effects == null) item.Effects = new List<IEffect>();
-            DrawEffectListItems(item.Effects, basePath + ".Effects");
-            PolymorphicPicker.DrawAddButton(
-                "Effect", typeof(IEffect), item.Effects,
-                () => { EditorUtility.SetDirty(_enemy); NotifyChanged(); });
-
-            EditorGUILayout.Space(4);
-
-            // Target override
-            EditorGUILayout.LabelField("Target Override", EditorStyles.miniBoldLabel);
-            PolymorphicPicker.DrawSingle(
-                "Type", typeof(BaseEnemyTargetSelector), item.TargetSelector,
-                newInstance =>
-                {
-                    Undo.RecordObject(_enemy, "Change Effect Target Selector");
-                    item.TargetSelector = (BaseEnemyTargetSelector)newInstance;
-                    EditorUtility.SetDirty(_enemy);
-                    NotifyChanged();
-                });
-            if (item.TargetSelector != null)
-            {
-                EditorGUI.indentLevel++;
-                DrawOdinProp(basePath + ".TargetSelector");
-                EditorGUI.indentLevel--;
-            }
-        }
-
-        void DrawEffectListItems(IList list, string listRelativePath)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        var item = list[i];
-                        EditorGUILayout.LabelField(
-                            item != null ? item.GetType().Name : "(null)",
-                            EditorStyles.miniBoldLabel);
-                        GUILayout.FlexibleSpace();
-                        if (PolymorphicPicker.DrawClearButton())
-                        {
-                            Undo.RecordObject(_enemy, "Remove Effect");
-                            list.RemoveAt(i);
-                            EditorUtility.SetDirty(_enemy);
-                            NotifyChanged();
-                            return;
-                        }
-                    }
-
-                    if (list[i] != null)
-                    {
-                        var effectPath = listRelativePath + ".$" + i;
-                        DrawOdinProp(effectPath);
-                        DrawReaderPickersForEffect(list[i], effectPath);
-                    }
-                }
-            }
-        }
-
-        void DrawReaderPickersForEffect(object effect, string effectOdinPath)
-        {
-            var type = effect.GetType();
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
-
-            bool hasFromReader = false;
-            foreach (var f in fields)
-            {
-                if (f.FieldType == typeof(DamageSource)
-                    && (DamageSource)f.GetValue(effect) == DamageSource.FromReader)
-                {
-                    hasFromReader = true;
-                    break;
-                }
-            }
-            if (!hasFromReader) return;
-
-            foreach (var f in fields)
-            {
-                if (f.FieldType != typeof(EffectIntReader)) continue;
-                var current = (EffectIntReader)f.GetValue(effect);
-
-                PolymorphicPicker.DrawSingle(
-                    "Reader Type", typeof(EffectIntReader), current,
-                    newInstance =>
-                    {
-                        Undo.RecordObject(_enemy, "Change Effect Reader");
-                        f.SetValue(effect, newInstance);
-                        EditorUtility.SetDirty(_enemy);
-                        NotifyChanged();
-                    });
-            }
-        }
-
-        void DrawOdinProp(string relativePath)
-        {
-            var prop = _soTree.GetPropertyAtPath(_selectedPath + "." + relativePath);
-            if (prop != null) prop.Draw();
-            else EditorGUILayout.LabelField(relativePath, "(field not found)");
-        }
+        void DrawOdinProp(string relativePath) => _ctx.Draw(Abs(relativePath));
 
         /// <summary>
         /// GenericMenu callbacks fire outside the IMGUI cycle — without an explicit repaint,
@@ -673,40 +428,5 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             }
         }
 
-        void EnsureTree()
-        {
-            if (_soTree != null) return;
-            if (_enemy == null) return;
-            _soTree = PropertyTree.Create(_enemy);
-        }
-
-        void DisposeTree()
-        {
-            _soTree?.Dispose();
-            _soTree = null;
-        }
-
-        /// <summary>
-        /// Walk the SO's PropertyTree to find the path whose value reference equals
-        /// <paramref name="target"/>. Required because the AI tree topology is polymorphic
-        /// and paths are not stable across edits.
-        /// </summary>
-        string FindPathTo(AIDecisionNode target)
-        {
-            if (_soTree == null || target == null) return null;
-            foreach (var prop in _soTree.EnumerateTree(true))
-            {
-                var value = prop.ValueEntry?.WeakSmartValue;
-                if (ReferenceEquals(value, target)) return prop.Path;
-            }
-            return null;
-        }
-
-        bool PathStillPointsToSelection()
-        {
-            if (_soTree == null || _selected == null || string.IsNullOrEmpty(_selectedPath)) return false;
-            var prop = _soTree.GetPropertyAtPath(_selectedPath);
-            return prop != null && ReferenceEquals(prop.ValueEntry?.WeakSmartValue, _selected);
-        }
     }
 }

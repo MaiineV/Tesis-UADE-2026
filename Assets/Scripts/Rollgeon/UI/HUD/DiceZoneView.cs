@@ -155,9 +155,15 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.Subscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
+            EventManager.Subscribe(EventName.OnEnchantmentApplied, HandleEnchantmentChanged);
+            EventManager.Subscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
 
             // Estado inicial: slots apagados hasta que el jugador presione Roll.
             ClearAll();
+
+            // El altar encanta durante exploración y este mismo componente ya está bindeado
+            // ahí, así que Bind cubre el estado inicial y los eventos los cambios en vivo.
+            RefreshEnchantVisuals();
         }
 
         public void Unbind()
@@ -172,6 +178,8 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.UnSubscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
+            EventManager.UnSubscribe(EventName.OnEnchantmentApplied, HandleEnchantmentChanged);
+            EventManager.UnSubscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
             if (_resolvedSlots != null)
                 foreach (var s in _resolvedSlots)
                     s?.OnToggled.RemoveAllListeners();
@@ -194,6 +202,10 @@ namespace Rollgeon.UI.HUD
             // el estado nuevo — su ClearAll pisaría las caras recién asignadas.
             _animator?.CancelOutroAndComplete();
 
+            // Antes del loop de reveal: la silueta tiene que ser la correcta mientras el dado
+            // gira, no recién al frenar.
+            RefreshDiceShapes();
+
             int count = _resolvedSlots?.Length ?? 0;
             var willReveal = new bool[count];
             for (int i = 0; i < count; i++)
@@ -214,6 +226,47 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < count; i++)
                 if (willReveal[i]) _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
             RefreshDiceBlock();
+        }
+
+        /// <summary>
+        /// Pinta la silueta de cada slot según el tipo de dado que tiene en el bag. El índice de
+        /// slot mapea 1:1 al del bag (<see cref="RunComboDetection"/> ya lo asume).
+        /// </summary>
+        /// <remarks>
+        /// No se llama desde <c>Bind</c>: el bag es run-scoped y ahí todavía es null. Un roll no
+        /// puede ocurrir antes de que exista, así que engancharlo al roll alcanza. Idempotente y
+        /// gratis — el setter de <c>Image.sprite</c> early-outea si no cambió.
+        /// </remarks>
+        private void RefreshDiceShapes()
+        {
+            if (_resolvedSlots == null) return;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return;
+            if (enchants == null || !enchants.IsReady) return;
+
+            var bag = enchants.Bag.Dice;
+            int count = Mathf.Min(_resolvedSlots.Length, bag.Count);
+            for (int i = 0; i < count; i++)
+                _resolvedSlots[i]?.SetDiceType(bag[i]);
+        }
+
+        // El payload trae (playerGuid, upgradeId, bagIndex, enchSlotIndex); lo ignoramos y
+        // refrescamos entero, como HandleDiceBlockChanged. Es idempotente e inmune a un error
+        // de mapeo de índice, y son 5 slots.
+        private void HandleEnchantmentChanged(params object[] args) => RefreshEnchantVisuals();
+
+        /// <summary>
+        /// Pinta el visual de encantamiento de cada slot según su dado en el bag.
+        /// </summary>
+        private void RefreshEnchantVisuals()
+        {
+            if (_resolvedSlots == null) return;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return;
+            if (enchants == null || !enchants.IsReady) return;
+
+            int count = Mathf.Min(_resolvedSlots.Length, enchants.Bag.Dice.Count);
+            for (int i = 0; i < count; i++)
+                _resolvedSlots[i]?.SetEnchantVisual(
+                    DiceEnchantVisualResolver.ResolvePrimary(enchants.Bag.GetEnchantments(i)));
         }
 
         // Boss 1 (§2): refleja el estado de IDiceBlockService en los slots — grayed + candado,

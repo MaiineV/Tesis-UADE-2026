@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -23,6 +24,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// secundarios antes de evaluar escaleras.
     /// </para>
     /// </remarks>
+    [NotYetWired("ContractSheet todavia no lee valores secundarios, asi que el dado no cuenta como valor+1 para escaleras.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class EscaladorStep : IOnDiceRolledTrigger
     {

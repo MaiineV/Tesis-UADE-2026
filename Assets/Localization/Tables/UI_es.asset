@@ -260,6 +260,18 @@ MonoBehaviour:
     m_Localized: "Pol\xEDtica de privacidad"
     m_Metadata:
       m_Items: []
+  - m_Id: 878601589063680
+    m_Localized: Idioma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949760
+    m_Localized: "\xBFSeguro?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949761
+    m_Localized: Volver
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -22,6 +23,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// de wildcard antes de evaluar combos.
     /// </para>
     /// </remarks>
+    [NotYetWired("ContractSheet todavia no consume el flag de comodin, asi que el dado no matchea como cualquier valor.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class WildcardForCombo : IOnDiceRolledTrigger
     {

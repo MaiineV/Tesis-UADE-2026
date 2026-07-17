@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Rollgeon.Dice;
 using Rollgeon.UI.HUD.DiceAnim;
 using UnityEngine;
 
@@ -250,6 +251,79 @@ namespace Rollgeon.UI.Tests
             var plans = new[] { DiceOutroPlan.Skipped, DiceOutroPlan.Skipped };
 
             Assert.AreEqual(0f, DiceAnimChoreographer.OutroTotalSeconds(plans, 0.05f));
+        }
+
+        // ── SpinRole ─────────────────────────────────────────────────────
+
+        [Test]
+        public void SpinRole_AlternatesFrontAndSides_InTheAuthoredSequence()
+        {
+            // Arrange & Act — 8 ticks con el lateral A primero.
+            var sequence = new DiceShapeRole[8];
+            for (int tick = 1; tick <= 8; tick++)
+                sequence[tick - 1] = DiceAnimChoreographer.SpinRole(tick, sideSeed: 0);
+
+            // Assert — la secuencia 0-1-0-2 del brief.
+            Assert.AreEqual(
+                new[]
+                {
+                    DiceShapeRole.Front, DiceShapeRole.SideA,
+                    DiceShapeRole.Front, DiceShapeRole.SideB,
+                    DiceShapeRole.Front, DiceShapeRole.SideA,
+                    DiceShapeRole.Front, DiceShapeRole.SideB,
+                },
+                sequence);
+        }
+
+        [Test]
+        public void SpinRole_StartsOnTheOtherSide_WhenSeedIsOne()
+        {
+            // Act — el seed solo cambia con cuál lateral arranca; dos dados no van en fase.
+            Assert.AreEqual(DiceShapeRole.SideB, DiceAnimChoreographer.SpinRole(2, sideSeed: 1));
+            Assert.AreEqual(DiceShapeRole.SideA, DiceAnimChoreographer.SpinRole(4, sideSeed: 1));
+        }
+
+        [Test]
+        public void SpinRole_NeverReturnsHoverOrSelected()
+        {
+            // Arrange & Act — el ciclado solo usa el frontal y los dos laterales.
+            for (int tick = 1; tick <= 32; tick++)
+            {
+                for (int seed = 0; seed <= 1; seed++)
+                {
+                    var role = DiceAnimChoreographer.SpinRole(tick, seed);
+
+                    // Assert
+                    Assert.That(role, Is.EqualTo(DiceShapeRole.Front)
+                                        .Or.EqualTo(DiceShapeRole.SideA)
+                                        .Or.EqualTo(DiceShapeRole.SideB),
+                        $"tick {tick}, seed {seed} devolvió {role}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// El dado tiene que descansar en el frontal antes del reveal, no cortar desde un
+        /// lateral. Con el tuning shippeado (SpinSeconds 0.5, SpinTickSeconds 0.06) hay 8 ticks
+        /// pero el 8 nunca dispara — TickTime(8,8,…) da exactamente la duración y el loop del
+        /// animator corre mientras elapsed &lt; duración. El último que llega a verse es el 7.
+        /// </summary>
+        [Test]
+        public void SpinRole_LastReachableTick_IsFront_WithShippedTuning()
+        {
+            // Arrange
+            var t = DiceAnimTimings.Defaults;
+            int ticks = DiceAnimChoreographer.TickCount(t.SpinSeconds, t.SpinTickSeconds);
+            Assert.AreEqual(8, ticks, "Cambió el tuning: revisar en qué tick aterriza el ciclado.");
+            Assert.AreEqual(t.SpinSeconds,
+                DiceAnimChoreographer.TickTime(ticks, ticks, t.SpinSeconds, t.SpinDecelerationPower),
+                1e-5f, "El último tick ya no cae fuera del loop.");
+
+            // Act
+            var lastReachable = DiceAnimChoreographer.SpinRole(ticks - 1, sideSeed: 0);
+
+            // Assert
+            Assert.AreEqual(DiceShapeRole.Front, lastReachable);
         }
     }
 }

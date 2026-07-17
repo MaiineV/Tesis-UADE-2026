@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35e6d96707be89542bf23a6b22b4bf1c, type: 3}
+  m_Name: MenuJuiceSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Menu.MenuJuiceSettingsSO
+  TextColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
+  AccentColor: {r: 0.8784314, g: 0.7529412, b: 0.6627451, a: 1}
+  MutedColor: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 1}
+  DimColor: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 0.55}
+  StaggerStep: 0.15
+  EntranceDuration: 0.4
+  EntranceYOffset: 40
+  HoverScale: 1.15
+  ScaleLerpSpeed: 8
+  HoverXOffset: -12
+  OffsetLerpSpeed: 10
+  UnderlinePad: 12
+  UnderlineLerpSpeed: 14
+  ColorCycleSpeed: 5
+  ColorLerpSpeed: 10
+  PunchScale: 1.3
+  ShakeStrength: 3
+  ShakeDuration: 0.15
+  PunchReturnSpeed: 12
+  DiamondFollowSpeed: 12
+  DiamondPulseFrequency: 6
+  DiamondPulseAmplitude: 0.15
+  DiamondMargin: 28
+  DiamondFadeSpeed: 10

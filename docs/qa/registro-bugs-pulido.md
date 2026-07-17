@@ -41,6 +41,50 @@ La escalada entre bosses es solo por Attack. Con upgrades de dados del jugador, 
 ### PUL-004 — Nada comunica que el escudo se gana atacando
 Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regla "defensa solo tras atacar" es invisible para el jugador. Fix barato: tooltip/onboarding con la regla explícita.
 
+### PUL-005 — `ItemSO` vs `ShopItemDef`: doble autoría de la misma identidad
+- **Área**: Items / Shop
+- Un item vendible se autora **dos veces**: `ItemSO` declara el efecto, `ShopItemDef` la identidad vendible, y los dos repiten `ItemId` / `DisplayName` / `Description` / `Icon`. Visible hoy en `Item_HealingPotion.asset` + `ShopItem_HealingPotion.asset` (mismo `potion.healing`). Solo `ShopItemDef` puede entrar a `ShopPool.asset`.
+- **Riesgo**: editar uno y olvidar el otro deja la tienda mostrando datos viejos. El `Tools/Item Editor` (§26.13) solo edita el `ItemSO`, así que no lo detecta.
+- **Resolución prevista**: `ShopItemDef` está documentado como placeholder MVP — muere cuando llegue `RewardEntrySO` (§19). **No arreglar antes**; el fix real es esa migración, no un parche de sincronización.
+- **Estado**: abierto. Detectado al mapear el sistema para Feature#0032 (PR #48).
+
+### PUL-006 — 3 `ShopItemDef` huérfanos comparten `ItemId="Item01"`
+- **Área**: Items / Shop
+- `D20Die.asset`, `D20DieEnchantmentPlus.asset` y `D20DieEnhancent.asset` (en `Assets/Rollgeon/Rooms/Shop/Items/`) son tres assets distintos con el **mismo** `ItemId="Item01"`, mismo `DisplayName`, mismo ícono y `Description` vacía. No son tres items: son restos de experimentación.
+- **Hoy es inofensivo**: verificado por dependencias — ninguno está referenciado en `ShopPool.asset` ni en `SP_Tutorial.asset`, así que no aparecen en la tienda. Mismo riesgo que **PUL-001** — si alguien los carga a un pool por error, dos entries con el mismo id rompen la resolución por `GetById` (el `ValidateNoDuplicateIds` de `BaseCatalogSO` lo avisa solo si entran a un catálogo, y estos no están en ninguno).
+- **Fix**: quedarse con uno, o borrar los tres si el D20 ya no es un item vendible.
+- **Estado**: abierto. Detectado al mapear el sistema para Feature#0032 (PR #48).
+
+### PUL-007 — `InventoryService` sin cobertura de activación ni de save/restore
+- **Área**: Items / Tests
+- `Rollgeon.Items.Tests` existe desde Feature#0032 (PR #48) pero cubre **solo** el bind/unbind de hooks pasivos (9 tests, ver §18.2.1). Siguen sin cobertura:
+  - `ActivateItem` — la ruta de action economy (`ConsumesAction` → `ActionDefinitionSO` transitoria → `TurnManager.CanExecute`), el cooldown, y el `ConsumedOnUse` que remueve el slot **por índice**.
+  - `CaptureState` / `RestoreState` (`SaveKey = "run.inventory"`) — rehidratación via `_catalog.GetById`, incluido el caso de un item cuyo asset ya no existe.
+  - `ApplyPersistentModifiers` / `RemovePersistentModifiers`.
+- **Por qué importa ahora**: hasta el PR #48 había **1 solo item autorado**, así que estas rutas casi no corrían. Con las tools de autoría (§26.13/§26.14) el contenido va a crecer y estas rutas pasan a ser calientes.
+- **Estado**: abierto. Anotado al cerrar Feature#0032 (PR #48).
+
+### PUL-008 — El D3 se ve idéntico al D4 (el sheet de dados no trae su fila)
+- **Área**: UI / Dice / Arte
+- `Assets/Art/UI/Dices/Dices.png` trae 6 filas (D4, D6, D8, D10, D12, D20). El **D3** es el 7º valor de `DiceType` — llegó con el pack de Encantamientos, después de que se pintara el sheet. Para que el catálogo valide, `DiceShapeCatalogAuthoring` le asigna la fila del **D4** (decisión explícita, ver `TypeRows`).
+- **Riesgo**: un jugador con D3 y D4 en la bolsa no los distingue salvo por el número. `Validate`/`ValidateRoles` chequean **tipo** duplicado, no **sprite** duplicado, así que nada lo atrapa automáticamente.
+- **Fix**: pedirle al artista la fila del D3 (5 columnas: frontal, 2 laterales, hover, selected). Al llegar, solo se re-slicea el sheet y se corre `Tools/Rollgeon/Dice/Author Shape Catalog From Sheet` — cero código.
+- **Estado**: abierto. Decidido al implementar Feature#0033.
+
+### PUL-009 — El throw 2D/3D no cicla los sprites laterales del set
+- **Área**: UI / Dice
+- `DiceThrowDieView.SetDiceType` (`:44-49`) toma el **frontal** del set vía el default de `GetShape` y nada más: en modo throw el dado rota de verdad en vuelo (`DiceThrow2DPresenter.cs:935`), así que el ciclado 0-1-0-2 del modo Classic no aplica tal cual.
+- **Consecuencia**: el hover/selected/laterales del arte nuevo solo se ven en el HUD Classic. Si el juego shippea en modo throw, media inversión del sheet no se usa.
+- **Fix**: decidir con arte/diseño si el dado volador debe cambiar de sprite según su rotación (leer el ángulo y mapearlo a frontal/lateral) o quedarse con el frontal.
+- **Estado**: abierto. Alcance excluido a propósito en Feature#0033, no olvido.
+
+### PUL-010 — El último tick del spin nunca dispara (off-by-one)
+- **Área**: UI / Dice / Anim
+- Con el tuning shippeado `TickCount(0.5, 0.06)` = **8**, pero `TickTime(8, 8, …)` devuelve exactamente `0.5` = la duración, y el loop de `DiceSlotAnimator.SpinRoutine` corre `while (elapsed < plan.Duration)`. El tick 8 nunca entra: se ven **7 de 8** cambios de cara.
+- **Hoy es benigno**: 7 u 8 parpadeos de número random en 0.5s es imperceptible, y el ciclado de sprites de Feature#0033 está construido para aterrizar bien igual (el tick 7 es impar ⇒ frontal, y `LandFromSpin` suelta el rol pase lo que pase).
+- **Cuidado si se toca**: `DiceAnimChoreographerTests.SpinRole_LastReachableTick_IsFront_WithShippedTuning` documenta y asierta este comportamiento — arreglar el off-by-one cambia cuál es el último tick y hay que revisar en qué rol aterriza.
+- **Estado**: abierto. Detectado al implementar Feature#0033.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
