@@ -180,6 +180,23 @@ namespace Rollgeon.EditorTools.Menu
                 }
 
                 var stack = new[] { resume, pauseSettings, quitRun };
+
+                // Mismo ritmo compacto que el stack del menú (ajuste de playtest:
+                // venían a ~160px y el Settings era 100x100).
+                var pauseStackY = new[] { 80f, 0f, -80f };
+                for (int i = 0; i < stack.Length; i++)
+                {
+                    Place((RectTransform)stack[i].transform,
+                        (RectTransform)stack[i].transform.parent, new Vector2(0f, pauseStackY[i]),
+                        new Vector2(300f, 75f));
+                }
+
+                // Por encima del overlay del tutorial (29000): pausar durante un
+                // diálogo del tutorial no debe oscurecer los botones de pausa.
+                // Sigue debajo del loading screen (31000).
+                var canvas = root.GetComponentInChildren<Canvas>(true);
+                if (canvas != null) canvas.sortingOrder = 29500;
+
                 var juicyButtons = stack.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
                 EnsureGroup(overlay.gameObject, juicyButtons, settings);
 
