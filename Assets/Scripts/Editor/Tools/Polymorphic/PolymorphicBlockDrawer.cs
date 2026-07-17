@@ -234,6 +234,98 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             }
         }
 
+        // ---- arbitrary node (graph side panel) -----------------------------
+
+        /// <summary>
+        /// Draws whatever block the canvas has selected, whatever its type — an effect group, a
+        /// dice-enchantment trigger, a chain phase, a reader.
+        /// </summary>
+        /// <remarks>
+        /// Effects keep the exact rendering the enemy tool has always had (Odin draws the whole
+        /// effect, plus the conditional reader picker). Everything else gets the generic treatment,
+        /// which is what makes an enchantment's <c>Cost</c> reader authorable at all — Odin hides
+        /// that picker, so without this the panel would show a slot no one can fill.
+        /// </remarks>
+        public static void DrawNode(PolymorphicAuthoringContext ctx, object value, string path, Options opts)
+        {
+            if (value == null) return;
+
+            if (value is EffectData group)
+            {
+                DrawEffectData(ctx, group, path, opts, 0);
+                return;
+            }
+
+            if (value is IEffect)
+            {
+                DrawBlockBody(ctx, value, path, opts, 0);
+                DrawReaderPickers(ctx, value, path);
+                return;
+            }
+
+            DrawGenericBody(ctx, value, path, opts, 0);
+        }
+
+        /// <summary>Odin draws the plain fields; we own every polymorphic slot and container.</summary>
+        static void DrawGenericBody(
+            PolymorphicAuthoringContext ctx, object value, string path, Options opts, int depth)
+        {
+            var type = value.GetType();
+            var pickers = PolymorphicMemberScanner.Scan(type);
+            var blocks = PolymorphicMemberScanner.BlockMembersOf(type);
+
+            if ((pickers.Count == 0 && blocks.Count == 0) || depth >= MAX_DEPTH)
+            {
+                ctx.Draw(path);
+                return;
+            }
+
+            var prop = ctx.At(path);
+            if (prop == null)
+            {
+                ctx.Draw(path);
+                return;
+            }
+
+            for (int i = 0; i < prop.Children.Count; i++)
+            {
+                var child = prop.Children[i];
+                if (IsBlockNamed(pickers, child.Name) || IsBlockNamed(blocks, child.Name)) continue;
+                child.Draw();
+            }
+
+            foreach (var picker in pickers)
+                DrawPickerMember(ctx, picker, value, path, opts, depth);
+
+            foreach (var block in blocks)
+                DrawBlockMember(ctx, block, value, path, opts, depth);
+        }
+
+        static void DrawPickerMember(
+            PolymorphicAuthoringContext ctx, PolymorphicMember member,
+            object owner, string ownerPath, Options opts, int depth)
+        {
+            string memberPath = ownerPath + "." + member.Name;
+            var raw = member.Field.GetValue(owner);
+
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField(member.Title, EditorStyles.miniBoldLabel);
+
+            if (!member.IsList)
+            {
+                var captured = member;
+                DrawSingleSlot(
+                    ctx, "Type", member.BaseType, raw, memberPath,
+                    v => captured.Field.SetValue(owner, v),
+                    "Change " + member.Title);
+                return;
+            }
+
+            if (!(raw is IList list)) return;
+            DrawPolymorphicListItems(ctx, list, memberPath, member.BaseType.Name);
+            DrawAddButton(ctx, member.BaseType.Name, member.BaseType, list);
+        }
+
         // ---- recursion into nested containers ------------------------------
 
         /// <summary>
