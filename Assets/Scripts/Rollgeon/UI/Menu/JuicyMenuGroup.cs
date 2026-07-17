@@ -30,12 +30,16 @@ namespace Rollgeon.UI.Menu
                  "En el main menu también va true: el delay del intro se maneja con Wait For Intro.")]
         private bool _playEntranceOnEnable = true;
 
-        [SerializeField, Optional, Tooltip("Si este GameObject (IntroAnimationController) está activo al " +
-                 "habilitarse el grupo, la entrada espera Intro Delay. El intro se auto-desactiva tras " +
-                 "correr, así que al volver al menú por push/pop el delay no aplica.")]
+        [SerializeField, Optional, Tooltip("Intro de la escena (IntroAnimationController). Con esto " +
+                 "cableado, la PRIMERA entrada tras cargar la escena espera Intro Delay; las " +
+                 "siguientes (volver por push/pop) entran sin delay.")]
         private GameObject _waitForIntro;
 
         [SerializeField] private float _introDelay = 1.2f;
+
+        // Instancia, no serializado: se resetea con cada carga de escena — que es
+        // exactamente cuando el intro vuelve a reproducirse.
+        private bool _introDelayConsumed;
 
         private JuicyMenuButton _current;
         private Image _leftDiamondImage;
@@ -70,7 +74,16 @@ namespace Rollgeon.UI.Menu
 
             if (_playEntranceOnEnable)
             {
-                float baseDelay = _waitForIntro != null && _waitForIntro.activeSelf ? _introDelay : 0f;
+                // No mirar activeSelf del intro: el orden de OnEnable tras la
+                // reactivación del ScreenHost no garantiza padre-antes-que-hijo,
+                // y el intro se auto-desactiva en su OnEnable — si corre antes
+                // que este, activeSelf ya es false y el delay se perdería.
+                float baseDelay = 0f;
+                if (!_introDelayConsumed)
+                {
+                    _introDelayConsumed = true;
+                    if (_waitForIntro != null) baseDelay = _introDelay;
+                }
                 PlayEntrance(baseDelay);
             }
         }
