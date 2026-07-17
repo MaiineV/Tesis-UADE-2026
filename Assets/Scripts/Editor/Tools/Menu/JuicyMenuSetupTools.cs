@@ -462,6 +462,10 @@ namespace Rollgeon.EditorTools.Menu
         {
             var go = button.gameObject;
 
+            // Un botón del stack juicy tiene que estar activo — el Settings de
+            // pausa venía desactivado de su época de stub y nunca se veía.
+            if (!go.activeSelf) go.SetActive(true);
+
             // Look texto-only del video: el fondo se vuelve invisible pero
             // sigue siendo el raycast target del hover/click.
             if (go.TryGetComponent<Image>(out var background))
