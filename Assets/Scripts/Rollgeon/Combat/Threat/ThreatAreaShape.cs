@@ -17,6 +17,13 @@ namespace Rollgeon.Combat.Threat
 
         /// <summary>Mitad de la sala donde está el jugador. Boss 3 — media sala.</summary>
         HalfRoom,
+
+        /// <summary>
+        /// Banda direccional que sale del propio boss hacia el jugador — Boss 1 (slash).
+        /// A diferencia de las shapes de arriba, el origen es la coordenada del boss, no la
+        /// del jugador. Ver <see cref="ThreatAreaShape.ComputeDirectionalBand"/>.
+        /// </summary>
+        DirectionalBand,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -87,6 +94,53 @@ namespace Rollgeon.Combat.Threat
 
             return result;
         }
+
+        /// <summary>
+        /// Banda direccional que sale de <paramref name="self"/> (el boss) hacia
+        /// <paramref name="player"/>: <paramref name="depth"/> pasos de profundidad en la
+        /// dirección cardinal dominante (<see cref="Cardinal.FromDelta"/>), cada uno una
+        /// banda perpendicular de <c>2·halfWidth+1</c> casillas centrada en el eje
+        /// perpendicular del boss. Arranca pegada al boss (paso 1), nunca incluye su propia
+        /// fila/columna en el eje de avance.
+        /// </summary>
+        public static HashSet<GridCoord> ComputeDirectionalBand(
+            IGridManager grid, GridCoord self, GridCoord player, int halfWidth, int depth)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            int hw = halfWidth < 0 ? 0 : halfWidth;
+            int d = depth < 1 ? 1 : depth;
+
+            var dir = CardinalExtensions.FromDelta(self, player);
+            var (stepX, stepY) = DirectionStep(dir);
+            bool advancesOnX = stepX != 0;
+
+            for (int step = 1; step <= d; step++)
+            {
+                int originX = self.X + stepX * step;
+                int originY = self.Y + stepY * step;
+
+                for (int off = -hw; off <= hw; off++)
+                {
+                    var c = advancesOnX
+                        ? new GridCoord(originX, originY + off)
+                        : new GridCoord(originX + off, originY);
+                    if (IsValidTile(grid, c)) result.Add(c);
+                }
+            }
+
+            return result;
+        }
+
+        private static (int dx, int dy) DirectionStep(Cardinal dir) => dir switch
+        {
+            Cardinal.North => (0, 1),
+            Cardinal.South => (0, -1),
+            Cardinal.East => (1, 0),
+            Cardinal.West => (-1, 0),
+            _ => (0, 1),
+        };
 
         // El "ancho" de la franja es impar-céntrico: width 1 ⇒ banda 0 (solo la línea),
         // width 2/3 ⇒ banda 1 (±1), etc. half = (width-1)/2.

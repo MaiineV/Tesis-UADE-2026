@@ -71,6 +71,15 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "Usalo como placeholder durante prototipado, o como pad de turno cuando un " +
                 "branch no debería actuar pero tampoco fallar.",
 
+            [typeof(AINode_TelegraphMark)] =
+                "Telegraph Mark: marca un área (sin dañar este turno) para que " +
+                "ExecuteTelegraph la detone el turno siguiente del enemigo.\n\n" +
+                "Shape=DirectionalBand: el área sale del propio enemigo (no del jugador) — " +
+                "banda perpendicular de 2·Size+1 casillas, centrada en su coordenada, " +
+                "extendida Depth casillas en la dirección cardinal dominante hacia el " +
+                "jugador. Las demás shapes (Square/Row/Column/HalfRoom) se centran en el " +
+                "jugador como siempre.",
+
             [typeof(AINode_Behavior)] =
                 "Behavior: ejecuta un EnemyActionBehavior — la unidad reusable de combate " +
                 "(ataque, heal, buff, etc.).\n\n" +
