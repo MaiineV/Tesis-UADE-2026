@@ -18,7 +18,7 @@ namespace Rollgeon.Entities.Visuals
     /// una barra de HP y un animator, pero no se requieren para FP.
     /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Entity Pawn")]
-    public sealed class EntityPawn : MonoBehaviour
+    public sealed class EntityPawn : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         // Offset Y aplicado a TODOS los pawns (hero + enemies) para que ninguno
         // clipée con el piso/grid. Antes solo el hero se elevaba — los enemigos

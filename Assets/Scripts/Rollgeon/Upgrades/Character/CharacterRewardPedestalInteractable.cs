@@ -22,7 +22,7 @@ namespace Rollgeon.Upgrades.Character
     /// (la elección es mutuamente exclusiva: 1 de 3).
     /// </remarks>
     [AddComponentMenu("Rollgeon/Upgrades/Character/Character Reward Pedestal")]
-    public sealed class CharacterRewardPedestalInteractable : MonoBehaviour
+    public sealed class CharacterRewardPedestalInteractable : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         private const string LogPrefix = "[CharacterRewardPedestal] ";
 

@@ -14,7 +14,7 @@ namespace Rollgeon.Dungeon
     /// El prop se disena con <c>InteractableComponent</c> (§7.7) en la foundation real.
     /// </para>
     /// </remarks>
-    public class FloorExitInteractable : MonoBehaviour
+    public class FloorExitInteractable : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         [Tooltip("Label mostrado al jugador. Se localiza downstream — literal en el FP.")]
         public string InteractLabel = "Avanzar al siguiente piso";
