@@ -35,8 +35,14 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         public Ease SpinEase = Ease.OutCubic;
 
+        [Tooltip("Mostrar números random en el label mientras el dado gira. Apagado, el label " +
+                 "queda vacío hasta el reveal: el ciclado de sprites del set ya comunica el " +
+                 "giro, y el número parpadeando encima compite con él.")]
+        public bool ShowPreviewFacesDuringSpin;
+
         [Tooltip("Cara máxima mostrada como preview durante el giro (d6 = 6). Si la " +
-                 "cara real supera esto, el rango se extiende hasta la cara real.")]
+                 "cara real supera esto, el rango se extiende hasta la cara real. " +
+                 "Sin efecto si ShowPreviewFacesDuringSpin está apagado.")]
         [Min(2)] public int PreviewFaceMax = 6;
 
         [Tooltip("Altura (px) del salto parabólico durante el giro — el dado 'rueda en " +

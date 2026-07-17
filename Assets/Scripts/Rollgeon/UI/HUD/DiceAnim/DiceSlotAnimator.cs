@@ -143,6 +143,12 @@ namespace Rollgeon.UI.HUD.DiceAnim
             // Con qué lateral arranca el ciclado. Se tira una vez por spin: dos dados que giran
             // juntos no van en fase, y el resto de la secuencia es determinista.
             int sideSeed = rng.Next(2);
+            bool showPreviewFaces = _settings.ShowPreviewFacesDuringSpin;
+            // El label arrastra la cara del roll anterior: hay que vaciarlo al arrancar, no en
+            // el primer tick, o el número viejo se queda quieto hasta entonces y se lee como
+            // resultado.
+            if (!showPreviewFaces) _view.ClearSpinPreview();
+
             int previewFace = 0;
             int nextTick = 1;
             float elapsed = 0f;
@@ -151,9 +157,14 @@ namespace Rollgeon.UI.HUD.DiceAnim
                 if (nextTick <= plan.TickCount && elapsed >= DiceAnimChoreographer.TickTime(
                         nextTick, plan.TickCount, plan.Duration, _settings.SpinDecelerationPower))
                 {
-                    previewFace = DiceAnimChoreographer.NextPreviewFace(rng, faceRange, previewFace);
-                    _view.SetSpinPreviewFace(previewFace);
+                    if (showPreviewFaces)
+                    {
+                        previewFace = DiceAnimChoreographer.NextPreviewFace(rng, faceRange, previewFace);
+                        _view.SetSpinPreviewFace(previewFace);
+                    }
                     _view.SetSpinRole(DiceAnimChoreographer.SpinRole(nextTick, sideSeed));
+                    // Sigue latiendo con el número apagado: el tick ahora también es el cambio
+                    // de sprite, y de él cuelga el SFX del ciclado.
                     PreviewTicked?.Invoke();
                     nextTick++;
                 }

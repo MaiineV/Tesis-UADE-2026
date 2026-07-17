@@ -18,6 +18,7 @@ MonoBehaviour:
   SpinStaggerSeconds: 0.05
   SpinTurns: 0
   SpinEase: 9
+  ShowPreviewFacesDuringSpin: 0
   PreviewFaceMax: 6
   SpinJumpHeight: 14
   RaiseOffsetY: 18

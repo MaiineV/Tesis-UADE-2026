@@ -200,6 +200,16 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
+        /// Vacía el label mientras el dado gira. Mismo contrato que
+        /// <see cref="SetSpinPreviewFace"/>: no toca <see cref="CurrentFace"/>, y el reveal
+        /// repinta el número vía <see cref="ShowFace"/>.
+        /// </summary>
+        public void ClearSpinPreview()
+        {
+            _diceLabel?.SetText(string.Empty);
+        }
+
+        /// <summary>
         /// Habilita/deshabilita el toggle de hold sin pisar el estado de bloqueo
         /// (un dado bloqueado por boss queda no-interactable aunque pidan true).
         /// Lo usa la animación de spin: un dado que todavía rueda no se puede holdear.
