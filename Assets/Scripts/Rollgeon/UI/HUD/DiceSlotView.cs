@@ -1,4 +1,6 @@
 using TMPro;
+using Rollgeon.Dice;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -16,7 +18,26 @@ namespace Rollgeon.UI.HUD
 
         [Title("Combat — Hold toggle")]
         [SerializeField, Optional] private Button _button;
-        [SerializeField, Optional] private Graphic _background;
+
+        [Tooltip("Cuerpo del dado: lleva la silueta del tipo y recibe los tints de hold/blocked.")]
+        [SerializeField, Optional] private Image _background;
+
+        [Title("Forma por tipo de dado")]
+        [SerializeField, Optional]
+        [Tooltip("Catálogo de siluetas. Si queda vacío se resuelve desde " +
+                 "Resources/Dice/DiceShapeCatalog.")]
+        private DiceShapeCatalogSO _shapeCatalog;
+
+        [SerializeField, Optional]
+        [Tooltip("Overlays que se recortan con la silueta del dado (glow, flash). Sin el sprite " +
+                 "quedan como cuadrados llenos sobre una forma que no lo es.")]
+        private Image[] _shapedOverlays;
+
+        [Title("Encantamiento")]
+        [SerializeField, Optional]
+        [Tooltip("Material del dado encantado (EnchantHoloUI). Compartido: la variación por " +
+                 "dado sale de la posición, no de instanciarlo.")]
+        private Material _enchantMaterial;
 
         [Title("Dice block")]
         [SerializeField, Optional]
@@ -30,6 +51,10 @@ namespace Rollgeon.UI.HUD
         private Color _defaultColor;
         private bool _blocked;
         private bool _held;
+
+        private DiceShapeCatalogSO _resolvedCatalog;
+        private bool _catalogResolved;
+        private EnchantmentSO _enchantment;
 
         private void Awake()
         {
@@ -47,6 +72,63 @@ namespace Rollgeon.UI.HUD
         {
             if (_diceLabel != null)
                 _diceLabel.text = diceTypeName;
+        }
+
+        /// <summary>Build selection — etiqueta y silueta del tipo de dado.</summary>
+        public void Bind(DiceType type)
+        {
+            Bind(type.ToString());
+            SetDiceType(type);
+        }
+
+        /// <summary>
+        /// Pinta la silueta del tipo de dado; el número TMP se dibuja encima. Sin catálogo o sin
+        /// entrada, el sprite queda en null y el <see cref="Image"/> dibuja el cuadrado de color
+        /// plano de siempre — por eso esto es seguro antes de que exista el arte.
+        /// </summary>
+        /// <remarks>
+        /// Los overlays llevan la misma silueta: el juice solo les anima el alfa, así que sin
+        /// sprite el glow y el flash se dibujarían como cuadrados sobre un dado que no lo es.
+        /// </remarks>
+        public void SetDiceType(DiceType type)
+        {
+            var catalog = ResolveCatalog();
+            var shape = catalog != null ? catalog.GetShape(type) : null;
+
+            if (_background != null) _background.sprite = shape;
+
+            if (_shapedOverlays == null) return;
+            for (int i = 0; i < _shapedOverlays.Length; i++)
+                if (_shapedOverlays[i] != null) _shapedOverlays[i].sprite = shape;
+        }
+
+        private DiceShapeCatalogSO ResolveCatalog()
+        {
+            if (_catalogResolved) return _resolvedCatalog;
+            _resolvedCatalog = DiceShapeCatalogSO.Resolve(_shapeCatalog);
+            _catalogResolved = true;
+            return _resolvedCatalog;
+        }
+
+        /// <summary>
+        /// Muestra el visual del dado encantado. <c>null</c> = sin encantamiento (vuelve al
+        /// material default de uGUI).
+        /// </summary>
+        /// <remarks>
+        /// Toma el <see cref="EnchantmentSO"/> y no un bool: hoy cuesta lo mismo, pero cuando
+        /// llegue un segundo efecto cambia solo el cuerpo del método, sin tocar call-sites.
+        /// El material es compartido — la variación por dado sale de la posición canvas-space
+        /// dentro del shader, así que no hay que instanciar nada (uGUI ni siquiera soporta
+        /// MaterialPropertyBlock).
+        /// </remarks>
+        public void SetEnchantVisual(EnchantmentSO enchantment)
+        {
+            // Idempotente: sin esto, escribir el material cada frame dispara SetMaterialDirty.
+            if (_enchantment == enchantment) return;
+            _enchantment = enchantment;
+
+            if (_background == null) return;
+            _background.material = enchantment != null ? _enchantMaterial : null;
         }
 
         /// <summary>Última cara mostrada (0 = sin tirada). Lo lee el presenter de

@@ -415,7 +415,7 @@ MonoBehaviour:
   m_text: 3
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -6320739639602577290, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5436,6 +5436,11 @@ MonoBehaviour:
   _diceLabel: {fileID: 8048459842649218551}
   _button: {fileID: 4987576075778544699}
   _background: {fileID: 4877394810810214232}
+  _shapeCatalog: {fileID: 0}
+  _shapedOverlays:
+  - {fileID: 3876111909684940474}
+  - {fileID: 7414547771296183912}
+  _enchantMaterial: {fileID: 2100000, guid: b27f14d3b08f66a478388b0247a5dea5, type: 2}
   _lockIcon: {fileID: 3187545307022097084}
   OnToggled:
     m_PersistentCalls:

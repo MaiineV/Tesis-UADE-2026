@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
 using Rollgeon.UI.HUD;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
@@ -820,6 +821,11 @@ namespace Rollgeon.Dice.Throw
             view.Rect.anchoredPosition = pos;
             view.ShowText("?");
 
+            // index es el índice de slot, que mapea 1:1 al del bag (lo mismo que asumen
+            // held[i] y blocks.IsBlocked(i) más arriba).
+            var types = ResolveBagTypes();
+            if (types != null && index < types.Count) view.SetDiceType(types[index]);
+
             return new DieVisual
             {
                 Index = index,
@@ -828,6 +834,14 @@ namespace Rollgeon.Dice.Throw
                 RestPos = pos,
                 SpotPos = pos,
             };
+        }
+
+        /// <summary>Tipos del bag, o null si la run todavía no lo inicializó.</summary>
+        private IReadOnlyList<DiceType> ResolveBagTypes()
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return null;
+            if (enchants == null || !enchants.IsReady) return null;
+            return enchants.Bag.Dice;
         }
 
         private void TweenBack(DieVisual die, Vector2 target)

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eb06a452616bb842a0a9b5ea1ae7df5, type: 3}
+  m_Name: DiceShapeCatalog
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.DiceShapeCatalogSO
+  Shapes:
+  - Type: 0
+    Shape: {fileID: 21300000, guid: da9866479b173644bb91a614a87c0de0, type: 3}
+  - Type: 1
+    Shape: {fileID: 21300000, guid: 71acff5900eb1ee47925e5819e79649c, type: 3}
+  - Type: 2
+    Shape: {fileID: 21300000, guid: 9acb5b9117de6b24b81cff10451336f6, type: 3}
+  - Type: 3
+    Shape: {fileID: 21300000, guid: e834299375b78ac4cad7104de1c5a2e8, type: 3}
+  - Type: 4
+    Shape: {fileID: 21300000, guid: 2273ca0e3ebb27649b4a3199655c257a, type: 3}
+  - Type: 5
+    Shape: {fileID: 21300000, guid: 8a6b6e0b3565a484ab9ac798bb5a6fd8, type: 3}
+  - Type: 6
+    Shape: {fileID: 21300000, guid: 68575526b7a0ea141b36f22e82c25b23, type: 3}
+  FallbackShape: {fileID: 0}

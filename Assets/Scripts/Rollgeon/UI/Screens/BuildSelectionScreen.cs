@@ -231,7 +231,7 @@ namespace Rollgeon.UI.Screens
             foreach (var dice in _currentBag)
             {
                 var slot = Instantiate(_diceSlotPrefab, _diceContainer);
-                slot.Bind(dice.ToString());
+                slot.Bind(dice);
             }
         }
 
