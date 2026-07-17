@@ -73,8 +73,10 @@ namespace Rollgeon.GameCamera
         private CameraConfigSO _configOverride;
 
         /// <summary>
-        /// Inicialización pública. Útil para tests y para bootstraps que quieran
-        /// wirear la cámara manualmente sin pasar por <see cref="Awake"/>.
+        /// Inicialización pública: deja la cámara operativa y la registra como
+        /// <see cref="ICameraService"/> en <see cref="ServiceScope.Global"/>. Útil para
+        /// tests y para bootstraps que quieran wirear la cámara manualmente sin pasar por
+        /// <see cref="Awake"/>. <see cref="OnDestroy"/> la desregistra.
         /// </summary>
         public void Initialize(CameraConfigSO config)
         {
@@ -100,17 +102,25 @@ namespace Rollgeon.GameCamera
             }
 
             RefreshWallOcclusion();
+
+            // Global, no Run: la cámara vive y muere con la SCENE, no con la run. En Run
+            // scope se desregistraba sola — Unity corre todos los Awake antes de cualquier
+            // Start, así que este registro quedaba hecho y acto seguido
+            // GameplayBootstrapper.Start → StartRun → ClearScope(Run) lo borraba, dejando la
+            // cámara viva pero irresoluble: sin SetFollowTarget y sin recenter al entrar a
+            // una sala. OnDestroy la desregistra al descargar la scene.
+            ServiceLocator.AddService<ICameraService>(this, ServiceScope.Global);
         }
 
         private void HandleRoomEntered(params object[] args) => RefreshWallOcclusion();
 
         /// <summary>
         /// Autowire para uso en la scene de gameplay: resuelve el
-        /// <see cref="CameraConfigSO"/> (override o desde <see cref="ServiceLocator"/>),
-        /// se inicializa y se registra como <see cref="ICameraService"/> en
-        /// <see cref="ServiceScope.Run"/> (§17.E — "registrado al despertar").
-        /// Tests y bootstraps manuales pueden llamar <see cref="Initialize"/>
-        /// primero — <c>Awake</c> detecta que ya hay config y no hace nada.
+        /// <see cref="CameraConfigSO"/> (override o desde <see cref="ServiceLocator"/>) y
+        /// delega en <see cref="Initialize"/>, que es quien registra el service
+        /// (§17.E — "registrado al despertar"). Tests y bootstraps manuales pueden llamar
+        /// <see cref="Initialize"/> primero — <c>Awake</c> detecta que ya hay config y no
+        /// hace nada.
         /// </summary>
         private void Awake()
         {
@@ -124,7 +134,6 @@ namespace Rollgeon.GameCamera
             if (config == null) return;  // inerte hasta que algo llame Initialize()
 
             Initialize(config);
-            ServiceLocator.AddService<ICameraService>(this, ServiceScope.Run);
         }
 
         private void OnEnable() => MMCameraShakeEvent.Register(OnFeelCameraShake);
