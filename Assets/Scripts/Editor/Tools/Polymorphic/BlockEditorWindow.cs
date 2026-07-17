@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Rollgeon.Editor.Tools.Polymorphic.Graph;
+using Rollgeon.Patterns.Catalogs;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -58,6 +59,15 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
         /// <summary>Optional per-asset warnings drawn above the graph.</summary>
         protected virtual void DrawIssues(T asset) { }
+
+        /// <summary>The asset's authored id. Drives the catalog check and the rename suggestion.</summary>
+        protected virtual string IdOf(T asset) => null;
+
+        /// <summary>
+        /// File name this asset should carry, derived from its id — e.g. <c>Item_PotionHealing</c>.
+        /// Null disables the rename button.
+        /// </summary>
+        protected virtual string SuggestedAssetName(T asset) => null;
 
         // ---- lifecycle -----------------------------------------------------
 
@@ -263,7 +273,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 {
                     PolymorphicBlockDrawer.DrawNode(
                         _ctx, _selected, string.Empty, PolymorphicBlockDrawer.Options.Default);
+                    DrawRenameButton();
                 }
+
+                EditorGUILayout.Space(4);
+                DrawCatalogButton();
 
                 if (_selectedNode.Children.Count > 0)
                 {
@@ -320,6 +334,95 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             _ctx.Tree?.Draw(false);
             EditorGUILayout.EndScrollView();
             _ctx.ApplyChanges();
+        }
+
+        // ---- root-node actions ----------------------------------------------
+
+        /// <summary>
+        /// Renames the asset file after its id. Without it every asset keeps the "_New" stem the
+        /// Create button gave it, and a folder of Item_New 1 / Item_New 2 is unnavigable.
+        /// </summary>
+        void DrawRenameButton()
+        {
+            string suggested = SuggestedAssetName(_selected);
+            if (string.IsNullOrEmpty(suggested)) return;
+            if (suggested == _selected.name) return;
+
+            EditorGUILayout.Space(4);
+            var prev = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.55f, 0.75f, 1f);
+            if (GUILayout.Button($"Rename asset  →  {suggested}", GUILayout.Height(22f)))
+                RenameAsset(suggested);
+            GUI.backgroundColor = prev;
+        }
+
+        void RenameAsset(string newName)
+        {
+            string path = AssetDatabase.GetAssetPath(_selected);
+            // Renaming is GUID-stable, so pools and catalogs keep pointing at it.
+            string error = AssetDatabase.RenameAsset(path, newName);
+            if (!string.IsNullOrEmpty(error))
+            {
+                EditorUtility.DisplayDialog("Rename failed", error, "OK");
+                return;
+            }
+            AssetDatabase.SaveAssets();
+            RefreshList();
+        }
+
+        /// <summary>
+        /// Registers the asset in whatever catalog lists its type. An unregistered asset is
+        /// invisible to everything that resolves by id — shops, effects, the dev console.
+        /// </summary>
+        void DrawCatalogButton()
+        {
+            var catalog = FindCatalog();
+            if (catalog == null) return;
+
+            string id = IdOf(_selected);
+            if (string.IsNullOrEmpty(id))
+            {
+                EditorGUILayout.HelpBox("Set an id before registering this in a catalog.", MessageType.Info);
+                return;
+            }
+
+            if (catalog.Contains(id))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField($"✓ Registered in {catalog.name}", EditorStyles.miniLabel);
+                    if (GUILayout.Button("Ping", GUILayout.Width(44f))) EditorGUIUtility.PingObject(catalog);
+                }
+                return;
+            }
+
+            var prev = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.55f, 0.95f, 0.6f);
+            if (GUILayout.Button($"Add to {catalog.name}", GUILayout.Height(24f)))
+            {
+                if (catalog.EditorAdd(_selected))
+                {
+                    AssetDatabase.SaveAssets();
+                    Debug.Log($"[{GetType().Name}] '{id}' registered in {catalog.name}.", catalog);
+                }
+            }
+            GUI.backgroundColor = prev;
+        }
+
+        /// <summary>
+        /// First catalog asset in the project whose entry type is <typeparamref name="T"/>. Found by
+        /// type rather than by a per-window override — one catalog per family is the convention, and
+        /// a hardcoded path would rot the moment someone moves the asset.
+        /// </summary>
+        BaseCatalogSO<T> FindCatalog()
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:" + nameof(BaseCatalogSO)))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (AssetDatabase.LoadAssetAtPath<BaseCatalogSO>(path) is BaseCatalogSO<T> typed)
+                    return typed;
+            }
+            return null;
         }
 
         // ---- CRUD -----------------------------------------------------------

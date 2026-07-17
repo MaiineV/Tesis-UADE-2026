@@ -30,6 +30,15 @@ namespace Rollgeon.Editor.Tools.Item
         protected override string SearchTextOf(ItemSO asset) =>
             asset == null ? null : $"{asset.name} {asset.DisplayName} {asset.ItemId}";
 
+        protected override string IdOf(ItemSO asset) => asset != null ? asset.ItemId : null;
+
+        /// <summary>`potion.healing` → `Item_PotionHealing`, matching the Item_* convention on disk.</summary>
+        protected override string SuggestedAssetName(ItemSO asset)
+        {
+            if (asset == null || string.IsNullOrEmpty(asset.ItemId)) return null;
+            return "Item_" + AssetNaming.PascalCaseId(asset.ItemId);
+        }
+
         protected override void DrawIssues(ItemSO asset)
         {
             if (asset == null) return;

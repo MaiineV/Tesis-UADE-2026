@@ -32,6 +32,24 @@ namespace Rollgeon.Editor.Tools.Enchantment
         protected override string SearchTextOf(EnchantmentSO asset) =>
             asset == null ? null : $"{asset.name} {asset.DisplayName} {asset.UpgradeId}";
 
+        protected override string IdOf(EnchantmentSO asset) => asset != null ? asset.UpgradeId : null;
+
+        /// <summary>
+        /// `ench.multiplo_de_3` → `Ench_MultiploDe3`. The `ench.` prefix is the channel, not part of
+        /// the name — every asset on disk already drops it.
+        /// </summary>
+        protected override string SuggestedAssetName(EnchantmentSO asset)
+        {
+            if (asset == null || string.IsNullOrEmpty(asset.UpgradeId)) return null;
+
+            string id = asset.UpgradeId;
+            const string prefix = "ench.";
+            if (id.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+                id = id.Substring(prefix.Length);
+
+            return "Ench_" + AssetNaming.PascalCaseId(id);
+        }
+
         protected override void DrawIssues(EnchantmentSO asset)
         {
             if (asset == null) return;
