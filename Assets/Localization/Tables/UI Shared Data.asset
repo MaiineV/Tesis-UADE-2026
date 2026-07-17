@@ -255,6 +255,18 @@ MonoBehaviour:
     m_Key: menu.analytics_consent_privacy
     m_Metadata:
       m_Items: []
+  - m_Id: 878601589063680
+    m_Key: menu.language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949760
+    m_Key: menu.reset_confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949761
+    m_Key: menu.back
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

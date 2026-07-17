@@ -54,6 +54,17 @@ namespace Rollgeon.UI.Menu
         /// <summary>Seteado por <see cref="JuicyMenuGroup"/> cuando otro botón tiene el foco.</summary>
         public void SetDimmed(bool dimmed) => _dimmed = dimmed;
 
+        private Color? _colorOverride;
+
+        /// <summary>
+        /// Fuerza el color del label (gana al ciclo pastel y al dim) — necesario
+        /// para estados como el "armado" de una confirmación destructiva, que de
+        /// otro modo el lerp de color por frame pisaría al instante.
+        /// </summary>
+        public void SetColorOverride(Color color) => _colorOverride = color;
+
+        public void ClearColorOverride() => _colorOverride = null;
+
         private bool _initialized;
 
         private void Awake() => EnsureInit();
@@ -107,6 +118,7 @@ namespace Rollgeon.UI.Menu
             _currentScale = 1f;
             _punchActive = false;
             _dimmed = false;
+            _colorOverride = null;
 
             bool wasHighlighted = Highlighted;
             _pointerOver = false;
@@ -175,6 +187,10 @@ namespace Rollgeon.UI.Menu
             {
                 // Deshabilitado se lee como dimmed permanente (Continue sin save).
                 target = _settings.DimColor;
+            }
+            else if (_colorOverride.HasValue)
+            {
+                target = _colorOverride.Value;
             }
             else if (Highlighted)
             {

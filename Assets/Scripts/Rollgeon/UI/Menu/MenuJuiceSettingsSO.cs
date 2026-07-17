@@ -48,6 +48,11 @@ namespace Rollgeon.UI.Menu
         public float ShakeDuration = 0.15f;
         public float PunchReturnSpeed = 12f;
 
+        [Header("Alerta (confirmaciones destructivas)")]
+        [Tooltip("Color del estado 'armado' de acciones destructivas (ej. Borrar partida). " +
+                 "Rojo desaturado que armoniza con la paleta del Figma.")]
+        public Color AlertColor = new Color32(0xC7, 0x5B, 0x4E, 0xFF);
+
         [Header("Rombos indicadores")]
         public float DiamondFollowSpeed = 12f;
         public float DiamondPulseFrequency = 6f;

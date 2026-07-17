@@ -24,7 +24,6 @@ namespace Rollgeon.UI.Tests
         private Button _playButton;
         private Button _continueButton;
         private Button _quitButton;
-        private Button _resetSaveButton;
         private InMemoryStore _store;
         private SaveSettingsSO _settings;
 
@@ -57,11 +56,9 @@ namespace Rollgeon.UI.Tests
             _playButton = AttachButton("PlayButton");
             _continueButton = AttachButton("ContinueButton");
             _quitButton = AttachButton("QuitButton");
-            _resetSaveButton = AttachButton("ResetSaveButton");
             AssignPrivate(_screen, "_playButton", _playButton);
             AssignPrivate(_screen, "_continueButton", _continueButton);
             AssignPrivate(_screen, "_quitButton", _quitButton);
-            AssignPrivate(_screen, "_resetSaveButton", _resetSaveButton);
         }
 
         [TearDown]
@@ -138,24 +135,25 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ResetSaveClicked_WithRunSave_DeletesRunSaveAndDisablesContinue()
+        public void OnGainFocus_AfterSaveDeleted_DisablesContinueButton()
         {
-            // Arrange: hay una run guardada → Continue arranca prendido.
+            // Arrange: hay una run guardada → Continue arranca prendido. El panel
+            // de opciones (overlay) puede borrar el save; al pop, el menú recupera
+            // foco sin re-enable y debe refrescar el Continue.
             _store.Files[_settings.GetSavePath()] = new byte[] { 1 };
             ActivateAndEnable();
             Assert.IsTrue(_continueButton.interactable,
                 "Precondición: con save presente el Continue debe estar prendido.");
 
-            // Act: "Borrar partida" (sin IMetaProgressionService registrado — el fix
-            // igual debe borrar la run en curso y loguea un warning inocuo).
-            _resetSaveButton.onClick.Invoke();
+            // Act: el save desaparece (lo borró el panel) y el menú recupera foco.
+            SaveSystem.DeleteSave();
+            typeof(MainMenuScreen)
+                .GetMethod("OnGainFocus", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(_screen, null);
 
-            // Assert: el save de run se borró y el Continue quedó apagado.
-            Assert.IsFalse(_store.Exists(_settings.GetSavePath()),
-                "Borrar partida debe eliminar el save file de la run en curso.");
-            Assert.IsFalse(SaveSystem.HasSave());
+            // Assert
             Assert.IsFalse(_continueButton.interactable,
-                "Tras borrar partida el Continue no debe poder reanudar la run eliminada.");
+                "Tras recuperar foco sin save, el Continue debe quedar apagado.");
         }
 
         // ---------------- helpers ----------------

@@ -6,7 +6,9 @@
         "Rollgeon.Steam",
         "Unity.Localization",
         "Unity.Localization.Editor",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Febucci.TextAnimatorForUnity.Runtime",
+        "Febucci.TextAnimatorForUnity.TMP.Runtime"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,5 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
+using Febucci.TextAnimatorForUnity.TextMeshPro;
+using Rollgeon.EditorTools.Localization;
+using Rollgeon.Localization;
 using Rollgeon.UI.Menu;
 using Rollgeon.UI.Screens;
 using TMPro;
@@ -29,15 +31,18 @@ namespace Rollgeon.EditorTools.Menu
         private static readonly Color AccentColor = new Color32(0xE0, 0xC0, 0xA9, 0xFF);
         private static readonly Color PausePanelColor = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.85f);
 
-        // Stack vertical centrado alrededor de la banda que ocupaban los 4
-        // botones originales (68 .. -232).
-        private static readonly float[] StackY = { 118f, 18f, -82f, -182f, -282f };
+        // Stack vertical más compacto y por debajo del arte del título
+        // (que ocupa y≈175..400): top edge en 67.5, sin superposición.
+        private static readonly float[] StackY = { 30f, -45f, -120f, -195f, -270f };
         private static readonly Vector2 ButtonSize = new Vector2(300f, 75f);
 
         [MenuItem("Rollgeon/Juicy Menu/Setup All")]
         public static void SetupAll()
         {
+            // El panel (4) reparenta los botones secundarios ANTES de que
+            // WireIntro (en 2) vacíe _buttonsToFadeIn — así converge en una pasada.
             CreateAssets();
+            SetupOptionsPanel();
             SetupMainMenuScene();
             SetupPausePrefab();
         }
@@ -135,7 +140,7 @@ namespace Rollgeon.EditorTools.Menu
             var juicyButtons = stack.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
             var group = EnsureGroup(screen.gameObject, juicyButtons, settings);
 
-            WireIntro(screen.gameObject, group, stack);
+            WireIntro(screen.gameObject, group);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -190,6 +195,232 @@ namespace Rollgeon.EditorTools.Menu
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        [MenuItem("Rollgeon/Juicy Menu/4 - Setup Options Panel")]
+        public static void SetupOptionsPanel()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<MenuJuiceSettingsSO>(SettingsPath);
+            var outlineMat = AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath);
+            if (settings == null || outlineMat == null)
+            {
+                Debug.LogError("[JuicyMenuSetup] Correr primero '1 - Create Assets'.");
+                return;
+            }
+
+            LocalizationSetupTools.UpsertEntry("UI", "menu.language", "Idioma", "Language");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.reset_confirm", "¿Seguro?", "Are you sure?");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.back", "Volver", "Back");
+            AssetDatabase.SaveAssets();
+
+            var scene = EditorSceneManager.GetActiveScene().path == MainMenuScenePath
+                ? EditorSceneManager.GetActiveScene()
+                : EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
+
+            var screen = scene.GetRootGameObjects()
+                .Select(root => root.GetComponentInChildren<MainMenuScreen>(true))
+                .FirstOrDefault(s => s != null);
+            if (screen == null)
+            {
+                Debug.LogError("[JuicyMenuSetup] MainMenuScreen no encontrado en la escena.");
+                return;
+            }
+
+            var canvas = (RectTransform)screen.transform.parent;
+
+            // -- Root del overlay (inactivo: lo activa el ScreenHost al pushearlo) --
+            var optionsRect = FindChild(canvas, "OptionsScreen");
+            if (optionsRect == null)
+            {
+                var go = new GameObject("OptionsScreen", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+                optionsRect = (RectTransform)go.transform;
+                optionsRect.SetParent(canvas, worldPositionStays: false);
+            }
+            Stretch(optionsRect);
+            var scrim = optionsRect.GetComponent<Image>();
+            scrim.color = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.72f);
+            scrim.raycastTarget = true;
+            var optionsGo = optionsRect.gameObject;
+
+            // -- Panel --
+            var panel = FindChild(optionsRect, "Panel");
+            if (panel == null)
+            {
+                var go = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(Outline));
+                panel = (RectTransform)go.transform;
+                panel.SetParent(optionsRect, worldPositionStays: false);
+            }
+            panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
+            panel.pivot = new Vector2(0.5f, 0.5f);
+            panel.anchoredPosition = Vector2.zero;
+            panel.sizeDelta = new Vector2(560f, 640f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.95f);
+            var panelOutline = panel.GetComponent<Outline>();
+            panelOutline.effectColor = OutlineColor;
+            panelOutline.effectDistance = new Vector2(3f, -3f);
+
+            // -- Título (Text Animator para el <wave> del texto code-set) --
+            var title = EnsureTmpLabel(panel, "TitleLabel", "Opciones", 54f, new Vector2(0f, 250f),
+                new Vector2(500f, 70f), outlineMat, new Color32(0xE7, 0xE3, 0xE2, 0xFF));
+            if (title.GetComponent<TextAnimator_TMP>() == null)
+                title.gameObject.AddComponent<TextAnimator_TMP>();
+
+            var divider = FindChild(panel, "TitleDivider");
+            if (divider == null)
+            {
+                var go = new GameObject("TitleDivider", typeof(RectTransform), typeof(Image));
+                divider = (RectTransform)go.transform;
+                divider.SetParent(panel, worldPositionStays: false);
+            }
+            divider.anchorMin = divider.anchorMax = new Vector2(0.5f, 0.5f);
+            divider.pivot = new Vector2(0.5f, 0.5f);
+            divider.anchoredPosition = new Vector2(0f, 210f);
+            divider.sizeDelta = new Vector2(300f, 3f);
+            var dividerImage = divider.GetComponent<Image>();
+            dividerImage.color = AccentColor;
+            dividerImage.raycastTarget = false;
+
+            // -- Reparentar los ex-botones de debug del menú --
+            var tutorialToggle = FindAnywhere(canvas, "TutorialToggleButton");
+            var analyticsToggle = FindAnywhere(canvas, "AnalyticsToggleButton");
+            var spanish = FindAnywhere(canvas, "SpanishButton");
+            var english = FindAnywhere(canvas, "EnglishButton");
+            var deleteSave = FindAnywhere(canvas, "DeleteProgressButton");
+            if (tutorialToggle == null || analyticsToggle == null || spanish == null
+                || english == null || deleteSave == null)
+            {
+                Debug.LogError("[JuicyMenuSetup] Falta alguno de los botones secundarios en la escena.");
+                return;
+            }
+
+            Place(tutorialToggle, panel, new Vector2(0f, 150f), new Vector2(300f, 70f));
+            Place(analyticsToggle, panel, new Vector2(0f, 70f), new Vector2(300f, 70f));
+            Place(spanish, panel, new Vector2(-90f, -60f), new Vector2(150f, 60f));
+            Place(english, panel, new Vector2(90f, -60f), new Vector2(150f, 60f));
+            Place(deleteSave, panel, new Vector2(0f, -160f), new Vector2(300f, 70f));
+
+            var languageLabel = EnsureTmpLabel(panel, "LanguageLabel", "Idioma", 30f, new Vector2(0f, 0f),
+                new Vector2(300f, 40f), outlineMat, new Color32(0x5F, 0x73, 0x7A, 0xFF));
+
+            // -- Botón Volver (clon del delete para heredar estructura/label) --
+            var back = FindChild(panel, "BackButton");
+            if (back == null)
+            {
+                var go = Object.Instantiate(deleteSave.gameObject, panel);
+                go.name = "BackButton";
+                back = (RectTransform)go.transform;
+                var backLocalize = go.GetComponentInChildren<LocalizeStringEvent>(true);
+                if (backLocalize != null) backLocalize.StringReference.SetReference("UI", "menu.back");
+                var backText = go.GetComponentInChildren<TMP_Text>(true);
+                if (backText != null) backText.text = "Volver";
+            }
+            Place(back, panel, new Vector2(0f, -240f), new Vector2(300f, 70f));
+
+            // -- Juice: mismos efectos que el stack del menú, stagger en cada apertura --
+            var buttons = new[] { tutorialToggle, analyticsToggle, spanish, english, deleteSave, back }
+                .Select(rect => rect.GetComponent<Button>()).ToArray();
+            var juicyButtons = buttons.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
+            EnsureGroup(optionsGo, juicyButtons, settings);
+
+            // -- LanguageSelector se muda del MainMenuScreen al panel --
+            if (screen.TryGetComponent<LanguageSelector>(out var oldSelector))
+                Object.DestroyImmediate(oldSelector);
+            if (!optionsGo.TryGetComponent<LanguageSelector>(out var selector))
+                selector = optionsGo.AddComponent<LanguageSelector>();
+            var selectorSo = new SerializedObject(selector);
+            selectorSo.FindProperty("_spanishButton").objectReferenceValue = spanish.GetComponent<Button>();
+            selectorSo.FindProperty("_englishButton").objectReferenceValue = english.GetComponent<Button>();
+            selectorSo.ApplyModifiedProperties();
+
+            // -- OptionsScreen component + wiring --
+            if (!optionsGo.TryGetComponent<OptionsScreen>(out var options))
+                options = optionsGo.AddComponent<OptionsScreen>();
+            var so = new SerializedObject(options);
+            so.FindProperty("_titleLabel").objectReferenceValue = title;
+            so.FindProperty("_panel").objectReferenceValue = panel;
+            so.FindProperty("_rootCanvasGroup").objectReferenceValue = optionsGo.GetComponent<CanvasGroup>();
+            so.FindProperty("_tutorialToggleButton").objectReferenceValue = tutorialToggle.GetComponent<Button>();
+            so.FindProperty("_tutorialToggleLabel").objectReferenceValue = tutorialToggle.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_analyticsToggleButton").objectReferenceValue = analyticsToggle.GetComponent<Button>();
+            so.FindProperty("_analyticsToggleLabel").objectReferenceValue = analyticsToggle.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_languageLabel").objectReferenceValue = languageLabel;
+            so.FindProperty("_resetSaveButton").objectReferenceValue = deleteSave.GetComponent<Button>();
+            so.FindProperty("_resetSaveLabel").objectReferenceValue = deleteSave.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_resetSaveJuice").objectReferenceValue = deleteSave.GetComponent<JuicyMenuButton>();
+            so.FindProperty("_backButton").objectReferenceValue = back.GetComponent<Button>();
+            so.FindProperty("_backLabel").objectReferenceValue = back.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_settings").objectReferenceValue = settings;
+            so.ApplyModifiedProperties();
+
+            // El overlay arranca desactivado; ScreenHost lo registra igual
+            // (_includeInactive) y PushOverlay lo activa.
+            optionsGo.SetActive(false);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[JuicyMenuSetup] Panel de opciones cableado (6 botones + grupo + título animado).");
+        }
+
+        private static RectTransform FindChild(Transform parent, string name)
+        {
+            return parent.Find(name) as RectTransform;
+        }
+
+        private static RectTransform FindAnywhere(Transform root, string name)
+        {
+            return root.GetComponentsInChildren<Transform>(includeInactive: true)
+                .FirstOrDefault(t => t.name == name) as RectTransform;
+        }
+
+        private static void Stretch(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+        }
+
+        private static void Place(RectTransform rect, RectTransform parent, Vector2 position, Vector2 size)
+        {
+            if (rect.parent != parent) rect.SetParent(parent, worldPositionStays: false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            if (rect.TryGetComponent<CanvasGroup>(out var cg)) cg.alpha = 1f;
+        }
+
+        private static TMP_Text EnsureTmpLabel(RectTransform parent, string name, string fallbackText,
+            float fontSize, Vector2 position, Vector2 size, Material outlineMat, Color color)
+        {
+            var rect = FindChild(parent, name);
+            if (rect == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+                rect = (RectTransform)go.transform;
+                rect.SetParent(parent, worldPositionStays: false);
+            }
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            var tmp = rect.GetComponent<TMP_Text>();
+            tmp.text = fallbackText;
+            tmp.fontSize = fontSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = color;
+
+            // La fuente va antes que el material: el preset de outline pertenece
+            // al atlas de m6x11plus, no al default de TMP.
+            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+            if (font != null) tmp.font = font;
+            tmp.fontSharedMaterial = outlineMat;
+            tmp.raycastTarget = false;
+            EditorUtility.SetDirty(tmp);
+            return tmp;
         }
 
         private static Button CreateOptionsButton(Button template)
@@ -299,7 +530,7 @@ namespace Rollgeon.EditorTools.Menu
             return existing;
         }
 
-        private static void WireIntro(GameObject screenGo, JuicyMenuGroup group, Button[] primaryButtons)
+        private static void WireIntro(GameObject screenGo, JuicyMenuGroup group)
         {
             var intro = screenGo.GetComponentInChildren<MainMenuIntroAnimation>(true);
             if (intro == null)
@@ -313,23 +544,24 @@ namespace Rollgeon.EditorTools.Menu
 
             // La entrada staggered reemplaza el fade sincronizado de los
             // primarios; los CanvasGroups de botones secundarios quedan.
-            var primaryGos = new HashSet<GameObject>(primaryButtons.Select(b => b.gameObject));
-            var fadeArray = introSo.FindProperty("_buttonsToFadeIn");
-            for (int i = fadeArray.arraySize - 1; i >= 0; i--)
-            {
-                var element = fadeArray.GetArrayElementAtIndex(i);
-                var cg = element.objectReferenceValue as CanvasGroup;
-                if (cg == null || !primaryGos.Contains(cg.gameObject)) continue;
-                element.objectReferenceValue = null;
-                fadeArray.DeleteArrayElementAtIndex(i);
-            }
+            // Los primarios entran con el stagger del grupo y los secundarios
+            // viven ahora dentro del panel de opciones: el fade del intro no
+            // aplica a ninguno.
+            introSo.FindProperty("_buttonsToFadeIn").arraySize = 0;
 
-            float fadeDelay = introSo.FindProperty("_buttonsFadeDelay").floatValue;
+            // La entrada arranca recién cuando el intro terminó de asentarse
+            // (título push y fade son los últimos beats) — recalculado desde los
+            // valores serializados para resistir retunes del intro.
+            float settle = Mathf.Max(
+                introSo.FindProperty("_tituloPushDelay").floatValue
+                    + introSo.FindProperty("_tituloPushDuration").floatValue,
+                introSo.FindProperty("_buttonsFadeDelay").floatValue
+                    + introSo.FindProperty("_buttonsFadeDuration").floatValue);
             introSo.ApplyModifiedProperties();
 
             var groupSo = new SerializedObject(group);
             groupSo.FindProperty("_waitForIntro").objectReferenceValue = intro.gameObject;
-            groupSo.FindProperty("_introDelay").floatValue = fadeDelay;
+            groupSo.FindProperty("_introDelay").floatValue = settle + 0.1f;
             groupSo.FindProperty("_playEntranceOnEnable").boolValue = true;
             groupSo.ApplyModifiedProperties();
         }

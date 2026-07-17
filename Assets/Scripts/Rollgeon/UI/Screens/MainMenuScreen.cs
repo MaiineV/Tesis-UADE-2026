@@ -51,36 +51,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _optionsButton;
 
-        [Tooltip("Boton 'Borrar partida' (#164). Resetea la meta-progresion al estado inicial " +
-                 "(borra el save y los pools se actualizan al instante) y elimina la run en curso " +
-                 "guardada, apagando el Continue. Opcional.")]
-        [SerializeField]
-        private Button _resetSaveButton;
-
-        [Tooltip("Boton 'Tutorial'. Relanza el tutorial a demanda. Opcional — el tutorial " +
-                 "igual arranca solo en la primera run (meta save sin TutorialCompleted).")]
-        [SerializeField]
-        private Button _tutorialButton;
-
-        [Tooltip("Boton toggle 'Tutorial: ON/OFF'. Prende/apaga el auto-launch del tutorial " +
-                 "(persiste en el save de meta-progresión). Opcional.")]
-        [SerializeField]
-        private Button _tutorialToggleButton;
-
-        [Tooltip("Label del boton toggle — se actualiza a 'Tutorial: ON' / 'Tutorial: OFF'.")]
-        [SerializeField]
-        private TMP_Text _tutorialToggleLabel;
-
-        [Tooltip("Boton toggle 'Telemetría: ON/OFF' (Feature#0029). Prende/apaga el envío de " +
-                 "datos anónimos de gameplay. Persiste en PlayerPrefs — a diferencia del toggle " +
-                 "de tutorial, sobrevive al 'Borrar partida'. Opcional.")]
-        [SerializeField]
-        private Button _analyticsToggleButton;
-
-        [Tooltip("Label del boton toggle de telemetría — 'Telemetría: ON' / 'Telemetría: OFF'.")]
-        [SerializeField]
-        private TMP_Text _analyticsToggleLabel;
-
         /// <inheritdoc/>
         public override string ScreenStringId => "MainMenu";
 
@@ -121,28 +91,6 @@ namespace Rollgeon.UI.Screens
                 _optionsButton.onClick.AddListener(OnOptionsClicked);
             }
 
-            if (_resetSaveButton != null)
-            {
-                _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
-            }
-
-            if (_tutorialButton != null)
-            {
-                _tutorialButton.onClick.AddListener(OnTutorialClicked);
-            }
-
-            if (_tutorialToggleButton != null)
-            {
-                _tutorialToggleButton.onClick.AddListener(OnTutorialToggleClicked);
-                RefreshTutorialToggleLabel();
-            }
-
-            if (_analyticsToggleButton != null)
-            {
-                _analyticsToggleButton.onClick.AddListener(OnAnalyticsToggleClicked);
-                RefreshAnalyticsToggleLabel();
-            }
-
             ConsumePostTutorialRouting();
             TryShowAnalyticsConsent();
         }
@@ -154,10 +102,6 @@ namespace Rollgeon.UI.Screens
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
             if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
             if (_optionsButton != null) _optionsButton.onClick.RemoveListener(OnOptionsClicked);
-            if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
-            if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
-            if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
-            if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.RemoveListener(OnAnalyticsToggleClicked);
         }
 
         /// <summary>
@@ -281,74 +225,6 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Handler del boton "Tutorial". Relanza el tutorial a demanda (aunque ya
-        /// esté completado).
-        /// </summary>
-        private void OnTutorialClicked()
-        {
-            Debug.Log(LogPrefix + "Tutorial clicked.", this);
-            Rollgeon.Tutorial.TutorialLauncher.Launch();
-        }
-
-        /// <summary>
-        /// Handler del boton toggle. Invierte <see cref="IMetaProgressionService.IsTutorialEnabled"/>
-        /// y persiste — gatea tanto el auto-launch de la primera run como el boton "Tutorial".
-        /// </summary>
-        private void OnTutorialToggleClicked()
-        {
-            if (!ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) || meta == null)
-            {
-                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — no se puede togglear el tutorial.", this);
-                return;
-            }
-
-            meta.SetTutorialEnabled(!meta.IsTutorialEnabled);
-            RefreshTutorialToggleLabel();
-        }
-
-        private void RefreshTutorialToggleLabel()
-        {
-            if (_tutorialToggleLabel == null) return;
-
-            bool enabled = !ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) || meta == null || meta.IsTutorialEnabled;
-            _tutorialToggleLabel.text = enabled
-                ? Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_on", "Tutorial: ON")
-                : Rollgeon.Localization.LocalizedContent.Ui("menu.tutorial_off", "Tutorial: OFF");
-        }
-
-        // ================================================================
-        // Telemetría (Feature#0029)
-        // ================================================================
-
-        /// <summary>
-        /// Handler del toggle de telemetría. Invierte el consentimiento vía
-        /// <see cref="Rollgeon.Analytics.IAnalyticsConsentService"/> (persiste en
-        /// PlayerPrefs y se aplica al SDK si ya inicializó).
-        /// </summary>
-        private void OnAnalyticsToggleClicked()
-        {
-            if (!ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent) || consent == null)
-            {
-                Debug.LogWarning(LogPrefix + "IAnalyticsConsentService no esta registrado — no se puede togglear la telemetría.", this);
-                return;
-            }
-
-            consent.SetConsent(!consent.IsGranted);
-            RefreshAnalyticsToggleLabel();
-        }
-
-        private void RefreshAnalyticsToggleLabel()
-        {
-            if (_analyticsToggleLabel == null) return;
-
-            bool granted = ServiceLocator.TryGetService<Rollgeon.Analytics.IAnalyticsConsentService>(out var consent)
-                           && consent != null && consent.IsGranted;
-            _analyticsToggleLabel.text = granted
-                ? Rollgeon.Localization.LocalizedContent.Ui("menu.analytics_on", "Telemetría: ON")
-                : Rollgeon.Localization.LocalizedContent.Ui("menu.analytics_off", "Telemetría: OFF");
-        }
-
-        /// <summary>
         /// Primera ejecución sin decisión de consentimiento → abre el popup
         /// opt-in (GDPR). Diferido un frame para que el ScreenHost termine de
         /// registrar screens (mismo patrón que <see cref="ConsumePostTutorialRouting"/>).
@@ -378,12 +254,13 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// El popup de consentimiento (overlay no-destructivo) se cierra con pop —
-        /// el menú recupera foco sin re-enable, así que el toggle se refresca acá.
+        /// Los overlays (consentimiento, opciones) se cierran con pop — el menú
+        /// recupera foco sin re-enable. El panel de opciones puede haber borrado
+        /// el save, así que el Continue se refresca acá.
         /// </summary>
         protected override void OnGainFocus()
         {
-            RefreshAnalyticsToggleLabel();
+            RefreshContinueButton();
         }
 
         /// <summary>
@@ -424,37 +301,20 @@ namespace Rollgeon.UI.Screens
             screens.PushByStringId("UnlocksScreen");
         }
 
+        /// <summary>
+        /// Abre el panel de opciones como overlay no-destructivo (el menú queda
+        /// vivo detrás; al pop, <see cref="OnGainFocus"/> refresca el Continue).
+        /// </summary>
         private void OnOptionsClicked()
         {
-            Debug.Log(LogPrefix + "Options pressed (stub — pending settings screen).");
-        }
-
-        /// <summary>
-        /// Handler del boton "Borrar partida" (#164). Borra TODO el progreso:
-        /// (1) resetea la meta-progresión al estado inicial (Guerrero + D3/D4/D6),
-        /// y (2) elimina la run en curso guardada (<c>run.*</c> save file + cache) y
-        /// apaga el Continue. Sin este paso 2 el botón Continue seguiría reanudando
-        /// una partida que el usuario acaba de borrar (los dos saves son independientes:
-        /// meta-progresión vs run).
-        /// </summary>
-        private void OnResetSaveClicked()
-        {
-            if (ServiceLocator.TryGetService<Rollgeon.Meta.IMetaProgressionService>(out var meta) && meta != null)
+            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
             {
-                meta.ResetProgression();
+                screens.PushOverlay<OptionsScreen>();
             }
             else
             {
-                Debug.LogWarning(LogPrefix + "IMetaProgressionService no esta registrado — " +
-                                 "se borra solo la run en curso, no la meta-progresion.", this);
+                Debug.LogWarning(LogPrefix + "IScreenManager no esta registrado — no se puede abrir opciones.", this);
             }
-
-            // La run en curso vive en un save aparte (SaveSystem, run.* keys); borrarlo y
-            // refrescar apaga el Continue para no reanudar una partida ya eliminada.
-            SaveSystem.DeleteSave();
-            RefreshContinueButton();
-
-            Debug.Log(LogPrefix + "Partida borrada — meta-progresion en estado inicial y run en curso eliminada.", this);
         }
 
         /// <summary>
