@@ -8016,7 +8016,7 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 10caaefb5bd514845b3a841d2dbeda59, type: 2}
   _playEntranceOnEnable: 1
   _waitForIntro: {fileID: 636127787}
-  _introDelay: 8
+  _introDelay: 14
 --- !u!1 &1202641559
 GameObject:
   m_ObjectHideFlags: 0
