@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8cb027e747995444481a314d46f5b69c
+guid: 9b81d3927284aa04bae3d87f29c6c9ed
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -34,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -97,23 +97,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Move-pink_0
+      name: icon_sword_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 196
-        height: 280
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b624d377796c3bb46b4570a8c693e65c
-      internalID: -91134534
+      spriteID: 62d3cfc85c9804d47ba8c02e9eb6617a
+      internalID: 1919451345
       vertices: []
       indices: 
       edges: []
@@ -122,7 +122,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 9a7799db733a68c419583a6c1c3bacb4
+    spriteID: a88770bc53a3fcc47aa15353dd7ae8ce
     internalID: 0
     vertices: []
     indices: 
@@ -130,9 +130,11 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Move-pink_0: -91134534
+      icon_sword_0: 1919451345
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

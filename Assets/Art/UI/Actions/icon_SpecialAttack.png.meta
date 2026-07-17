@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 3128ac4cc3aaa8448bc7fee9872fc6bc
+guid: 0ef754dbc267d274ea3607c4cb36582f
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -34,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -97,13 +97,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Attack-red_0
+      name: icon_SpecialAttack_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1577
-        height: 1577
+        width: 16
+        height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -112,8 +112,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e2f5aee65f04e464882a5be086c2b09e
-      internalID: -1395844373
+      spriteID: d09a2cba474cc4c429823a02b153b675
+      internalID: -42257612
       vertices: []
       indices: 
       edges: []
@@ -122,7 +122,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 79689118226451843a54412aae8ef4ee
+    spriteID: a2044920dd922dd47a8c3750a228efd4
     internalID: 0
     vertices: []
     indices: 
@@ -132,7 +132,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Attack-red_0: -1395844373
+      icon_SpecialAttack_0: -42257612
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
