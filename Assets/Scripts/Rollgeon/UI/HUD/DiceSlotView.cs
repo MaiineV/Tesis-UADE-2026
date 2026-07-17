@@ -51,6 +51,9 @@ namespace Rollgeon.UI.HUD
         private Color _defaultColor;
         private bool _blocked;
         private bool _held;
+        private bool _hovered;
+        private DiceType _type;
+        private DiceShapeRole? _spinRole;
 
         private DiceShapeCatalogSO _resolvedCatalog;
         private bool _catalogResolved;
@@ -82,19 +85,63 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// Pinta la silueta del tipo de dado; el número TMP se dibuja encima. Sin catálogo o sin
-        /// entrada, el sprite queda en null y el <see cref="Image"/> dibuja el cuadrado de color
-        /// plano de siempre — por eso esto es seguro antes de que exista el arte.
+        /// Fija el tipo de dado del slot y repinta. Sin catálogo o sin entrada, el sprite queda
+        /// en null y el <see cref="Image"/> dibuja el cuadrado de color plano de siempre — por
+        /// eso esto es seguro antes de que exista el arte.
+        /// </summary>
+        /// <remarks>
+        /// NO fuerza el frontal: <c>DiceZoneView.RefreshDiceShapes</c> repasa los CINCO slots en
+        /// cada roll, incluidos los holdeados, así que forzarlo acá le borraría el visual de
+        /// hold al dado apartado en cada reroll.
+        /// </remarks>
+        public void SetDiceType(DiceType type)
+        {
+            _type = type;
+            RefreshShape();
+        }
+
+        /// <summary>Puntero encima del dado. Lo llama <see cref="DiceSlotHoverJuice"/>.</summary>
+        /// <remarks>
+        /// El estado de hover no se detecta acá aunque el sprite sea de este componente: el
+        /// gate correcto (dado interactable ⇒ ni girando ni bloqueado) y el reset al
+        /// desactivarse ya viven en <see cref="DiceSlotHoverJuice"/>. Dos máquinas de hover
+        /// sobre el mismo GameObject divergirían.
+        /// </remarks>
+        public void SetHovered(bool hovered)
+        {
+            if (_hovered == hovered) return;
+            _hovered = hovered;
+            RefreshShape();
+        }
+
+        /// <summary>
+        /// Rol impuesto por el ciclado del giro, o <c>null</c> para volver al rol de reposo.
+        /// Lo llama <c>DiceSlotAnimator</c>.
+        /// </summary>
+        public void SetSpinRole(DiceShapeRole? role)
+        {
+            if (_spinRole == role) return;
+            _spinRole = role;
+            RefreshShape();
+        }
+
+        /// <summary>
+        /// El ÚNICO escritor de <c>sprite</c> del slot: resuelve el rol contra el estado
+        /// completo y lo pinta. Todos los mutadores pasan por acá.
         /// </summary>
         /// <remarks>
         /// Los overlays llevan la misma silueta: el juice solo les anima el alfa, así que sin
         /// sprite el glow y el flash se dibujarían como cuadrados sobre un dado que no lo es.
         /// </remarks>
-        public void SetDiceType(DiceType type)
+        private void RefreshShape()
         {
             var catalog = ResolveCatalog();
-            var shape = catalog != null ? catalog.GetShape(type) : null;
+            var role = DiceShapeRoleResolver.Resolve(_blocked, _held, _hovered, _spinRole);
+            // Sin catálogo el sprite queda en null a propósito: Image degrada al cuadrado de
+            // color plano de siempre, que es lo que hace esto seguro antes de que exista el arte.
+            var shape = catalog != null ? catalog.GetShape(_type, role) : null;
 
+            // El setter de Image.sprite early-outea si no cambió: repintar de más sale gratis.
             if (_background != null) _background.sprite = shape;
 
             if (_shapedOverlays == null) return;
@@ -162,18 +209,22 @@ namespace Rollgeon.UI.HUD
             if (_button != null) _button.interactable = interactable && !_blocked;
         }
 
-        /// <summary>Combat — toggle held visual (blue tint). Sin efecto si el dado está bloqueado.</summary>
+        /// <summary>Combat — toggle held visual. Sin efecto si el dado está bloqueado.</summary>
+        /// <remarks>
+        /// El visual de holdeado es el sprite <see cref="DiceShapeRole.Selected"/> del set: el
+        /// tint azul que había acá antes lo pisaba y, encima, el ColorTint del Button ya lo
+        /// multiplicaba por su cuenta. El glow pulsante de <see cref="DiceSlotJuice"/> sigue
+        /// acompañando.
+        /// </remarks>
         public void SetHeld(bool held)
         {
             _held = held;
-            if (_blocked) return; // El estado bloqueado pisa el tint de hold.
-            if (_background == null) return;
-            _background.color = held ? new Color(0.4f, 0.8f, 1f, 1f) : _defaultColor;
+            RefreshShape();
         }
 
         /// <summary>
         /// Boss 1 (§2) — marca el dado como bloqueado: grayed-out + ícono de candado, y desactiva
-        /// el botón de hold. Al desbloquear, restaura el botón y el tint según el estado de hold.
+        /// el botón de hold. Al desbloquear, restaura el botón y el visual según el estado real.
         /// </summary>
         public void SetBlocked(bool blocked)
         {
@@ -181,9 +232,8 @@ namespace Rollgeon.UI.HUD
             if (_lockIcon != null) _lockIcon.SetActive(blocked);
             if (_button != null) _button.interactable = !blocked;
             if (_background != null)
-                _background.color = blocked
-                    ? BlockedColor
-                    : (_held ? new Color(0.4f, 0.8f, 1f, 1f) : _defaultColor);
+                _background.color = blocked ? BlockedColor : _defaultColor;
+            RefreshShape();
         }
 
         /// <summary>
@@ -194,6 +244,10 @@ namespace Rollgeon.UI.HUD
         {
             CurrentFace = 0;
             _diceLabel?.SetText(string.Empty);
+            // Un spin cancelado a mitad no debe dejar latcheado su lateral. El hover NO se
+            // resetea acá: es de DiceSlotHoverJuice, que lo baja al desactivarse el slot —
+            // si el slot sigue vivo y el puntero encima, el hover sigue siendo cierto.
+            _spinRole = null;
             SetBlocked(false);
             SetHeld(false);
         }
