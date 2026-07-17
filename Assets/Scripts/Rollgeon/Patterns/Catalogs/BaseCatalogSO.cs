@@ -96,6 +96,28 @@ namespace Rollgeon.Patterns.Catalogs
             return AllIds.Contains(id);
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// <b>Editor-only.</b> Registra <paramref name="entry"/> si no estaba. Devuelve <c>false</c>
+        /// si ya figuraba (por referencia) o si es null.
+        /// </summary>
+        /// <remarks>
+        /// Existe porque <c>_entries</c> es <c>[OdinSerialize]</c> y protected: invisible a
+        /// <c>SerializedObject</c>, así que una tool no puede agregarle nada sin una API. Mismo
+        /// criterio que <c>EnchantmentCatalogSO.Repopulate</c>. Nada en runtime muta un catálogo.
+        /// </remarks>
+        public bool EditorAdd(T entry)
+        {
+            if (entry == null) return false;
+            if (_entries.Contains(entry)) return false;
+
+            UnityEditor.Undo.RecordObject(this, "Add to " + CatalogName);
+            _entries.Add(entry);
+            UnityEditor.EditorUtility.SetDirty(this);
+            return true;
+        }
+#endif
+
         // ---- Odin validators (privados, solo para el inspector) -----------------
 
         private bool ValidateNoDuplicateIds(List<T> entries)
