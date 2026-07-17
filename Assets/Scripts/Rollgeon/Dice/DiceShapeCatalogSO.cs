@@ -2,11 +2,34 @@ using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Rollgeon.Dice
 {
     /// <summary>
-    /// Sprite de forma por <see cref="DiceType"/>: el D4 se ve triangular, el D6
+    /// Qué sprite del set de un dado se está mirando. El arte viene en filas de 5
+    /// (<c>Assets/Art/UI/Dices/Dices.png</c>) y este enum es el orden de esas columnas.
+    /// </summary>
+    public enum DiceShapeRole
+    {
+        /// <summary>Cara frontal: el dado quieto.</summary>
+        Front = 0,
+
+        /// <summary>Lateral A — junto con <see cref="SideB"/> vende el giro del roll.</summary>
+        SideA = 1,
+
+        /// <summary>Lateral B.</summary>
+        SideB = 2,
+
+        /// <summary>Puntero encima del dado.</summary>
+        Hover = 3,
+
+        /// <summary>Dado holdeado.</summary>
+        Selected = 4,
+    }
+
+    /// <summary>
+    /// Set de sprites por <see cref="DiceType"/>: el D4 se ve triangular, el D6
     /// cuadrado, etc. Lo consumen <c>DiceSlotView</c> (classic) y
     /// <c>DiceThrowDieView</c> (modo 2D) para que el jugador distinga el tipo de
     /// dado sin leer el número.
@@ -18,7 +41,7 @@ namespace Rollgeon.Dice
         public const string ResourcePath = "Dice/DiceShapeCatalog";
 
         [ListDrawerSettings(ShowFoldout = false)]
-        [Tooltip("Forma de cada tipo de dado. Debe cubrir todos los valores de DiceType.")]
+        [Tooltip("Set de sprites de cada tipo de dado. Debe cubrir todos los valores de DiceType.")]
         public List<DiceShapeEntry> Shapes = new();
 
         [Optional]
@@ -27,24 +50,41 @@ namespace Rollgeon.Dice
         public Sprite FallbackShape;
 
         /// <summary>
-        /// Forma de <paramref name="type"/>, o <see cref="FallbackShape"/> si no tiene
-        /// entrada (o la tiene vacía). Puede devolver <c>null</c>: el caller asigna igual
-        /// y <c>Image</c> degrada al quad de color plano.
+        /// Sprite de <paramref name="type"/> para <paramref name="role"/>. Degrada en cadena
+        /// <c>role → Front → FallbackShape</c>: un catálogo autorado antes de que existieran los
+        /// roles (o con un rol sin arte) sigue dibujando el frontal en vez de desaparecer.
+        /// Puede devolver <c>null</c>: el caller asigna igual y <c>Image</c> degrada al quad de
+        /// color plano.
         /// </summary>
-        public Sprite GetShape(DiceType type)
+        /// <remarks>
+        /// El default <see cref="DiceShapeRole.Front"/> deja intactos a los call-sites que no
+        /// conocen roles (<c>DiceThrowDieView</c>).
+        /// </remarks>
+        public Sprite GetShape(DiceType type, DiceShapeRole role = DiceShapeRole.Front)
         {
             if (Shapes != null)
             {
                 for (int i = 0; i < Shapes.Count; i++)
-                    if (Shapes[i].Type == type && Shapes[i].Shape != null)
-                        return Shapes[i].Shape;
+                {
+                    if (Shapes[i].Type != type) continue;
+
+                    var sprite = Shapes[i].Get(role);
+                    if (sprite != null) return sprite;
+
+                    // Entrada encontrada pero sin arte para el rol: el frontal es la
+                    // degradación, no seguir buscando otra entrada del mismo tipo.
+                    if (Shapes[i].Front != null) return Shapes[i].Front;
+                    break;
+                }
             }
             return FallbackShape;
         }
 
         /// <summary>
-        /// <c>true</c> si el catálogo cubre todos los <see cref="DiceType"/> con un sprite
-        /// real y sin duplicados.
+        /// <c>true</c> si el catálogo cubre todos los <see cref="DiceType"/> con un frontal
+        /// real y sin duplicados. NO exige el resto del set — eso lo chequea
+        /// <see cref="ValidateRoles"/>, para que un catálogo a medio autorar falle con el
+        /// mensaje que corresponde y no con "falta SideA".
         /// </summary>
         public bool Validate(out string error)
         {
@@ -62,9 +102,9 @@ namespace Rollgeon.Dice
                     error = $"{entry.Type}: entrada duplicada — GetShape solo usaría la primera.";
                     return false;
                 }
-                if (entry.Shape == null)
+                if (entry.Front == null)
                 {
-                    error = $"{entry.Type}: sin sprite asignado.";
+                    error = $"{entry.Type}: sin sprite frontal asignado.";
                     return false;
                 }
             }
@@ -77,6 +117,32 @@ namespace Rollgeon.Dice
                 {
                     error = $"{type}: falta su entrada en el catálogo.";
                     return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
+
+        /// <summary>
+        /// <c>true</c> si además de <see cref="Validate"/> cada tipo tiene los 5 roles con arte
+        /// real. Es la red que avisa cuando llega un dado nuevo y solo se autoró el frontal:
+        /// sin esto el dado se vería quieto durante el giro y sin feedback de hover/held, que es
+        /// un bug silencioso.
+        /// </summary>
+        public bool ValidateRoles(out string error)
+        {
+            if (!Validate(out error)) return false;
+
+            foreach (var entry in Shapes)
+            {
+                foreach (DiceShapeRole role in Enum.GetValues(typeof(DiceShapeRole)))
+                {
+                    if (entry.Get(role) == null)
+                    {
+                        error = $"{entry.Type}: sin sprite para el rol {role}.";
+                        return false;
+                    }
                 }
             }
 
@@ -99,20 +165,47 @@ namespace Rollgeon.Dice
         private void OnValidate()
         {
             if (Shapes == null) return;
-            if (!Validate(out var error))
+            if (!ValidateRoles(out var error))
             {
                 Debug.LogWarning($"{name}: {error}", this);
             }
         }
     }
 
-    /// <summary>La forma de un tipo de dado dentro de un <see cref="DiceShapeCatalogSO"/>.</summary>
+    /// <summary>El set de sprites de un tipo de dado dentro de un <see cref="DiceShapeCatalogSO"/>.</summary>
+    /// <remarks>
+    /// El orden de los campos espeja las columnas del sheet de arte (ver
+    /// <see cref="DiceShapeRole"/>).
+    /// </remarks>
     [Serializable]
     public struct DiceShapeEntry
     {
         public DiceType Type;
 
-        [Tooltip("Silueta del dado. El número TMP se dibuja encima.")]
-        public Sprite Shape;
+        [FormerlySerializedAs("Shape")]
+        [Tooltip("Dado quieto. El número TMP se dibuja encima.")]
+        public Sprite Front;
+
+        [Tooltip("Lateral A del giro.")]
+        public Sprite SideA;
+
+        [Tooltip("Lateral B del giro.")]
+        public Sprite SideB;
+
+        [Tooltip("Puntero encima del dado.")]
+        public Sprite Hover;
+
+        [Tooltip("Dado holdeado.")]
+        public Sprite Selected;
+
+        /// <summary>Sprite de <paramref name="role"/>, o <c>null</c> si ese rol no tiene arte.</summary>
+        public Sprite Get(DiceShapeRole role) => role switch
+        {
+            DiceShapeRole.SideA => SideA,
+            DiceShapeRole.SideB => SideB,
+            DiceShapeRole.Hover => Hover,
+            DiceShapeRole.Selected => Selected,
+            _ => Front,
+        };
     }
 }

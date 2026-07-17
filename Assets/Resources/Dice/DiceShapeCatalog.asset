@@ -14,17 +14,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.DiceShapeCatalogSO
   Shapes:
   - Type: 0
-    Shape: {fileID: 21300000, guid: da9866479b173644bb91a614a87c0de0, type: 3}
+    Front: {fileID: 359414099, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 1401531898, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1503717991, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1218516326, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 1
-    Shape: {fileID: 21300000, guid: 71acff5900eb1ee47925e5819e79649c, type: 3}
+    Front: {fileID: 1178113197, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 284238095, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 80988382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: 707918844, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: -2104052386, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 2
-    Shape: {fileID: 21300000, guid: 9acb5b9117de6b24b81cff10451336f6, type: 3}
+    Front: {fileID: -703235995, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 750792382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: -513660922, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: 810267790, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 716723144, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 3
-    Shape: {fileID: 21300000, guid: e834299375b78ac4cad7104de1c5a2e8, type: 3}
+    Front: {fileID: -1305715248, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 1238936565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: -1582812979, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1509081565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1955476980, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 4
-    Shape: {fileID: 21300000, guid: 2273ca0e3ebb27649b4a3199655c257a, type: 3}
+    Front: {fileID: -213345111, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: -817261351, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 915400990, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1001478702, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 2038314485, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 5
-    Shape: {fileID: 21300000, guid: 8a6b6e0b3565a484ab9ac798bb5a6fd8, type: 3}
+    Front: {fileID: 1496919688, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 429831747, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 672915450, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1491227567, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: -1499136606, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   - Type: 6
-    Shape: {fileID: 21300000, guid: 68575526b7a0ea141b36f22e82c25b23, type: 3}
+    Front: {fileID: 359414099, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 1401531898, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1503717991, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1218516326, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   FallbackShape: {fileID: 0}
