@@ -158,6 +158,13 @@ namespace Rollgeon.Dungeon
             //     a esa entrada se designa como salida de piso dinámica en ConfigureDoorSlots.
             EnforceBossSingleEntrance();
 
+            // 5c. Guard de puertas (PUL-011): podar conexiones cuya dirección no tiene puerta
+            //     autorada en el prefab (o el vecino no tiene la recíproca). Sin esto el minimapa
+            //     muestra la conexión pero no hay paso — sala inalcanzable. Corre ANTES del seed
+            //     de DoorStates (6) e instanciación (7) para que todo downstream vea el grafo ya
+            //     coherente. Con las 21 salas actuales (4 puertas c/u) es no-op.
+            PruneDoorlessConnections();
+
             // 6. Seed default DoorStates en cada instancia.
             foreach (var instance in _instances.Values)
             {
@@ -955,6 +962,73 @@ namespace Rollgeon.Dungeon
 
             return visited.Count == _instances.Count;
         }
+
+        /// <summary>
+        /// PUL-011: poda las conexiones intraversables — las que caen en una dirección sin
+        /// puerta autorada en el prefab (o cuyo vecino no tiene la recíproca). Deja el grafo
+        /// lógico coherente con las puertas físicas (el minimapa deja de mostrar un paso que
+        /// no existe) y loguea un <see cref="Debug.LogError"/> por cada poda para exponer el
+        /// prefab mal autoreado. Tras podar, avisa si alguna sala quedó inalcanzable.
+        /// </summary>
+        private void PruneDoorlessConnections()
+        {
+            var edges = DoorTopologyGuard.ComputeDoorlessEdges(_instances, PrefabHasDoorForDirection);
+            if (edges.Count == 0) return;
+
+            foreach (var e in edges)
+            {
+                if (_instances.TryGetValue(e.From, out var a)) a.Connections.Remove(e.Dir);
+                if (_instances.TryGetValue(e.To, out var b)) b.Connections.Remove(e.Dir.Opposite());
+
+                Debug.LogError(
+                    $"[DungeonManager] Conexión sin puerta podada: '{RoomIdOf(e.From)}' {e.Dir} ↔ " +
+                    $"'{RoomIdOf(e.To)}'. Un prefab no tiene DoorSlot autoreado ({e.Dir} en el origen " +
+                    $"o {e.Dir.Opposite()} en el vecino); la conexión era intraversable y se quitó del " +
+                    "grafo. Autorar las 4 puertas del prefab (Auto-Populate en el RoomLayout).");
+            }
+
+            // ¿Se aisló alguna sala al podar? Softlock si estaba en el camino crítico — error explícito.
+            if (!_cellIndex.TryGetValue(Vector2Int.zero, out var startId)) return;
+            var reachable = DoorTopologyGuard.ReachableFrom(startId, _instances);
+            foreach (var inst in _instances.Values)
+            {
+                if (reachable.Contains(inst.InstanceId)) continue;
+                Debug.LogError(
+                    $"[DungeonManager] Sala '{RoomIdOf(inst.InstanceId)}' (cell {inst.GridCell}) quedó " +
+                    "INALCANZABLE desde el start tras podar conexiones sin puerta. Revisar las puertas " +
+                    "autoradas de esa sala y sus vecinas.");
+            }
+        }
+
+        /// <summary>
+        /// ¿El prefab de <paramref name="instance"/> tiene una puerta autorada para
+        /// <paramref name="dir"/>? Mira el <c>RoomLayout.DoorSlots</c> del prefab template
+        /// (un slot de esa dirección con <c>DoorRoot</c>) y, como fallback, un
+        /// <see cref="DoorController"/> suelto. Sin prefab/layout devuelve <c>true</c> (no
+        /// podemos determinar ⇒ no podar). Mismo criterio de "autoreado" que
+        /// <see cref="ConfigureDoorSlots"/>.
+        /// </summary>
+        private bool PrefabHasDoorForDirection(RoomInstance instance, DoorDirection dir)
+        {
+            var prefab = instance?.Template != null ? instance.Template.RoomPrefab : null;
+            if (prefab == null) return true;
+
+            var layout = prefab.GetComponent<RoomLayout>();
+            if (layout == null || layout.DoorSlots == null) return true;
+
+            foreach (var slot in layout.DoorSlots)
+                if (slot != null && slot.Direction == dir && slot.DoorRoot != null)
+                    return true;
+
+            foreach (var ctrl in prefab.GetComponentsInChildren<DoorController>(includeInactive: true))
+                if (ctrl != null && ctrl.Direction == dir)
+                    return true;
+
+            return false;
+        }
+
+        private string RoomIdOf(Guid id)
+            => _instances.TryGetValue(id, out var inst) && inst.Template != null ? inst.Template.RoomId : "<null>";
 
         /// <summary>
         /// Marca como salida de piso (<see cref="DoorController.IsExit"/>) la puerta de la

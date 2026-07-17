@@ -92,7 +92,7 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Hoy es benigno**: tras el fix, **las 21 salas de piso tienen las 4 puertas** `[N,S,E,O]`, así que ninguna divergencia es posible con el contenido actual. El runtime ya **detecta** el mismatch (`DungeonManager.cs` loguea "tiene Connection al {dir} pero el prefab no tiene DoorSlotRef" desde ambos lados de la reciprocidad) pero **solo avisa, no repara**.
 - **Riesgo a futuro**: cualquier sala nueva autorada sin las 4 puertas reintroduce el bug en silencio (solo un warning en consola). El usuario declinó el guard de generación en `Fix#0034` a propósito (alcance).
 - **Fix**: un paso de validación/reparación en generación (o un test de assets que recorra `Assets/Prefabs/Rooms/**` y falle si un `RoomLayout` no tiene los 4 `DoorSlots`). El tool `Rollgeon/Tools/Diagnose Room Doors` ya hace el diagnóstico manual.
-- **Estado**: abierto. Detectado y acotado al arreglar el bug de puertas en `Fix#0034`.
+- **Estado**: **cerrado** en `Fix#0034`. Se agregó el guard en generación (`DoorTopologyGuard` + `DungeonManager.PruneDoorlessConnections`, paso 5c de `GenerateFloor`): poda las conexiones cuya dirección no tiene puerta autorada (o cuyo vecino no tiene la recíproca) de ambos lados, con `LogError` por poda, y reporta con `LogError` cualquier sala que quede inalcanzable tras podar. Con las 21 salas actuales (4 puertas c/u) es no-op. Cubierto por `DoorTopologyGuardTests` (7 tests de lógica pura).
 
 ---
 
