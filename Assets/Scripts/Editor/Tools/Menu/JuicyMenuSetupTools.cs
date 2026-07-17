@@ -478,6 +478,15 @@ namespace Rollgeon.EditorTools.Menu
             if (label != null)
             {
                 label.fontSharedMaterial = outlineMat;
+
+                // El label llena el botón: rects fijos heredados de layouts viejos
+                // (ej. el Settings de pausa era un ícono 100x100) acomodan el texto
+                // distinto al resto del stack.
+                var labelRect = (RectTransform)label.transform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.anchoredPosition = Vector2.zero;
+                labelRect.sizeDelta = Vector2.zero;
                 EditorUtility.SetDirty(label);
             }
 
