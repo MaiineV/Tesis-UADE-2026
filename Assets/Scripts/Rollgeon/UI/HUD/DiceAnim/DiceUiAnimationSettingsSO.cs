@@ -28,8 +28,10 @@ namespace Rollgeon.UI.HUD.DiceAnim
         [Tooltip("Delay entre slots para que no revelen todos juntos.")]
         public float SpinStaggerSeconds = 0.05f;
 
-        [Tooltip("Vueltas completas (Z) que da el sprite durante el giro.")]
-        public float SpinTurns = 2f;
+        [Tooltip("Vueltas completas (Z) que da el sprite durante el giro. 0 = sin rotación: el " +
+                 "ciclado de sprites laterales del set ya lee como giro y sumarle rotación hace " +
+                 "que el dado gire dos veces a la vez.")]
+        public float SpinTurns;
 
         public Ease SpinEase = Ease.OutCubic;
 
@@ -103,7 +105,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
             SpinTickSeconds = SpinTickSeconds,
             SpinDecelerationPower = SpinDecelerationPower,
             SpinStaggerSeconds = SpinStaggerSeconds,
-            SpinTurns = SpinTurns,
             PreviewFaceMax = PreviewFaceMax,
             RaiseOffsetY = RaiseOffsetY,
             RaiseSeconds = RaiseSeconds,

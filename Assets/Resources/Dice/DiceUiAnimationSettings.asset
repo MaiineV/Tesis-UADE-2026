@@ -16,7 +16,7 @@ MonoBehaviour:
   SpinTickSeconds: 0.06
   SpinDecelerationPower: 2
   SpinStaggerSeconds: 0.05
-  SpinTurns: 2
+  SpinTurns: 0
   SpinEase: 9
   PreviewFaceMax: 6
   SpinJumpHeight: 14

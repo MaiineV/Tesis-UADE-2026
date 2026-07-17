@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Rollgeon.Dice;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD.DiceAnim
@@ -13,7 +14,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
         public float SpinTickSeconds;
         public float SpinDecelerationPower;
         public float SpinStaggerSeconds;
-        public float SpinTurns;
         public int PreviewFaceMax;
 
         public float RaiseOffsetY;
@@ -37,7 +37,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
             SpinTickSeconds = 0.06f,
             SpinDecelerationPower = 2f,
             SpinStaggerSeconds = 0.05f,
-            SpinTurns = 2f,
             PreviewFaceMax = 6,
             RaiseOffsetY = 18f,
             RaiseSeconds = 0.12f,
@@ -247,6 +246,28 @@ namespace Rollgeon.UI.HUD.DiceAnim
         /// <summary>Rango de preview: cubre la cara real aunque supere el máximo configurado.</summary>
         public static int PreviewFaceRange(int configuredMax, int finalFace)
             => Mathf.Max(2, Mathf.Max(configuredMax, finalFace));
+
+        /// <summary>
+        /// Sprite del set que toca mostrar en el tick <paramref name="tickIndex"/> (1-based) del
+        /// giro: frontal y lateral alternados, con los dos laterales turnándose — la secuencia
+        /// <c>0-1-0-2-0-1-0-2</c> del brief. <paramref name="sideSeed"/> (0 o 1) elige con cuál
+        /// de los dos laterales arranca, y se tira una vez por spin: así dos dados que giran
+        /// juntos no van en fase sin necesidad de tunear nada.
+        /// </summary>
+        /// <remarks>
+        /// El tick impar cae en frontal a propósito. Con el tuning shippeado
+        /// (<c>SpinSeconds 0.5</c>, <c>SpinTickSeconds 0.06</c>) hay 8 ticks pero el último que
+        /// llega a disparar es el 7 — impar ⇒ el dado descansa en el frontal ~117ms antes del
+        /// reveal en vez de cortar desde un lateral. El tick 1 no dibuja nada nuevo (el dado ya
+        /// está en frontal) y el setter de <c>Image.sprite</c> early-outea, así que sale gratis.
+        /// </remarks>
+        public static DiceShapeRole SpinRole(int tickIndex, int sideSeed)
+        {
+            if (tickIndex % 2 != 0) return DiceShapeRole.Front;
+            // -1 para que el primer lateral (tick 2) caiga en el índice 0: con sideSeed = 0 la
+            // secuencia arranca en SideA y se lee 0-1-0-2, como el brief.
+            return (tickIndex / 2 - 1 + sideSeed) % 2 == 0 ? DiceShapeRole.SideA : DiceShapeRole.SideB;
+        }
 
         /// <summary>
         /// Offset parabólico clásico (0 en los extremos, <paramref name="height"/> en
