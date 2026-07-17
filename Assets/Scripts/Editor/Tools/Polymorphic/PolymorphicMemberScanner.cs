@@ -59,33 +59,135 @@ namespace Rollgeon.Editor.Tools.Polymorphic
     /// </remarks>
     public static class PolymorphicMemberScanner
     {
-        static readonly Dictionary<Type, IReadOnlyList<PolymorphicMember>> _cache =
+        static readonly Dictionary<Type, IReadOnlyList<PolymorphicMember>> _pickerCache =
             new Dictionary<Type, IReadOnlyList<PolymorphicMember>>();
+        static readonly Dictionary<Type, IReadOnlyList<PolymorphicMember>> _blockCache =
+            new Dictionary<Type, IReadOnlyList<PolymorphicMember>>();
+        static readonly Dictionary<Type, bool> _hiddenDeepCache = new Dictionary<Type, bool>();
 
+        /// <summary>Slots whose concrete type the designer picks — the fields a tool must own.</summary>
         public static IReadOnlyList<PolymorphicMember> Scan(Type type)
         {
             if (type == null) return Array.Empty<PolymorphicMember>();
-            if (_cache.TryGetValue(type, out var cached)) return cached;
+            if (_pickerCache.TryGetValue(type, out var cached)) return cached;
 
             var found = new List<PolymorphicMember>();
             foreach (var field in SerializedFieldsOf(type))
             {
                 var elementType = ElementTypeOf(field.FieldType, out bool isList);
                 if (elementType == null) continue;
-                if (!elementType.IsAbstract && !elementType.IsInterface) continue;
-                // UnityEngine.Object references are asset links, not inline polymorphism —
-                // Odin's object field already handles them.
-                if (typeof(UnityEngine.Object).IsAssignableFrom(elementType)) continue;
+                if (!IsPickerSlot(elementType)) continue;
 
                 found.Add(new PolymorphicMember(field, elementType, isList, TitleOf(field)));
             }
 
-            _cache[type] = found;
+            _pickerCache[type] = found;
             return found;
         }
 
-        /// <summary>Clears the reflection cache. Call after a domain reload in long-lived tools.</summary>
-        public static void ClearCache() => _cache.Clear();
+        /// <summary>
+        /// Members that are <b>concrete</b> containers a tool has to walk into, because Odin cannot
+        /// author what's underneath: <c>EffectData</c>, <c>ChainPhase</c>, <c>PassiveItemHook</c>…
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <see cref="Scan"/> finds where a <i>picker</i> goes; this finds where to <i>walk</i>.
+        /// Both are needed: <c>ItemSO</c> has zero picker slots of its own, yet reaches three of them
+        /// through <c>OnActivate</c>, and <c>EffChain</c> reaches more through
+        /// <c>Phases → ChainPhase → Effects</c>.
+        /// </para>
+        /// <para>
+        /// <b>The test is "contains a hidden picker below", not "contains a polymorphic slot".</b>
+        /// That distinction is load-bearing: <c>SelectionSettings</c> holds an
+        /// <c>ISelectionCountReader</c>, which Odin draws perfectly well — treating it as a container
+        /// would make every effect render field-by-field and change how the working enemy tool looks,
+        /// for nothing. A tool should take over traversal only where Odin actually fails.
+        /// </para>
+        /// </remarks>
+        public static IReadOnlyList<PolymorphicMember> BlockMembersOf(Type type)
+        {
+            if (type == null) return Array.Empty<PolymorphicMember>();
+            if (_blockCache.TryGetValue(type, out var cached)) return cached;
+
+            var found = new List<PolymorphicMember>();
+            foreach (var field in SerializedFieldsOf(type))
+            {
+                var elementType = ElementTypeOf(field.FieldType, out bool isList);
+                if (elementType == null) continue;
+                if (IsPickerSlot(elementType)) continue;              // that's a picker, not a container
+                if (!IsInlineSerializableClass(elementType)) continue;
+                if (!HasHiddenPickerDeep(elementType)) continue;
+
+                found.Add(new PolymorphicMember(field, elementType, isList, TitleOf(field)));
+            }
+
+            _blockCache[type] = found;
+            return found;
+        }
+
+        /// <summary>True when a designer must choose a concrete type for this slot.</summary>
+        static bool IsPickerSlot(Type elementType)
+        {
+            if (!elementType.IsAbstract && !elementType.IsInterface) return false;
+            // UnityEngine.Object references are asset links, not inline polymorphism —
+            // Odin's object field already handles them.
+            return !typeof(UnityEngine.Object).IsAssignableFrom(elementType);
+        }
+
+        /// <summary>
+        /// Whether <paramref name="type"/> transitively holds a slot Odin refuses to pick for.
+        /// Cycle-guarded: <c>EffChain → ChainPhase → EffectData → IEffect → EffChain</c> is real.
+        /// </summary>
+        public static bool HasHiddenPickerDeep(Type type)
+        {
+            if (type == null) return false;
+            if (_hiddenDeepCache.TryGetValue(type, out bool cached)) return cached;
+
+            // Only the entry point caches. A nested call can return false purely because the
+            // cycle guard cut it short, and caching that would poison the type for good.
+            bool result = Walk(type, new HashSet<Type>());
+            _hiddenDeepCache[type] = result;
+            return result;
+        }
+
+        static bool Walk(Type type, HashSet<Type> visited)
+        {
+            if (type == null || !visited.Add(type)) return false;
+
+            foreach (var field in SerializedFieldsOf(type))
+            {
+                var elementType = ElementTypeOf(field.FieldType, out _);
+                if (elementType == null) continue;
+
+                if (IsPickerSlot(elementType))
+                {
+                    // Odin hides its picker exactly when the *declared* type carries the attribute.
+                    if (elementType.IsDefined(typeof(HideReferenceObjectPickerAttribute), true)) return true;
+                    continue;
+                }
+
+                if (IsInlineSerializableClass(elementType) && Walk(elementType, visited)) return true;
+            }
+            return false;
+        }
+
+        static bool IsInlineSerializableClass(Type t)
+        {
+            if (t.IsPrimitive || t.IsEnum || t == typeof(string)) return false;
+            if (typeof(UnityEngine.Object).IsAssignableFrom(t)) return false;
+            if (!t.IsClass && !t.IsValueType) return false;
+            if (t.Namespace != null && t.Namespace.StartsWith("System", StringComparison.Ordinal)) return false;
+            if (t.Namespace != null && t.Namespace.StartsWith("UnityEngine", StringComparison.Ordinal)) return false;
+            return t.IsDefined(typeof(SerializableAttribute), false);
+        }
+
+        /// <summary>Clears the reflection caches. Call after a domain reload in long-lived tools.</summary>
+        public static void ClearCache()
+        {
+            _pickerCache.Clear();
+            _blockCache.Clear();
+            _hiddenDeepCache.Clear();
+        }
 
         /// <summary>
         /// Fields Odin will serialize: public instance fields, plus non-public ones opted in with

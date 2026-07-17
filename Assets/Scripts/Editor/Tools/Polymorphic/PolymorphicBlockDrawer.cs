@@ -23,6 +23,13 @@ namespace Rollgeon.Editor.Tools.Polymorphic
     /// </remarks>
     public static class PolymorphicBlockDrawer
     {
+        /// <summary>
+        /// Nesting cap. <c>EffChain → ChainPhase → EffectData → EffChain</c> is legal at runtime, so
+        /// the drawer needs a floor; past this depth it hands the subtree back to Odin rather than
+        /// recursing forever.
+        /// </summary>
+        public const int MAX_DEPTH = 6;
+
         /// <summary>Per-host toggles for parts of an <see cref="EffectData"/> that don't apply everywhere.</summary>
         public struct Options
         {
@@ -114,6 +121,12 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         public static void DrawEffectDataList(
             PolymorphicAuthoringContext ctx, IList<EffectData> list, string listPath, Options opts)
         {
+            DrawEffectDataList(ctx, list, listPath, opts, 0);
+        }
+
+        static void DrawEffectDataList(
+            PolymorphicAuthoringContext ctx, IList<EffectData> list, string listPath, Options opts, int depth)
+        {
             if (list == null) return;
             for (int i = 0; i < list.Count; i++)
             {
@@ -137,7 +150,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                         }
                     }
                     if (list[i] != null)
-                        DrawEffectData(ctx, list[i], listPath + ".$" + i, opts);
+                        DrawEffectData(ctx, list[i], listPath + ".$" + i, opts, depth);
                 }
             }
         }
@@ -148,6 +161,12 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// </summary>
         public static void DrawEffectData(
             PolymorphicAuthoringContext ctx, EffectData item, string basePath, Options opts)
+        {
+            DrawEffectData(ctx, item, basePath, opts, 0);
+        }
+
+        static void DrawEffectData(
+            PolymorphicAuthoringContext ctx, EffectData item, string basePath, Options opts, int depth)
         {
             if (item == null) return;
 
@@ -163,7 +182,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             EditorGUILayout.LabelField("Effects", EditorStyles.miniBoldLabel);
             if (item.Effects == null) item.Effects = new List<IEffect>();
-            DrawEffectListItems(ctx, item.Effects, basePath + ".Effects");
+            DrawEffectListItems(ctx, item.Effects, basePath + ".Effects", opts, depth);
             DrawAddButton(ctx, "Effect", typeof(IEffect), item.Effects);
 
             if (!opts.ShowTargetSelector) return;
@@ -181,7 +200,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// The <c>List&lt;IEffect&gt;</c> inside an <see cref="EffectData"/>. Same shape as
         /// <see cref="DrawPolymorphicListItems"/> plus the reader pickers each effect may need.
         /// </summary>
-        static void DrawEffectListItems(PolymorphicAuthoringContext ctx, IList list, string listPath)
+        static void DrawEffectListItems(
+            PolymorphicAuthoringContext ctx, IList list, string listPath, Options opts, int depth)
         {
             for (int i = 0; i < list.Count; i++)
             {
@@ -207,11 +227,101 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                     if (list[i] != null)
                     {
                         var effectPath = listPath + ".$" + i;
-                        ctx.Draw(effectPath);
+                        DrawBlockBody(ctx, list[i], effectPath, opts, depth);
                         DrawReaderPickers(ctx, list[i], effectPath);
                     }
                 }
             }
+        }
+
+        // ---- recursion into nested containers ------------------------------
+
+        /// <summary>
+        /// Draws an arbitrary inline object. Odin draws it whole unless it holds containers with
+        /// unauthorable content below — then this owns the traversal and hands Odin each leaf.
+        /// </summary>
+        /// <remarks>
+        /// Only <c>EffChain</c> qualifies today (via <c>Phases → ChainPhase → Effects</c>), but the
+        /// rule is structural, not a special case: without this, the nested <c>EffectData</c> inside
+        /// a chain renders through Odin's stock drawer, whose PreCondition picker is missing — which
+        /// is why nothing could be authored inside a chain in any tool.
+        /// </remarks>
+        static void DrawBlockBody(
+            PolymorphicAuthoringContext ctx, object value, string path, Options opts, int depth)
+        {
+            var blocks = PolymorphicMemberScanner.BlockMembersOf(value.GetType());
+            if (blocks.Count == 0 || depth >= MAX_DEPTH)
+            {
+                // The common case: no container underneath, so Odin renders the whole thing and the
+                // panel looks exactly as it always has.
+                ctx.Draw(path);
+                return;
+            }
+
+            var prop = ctx.At(path);
+            if (prop == null)
+            {
+                ctx.Draw(path);
+                return;
+            }
+
+            // Odin draws every field that isn't a container we have to own.
+            for (int i = 0; i < prop.Children.Count; i++)
+            {
+                var child = prop.Children[i];
+                if (IsBlockNamed(blocks, child.Name)) continue;
+                child.Draw();
+            }
+
+            foreach (var block in blocks)
+                DrawBlockMember(ctx, block, value, path, opts, depth);
+        }
+
+        static bool IsBlockNamed(IReadOnlyList<PolymorphicMember> blocks, string name)
+        {
+            for (int i = 0; i < blocks.Count; i++)
+                if (blocks[i].Name == name) return true;
+            return false;
+        }
+
+        static void DrawBlockMember(
+            PolymorphicAuthoringContext ctx, PolymorphicMember block,
+            object owner, string ownerPath, Options opts, int depth)
+        {
+            var value = block.Field.GetValue(owner);
+            if (value == null) return;
+
+            string memberPath = ownerPath + "." + block.Name;
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField(block.Title, EditorStyles.miniBoldLabel);
+
+            if (!block.IsList)
+            {
+                DrawNestedBlock(ctx, value, memberPath, opts, depth + 1);
+                return;
+            }
+
+            if (!(value is IList list)) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] == null) continue;
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    EditorGUILayout.LabelField($"{block.BaseType.Name} {i}", EditorStyles.miniLabel);
+                    DrawNestedBlock(ctx, list[i], memberPath + ".$" + i, opts, depth + 1);
+                }
+            }
+        }
+
+        static void DrawNestedBlock(
+            PolymorphicAuthoringContext ctx, object value, string path, Options opts, int depth)
+        {
+            if (value is EffectData nested)
+            {
+                DrawEffectData(ctx, nested, path, opts, depth);
+                return;
+            }
+            DrawBlockBody(ctx, value, path, opts, depth);
         }
 
         /// <summary>
