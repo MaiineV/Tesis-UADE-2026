@@ -18,7 +18,12 @@ namespace Rollgeon.Items
         private readonly List<InventorySlot> _passiveItems = new();
         private readonly List<InventorySlot> _activeItems = new();
 
-        private readonly List<(EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
+        /// <summary>
+        /// Cada handler suscripto, con el item que lo puso. El <c>itemId</c> es lo que hace posible
+        /// desenganchar un item sin tocar los de otro — ver <see cref="UnbindPassiveHooks"/>.
+        /// Misma clave que <see cref="_appliedModifierIds"/>, así los dos tratan igual a un item.
+        /// </summary>
+        private readonly List<(string itemId, EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
         private readonly Dictionary<string, List<Guid>> _appliedModifierIds = new();
 
         private readonly ItemCatalogSO _catalog;
@@ -217,34 +222,34 @@ namespace Rollgeon.Items
                 };
 
                 EventManager.Subscribe(hook.TriggerEvent, handler);
-                _hookHandlers.Add((hook.TriggerEvent, handler));
+                _hookHandlers.Add((item.ItemId, hook.TriggerEvent, handler));
             }
         }
 
+        /// <summary>
+        /// Desengancha exactamente los handlers que puso <paramref name="item"/>.
+        /// </summary>
+        /// <remarks>
+        /// Matchea por <c>itemId</c>, no por <c>TriggerEvent</c>. Con dos pasivas colgadas del mismo
+        /// evento, matchear por evento desenganchaba una cualquiera (la última, por el recorrido
+        /// LIFO): quitar la pasiva A mataba el hook de B y dejaba vivo el de A. Con un solo item
+        /// autorado no se notaba.
+        /// <para>
+        /// Tampoco recorre <c>item.PassiveHooks</c> para decidir qué sacar: se desengancha lo que se
+        /// enganchó. Si el SO cambió entre el bind y el unbind, mirar los hooks de ahora dejaría
+        /// suscripciones colgadas apuntando a un item que ya no está en el inventario.
+        /// </para>
+        /// </remarks>
         private void UnbindPassiveHooks(ItemSO item)
         {
-            // Unbind all handlers that were registered for this item's hooks.
-            // Since we track (event, handler) pairs and can't distinguish per-item
-            // in the flat list, we remove handlers matching the item's trigger events.
-            // For a full implementation, track per-item handler lists.
-            // For now, this works correctly because BindPassiveHooks appends and
-            // we remove in LIFO order for the matching event count.
-            if (item.PassiveHooks == null) return;
+            if (item == null || string.IsNullOrEmpty(item.ItemId)) return;
 
-            for (int i = item.PassiveHooks.Count - 1; i >= 0; i--)
+            for (int i = _hookHandlers.Count - 1; i >= 0; i--)
             {
-                var hook = item.PassiveHooks[i];
-                if (hook == null) continue;
+                if (_hookHandlers[i].itemId != item.ItemId) continue;
 
-                for (int j = _hookHandlers.Count - 1; j >= 0; j--)
-                {
-                    if (_hookHandlers[j].evt == hook.TriggerEvent)
-                    {
-                        EventManager.UnSubscribe(_hookHandlers[j].evt, _hookHandlers[j].handler);
-                        _hookHandlers.RemoveAt(j);
-                        break;
-                    }
-                }
+                EventManager.UnSubscribe(_hookHandlers[i].evt, _hookHandlers[i].handler);
+                _hookHandlers.RemoveAt(i);
             }
         }
 
@@ -422,7 +427,7 @@ namespace Rollgeon.Items
 
         private void ClearAllHooksAndModifiers()
         {
-            foreach (var (evt, handler) in _hookHandlers)
+            foreach (var (_, evt, handler) in _hookHandlers)
                 EventManager.UnSubscribe(evt, handler);
             _hookHandlers.Clear();
 

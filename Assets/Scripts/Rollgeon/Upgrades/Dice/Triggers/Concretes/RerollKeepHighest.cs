@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Attributes;
 using Patterns;
 using Sirenix.OdinInspector;
 
@@ -20,6 +21,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers.Concretes
     /// y no modifica el resultado.
     /// </para>
     /// </remarks>
+    [NotYetWired("Solo trackea el 'usado' una-vez-por-combate; el reroll real no esta wireado.")]
     [Serializable, HideReferenceObjectPicker]
     public sealed class RerollKeepHighest
         : IOnEnchantmentAppliedTrigger,

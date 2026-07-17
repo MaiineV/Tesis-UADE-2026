@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using Rollgeon.Editor.Tools.Polymorphic;
 using Rollgeon.Heroes;
-using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,8 +12,8 @@ namespace Rollgeon.Editor.Tools
         const float MiddleWidth = 340f;
 
         readonly List<ClassHeroSO> _heroes = new List<ClassHeroSO>();
+        readonly PolymorphicAuthoringContext _ctx = new PolymorphicAuthoringContext();
         ClassHeroSO _selected;
-        PropertyTree _tree;
         int _behaviorIdx = -1;
 
         Vector2 _leftScroll, _midScroll, _rightScroll;
@@ -58,7 +58,7 @@ namespace Rollgeon.Editor.Tools
 
         void OnGUI()
         {
-            _tree?.UpdateTree();
+            _ctx.UpdateTree();
 
             DrawToolbar();
 
@@ -70,7 +70,7 @@ namespace Rollgeon.Editor.Tools
             DrawRight();
             EditorGUILayout.EndHorizontal();
 
-            _tree?.ApplyChanges();
+            _ctx.ApplyChanges();
         }
 
         // ── Toolbar: search + CRUD + validate ───────────────────
@@ -326,7 +326,7 @@ namespace Rollgeon.Editor.Tools
             EditorGUILayout.BeginVertical(GUILayout.Width(MiddleWidth));
             _midScroll = EditorGUILayout.BeginScrollView(_midScroll);
 
-            if (_selected == null || _tree == null)
+            if (_selected == null || _ctx.Tree == null)
             {
                 EditorGUILayout.HelpBox("Select a hero class from the left panel.", MessageType.Info);
             }
@@ -469,29 +469,21 @@ namespace Rollgeon.Editor.Tools
                 Header($"Effect Pipeline — {b.ActionName}");
                 EditorGUILayout.Space(4);
 
-                if (b.Effects == null || b.Effects.Count == 0)
-                {
+                if (b.Effects == null) b.Effects = new List<Rollgeon.Effects.EffectData>();
+                if (b.Effects.Count == 0)
                     EditorGUILayout.HelpBox("No effect groups defined.", MessageType.Info);
-                }
-                else
-                {
-                    for (int i = 0; i < b.Effects.Count; i++)
-                    {
-                        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                        Prop($"{BehaviorPath()}.Effects.${i}");
-                        EditorGUILayout.EndVertical();
-                        EditorGUILayout.Space(8);
-                    }
-                }
+
+                // Was: Prop("...Effects.$i"), which handed the whole EffectData to Odin's stock
+                // drawer — and Odin hides the picker for BasePreCondition, so preconditions could
+                // never be authored here. The shared drawer supplies the pickers Odin drops, and
+                // recurses into EffChain phases.
+                PolymorphicBlockDrawer.DrawEffectDataList(
+                    _ctx, b.Effects, $"{BehaviorPath()}.Effects",
+                    PolymorphicBlockDrawer.Options.Default);
 
                 EditorGUILayout.Space(4);
-                if (GUILayout.Button("+ Add Effect Group", GUILayout.Height(22f)))
-                {
-                    Undo.RecordObject(_selected, "Add EffectData");
-                    b.Effects.Add(new Rollgeon.Effects.EffectData());
-                    EditorUtility.SetDirty(_selected);
-                    RebuildTree();
-                }
+                PolymorphicBlockDrawer.DrawAddButton(
+                    _ctx, "Effect Group", typeof(Rollgeon.Effects.EffectData), b.Effects);
             }
 
             EditorGUILayout.EndScrollView();
@@ -500,12 +492,7 @@ namespace Rollgeon.Editor.Tools
 
         // ── Helpers ─────────────────────────────────────────────
 
-        void Prop(string path)
-        {
-            if (_tree == null) return;
-            var p = _tree.GetPropertyAtPath(path);
-            if (p != null) p.Draw();
-        }
+        void Prop(string path) => _ctx.Draw(path);
 
         string BehaviorPath() => $"PhaseBehaviors.${_behaviorIdx}";
 
@@ -563,18 +550,9 @@ namespace Rollgeon.Editor.Tools
             }
         }
 
-        void RebuildTree()
-        {
-            DisposeTree();
-            if (_selected != null)
-                _tree = PropertyTree.Create(_selected);
-        }
+        void RebuildTree() => _ctx.Bind(_selected);
 
-        void DisposeTree()
-        {
-            _tree?.Dispose();
-            _tree = null;
-        }
+        void DisposeTree() => _ctx.Dispose();
 
         static void Header(string title)
         {

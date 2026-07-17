@@ -4,12 +4,23 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Rollgeon.Editor.Tools.Enemy.AITree
+namespace Rollgeon.Editor.Tools.Polymorphic
 {
     /// <summary>
-    /// Reflection-driven dropdown for assigning concrete subtypes to polymorphic fields
-    /// whose base class is decorated with <c>[HideReferenceObjectPicker]</c>. Odin hides
-    /// its own picker for those types (project rule §13.6.1), so the editor needs its own.
+    /// Reflection-driven dropdown for assigning concrete subtypes to polymorphic fields.
+    /// <para>
+    /// Odin hides its own picker whenever the <b>declared</b> type carries
+    /// <c>[HideReferenceObjectPicker]</c> (project rule §13.6.1) — so <c>BasePreCondition</c>,
+    /// <c>BaseEnemyTargetSelector</c> and <c>EffectIntReader</c> slots are unauthorable without
+    /// this. Interface-typed slots (<c>IEffect</c>, <c>IEnchantmentTrigger</c>, <c>IFaceFilter</c>)
+    /// do get Odin's picker while null, but lose it once assigned — every concrete declares the
+    /// attribute — so re-typing in place is impossible there too.
+    /// </para>
+    /// <para>
+    /// Tools therefore own the whole list UI (add / remove / assign) and let Odin draw only each
+    /// element's inner fields. That keeps one consistent picker everywhere instead of one that
+    /// appears and vanishes depending on the declared type.
+    /// </para>
     /// </summary>
     public static class PolymorphicPicker
     {
@@ -74,9 +85,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         /// "+ Add" button below an existing list. Mutates the list in place when the user picks
         /// a concrete type. The caller is responsible for invoking <paramref name="onAdded"/>
         /// to mark the host SO dirty and trigger a repaint.
+        /// <para>
+        /// <paramref name="onBeforeAdd"/> runs immediately before the mutation — it exists so the
+        /// caller can record undo, which has to happen while the list is still in its old state.
+        /// </para>
         /// </summary>
         public static void DrawAddButton(
-            string label, Type baseType, IList list, Action onAdded)
+            string label, Type baseType, IList list, Action onAdded, Action onBeforeAdd = null)
         {
             if (list == null) return;
             if (GUILayout.Button("+ Add " + label, GUILayout.Height(22f)))
@@ -87,6 +102,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     var capt = t;
                     menu.AddItem(new GUIContent(t.Name), false, () =>
                     {
+                        onBeforeAdd?.Invoke();
                         list.Add(Activator.CreateInstance(capt));
                         onAdded?.Invoke();
                     });
