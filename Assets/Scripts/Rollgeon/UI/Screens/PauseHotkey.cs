@@ -51,6 +51,13 @@ namespace Rollgeon.UI.Screens
                 // Pause al top → resume. PauseMenuOverlay.OnPopped popea el phase overlay.
                 screens.PopOverlay();
             }
+            else if (screens.Current is OptionsScreen)
+            {
+                // Opciones (abiertas desde la pausa) al top → cerrarlas y volver
+                // a la pausa. Sin esta rama se pusheaba OTRA pausa encima y se
+                // duplicaba el PhaseOverlay.Pause.
+                screens.PopOverlay();
+            }
             else
             {
                 // Sin pausar → abrir. Mismo path que RoomNavigationView.OnPauseClicked.
