@@ -1,5 +1,6 @@
 using TMPro;
 using Rollgeon.Dice;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -32,6 +33,12 @@ namespace Rollgeon.UI.HUD
                  "quedan como cuadrados llenos sobre una forma que no lo es.")]
         private Image[] _shapedOverlays;
 
+        [Title("Encantamiento")]
+        [SerializeField, Optional]
+        [Tooltip("Material del dado encantado (EnchantHoloUI). Compartido: la variación por " +
+                 "dado sale de la posición, no de instanciarlo.")]
+        private Material _enchantMaterial;
+
         [Title("Dice block")]
         [SerializeField, Optional]
         [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
@@ -47,6 +54,7 @@ namespace Rollgeon.UI.HUD
 
         private DiceShapeCatalogSO _resolvedCatalog;
         private bool _catalogResolved;
+        private EnchantmentSO _enchantment;
 
         private void Awake()
         {
@@ -100,6 +108,27 @@ namespace Rollgeon.UI.HUD
             _resolvedCatalog = DiceShapeCatalogSO.Resolve(_shapeCatalog);
             _catalogResolved = true;
             return _resolvedCatalog;
+        }
+
+        /// <summary>
+        /// Muestra el visual del dado encantado. <c>null</c> = sin encantamiento (vuelve al
+        /// material default de uGUI).
+        /// </summary>
+        /// <remarks>
+        /// Toma el <see cref="EnchantmentSO"/> y no un bool: hoy cuesta lo mismo, pero cuando
+        /// llegue un segundo efecto cambia solo el cuerpo del método, sin tocar call-sites.
+        /// El material es compartido — la variación por dado sale de la posición canvas-space
+        /// dentro del shader, así que no hay que instanciar nada (uGUI ni siquiera soporta
+        /// MaterialPropertyBlock).
+        /// </remarks>
+        public void SetEnchantVisual(EnchantmentSO enchantment)
+        {
+            // Idempotente: sin esto, escribir el material cada frame dispara SetMaterialDirty.
+            if (_enchantment == enchantment) return;
+            _enchantment = enchantment;
+
+            if (_background == null) return;
+            _background.material = enchantment != null ? _enchantMaterial : null;
         }
 
         /// <summary>Última cara mostrada (0 = sin tirada). Lo lee el presenter de
