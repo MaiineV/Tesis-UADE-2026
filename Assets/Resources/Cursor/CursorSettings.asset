@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1d7d0417be51d44daf94a967e885829, type: 3}
   m_Name: CursorSettings
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Cursor.CursorSettingsSO
-  StateSprites:
-  - {fileID: 982116024, guid: a37f1a6e312f42342bb4ec9ec437d505, type: 3}
-  - {fileID: 717574729, guid: a37f1a6e312f42342bb4ec9ec437d505, type: 3}
-  - {fileID: -847101180, guid: a37f1a6e312f42342bb4ec9ec437d505, type: 3}
-  - {fileID: -1129831642, guid: a37f1a6e312f42342bb4ec9ec437d505, type: 3}
+  StateCursors:
+  - {fileID: 2800000, guid: 031e3206849b1ef4ba88b0724e651245, type: 3}
+  - {fileID: 2800000, guid: 8c0c8ee3c73435e49b9727da697e12ea, type: 3}
+  - {fileID: 2800000, guid: efa295aca45d95545a0960212ee35206, type: 3}
+  - {fileID: 2800000, guid: d854da0189847b54a9996ab6a7f00c14, type: 3}
   Scale: 2
   HotspotPivot: {x: 0.1, y: 0.9}
   WorldRaycastDistance: 100
