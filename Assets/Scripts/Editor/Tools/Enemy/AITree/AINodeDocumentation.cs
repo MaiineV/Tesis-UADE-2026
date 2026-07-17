@@ -44,6 +44,14 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "resultado del child elegido.\n\n" +
                 "RNG inyectado vía AIContext.Rng — los tests pueden seedearlo para determinismo.",
 
+            [typeof(AINode_Alternate)] =
+                "Alternate (round-robin): rota entre los Children en orden fijo, uno por " +
+                "turno (0, 1, 2, ..., 0, 1, 2, ...). A diferencia de Random, garantiza que " +
+                "nunca se repite el mismo hijo dos veces seguidas.\n\n" +
+                "Usalo cuando necesitás que el enemigo alterne dos comportamientos (ej. " +
+                "'ataque especial' / 'golpe normal') sin depender del azar. El índice vive " +
+                "en la instancia runtime (se resetea a 0 en cada pelea nueva).",
+
             [typeof(AINode_Move)] =
                 "Move Toward Target: mueve al enemy hasta MaxSteps casillas (AIIntReader) hacia " +
                 "el target del TargetSelector (null = player), manteniendo DesiredRange casillas " +
