@@ -224,5 +224,25 @@ namespace Rollgeon.Combat.Tests
 
             Assert.AreEqual(0, tiles.Count);
         }
+
+        [Test]
+        public void ComputeScatteredSquares_AnchorsStayWithinCentralHalfOfRoom()
+        {
+            // Arrange — sala 20x20 (X,Y en [0,19]): margen 25% por lado ⇒ pool central
+            // en X,Y ∈ [5,14]. Con squareWidth=2 el cuadrado puede extenderse 1 casilla
+            // más allá del pool, así que el rango válido de tiles es [5,15].
+            _grid.LoadRoom(NavGraph.Rect(20, 20));
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeScatteredSquares(_grid, new System.Random(3), count: 3, squareWidth: 2);
+
+            // Assert
+            Assert.Greater(tiles.Count, 0);
+            foreach (var c in tiles)
+            {
+                Assert.IsTrue(c.X >= 5 && c.X <= 15 && c.Y >= 5 && c.Y <= 15,
+                    $"Tile {c} cayó fuera del 50% central de la sala (zonas no deberían pegarse a las paredes).");
+            }
+        }
     }
 }

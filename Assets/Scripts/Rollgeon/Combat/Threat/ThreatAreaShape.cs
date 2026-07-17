@@ -142,8 +142,9 @@ namespace Rollgeon.Combat.Threat
 
         /// <summary>
         /// <paramref name="count"/> cuadrados de <paramref name="squareWidth"/>·<paramref name="squareWidth"/>
-        /// casillas, anclados en tiles al azar de la sala (vía <paramref name="rng"/>) — ni el
-        /// jugador ni el boss son el centro. Requiere una sala con bounds reales (como
+        /// casillas, anclados al azar (vía <paramref name="rng"/>) en el 50% central de la sala
+        /// (25% de margen recortado en cada borde) — ni el jugador ni el boss son el centro, y
+        /// las zonas no aparecen pegadas a las paredes. Requiere una sala con bounds reales (como
         /// <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/>/<see cref="ThreatShape.HalfRoom"/>);
         /// grafo vacío ⇒ vacío. Los cuadrados pueden solaparse entre sí, se fusionan en el
         /// mismo <c>HashSet</c> sin duplicar.
@@ -158,9 +159,11 @@ namespace Rollgeon.Combat.Threat
             var room = new List<GridCoord>(RoomTiles(grid));
             if (room.Count == 0) return result;
 
+            var anchorPool = CenterAnchorPool(room);
+
             for (int i = 0; i < count; i++)
             {
-                var anchor = room[rng.Next(room.Count)];
+                var anchor = anchorPool[rng.Next(anchorPool.Count)];
                 for (int dx = 0; dx < w; dx++)
                 for (int dy = 0; dy < w; dy++)
                 {
@@ -170,6 +173,32 @@ namespace Rollgeon.Combat.Threat
             }
 
             return result;
+        }
+
+        // Recorta un margen del 25% por lado, dejando el 50% central de la sala como pool
+        // de anclaje — así las zonas erráticas caen "en el medio del mapa", nunca pegadas
+        // al borde. Sala minúscula donde el margen vacía el pool ⇒ fallback a la sala entera.
+        private static List<GridCoord> CenterAnchorPool(List<GridCoord> room)
+        {
+            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in room)
+            {
+                if (c.X < minX) minX = c.X;
+                if (c.X > maxX) maxX = c.X;
+                if (c.Y < minY) minY = c.Y;
+                if (c.Y > maxY) maxY = c.Y;
+            }
+
+            int marginX = (maxX - minX + 1) / 4;
+            int marginY = (maxY - minY + 1) / 4;
+            int loX = minX + marginX, hiX = maxX - marginX;
+            int loY = minY + marginY, hiY = maxY - marginY;
+
+            var pool = new List<GridCoord>();
+            foreach (var c in room)
+                if (c.X >= loX && c.X <= hiX && c.Y >= loY && c.Y <= hiY) pool.Add(c);
+
+            return pool.Count > 0 ? pool : room;
         }
 
         private static (int dx, int dy) DirectionStep(Cardinal dir) => dir switch
