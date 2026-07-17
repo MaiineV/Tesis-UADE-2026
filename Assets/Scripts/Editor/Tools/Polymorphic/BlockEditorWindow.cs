@@ -255,10 +255,21 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             }
             else if (_selectedNode.Kind == BlockNodeKind.Root)
             {
-                EditorGUILayout.LabelField(_selectedNode.Title, EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox(
-                    "This is the asset itself. Use the Raw Data tab for its top-level fields, " +
-                    "or select one of the blocks to the right.", MessageType.Info);
+                // The asset's own fields — id, display name, icon, cooldown… Everything except the
+                // blocks, which are nodes to the right. Saves a trip to the Raw Data tab for the
+                // fields an author touches most.
+                BlockPanelStyles.DrawNodeHeader(_selectedNode);
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    PolymorphicBlockDrawer.DrawNode(
+                        _ctx, _selected, string.Empty, PolymorphicBlockDrawer.Options.Default);
+                }
+
+                if (_selectedNode.Children.Count > 0)
+                {
+                    EditorGUILayout.Space(6);
+                    BlockPanelStyles.DrawChildrenSummary(_selectedNode);
+                }
             }
             else
             {

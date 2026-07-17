@@ -6,6 +6,7 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
 using Rollgeon.PreConditions;
+using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -260,8 +261,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             var pickers = PolymorphicMemberScanner.Scan(type);
             var blocks = PolymorphicMemberScanner.BlockMembersOf(type);
 
-            var prop = ctx.At(path);
-            if (prop == null)
+            var children = ChildrenAt(ctx, path);
+            if (children == null)
             {
                 ctx.Draw(path);
                 return;
@@ -269,9 +270,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             bool drewAnything = false;
 
-            for (int i = 0; i < prop.Children.Count; i++)
+            foreach (var child in children)
             {
-                var child = prop.Children[i];
                 if (IsBlockNamed(blocks, child.Name)) continue;   // graphed
                 if (IsBlockNamed(pickers, child.Name)) continue;  // graphed, or handled below
                 child.Draw();
@@ -309,6 +309,44 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// </summary>
         static bool IsHiddenTargetSelector(PolymorphicMember member, Options opts) =>
             !opts.ShowTargetSelector && member.BaseType == typeof(BaseEnemyTargetSelector);
+
+        /// <summary>
+        /// Child properties at <paramref name="path"/>, or the asset's own top-level fields when the
+        /// path is empty (the root node). Null when the path doesn't resolve.
+        /// </summary>
+        static List<InspectorProperty> ChildrenAt(PolymorphicAuthoringContext ctx, string path)
+        {
+            var result = new List<InspectorProperty>();
+
+            if (string.IsNullOrEmpty(path))
+            {
+                if (ctx.Tree == null) return null;
+                foreach (var p in ctx.Tree.EnumerateTree(false))
+                {
+                    if (IsOdinMachinery(p.Name)) continue;
+                    result.Add(p);
+                }
+                return result;
+            }
+
+            var prop = ctx.At(path);
+            if (prop == null) return null;
+            for (int i = 0; i < prop.Children.Count; i++)
+            {
+                var child = prop.Children[i];
+                if (IsOdinMachinery(child.Name)) continue;
+                result.Add(child);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Odin surfaces its own plumbing as properties of a <c>SerializedScriptableObject</c>:
+        /// the serialisation blob, and the hook it uses to run a type's custom inspector GUI.
+        /// Neither is content, and drawing the latter re-entrantly renders the whole inspector.
+        /// </summary>
+        static bool IsOdinMachinery(string propertyName) =>
+            propertyName == "serializationData" || propertyName == "InternalOnInspectorGUI";
 
         // ---- recursion into nested containers ------------------------------
 

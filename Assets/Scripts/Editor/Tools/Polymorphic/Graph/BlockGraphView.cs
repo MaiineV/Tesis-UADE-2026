@@ -46,9 +46,12 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
             this.AddManipulator(new ContentDragger());
-            this.AddManipulator(new RightClickPanManipulator());
-            // Deliberately no SelectionDragger and no RectangleSelector: positions are derived, so
-            // moving a node would be a lie, and box-select only exists to move things.
+            this.AddManipulator(new RectangleSelector());
+            // No right-click pan: right-click is the add/remove menu here, and a manipulator that
+            // swallows the press would eat it. Pan with middle-drag or alt+drag (ContentDragger).
+            // No SelectionDragger either — positions are derived, so moving a node would be a lie.
+
+            deleteSelection = OnDeleteSelection;
 
             var grid = new GridBackground();
             Insert(0, grid);
@@ -144,25 +147,58 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             Rebuild();
         }
 
-        void Remove(BlockGraphNode node)
+        /// <summary>
+        /// Del / Backspace on the selection. Whatever hangs off a removed block goes with it — the
+        /// children live inside it, so there is nothing extra to unhook.
+        /// </summary>
+        void OnDeleteSelection(string operationName, AskUser askUser)
         {
-            var member = node.SourceMember.Value;
-            _ctx.Mutate($"Remove {node.Title}", () =>
+            if (_ctx == null) return;
+
+            var doomed = selection
+                .OfType<BlockNodeView>()
+                .Select(v => v.Model)
+                .Where(m => m.CanRemove)
+                .ToList();
+            if (doomed.Count == 0) return;
+
+            string label = doomed.Count == 1 ? $"Remove {doomed[0].Title}" : $"Remove {doomed.Count} blocks";
+            _ctx.Mutate(label, () =>
             {
-                if (node.SourceIndex >= 0)
-                {
-                    if (member.Field.GetValue(node.Owner) is IList list
-                        && node.SourceIndex < list.Count)
-                        list.RemoveAt(node.SourceIndex);
-                }
-                else
-                {
-                    member.Field.SetValue(node.Owner, null);
-                }
+                foreach (var node in doomed) Detach(node);
             });
+
             OnNodeSelected?.Invoke(null);
             OnStructureChanged?.Invoke();
             Rebuild();
+        }
+
+        void Remove(BlockGraphNode node)
+        {
+            _ctx.Mutate($"Remove {node.Title}", () => Detach(node));
+            OnNodeSelected?.Invoke(null);
+            OnStructureChanged?.Invoke();
+            Rebuild();
+        }
+
+        /// <summary>
+        /// Unhooks one block from its owner. Removes <b>by reference</b>, never by index: a
+        /// multi-select deletes several blocks in one pass, and each removal shifts the indices of
+        /// the ones after it — so a stored index would take out the wrong element.
+        /// </summary>
+        static void Detach(BlockGraphNode node)
+        {
+            if (!node.CanRemove) return;
+            var member = node.SourceMember.Value;
+
+            if (node.SourceIndex >= 0)
+            {
+                if (member.Field.GetValue(node.Owner) is IList list) list.Remove(node.Value);
+            }
+            else
+            {
+                member.Field.SetValue(node.Owner, null);
+            }
         }
 
         /// <summary>

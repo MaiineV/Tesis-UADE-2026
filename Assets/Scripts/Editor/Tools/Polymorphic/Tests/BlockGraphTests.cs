@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Rollgeon.Editor.Tools.Polymorphic;
 using Rollgeon.Editor.Tools.Polymorphic.Graph;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -243,6 +244,35 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
 
             Assert.IsFalse(model.Root.CanRemove);
             Assert.IsNull(model.Root.Parent);
+        }
+
+        /// <summary>
+        /// Removal goes by reference, not by index — a multi-select deletes several blocks in one
+        /// pass and each removal shifts the indices after it. This pins that a stored index is never
+        /// what identifies the element.
+        /// </summary>
+        [Test]
+        public void Build_MiddleElement_RemovesByReferenceNotIndex()
+        {
+            var item = NewActiveItem();
+            var first = new EffAddShield();
+            var middle = new EffHeal();
+            var last = new EffDealDamage();
+            item.OnActivate.Effects.Add(first);
+            item.OnActivate.Effects.Add(middle);
+            item.OnActivate.Effects.Add(last);
+
+            var model = BlockGraphModel.Build(item);
+            var middleNode = model.Root.Children[0].Children[1];
+            Assert.AreSame(middle, middleNode.Value);
+
+            // Simulate deleting the first one, which is what shifts every later index.
+            item.OnActivate.Effects.Remove(first);
+
+            // A stale SourceIndex of 1 now points at `last`; by reference it still finds `middle`.
+            item.OnActivate.Effects.Remove((IEffect)middleNode.Value);
+
+            CollectionAssert.AreEqual(new IEffect[] { last }, item.OnActivate.Effects);
         }
 
         [Test]

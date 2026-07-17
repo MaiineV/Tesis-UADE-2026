@@ -24,7 +24,10 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             Model = model;
             title = model.Title;
 
-            capabilities &= ~Capabilities.Deletable;
+            // Deletable drives the Del key; BlockGraphView.deleteSelection turns it into a data edit.
+            // The root has no owner to detach from, so it stays undeletable.
+            if (!model.CanRemove) capabilities &= ~Capabilities.Deletable;
+
             // Not movable: position means "where this sits in the data". Letting it be dragged
             // would imply the layout is authored, and it isn't — it's recomputed every rebuild.
             capabilities &= ~Capabilities.Movable;
