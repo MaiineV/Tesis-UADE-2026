@@ -7506,7 +7506,12 @@ public enum ItemRarity { Common, Uncommon, Rare, Legendary }
 [Serializable]
 public class PassiveItemHook
 {
-    [InfoBox("Evento que dispara el efecto pasivo. Ej: OnTurnStarted, OnComboMatched, OnDamageResolved.")]
+    [InfoBox("Evento del bus que dispara el efecto. Usables: OnTurnStarted, OnTurnFinished, " +
+             "OnRollStarted, OnDiceRolled, OnRollResolved, OnDamageIncoming, OnDamageOutgoing, " +
+             "OnComboCrossed, OnWeaknessHit, OnPlayerHealthChanged.")]
+    [InfoBox("El hook filtra por args[0] == Guid del jugador (convención §18). Un evento que NO " +
+             "arranca con un Guid dispara siempre — no hay a quién comparar.",
+             InfoMessageType.Warning)]
     public EventName TriggerEvent;
 
     [OdinSerialize]
@@ -7537,11 +7542,32 @@ public class PersistentModifierDef
 
 | Ítem | Type | Efecto |
 |---|---|---|
-| "Guante de espinas" | Passive | Hook en `OnDamageResolved` → si el player recibió daño, `EffDealDamage(3)` al atacante |
+| "Guante de espinas" | Passive | Hook en `OnDamageIncoming` → si el player recibió daño, `EffDealDamage(3)` al atacante |
 | "Amuleto de regeneración" | Passive | PersistentModifier: `Health regen +2` via hook en `OnTurnFinished` |
 | "Dado de la suerte" | Passive | Hook en `OnRollStarted` → `EffAddIntModifier` en `RerollBudget` (+1 reroll gratuito) |
 | "Bomba de humo" | Active | `OnActivate`: `EffAddStatusEffect(Invisible, 2 turnos)`, Cooldown = 5 |
 | "Poción de furia" | Active | `OnActivate`: `EffAddFloatModifier(OutgoingDamageMultiplier, ×1.5, 3 turnos)`, Cooldown = 8 |
+
+#### 18.2.0 Qué eventos se pueden hookear
+
+`TriggerEvent` es un `EventName` — el bus legacy. **`OnComboMatched` y `OnDamageResolved` no existen
+ahí** y no se pueden hookear desde un item: son `TypedEvent<T>` por diseño (§1.2.1). Hasta 2026-07 el
+InfoBox de este campo los recomendaba igual, y la tabla de ejemplos de acá abajo también — el enum es
+un dropdown, así que el diseñador no los encontraba y no sabía por qué.
+
+Equivalentes reales:
+
+| Si buscabas | Usá |
+|---|---|
+| `OnDamageResolved` (recibir daño) | `OnDamageIncoming` |
+| `OnDamageResolved` (pegar) | `OnDamageOutgoing` |
+| `OnComboMatched` | `OnComboCrossed`, `OnWeaknessHit`, `OnComboCounterIncremented` |
+| cambio de HP | `OnPlayerHealthChanged` |
+
+**Filtro de owner.** `InventoryService.BindPassiveHooks` corre el efecto sólo si
+`args[0]` es el `Guid` del jugador (convención §18: `args[0]` es la entidad del evento). Un evento que
+**no** arranca con un `Guid` no tiene contra qué comparar y **dispara siempre** — para un item del
+jugador suele dar igual, pero conviene saberlo antes de colgar una pasiva de un evento global.
 
 #### 18.2.1 Invariante de bind/unbind
 
