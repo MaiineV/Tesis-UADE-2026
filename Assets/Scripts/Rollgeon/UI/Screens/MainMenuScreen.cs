@@ -46,6 +46,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Button _unlocksButton;
 
+        [Tooltip("Boton 'Opciones'. Stub hasta que exista la settings screen — mismo patrón " +
+                 "que el settings de PauseMenuOverlay. Opcional.")]
+        [SerializeField]
+        private Button _optionsButton;
+
         [Tooltip("Boton 'Borrar partida' (#164). Resetea la meta-progresion al estado inicial " +
                  "(borra el save y los pools se actualizan al instante) y elimina la run en curso " +
                  "guardada, apagando el Continue. Opcional.")]
@@ -111,6 +116,11 @@ namespace Rollgeon.UI.Screens
                 _unlocksButton.onClick.AddListener(OnUnlocksClicked);
             }
 
+            if (_optionsButton != null)
+            {
+                _optionsButton.onClick.AddListener(OnOptionsClicked);
+            }
+
             if (_resetSaveButton != null)
             {
                 _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
@@ -143,6 +153,7 @@ namespace Rollgeon.UI.Screens
             if (_continueButton != null) _continueButton.onClick.RemoveListener(OnContinueClicked);
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
             if (_unlocksButton != null) _unlocksButton.onClick.RemoveListener(OnUnlocksClicked);
+            if (_optionsButton != null) _optionsButton.onClick.RemoveListener(OnOptionsClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
@@ -411,6 +422,11 @@ namespace Rollgeon.UI.Screens
             }
 
             screens.PushByStringId("UnlocksScreen");
+        }
+
+        private void OnOptionsClicked()
+        {
+            Debug.Log(LogPrefix + "Options pressed (stub — pending settings screen).");
         }
 
         /// <summary>
