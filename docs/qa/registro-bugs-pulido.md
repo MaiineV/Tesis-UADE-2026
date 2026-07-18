@@ -94,6 +94,25 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix**: un paso de validación/reparación en generación (o un test de assets que recorra `Assets/Prefabs/Rooms/**` y falle si un `RoomLayout` no tiene los 4 `DoorSlots`). El tool `Rollgeon/Tools/Diagnose Room Doors` ya hace el diagnóstico manual.
 - **Estado**: **cerrado** en `Fix#0034`. Se agregó el guard en generación (`DoorTopologyGuard` + `DungeonManager.PruneDoorlessConnections`, paso 5c de `GenerateFloor`): poda las conexiones cuya dirección no tiene puerta autorada (o cuyo vecino no tiene la recíproca) de ambos lados, con `LogError` por poda, y reporta con `LogError` cualquier sala que quede inalcanzable tras podar. Con las 21 salas actuales (4 puertas c/u) es no-op. Cubierto por `DoorTopologyGuardTests` (7 tests de lógica pura).
 
+### PUL-012 — El preview de daño no muestra los bonos at-played
+- **Área**: UI / Combat / Upgrades
+- El canal nuevo de "combo jugado" (`ComboPlayService`, Feature#0035) inyecta `bono_combo` recién al confirmar el ataque, dentro de la ventana de ejecución. `DamageFormulaView` llama `PlayerComboDamage.Resolve` con la ventana cerrada, así que una pasiva/item con `EffAddComboBonus` at-played suma daño real que el preview del HUD no anticipa.
+- **Hoy es benigno**: decisión explícita del diseño de Feature#0035 (el preview quedó como estaba); solo hay diferencia si diseño autorea pasivas at-played con bono.
+- **Fix previsto**: dry-run de preview — dispatchar solo `EffectData` cuyos efectos sean todos `IComboScratchWriter` (el marker ya existe en `CapabilityInterfaces.cs` para esto) contra un scratch descartable y sumarlo al preview.
+- **Estado**: abierto. Diferido a propósito en Feature#0035.
+
+### PUL-013 — Contadores de combo y analytics cuentan previews, no combos jugados
+- **Área**: Combos / Analytics
+- `ComboCountersService` y `AnalyticsTrackerService` escuchan `ComboMatchedPayload`, que se re-emite en **cada toggle de hold** (preview), no al jugar el combo. Un jugador que holdea/desholdea infla contadores Balatro-style y métricas sin atacar nunca.
+- **Fix previsto**: resuscribirlos a `ComboPlayedPayload` (Feature#0035) — una emisión por acción confirmada, pre-daño. Revisar el balance de los readers `ReadComboCounter` antes: los números van a bajar.
+- **Estado**: abierto. Detectado al diseñar Feature#0035; fuera de alcance de esa sesión.
+
+### PUL-014 — El hook RoomEntered de pasivas no filtra por sala
+- **Área**: Upgrades / Combos
+- El trigger legacy `AddGoldOnRoomEntered` tenía un `RoomIdFilter` (string) que ningún asset usaba; al migrarlo a `ExecuteEffectsOnEvent(RoomEntered)` (Feature#0035) ese filtro se descartó — no existe `PcRoomId` y el `RoomId` del evento no llega a las PreConditions.
+- **Fix previsto**: si diseño necesita "oro solo al entrar a la tienda", agregar `PcRoomId` que lea el payload de sala vía `PreConditionContext` (el campo `Effect` ya existe; falta poblar RoomId en el contexto del bridge).
+- **Estado**: abierto. Diferido a propósito en Feature#0035 (sin uso en assets).
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
