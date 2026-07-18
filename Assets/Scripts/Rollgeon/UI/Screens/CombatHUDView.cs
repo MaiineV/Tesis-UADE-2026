@@ -362,8 +362,9 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
-            if (_boardSkin != null)
-                _boardSkin.ApplyBoardType(behavior != null ? behavior.BoardType : DiceBoardType.Default);
+            var boardType = behavior != null ? behavior.BoardType : DiceBoardType.Default;
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(boardType);
+            if (_damageFormula != null) _damageFormula.SetBoardType(boardType);
         }
 
         public void ClearBehaviorForFormula()
@@ -381,6 +382,7 @@ namespace Rollgeon.UI.Screens
         public void ApplyBoardType(DiceBoardType type)
         {
             if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
+            if (_damageFormula != null) _damageFormula.SetBoardType(type);
         }
 
         // ======================================================================

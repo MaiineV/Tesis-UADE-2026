@@ -69,6 +69,14 @@ namespace Rollgeon.UI.HUD
                     Skins[i] = entry;
                 }
 
+                // Mismo criterio para el color del value text: default (0,0,0,0) lo dejaría
+                // invisible. Blanco = texto sin teñir; el usuario elige el color por tipo.
+                if (entry.TextColor == default)
+                {
+                    entry.TextColor = Color.white;
+                    Skins[i] = entry;
+                }
+
                 if (!seen.Add(entry.Type))
                     Debug.LogWarning($"{name}: {entry.Type} duplicado — TryGet usa la primera entrada.", this);
             }
@@ -91,13 +99,47 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Modo de dibujo del Image. Sliced respeta los bordes 9-slice del sprite.")]
         public Image.Type ImageType;
 
-        /// <summary>Entry con defaults sanos (tint blanco, Sliced) para autorado nuevo desde código.</summary>
+        [Header("Value text")]
+        [Tooltip("Color base del value text (DamageFormulaView) para este tipo de tirada. " +
+                 "Blanco = texto sin teñir.")]
+        public Color TextColor;
+
+        [Tooltip("Feedback del value text de este tipo: la animación (flavor) es fija por tipo " +
+                 "y su intensidad escala con el valor del combo.")]
+        public ValueTextFeedback Feedback;
+
+        /// <summary>Entry con defaults sanos (tint/texto blanco, Sliced) para autorado nuevo desde código.</summary>
         public static DiceBoardSkinEntry ForType(DiceBoardType type, Sprite sprite) => new()
         {
             Type = type,
             Sprite = sprite,
             Tint = Color.white,
             ImageType = Image.Type.Sliced,
+            TextColor = Color.white,
         };
+    }
+
+    /// <summary>
+    /// Feedback del value text para un tipo de tablero. La animación (<see cref="EffectTag"/>,
+    /// un tag de Febucci Text Animator que sacude/ondula las letras) es FIJA por tipo — la misma
+    /// entre tiradas — y su AMPLITUD escala con el valor del combo: mejor combo ⇒ más fuerte.
+    /// Lo consume <c>ValueTextFeedbackController</c>.
+    /// </summary>
+    [Serializable]
+    public struct ValueTextFeedback
+    {
+        [Tooltip("Tag de Febucci Text Animator del value text de este tipo (ej. \"shake\" en " +
+                 "ataque, \"wave\"/\"bounce\" en defensa). Vacío = sin animación. Se aplica sobre " +
+                 "las letras (compatible con UI); la amplitud la controla AmplitudeMin/Max.")]
+        public string EffectTag;
+
+        [Tooltip("Amplitud del tag cuando el combo es bajo / no hay combo (baseline).")]
+        public float AmplitudeMin;
+
+        [Tooltip("Amplitud del tag al combo >= ValueForMax.")]
+        public float AmplitudeMax;
+
+        [Tooltip("Valor de combo al que se alcanza AmplitudeMax. <= 0 usa un default razonable.")]
+        public float ValueForMax;
     }
 }
