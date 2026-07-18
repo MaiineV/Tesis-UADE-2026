@@ -180,7 +180,10 @@ namespace Rollgeon.Shop
             for (int i = 0; i < slotCount; i++)
             {
                 string spawnPointId = SpawnPointKey(i);
-                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop);
+                // Slot 0 = entry garantizada (la poción, si el pool la cablea);
+                // el resto rolea del pool dinámico de pasivas + extras manuales.
+                bool guaranteedSlot = i == 0;
+                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop, guaranteedSlot);
                 if (slot == null) continue;
 
                 if (!slot.Purchased)
@@ -215,7 +218,7 @@ namespace Rollgeon.Shop
 
         private ShopSlot BuildOrHydrateSlot(
             RoomInstance room, string spawnPointId, System.Random rng, int floorDepth,
-            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop)
+            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop, bool guaranteedSlot)
         {
             if (room.ObjectStates.TryGet<ShopItemState>(spawnPointId, out var state))
             {
@@ -236,8 +239,14 @@ namespace Rollgeon.Shop
             }
 
             // Primera visita: rolear + persistir. Pasamos los rolled previos como
-            // exclude para evitar duplicados dentro del mismo shop.
-            var rolled = ActivePool.Roll(rng, floorDepth, rolledInThisShop);
+            // exclude para evitar duplicados dentro del mismo shop. El slot
+            // garantizado (poción) saltea el roll; sin garantizado cableado (ej.
+            // tutorial) degrada al roll normal.
+            ShopRollResult rolled;
+            if (!guaranteedSlot || !ActivePool.TryGetGuaranteed(out rolled))
+            {
+                rolled = ActivePool.RollDynamic(rng, floorDepth, rolledInThisShop);
+            }
             if (rolled.Item == null)
             {
                 Debug.LogWarning(LogPrefix + "Pool vacío o sin entries eligibles — slot se omite.");
@@ -349,12 +358,31 @@ namespace Rollgeon.Shop
         private IShopRewardEntry ResolveEntryFromPool(string entryId)
         {
             if (ActivePool == null || string.IsNullOrEmpty(entryId)) return null;
-            foreach (var weighted in ActivePool.Items)
+
+            var guaranteed = ActivePool.Guaranteed.GetEntry();
+            if (guaranteed != null && guaranteed.EntryId == entryId) return guaranteed;
+
+            if (ActivePool.Items != null)
             {
-                var entry = weighted.GetEntry();
-                if (entry == null) continue;
-                if (entry.EntryId == entryId) return entry;
+                foreach (var weighted in ActivePool.Items)
+                {
+                    var entry = weighted.GetEntry();
+                    if (entry == null) continue;
+                    if (entry.EntryId == entryId) return entry;
+                }
             }
+
+            // Pasivas del pool dinámico (re-entry de un slot roleado de ahí).
+            if (ActivePool.PassivePool != null && ActivePool.PassivePool.Entries != null)
+            {
+                foreach (var entry in ActivePool.PassivePool.Entries)
+                {
+                    var passive = entry?.Passive;
+                    if (passive == null) continue;
+                    if (((IShopRewardEntry)passive).EntryId == entryId) return passive;
+                }
+            }
+
             return null;
         }
 

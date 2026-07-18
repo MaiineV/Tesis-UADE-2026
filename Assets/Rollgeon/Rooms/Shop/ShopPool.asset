@@ -17,21 +17,13 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 11400000, guid: 89b4385b83bcc2640a07f385a7787d29, type: 2}
-    - {fileID: 11400000, guid: 505e3b0c910ab8d42a7b3ec23269481f, type: 2}
-    - {fileID: 11400000, guid: b4d5ef204eb691346befce16015f8222, type: 2}
+    - {fileID: 11400000, guid: aee1eefd99d9d7f4badf337802bf75ab, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: Items
-      Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Shop.WeightedShopItem,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 3
-    - Name: 
+    - Name: Guaranteed
       Entry: 7
       Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
     - Name: Item
@@ -39,7 +31,7 @@ MonoBehaviour:
       Data: 0
     - Name: Weight
       Entry: 4
-      Data: 4
+      Data: 1
     - Name: BasePrice
       Entry: 3
       Data: 8
@@ -49,58 +41,26 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 7
-      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
-    - Name: Item
+    - Name: PassivePool
       Entry: 10
       Data: 1
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: BasePrice
-      Entry: 3
-      Data: 30
-    - Name: MinFloorDepth
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
+    - Name: Items
       Entry: 7
-      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
-    - Name: Item
-      Entry: 10
-      Data: 2
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: BasePrice
-      Entry: 3
-      Data: 20
-    - Name: MinFloorDepth
-      Entry: 3
-      Data: 0
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Shop.WeightedShopItem,
+        Rollgeon]], mscorlib
     - Name: 
-      Entry: 8
-      Data: 
+      Entry: 12
+      Data: 0
     - Name: 
       Entry: 13
       Data: 
     - Name: 
       Entry: 8
       Data: 
-  Items:
-  - Item: {fileID: 11400000, guid: 89b4385b83bcc2640a07f385a7787d29, type: 2}
-    Weight: 4
+  Guaranteed:
+    Item: {fileID: 11400000, guid: 89b4385b83bcc2640a07f385a7787d29, type: 2}
+    Weight: 1
     BasePrice: 8
     MinFloorDepth: 0
-  - Item: {fileID: 11400000, guid: 505e3b0c910ab8d42a7b3ec23269481f, type: 2}
-    Weight: 1
-    BasePrice: 30
-    MinFloorDepth: 0
-  - Item: {fileID: 11400000, guid: b4d5ef204eb691346befce16015f8222, type: 2}
-    Weight: 1
-    BasePrice: 20
-    MinFloorDepth: 0
+  PassivePool: {fileID: 11400000, guid: aee1eefd99d9d7f4badf337802bf75ab, type: 2}
+  Items: []
