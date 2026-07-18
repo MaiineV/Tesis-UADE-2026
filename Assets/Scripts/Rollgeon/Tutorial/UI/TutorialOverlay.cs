@@ -134,6 +134,8 @@ namespace Rollgeon.Tutorial.UI
             {
                 _popupBackground.sprite = _settings.PopupBackgroundSprite;
                 _popupBackground.type = Image.Type.Sliced;
+                if (_settings.PopupBackgroundPpuMultiplier > 0f)
+                    _popupBackground.pixelsPerUnitMultiplier = _settings.PopupBackgroundPpuMultiplier;
             }
 
             _popupText = CreateText("Text", _popupRoot);

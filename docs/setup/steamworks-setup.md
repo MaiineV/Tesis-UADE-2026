@@ -56,10 +56,18 @@ logros data-driven. App ID del equipo: **4889850**.
 
 ## Builds
 
-- Build de prueba fuera de Steam: copiar `steam_appid.txt` **junto al .exe**.
-- Depot final subido a Steam: **NUNCA incluir `steam_appid.txt`** (rompe el
-  relaunch-vía-Steam y delata builds de dev). `RestartAppIfNecessary` solo
-  corre en builds (`#if !UNITY_EDITOR`).
+Desde Feature#0036 el pipeline está automatizado:
+
+- **Generar el player** → [`windows-build.md`](./windows-build.md).
+  Menú **Rollgeon → Build → Windows 64**. El post-build copia `steam_appid.txt`
+  al lado del `.exe` solo (hace falta para correrlo fuera del cliente de Steam).
+- **Subir a Steam** → [`../../SteamPipe/README.md`](../../SteamPipe/README.md).
+  El depot **excluye** `steam_appid.txt` por vdf: incluirlo rompe el
+  relaunch-vía-Steam y delata builds de dev. `RestartAppIfNecessary` solo corre
+  en builds (`#if !UNITY_EDITOR`).
+
+**No hace falta aprobación de Valve** para subir y testear builds. El review solo
+se dispara al pedir el release ("Mark as ready for review").
 
 ## Troubleshooting
 

@@ -271,6 +271,14 @@ MonoBehaviour:
     m_Localized: Back
     m_Metadata:
       m_Items: []
+  - m_Id: 1211500024659968
+    m_Localized: Contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211500091768832
+    m_Localized: Minimum damage = highest die
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

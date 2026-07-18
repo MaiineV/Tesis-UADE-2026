@@ -567,6 +567,15 @@ MonoBehaviour:
     m_Localized: "Tutorial \u2014 Combate 2"
     m_Metadata:
       m_Items: []
+  - m_Id: 1211498464378880
+    m_Localized: Furia del Guerrero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211498485350400
+    m_Localized: Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos.
+      Al curarte por encima de ese umbral, vuelve a la normalidad.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
