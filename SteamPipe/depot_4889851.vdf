@@ -3,7 +3,10 @@
 "DepotBuildConfig"
 {
 	"DepotID"		"4889851"
-	"contentroot"	"..\Build\Windows64"
+
+	// Sin contentroot a proposito: se hereda el del app script. Si se declara acá,
+	// se resuelve RELATIVO al contentroot del app (no a este archivo), así que
+	// repetirlo da repo\Build\Build\Windows64 y falla con "Invalid content root".
 
 	"FileMapping"
 	{
