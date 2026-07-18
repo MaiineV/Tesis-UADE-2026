@@ -94,6 +94,16 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "El TargetSelector del Behavior resuelve a quién apuntan los Effects. Cada " +
                 "Effect tiene su propia lista de PreConditions independiente — el behavior " +
                 "ejecuta solo los Effects cuyas PreConditions pasan.",
+
+            [typeof(AINode_SpawnReinforcements)] =
+                "Spawn Reinforcements: spawnea Count copias de EnemyToSpawn en tiles del " +
+                "borde de la sala (perímetro del bounding box, walkable y libres) y los " +
+                "suma a la ronda de combate en curso.\n\n" +
+                "Los refuerzos van al FINAL de la ronda actual — quien ya estaba en cola " +
+                "(player/boss) termina su turno normal antes; de ahí en adelante rotan de " +
+                "forma regular y estable, como cualquier otro participante.\n\n" +
+                "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
+                "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
         };
 
         /// <summary>
