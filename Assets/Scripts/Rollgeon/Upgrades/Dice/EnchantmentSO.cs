@@ -58,6 +58,14 @@ namespace Rollgeon.Upgrades.Dice
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true, DefaultExpandedState = true)]
         protected List<IEnchantmentTrigger> _triggers = new List<IEnchantmentTrigger>();
 
+        [Title("Capabilities (declarativas)")]
+        [InfoBox("Propiedades estáticas del encantamiento que los services consultan " +
+                 "(comodín, prevent-holding, etc.). No ejecutan nada por sí mismas; las " +
+                 "marcadas [NotYetWired] aún no tienen consumidor en el runtime.")]
+        [OdinSerialize, SerializeReference]
+        [ListDrawerSettings(ShowFoldout = false, DefaultExpandedState = true)]
+        protected List<IEnchantmentCapability> _capabilities = new List<IEnchantmentCapability>();
+
         /// <inheritdoc />
         public override UpgradeChannel Channel => UpgradeChannel.Dice;
 
@@ -69,6 +77,9 @@ namespace Rollgeon.Upgrades.Dice
 
         /// <summary>Triggers polimórficos que reaccionan a eventos del combate.</summary>
         public IReadOnlyList<IEnchantmentTrigger> Triggers => _triggers;
+
+        /// <summary>Capacidades declarativas — los services las consultan por tipo.</summary>
+        public IReadOnlyList<IEnchantmentCapability> Capabilities => _capabilities;
 
         /// <summary>
         /// <c>true</c> si <paramref name="type"/> figura en
