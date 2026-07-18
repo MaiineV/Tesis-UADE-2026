@@ -417,6 +417,45 @@ namespace Rollgeon.GameCamera.Tests
             return occ;
         }
 
+        // ------------------------------------------------------------------ //
+        // Registro en el ServiceLocator                                       //
+        // ------------------------------------------------------------------ //
+
+        // Regresión: la cámara se registraba en ServiceScope.Run. Unity corre TODOS los
+        // Awake antes de cualquier Start, así que el registro se hacía y acto seguido
+        // GameplayBootstrapper.Start → StartRun → ClearScope(Run) lo borraba. Nadie lo
+        // volvía a registrar (Awake no corre dos veces) y tanto el SetFollowTarget del
+        // bootstrapper como el recenter del RoomGridLoader dejaban de resolver el service:
+        // la cámara no se centraba ni al arrancar ni al cambiar de sala.
+
+        [Test]
+        public void Initialize_RegistersItselfAsCameraService()
+        {
+            // El SetUp ya llamó Initialize sobre _service.
+            Assert.IsTrue(ServiceLocator.TryGetService<ICameraService>(out var registered));
+            Assert.AreSame(_service, registered);
+        }
+
+        [Test]
+        public void Initialize_RegistersOutsideRunScope_SurvivesClearScopeRun()
+        {
+            ServiceLocator.ClearScope(ServiceScope.Run);
+
+            Assert.IsTrue(ServiceLocator.TryGetService<ICameraService>(out var registered),
+                "La cámara vive con la scene, no con la run. Si ClearScope(Run) la borra, " +
+                "StartRun la desregistra y se pierde el recenter al entrar a una sala.");
+            Assert.AreSame(_service, registered);
+        }
+
+        // El desregistro en OnDestroy (lo que hace seguro el scope Global cuando se
+        // descarga la scene) no se cubre acá: EditMode no dispara los callbacks de
+        // lifecycle de Unity — ni Awake ni OnDestroy — así que el test pasaría por
+        // motivos equivocados. Verificado en playtest.
+
+        // El otro extremo de esta regresión — que StartRun no desregistre una cámara ya
+        // inicializada — se cubre en RunBootstrapperTests, el fixture que ya tiene armado
+        // el entorno de arranque de run.
+
         // -----------------------------------------------------------------
         // Stubs
         // -----------------------------------------------------------------

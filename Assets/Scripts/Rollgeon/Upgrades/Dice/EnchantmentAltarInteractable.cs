@@ -23,7 +23,7 @@ namespace Rollgeon.Upgrades.Dice
     /// UI (Phase 6) consume para abrir la pantalla de selección.
     /// </remarks>
     [AddComponentMenu("Rollgeon/Upgrades/Dice/Enchantment Altar Interactable")]
-    public sealed class EnchantmentAltarInteractable : MonoBehaviour
+    public sealed class EnchantmentAltarInteractable : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         private const string LogPrefix = "[EnchantmentAltarInteractable] ";
 

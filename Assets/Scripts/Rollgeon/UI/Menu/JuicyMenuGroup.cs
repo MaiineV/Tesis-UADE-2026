@@ -43,9 +43,18 @@ namespace Rollgeon.UI.Menu
         private Image _rightDiamondImage;
         private Vector3 _leftDiamondBaseScale = Vector3.one;
         private Vector3 _rightDiamondBaseScale = Vector3.one;
+        private float _spawnUnscaledTime;
 
         private void Awake()
         {
+            // Ancla del delay de intro. Time.timeSinceLevelLoad no sirve: en el
+            // OnEnable de una escena recién cargada con LoadScene todavía arrastra
+            // el reloj de la escena anterior (la carga real se difiere un frame),
+            // así que al volver de una run el delay clampeaba a 0 y los botones
+            // entraban antes que el logo. Awake corre una sola vez por carga de
+            // escena, incluso con el churn de SetActive del ScreenHost.
+            _spawnUnscaledTime = Time.unscaledTime;
+
             if (_leftDiamond != null)
             {
                 _leftDiamondImage = _leftDiamond.GetComponent<Image>();
@@ -71,15 +80,15 @@ namespace Rollgeon.UI.Menu
 
             if (_playEntranceOnEnable)
             {
-                // El delay se ancla al reloj de la escena, no a estados de otros
-                // objetos: activeSelf del intro depende del orden de OnEnable (no
-                // garantizado) y un flag "primer enable" se consume de más si un
-                // overlay churnea la screen durante la carga. Con el reloj, la
-                // entrada cae en Intro Delay desde el load sin importar cuántas
-                // veces se habilite el grupo; al volver al menú más tarde,
-                // timeSinceLevelLoad ya superó el delay y la entrada es inmediata.
+                // El delay se ancla al reloj propio (ver Awake), no a estados de
+                // otros objetos: activeSelf del intro depende del orden de OnEnable
+                // (no garantizado) y un flag "primer enable" se consume de más si
+                // un overlay churnea la screen durante la carga. La primera entrada
+                // tras cargar la escena espera Intro Delay completo; al volver al
+                // menú por push/pop el reloj ya superó el delay y es inmediata.
+                float elapsedSinceSpawn = Time.unscaledTime - _spawnUnscaledTime;
                 float baseDelay = _waitForIntro != null
-                    ? Mathf.Max(0f, _introDelay - Time.timeSinceLevelLoad)
+                    ? Mathf.Max(0f, _introDelay - elapsedSinceSpawn)
                     : 0f;
                 PlayEntrance(baseDelay);
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.GameCamera;
 using Rollgeon.Heroes;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
@@ -78,6 +79,39 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.StartRun(_hero, null, runId);
 
             Assert.IsTrue(fired);
+        }
+
+        // Regresión: StartRun abre con ClearScope(Run) para disponer leftovers de una run
+        // anterior. La cámara de 02_Gameplay se registraba en Run scope desde su Awake y,
+        // como Unity corre todos los Awake antes de cualquier Start, ese ClearScope la
+        // borraba apenas arrancaba la run: se perdían el SetFollowTarget del bootstrapper
+        // y el recenter del RoomGridLoader al entrar a una sala. La cámara vive con la
+        // scene, no con la run — StartRun no la puede tocar.
+        [Test]
+        public void StartRun_KeepsSceneRegisteredCameraService()
+        {
+            var cameraGO = new GameObject("TestMainCamera", typeof(UnityEngine.Camera));
+            var config = ScriptableObject.CreateInstance<CameraConfigSO>();
+            try
+            {
+                // Initialize es lo que corre el Awake de la cámara en 02_Gameplay, y es
+                // quien la registra. Acá se llama a mano porque en EditMode los callbacks
+                // de lifecycle de Unity no se disparan.
+                var camera = cameraGO.AddComponent<CameraService>();
+                camera.Initialize(config);
+
+                RunBootstrapper.StartRun(_hero, null, Guid.NewGuid());
+
+                Assert.IsTrue(ServiceLocator.TryGetService<ICameraService>(out var registered),
+                    "StartRun no debe desregistrar la cámara: sin ICameraService no hay " +
+                    "recenter al entrar a una sala.");
+                Assert.AreSame(camera, registered);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraGO);
+                UnityEngine.Object.DestroyImmediate(config);
+            }
         }
 
         [Test]

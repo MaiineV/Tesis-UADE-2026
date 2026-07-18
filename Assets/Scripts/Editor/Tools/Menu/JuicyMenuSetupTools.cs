@@ -46,6 +46,7 @@ namespace Rollgeon.EditorTools.Menu
             SetupOptionsPanel();
             SetupMainMenuScene();
             SetupPausePrefab();
+            SetupPauseOptionsPanel();
         }
 
         [MenuItem("Rollgeon/Juicy Menu/1 - Create Assets")]
@@ -180,6 +181,23 @@ namespace Rollgeon.EditorTools.Menu
                 }
 
                 var stack = new[] { resume, pauseSettings, quitRun };
+
+                // Mismo ritmo compacto que el stack del menú (ajuste de playtest:
+                // venían a ~160px y el Settings era 100x100).
+                var pauseStackY = new[] { 80f, 0f, -80f };
+                for (int i = 0; i < stack.Length; i++)
+                {
+                    Place((RectTransform)stack[i].transform,
+                        (RectTransform)stack[i].transform.parent, new Vector2(0f, pauseStackY[i]),
+                        new Vector2(300f, 75f));
+                }
+
+                // Por encima del overlay del tutorial (29000): pausar durante un
+                // diálogo del tutorial no debe oscurecer los botones de pausa.
+                // Sigue debajo del loading screen (31000).
+                var canvas = root.GetComponentInChildren<Canvas>(true);
+                if (canvas != null) canvas.sortingOrder = 29500;
+
                 var juicyButtons = stack.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
                 EnsureGroup(overlay.gameObject, juicyButtons, settings);
 
@@ -209,10 +227,7 @@ namespace Rollgeon.EditorTools.Menu
                 return;
             }
 
-            LocalizationSetupTools.UpsertEntry("UI", "menu.language", "Idioma", "Language");
-            LocalizationSetupTools.UpsertEntry("UI", "menu.reset_confirm", "¿Seguro?", "Are you sure?");
-            LocalizationSetupTools.UpsertEntry("UI", "menu.back", "Volver", "Back");
-            AssetDatabase.SaveAssets();
+            UpsertOptionsLocalization();
 
             var scene = EditorSceneManager.GetActiveScene().path == MainMenuScenePath
                 ? EditorSceneManager.GetActiveScene()
@@ -227,8 +242,71 @@ namespace Rollgeon.EditorTools.Menu
                 return;
             }
 
-            var canvas = (RectTransform)screen.transform.parent;
+            // El LanguageSelector viejo vivía en el MainMenuScreen — se muda al
+            // panel (BuildOptionsPanel agrega el nuevo). Solo aplica al menú.
+            if (screen.TryGetComponent<LanguageSelector>(out var oldSelector))
+                Object.DestroyImmediate(oldSelector);
 
+            BuildOptionsPanel((RectTransform)screen.transform.parent, settings, outlineMat);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[JuicyMenuSetup] Panel de opciones cableado en 01_MainMenu.");
+        }
+
+        [MenuItem("Rollgeon/Juicy Menu/5 - Setup Pause Options Panel")]
+        public static void SetupPauseOptionsPanel()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<MenuJuiceSettingsSO>(SettingsPath);
+            var outlineMat = AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath);
+            if (settings == null || outlineMat == null)
+            {
+                Debug.LogError("[JuicyMenuSetup] Correr primero '1 - Create Assets'.");
+                return;
+            }
+
+            UpsertOptionsLocalization();
+
+            var root = PrefabUtility.LoadPrefabContents(PausePrefabPath);
+            try
+            {
+                var canvas = root.GetComponentInChildren<Canvas>(true);
+                if (canvas == null)
+                {
+                    Debug.LogError("[JuicyMenuSetup] Canvas no encontrado en el prefab de pausa.");
+                    return;
+                }
+
+                // Misma OptionsScreen que el menú: el ScreenHost de 02_Gameplay
+                // la descubre como BaseScreen hija (inactivas incluidas) y
+                // PauseMenuOverlay la abre con PushOverlay<OptionsScreen>().
+                BuildOptionsPanel((RectTransform)canvas.transform, settings, outlineMat);
+
+                PrefabUtility.SaveAsPrefabAsset(root, PausePrefabPath);
+                Debug.Log("[JuicyMenuSetup] Panel de opciones cableado en Canvas_PauseMenu.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void UpsertOptionsLocalization()
+        {
+            LocalizationSetupTools.UpsertEntry("UI", "menu.language", "Idioma", "Language");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.reset_confirm", "¿Seguro?", "Are you sure?");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.back", "Volver", "Back");
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// Arma (o actualiza) el panel de opciones como hija de <paramref name="canvas"/>.
+        /// Botones secundarios find-or-create: en <c>01_MainMenu</c> reparenta los
+        /// ex-botones de debug existentes; en el prefab de pausa los crea de cero.
+        /// Idempotente en ambos destinos.
+        /// </summary>
+        private static void BuildOptionsPanel(RectTransform canvas, MenuJuiceSettingsSO settings, Material outlineMat)
+        {
             // -- Root del overlay (inactivo: lo activa el ScreenHost al pushearlo) --
             var optionsRect = FindChild(canvas, "OptionsScreen");
             if (optionsRect == null)
@@ -238,6 +316,9 @@ namespace Rollgeon.EditorTools.Menu
                 optionsRect.SetParent(canvas, worldPositionStays: false);
             }
             Stretch(optionsRect);
+            // Último hermano del canvas: el overlay tiene que renderear por
+            // encima de la screen que tapa (menú o pausa).
+            optionsRect.SetAsLastSibling();
             var scrim = optionsRect.GetComponent<Image>();
             scrim.color = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.72f);
             scrim.raycastTarget = true;
@@ -282,18 +363,13 @@ namespace Rollgeon.EditorTools.Menu
             dividerImage.color = AccentColor;
             dividerImage.raycastTarget = false;
 
-            // -- Reparentar los ex-botones de debug del menú --
-            var tutorialToggle = FindAnywhere(canvas, "TutorialToggleButton");
-            var analyticsToggle = FindAnywhere(canvas, "AnalyticsToggleButton");
-            var spanish = FindAnywhere(canvas, "SpanishButton");
-            var english = FindAnywhere(canvas, "EnglishButton");
-            var deleteSave = FindAnywhere(canvas, "DeleteProgressButton");
-            if (tutorialToggle == null || analyticsToggle == null || spanish == null
-                || english == null || deleteSave == null)
-            {
-                Debug.LogError("[JuicyMenuSetup] Falta alguno de los botones secundarios en la escena.");
-                return;
-            }
+            // -- Botones secundarios: reparentar los existentes o crearlos --
+            // (los textos definitivos los setea OptionsScreen.RefreshLabels por código)
+            var tutorialToggle = EnsureSecondaryButton(canvas, panel, "TutorialToggleButton", "Tutorial: ON", outlineMat);
+            var analyticsToggle = EnsureSecondaryButton(canvas, panel, "AnalyticsToggleButton", "Telemetría: ON", outlineMat);
+            var spanish = EnsureSecondaryButton(canvas, panel, "SpanishButton", "Español", outlineMat);
+            var english = EnsureSecondaryButton(canvas, panel, "EnglishButton", "English", outlineMat);
+            var deleteSave = EnsureSecondaryButton(canvas, panel, "DeleteProgressButton", "Borrar partida", outlineMat);
 
             Place(tutorialToggle, panel, new Vector2(0f, 150f), new Vector2(300f, 70f));
             Place(analyticsToggle, panel, new Vector2(0f, 70f), new Vector2(300f, 70f));
@@ -324,9 +400,7 @@ namespace Rollgeon.EditorTools.Menu
             var juicyButtons = buttons.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
             EnsureGroup(optionsGo, juicyButtons, settings);
 
-            // -- LanguageSelector se muda del MainMenuScreen al panel --
-            if (screen.TryGetComponent<LanguageSelector>(out var oldSelector))
-                Object.DestroyImmediate(oldSelector);
+            // -- LanguageSelector vive en el propio panel --
             if (!optionsGo.TryGetComponent<LanguageSelector>(out var selector))
                 selector = optionsGo.AddComponent<LanguageSelector>();
             var selectorSo = new SerializedObject(selector);
@@ -357,10 +431,30 @@ namespace Rollgeon.EditorTools.Menu
             // El overlay arranca desactivado; ScreenHost lo registra igual
             // (_includeInactive) y PushOverlay lo activa.
             optionsGo.SetActive(false);
+        }
 
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            Debug.Log("[JuicyMenuSetup] Panel de opciones cableado (6 botones + grupo + título animado).");
+        /// <summary>
+        /// Busca el botón por nombre bajo <paramref name="searchRoot"/> (para
+        /// reparentar los ex-botones de debug del menú) y si no existe lo crea
+        /// bajo <paramref name="panel"/> con la estructura mínima que espera
+        /// <see cref="EnsureJuicyButton"/>: Image de fondo + Button + label TMP.
+        /// </summary>
+        private static RectTransform EnsureSecondaryButton(RectTransform searchRoot, RectTransform panel,
+            string name, string fallbackText, Material outlineMat)
+        {
+            var existing = FindAnywhere(searchRoot, name);
+            if (existing != null) return existing;
+
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(panel, worldPositionStays: false);
+
+            var button = go.GetComponent<Button>();
+            button.targetGraphic = go.GetComponent<Image>();
+
+            EnsureTmpLabel(rect, "Label", fallbackText, 30f, Vector2.zero, Vector2.zero,
+                outlineMat, new Color32(0xE7, 0xE3, 0xE2, 0xFF));
+            return rect;
         }
 
         private static RectTransform FindChild(Transform parent, string name)
@@ -445,6 +539,10 @@ namespace Rollgeon.EditorTools.Menu
         {
             var go = button.gameObject;
 
+            // Un botón del stack juicy tiene que estar activo — el Settings de
+            // pausa venía desactivado de su época de stub y nunca se veía.
+            if (!go.activeSelf) go.SetActive(true);
+
             // Look texto-only del video: el fondo se vuelve invisible pero
             // sigue siendo el raycast target del hover/click.
             if (go.TryGetComponent<Image>(out var background))
@@ -460,7 +558,23 @@ namespace Rollgeon.EditorTools.Menu
             var label = go.GetComponentInChildren<TMP_Text>(true);
             if (label != null)
             {
+                // La fuente va antes que el material (mismo orden que EnsureTmpLabel):
+                // sin esto, un label heredado con el default de TMP (LiberationSans)
+                // quedaba con atlas y material desparejados.
+                var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+                if (font != null) label.font = font;
                 label.fontSharedMaterial = outlineMat;
+
+                // El label llena el botón y centra el texto: rects/alineaciones
+                // heredados de layouts viejos (ej. el Settings de pausa era un
+                // ícono 100x100 con texto arriba-izquierda) desalinean el texto,
+                // el subrayado y los rombos, que se centran en el rect.
+                var labelRect = (RectTransform)label.transform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.anchoredPosition = Vector2.zero;
+                labelRect.sizeDelta = Vector2.zero;
+                label.alignment = TextAlignmentOptions.Center;
                 EditorUtility.SetDirty(label);
             }
 

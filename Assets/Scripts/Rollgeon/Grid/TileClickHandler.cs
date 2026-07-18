@@ -12,7 +12,6 @@ namespace Rollgeon.Grid
     public sealed class TileClickHandler : MonoBehaviour
     {
         [SerializeField] private Camera _camera;
-        [SerializeField] private LayerMask _tileLayer;
         [SerializeField] private InputActionAsset _actions;
         [SerializeField] private string _mapName = "UI";
 
@@ -115,33 +114,10 @@ namespace Rollgeon.Grid
             var rtPos = RenderTextureCursor.ScreenToRt(
                 screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid)) return;
+
             var ray = cam.ScreenPointToRay(rtPos);
-            GridCoord? hovered = null;
-
-            // Hover sobre el modelo de un pawn = hover sobre su celda (simétrico al click).
-            if (Physics.Raycast(ray, out var hitAny, 100f))
-            {
-                var pawn = hitAny.collider.GetComponentInParent<Rollgeon.Entities.Visuals.EntityPawn>();
-                if (pawn != null
-                    && ServiceLocator.TryGetService<IGridManager>(out var pawnGrid)
-                    && pawnGrid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
-                {
-                    hovered = pawnCoord;
-                }
-            }
-
-            if (hovered == null && Physics.Raycast(ray, out var hit, 100f, _tileLayer))
-            {
-                var marker = hit.collider.GetComponentInParent<TileMarker>();
-                if (marker != null)
-                {
-                    hovered = marker.Coord;
-                }
-                else if (ServiceLocator.TryGetService<IGridManager>(out var grid))
-                {
-                    hovered = grid.WorldToGrid(hit.point);
-                }
-            }
+            var hovered = ResolveCoordUnderCursor(ray, grid);
 
             if (Nullable.Equals(hovered, _lastHoveredCoord)) return;
             _lastHoveredCoord = hovered;
@@ -195,42 +171,47 @@ namespace Rollgeon.Grid
             var rtPos = RenderTextureCursor.ScreenToRt(
                 screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
 
-            Debug.Log($"[TileClickHandler] Raycast from screenPos={screenPos} rtPos={rtPos} layer={_tileLayer.value}");
+            Debug.Log($"[TileClickHandler] Raycast from screenPos={screenPos} rtPos={rtPos}");
             var ray = cam.ScreenPointToRay(rtPos);
 
-            // CNF-002: primero raycast SIN máscara — clickear SOBRE el modelo del enemigo
-            // debe targetear SU celda. Con la máscara de tiles sola, el ray atraviesa el
-            // modelo (los pawns no son layer Tile) y pega en la celda que queda DETRÁS
-            // (cámara en ángulo). Mismo patrón que el drop del drag.
+            var clicked = ResolveCoordUnderCursor(ray, grid);
+            if (clicked == null)
+            {
+                Debug.Log("[TileClickHandler] No tile under cursor");
+                return;
+            }
+
+            Debug.Log($"[TileClickHandler] Click coord={clicked.Value}");
+            controller.OnTargetClicked(TargetRef.At(clicked.Value));
+        }
+
+        /// <summary>
+        /// Resuelve la celda bajo el cursor. Primero el modelo de un pawn (click/hover
+        /// sobre el enemigo = su celda, CNF-002). Si no, intersecta el rayo con el PLANO
+        /// del piso — no con los colliders de los tiles.
+        /// </summary>
+        /// <remarks>
+        /// El collider de cada tile es una caja de 1u de alto que sobresale 0.5 por encima
+        /// del piso visible; desde la cámara en ángulo, el collider de un tile de adelante
+        /// tapaba al de atrás y esa celda quedaba imposible de seleccionar/pintar. La grilla
+        /// es un único plano (GridCoord es 2D), así que intersectar contra el plano a la
+        /// altura de <see cref="IGridManager.GridOrigin"/> da la celda correcta ignorando
+        /// cualquier cosa que haya en el medio.
+        /// </remarks>
+        private GridCoord? ResolveCoordUnderCursor(Ray ray, IGridManager grid)
+        {
             if (Physics.Raycast(ray, out var hitAny, 100f))
             {
                 var pawn = hitAny.collider.GetComponentInParent<Rollgeon.Entities.Visuals.EntityPawn>();
                 if (pawn != null && grid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
-                {
-                    Debug.Log($"[TileClickHandler] Click sobre pawn '{pawn.name}' — coord={pawnCoord}");
-                    controller.OnTargetClicked(TargetRef.At(pawnCoord));
-                    return;
-                }
+                    return pawnCoord;
             }
 
-            if (!Physics.Raycast(ray, out var hit, 100f, _tileLayer))
-            {
-                Debug.Log("[TileClickHandler] Raycast missed — no tile hit");
-                return;
-            }
+            var floor = new Plane(Vector3.up, grid.GridOrigin);
+            if (!floor.Raycast(ray, out float enter)) return null;
 
-            Debug.Log($"[TileClickHandler] Hit '{hit.collider.name}' at {hit.point}");
-            var marker = hit.collider.GetComponentInParent<TileMarker>();
-            if (marker != null)
-            {
-                Debug.Log($"[TileClickHandler] TileMarker found — coord={marker.Coord}");
-                controller.OnTargetClicked(TargetRef.At(marker.Coord));
-                return;
-            }
-
-            var coord = grid.WorldToGrid(hit.point);
-            Debug.Log($"[TileClickHandler] No TileMarker — WorldToGrid={coord}");
-            controller.OnTargetClicked(TargetRef.At(coord));
+            var coord = grid.WorldToGrid(ray.GetPoint(enter));
+            return grid.InBounds(coord) ? coord : (GridCoord?)null;
         }
     }
 }

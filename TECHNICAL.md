@@ -6510,6 +6510,8 @@ screens.Push(ScreenId.MainMenu); // o la screen inicial
 
 Servicio scripteado registrado en el bootstrap (§1.1.1). La implementación concreta (`CameraService : MonoBehaviour, ICameraService`) vive en la scene de gameplay como un único `Camera` + rig, inicializado desde el `CameraConfigSO` y registrado al despertar.
 
+**Scope: `Global`, no `Run`.** La cámara es un objeto de la *scene* `02_Gameplay` — su lifetime es el de la scene, no el de la run, y se desregistra sola en `OnDestroy`. Registrarla en `ServiceScope.Run` es un bug: Unity corre **todos** los `Awake()` antes de cualquier `Start()`, así que `CameraService.Awake` registra el service y acto seguido `GameplayBootstrapper.Start` → `RunBootstrapper.StartRun` → `ClearScope(ServiceScope.Run)` lo borra. Nada lo vuelve a registrar (`Awake` no corre dos veces), y como `CameraService` no es `IDisposable` ni depende del `ServiceLocator` para sus propios eventos, la falla es **silenciosa y parcial**: la rotación y el wall occlusion siguen andando (van por el `EventManager` estático) pero `SetFollowTarget` y el recenter al entrar a una sala (`RoomGridLoader`) dejan de resolver el service y la cámara nunca se centra. Ver §17.E.10.
+
 ```csharp
 public interface ICameraService
 {

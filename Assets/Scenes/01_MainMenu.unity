@@ -12059,7 +12059,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: "Telemetr\xEDa: OFF"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: a06e036e36adf474e8ef067efc45ec46, type: 2}
   m_fontSharedMaterials:
   - {fileID: 0}

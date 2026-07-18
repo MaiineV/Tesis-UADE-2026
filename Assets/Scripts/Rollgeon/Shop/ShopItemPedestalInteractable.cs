@@ -33,7 +33,7 @@ namespace Rollgeon.Shop
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/Shop/Shop Item Pedestal Interactable")]
-    public sealed class ShopItemPedestalInteractable : MonoBehaviour
+    public sealed class ShopItemPedestalInteractable : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         private const string LogPrefix = "[ShopItemPedestalInteractable] ";
 

@@ -1139,9 +1139,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileClickHandler
   _camera: {fileID: 1690433639}
-  _tileLayer:
-    serializedVersion: 2
-    m_Bits: 64
   _actions: {fileID: 0}
   _mapName: UI
 --- !u!4 &1327258863
@@ -2697,6 +2694,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4802146124504875049, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: _iconActive
+      value: 
+      objectReference: {fileID: 21300000, guid: facf44e63a96c48459793bff074181b3, type: 3}
+    - target: {fileID: 4802146124504875049, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: _iconInactive
+      value: 
+      objectReference: {fileID: 21300000, guid: facf44e63a96c48459793bff074181b3, type: 3}
     - target: {fileID: 5887643075634823342, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: m_Name
       value: Canvas_PlayerStatus
