@@ -121,6 +121,7 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
                 {
                     OwnerGuid = fx.SourceGuid,
                     OpponentGuid = fx.TargetGuid,
+                    Effect = fx,
                 };
 
                 data.TryExecute(fx, preCtx);

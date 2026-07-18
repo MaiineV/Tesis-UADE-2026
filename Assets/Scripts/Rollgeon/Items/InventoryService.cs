@@ -274,6 +274,7 @@ namespace Rollgeon.Items
                 {
                     OwnerGuid = playerGuid,
                     OpponentGuid = ctx.TargetGuid,
+                    Effect = ctx,
                 };
                 capturedHook.Effect.TryExecute(ctx, preCtx);
             };
