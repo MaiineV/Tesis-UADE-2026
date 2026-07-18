@@ -1,5 +1,6 @@
 using Patterns;
 using Rollgeon.Combos;
+using Rollgeon.Heroes;
 using Rollgeon.Localization;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -42,6 +43,7 @@ namespace Rollgeon.UI.HUD
         private static readonly Color NerfedColor = new Color(1f, 0.45f, 0.4f, 1f);
 
         private BaseComboSO _combo;
+        private ContractSheet _sheetOverride;
         private Color _damageDefaultColor = Color.white;
         private bool _damageDefaultColorCached;
 
@@ -51,10 +53,18 @@ namespace Rollgeon.UI.HUD
         /// <see cref="BaseComboSO.Description"/> (opcional) e <see cref="BaseComboSO.Icon"/> (opcional).
         /// Fallback a <see cref="BaseComboSO.ComboId"/> si <c>DisplayName</c> es null/empty.
         /// </summary>
-        public void Bind(BaseComboSO combo)
+        public void Bind(BaseComboSO combo) => Bind(combo, sheetOverride: null);
+
+        /// <summary>
+        /// Variante con <paramref name="sheetOverride"/>: en selección de clase no hay
+        /// <c>IPlayerService.CurrentHero</c> todavía y sin el override la fila mostraría
+        /// el daño del catálogo global en vez del de la clase elegida.
+        /// </summary>
+        public void Bind(BaseComboSO combo, ContractSheet sheetOverride)
         {
             if (combo == null) return;
             _combo = combo;
+            _sheetOverride = sheetOverride;
 
             if (_nameLabel != null)
             {
@@ -101,10 +111,7 @@ namespace Rollgeon.UI.HUD
 
             // Base plano de la tabla por clase (Spec Daño v2) — la lista del contrato debe
             // mostrar los valores de ESTA clase, no los del catálogo global.
-            int baseDmg = _combo.BaseDamage;
-            if (ServiceLocator.TryGetService<Rollgeon.Player.IPlayerService>(out var player)
-                && player?.CurrentHero?.Sheet != null)
-                baseDmg = player.CurrentHero.Sheet.GetBaseDamage(_combo);
+            int baseDmg = ResolveBaseDamage(_combo, _sheetOverride);
 
             int effective = baseDmg;
             if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
@@ -114,6 +121,23 @@ namespace Rollgeon.UI.HUD
             _damageLabel.color = effective > baseDmg ? BuffedColor
                 : effective < baseDmg ? NerfedColor
                 : _damageDefaultColor;
+        }
+
+        /// <summary>
+        /// Resolución del daño base de la fila, pura para tests: override explícito
+        /// (selección de clase) → sheet del héroe actual → base del catálogo.
+        /// </summary>
+        public static int ResolveBaseDamage(BaseComboSO combo, ContractSheet sheetOverride)
+        {
+            if (combo == null) return 0;
+
+            if (sheetOverride != null) return sheetOverride.GetBaseDamage(combo);
+
+            if (ServiceLocator.TryGetService<Rollgeon.Player.IPlayerService>(out var player)
+                && player?.CurrentHero?.Sheet != null)
+                return player.CurrentHero.Sheet.GetBaseDamage(combo);
+
+            return combo.BaseDamage;
         }
     }
 }

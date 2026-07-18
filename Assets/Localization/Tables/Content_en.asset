@@ -565,6 +565,15 @@ MonoBehaviour:
     m_Localized: "Tutorial \u2014 Combate 2"
     m_Metadata:
       m_Items: []
+  - m_Id: 1211498464378880
+    m_Localized: Warrior's Fury
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211498485350400
+    m_Localized: When your health is 3 or less, your base damage increases by 5 points.
+      Healing above that threshold returns it to normal.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
