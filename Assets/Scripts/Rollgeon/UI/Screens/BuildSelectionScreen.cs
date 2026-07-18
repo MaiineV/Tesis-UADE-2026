@@ -61,6 +61,14 @@ namespace Rollgeon.UI.Screens
         [Tooltip("Boton para vaciar la bolsa actual. Opcional.")]
         [SerializeField, Optional] private Button _clearBagButton;
 
+        [Title("Mock rework (opcional)")]
+        [Tooltip("Tira de la bolsa ordenada menor→mayor con juice. Con esto cableado " +
+                 "reemplaza a _diceContainer/_diceSlotPrefab (que quedan como legacy).")]
+        [SerializeField, Optional] private DiceStripView _diceStrip;
+
+        [Tooltip("Sprites por tipo + tunables de la tira. Requerido si _diceStrip está cableado.")]
+        [SerializeField, Optional] private DiceBuildUiSettingsSO _diceUiSettings;
+
         // ---- State ----
         private ClassHeroSO _selectedHero;
         private Guid _runId;
@@ -102,6 +110,13 @@ namespace Rollgeon.UI.Screens
             if (_confirmButton != null) _confirmButton.onClick.AddListener(OnConfirmClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
             if (_clearBagButton != null) _clearBagButton.onClick.AddListener(OnClearBagClicked);
+
+            if (_diceStrip != null)
+            {
+                _diceStrip.Configure(_diceUiSettings);
+                // Click en un dado de la tira = quitarlo de la bolsa (mock).
+                _diceStrip.OnDieClicked += OnRemoveDice;
+            }
         }
 
         protected override void OnPopped()
@@ -109,6 +124,7 @@ namespace Rollgeon.UI.Screens
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(OnConfirmClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
             if (_clearBagButton != null) _clearBagButton.onClick.RemoveListener(OnClearBagClicked);
+            if (_diceStrip != null) _diceStrip.OnDieClicked -= OnRemoveDice;
             ClearPoolRows();
             ClearDiceSlots();
             _currentBag.Clear();
@@ -161,10 +177,17 @@ namespace Rollgeon.UI.Screens
                 if (!MetaUnlockGate.IsAvailable(UnlockableCategory.Dice, entry.Type.ToString())) continue;
 
                 var row = Instantiate(_poolOfferingPrefab, _poolOfferingsContainer);
-                row.Bind(entry.Type, entry.MaxInBag);
+                var sprite = _diceUiSettings != null ? _diceUiSettings.GetSprite(entry.Type) : null;
+                row.Bind(entry.Type, entry.MaxInBag, sprite);
                 row.OnAddRequested += OnAddDice;
                 row.OnRemoveRequested += OnRemoveDice;
                 _poolRows.Add(row);
+            }
+
+            // Separadores entre filas como en el mock: todas menos la última.
+            for (int i = 0; i < _poolRows.Count; i++)
+            {
+                _poolRows[i].SetDividerVisible(i < _poolRows.Count - 1);
             }
         }
 
@@ -226,6 +249,14 @@ namespace Rollgeon.UI.Screens
 
         private void RebuildSelectedSlots()
         {
+            // Path del mock: tira ordenada menor→mayor con diff + juice.
+            if (_diceStrip != null)
+            {
+                _diceStrip.SetDice(DiceStripMath.SortAscending(_currentBag), animate: true);
+                return;
+            }
+
+            // Path legacy (tests / prefabs viejos): destruir y re-instanciar.
             ClearDiceSlots();
             if (_diceContainer == null || _diceSlotPrefab == null) return;
             foreach (var dice in _currentBag)

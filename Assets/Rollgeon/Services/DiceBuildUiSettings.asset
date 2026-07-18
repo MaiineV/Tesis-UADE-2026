@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77a9931723a4ffc4ba695ae8eadfcb4e, type: 3}
+  m_Name: DiceBuildUiSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.DiceBuildUiSettingsSO
+  D4: {fileID: 1401531898, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  D6: {fileID: 284238095, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  D8: {fileID: 750792382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  D10: {fileID: 1238936565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  D12: {fileID: -817261351, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  D20: {fileID: 429831747, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  DieSize: 96
+  Spacing: 118
+  DropHeight: 70
+  DropDuration: 0.3
+  DropEase: 27
+  RemoveDuration: 0.18
+  RemoveEase: 26
+  SlideDuration: 0.22
+  SlideEase: 9
+  ClearStagger: 0.05
+  PoolPunchScale: 0.15
+  PoolPunchDuration: 0.2
+  AddClip: {fileID: 0}
+  RemoveClip: {fileID: 0}
+  ClearClip: {fileID: 0}
+  SfxVolume: 1
+  SfxPitchRange: {x: 0.95, y: 1.05}
