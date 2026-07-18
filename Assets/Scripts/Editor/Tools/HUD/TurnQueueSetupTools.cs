@@ -52,16 +52,25 @@ namespace Rollgeon.EditorTools.HUD
                 }
 
                 // Primer hermano: renderea detrás del portrait/label/overlays.
+                // Layout tuneado en playtest: centrado en el slot (50,50), 90x90
+                // con preserve aspect y escala 1.3.
                 frameRect.SetAsFirstSibling();
-                frameRect.anchorMin = Vector2.zero;
-                frameRect.anchorMax = Vector2.one;
+                frameRect.anchorMin = frameRect.anchorMax = Vector2.zero;
                 frameRect.pivot = new Vector2(0.5f, 0.5f);
-                frameRect.anchoredPosition = Vector2.zero;
-                frameRect.sizeDelta = Vector2.zero;
+                frameRect.anchoredPosition = new Vector2(50f, 50f);
+                frameRect.sizeDelta = new Vector2(90f, 90f);
+                frameRect.localScale = new Vector3(1.3f, 1.3f, 1.3f);
 
                 var frameImage = frameRect.GetComponent<Image>();
                 frameImage.sprite = idle;
+                frameImage.preserveAspect = true;
                 frameImage.raycastTarget = false;
+
+                // El portrait arrancaba negro en el prefab y sin el tinte runtime
+                // (removido con los frames) quedaba invisible — blanco siempre.
+                var portraitSo = new SerializedObject(slot);
+                var portrait = portraitSo.FindProperty("_portrait").objectReferenceValue as Image;
+                if (portrait != null) portrait.color = Color.white;
 
                 var so = new SerializedObject(slot);
                 so.FindProperty("_frame").objectReferenceValue = frameImage;
