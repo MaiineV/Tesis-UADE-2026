@@ -29,7 +29,7 @@ namespace Rollgeon.Combat.Threat
         public static readonly Guid RainSourceId = new Guid("6c1f3a2e-7b4d-4a9e-9c3f-1a2b3c4d5e6f");
 
         private const int CycleRounds = 2;
-        private const int SquareCount = 6;
+        private const int SquareCount = 10;
         private const int SquareSize = 1;
         private const int Damage = 6;
 
