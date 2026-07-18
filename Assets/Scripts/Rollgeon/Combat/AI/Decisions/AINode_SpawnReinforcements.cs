@@ -83,9 +83,16 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
+        /// <summary>Distancia Chebyshev mínima entre dos refuerzos — evita que 2 spawns
+        /// del mismo lado queden pegados uno al lado del otro.</summary>
+        private const int MinSpawnSeparation = 3;
+
         // Tiles del perímetro del bounding box de la sala (X==min/max o Y==min/max),
-        // walkable y libres — hasta count, sin repetir. Sala sin bounds reales (grafo
-        // vacío) o sin tiles de borde disponibles ⇒ lista vacía (no crashea).
+        // walkable y libres. Agrupados por lado (W/E/S/N — una esquina puede pertenecer
+        // a 2 lados) y repartidos en orden aleatorio de lado para que, con Count>=2, los
+        // refuerzos caigan en lados distintos u opuestos en vez de todos apilados en el
+        // mismo lado. Sala sin bounds reales (grafo vacío) o sin tiles de borde
+        // disponibles ⇒ lista vacía (no crashea).
         private static List<GridCoord> PickEdgeSpawnTiles(IGridManager grid, System.Random rng, int count)
         {
             var result = new List<GridCoord>();
@@ -104,24 +111,64 @@ namespace Rollgeon.Combat.AI.Decisions
             }
             if (allCoords.Count == 0) return result;
 
-            var candidates = new List<GridCoord>();
+            // 0=West (X==minX), 1=East (X==maxX), 2=South (Y==minY), 3=North (Y==maxY).
+            var sides = new List<GridCoord>[] { new(), new(), new(), new() };
             foreach (var c in allCoords)
             {
-                bool onEdge = c.X == minX || c.X == maxX || c.Y == minY || c.Y == maxY;
-                if (!onEdge) continue;
                 if (!grid.IsWalkable(c) || grid.IsOccupied(c)) continue;
-                candidates.Add(c);
+                if (c.X == minX) sides[0].Add(c);
+                if (c.X == maxX) sides[1].Add(c);
+                if (c.Y == minY) sides[2].Add(c);
+                if (c.Y == maxY) sides[3].Add(c);
             }
 
-            int take = Math.Min(count, candidates.Count);
-            for (int i = 0; i < take; i++)
+            var sideOrder = new List<int> { 0, 1, 2, 3 };
+            ShuffleInPlace(sideOrder, rng);
+
+            int guard = sides[0].Count + sides[1].Count + sides[2].Count + sides[3].Count;
+            int cursor = 0;
+            while (result.Count < count && guard-- > 0)
             {
-                int pick = rng.Next(candidates.Count);
-                result.Add(candidates[pick]);
-                candidates.RemoveAt(pick);
+                var pool = sides[sideOrder[cursor % sideOrder.Count]];
+                cursor++;
+                if (pool.Count == 0) continue;
+
+                int fallbackIdx = -1;
+                int chosenIdx = -1;
+                for (int attempt = 0; attempt < pool.Count; attempt++)
+                {
+                    int idx = rng.Next(pool.Count);
+                    fallbackIdx = idx;
+                    if (IsFarEnoughFromAll(pool[idx], result, MinSpawnSeparation))
+                    {
+                        chosenIdx = idx;
+                        break;
+                    }
+                }
+
+                int pick = chosenIdx >= 0 ? chosenIdx : fallbackIdx;
+                result.Add(pool[pick]);
+                pool.RemoveAt(pick);
             }
 
             return result;
+        }
+
+        private static bool IsFarEnoughFromAll(GridCoord c, List<GridCoord> picked, int minSeparation)
+        {
+            foreach (var p in picked)
+                if (Math.Max(Math.Abs(c.X - p.X), Math.Abs(c.Y - p.Y)) < minSeparation)
+                    return false;
+            return true;
+        }
+
+        private static void ShuffleInPlace<T>(List<T> list, System.Random rng)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
         }
     }
 }

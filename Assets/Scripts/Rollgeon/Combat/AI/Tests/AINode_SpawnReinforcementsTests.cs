@@ -118,6 +118,27 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void Tick_TwoReinforcements_SpawnFarApart_NotStuckTogether()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var node = new AINode_SpawnReinforcements { EnemyToSpawn = _enemyToSpawn, Count = 2 };
+
+            node.Tick(NewContext(Guid.NewGuid()));
+
+            var coords = new System.Collections.Generic.List<GridCoord>();
+            foreach (var id in _turnOrder.OrderForRound)
+            {
+                Assert.IsTrue(_grid.TryGetPosition(id, out var coord));
+                coords.Add(coord);
+            }
+
+            Assert.AreEqual(2, coords.Count);
+            int chebyshev = Math.Max(Math.Abs(coords[0].X - coords[1].X), Math.Abs(coords[0].Y - coords[1].Y));
+            Assert.GreaterOrEqual(chebyshev, 3,
+                $"Los 2 refuerzos quedaron pegados: {coords[0]} y {coords[1]} (distancia Chebyshev {chebyshev}).");
+        }
+
+        [Test]
         public void Tick_NullGrid_ReturnsFailed()
         {
             var node = new AINode_SpawnReinforcements { EnemyToSpawn = _enemyToSpawn, Count = 2 };
