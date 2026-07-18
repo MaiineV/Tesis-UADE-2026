@@ -113,7 +113,7 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Hoy es benigno en runtime**: el único consumidor no-test es `ContractWarriorFactory.Build`, que nadie invoca en el juego (red de seguridad para tests/doc, y tiraría `InvalidOperationException` con el catálogo real). Los tests que usan las constantes crean sus propios combos con esos ids — autocontenidos.
 - **Riesgo real**: cualquier código nuevo que compare `ComboId.Par` contra un `ComboDetectionResult.ComboId` real jamás matchea, en silencio.
 - **Fix previsto**: alinear las constantes con los ids de los assets (o al revés, decisión de diseño), actualizar los tests que las usan, y agregar un audit test que cruce `ComboId` contra `BaseComboSO.GetKnownComboIds()`.
-- **Estado**: abierto.
+- **Estado**: **cerrado** en `Feature#0035`. Las constantes se alinearon con los assets (`combo.pair`/`combo.trio`/`combo.ladder`/`combo.higher_number`); `SumX` se renombró a `HigherNumber` (rebrand de diseño del combo — la clase sigue siendo `Combo_SumaX`, X=4). `ComboIdDropdownContractTests.ComboIdConstants_And_ProjectAssets_StayInParity` audita paridad bidireccional constantes↔assets de forma permanente.
 
 ### PUL-014 — El hook RoomEntered de pasivas no filtra por sala
 - **Área**: Upgrades / Combos
