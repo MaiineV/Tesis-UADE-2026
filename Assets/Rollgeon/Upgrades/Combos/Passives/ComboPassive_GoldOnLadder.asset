@@ -35,6 +35,19 @@ MonoBehaviour:
     - Name: _icon
       Entry: 10
       Data: 0
+    - Name: _statGrants
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.StatGrant, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: _targetComboId
       Entry: 1
       Data: combo.ladder
@@ -43,20 +56,168 @@ MonoBehaviour:
       Data: 
     - Name: _extraTriggers
       Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Combos.IComboPassiveTrigger,
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Combos.IComboPassiveTrigger,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 1|Rollgeon.Upgrades.Combos.Triggers.Concretes.AddGoldOnComboMatch, Rollgeon
-    - Name: Amount
+      Data: 2|Rollgeon.Upgrades.Combos.Triggers.Concretes.ExecuteEffectsOnEvent,
+        Rollgeon
+    - Name: Event
+      Entry: 3
+      Data: 0
+    - Name: Effects
       Entry: 7
-      Data: 2|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 4|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 7|Rollgeon.Effects.Concretes.EffModifyGold, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 1
+    - Name: PatternRows
+      Entry: 3
+      Data: 1
+    - Name: PatternCols
+      Entry: 3
+      Data: 1
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 9|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
+    - Name: _amount
+      Entry: 7
+      Data: 10|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _failChainIfInsufficient
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -78,18 +239,51 @@ MonoBehaviour:
   _flatDamageBonus:
     rid: -2
   _extraTriggers:
-  - rid: 2879776407734714813
+  - rid: 8131244039720141471
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 2879776407734714813
-      type: {class: AddGoldOnComboMatch, ns: Rollgeon.Upgrades.Combos.Triggers.Concretes, asm: Rollgeon}
+    - rid: 8131244039720141471
+      type: {class: ExecuteEffectsOnEvent, ns: Rollgeon.Upgrades.Combos.Triggers.Concretes, asm: Rollgeon}
       data:
-        Amount:
-          rid: 2879776407734714814
-    - rid: 2879776407734714814
+        Event: 0
+        Effects:
+        - Label: Effect Group
+          PreConditions: []
+          Effects:
+          - rid: 8131244039720141472
+          TargetSelector:
+            rid: -2
+    - rid: 8131244039720141472
+      type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 1
+          PatternRows: 1
+          PatternCols: 1
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 01
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        Operation: 0
+        _amount:
+          rid: 8131244039720141473
+        _failChainIfInsufficient: 1
+    - rid: 8131244039720141473
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 3
