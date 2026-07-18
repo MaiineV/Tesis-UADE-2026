@@ -647,6 +647,10 @@ namespace Rollgeon.Combat.Handoff
                     {
                         _activeChain = chain;
                         _chainPhaseIndex = 0;
+                        // SetBehaviorForFormula ya empujó el board del behavior; si la fase 0
+                        // overridea, lo corregimos acá (vale para ambos entry points del primer
+                        // roll: selección BeforeRoll y el botón Roll manual).
+                        ApplyChainPhaseBoardSkin(hud, 0);
                         // OnChainStarted se emite recien cuando arranca el primer roll
                         // del chain (no aca). Si lo emitieramos al seleccionar, los
                         // demas botones quedarian lockeados antes de que el jugador
@@ -1170,9 +1174,27 @@ namespace Rollgeon.Combat.Handoff
             EventManager.Trigger(EventName.OnCombatTargetChanged, _player.PlayerGuid, Guid.Empty);
         }
 
+        // Empuja al board skin el tipo efectivo de la fase de chain indicada: el propio de la
+        // fase si overridea, si no el del behavior. Cada fase tira aparte y puede querer un
+        // board distinto (ej. daño=Attack, escudo=Defense).
+        private void ApplyChainPhaseBoardSkin(CombatHUDView hud, int phaseIndex)
+        {
+            if (_activeChain == null || _selectedBehavior == null) return;
+            if (phaseIndex < 0 || phaseIndex >= _activeChain.PhaseCount) return;
+
+            var phase = _activeChain.Phases[phaseIndex];
+            var type = phase != null
+                ? phase.ResolveBoardType(_selectedBehavior.BoardType)
+                : _selectedBehavior.BoardType;
+            hud.ApplyBoardType(type);
+        }
+
         private void PrepareNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
         {
             var nextPhase = _activeChain.Phases[_chainPhaseIndex];
+            // Board skin de la fase entrante antes de abrir su target-select, así el tablero
+            // ya muestra el skin correcto (ej. Defense en la fase de escudo) mientras se apunta.
+            ApplyChainPhaseBoardSkin(hud, _chainPhaseIndex);
             var beforeRoll = FindPhaseSelectionAt(nextPhase, SelectionTiming.BeforeRoll);
 
 

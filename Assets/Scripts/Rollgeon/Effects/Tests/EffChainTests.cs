@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
 using Rollgeon.PreConditions;
+using Rollgeon.UI.HUD;
 
 namespace Rollgeon.Effects.Tests
 {
@@ -236,6 +237,34 @@ namespace Rollgeon.Effects.Tests
             var found = behavior.FindChainEffect();
 
             Assert.IsNull(found);
+        }
+
+        // ───── ResolveBoardType (board skin por fase) ─────────────────────────
+
+        [Test]
+        public void ResolveBoardType_OverrideOff_InheritsBehaviorType()
+        {
+            // Arrange
+            var phase = new ChainPhase { OverrideBoardType = false, BoardType = DiceBoardType.Default };
+
+            // Act
+            var result = phase.ResolveBoardType(DiceBoardType.Attack);
+
+            // Assert
+            Assert.AreEqual(DiceBoardType.Attack, result);
+        }
+
+        [Test]
+        public void ResolveBoardType_OverrideOn_UsesPhaseType()
+        {
+            // Arrange — la fase overridea a Defense aunque el behavior sea Attack.
+            var phase = new ChainPhase { OverrideBoardType = true, BoardType = DiceBoardType.Defense };
+
+            // Act
+            var result = phase.ResolveBoardType(DiceBoardType.Attack);
+
+            // Assert
+            Assert.AreEqual(DiceBoardType.Defense, result);
         }
     }
 }
