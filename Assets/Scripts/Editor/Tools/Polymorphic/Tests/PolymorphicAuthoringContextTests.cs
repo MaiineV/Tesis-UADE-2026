@@ -4,6 +4,7 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Items;
 using Rollgeon.PreConditions;
+using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -181,6 +182,98 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             Assert.IsNotNull(copy);
             Assert.IsInstanceOf<EffHeal>(copy.Effects[0], "effect kept its concrete type");
             Assert.IsInstanceOf<PCComposite>(copy.PreConditions[0], "precondition kept its concrete type");
+        }
+
+        // ---- colas de colección anidadas ------------------------------------
+
+        /// <summary>
+        /// La regresión del "+ que no hace nada": Odin ENCOLA el add de una lista en el
+        /// resolver de esa propiedad, y <c>PropertyTree.ApplyChanges</c> solo vacía los
+        /// resolvers del nivel raíz. <c>ctx.ApplyChanges</c> debe vaciar también los anidados
+        /// — sin eso, el + de ComboIds / PersistentModifiers en las tools no aplica jamás.
+        /// </summary>
+        [Test]
+        public void ApplyChanges_FlushesQueuedAdd_OnNestedStringList()
+        {
+            var item = NewItem();
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook { Kind = PassiveHookKind.ComboPlayed };
+            item.PassiveHooks.Add(hook);
+
+            using (var ctx = new PolymorphicAuthoringContext(item))
+            {
+                ctx.UpdateTree();
+                var resolver = (ICollectionResolver)ctx.At("PassiveHooks.$0.ComboFilter.ComboIds").ChildResolver;
+                resolver.QueueAdd(new object[] { "combo.par" });
+
+                ctx.ApplyChanges();
+
+                Assert.AreEqual(1, hook.ComboFilter.ComboIds.Count);
+                Assert.AreEqual("combo.par", hook.ComboFilter.ComboIds[0]);
+            }
+        }
+
+        [Test]
+        public void ApplyChanges_FlushesQueuedAdd_OnPersistentModifiers()
+        {
+            var item = NewItem();
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook();
+            item.PassiveHooks.Add(hook);
+
+            using (var ctx = new PolymorphicAuthoringContext(item))
+            {
+                ctx.UpdateTree();
+                var resolver = (ICollectionResolver)ctx.At("PassiveHooks.$0.PersistentModifiers").ChildResolver;
+                resolver.QueueAdd(new object[] { new PersistentModifierDef() });
+
+                ctx.ApplyChanges();
+
+                Assert.AreEqual(1, hook.PersistentModifiers.Count);
+            }
+        }
+
+        [Test]
+        public void ApplyChanges_FlushedQueue_RaisesChanged_SoPanelsRepaint()
+        {
+            var item = NewItem();
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook();
+            item.PassiveHooks.Add(hook);
+
+            using (var ctx = new PolymorphicAuthoringContext(item))
+            {
+                int changed = 0;
+                ctx.Changed += () => changed++;
+                ctx.UpdateTree();
+                var resolver = (ICollectionResolver)ctx.At("PassiveHooks.$0.ComboFilter.ComboIds").ChildResolver;
+                resolver.QueueAdd(new object[] { "combo.par" });
+
+                ctx.ApplyChanges();
+
+                Assert.AreEqual(1, changed);
+            }
+        }
+
+        [Test]
+        public void ApplyChanges_WithoutQueuedChanges_DoesNotRaiseChanged()
+        {
+            var item = NewItem();
+            item.Type = ItemType.Passive;
+            item.PassiveHooks.Add(new PassiveItemHook());
+
+            using (var ctx = new PolymorphicAuthoringContext(item))
+            {
+                int changed = 0;
+                ctx.Changed += () => changed++;
+                ctx.UpdateTree();
+                ctx.At("PassiveHooks.$0.ComboFilter.ComboIds"); // resolver creado, cola vacía
+
+                ctx.ApplyChanges();
+
+                Assert.AreEqual(0, changed,
+                    "el flush corre en cada pasada del panel — sin cola no debe notificar ni ensuciar");
+            }
         }
 
         // ---- undo -----------------------------------------------------------
