@@ -122,6 +122,26 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
+        public void Execute_PassiveBonus_ReachesDamageFormulaDuringWindow()
+        {
+            // Arrange — un suscriptor de ComboPlayed (una pasiva) inyecta +5 al play
+            // scratch; un efecto del behavior resuelve la fórmula DENTRO de la ventana,
+            // como hace EffDealDamage en el flujo real.
+            TypedEvent<ComboPlayedPayload>.Subscribe(_ => _play.CurrentPlayScratch.BonusComboDamage += 5);
+            var resolver = new ResolveDamageProbeEffect();
+            var behavior = BuildBehavior(resolver);
+
+            // Act
+            behavior.Execute(BuildComboContext());
+
+            // Assert — (15 base combo del contexto) + 5 de bono_combo del canal at-played.
+            Assert.AreEqual(20, resolver.ResolvedDamage);
+            // Con la ventana cerrada, la fórmula vuelve al valor sin bono (el preview no lo ve).
+            Assert.AreEqual(10, Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                Guid.NewGuid(), 10, null));
+        }
+
+        [Test]
         public void Execute_WithoutPlayService_RunsWithoutError()
         {
             // Arrange
@@ -159,6 +179,28 @@ namespace Rollgeon.Heroes.Tests
                 ApplyCount++;
                 WindowWasOpenDuringApply = _service.IsPlayWindowOpen && _service.CurrentPlayScratch != null;
                 BonusSeenDuringApply = _service.CurrentPlayScratch?.BonusComboDamage ?? 0;
+                return true;
+            }
+        }
+
+        private sealed class ResolveDamageProbeEffect : IEffect
+        {
+            public int ResolvedDamage;
+
+            public string GetEffectName() => "ResolveDamageProbe";
+            public Effects.Selection.SelectionSettings GetSelection() => new Effects.Selection.SelectionSettings();
+            public bool HasSelectionRequirement() => false;
+            public bool RequiresSelectionAt(Effects.Selection.SelectionTiming timing) => false;
+            public bool ValidateSelection(Effects.Selection.TargetSelectionResult result, Guid ownerGuid, out string error)
+            {
+                error = null;
+                return true;
+            }
+
+            public bool Apply(EffectContext context)
+            {
+                ResolvedDamage = Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                    context.SourceGuid, context.ComboResult?.BaseDamage ?? 0, null);
                 return true;
             }
         }

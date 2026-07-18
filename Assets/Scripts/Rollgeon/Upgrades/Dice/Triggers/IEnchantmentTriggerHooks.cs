@@ -69,4 +69,16 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     {
         void OnTurnFinished(EnchantmentTriggerContext ctx);
     }
+
+    /// <summary>
+    /// Dispara cuando el combo se JUEGA: la acción con combo matcheado se está
+    /// ejecutando, ANTES de resolver el daño — a diferencia de
+    /// <see cref="IOnComboMatchedTrigger"/>, que dispara en cada preview de hold.
+    /// <c>ctx.Scratch</c> es el play scratch de la ventana: lo que se escriba ahí
+    /// llega a <c>bono_combo</c> de ESTA resolución de daño.
+    /// </summary>
+    public interface IOnComboPlayedTrigger : IEnchantmentTrigger
+    {
+        void OnComboPlayed(EnchantmentTriggerContext ctx);
+    }
 }

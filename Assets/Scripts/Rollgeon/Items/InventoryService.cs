@@ -6,9 +6,11 @@ using Patterns.Save;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Player;
 using Rollgeon.PreConditions;
+using Rollgeon.Upgrades;
 using UnityEngine;
 
 namespace Rollgeon.Items
@@ -24,6 +26,13 @@ namespace Rollgeon.Items
         /// Misma clave que <see cref="_appliedModifierIds"/>, así los dos tratan igual a un item.
         /// </summary>
         private readonly List<(string itemId, EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
+
+        /// <summary>
+        /// Handlers tipados de ComboPlayed, en lista paralela a <see cref="_hookHandlers"/>
+        /// (el bus tipado no comparte el shape de EventReceiver). Mismo contrato de unbind
+        /// por <c>itemId</c>.
+        /// </summary>
+        private readonly List<(string itemId, Action<ComboPlayedPayload> handler)> _comboPlayedHandlers = new();
         private readonly Dictionary<string, List<Guid>> _appliedModifierIds = new();
 
         private readonly ItemCatalogSO _catalog;
@@ -200,6 +209,12 @@ namespace Rollgeon.Items
             {
                 if (hook?.Effect == null) continue;
 
+                if (hook.Kind == PassiveHookKind.ComboPlayed)
+                {
+                    BindComboPlayedHook(item, hook);
+                    continue;
+                }
+
                 var capturedHook = hook;
                 var capturedItem = item;
                 EventManager.EventReceiver handler = args =>
@@ -226,6 +241,47 @@ namespace Rollgeon.Items
             }
         }
 
+        private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)
+        {
+            var capturedHook = hook;
+            Action<ComboPlayedPayload> handler = payload =>
+            {
+                var playerGuid = GetPlayerGuid();
+                if (payload.SourceGuid != playerGuid) return;
+                if (capturedHook.ComboFilter != null && !capturedHook.ComboFilter.Matches(payload.ComboId)) return;
+
+                // El efecto corre DENTRO de la ventana de combo jugado: el play scratch
+                // viaja como trigger context para que un EffAddComboBonus del item sume
+                // al daño del golpe en curso. Efectos directos (oro, heal) no lo necesitan.
+                var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+                var ctx = new EffectContext
+                {
+                    SourceGuid = playerGuid,
+                    TargetGuid = payload.TargetGuid != Guid.Empty ? payload.TargetGuid : playerGuid,
+                    DiceResult = payload.DiceResult,
+                    KeptDice = payload.KeptDice,
+                    KeptDiceOriginalIndices = payload.KeptDiceOriginalIndices,
+                    ComboResult = payload.ComboResult,
+                    lastResult = true,
+                    TriggerContext = new ScratchTriggerContext
+                    {
+                        Scratch = play?.CurrentPlayScratch,
+                        ComboId = payload.ComboId,
+                        Channel = ScratchChannel.Item,
+                    },
+                };
+                var preCtx = new PreConditionContext
+                {
+                    OwnerGuid = playerGuid,
+                    OpponentGuid = ctx.TargetGuid,
+                };
+                capturedHook.Effect.TryExecute(ctx, preCtx);
+            };
+
+            TypedEvent<ComboPlayedPayload>.Subscribe(handler);
+            _comboPlayedHandlers.Add((item.ItemId, handler));
+        }
+
         /// <summary>
         /// Desengancha exactamente los handlers que puso <paramref name="item"/>.
         /// </summary>
@@ -250,6 +306,14 @@ namespace Rollgeon.Items
 
                 EventManager.UnSubscribe(_hookHandlers[i].evt, _hookHandlers[i].handler);
                 _hookHandlers.RemoveAt(i);
+            }
+
+            for (int i = _comboPlayedHandlers.Count - 1; i >= 0; i--)
+            {
+                if (_comboPlayedHandlers[i].itemId != item.ItemId) continue;
+
+                TypedEvent<ComboPlayedPayload>.Unsubscribe(_comboPlayedHandlers[i].handler);
+                _comboPlayedHandlers.RemoveAt(i);
             }
         }
 
@@ -430,6 +494,10 @@ namespace Rollgeon.Items
             foreach (var (_, evt, handler) in _hookHandlers)
                 EventManager.UnSubscribe(evt, handler);
             _hookHandlers.Clear();
+
+            foreach (var (_, handler) in _comboPlayedHandlers)
+                TypedEvent<ComboPlayedPayload>.Unsubscribe(handler);
+            _comboPlayedHandlers.Clear();
 
             var playerGuid = GetPlayerGuid();
             if (playerGuid != Guid.Empty && ServiceLocator.TryGetService<AttributesManager>(out var attrMgr))

@@ -22,6 +22,11 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
         DiceRolled,
         RollResolved,
         DamageResolved,
+
+        // APPEND-ONLY: los SOs serializan el int del enum — agregar valores solo al final.
+
+        /// <summary>El combo se jugó (acción confirmada, pre-daño). Respeta TargetComboId.</summary>
+        ComboPlayed,
     }
 
     /// <summary>
@@ -52,7 +57,8 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
         IOnCombatStartPassiveTrigger, IOnCombatEndPassiveTrigger,
         IOnGoldChangedPassiveTrigger,
         IOnDiceRolledPassiveTrigger, IOnRollResolvedPassiveTrigger,
-        IOnDamageResolvedPassiveTrigger
+        IOnDamageResolvedPassiveTrigger,
+        IOnComboPlayedPassiveTrigger
     {
         [Title("Event")]
         [Tooltip("Evento de juego que dispara los efectos. ComboMatched respeta el " +
@@ -78,6 +84,7 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
         public void OnDiceRolled(ComboPassiveContext ctx) => RunIf(ComboPassiveHookEvent.DiceRolled, ctx);
         public void OnRollResolved(ComboPassiveContext ctx) => RunIf(ComboPassiveHookEvent.RollResolved, ctx);
         public void OnDamageResolved(ComboPassiveContext ctx) => RunIf(ComboPassiveHookEvent.DamageResolved, ctx);
+        public void OnComboPlayed(ComboPassiveContext ctx) => RunIf(ComboPassiveHookEvent.ComboPlayed, ctx);
 
         private void RunIf(ComboPassiveHookEvent hookEvent, ComboPassiveContext ctx)
         {
@@ -98,8 +105,17 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
                     TargetGuid = src.TargetGuid != Guid.Empty ? src.TargetGuid : src.SourceGuid,
                     DiceResult = src.DiceResult,
                     KeptDice = src.KeptDice,
+                    KeptDiceOriginalIndices = src.KeptDiceOriginalIndices,
                     ComboResult = src.ComboResult,
                     lastResult = true,
+                    // El scratch del dispatch viaja como trigger context: habilita los
+                    // IComboScratchWriter (EffAddComboBonus, etc.) dentro de pasivas.
+                    TriggerContext = new ScratchTriggerContext
+                    {
+                        Scratch = ctx.Scratch,
+                        ComboId = ctx.ComboId,
+                        Channel = ScratchChannel.ComboPassive,
+                    },
                 };
                 var preCtx = new PreConditionContext
                 {
