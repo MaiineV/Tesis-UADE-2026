@@ -188,12 +188,12 @@ namespace Rollgeon.Combat.Threat
         }
 
         // Elige hasta count anclas del pool. Prueba niveles de separación decrecientes
-        // (gap visible de 2 casillas → 1 → apenas sin solapar → libre) y se queda con el
+        // (gap visible de 3 casillas → 2 → 1 → apenas sin solapar → libre) y se queda con el
         // primero que logre juntar count anclas — así el resultado se ve "prolijo" cuando
         // la sala da lugar, y solo se degrada a solapar si de verdad no entra.
         private static List<GridCoord> PickSeparatedAnchors(List<GridCoord> pool, System.Random rng, int count, int squareWidth)
         {
-            foreach (var gap in new[] { 2, 1, 0 })
+            foreach (var gap in new[] { 3, 2, 1, 0 })
             {
                 var picked = TryPickWithMinDistance(pool, rng, count, squareWidth + gap);
                 if (picked.Count == count) return picked;

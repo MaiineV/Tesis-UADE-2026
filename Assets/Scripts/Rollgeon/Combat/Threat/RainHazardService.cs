@@ -30,7 +30,7 @@ namespace Rollgeon.Combat.Threat
 
         private const int CycleRounds = 2;
         private const int SquareCount = 6;
-        private const int SquareSize = 2;
+        private const int SquareSize = 1;
         private const int Damage = 6;
 
         private readonly System.Random _rng = new System.Random();
