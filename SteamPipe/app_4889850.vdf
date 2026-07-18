@@ -1,0 +1,32 @@
+// Script de build de SteamPipe para Rollgeon (App 4889850) — Feature#0036.
+// Los paths de ESTE archivo son relativos a ESTE archivo — por eso app y depot viven
+// juntos en SteamPipe/. OJO: el contentroot de un depot vdf NO sigue esa regla, se
+// resuelve relativo a este contentroot. Por eso el depot no declara el suyo.
+//
+// Uso:  steamcmd +login <cuenta> +run_app_build "<ruta absoluta>\SteamPipe\app_4889850.vdf" +quit
+// Ver SteamPipe/README.md para el checklist completo.
+
+"appbuild"
+{
+	"appid"			"4889850"
+	"desc"			"Rollgeon 0.1.0 — primera build de Windows (Feature#0036 + fix loading tween)"
+
+	// Ambos caen bajo Build/, que está gitignoreado.
+	"buildoutput"	"..\Build\SteamPipeOutput"
+	"contentroot"	"..\Build\Windows64"
+
+	// Vacío = se sube pero no se pone live en ninguna branch. La promoción se hace
+	// a mano desde el partner site. La branch 'default' NUNCA se puede poner live
+	// automáticamente, es una restricción de Steam.
+	"setlive"		""
+
+	// 1 = dry run, no sube nada. Pasar a "0" recién cuando el preview salga limpio.
+	// Primera subida real: BuildID 24276889 (2026-07-18).
+	"preview"		"1"
+	"local"			""
+
+	"depots"
+	{
+		"4889851"	"depot_4889851.vdf"
+	}
+}
