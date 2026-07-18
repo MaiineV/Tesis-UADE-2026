@@ -142,12 +142,12 @@ namespace Rollgeon.Combat.Threat
 
         /// <summary>
         /// <paramref name="count"/> cuadrados de <paramref name="squareWidth"/>·<paramref name="squareWidth"/>
-        /// casillas, anclados al azar (vía <paramref name="rng"/>) en el 50% central de la sala
-        /// (25% de margen recortado en cada borde) — ni el jugador ni el boss son el centro, y
-        /// las zonas no aparecen pegadas a las paredes. Requiere una sala con bounds reales (como
-        /// <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/>/<see cref="ThreatShape.HalfRoom"/>);
-        /// grafo vacío ⇒ vacío. Los cuadrados pueden solaparse entre sí, se fusionan en el
-        /// mismo <c>HashSet</c> sin duplicar.
+        /// casillas, anclados al azar (vía <paramref name="rng"/>) en la mitad oeste del 50%
+        /// central de la sala (centrado en Y, sesgado a la izquierda en X) — ni el jugador ni
+        /// el boss son el centro, y las zonas no aparecen pegadas a las paredes. Requiere una
+        /// sala con bounds reales (como <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/>/
+        /// <see cref="ThreatShape.HalfRoom"/>); grafo vacío ⇒ vacío. Los cuadrados pueden
+        /// solaparse entre sí, se fusionan en el mismo <c>HashSet</c> sin duplicar.
         /// </summary>
         public static HashSet<GridCoord> ComputeScatteredSquares(
             IGridManager grid, System.Random rng, int count, int squareWidth)
@@ -175,11 +175,12 @@ namespace Rollgeon.Combat.Threat
             return result;
         }
 
-        // Recorta un margen del 25% por lado, dejando el 50% central de la sala como pool
-        // de anclaje — así las zonas erráticas caen "en el medio del mapa", nunca pegadas
-        // al borde. El ancla es la esquina inferior-izquierda del cuadrado (crece hacia
-        // +X/+Y), así que además recortamos (squareWidth-1) del límite superior para que el
-        // cuadrado entero quede adentro del pool central, sin sobresalir hacia el borde.
+        // Recorta un margen del 25% por lado en Y, dejando el 50% central de la sala. En X
+        // usamos solo la mitad oeste (izquierda) de ese 50% central — las zonas erráticas
+        // caen "en el medio del mapa" verticalmente, pero sesgadas hacia la izquierda
+        // horizontalmente, nunca pegadas a la pared. El ancla es la esquina inferior-izquierda
+        // del cuadrado (crece hacia +X/+Y), así que además recortamos (squareWidth-1) del
+        // límite superior para que el cuadrado entero quede adentro del pool, sin sobresalir.
         // Sala/pool minúsculos donde el recorte vacía el pool ⇒ fallback en cascada.
         private static List<GridCoord> CenterAnchorPool(List<GridCoord> room, int squareWidth)
         {
@@ -196,6 +197,9 @@ namespace Rollgeon.Combat.Threat
             int marginY = (maxY - minY + 1) / 4;
             int loX = minX + marginX, hiX = maxX - marginX;
             int loY = minY + marginY, hiY = maxY - marginY;
+
+            // Sesgo a la izquierda: solo la mitad oeste del rango central de X.
+            hiX = (loX + hiX) / 2;
 
             int fit = squareWidth - 1;
             var fitted = new List<GridCoord>();

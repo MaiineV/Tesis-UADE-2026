@@ -226,13 +226,14 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void ComputeScatteredSquares_AnchorsStayWithinCentralHalfOfRoom()
+        public void ComputeScatteredSquares_AnchorsStayWithinWestHalfOfCentralBand()
         {
-            // Arrange — sala 20x20 (X,Y en [0,19]): margen 25% por lado ⇒ pool central
-            // en X,Y ∈ [5,14]. El ancla es la esquina inferior-izquierda del cuadrado, así
-            // que con squareWidth=2 el límite superior del pool de anclaje se recorta a 13
-            // (14-1) — el cuadrado entero (ancla + 1) queda siempre dentro de [5,14], sin
-            // sobresalir hacia el borde.
+            // Arrange — sala 20x20 (X,Y en [0,19]): margen 25% por lado ⇒ banda central
+            // en Y ∈ [5,14] y, antes del sesgo, X ∈ [5,14]. El sesgo a la izquierda recorta
+            // X a su mitad oeste: (5+14)/2 = 9 ⇒ X ∈ [5,9]. El ancla es la esquina
+            // inferior-izquierda del cuadrado, así que con squareWidth=2 el límite superior
+            // del pool de anclaje se recorta 1 casilla más (8 en X, 13 en Y) — el cuadrado
+            // entero queda siempre dentro de X ∈ [5,9], Y ∈ [5,14].
             _grid.LoadRoom(NavGraph.Rect(20, 20));
 
             // Act
@@ -242,8 +243,8 @@ namespace Rollgeon.Combat.Tests
             Assert.Greater(tiles.Count, 0);
             foreach (var c in tiles)
             {
-                Assert.IsTrue(c.X >= 5 && c.X <= 14 && c.Y >= 5 && c.Y <= 14,
-                    $"Tile {c} cayó fuera del 50% central de la sala (zonas no deberían pegarse a las paredes).");
+                Assert.IsTrue(c.X >= 5 && c.X <= 9 && c.Y >= 5 && c.Y <= 14,
+                    $"Tile {c} cayó fuera de la mitad oeste de la banda central (zonas no deberían pegarse a las paredes ni caer al este del centro).");
             }
         }
     }
