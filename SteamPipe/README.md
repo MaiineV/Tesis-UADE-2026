@@ -10,26 +10,21 @@ todo cuando ya existe `Build/Windows64/Rollgeon.exe`.
 **Mark as ready for review** para pedir el release. Mientras la app esté sin lanzar,
 subir builds y probarlas es libre y sin límite.
 
-Lo único que sí hay que tener del lado del partner site:
-
-1. Los **depots incluidos en el Dev Comp Package** — si no, subís archivos y la app
-   no te aparece instalable en tu biblioteca.
-2. Las **Launch Options** configuradas (Installation → General Installation:
-   ejecutable `Rollgeon.exe`, OS Windows) y publicadas. **El depot por sí solo no
-   hace la app lanzable** — sin esto, Steam la instala y no sabe qué correr.
+Lo que sí hay que tener configurado del lado del partner site está en el checklist
+de acá abajo. **El depot por sí solo no hace la app lanzable.**
 
 ## Antes de la primera corrida
 
 - [ ] Bajar el [Steamworks SDK](https://partner.steamgames.com/downloads/steamworks_sdk.zip)
       y ubicar `sdk/tools/ContentBuilder/builder/steamcmd.exe`.
-- [ ] Conseguir el **depot ID real**: partner.steamgames.com → App 4889850 →
-      **SteamPipe → Depots**. Por convención es `appid + 1` (4889851), pero lo asigna
-      Steamworks: hay que leerlo, no asumirlo.
-- [ ] Reemplazar `REPLACE_DEPOT_ID` en **4 lugares**:
-  - el nombre del archivo `depot_REPLACE_DEPOT_ID.vdf`
-  - la key dentro del bloque `"depots"` de `app_4889850.vdf`
-  - el nombre del vdf referenciado en ese mismo bloque
-  - el campo `"DepotID"` dentro del depot vdf
+- [x] Depot ID: **4889851** (leído de partner site → App 4889850 → SteamPipe → Depots,
+      2026-07-18). Ya está cableado en los dos vdf.
+- [ ] El depósito 4889851 tiene que estar en el **Dev Comp Package** (Asociaciones de
+      paquetes → Dev Comp). Si no figura ahí, subís archivos y la app no aparece
+      instalable en tu biblioteca, sin ningún error que lo explique.
+- [ ] **Launch Options** configuradas y publicadas: Instalación → Instalación general,
+      ejecutable `Rollgeon.exe`, OS Windows. Sin esto Steam instala el juego y no sabe
+      qué correr. Ojo: hay que apretar **Publicar cambios**, es un paso aparte.
 - [ ] Login interactivo una sola vez para satisfacer Steam Guard y cachear el sentry:
       `steamcmd +login <cuenta>`
 

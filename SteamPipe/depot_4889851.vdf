@@ -1,9 +1,8 @@
 // Depot de Windows 64 para Rollgeon — Feature#0036.
-// Renombrar este archivo con el depot ID real antes de usarlo (ver README.md).
 
 "DepotBuildConfig"
 {
-	"DepotID"		"REPLACE_DEPOT_ID"
+	"DepotID"		"4889851"
 	"contentroot"	"..\Build\Windows64"
 
 	"FileMapping"
