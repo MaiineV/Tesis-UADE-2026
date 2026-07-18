@@ -17,6 +17,13 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
+    - {fileID: 11400000, guid: ec99a59ef8ef861449583c0c274d517f, type: 2}
+    - {fileID: 11400000, guid: 370d5b15c1d775848b478ecfd48fc852, type: 2}
+    - {fileID: 11400000, guid: 6c679df4635247742bfb3c632ba8e5da, type: 2}
+    - {fileID: 11400000, guid: 81a4a7d0704466148b012f4e3511b29e, type: 2}
+    - {fileID: 11400000, guid: 03513e3bd0e0d8c43a28be53693a2338, type: 2}
+    - {fileID: 11400000, guid: e564ea620998f9340a5b37b6c85c1467, type: 2}
+    - {fileID: 11400000, guid: 4aeb388a7c3a85c45b060416c58677ac, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -28,10 +35,31 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 8
     - Name: 
       Entry: 10
       Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
+      Entry: 10
+      Data: 7
     - Name: 
       Entry: 13
       Data: 
