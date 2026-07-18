@@ -43,9 +43,6 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Separación vertical (px) de la pila de oro (las monedas son más finas).")]
         public float GoldChipSpacingY = 8f;
 
-        [Tooltip("Tope de fichas visibles por pila — el label sigue mostrando el valor real.")]
-        public int MaxVisibleChips = 30;
-
         [Header("Animación — ganar (ficha cae en la pila)")]
         [Tooltip("Altura (px) desde donde cae la ficha nueva.")]
         public float DropHeight = 60f;

@@ -177,6 +177,21 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void HighValues_StackGrowsUnbounded_OneChipPerPoint()
+        {
+            _view.Bind(_playerGuid);
+
+            // Sin tope visual: la pila representa cada punto aunque el valor sea
+            // alto (el cap real lo pone el diseño del juego, no el HUD).
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 45);
+            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 5);
+            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 5);
+
+            Assert.AreEqual(50, _stack.DisplayedCount);
+            Assert.AreEqual("<color=#A3B3B1>50</color>/10", _label.text);
+        }
+
+        [Test]
         public void LethalDamage_EmptiesStackAndShowsZero()
         {
             _view.Bind(_playerGuid);

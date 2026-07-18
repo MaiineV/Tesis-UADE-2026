@@ -132,15 +132,5 @@ namespace Rollgeon.UI.Tests
         {
             Assert.AreEqual(expected, ChipStackMath.ClassifyGoldTransition(oldGold, newGold));
         }
-
-        // ---------------- ClampVisible ----------------
-
-        [TestCase(10, 30, 10)]
-        [TestCase(45, 30, 30)]
-        [TestCase(-2, 30, 0)]
-        public void ClampVisible_ClampsToBudget(int count, int max, int expected)
-        {
-            Assert.AreEqual(expected, ChipStackMath.ClampVisible(count, max));
-        }
     }
 }

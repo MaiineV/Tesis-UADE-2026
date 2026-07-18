@@ -118,9 +118,9 @@ namespace Rollgeon.UI.HUD
         {
             if (_settings == null) return;
 
-            int visible = ChipStackMath.ClampVisible(current, _settings.MaxVisibleChips);
+            // Sin tope visual: una ficha por punto de energía.
             _chipBuffer.Clear();
-            for (int i = 0; i < visible; i++) _chipBuffer.Add(0);
+            for (int i = 0; i < current; i++) _chipBuffer.Add(0);
 
             if (_stack != null) _stack.SetChips(_chipBuffer, animate);
             if (_label != null) _label.text = ChipStackMath.FormatEnergyLabel(current, max);

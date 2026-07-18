@@ -125,15 +125,5 @@ namespace Rollgeon.UI.HUD
                 return GoldTransition.ShakeOnly;
             return GoldTransition.ChipsChanged;
         }
-
-        /// <summary>
-        /// Capea la cantidad de fichas visibles (el label sigue mostrando el valor
-        /// real aunque la pila esté al tope).
-        /// </summary>
-        public static int ClampVisible(int count, int maxVisible)
-        {
-            if (count < 0) return 0;
-            return Math.Min(count, maxVisible);
-        }
     }
 }

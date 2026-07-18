@@ -50,7 +50,6 @@ namespace Rollgeon.UI.HUD
 
         private int _maxHp = 1;
         private readonly List<int> _chipBuffer = new List<int>();
-        private readonly List<int> _clampedBuffer = new List<int>();
 
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Action<HealResolvedPayload> _onHealResolved;
@@ -171,14 +170,11 @@ namespace Rollgeon.UI.HUD
         {
             if (_settings == null) return;
 
+            // Sin tope visual: una ficha por punto, la pila crece con el recurso
+            // (el cap real lo pone el diseño del juego, no el HUD).
             ChipStackMath.BuildHealthChipIds(hp, shield, _chipBuffer);
 
-            // El label muestra el valor real; la pila se capea al presupuesto visual.
-            _clampedBuffer.Clear();
-            int visible = ChipStackMath.ClampVisible(_chipBuffer.Count, _settings.MaxVisibleChips);
-            for (int i = 0; i < visible; i++) _clampedBuffer.Add(_chipBuffer[i]);
-
-            if (_stack != null) _stack.SetChips(_clampedBuffer, animate);
+            if (_stack != null) _stack.SetChips(_chipBuffer, animate);
             if (_label != null)
             {
                 _label.text = ChipStackMath.FormatHealthLabel(hp, shield, _maxHp, _settings.ShieldHex);
