@@ -296,6 +296,12 @@ namespace Rollgeon.UI.Screens
         {
             _playerGuid = playerGuid;
 
+            // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
+            // el Inspector, se auto-resuelven en escena.
+            if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
+
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
 

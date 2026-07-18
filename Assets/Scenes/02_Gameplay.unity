@@ -2820,11 +2820,11 @@ PrefabInstance:
     - target: {fileID: 4802146124504875049, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: _iconActive
       value: 
-      objectReference: {fileID: 21300000, guid: facf44e63a96c48459793bff074181b3, type: 3}
+      objectReference: {fileID: -1010130055, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
     - target: {fileID: 4802146124504875049, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: _iconInactive
       value: 
-      objectReference: {fileID: 21300000, guid: facf44e63a96c48459793bff074181b3, type: 3}
+      objectReference: {fileID: -359211130, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
     - target: {fileID: 5887643075634823342, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: m_Name
       value: Canvas_PlayerStatus
@@ -3322,21 +3322,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
-    - target: {fileID: 306144728987278630, guid: 9c92df5337057d041b0672a557567cab, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2416045015693580849, guid: 9c92df5337057d041b0672a557567cab, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5416459890041017060, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_Name
       value: Canvas_ExplorationHUD
-      objectReference: {fileID: 0}
-    - target: {fileID: 5416459890041017060, guid: 9c92df5337057d041b0672a557567cab, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7925402146584446497, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_Pivot.x

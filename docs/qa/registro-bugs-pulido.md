@@ -94,6 +94,16 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix**: un paso de validación/reparación en generación (o un test de assets que recorra `Assets/Prefabs/Rooms/**` y falle si un `RoomLayout` no tiene los 4 `DoorSlots`). El tool `Rollgeon/Tools/Diagnose Room Doors` ya hace el diagnóstico manual.
 - **Estado**: **cerrado** en `Fix#0034`. Se agregó el guard en generación (`DoorTopologyGuard` + `DungeonManager.PruneDoorlessConnections`, paso 5c de `GenerateFloor`): poda las conexiones cuya dirección no tiene puerta autorada (o cuyo vecino no tiene la recíproca) de ambos lados, con `LogError` por poda, y reporta con `LogError` cualquier sala que quede inalcanzable tras podar. Con las 21 salas actuales (4 puertas c/u) es no-op. Cubierto por `DoorTopologyGuardTests` (7 tests de lógica pura).
 
+### PUL-012 — El `.exe` no tiene metadatos de producto (Windows lo muestra como "rollgeon.exe")
+- **Severidad**: Baja (cosmético, pero visible al jugador antes de abrir el juego)
+- **Área**: Build / Steam
+- **Repro**: primera ejecución de `Build/Windows64/Rollgeon.exe` → el diálogo de permisos de red del firewall de Windows muestra **`rollgeon.exe`** en minúscula.
+- **Esperado**: "Rollgeon", o al menos "Rollgeon.exe" respetando mayúsculas.
+- **Observado**: `(Get-Item Rollgeon.exe).VersionInfo` devuelve `ProductName`, `FileDescription` y `CompanyName` **vacíos**; `ProductVersion` es `6000.3.11f1` (la de Unity, no `bundleVersion`). Sin `FileDescription`, Windows cae al nombre del archivo, y la regla de firewall guarda el path entero en minúscula (`...\build\windows64\rollgeon.exe`).
+- **Causa**: no es misconfiguración. El ejecutable del player de Windows es **pre-compilado** y Unity no le estampa los valores de PlayerSettings — el manual documenta que hay que modificar los metadatos uno mismo. Afecta también a Task Manager y a las heurísticas de antivirus (binario sin firmar y sin metadatos).
+- **Fix propuesto**: paso post-build en `RollgeonBuild.CopySteamAppId`-style que estampe el version info con `rcedit` (dependencia externa, ~1 MB). Alternativa: firmar el ejecutable, que resuelve esto y el warning de SmartScreen a la vez.
+- **Branch**: detectado en `Feature#0036_SteamBuild`. **Estado**: abierto, no bloquea la primera subida a Steam.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
