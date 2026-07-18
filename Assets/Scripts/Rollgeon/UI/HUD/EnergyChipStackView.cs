@@ -37,6 +37,7 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _bound;
 
+        private bool _hasData;
         private readonly List<int> _chipBuffer = new List<int>();
 
         private void Awake()
@@ -89,6 +90,27 @@ namespace Rollgeon.UI.HUD
             _bound = false;
         }
 
+        /// <summary>
+        /// Reintento del estado inicial: al arrancar la run el BindAll del HUD
+        /// puede correr antes de que el jugador/servicio existan y el fetch
+        /// falla silencioso — la pila quedaba vacía hasta el primer combate.
+        /// Se reintenta por frame hasta la primera lectura exitosa.
+        /// </summary>
+        private void Update()
+        {
+            if (_hasData) return;
+
+            if (_playerGuid == Guid.Empty
+                && ServiceLocator.TryGetService<Rollgeon.Player.IPlayerService>(out var ps) && ps != null
+                && ps.PlayerGuid != Guid.Empty)
+            {
+                _playerGuid = ps.PlayerGuid;
+            }
+
+            if (_playerGuid == Guid.Empty) return;
+            FetchInitialState();
+        }
+
         private void HandleEnergyChanged(params object[] args)
         {
             if (args == null || args.Length < 3)
@@ -99,19 +121,21 @@ namespace Rollgeon.UI.HUD
             if (!(args[0] is Guid guid) || guid != _playerGuid) return;
             if (!(args[1] is int current) || !(args[2] is int max)) return;
 
+            _hasData = true;
             Apply(current, max, animate: true);
         }
 
         private void FetchInitialState()
         {
+            // Silencioso sin datos: el Update reintenta (loguear acá spamearía).
             if (_playerGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
-            {
-                Debug.Log(LogPrefix + "IEnergyService no registrado todavia — UI queda default hasta primer evento.", this);
-                return;
-            }
+            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null) return;
 
-            Apply(energy.GetCurrent(_playerGuid), energy.GetMax(_playerGuid), animate: false);
+            int max = energy.GetMax(_playerGuid);
+            if (max <= 0) return; // ruleset/energía aún no inicializados
+
+            _hasData = true;
+            Apply(energy.GetCurrent(_playerGuid), max, animate: false);
         }
 
         private void Apply(int current, int max, bool animate)

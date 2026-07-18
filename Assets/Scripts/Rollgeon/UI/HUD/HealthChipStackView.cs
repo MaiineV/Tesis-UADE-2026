@@ -49,6 +49,7 @@ namespace Rollgeon.UI.HUD
         private bool _bound;
 
         private int _maxHp = 1;
+        private bool _hasData;
         private readonly List<int> _chipBuffer = new List<int>();
 
         private Action<DamageResolvedPayload> _onDamageResolved;
@@ -87,6 +88,30 @@ namespace Rollgeon.UI.HUD
         {
             ConfigureStack();
             Subscribe();
+            ResolveMaxHp();
+            RefreshFromAuthoritative(animate: false);
+        }
+
+        /// <summary>
+        /// Reintento del estado inicial: al arrancar la run el BindAll del HUD
+        /// corre antes de que el AttributesManager registre al jugador, el fetch
+        /// falla silencioso y en exploración no hay eventos que re-pueblen la
+        /// pila (recién el primer combate la llenaba). Se reintenta por frame
+        /// hasta la primera lectura exitosa y después es no-op.
+        /// </summary>
+        private void Update()
+        {
+            if (_hasData) return;
+
+            if (_playerGuid == Guid.Empty
+                && ServiceLocator.TryGetService<IPlayerService>(out var ps) && ps != null
+                && ps.PlayerGuid != Guid.Empty)
+            {
+                _playerGuid = ps.PlayerGuid;
+            }
+
+            if (_playerGuid == Guid.Empty) return;
+
             ResolveMaxHp();
             RefreshFromAuthoritative(animate: false);
         }
@@ -152,14 +177,17 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         private void RefreshFromAuthoritative(bool animate)
         {
+            // Sin datos todavía → silencioso: el Update reintenta cada frame
+            // hasta la primera lectura exitosa (loguear acá spamearía).
             if (_playerGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
-            {
-                Debug.Log(LogPrefix + "AttributesManager no registrado todavia — UI queda default hasta primer evento.", this);
-                return;
-            }
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null) return;
+            if (!attrs.IsRegistered(_playerGuid)) return;
 
-            int hp = Mathf.Max(0, attrs.GetAttributeValue<Health, int>(_playerGuid));
+            var healthAttr = attrs.GetAttribute<Health>(_playerGuid);
+            if (healthAttr == null) return;
+
+            _hasData = true;
+            int hp = Mathf.Max(0, healthAttr.Value);
             var shieldAttr = attrs.GetAttribute<Shield>(_playerGuid);
             int shield = Mathf.Max(0, shieldAttr?.Value ?? 0);
 
