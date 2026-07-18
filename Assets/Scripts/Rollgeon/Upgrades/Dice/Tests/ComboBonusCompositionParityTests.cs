@@ -9,15 +9,14 @@ using Rollgeon.Effects.Readers;
 using Rollgeon.Upgrades.Dice.PreConditions;
 using Rollgeon.Upgrades.Dice.Readers;
 using Rollgeon.Upgrades.Dice.Triggers;
-using Rollgeon.Upgrades.Dice.Triggers.Concretes;
 
 namespace Rollgeon.Upgrades.Dice.Tests
 {
     /// <summary>
-    /// Tests de PARIDAD: cada trigger legacy de scratch-math contra su composición
-    /// Eff/PC equivalente, ejecutados sobre contextos idénticos — el scratch resultante
-    /// debe ser igual. Son el oráculo de la migración de assets (Etapa 3); cuando los
-    /// legacy se borren (Etapa 4), el lado legacy se reemplaza por el valor literal.
+    /// Oráculo de paridad de la migración (Etapa 4): las composiciones que reemplazaron
+    /// a los triggers legacy de scratch-math, contra los valores literales que el legacy
+    /// producía (verificados con ambas implementaciones vivas antes del borrado —
+    /// Feature#0035). Cambiar estas expectativas es cambiar el balance del juego.
     /// </summary>
     [TestFixture]
     public class ComboBonusCompositionParityTests
@@ -65,177 +64,146 @@ namespace Rollgeon.Upgrades.Dice.Tests
             };
         }
 
-        /// <summary>Dispatcha legacy y composición sobre contextos gemelos y compara el scratch.</summary>
-        private static void AssertScratchParity(
-            Action<EnchantmentTriggerContext> legacyDispatch,
-            Action<EnchantmentTriggerContext> composedDispatch,
-            Func<EnchantmentTriggerContext> ctxFactory,
-            string caseName)
+        private static EnchantmentScratch RunComboMatched(ExecuteEffectsOnDiceEvent bridge, string comboId, int[] faces)
         {
-            var legacyCtx = ctxFactory();
-            var composedCtx = ctxFactory();
+            var ctx = BuildCtx(comboId, faces);
+            bridge.OnComboMatched(ctx);
+            return ctx.Scratch;
+        }
 
-            legacyDispatch(legacyCtx);
-            composedDispatch(composedCtx);
-
-            Assert.AreEqual(legacyCtx.Scratch.BonusComboDamage, composedCtx.Scratch.BonusComboDamage,
-                $"{caseName}: BonusComboDamage difiere entre legacy y composición.");
-            Assert.AreEqual(legacyCtx.Scratch.ComboDamageMultiplier, composedCtx.Scratch.ComboDamageMultiplier, 0.0001f,
-                $"{caseName}: ComboDamageMultiplier difiere.");
-            Assert.AreEqual(legacyCtx.Scratch.BlockComboDamage, composedCtx.Scratch.BlockComboDamage,
-                $"{caseName}: BlockComboDamage difiere.");
+        private static EnchantmentScratch RunRollResolved(ExecuteEffectsOnDiceEvent bridge, int[] faces)
+        {
+            var ctx = BuildCtx(null, faces);
+            bridge.OnRollResolved(ctx);
+            return ctx.Scratch;
         }
 
         // ================================================================
-        // AddComboDamage → EEODE(ComboMatched, Filter) + EffAddComboBonus
+        // AddComboDamage legacy → EEODE(ComboMatched, Filter) + EffAddComboBonus
         // ================================================================
 
         [Test]
-        public void Parity_AddComboDamage_WithComboIdRestriction()
+        public void Composition_AddComboBonus_RespectsComboIdRestriction()
         {
-            var legacy = new AddComboDamage
-            {
-                Bonus = new ReadConstantInt { Value = 5 },
-                RestrictToComboIds = new List<string> { "combo.par" },
-            };
-            var composed = Bridge(EnchantmentHookEvent.ComboMatched,
+            var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffAddComboBonus { Amount = new ReadConstantInt { Value = 5 } }));
-            composed.Filter = new ComboFilter
+            bridge.Filter = new ComboFilter
             {
                 Mode = ComboFilterMode.ComboIds,
                 ComboIds = new List<string> { "combo.par" },
             };
 
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 2, 2, 5 }), "AddComboDamage/par");
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.trio", new[] { 3, 3, 3 }), "AddComboDamage/trio (filtrado)");
+            Assert.AreEqual(5, RunComboMatched(bridge, "combo.par", new[] { 2, 2, 5 }).BonusComboDamage);
+            Assert.AreEqual(0, RunComboMatched(bridge, "combo.trio", new[] { 3, 3, 3 }).BonusComboDamage);
         }
 
         // ================================================================
-        // Deltas de roll (aprox MVP) → EffAddComboBonus(ReadCarrierRollDelta | const)
+        // Deltas de roll (Pesado / Oxidado / Invertido / Afilado / Volátil legacy)
         // ================================================================
 
         [Test]
-        public void Parity_AddFlatToResult_ConstantBonus()
+        public void Composition_FlatBonus_AddsConstant()
         {
-            var legacy = new AddFlatToResult { Bonus = new ReadConstantInt { Value = 2 } };
-            var composed = Bridge(EnchantmentHookEvent.RollResolved,
+            // Ench_Pesado: +2 plano en RollResolved.
+            var bridge = Bridge(EnchantmentHookEvent.RollResolved,
                 Group(new EffAddComboBonus { Amount = new ReadConstantInt { Value = 2 } }));
 
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 4 }), "AddFlatToResult");
+            Assert.AreEqual(2, RunRollResolved(bridge, new[] { 4 }).BonusComboDamage);
         }
 
         [Test]
-        public void Parity_SubtractFromResult_NegativeConstant()
+        public void Composition_NegativeConstant_Subtracts()
         {
-            var legacy = new SubtractFromResult { Amount = new ReadConstantInt { Value = 2 } };
-            var composed = Bridge(EnchantmentHookEvent.RollResolved,
+            // Ench_Oxidado: -2 en RollResolved (constante negada por el migrador).
+            var bridge = Bridge(EnchantmentHookEvent.RollResolved,
                 Group(new EffAddComboBonus { Amount = new ReadConstantInt { Value = -2 } }));
 
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 4 }), "SubtractFromResult");
+            Assert.AreEqual(-2, RunRollResolved(bridge, new[] { 4 }).BonusComboDamage);
         }
 
         [Test]
-        public void Parity_InvertResult_DeltaReader()
+        public void Composition_InvertDelta_MatchesLegacyMath()
         {
-            var legacy = new InvertResult();
-            var composed = Bridge(EnchantmentHookEvent.RollResolved,
+            // Ench_Invertido (D6): cara 2 → +3; cara 5 → -3.
+            var bridge = Bridge(EnchantmentHookEvent.RollResolved,
                 Group(new EffAddComboBonus
                 {
                     Amount = new ReadCarrierRollDelta { Op = CarrierRollDeltaOp.Invert },
                 }));
 
-            // D6 cara 2 → +3; cara 5 → -3.
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 2 }), "Invert/2");
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 5 }), "Invert/5");
+            Assert.AreEqual(3, RunRollResolved(bridge, new[] { 2 }).BonusComboDamage);
+            Assert.AreEqual(-3, RunRollResolved(bridge, new[] { 5 }).BonusComboDamage);
         }
 
         [Test]
-        public void Parity_ClampMinToHalfMax_DeltaReader()
+        public void Composition_ClampDelta_MatchesLegacyMath()
         {
-            var legacy = new ClampMinToHalfMax();
-            var composed = Bridge(EnchantmentHookEvent.RollResolved,
+            // Ench_Afilado (D6, mínimo 3): cara 2 → +1; cara 4 → 0.
+            var bridge = Bridge(EnchantmentHookEvent.RollResolved,
                 Group(new EffAddComboBonus
                 {
                     Amount = new ReadCarrierRollDelta { Op = CarrierRollDeltaOp.ClampMinToHalfMax },
                 }));
 
-            // D6 mínimo 3: cara 2 → +1; cara 4 → 0.
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 2 }), "Clamp/2");
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 4 }), "Clamp/4");
+            Assert.AreEqual(1, RunRollResolved(bridge, new[] { 2 }).BonusComboDamage);
+            Assert.AreEqual(0, RunRollResolved(bridge, new[] { 4 }).BonusComboDamage);
         }
 
         [Test]
-        public void Parity_DoubleMaxZeroMin_DeltaReader()
+        public void Composition_DoubleMaxZeroMinDelta_MatchesLegacyMath()
         {
-            var legacy = new DoubleMaxZeroMin();
-            var composed = Bridge(EnchantmentHookEvent.RollResolved,
+            // Ench_Volatil (D6): cara 6 → +6; cara 1 → -1; cara 3 → 0.
+            var bridge = Bridge(EnchantmentHookEvent.RollResolved,
                 Group(new EffAddComboBonus
                 {
                     Amount = new ReadCarrierRollDelta { Op = CarrierRollDeltaOp.DoubleMaxZeroMin },
                 }));
 
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 6 }), "DoubleMaxZeroMin/6");
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 1 }), "DoubleMaxZeroMin/1");
-            AssertScratchParity(legacy.OnRollResolved, composed.OnRollResolved,
-                () => BuildCtx(null, new[] { 3 }), "DoubleMaxZeroMin/3");
+            Assert.AreEqual(6, RunRollResolved(bridge, new[] { 6 }).BonusComboDamage);
+            Assert.AreEqual(-1, RunRollResolved(bridge, new[] { 1 }).BonusComboDamage);
+            Assert.AreEqual(0, RunRollResolved(bridge, new[] { 3 }).BonusComboDamage);
         }
 
         // ================================================================
-        // Face-conditional → PcCarrierFace + Eff*
+        // Face-conditional (Gemelo / Resonante / ParityGamble legacy)
         // ================================================================
 
         [Test]
-        public void Parity_TwinBonus_HasDuplicateMultiplier()
+        public void Composition_TwinMultiplier_OnlyWithDuplicateFace()
         {
-            var legacy = new TwinBonus { BonusMultiplier = 1.5f };
-            var composed = Bridge(EnchantmentHookEvent.ComboMatched,
+            // Ench_Gemelo: ×1.5 si otro dado comparte la cara del carrier.
+            var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffMultiplyComboDamage { Multiplier = 1.5f },
                     new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate }));
 
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 3, 3, 5 }), "TwinBonus/gemelo");
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 3, 4, 5 }), "TwinBonus/sin gemelo");
+            Assert.AreEqual(1.5f, RunComboMatched(bridge, "combo.par", new[] { 3, 3, 5 }).ComboDamageMultiplier, 0.0001f);
+            Assert.AreEqual(1f, RunComboMatched(bridge, "combo.par", new[] { 3, 4, 5 }).ComboDamageMultiplier, 0.0001f);
         }
 
         [Test]
-        public void Parity_ResonantDoubleCount_CarrierFaceBonus()
+        public void Composition_ResonantBonus_AddsCarrierFaceWhenDuplicated()
         {
-            var legacy = new ResonantDoubleCount();
-            var composed = Bridge(EnchantmentHookEvent.ComboMatched,
+            // Ench_Resonante: +cara del carrier si está duplicada.
+            var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffAddComboBonus { Amount = new ReadCarrierFace() },
                     new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate }));
 
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 4, 4, 2 }), "Resonante/duplicado");
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 4, 5, 2 }), "Resonante/sin duplicado");
+            Assert.AreEqual(4, RunComboMatched(bridge, "combo.par", new[] { 4, 4, 2 }).BonusComboDamage);
+            Assert.AreEqual(0, RunComboMatched(bridge, "combo.par", new[] { 4, 5, 2 }).BonusComboDamage);
         }
 
         [Test]
-        public void Parity_ParityScoreMultiplier_TwoGatedGroups()
+        public void Composition_ParityGamble_TwoGatedGroups()
         {
-            var legacy = new ParityScoreMultiplier { MultiplierOdd = 3f, MultiplierEven = 0f };
-            var composed = Bridge(EnchantmentHookEvent.ComboMatched,
+            // Ench_ParityGamble: impar → ×3; par → ×0.
+            var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffMultiplyComboDamage { Multiplier = 3f },
                     new PcCarrierFace { Mode = CarrierFaceMode.Odd }),
                 Group(new EffMultiplyComboDamage { Multiplier = 0f },
                     new PcCarrierFace { Mode = CarrierFaceMode.Even }));
 
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 3 }), "ParityGamble/impar");
-            AssertScratchParity(legacy.OnComboMatched, composed.OnComboMatched,
-                () => BuildCtx("combo.par", new[] { 4 }), "ParityGamble/par");
+            Assert.AreEqual(3f, RunComboMatched(bridge, "combo.par", new[] { 3 }).ComboDamageMultiplier, 0.0001f);
+            Assert.AreEqual(0f, RunComboMatched(bridge, "combo.par", new[] { 4 }).ComboDamageMultiplier, 0.0001f);
         }
     }
 }

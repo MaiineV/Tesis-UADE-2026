@@ -38,9 +38,10 @@ namespace Rollgeon.Upgrades.Combos.Triggers.Concretes
     /// </summary>
     /// <remarks>
     /// <para>
-    /// A diferencia de los triggers de scratch (<see cref="AddGoldOnComboMatch"/>,
-    /// etc.), acá los efectos se aplican DIRECTO sobre los sistemas (vía
-    /// <c>EffectData.TryExecute</c>) — no pasan por el <c>EnchantmentScratch</c>.
+    /// A diferencia de los triggers de scratch legacy (borrados en Feature#0035),
+    /// acá los efectos se aplican DIRECTO sobre los sistemas (vía
+    /// <c>EffectData.TryExecute</c>) — no pasan por el <c>EnchantmentScratch</c>,
+    /// salvo los <c>IComboScratchWriter</c> que escriben al scratch del trigger context.
     /// </para>
     /// <para>
     /// Cada <see cref="EffectData"/> corre con un <see cref="EffectContext"/> fresco

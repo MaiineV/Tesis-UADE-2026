@@ -10,16 +10,14 @@ using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Upgrades.Dice.Triggers;
-using Rollgeon.Upgrades.Dice.Triggers.Concretes;
 
 namespace Rollgeon.Upgrades.Dice.Tests
 {
     /// <summary>
-    /// Paridad OBSERVABLE de los triggers gold-gated: legacy (scratch diferido +
-    /// applier) vs composición (PcGoldCompare + EffModifyGold inmediato). Se compara
-    /// el oro final y el flag de block — el "gold efectivo" legacy y el apply
-    /// inmediato nuevo coinciden mientras ningún trigger sume y gaste oro en el
-    /// mismo evento (ningún asset lo hace — documentado en el plan §B4).
+    /// Oráculo de los encantamientos gold-gated migrados (Sediento / SpendForBonus /
+    /// BlockBelowGold legacy): PcGoldCompare + EffModifyGold inmediato, con los valores
+    /// observables que el legacy producía (verificados con ambas implementaciones vivas
+    /// antes del borrado — Feature#0035). El orden de los grupos ES la semántica.
     /// </summary>
     [TestFixture]
     public class GoldGatedCompositionTests
@@ -57,23 +55,12 @@ namespace Rollgeon.Upgrades.Dice.Tests
             };
         }
 
-        /// <summary>Camino legacy completo: dispatch + applier (como hace el service).</summary>
-        private (int gold, bool block) RunLegacy(IOnComboMatchedTrigger legacy, int startingGold)
-        {
-            _economy.ResetTo(startingGold);
-            var ctx = BuildCtx();
-            legacy.OnComboMatched(ctx);
-            EnchantmentScratchApplier.Apply(ctx.Scratch, ctx.Effect.SourceGuid);
-            return (_economy.CurrentGold, ctx.Scratch.BlockComboDamage);
-        }
-
-        /// <summary>Camino nuevo: bridge con apply inmediato de EffModifyGold.</summary>
-        private (int gold, bool block) RunComposed(ExecuteEffectsOnDiceEvent bridge, int startingGold)
+        private (int gold, bool block, int bonus) Run(ExecuteEffectsOnDiceEvent bridge, int startingGold)
         {
             _economy.ResetTo(startingGold);
             var ctx = BuildCtx();
             bridge.OnComboMatched(ctx);
-            return (_economy.CurrentGold, ctx.Scratch.BlockComboDamage);
+            return (_economy.CurrentGold, ctx.Scratch.BlockComboDamage, ctx.Scratch.BonusComboDamage);
         }
 
         private static EffectData Group(Rollgeon.PreConditions.BasePreCondition pc, params IEffect[] effects)
@@ -88,7 +75,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             new PcGoldCompare { Comparison = cmp, Value = new ReadConstantInt { Value = value } };
 
         // ================================================================
-        // SpendGoldOnComboParticipation ("Sediento")
+        // "Sediento": paga el costo o bloquea el combo
         // ================================================================
 
         private static ExecuteEffectsOnDiceEvent SedientoComposition(int cost)
@@ -110,36 +97,27 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void Parity_Sediento_WithEnoughGold_SpendsWithoutBlocking()
+        public void Sediento_WithEnoughGold_SpendsWithoutBlocking()
         {
-            var legacy = new SpendGoldOnComboParticipation { Cost = new ReadConstantInt { Value = 3 } };
+            var result = Run(SedientoComposition(3), startingGold: 10);
 
-            var legacyResult = RunLegacy(legacy, startingGold: 10);
-            var composedResult = RunComposed(SedientoComposition(3), startingGold: 10);
-
-            Assert.AreEqual(legacyResult, composedResult);
-            Assert.AreEqual((7, false), composedResult);
+            Assert.AreEqual((7, false, 0), result);
         }
 
         [Test]
-        public void Parity_Sediento_WithoutGold_BlocksWithoutSpending()
+        public void Sediento_WithoutGold_BlocksWithoutSpending()
         {
-            var legacy = new SpendGoldOnComboParticipation { Cost = new ReadConstantInt { Value = 3 } };
+            var result = Run(SedientoComposition(3), startingGold: 2);
 
-            var legacyResult = RunLegacy(legacy, startingGold: 2);
-            var composedResult = RunComposed(SedientoComposition(3), startingGold: 2);
-
-            Assert.AreEqual(legacyResult, composedResult);
-            Assert.AreEqual((2, true), composedResult);
+            Assert.AreEqual((2, true, 0), result);
         }
 
         // ================================================================
-        // SpendGoldForComboBonus ("pagá y pegá más fuerte")
+        // "Pagá y pegá más fuerte": Spend + bonus con atomicidad por cortocircuito
         // ================================================================
 
         private static ExecuteEffectsOnDiceEvent SpendForBonusComposition(int cost, int bonus)
         {
-            // Cortocircuito de EffectData: si el Spend falla, el bonus no corre.
             return new ExecuteEffectsOnDiceEvent
             {
                 Event = EnchantmentHookEvent.ComboMatched,
@@ -157,58 +135,23 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void Parity_SpendForBonus_PaysAndAddsBonus()
+        public void SpendForBonus_PaysAndAddsBonus()
         {
-            var legacy = new SpendGoldForComboBonus
-            {
-                Cost = new ReadConstantInt { Value = 3 },
-                Bonus = new ReadConstantInt { Value = 5 },
-            };
+            var result = Run(SpendForBonusComposition(3, 5), startingGold: 10);
 
-            _economy.ResetTo(10);
-            var legacyCtx = BuildCtx();
-            legacy.OnComboMatched(legacyCtx);
-            EnchantmentScratchApplier.Apply(legacyCtx.Scratch, legacyCtx.Effect.SourceGuid);
-            int legacyGold = _economy.CurrentGold;
-
-            _economy.ResetTo(10);
-            var composedCtx = BuildCtx();
-            SpendForBonusComposition(3, 5).OnComboMatched(composedCtx);
-
-            Assert.AreEqual(legacyGold, _economy.CurrentGold);
-            Assert.AreEqual(legacyCtx.Scratch.BonusComboDamage, composedCtx.Scratch.BonusComboDamage);
-            Assert.AreEqual(7, _economy.CurrentGold);
-            Assert.AreEqual(5, composedCtx.Scratch.BonusComboDamage);
+            Assert.AreEqual((7, false, 5), result);
         }
 
         [Test]
-        public void Parity_SpendForBonus_InsufficientGold_NoBonusNoSpend()
+        public void SpendForBonus_InsufficientGold_NoBonusNoSpend()
         {
-            var legacy = new SpendGoldForComboBonus
-            {
-                Cost = new ReadConstantInt { Value = 3 },
-                Bonus = new ReadConstantInt { Value = 5 },
-            };
+            var result = Run(SpendForBonusComposition(3, 5), startingGold: 2);
 
-            _economy.ResetTo(2);
-            var legacyCtx = BuildCtx();
-            legacy.OnComboMatched(legacyCtx);
-            EnchantmentScratchApplier.Apply(legacyCtx.Scratch, legacyCtx.Effect.SourceGuid);
-            int legacyGold = _economy.CurrentGold;
-            int legacyBonus = legacyCtx.Scratch.BonusComboDamage;
-
-            _economy.ResetTo(2);
-            var composedCtx = BuildCtx();
-            SpendForBonusComposition(3, 5).OnComboMatched(composedCtx);
-
-            Assert.AreEqual(legacyGold, _economy.CurrentGold);
-            Assert.AreEqual(legacyBonus, composedCtx.Scratch.BonusComboDamage);
-            Assert.AreEqual(2, _economy.CurrentGold);
-            Assert.AreEqual(0, composedCtx.Scratch.BonusComboDamage);
+            Assert.AreEqual((2, false, 0), result);
         }
 
         // ================================================================
-        // BlockComboIfBelowGold ("sin oro no hay daño")
+        // "Sin oro no hay daño"
         // ================================================================
 
         private static ExecuteEffectsOnDiceEvent BlockBelowComposition(int threshold)
@@ -224,18 +167,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void Parity_BlockBelowGold_BlocksOnlyWhenPoor()
+        public void BlockBelowGold_BlocksOnlyWhenPoor()
         {
-            var legacy = new BlockComboIfBelowGold { Threshold = new ReadConstantInt { Value = 1 } };
-
-            Assert.AreEqual(
-                RunLegacy(legacy, startingGold: 0),
-                RunComposed(BlockBelowComposition(1), startingGold: 0),
-                "Sin oro: ambos bloquean.");
-            Assert.AreEqual(
-                RunLegacy(legacy, startingGold: 5),
-                RunComposed(BlockBelowComposition(1), startingGold: 5),
-                "Con oro: ninguno bloquea.");
+            Assert.AreEqual((0, true, 0), Run(BlockBelowComposition(1), startingGold: 0));
+            Assert.AreEqual((5, false, 0), Run(BlockBelowComposition(1), startingGold: 5));
         }
 
         private sealed class FakeEconomy : IEconomyService

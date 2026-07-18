@@ -19,10 +19,11 @@ using UnityEngine;
 namespace Rollgeon.Upgrades.Combos.Tests
 {
     /// <summary>
-    /// Paridad observable del canal combos: los concretes de scratch legacy
-    /// (AddGoldOnComboMatch, AddShieldOnTurnStart) contra sus composiciones
-    /// <c>ExecuteEffectsOnEvent</c> + EffModifyGold / EffModifyIntAttribute,
-    /// despachadas por el <see cref="ComboPassiveService"/> real.
+    /// Oráculo del canal combos migrado: las composiciones ExecuteEffectsOnEvent +
+    /// EffModifyGold / EffModifyIntAttribute que reemplazaron a los concretes legacy
+    /// (AddGoldOnComboMatch / AddShieldOnTurnStart), con los valores observables que el
+    /// legacy producía (verificados con ambas implementaciones vivas antes del borrado
+    /// — Feature#0035), despachadas por el <see cref="ComboPassiveService"/> real.
     /// </summary>
     [TestFixture]
     public class ComboPassiveCompositionParityTests
@@ -100,13 +101,6 @@ namespace Rollgeon.Upgrades.Combos.Tests
         private void OwnPassive(ComboPassiveSO passive) =>
             ServiceLocator.GetService<RunComboPassivesState>().Add(passive);
 
-        private void ClearPassives()
-        {
-            // Estado fresco por variante: re-crea el run state (mismo camino que OnRunStart).
-            SaveSystem.Clear();
-            EventManager.Trigger(EventName.OnRunStart, Guid.NewGuid(), "test-ruleset");
-        }
-
         private static EffModifyIntAttribute ShieldAdd(int amount)
         {
             var eff = new EffModifyIntAttribute
@@ -141,35 +135,26 @@ namespace Rollgeon.Upgrades.Combos.Tests
         private int PlayerShield() => _attrs.GetAttributeValue<Shield, int>(_player.PlayerGuid);
 
         // ================================================================
-        // AddGoldOnComboMatch → ExecuteEffectsOnEvent + EffModifyGold
+        // Gold on combo match (ComboPassive_GoldOnLadder migrada)
         // ================================================================
 
         [Test]
-        public void Parity_GoldOnComboMatch_SameFinalGold()
+        public void GoldOnComboMatch_TargetCombo_AddsGold()
         {
-            // Legacy — scratch diferido, aplicado por el service.
-            OwnPassive(MakePassive("legacy", "combo.escalera",
-                new AddGoldOnComboMatch { Amount = new ReadConstantInt { Value = 3 } }));
-            _economy.ResetTo(0);
-            RaiseComboMatched("combo.escalera");
-            int legacyGold = _economy.CurrentGold;
-
-            // Composición — apply inmediato del EffModifyGold.
-            ClearPassives();
-            OwnPassive(MakePassive("composed", "combo.escalera",
+            OwnPassive(MakePassive("gold-on-ladder", "combo.escalera",
                 Bridge(ComboPassiveHookEvent.ComboMatched,
                     new EffModifyGold { Operation = GoldOperation.Add, Amount = new ReadConstantInt { Value = 3 } })));
             _economy.ResetTo(0);
+
             RaiseComboMatched("combo.escalera");
 
-            Assert.AreEqual(legacyGold, _economy.CurrentGold);
             Assert.AreEqual(3, _economy.CurrentGold);
         }
 
         [Test]
-        public void Parity_GoldOnComboMatch_OtherCombo_NoGold()
+        public void GoldOnComboMatch_OtherCombo_NoGold()
         {
-            OwnPassive(MakePassive("composed", "combo.escalera",
+            OwnPassive(MakePassive("gold-on-ladder", "combo.escalera",
                 Bridge(ComboPassiveHookEvent.ComboMatched,
                     new EffModifyGold { Operation = GoldOperation.Add, Amount = new ReadConstantInt { Value = 3 } })));
             _economy.ResetTo(0);
@@ -180,27 +165,29 @@ namespace Rollgeon.Upgrades.Combos.Tests
         }
 
         // ================================================================
-        // AddShieldOnTurnStart → ExecuteEffectsOnEvent + EffModifyIntAttribute
+        // Shield on turn start (AddShieldOnTurnStart migrado)
         // ================================================================
 
         [Test]
-        public void Parity_ShieldOnTurnStart_SameFinalShield()
+        public void ShieldOnTurnStart_AddsShieldToPlayer()
         {
-            // Legacy — scratch.BonusShield aplicado por el applier sobre AttributesManager.
-            OwnPassive(MakePassive("legacy", null,
-                new AddShieldOnTurnStart { Amount = new ReadConstantInt { Value = 2 } }));
-            EventManager.Trigger(EventName.OnTurnStarted, _player.PlayerGuid);
-            int legacyShield = PlayerShield();
-
-            // Reset de shield + pasivas para la variante composicional.
-            _attrs.SetAttributeValue<Shield, int>(_player.PlayerGuid, 0);
-            ClearPassives();
-            OwnPassive(MakePassive("composed", null,
+            OwnPassive(MakePassive("shield-per-turn", null,
                 Bridge(ComboPassiveHookEvent.TurnStarted, ShieldAdd(2))));
+
             EventManager.Trigger(EventName.OnTurnStarted, _player.PlayerGuid);
 
-            Assert.AreEqual(legacyShield, PlayerShield());
             Assert.AreEqual(2, PlayerShield());
+        }
+
+        [Test]
+        public void ShieldOnTurnStart_EnemyTurn_DoesNothing()
+        {
+            OwnPassive(MakePassive("shield-per-turn", null,
+                Bridge(ComboPassiveHookEvent.TurnStarted, ShieldAdd(2))));
+
+            EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
+
+            Assert.AreEqual(0, PlayerShield());
         }
 
         // ================================================================

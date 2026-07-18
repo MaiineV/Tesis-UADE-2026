@@ -19,7 +19,6 @@ namespace Rollgeon.Upgrades.Dice.Tests
         private const string LegacyNamespace = "Rollgeon.Upgrades.Dice.Triggers.Concretes";
 
         [Test]
-        [Ignore("Activar en Etapa 4 — la coexistencia legacy/nuevo es válida durante la migración.")]
         public void AllEnchantmentAssets_UseOnlyComposableTriggers()
         {
             var offenders = new StringBuilder();
@@ -46,7 +45,6 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        [Ignore("Activar en Etapa 4 — la coexistencia legacy/nuevo es válida durante la migración.")]
         public void AllComboPassiveAssets_UseOnlyExecuteEffectsBridges()
         {
             var offenders = new StringBuilder();
