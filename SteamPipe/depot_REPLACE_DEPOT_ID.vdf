@@ -1,0 +1,24 @@
+// Depot de Windows 64 para Rollgeon — Feature#0036.
+// Renombrar este archivo con el depot ID real antes de usarlo (ver README.md).
+
+"DepotBuildConfig"
+{
+	"DepotID"		"REPLACE_DEPOT_ID"
+	"contentroot"	"..\Build\Windows64"
+
+	"FileMapping"
+	{
+		"LocalPath"		"*"
+		"DepotPath"		"."
+		"recursive"		"1"
+	}
+
+	// steam_appid.txt es SOLO para correr el .exe fuera del cliente de Steam.
+	// En el depot rompe el relaunch-vía-Steam y delata que es una build de dev.
+	"FileExclusion"	"steam_appid.txt"
+
+	// Símbolos de debug y carpetas que Unity deja al lado del player.
+	"FileExclusion"	"*.pdb"
+	"FileExclusion"	"*_BurstDebugInformation_DoNotShip*"
+	"FileExclusion"	"*_BackUpThisFolder_ButDontShipItWithYourGame*"
+}
