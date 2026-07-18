@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Weakness;
 
@@ -23,6 +24,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
 
             _attrManager = new AttributesManager();
             _sourceId = Guid.NewGuid();
@@ -49,6 +51,124 @@ namespace Rollgeon.Combat.Pipelines.Tests
             _attrManager.Dispose();
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
+        }
+
+        // ── Repeat-combo guard ("combo repetido = 0 daño") ────────────────
+
+        [Test]
+        public void Resolve_SameComboAsLastTurn_ZeroesDamage()
+        {
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");   // turno anterior
+            comboLog.Record("combo.par");   // CombatHandoffService ya registró ESTE golpe antes de Resolve
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(0, ctx.FinalDamage, "Mismo combo 2 veces seguidas debe anular el daño.");
+        }
+
+        [Test]
+        public void Resolve_DifferentComboThanLastTurn_FullDamage()
+        {
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.doblepar"); // turno anterior
+            comboLog.Record("combo.par");      // este golpe (ya registrado)
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(30, ctx.FinalDamage, "Combo distinto al anterior debe pegar completo.");
+        }
+
+        [Test]
+        public void Resolve_SameComboWithDifferentComboInBetween_FullDamage()
+        {
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");       // T1
+            comboLog.Record("combo.doblepar");  // T2
+            comboLog.Record("combo.par");       // T3 — este golpe
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "Par->DoblePar->Par: el anterior inmediato es DoblePar, no Par — debe pegar completo.");
+        }
+
+        [Test]
+        public void Resolve_NoComboFallback_NeverZeroed()
+        {
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record(null); // fallback "sin combo"
+            comboLog.Record(null); // otro fallback seguido
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = null,
+            };
+
+            pipeline.Resolve(ctx);
+
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "Ataques sin combo (ComboId null) nunca deben anularse por esta regla.");
+        }
+
+        [Test]
+        public void Preview_PredictsRepeatZero_MatchesResolve()
+        {
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par"); // último combo confirmado
+
+            var pipeline = new DamagePipeline(_attrManager);
+
+            // Preview: el intento todavía no se confirmó (Record no corrió para él).
+            var previewCtx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+            pipeline.Preview(previewCtx);
+
+            // Ahora se confirma de verdad: Record corre, después Resolve.
+            comboLog.Record("combo.par");
+            var resolveCtx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+            pipeline.Resolve(resolveCtx);
+
+            Assert.AreEqual(0, previewCtx.FinalDamage);
+            Assert.AreEqual(0, resolveCtx.FinalDamage);
+            Assert.AreEqual(resolveCtx.FinalDamage, previewCtx.FinalDamage,
+                "Preview debe predecir exactamente lo que Resolve termina aplicando.");
         }
 
         // ── 1. Apply_ReducesTargetHealth ─────────────────────────────────
