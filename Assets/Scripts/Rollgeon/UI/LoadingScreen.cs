@@ -35,6 +35,13 @@ namespace Rollgeon.UI
         private LoadingScreenSettingsSO _settings;
         private Image _backgroundMask;
         private Image _spinner;
+
+        // Instancias propias, no los assets del proyecto — ver BuildHierarchy.
+        private Material _spinnerMaterial;
+        private Material _backgroundMaterial;
+
+        private Tween _progressTween;
+        private float _lastProgress;
         private Action _onRevealComplete;
         private float _shownAtUnscaledTime;
 
@@ -64,22 +71,35 @@ namespace Rollgeon.UI
             scaler.referenceResolution = _settings.ReferenceResolution;
             scaler.matchWidthOrHeight = _settings.MatchWidthOrHeight;
 
+            // Graphic.material devuelve el asset compartido — NO instancia una copia
+            // como hace Renderer.material. Animar "el material del Image" mutaría el
+            // .mat del proyecto: en el editor eso lo ensucia en disco y deja los
+            // valores del último loading commiteados por accidente.
+            _backgroundMaterial = new Material(_settings.BackgroundMaterial);
+            _spinnerMaterial = new Material(_settings.SpinnerMaterial);
+
             _backgroundMask = CreateImage("Background", transform);
             var bgRect = _backgroundMask.rectTransform;
             bgRect.anchorMin = Vector2.zero;
             bgRect.anchorMax = Vector2.one;
             bgRect.offsetMin = Vector2.zero;
             bgRect.offsetMax = Vector2.zero;
-            _backgroundMask.material = _settings.BackgroundMaterial;
+            _backgroundMask.material = _backgroundMaterial;
 
             _spinner = CreateImage("Spinner", transform);
             var spinnerRect = _spinner.rectTransform;
             spinnerRect.anchorMin = spinnerRect.anchorMax = new Vector2(0.5f, 0.5f);
             spinnerRect.anchoredPosition = Vector2.zero;
             spinnerRect.sizeDelta = _settings.SpinnerSize;
-            _spinner.material = _settings.SpinnerMaterial;
+            _spinner.material = _spinnerMaterial;
             _spinner.sprite = _settings.SpinnerIcon;
             _spinner.preserveAspect = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_spinnerMaterial != null) Destroy(_spinnerMaterial);
+            if (_backgroundMaterial != null) Destroy(_backgroundMaterial);
         }
 
         private static Image CreateImage(string name, Transform parent)
@@ -96,16 +116,30 @@ namespace Rollgeon.UI
             _onRevealComplete = onRevealComplete;
             _shownAtUnscaledTime = Time.unscaledTime;
 
-            _backgroundMask.material.SetFloat(BackgroundProgressId, 0f);
-            _spinner.material.SetFloat(ProgressId, 0f);
-            _spinner.material.SetFloat(VanishId, -1f);
+            _progressTween.Stop();
+            _lastProgress = 0f;
+
+            _backgroundMaterial.SetFloat(BackgroundProgressId, 0f);
+            _spinnerMaterial.SetFloat(ProgressId, 0f);
+            _spinnerMaterial.SetFloat(VanishId, -1f);
 
             gameObject.SetActive(true);
         }
 
         public void ReportProgress(float progress01)
         {
-            Tween.MaterialProperty(_spinner.material, ProgressId, progress01, _settings.StepTweenDuration, Ease.OutQuad);
+            // Los callers reportan una vez por frame dentro de un
+            // while (op.progress < 0.9f) { ...; yield return null; }. Sin este corte
+            // se crea un tween de 0.15s por frame sobre la misma propiedad: se apilan
+            // decenas corriendo a la vez y, mientras op.progress sigue en 0, el
+            // destino es igual al valor actual y PrimeTween avisa en cada uno.
+            // También evita que un 1f repetido dispare el reveal más de una vez.
+            if (Mathf.Approximately(progress01, _lastProgress)) return;
+            _lastProgress = progress01;
+
+            _progressTween.Stop();
+            _progressTween = Tween.MaterialProperty(_spinnerMaterial, ProgressId, progress01,
+                _settings.StepTweenDuration, Ease.OutQuad);
 
             if (progress01 < 1f) return;
 
@@ -122,8 +156,8 @@ namespace Rollgeon.UI
 
         private void PlayReveal()
         {
-            Tween.MaterialProperty(_spinner.material, VanishId, 1f, _settings.VanishDuration, Ease.Linear);
-            Tween.MaterialProperty(_backgroundMask.material, BackgroundProgressId, _settings.BackgroundProgressMax,
+            Tween.MaterialProperty(_spinnerMaterial, VanishId, 1f, _settings.VanishDuration, Ease.Linear);
+            Tween.MaterialProperty(_backgroundMaterial, BackgroundProgressId, _settings.BackgroundProgressMax,
                     _settings.RevealDuration, Ease.InOutSine)
                 .OnComplete(() =>
                 {
