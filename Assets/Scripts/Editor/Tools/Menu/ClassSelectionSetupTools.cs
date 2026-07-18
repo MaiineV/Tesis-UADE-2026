@@ -34,10 +34,11 @@ namespace Rollgeon.EditorTools.Menu
         private static readonly Color LockedColor = new Color32(0x5F, 0x73, 0x7A, 0xFF);
         private static readonly Color FooterColor = new Color32(0x8A, 0x96, 0xA0, 0xFF);
 
-        // Multiplicador 9-slice del marco del retrato (pixel-art: cerca de
-        // escala entera; retunear acá). El resto de la pantalla usa sprites
-        // nativos o paneles planos — sin fichas (feedback de playtest).
+        // Multiplicadores 9-slice (pixel-art: cerca de escala entera; retunear
+        // acá). El resto de la pantalla usa sprites nativos o paneles planos —
+        // sin fichas (feedback de playtest).
         private const float PortraitFramePpu = 0.5f;
+        private const float ContractFramePpu = 1f;
 
         [MenuItem("Rollgeon/Class Selection/Setup All")]
         public static void SetupAll()
@@ -62,6 +63,7 @@ namespace Rollgeon.EditorTools.Menu
                 ["UI-Sheet-sheet_1"] = new Vector4(20, 20, 20, 20),
                 ["UI-Sheet-sheet_2"] = new Vector4(12, 12, 12, 12),
                 ["UI-Sheet-sheet_3"] = new Vector4(12, 12, 12, 12),
+                ["UI-Sheet-sheet_7"] = new Vector4(12, 12, 12, 12),
                 ["UI-Sheet-sheet_13"] = new Vector4(12, 12, 12, 12),
                 ["UI-Sheet-sheet_14"] = new Vector4(12, 12, 12, 12),
             };
@@ -167,9 +169,10 @@ namespace Rollgeon.EditorTools.Menu
                     hlg.childForceExpandHeight = false;
                 }
 
-                // Separador sutil de fila.
+                // Sin background de fila (feedback de playtest) — el Image queda
+                // transparente por si algún día se quiere un hover, pero no pinta.
                 if (!root.TryGetComponent<Image>(out var rowBg)) rowBg = root.AddComponent<Image>();
-                rowBg.color = new Color(1f, 1f, 1f, 0.05f);
+                rowBg.color = new Color(1f, 1f, 1f, 0f);
                 rowBg.raycastTarget = false;
 
                 // -- IconFrame (marco de dado siempre visible) con el Icon adentro --
@@ -183,10 +186,10 @@ namespace Rollgeon.EditorTools.Menu
                 iconFrame.SetSiblingIndex(0);
                 iconFrame.sizeDelta = new Vector2(48f, 48f);
                 var frameImage = iconFrame.GetComponent<Image>();
-                // Dado del mock: sheet_7 nativo (nada de fichas en esta pantalla).
-                frameImage.sprite = LoadSprite("UI-Sheet-sheet_7");
-                frameImage.type = Image.Type.Simple;
-                frameImage.preserveAspect = true;
+                // Sin frame en el ícono (feedback de playtest): el slot reserva
+                // layout pero no dibuja — solo se ve el Icon interior cuando
+                // llegue el arte de los dados.
+                frameImage.enabled = false;
                 frameImage.raycastTarget = false;
                 var frameLayout = iconFrame.GetComponent<LayoutElement>();
                 if (frameLayout == null) frameLayout = iconFrame.gameObject.AddComponent<LayoutElement>();
@@ -312,8 +315,8 @@ namespace Rollgeon.EditorTools.Menu
             if (headerLabel.GetComponent<TextAnimator_TMP>() == null)
                 headerLabel.gameObject.AddComponent<TextAnimator_TMP>();
 
-            // Panel del contrato como en el mock: fill oscuro + borde fino claro
-            // (sin sprites de ficha — Outline plano, mismo recurso que OptionsScreen).
+            // Panel del contrato: fill oscuro + MARCO sheet_7 9-sliced encima
+            // (fillCenter off: solo el borde del sprite, el centro lo pone el fill).
             var contractPanel = EnsureRect(rightPanel, "ContractPanel", new Vector2(0f, 45f), new Vector2(600f, 570f));
             if (!contractPanel.TryGetComponent<Image>(out var panelImage))
                 panelImage = contractPanel.gameObject.AddComponent<Image>();
@@ -321,10 +324,23 @@ namespace Rollgeon.EditorTools.Menu
             panelImage.type = Image.Type.Simple;
             panelImage.color = new Color(0.09f, 0.10f, 0.15f, 0.85f);
             panelImage.raycastTarget = false;
-            if (!contractPanel.TryGetComponent<Outline>(out var panelOutline))
-                panelOutline = contractPanel.gameObject.AddComponent<Outline>();
-            panelOutline.effectColor = new Color32(0x8A, 0x96, 0xA0, 0xFF);
-            panelOutline.effectDistance = new Vector2(2f, -2f);
+            if (contractPanel.TryGetComponent<Outline>(out var legacyOutline))
+                Object.DestroyImmediate(legacyOutline);
+
+            var panelFrame = EnsureRect(contractPanel, "PanelFrame", Vector2.zero, Vector2.zero);
+            panelFrame.anchorMin = Vector2.zero;
+            panelFrame.anchorMax = Vector2.one;
+            panelFrame.pivot = new Vector2(0.5f, 0.5f);
+            panelFrame.anchoredPosition = Vector2.zero;
+            panelFrame.sizeDelta = Vector2.zero;
+            panelFrame.SetAsLastSibling();
+            if (!panelFrame.TryGetComponent<Image>(out var panelFrameImage))
+                panelFrameImage = panelFrame.gameObject.AddComponent<Image>();
+            panelFrameImage.sprite = LoadSprite("UI-Sheet-sheet_7");
+            panelFrameImage.type = Image.Type.Sliced;
+            panelFrameImage.fillCenter = false;
+            panelFrameImage.pixelsPerUnitMultiplier = ContractFramePpu;
+            panelFrameImage.raycastTarget = false;
 
             var rows = FindAnywhere(screenRect, "RowsContainer");
             if (rows == null)
