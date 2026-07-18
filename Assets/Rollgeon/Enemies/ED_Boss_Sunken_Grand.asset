@@ -262,7 +262,7 @@ MonoBehaviour:
       Data: 2
     - Name: Count
       Entry: 3
-      Data: 4
+      Data: 6
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -402,7 +402,7 @@ MonoBehaviour:
       Data: 2
     - Name: Count
       Entry: 3
-      Data: 4
+      Data: 6
     - Name: HalfAxis
       Entry: 3
       Data: 0
