@@ -2066,6 +2066,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas_PauseMenu
       objectReference: {fileID: 0}
+    - target: {fileID: 4492679302366172888, guid: 0e2150a90603c9e4080d143a668cdceb, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7377420874640509665, guid: 0e2150a90603c9e4080d143a668cdceb, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -3170,6 +3174,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 3167072187410458955, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4250147185764614124, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5416459890041017060, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_Name
       value: Canvas_ExplorationHUD
@@ -3409,6 +3421,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas_Victory
       objectReference: {fileID: 0}
+    - target: {fileID: 6102421412158486591, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6451877433977116710, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
       propertyPath: m_sharedMaterial
       value: 
@@ -3433,6 +3449,10 @@ PrefabInstance:
     - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Name
       value: Canvas_Defeat
+      objectReference: {fileID: 0}
+    - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4376472940616494393, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_sharedMaterial
