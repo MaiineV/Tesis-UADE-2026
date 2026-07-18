@@ -173,6 +173,13 @@ namespace Rollgeon.UI.Screens
         {
             _playerGuid = playerGuid;
 
+            // Estos tres viven en Canvas_PlayerStatus (otro prefab) — la referencia
+            // cross-prefab es imposible en el Inspector, así que se auto-resuelven
+            // en escena igual que DiceZone/DamageFormula más abajo.
+            if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
+
             if (_healthChips != null) _healthChips.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_healthChips no esta cableado en el Inspector.", this);
 

@@ -44,6 +44,9 @@ namespace Rollgeon.Tutorial.UI
 
         [Header("Popup")]
         public Sprite PopupBackgroundSprite;
+        [Tooltip("Multiplicador de pixels-per-unit del 9-slice: <1 engrosa el borde " +
+                 "del frame en pantalla (0.5 lo duplica).")]
+        public float PopupBackgroundPpuMultiplier = 1f;
         public Color PopupBackgroundColor = new Color(0.08f, 0.07f, 0.12f, 0.95f);
         public TMP_FontAsset PopupFont;
         public float PopupFontSize = 30f;
