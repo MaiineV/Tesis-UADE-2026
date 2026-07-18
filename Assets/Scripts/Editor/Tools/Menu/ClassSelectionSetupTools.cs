@@ -273,6 +273,7 @@ namespace Rollgeon.EditorTools.Menu
 
             // -- Panel izquierdo: 3 clases --
             var leftPanel = EnsureRect(screenRect, "LeftPanel", new Vector2(-800f, 0f), new Vector2(280f, 420f));
+            StripLayoutComponents(leftPanel.gameObject);
             var warrior = EnsureClassEntry(screenRect, leftPanel, new[] { "WarriorButton" },
                 "WarriorButton", new Vector2(0f, 140f), "class.warrior", locked: false, font, outlineMat);
             var picaro = EnsureClassEntry(screenRect, leftPanel, new[] { "PicaroButton", "RogueButton" },
@@ -487,6 +488,11 @@ namespace Rollgeon.EditorTools.Menu
             entry.SetParent(leftPanel, worldPositionStays: false);
             Place(entry, leftPanel, pos, new Vector2(280f, 110f));
 
+            // Los botones viejos traían LayoutGroups que pisan las posiciones de
+            // los hijos (nombre-izquierda/ícono-derecha + underline "colgando") —
+            // acá manda el anchoredPosition, fuera todo layout automático.
+            StripLayoutComponents(entry.gameObject);
+
             if (!entry.TryGetComponent<Image>(out var bg)) bg = entry.gameObject.AddComponent<Image>();
             var c = bg.color;
             bg.color = new Color(c.r, c.g, c.b, 0f);
@@ -528,16 +534,17 @@ namespace Rollgeon.EditorTools.Menu
             var existingLabelRect = entry.Find("NameLabel") as RectTransform;
             TMP_Text existingLabel = existingLabelRect != null ? existingLabelRect.GetComponent<TMP_Text>() : null;
             if (existingLabel == null) existingLabel = entry.GetComponentInChildren<TMP_Text>(true);
+            // Mock: [ícono] a la izquierda, nombre a su derecha centrado vertical.
             var nameLabel = EnsureTmpLabel(entry, "NameLabel",
                 existingLabel != null ? (RectTransform)existingLabel.transform : null,
-                canonicalName, 34f, new Vector2(50f, 12f), new Vector2(170f, 44f), font, outlineMat,
+                canonicalName, 34f, new Vector2(55f, 0f), new Vector2(170f, 44f), font, outlineMat,
                 TextColor);
             nameLabel.alignment = TextAlignmentOptions.MidlineLeft;
             LocalizationSetupTools.BindTMP(nameLabel, "UI", locKey);
 
             // Underline dorado = indicador de selección, SOLO al seleccionar,
-            // del ancho de media palabra (mock).
-            var underline = EnsureRect(entry, "Underline", new Vector2(10f, -16f), new Vector2(90f, 3f));
+            // directamente debajo del nombre (mock).
+            var underline = EnsureRect(entry, "Underline", new Vector2(35f, -26f), new Vector2(130f, 3f));
             if (!underline.TryGetComponent<Image>(out var underlineImage))
                 underlineImage = underline.gameObject.AddComponent<Image>();
             underlineImage.color = AccentColor;
@@ -603,6 +610,14 @@ namespace Rollgeon.EditorTools.Menu
         {
             return root.GetComponentsInChildren<Transform>(includeInactive: true)
                 .FirstOrDefault(t => t.name == name && t != root) as RectTransform;
+        }
+
+        private static void StripLayoutComponents(GameObject go)
+        {
+            foreach (var group in go.GetComponents<LayoutGroup>())
+                Object.DestroyImmediate(group);
+            foreach (var fitter in go.GetComponents<ContentSizeFitter>())
+                Object.DestroyImmediate(fitter);
         }
 
         private static void DestroyChildrenNotIn(RectTransform parent, params string[] whitelist)
