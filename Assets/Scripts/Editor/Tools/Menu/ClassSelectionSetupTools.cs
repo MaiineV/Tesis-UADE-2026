@@ -222,7 +222,7 @@ namespace Rollgeon.EditorTools.Menu
                     TextAlignmentOptions.Center, 18f, 26f, wrap: false);
                 TuneLabel(rowRect, "DescriptionLabel", 285f, 48f, font, outlineMat,
                     new Color32(0xB8, 0xC0, 0xC8, 0xFF),
-                    TextAlignmentOptions.MidlineLeft, 10f, 14f, wrap: true);
+                    TextAlignmentOptions.MidlineLeft, 14f, 18f, wrap: true);
 
                 // Orden de columnas: IconFrame, Name, Damage, Description.
                 SetSibling(rowRect, "NameLabel", 1);
@@ -308,7 +308,8 @@ namespace Rollgeon.EditorTools.Menu
             portraitImage.raycastTarget = false;
 
             // -- Panel derecho: Contrato --
-            var rightPanel = EnsureRect(screenRect, "RightPanel", new Vector2(255f, 0f), new Vector2(600f, 900f));
+            // Más pegado a la derecha (feedback: quedaba muy al medio).
+            var rightPanel = EnsureRect(screenRect, "RightPanel", new Vector2(400f, 0f), new Vector2(600f, 900f));
 
             var header = FindAnywhere(screenRect, "HeaderLabel");
             var headerLabel = EnsureTmpLabel(rightPanel, "HeaderLabel", header, "Contrato", 48f,
@@ -413,7 +414,8 @@ namespace Rollgeon.EditorTools.Menu
                 confirm = (RectTransform)go.transform;
             }
             confirm.SetParent(screenRect, worldPositionStays: false);
-            Place(confirm, screenRect, new Vector2(140f, -480f), new Vector2(260f, 70f));
+            // Acompañan al RightPanel corrido a la derecha (mismo offset relativo).
+            Place(confirm, screenRect, new Vector2(285f, -480f), new Vector2(260f, 70f));
             EnsureButtonLabel(confirm, "Confirmar", font, outlineMat);
             LocalizationSetupTools.BindTMP(confirm.GetComponentInChildren<TMP_Text>(true), "UI", "screen.confirm");
 
@@ -424,7 +426,7 @@ namespace Rollgeon.EditorTools.Menu
                 back = (RectTransform)go.transform;
             }
             back.SetParent(screenRect, worldPositionStays: false);
-            Place(back, screenRect, new Vector2(420f, -480f), new Vector2(200f, 70f));
+            Place(back, screenRect, new Vector2(565f, -480f), new Vector2(200f, 70f));
             EnsureButtonLabel(back, "Atrás", font, outlineMat);
             LocalizationSetupTools.BindTMP(back.GetComponentInChildren<TMP_Text>(true), "UI", "screen.back");
 
@@ -543,8 +545,8 @@ namespace Rollgeon.EditorTools.Menu
             LocalizationSetupTools.BindTMP(nameLabel, "UI", locKey);
 
             // Underline dorado = indicador de selección, SOLO al seleccionar,
-            // directamente debajo del nombre (mock).
-            var underline = EnsureRect(entry, "Underline", new Vector2(35f, -26f), new Vector2(130f, 3f));
+            // mismo ancho pero por debajo de la card de la clase (feedback).
+            var underline = EnsureRect(entry, "Underline", new Vector2(35f, -52f), new Vector2(130f, 3f));
             if (!underline.TryGetComponent<Image>(out var underlineImage))
                 underlineImage = underline.gameObject.AddComponent<Image>();
             underlineImage.color = AccentColor;
