@@ -546,7 +546,7 @@ namespace Rollgeon.EditorTools.Menu
 
             // Underline dorado = indicador de selección, SOLO al seleccionar,
             // mismo ancho pero por debajo de la card de la clase (feedback).
-            var underline = EnsureRect(entry, "Underline", new Vector2(35f, -52f), new Vector2(130f, 3f));
+            var underline = EnsureRect(entry, "Underline", new Vector2(35f, -43f), new Vector2(130f, 3f));
             if (!underline.TryGetComponent<Image>(out var underlineImage))
                 underlineImage = underline.gameObject.AddComponent<Image>();
             underlineImage.color = AccentColor;
