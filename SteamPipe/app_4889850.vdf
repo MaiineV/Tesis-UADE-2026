@@ -9,7 +9,7 @@
 "appbuild"
 {
 	"appid"			"4889850"
-	"desc"			"Rollgeon 0.1.0 — primera build de Windows (Feature#0036)"
+	"desc"			"Rollgeon 0.1.0 — primera build de Windows (Feature#0036 + fix loading tween)"
 
 	// Ambos caen bajo Build/, que está gitignoreado.
 	"buildoutput"	"..\Build\SteamPipeOutput"
@@ -21,6 +21,7 @@
 	"setlive"		""
 
 	// 1 = dry run, no sube nada. Pasar a "0" recién cuando el preview salga limpio.
+	// Primera subida real: BuildID 24276889 (2026-07-18).
 	"preview"		"1"
 	"local"			""
 
