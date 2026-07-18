@@ -117,7 +117,8 @@ namespace Rollgeon.EditorTools.HUD
                 var goldView = EnsureView<GoldChipStackView>(goldStack.gameObject, goldRoot, goldLabel, settings);
 
                 // -- Ficha inclinada del oro (hija del ChipRoot, arranca inactiva) --
-                var tilted = EnsureRect(goldRoot, "TiltedChip", new Vector2(14f, 4f * settings.GoldChipSpacingY),
+                // Posición fina de playtest: apoyada al pie de la pila, a la derecha.
+                var tilted = EnsureRect(goldRoot, "TiltedChip", new Vector2(19.5f, -0.3f),
                     settings.GoldChipTilted != null ? settings.GoldChipTilted.rect.size * Mathf.Max(1f, settings.ChipScale) : new Vector2(19f, 18f));
                 if (!tilted.TryGetComponent<Image>(out var tiltedImage)) tiltedImage = tilted.gameObject.AddComponent<Image>();
                 if (!tilted.TryGetComponent<CanvasGroup>(out _)) tilted.gameObject.AddComponent<CanvasGroup>();
@@ -148,10 +149,23 @@ namespace Rollgeon.EditorTools.HUD
                     slotSo.FindProperty("_iconWhenCountZero").objectReferenceValue = settings.PotionEmpty;
                     slotSo.FindProperty("_iconActive").objectReferenceValue = null;
                     slotSo.FindProperty("_iconInactive").objectReferenceValue = null;
-                    slotSo.ApplyModifiedProperties();
 
-                    var slotIcon = new SerializedObject(potionSlot).FindProperty("_icon").objectReferenceValue as Image;
-                    if (slotIcon != null) slotIcon.sprite = settings.PotionFull;
+                    // Tuning fino de playtest: sprite chico centrado-alto en el slot
+                    // (el icon ancla al centro del slot 80x92 → local (40, 28.9)).
+                    var slotIcon = slotSo.FindProperty("_icon").objectReferenceValue as Image;
+                    if (slotIcon != null)
+                    {
+                        slotIcon.sprite = settings.PotionFull;
+                        var iconRect = (RectTransform)slotIcon.transform;
+                        iconRect.localScale = new Vector3(0.45f, 0.45f, 1f);
+                        iconRect.anchoredPosition = new Vector2(0f, -17.1f);
+                    }
+
+                    // CountLabel autorado (sin esto ActiveItemSlotView lo auto-crea
+                    // abajo-derecha en runtime y no respeta la posición tuneada).
+                    var countLabel = EnsureCountLabel(slotRect);
+                    slotSo.FindProperty("_countLabel").objectReferenceValue = countLabel;
+                    slotSo.ApplyModifiedProperties();
                 }
                 else
                 {
@@ -180,7 +194,26 @@ namespace Rollgeon.EditorTools.HUD
         [MenuItem("Rollgeon/Chip Stack HUD/4 - Clean ExplorationHUD Prefab")]
         public static void CleanExplorationHudPrefab()
         {
-            DeactivateInPrefab<GoldCounterView>(ExplorationHudPrefabPath, "GoldCounterView");
+            var root = PrefabUtility.LoadPrefabContents(ExplorationHudPrefabPath);
+            try
+            {
+                var gold = root.GetComponentInChildren<GoldCounterView>(true);
+                if (gold != null && gold.gameObject.activeSelf) gold.gameObject.SetActive(false);
+
+                // Tuning fino de playtest: el Heal más cerca del centro del stack
+                // de acciones (anchors (0, 0.5) del container ExplorationActions).
+                var heal = root.GetComponentsInChildren<RectTransform>(true)
+                    .FirstOrDefault(t => t.name == "HealButton");
+                if (heal != null) heal.anchoredPosition = new Vector2(100f, 0f);
+                else Debug.LogWarning("[ChipStackSetup] HealButton no encontrado en Canvas_ExplorationHUD.");
+
+                PrefabUtility.SaveAsPrefabAsset(root, ExplorationHudPrefabPath);
+                Debug.Log("[ChipStackSetup] Canvas_ExplorationHUD: GoldCounter desactivado + HealButton reposicionado.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         [MenuItem("Rollgeon/Chip Stack HUD/5 - Rewire Gameplay Scene")]
@@ -307,6 +340,36 @@ namespace Rollgeon.EditorTools.HUD
             so.FindProperty("_settings").objectReferenceValue = settings;
             so.ApplyModifiedProperties();
             return view;
+        }
+
+        /// <summary>
+        /// Label de cantidad de la poción, autorado en la posición tuneada de
+        /// playtest — anclado al origen (pivot 0,0) del slot, así el
+        /// anchoredPosition coincide con el local (53.2, -33.5) medido en editor.
+        /// </summary>
+        private static TextMeshProUGUI EnsureCountLabel(RectTransform slotRect)
+        {
+            var rect = slotRect.Find("CountLabel") as RectTransform;
+            if (rect == null)
+            {
+                var go = new GameObject("CountLabel", typeof(RectTransform));
+                rect = (RectTransform)go.transform;
+                rect.SetParent(slotRect, worldPositionStays: false);
+            }
+            rect.anchorMin = rect.anchorMax = Vector2.zero;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(53.2f, -33.5f);
+            rect.sizeDelta = new Vector2(60f, 30f);
+
+            var label = rect.GetComponent<TextMeshProUGUI>();
+            if (label == null) label = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = 26f;
+            label.raycastTarget = false;
+            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+            if (font != null) label.font = font;
+            EditorUtility.SetDirty(label);
+            return label;
         }
 
         private static void DeactivateHolder<T>(GameObject root) where T : Component
