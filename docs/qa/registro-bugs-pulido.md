@@ -107,6 +107,14 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix previsto**: resuscribirlos a `ComboPlayedPayload` (Feature#0035) — una emisión por acción confirmada, pre-daño. Revisar el balance de los readers `ReadComboCounter` antes: los números van a bajar.
 - **Estado**: abierto. Detectado al diseñar Feature#0035; fuera de alcance de esa sesión.
 
+### PUL-015 — Las constantes de `ComboId` no coinciden con los ids reales de los assets
+- **Área**: Combos / Heroes
+- `ComboId.cs` declara `combo.par`, `combo.triple`, `combo.straight`, `combo.sum_x`, pero los `BaseComboSO` del proyecto usan `combo.pair`, `combo.trio`, `combo.ladder`, `combo.higher_number` (los assets se renombraron y las constantes no siguieron). Detectado por `ComboIdDropdownContractTests.GetKnownComboIds_InEditMode_ContainsCanonicalIds` al agregar el dropdown transversal de combo ids.
+- **Hoy es benigno en runtime**: el único consumidor no-test es `ContractWarriorFactory.Build`, que nadie invoca en el juego (red de seguridad para tests/doc, y tiraría `InvalidOperationException` con el catálogo real). Los tests que usan las constantes crean sus propios combos con esos ids — autocontenidos.
+- **Riesgo real**: cualquier código nuevo que compare `ComboId.Par` contra un `ComboDetectionResult.ComboId` real jamás matchea, en silencio.
+- **Fix previsto**: alinear las constantes con los ids de los assets (o al revés, decisión de diseño), actualizar los tests que las usan, y agregar un audit test que cruce `ComboId` contra `BaseComboSO.GetKnownComboIds()`.
+- **Estado**: abierto.
+
 ### PUL-014 — El hook RoomEntered de pasivas no filtra por sala
 - **Área**: Upgrades / Combos
 - El trigger legacy `AddGoldOnRoomEntered` tenía un `RoomIdFilter` (string) que ningún asset usaba; al migrarlo a `ExecuteEffectsOnEvent(RoomEntered)` (Feature#0035) ese filtro se descartó — no existe `PcRoomId` y el `RoomId` del evento no llega a las PreConditions.
