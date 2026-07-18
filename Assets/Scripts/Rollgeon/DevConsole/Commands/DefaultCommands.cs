@@ -36,6 +36,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new FreeMoveCommand(freeMove));
             r.Register(new DoorCommand());
             r.Register(new FloorCommand());
+            r.Register(new BossCommand());
             r.Register(new ClassCommand());
 
             // Combate / extras
