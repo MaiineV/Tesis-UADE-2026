@@ -78,11 +78,11 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "banda perpendicular de 2·Size+1 casillas, centrada en su coordenada, " +
                 "extendida Depth casillas en la dirección cardinal dominante hacia el " +
                 "jugador.\n\n" +
-                "Shape=ScatteredSquares: Count cuadrados independientes de Size×Size, " +
-                "anclados al azar (AIContext.Rng) en la mitad oeste del 50% central de la " +
-                "sala (centrado en Y, sesgado a la izquierda en X) — ni el jugador ni el " +
-                "enemigo son el centro, y nunca aparecen pegados a las paredes. Requiere " +
-                "una sala con bounds reales.\n\n" +
+                "Shape=ScatteredSquares: Count cuadrados de Size×Size, anclados al azar " +
+                "(AIContext.Rng) en el 50% central de la sala — ni el jugador ni el " +
+                "enemigo son el centro, y nunca aparecen pegados a las paredes. Prioriza " +
+                "que los cuadrados no se toquen ni se solapen entre sí (degrada el gap si " +
+                "la sala no da lugar). Requiere una sala con bounds reales.\n\n" +
                 "Shape=SquareAroundSelf: mismo cálculo que Square (2·Size+1), pero centrado " +
                 "en la coordenada del propio enemigo en vez de la del jugador.\n\n" +
                 "Las demás shapes (Square/Row/Column/HalfRoom) se centran en el jugador " +
