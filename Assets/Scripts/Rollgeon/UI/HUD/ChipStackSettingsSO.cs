@@ -34,14 +34,14 @@ namespace Rollgeon.UI.HUD
         public Sprite PotionEmpty;
 
         [Header("Layout")]
-        [Tooltip("Escala de las fichas (pixel-art: enteros). Se aplica al sizeDelta, no al localScale.")]
-        public float ChipScale = 1f;
+        [Tooltip("Escala de las fichas. Se aplica al sizeDelta, no al localScale.")]
+        public float ChipScale = 1.2f;
 
         [Tooltip("Separación vertical (px) entre fichas apiladas de vida/energía.")]
-        public float ChipSpacingY = 14f;
+        public float ChipSpacingY = 17f;
 
         [Tooltip("Separación vertical (px) de la pila de oro (las monedas son más finas).")]
-        public float GoldChipSpacingY = 8f;
+        public float GoldChipSpacingY = 10f;
 
         [Header("Animación — ganar (ficha cae en la pila)")]
         [Tooltip("Altura (px) desde donde cae la ficha nueva.")]

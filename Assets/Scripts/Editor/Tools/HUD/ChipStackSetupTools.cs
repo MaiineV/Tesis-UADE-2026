@@ -157,7 +157,7 @@ namespace Rollgeon.EditorTools.HUD
                     {
                         slotIcon.sprite = settings.PotionFull;
                         var iconRect = (RectTransform)slotIcon.transform;
-                        iconRect.localScale = new Vector3(0.45f, 0.45f, 1f);
+                        iconRect.localScale = new Vector3(0.54f, 0.54f, 1f); // 0.45 +20% (pedido playtest)
                         iconRect.anchoredPosition = new Vector2(0f, -17.1f);
                     }
 

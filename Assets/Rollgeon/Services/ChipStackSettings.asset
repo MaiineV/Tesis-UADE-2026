@@ -19,9 +19,9 @@ MonoBehaviour:
   GoldChipTilted: {fileID: -332512725, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
   PotionFull: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}
   PotionEmpty: {fileID: 33138378, guid: b6568abed2869da409ddf4c38de78986, type: 3}
-  ChipScale: 1
-  ChipSpacingY: 14
-  GoldChipSpacingY: 8
+  ChipScale: 1.2
+  ChipSpacingY: 17
+  GoldChipSpacingY: 10
   MaxVisibleChips: 30
   DropHeight: 60
   DropDuration: 0.28
