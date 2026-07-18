@@ -39,7 +39,7 @@ MonoBehaviour:
   _description: 'Se activa cuando los 5 dados de tu tirada caen en la mitad superior
     de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12, etc.). Dano = piso + suma de
     los 5 valores.'
-  _icon: {fileID: 0}
+  _icon: {fileID: 750792382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   _baseDamage: 30
   _valueMultipliers:
   - 0

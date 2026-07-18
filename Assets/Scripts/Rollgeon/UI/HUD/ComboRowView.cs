@@ -86,6 +86,7 @@ namespace Rollgeon.UI.HUD
                 {
                     _iconImage.sprite = combo.Icon;
                     _iconImage.enabled = true;
+                    _iconImage.preserveAspect = true;
                 }
                 else
                 {
