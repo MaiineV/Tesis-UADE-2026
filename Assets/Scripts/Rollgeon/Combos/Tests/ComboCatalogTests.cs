@@ -29,7 +29,7 @@ namespace Rollgeon.Combos.Tests
                 ComboTestUtils.CreateCombo<Combo_FullHouse>(ComboId.FullHouse, 40),
                 ComboTestUtils.CreateCombo<Combo_Poker>(ComboId.Poker, 60),
                 ComboTestUtils.CreateCombo<Combo_Generala>(ComboId.Generala, 100),
-                ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.SumX, 25),
+                ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.HigherNumber, 25),
                 ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5),
             };
 
@@ -59,7 +59,7 @@ namespace Rollgeon.Combos.Tests
             CollectionAssert.Contains(ids, ComboId.FullHouse);
             CollectionAssert.Contains(ids, ComboId.Poker);
             CollectionAssert.Contains(ids, ComboId.Generala);
-            CollectionAssert.Contains(ids, ComboId.SumX);
+            CollectionAssert.Contains(ids, ComboId.HigherNumber);
             CollectionAssert.Contains(ids, ComboId.BruteForce);
         }
 
@@ -74,7 +74,7 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void Catalog_GetById_SumX_Returns_SumaX_Instance()
         {
-            var sumx = _catalog.GetById(ComboId.SumX);
+            var sumx = _catalog.GetById(ComboId.HigherNumber);
             Assert.IsNotNull(sumx);
             Assert.IsInstanceOf<Combo_SumaX>(sumx);
         }

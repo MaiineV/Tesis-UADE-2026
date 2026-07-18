@@ -48,16 +48,22 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void GetKnownComboIds_InEditMode_ContainsCanonicalIds()
+        public void ComboIdConstants_And_ProjectAssets_StayInParity()
         {
             // Audit-style: depende de los BaseComboSO assets del proyecto, igual que
-            // EnchantmentAssetAuditTests. Si esto falla, el dropdown sale vacío.
-            // Literales a propósito: las constantes de ComboId.cs están desfasadas de
-            // los ids reales de los assets (PUL-015) — acá pineamos la verdad del asset.
-            var ids = BaseComboSO.GetKnownComboIds().ToList();
+            // EnchantmentAssetAuditTests. Cierra PUL-015: las constantes habían quedado
+            // desfasadas de los assets (combo.par vs combo.pair) sin que nada lo delate.
+            // Paridad en ambas direcciones: una constante stale nunca matchea en runtime,
+            // y un asset sin constante es invisible para el código.
+            var constants = typeof(ComboId)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+                .Select(f => (string)f.GetRawConstantValue())
+                .ToList();
+            var assetIds = BaseComboSO.GetKnownComboIds().ToList();
 
-            Assert.Contains("combo.pair", ids);
-            Assert.Contains("combo.generala", ids);
+            CollectionAssert.AreEquivalent(assetIds, constants,
+                "ComboId.cs y los BaseComboSO assets divergieron — renombrar un id se hace en ambos lados");
         }
     }
 }

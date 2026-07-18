@@ -449,7 +449,7 @@ namespace Rollgeon.Combos.Tests
         {
             // X=4 (Warrior), BaseDamageConfigurable=25 (GD default).
             _sut = ScriptableObject.CreateInstance<Combo_SumaX>();
-            ComboTestUtils.SetField(_sut, "_comboId", ComboId.SumX);
+            ComboTestUtils.SetField(_sut, "_comboId", ComboId.HigherNumber);
             ComboTestUtils.SetField(_sut, "_x", 4);
             ComboTestUtils.SetField(_sut, "_baseDamageConfigurable", 25);
         }

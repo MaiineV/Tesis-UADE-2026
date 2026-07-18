@@ -86,7 +86,7 @@ namespace Rollgeon.UI.Tests
             // Warrior hero con 8 combos poblados (priorities ascendentes — matchea §5.4).
             _par = ComboTestUtils.CreateCombo<Combo_Par>(ComboId.Par, 10);
             _doblePar = ComboTestUtils.CreateCombo<Combo_DoblePar>(ComboId.DoublePair, 18);
-            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.SumX, 25);
+            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.HigherNumber, 25);
             _trio = ComboTestUtils.CreateCombo<Combo_Trio>(ComboId.Triple, 28);
             _escalera = ComboTestUtils.CreateCombo<Combo_Escalera>(ComboId.Straight, 35);
             _fullHouse = ComboTestUtils.CreateCombo<Combo_FullHouse>(ComboId.FullHouse, 40);
