@@ -3768,11 +3768,10 @@ MonoBehaviour:
   _rerollCount: {fileID: 0}
   _floatingDamage: {fileID: 8476784340615831960}
   _playerActionButtons: {fileID: 7076222357715826726}
-  _healthBar: {fileID: 0}
-  _energyBar: {fileID: 0}
+  _healthChips: {fileID: 0}
+  _energyChips: {fileID: 0}
   _endTurnButtonView: {fileID: 2571935840321668521}
   _damageFormula: {fileID: 0}
-  _shieldBar: {fileID: 4591696165374977259}
   _passiveBadge: {fileID: 6528147116408859551}
   _chainPhaseIndicator: {fileID: 7310378235752865344}
   _activeItems: {fileID: 0}
@@ -5303,7 +5302,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3089873729184811277
 RectTransform:
   m_ObjectHideFlags: 0

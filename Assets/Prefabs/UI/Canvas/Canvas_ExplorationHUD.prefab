@@ -53,9 +53,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.ExplorationHUDView
   _screenStringIdOverride: 
-  _healthBar: {fileID: 0}
-  _energyBar: {fileID: 0}
-  _goldCounter: {fileID: 3354546512056544501}
+  _healthChips: {fileID: 0}
+  _energyChips: {fileID: 0}
   _activeItems: {fileID: 0}
   _minimap: {fileID: 7258762250288503781}
   _roomNavigation: {fileID: 8317576877589694478}
@@ -631,7 +630,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3310149021224843953
 RectTransform:
   m_ObjectHideFlags: 0

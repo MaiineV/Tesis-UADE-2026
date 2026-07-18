@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83f45936d5586ed4483c93986fb0c550, type: 3}
+  m_Name: ChipStackSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipStackSettingsSO
+  HealthChip: {fileID: 1611900147, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  ShieldChip: {fileID: -18201817, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  EnergyChip: {fileID: -163928928, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  GoldChipFlat: {fileID: -1590291716, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
+  GoldChipTilted: {fileID: -332512725, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
+  PotionFull: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}
+  PotionEmpty: {fileID: 33138378, guid: b6568abed2869da409ddf4c38de78986, type: 3}
+  ChipScale: 1
+  ChipSpacingY: 14
+  GoldChipSpacingY: 8
+  MaxVisibleChips: 30
+  DropHeight: 60
+  DropDuration: 0.28
+  DropEase: 30
+  LoseSlideDistance: 40
+  LoseDuration: 0.18
+  LoseEase: 6
+  StaggerPerChip: 0.05
+  ShakeDuration: 0.25
+  ShakeStrengthX: 6
+  ShakeFrequency: 20
+  ShieldHex: A3B3B1
+  ChipDropClip: {fileID: 0}
+  ChipSpendClip: {fileID: 0}
+  GoldShakeClip: {fileID: 0}
+  SfxVolume: 1
+  SfxPitchRange: {x: 0.95, y: 1.05}
+  MaxSfxPerBatch: 4

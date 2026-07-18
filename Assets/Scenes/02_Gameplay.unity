@@ -2364,6 +2364,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8900275347121055636, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2485,6 +2489,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9191483318009207412}
     - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: _energyChips
+      value: 
+      objectReference: {fileID: 4914426451290232151}
+    - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: _healthChips
+      value: 
+      objectReference: {fileID: 4914426451290232152}
+    - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _rerollCount
       value: 
       objectReference: {fileID: 7776027269966315955}
@@ -2517,6 +2529,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 51302364306360471, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 3057962395495201967, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 7094254231321513198, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
       propertyPath: m_Name
       value: Canvas_Toast
@@ -2614,6 +2634,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 135019705656249135, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 211438820083527000, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 2363647808060330536, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3293974934458348137, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3882577187033048755, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 4579542396890523017, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2711,6 +2751,28 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+--- !u!114 &4914426451290232151 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8864967234821405761, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+  m_PrefabInstance: {fileID: 4914426451290232150}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85a42b3aa43aaec42833d9d56b6539ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.EnergyChipStackView
+--- !u!114 &4914426451290232152 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6153165306766953016, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+  m_PrefabInstance: {fileID: 4914426451290232150}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adfa9da97becbc4a95f1e9c432eb3d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.HealthChipStackView
 --- !u!114 &5110833795026267963 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 995057908155861667, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
@@ -2730,6 +2792,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 6619218596751161131, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 7207993922244463804, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 8258365237464834956, guid: d6d1912118d8398449ef042c200feadf, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2814,6 +2884,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas_FloorTransition
       objectReference: {fileID: 0}
+    - target: {fileID: 9081018285500060494, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2835,6 +2909,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 1928216255863403973, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+      propertyPath: m_fontSize
+      value: 26.15
+      objectReference: {fileID: 0}
     - target: {fileID: 1928216255863403973, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
       propertyPath: m_sharedMaterial
       value: 
@@ -3193,6 +3271,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9191483318009207412}
     - target: {fileID: 8762231558501322005, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: _energyChips
+      value: 
+      objectReference: {fileID: 4914426451290232151}
+    - target: {fileID: 8762231558501322005, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: _healthChips
+      value: 
+      objectReference: {fileID: 4914426451290232152}
+    - target: {fileID: 8762231558501322005, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: _rerollCount
       value: 
       objectReference: {fileID: 7776027269966315955}
@@ -3315,10 +3401,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4162857903770791883, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 6102421412158486591, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
       propertyPath: m_Name
       value: Canvas_Victory
       objectReference: {fileID: 0}
+    - target: {fileID: 6451877433977116710, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3332,10 +3426,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 2366235780599523828, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Name
       value: Canvas_Defeat
       objectReference: {fileID: 0}
+    - target: {fileID: 4376472940616494393, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 9014833472966344738, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Pivot.x
       value: 0
