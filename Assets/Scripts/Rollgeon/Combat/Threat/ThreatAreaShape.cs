@@ -31,6 +31,13 @@ namespace Rollgeon.Combat.Threat
         /// <see cref="ThreatAreaShape.ComputeScatteredSquares"/>.
         /// </summary>
         ScatteredSquares,
+
+        /// <summary>
+        /// Cuadrado (2·radio+1) centrado en el propio boss — Boss 1 (área alrededor). Misma
+        /// matemática que <see cref="SquareAroundPlayer"/>, pero el centro es la coordenada
+        /// del boss, no la del jugador.
+        /// </summary>
+        SquareAroundSelf,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -52,9 +59,12 @@ namespace Rollgeon.Combat.Threat
     {
         /// <summary>
         /// Devuelve las casillas amenazadas. <paramref name="size"/> es el radio para
-        /// <see cref="ThreatShape.SquareAroundPlayer"/> (1 ⇒ 3×3) y el ancho (en casillas) de la
-        /// franja para <see cref="ThreatShape.Row"/> / <see cref="ThreatShape.Column"/>
-        /// (1 ⇒ la línea del jugador; 3 ⇒ ±1). Ignorado para <see cref="ThreatShape.HalfRoom"/>.
+        /// <see cref="ThreatShape.SquareAroundPlayer"/>/<see cref="ThreatShape.SquareAroundSelf"/>
+        /// (1 ⇒ 3×3) y el ancho (en casillas) de la franja para <see cref="ThreatShape.Row"/> /
+        /// <see cref="ThreatShape.Column"/> (1 ⇒ la línea del jugador; 3 ⇒ ±1). Ignorado para
+        /// <see cref="ThreatShape.HalfRoom"/>. <paramref name="center"/> es la coordenada del
+        /// jugador para todas las shapes salvo <see cref="ThreatShape.SquareAroundSelf"/>, donde
+        /// es la del boss — la resuelve el caller (ver <see cref="Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark"/>).
         /// </summary>
         public static HashSet<GridCoord> Compute(
             IGridManager grid, GridCoord center, ThreatShape shape, int size, HalfRoomAxis axis)
@@ -65,6 +75,7 @@ namespace Rollgeon.Combat.Threat
             switch (shape)
             {
                 case ThreatShape.SquareAroundPlayer:
+                case ThreatShape.SquareAroundSelf:
                 {
                     int r = size < 0 ? 0 : size;
                     for (int dx = -r; dx <= r; dx++)

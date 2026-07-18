@@ -226,6 +226,26 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
+        public void Compute_SquareAroundSelf_CentersOnSelfNotPlayer()
+        {
+            // Arrange — self y player en esquinas opuestas; el área debe salir alrededor
+            // de self (radio 1 ⇒ 3x3), sin importar dónde está el player.
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var self = new GridCoord(4, 4);
+            var player = new GridCoord(0, 0);
+
+            // Act
+            var tiles = ThreatAreaShape.Compute(_grid, self, ThreatShape.SquareAroundSelf, size: 1, HalfRoomAxis.Vertical);
+
+            // Assert
+            Assert.AreEqual(9, tiles.Count);
+            for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+                Assert.IsTrue(tiles.Contains(new GridCoord(4 + dx, 4 + dy)));
+            Assert.IsFalse(tiles.Contains(player), "El área no debe depender de la posición del jugador.");
+        }
+
+        [Test]
         public void ComputeScatteredSquares_AnchorsStayWithinWestHalfOfCentralBand()
         {
             // Arrange — sala 20x20 (X,Y en [0,19]): margen 25% por lado ⇒ banda central

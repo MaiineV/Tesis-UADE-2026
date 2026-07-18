@@ -24,12 +24,14 @@ namespace Rollgeon.Combat.AI.Decisions
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMark : AIActionNode
     {
-        [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala).")]
+        [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala), " +
+                 "SquareAroundSelf=Boss1 (área centrada en el propio boss).")]
         public ThreatShape Shape = ThreatShape.SquareAroundPlayer;
 
-        [Tooltip("Radio para Square (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column (1 ⇒ línea del jugador), " +
-                 "medio-ancho de la banda perpendicular para DirectionalBand (1 ⇒ 3 casillas de ancho), " +
-                 "o ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2). Ignorado en HalfRoom.")]
+        [Tooltip("Radio para Square/SquareAroundSelf (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column " +
+                 "(1 ⇒ línea del jugador), medio-ancho de la banda perpendicular para DirectionalBand " +
+                 "(1 ⇒ 3 casillas de ancho), o ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2). " +
+                 "Ignorado en HalfRoom.")]
         [MinValue(0)]
         public int Size = 1;
 
@@ -74,6 +76,11 @@ namespace Rollgeon.Combat.AI.Decisions
             {
                 var rng = context.Rng ?? new System.Random();
                 tiles = ThreatAreaShape.ComputeScatteredSquares(grid, rng, Count, Size);
+            }
+            else if (Shape == ThreatShape.SquareAroundSelf)
+            {
+                if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
+                tiles = ThreatAreaShape.Compute(grid, selfCoord, Shape, Size, HalfAxis);
             }
             else
             {

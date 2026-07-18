@@ -83,6 +83,8 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "sala (centrado en Y, sesgado a la izquierda en X) — ni el jugador ni el " +
                 "enemigo son el centro, y nunca aparecen pegados a las paredes. Requiere " +
                 "una sala con bounds reales.\n\n" +
+                "Shape=SquareAroundSelf: mismo cálculo que Square (2·Size+1), pero centrado " +
+                "en la coordenada del propio enemigo en vez de la del jugador.\n\n" +
                 "Las demás shapes (Square/Row/Column/HalfRoom) se centran en el jugador " +
                 "como siempre.",
 
