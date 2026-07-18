@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 4cbc1b95004c95241ad598c95cceca01
+guid: 8ae4e33e959f31247bb4a8aee5f5c933
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,11 +97,11 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: EnemiesHealthbar_0
+      name: EnemiesHealthbarv2_0
       rect:
         serializedVersion: 2
         x: 3
-        y: 22
+        y: 26
         width: 94
         height: 18
       alignment: 0
@@ -112,19 +112,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f4ed4e4d406d8774ea7bddbf085a7ba9
-      internalID: 1325356657
+      spriteID: 4d55e23ebe79207478f47bc4f3c66694
+      internalID: -2024999893
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: EnemiesHealthbar_1
+      name: EnemiesHealthbarv2_1
       rect:
         serializedVersion: 2
-        x: 106
-        y: 9
-        width: 86
+        x: 104
+        y: 21
+        width: 67
         height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -134,18 +134,18 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 251ebabcaf93dd44892c6c4ef6ffa014
-      internalID: -1731013113
+      spriteID: 9db360a36801a4c40b51fc304cf4cf42
+      internalID: -1462324625
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: EnemiesHealthbar_2
+      name: EnemiesHealthbarv2_2
       rect:
         serializedVersion: 2
         x: 3
-        y: 4
+        y: 8
         width: 94
         height: 17
       alignment: 0
@@ -156,18 +156,40 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4522dc9b18738144592290c08ffce95e
-      internalID: 787732220
+      spriteID: 665cc39c4bc411840a1d403770e37e49
+      internalID: -529290547
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: EnemiesHealthbar_3
+      name: EnemiesHealthbarv2_3
       rect:
         serializedVersion: 2
-        x: 107
-        y: 27
+        x: 104
+        y: 5
+        width: 67
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8999344a69618e4084c80a4312ab65a
+      internalID: 1504459579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EnemiesHealthbarv2_4
+      rect:
+        serializedVersion: 2
+        x: 105
+        y: 32
         width: 85
         height: 3
       alignment: 0
@@ -178,8 +200,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d79566afc8e9b5b4bbb2bc5c0aebc6f3
-      internalID: 601590466
+      spriteID: d319d6b866f4e95449bdfe8430cea759
+      internalID: -1402182088
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EnemiesHealthbarv2_5
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 16
+        width: 85
+        height: 3
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6f2168b76b26f4642bd24878f0748ea9
+      internalID: 1738754013
       vertices: []
       indices: 
       edges: []
@@ -188,7 +232,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: aac1fa34ac2efbf45a89b064e0829327
+    spriteID: a474f4834bb73584ab7228ab9fb131d3
     internalID: 0
     vertices: []
     indices: 
@@ -200,10 +244,12 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      EnemiesHealthbar_0: 1325356657
-      EnemiesHealthbar_1: -1731013113
-      EnemiesHealthbar_2: 787732220
-      EnemiesHealthbar_3: 601590466
+      EnemiesHealthbarv2_0: -2024999893
+      EnemiesHealthbarv2_1: -1462324625
+      EnemiesHealthbarv2_2: -529290547
+      EnemiesHealthbarv2_3: 1504459579
+      EnemiesHealthbarv2_4: -1402182088
+      EnemiesHealthbarv2_5: 1738754013
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
