@@ -96,6 +96,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ActiveItemsView _activeItems;
 
+        [Tooltip("Opcional — swappea el sprite del tablero de dados según el BoardType del " +
+                 "behavior seleccionado (ataque/defensa). Si null, el tablero no cambia de skin.")]
+        [SerializeField]
+        private DiceBoardSkinView _boardSkin;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -357,12 +362,25 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
+            if (_boardSkin != null)
+                _boardSkin.ApplyBoardType(behavior != null ? behavior.BoardType : DiceBoardType.Default);
         }
 
         public void ClearBehaviorForFormula()
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(DiceBoardType.Default);
+        }
+
+        /// <summary>
+        /// Empuja un <see cref="DiceBoardType"/> directo al board skin, sin tocar la fórmula
+        /// de daño. Lo usa el chain para cambiar el skin por fase (cada fase tira aparte y
+        /// puede overridear el board del behavior — ej. daño=Attack, escudo=Defense).
+        /// </summary>
+        public void ApplyBoardType(DiceBoardType type)
+        {
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
         }
 
         // ======================================================================

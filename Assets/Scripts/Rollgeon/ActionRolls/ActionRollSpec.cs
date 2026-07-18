@@ -1,3 +1,5 @@
+using Rollgeon.UI.HUD;
+
 namespace Rollgeon.ActionRolls
 {
     /// <summary>
@@ -42,6 +44,12 @@ namespace Rollgeon.ActionRolls
         /// </summary>
         public bool AlwaysSucceeds;
 
+        /// <summary>
+        /// Skin del tablero de dados que usa esta tirada (default / ataque / defensa). Lo
+        /// consume <see cref="Rollgeon.UI.HUD.DiceBoardSkinView"/> para swappear el sprite.
+        /// </summary>
+        public DiceBoardType BoardType;
+
         public static ActionRollSpec Default => new ActionRollSpec
         {
             EnergyCost = 0,
@@ -51,6 +59,7 @@ namespace Rollgeon.ActionRolls
             AllowReroll = true,
             RerollEnergyCost = 1,
             AlwaysSucceeds = false,
+            BoardType = DiceBoardType.Default,
         };
     }
 }

@@ -470,7 +470,7 @@ MonoBehaviour:
   m_text: Roll
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -881,7 +881,7 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1924,7 +1924,7 @@ MonoBehaviour:
   m_text: Confirm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2101,7 +2101,7 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2239,7 +2239,7 @@ MonoBehaviour:
   m_text: (C)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2339,6 +2339,7 @@ GameObject:
   - component: {fileID: 577667429610198208}
   - component: {fileID: 7395088317676354048}
   - component: {fileID: 5429327609465198990}
+  - component: {fileID: 7560095422184507784}
   m_Layer: 0
   m_Name: DiceZoneView
   m_TagString: Untagged
@@ -2414,15 +2415,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.39215687}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 1193707934, guid: aa643022b7e218d44b6c11ca10fc65a4, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2490,6 +2491,20 @@ MonoBehaviour:
   _critHitstopSeconds: 0.05
   _landHitstopSeconds: 0.04
   _musicDuckFactor: 0.6
+--- !u!114 &7560095422184507784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6539047763363858036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35616fb163870624d9aff715d64cd97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceBoardSkinView
+  _boardImage: {fileID: 221295750832956733}
+  _catalog: {fileID: 11400000, guid: 3d515a5fd5276784a80f7af844f44738, type: 2}
 --- !u!1 &6750426597172233242
 GameObject:
   m_ObjectHideFlags: 0
@@ -2559,7 +2574,7 @@ MonoBehaviour:
   m_text: (C)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2583,7 +2598,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 23.4
+  m_fontSize: 26.15
   m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2712,7 +2727,7 @@ MonoBehaviour:
   m_text: -/-
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3822,6 +3837,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -3829,7 +3852,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3932,6 +3955,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -3939,7 +3970,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4042,6 +4073,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4049,7 +4088,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4152,6 +4191,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4159,7 +4206,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4262,6 +4309,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4269,7 +4324,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

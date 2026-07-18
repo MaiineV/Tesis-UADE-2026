@@ -2364,6 +2364,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8900275347121055636, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2473,6 +2477,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 7832882399325725898}
     - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: _boardSkin
+      value: 
+      objectReference: {fileID: 5820080220455282461}
+    - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _energyBar
       value: 
       objectReference: {fileID: 6488173070975872153}
@@ -2517,6 +2525,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 51302364306360471, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 3057962395495201967, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 7094254231321513198, guid: 44c33039d23f4a647a610f77fab819ff, type: 3}
       propertyPath: m_Name
       value: Canvas_Toast
@@ -2614,6 +2630,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 211438820083527000, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 588976558905374569, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 33.614502
+      objectReference: {fileID: 0}
+    - target: {fileID: 588976558905374569, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -336.14587
+      objectReference: {fileID: 0}
+    - target: {fileID: 3882577187033048755, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 4579542396890523017, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2730,6 +2762,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 6619218596751161131, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 7207993922244463804, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 8258365237464834956, guid: d6d1912118d8398449ef042c200feadf, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2814,6 +2854,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas_FloorTransition
       objectReference: {fileID: 0}
+    - target: {fileID: 9081018285500060494, guid: d6d1912118d8398449ef042c200feadf, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2835,6 +2879,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+    - target: {fileID: 1928216255863403973, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+      propertyPath: m_fontSize
+      value: 26.15
+      objectReference: {fileID: 0}
     - target: {fileID: 1928216255863403973, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
       propertyPath: m_sharedMaterial
       value: 
@@ -2968,6 +3016,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+--- !u!114 &5820080220455282461 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7560095422184507784, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+  m_PrefabInstance: {fileID: 5820080220455282460}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35616fb163870624d9aff715d64cd97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceBoardSkinView
 --- !u!1001 &6412196152835159266
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3315,10 +3374,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4162857903770791883, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 6102421412158486591, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
       propertyPath: m_Name
       value: Canvas_Victory
       objectReference: {fileID: 0}
+    - target: {fileID: 6451877433977116710, guid: f4ec4b948724a6a4aaecedc9fc828291, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3332,10 +3399,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 2366235780599523828, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Name
       value: Canvas_Defeat
       objectReference: {fileID: 0}
+    - target: {fileID: 4376472940616494393, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     - target: {fileID: 9014833472966344738, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Pivot.x
       value: 0
