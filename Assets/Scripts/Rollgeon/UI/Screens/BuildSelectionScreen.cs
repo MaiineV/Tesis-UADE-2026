@@ -79,6 +79,7 @@ namespace Rollgeon.UI.Screens
         private bool _builderMode;
         private readonly List<DiceType> _currentBag = new();
         private readonly List<PoolOfferingRow> _poolRows = new();
+        private int _lastShownBagCount = -1;
 
         public override string ScreenStringId => ScreenId;
 
@@ -138,6 +139,7 @@ namespace Rollgeon.UI.Screens
             ClearDiceSlots();
             _currentBag.Clear();
             _builderMode = false;
+            _lastShownBagCount = -1;
 
             // Modo builder (Fase 2): el hero trae un pool valido y la screen esta cableada.
             var pool = _selectedHero != null ? _selectedHero.DiceBagPool : null;
@@ -238,9 +240,29 @@ namespace Rollgeon.UI.Screens
             // Reconstruir la preview de la bolsa armada.
             RebuildSelectedSlots();
 
-            // Counter "X / Y".
+            // Counter "X / Y" con punch al cambiar.
             if (_bagCounterLabel != null)
+            {
                 _bagCounterLabel.text = $"{_currentBag.Count} / {required}";
+
+                bool countChanged = _lastShownBagCount >= 0 && _lastShownBagCount != _currentBag.Count;
+                if (countChanged && Application.isPlaying
+                    && !Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+                {
+                    var t = _bagCounterLabel.transform;
+                    PrimeTween.Tween.StopAll(onTarget: t);
+                    t.localScale = Vector3.one;
+                    PrimeTween.Tween.PunchScale(t, Vector3.one * 0.15f, 0.22f,
+                        frequency: 3, useUnscaledTime: true);
+                }
+            }
+
+            // Bolsa completa: ola de celebración en la tira (una sola vez por llegada).
+            if (_diceStrip != null && _currentBag.Count == required && _lastShownBagCount != required)
+            {
+                _diceStrip.PlayCompleteWave();
+            }
+            _lastShownBagCount = _currentBag.Count;
 
             // Confirm habilitado solo cuando esta en target.
             if (_confirmButton != null)

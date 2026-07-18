@@ -51,6 +51,34 @@ namespace Rollgeon.UI.Screens
         public float PoolPunchScale = 0.15f;
         public float PoolPunchDuration = 0.2f;
 
+        [Header("Juice de la tira")]
+        [Tooltip("Rotación Z (grados) con la que el dado cae antes de enderezarse.")]
+        public float DropRotation = 16f;
+
+        [Tooltip("ScaleY del squash al aterrizar (1 = sin squash).")]
+        public float LandSquashScale = 0.82f;
+        public float LandSquashDuration = 0.07f;
+
+        [Tooltip("Escala del dado de la tira bajo el mouse (hover clickeable).")]
+        public float HoverScale = 1.12f;
+        public float HoverDuration = 0.12f;
+
+        [Header("Partículas de impacto (mini burst)")]
+        [Tooltip("Cuadraditos por burst al agregar/quitar. 0 = sin partículas.")]
+        public int BurstCount = 8;
+        public float BurstDistanceMin = 28f;
+        public float BurstDistanceMax = 60f;
+        public float BurstDuration = 0.35f;
+        public float BurstParticleSize = 6f;
+        public Color AddBurstColor = new Color32(0xE0, 0xC0, 0xA9, 0xFF);
+        public Color RemoveBurstColor = new Color32(0x8A, 0x96, 0xA0, 0xFF);
+
+        [Header("Bolsa completa (ola)")]
+        [Tooltip("Salto (px) de cada dado en la ola al completar la bolsa.")]
+        public float WaveJumpHeight = 16f;
+        public float WaveJumpDuration = 0.14f;
+        public float WaveStagger = 0.06f;
+
         [Header("SFX (opcionales — null = silencio)")]
         public AudioClip AddClip;
         public AudioClip RemoveClip;

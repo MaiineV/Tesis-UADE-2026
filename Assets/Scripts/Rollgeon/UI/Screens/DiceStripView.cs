@@ -5,6 +5,7 @@ using PrimeTween;
 using Rollgeon.Audio;
 using Rollgeon.Dice;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.Screens
@@ -33,12 +34,28 @@ namespace Rollgeon.UI.Screens
             public CanvasGroup Group;
             public Button Button;
             public DiceType Type;
+            public bool Removing;
+        }
+
+        /// <summary>Relay de hover por dado — la view anima la escala.</summary>
+        private sealed class DieHoverRelay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+        {
+            public Action<bool> HoverChanged;
+            public void OnPointerEnter(PointerEventData eventData) => HoverChanged?.Invoke(true);
+            public void OnPointerExit(PointerEventData eventData) => HoverChanged?.Invoke(false);
+        }
+
+        private sealed class BurstParticle
+        {
+            public RectTransform Rect;
+            public Image Image;
         }
 
         private readonly List<DiceType> _model = new List<DiceType>();
         private readonly List<DieEntry> _entries = new List<DieEntry>();
         private readonly List<DieEntry> _dying = new List<DieEntry>();
         private readonly Stack<DieEntry> _pool = new Stack<DieEntry>();
+        private readonly Stack<BurstParticle> _particlePool = new Stack<BurstParticle>();
 
         /// <summary>Click en un dado de la tira. Payload = tipo del dado clickeado.</summary>
         public event Action<DiceType> OnDieClicked;
@@ -122,9 +139,31 @@ namespace Rollgeon.UI.Screens
             }
 
             // Cae desde arriba y asienta con OutBack (settle).
+            // Cae rotado y se endereza; al aterrizar: squash + mini burst.
             entry.Rect.anchoredPosition = new Vector2(targetX, _settings.DropHeight);
+            float tilt = UnityEngine.Random.Range(-_settings.DropRotation, _settings.DropRotation);
+            entry.Rect.localRotation = Quaternion.Euler(0f, 0f, tilt);
+            Tween.LocalRotation(entry.Rect, Quaternion.identity, _settings.DropDuration,
+                Ease.OutCubic, useUnscaledTime: true);
             Tween.UIAnchoredPositionY(entry.Rect, 0f, _settings.DropDuration,
-                _settings.DropEase, useUnscaledTime: true);
+                    _settings.DropEase, useUnscaledTime: true)
+                .OnComplete(this, self => self.OnDieLanded(entry, targetX));
+        }
+
+        private void OnDieLanded(DieEntry entry, float landX)
+        {
+            if (entry.Rect == null || entry.Removing || !_entries.Contains(entry)) return;
+
+            // Squash al aterrizar y vuelta con rebote.
+            Tween.Scale(entry.Rect, new Vector3(1.12f, _settings.LandSquashScale, 1f),
+                    _settings.LandSquashDuration, Ease.OutQuad, useUnscaledTime: true)
+                .OnComplete(this, self =>
+                {
+                    if (entry.Rect != null && !entry.Removing)
+                        Tween.Scale(entry.Rect, Vector3.one, 0.16f, Ease.OutBack, useUnscaledTime: true);
+                });
+
+            SpawnBurst(new Vector2(landX, -_settings.DieSize * 0.35f), _settings.AddBurstColor);
         }
 
         private void RemoveAt(int index, bool instant)
@@ -140,10 +179,32 @@ namespace Rollgeon.UI.Screens
             }
 
             _dying.Add(entry);
+            entry.Removing = true;
             entry.Button.interactable = false;
+            SpawnBurst(entry.Rect.anchoredPosition, _settings.RemoveBurstColor);
             Tween.Scale(entry.Rect, 0f, _settings.RemoveDuration, _settings.RemoveEase, useUnscaledTime: true);
             Tween.Alpha(entry.Group, 0f, _settings.RemoveDuration, useUnscaledTime: true)
                 .OnComplete(this, self => self.RecycleFromDying(entry));
+        }
+
+        /// <summary>
+        /// Ola de celebración al completar la bolsa: cada dado salta con stagger
+        /// de izquierda a derecha. La dispara la screen al llegar al target.
+        /// </summary>
+        public void PlayCompleteWave()
+        {
+            if (_settings == null || !Application.isPlaying) return;
+            if (Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                var entry = _entries[i];
+                if (entry.Rect == null || entry.Removing) continue;
+                Tween.UIAnchoredPositionY(entry.Rect, _settings.WaveJumpHeight,
+                    _settings.WaveJumpDuration, Ease.OutQuad,
+                    cycles: 2, cycleMode: CycleMode.Yoyo,
+                    startDelay: i * _settings.WaveStagger, useUnscaledTime: true);
+            }
         }
 
         private void RebuildAll(IReadOnlyList<DiceType> target, bool instant)
@@ -226,7 +287,79 @@ namespace Rollgeon.UI.Screens
                 Type = DiceType.D4,
             };
             button.onClick.AddListener(() => OnDieClicked?.Invoke(entry.Type));
+
+            // Hover clickeable: el dado se agranda bajo el mouse.
+            var hover = go.AddComponent<DieHoverRelay>();
+            hover.HoverChanged = hovered => OnDieHover(entry, hovered);
             return entry;
+        }
+
+        private void OnDieHover(DieEntry entry, bool hovered)
+        {
+            if (_settings == null || entry.Rect == null || entry.Removing) return;
+            if (!Application.isPlaying) return;
+            if (Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+            if (!_entries.Contains(entry)) return;
+
+            float target = hovered ? _settings.HoverScale : 1f;
+            Tween.Scale(entry.Rect, target, _settings.HoverDuration, Ease.OutQuad, useUnscaledTime: true);
+        }
+
+        // -----------------------------------------------------------------
+        // Mini burst de impacto (cuadraditos pooled, patrón DiceThrowImpactBurst)
+        // -----------------------------------------------------------------
+
+        private void SpawnBurst(Vector2 origin, Color color)
+        {
+            if (_settings == null || _settings.BurstCount <= 0) return;
+            if (!Application.isPlaying || !gameObject.activeInHierarchy) return;
+            if (Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+
+            for (int i = 0; i < _settings.BurstCount; i++)
+            {
+                var particle = _particlePool.Count > 0 ? _particlePool.Pop() : CreateParticle();
+                particle.Image.color = color;
+                particle.Rect.sizeDelta = Vector2.one * _settings.BurstParticleSize;
+                particle.Rect.anchoredPosition = origin;
+                particle.Rect.localScale = Vector3.one;
+                particle.Rect.SetAsLastSibling();
+                particle.Rect.gameObject.SetActive(true);
+
+                // Abanico hacia arriba con algo de spread lateral.
+                float angle = UnityEngine.Random.Range(30f, 150f) * Mathf.Deg2Rad;
+                float distance = UnityEngine.Random.Range(_settings.BurstDistanceMin, _settings.BurstDistanceMax);
+                var target = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+
+                Tween.UIAnchoredPosition(particle.Rect, target, _settings.BurstDuration,
+                    Ease.OutCubic, useUnscaledTime: true);
+                Tween.Scale(particle.Rect, 0.2f, _settings.BurstDuration, Ease.InQuad, useUnscaledTime: true);
+                var captured = particle;
+                Tween.Alpha(particle.Image, 0f, _settings.BurstDuration, Ease.InQuad, useUnscaledTime: true)
+                    .OnComplete(this, self => self.RecycleParticle(captured));
+            }
+        }
+
+        private BurstParticle CreateParticle()
+        {
+            var go = new GameObject("BurstParticle", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(transform, worldPositionStays: false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            var image = go.GetComponent<Image>();
+            image.raycastTarget = false;
+            return new BurstParticle { Rect = rect, Image = image };
+        }
+
+        private void RecycleParticle(BurstParticle particle)
+        {
+            if (particle.Rect == null) return;
+            Tween.StopAll(onTarget: particle.Rect);
+            Tween.StopAll(onTarget: particle.Image);
+            var c = particle.Image.color;
+            particle.Image.color = new Color(c.r, c.g, c.b, 1f);
+            particle.Rect.gameObject.SetActive(false);
+            _particlePool.Push(particle);
         }
 
         private void RecycleFromDying(DieEntry entry) => Recycle(entry, fromDying: true);
@@ -239,8 +372,10 @@ namespace Rollgeon.UI.Screens
             Tween.StopAll(onTarget: entry.Rect);
             Tween.StopAll(onTarget: entry.Group);
             entry.Rect.localScale = Vector3.one;
+            entry.Rect.localRotation = Quaternion.identity;
             entry.Group.alpha = 1f;
             entry.Button.interactable = true;
+            entry.Removing = false;
             entry.Rect.gameObject.SetActive(false);
             _pool.Push(entry);
         }
@@ -262,6 +397,8 @@ namespace Rollgeon.UI.Screens
                 Tween.StopAll(onTarget: entry.Rect);
                 Tween.StopAll(onTarget: entry.Group);
                 entry.Rect.localScale = Vector3.one;
+                entry.Rect.localRotation = Quaternion.identity;
+                entry.Rect.anchoredPosition = new Vector2(entry.Rect.anchoredPosition.x, 0f);
                 entry.Group.alpha = 1f;
             }
             SnapToTarget();
