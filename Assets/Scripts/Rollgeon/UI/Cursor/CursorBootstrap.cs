@@ -1,6 +1,5 @@
 using Patterns;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Rollgeon.UI.Cursor
 {
@@ -13,7 +12,6 @@ namespace Rollgeon.UI.Cursor
     /// </summary>
     public static class CursorBootstrap
     {
-        private const int OverlaySortingOrder = 32760; // sobre loading (31000) y todo lo demás.
         private static CursorService _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -32,25 +30,8 @@ namespace Rollgeon.UI.Cursor
             var root = new GameObject("[Cursor]");
             Object.DontDestroyOnLoad(root);
 
-            var canvas = root.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = OverlaySortingOrder;
-
-            var scaler = root.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-            // Sin GraphicRaycaster a propósito: el cursor no debe bloquear input.
-
-            var imageGo = new GameObject("CursorImage", typeof(RectTransform), typeof(Image));
-            var imageRect = (RectTransform)imageGo.transform;
-            imageRect.SetParent(root.transform, worldPositionStays: false);
-            var image = imageGo.GetComponent<Image>();
-            image.raycastTarget = false;
-
-            var view = root.AddComponent<CursorView>();
-            view.Configure(imageRect, image, settings);
-
             _instance = root.AddComponent<CursorService>();
-            _instance.Configure(view, settings);
+            _instance.Configure(settings);
             _instance.SetVisible(true);
 
             ServiceLocator.AddService<ICursorService>(_instance, ServiceScope.Global);

@@ -10,8 +10,10 @@ namespace Rollgeon.UI.Cursor
 {
     /// <summary>
     /// Cerebro del cursor custom: cada frame decide el estado (default / hover /
-    /// click-vacío / click-hover) según si hay algo interactivo bajo el mouse, y
-    /// mueve la <see cref="CursorView"/>. Oculta el cursor del sistema.
+    /// click-vacío / click-hover) según si hay algo interactivo bajo el mouse y
+    /// aplica la textura vía <c>Cursor.SetCursor</c> (cursor de hardware: lo
+    /// compone el OS, sin latencia ni doble puntero — el software con canvas
+    /// overlay iba un frame atrás del cursor del sistema).
     /// </summary>
     /// <remarks>
     /// "Hovereable" = UI interactiva (un <see cref="Selectable"/> habilitado o un
@@ -22,57 +24,76 @@ namespace Rollgeon.UI.Cursor
     /// </remarks>
     public sealed class CursorService : MonoBehaviour, ICursorService
     {
-        private CursorView _view;
         private CursorSettingsSO _settings;
         private bool _visible = true;
+        private CursorState _current = (CursorState)(-1);
 
         private Camera _worldCamera;
         private PointerEventData _pointerData;
         private readonly List<RaycastResult> _uiHits = new();
 
-        public void Configure(CursorView view, CursorSettingsSO settings)
+        public void Configure(CursorSettingsSO settings)
         {
-            _view = view;
             _settings = settings;
+            _current = (CursorState)(-1);
         }
-
-        private void OnEnable() => ApplySystemCursor();
 
         private void OnDisable()
         {
             // Al apagarse (ej. salir de play), devolver el cursor del sistema.
-            UnityEngine.Cursor.visible = true;
+            RestoreSystemCursor();
         }
 
         public void SetVisible(bool visible)
         {
             _visible = visible;
-            ApplySystemCursor();
-            if (_view != null) _view.gameObject.SetActive(visible);
-        }
-
-        private void ApplySystemCursor()
-        {
-            // El cursor custom reemplaza al del sistema; si lo ocultamos, vuelve el nativo.
-            UnityEngine.Cursor.visible = !_visible;
+            if (visible)
+            {
+                // Re-aplicar el estado actual en el próximo Update.
+                _current = (CursorState)(-1);
+            }
+            else
+            {
+                RestoreSystemCursor();
+            }
         }
 
         private void Update()
         {
-            if (!_visible || _view == null || _settings == null) return;
+            if (!_visible || _settings == null) return;
 
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // El SO resetea Cursor.visible al perder/recuperar foco — re-asegurar.
-            if (UnityEngine.Cursor.visible) UnityEngine.Cursor.visible = false;
-
             Vector2 pos = mouse.position.ReadValue();
-            _view.SetPosition(pos);
-
             bool pressed = mouse.leftButton.isPressed;
             bool hoverable = IsUiHoverable(pos) || IsWorldHoverable(pos);
-            _view.SetState(CursorStateResolver.Resolve(pressed, hoverable));
+
+            var state = CursorStateResolver.Resolve(pressed, hoverable);
+            if (state != _current) Apply(state);
+        }
+
+        private void Apply(CursorState state)
+        {
+            _current = state;
+            var texture = _settings.CursorFor(state);
+            // Sin textura (setup no corrido) degrada a la flecha del sistema.
+            UnityEngine.Cursor.SetCursor(texture, HotspotPixels(texture), CursorMode.Auto);
+        }
+
+        // SetCursor mide el hotspot en píxeles desde arriba-izquierda; el pivot
+        // del settings es normalizado con origen abajo-izquierda.
+        private Vector2 HotspotPixels(Texture2D texture)
+        {
+            if (texture == null || _settings == null) return Vector2.zero;
+            return new Vector2(
+                _settings.HotspotPivot.x * texture.width,
+                (1f - _settings.HotspotPivot.y) * texture.height);
+        }
+
+        private static void RestoreSystemCursor()
+        {
+            UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }
 
         private bool IsUiHoverable(Vector2 screenPos)

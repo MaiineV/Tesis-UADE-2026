@@ -62,13 +62,13 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private PlayerActionButtonsView _playerActionButtons;
 
-        [Required("Arrastrar HealthBarView.")]
+        [Required("Arrastrar HealthChipStackView (pila de fichas de vida+escudo).")]
         [SerializeField]
-        private HealthBarView _healthBar;
+        private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar EnergyBarView.")]
+        [Required("Arrastrar EnergyChipStackView (pila de fichas de energía).")]
         [SerializeField]
-        private EnergyBarView _energyBar;
+        private EnergyChipStackView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -78,9 +78,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
-        [Tooltip("Opcional — muestra el shield actual del jugador.")]
-        [SerializeField]
-        private ShieldBarView _shieldBar;
 
         [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
                  "hero (ej. Furia del Guerrero) está activa.")]
@@ -127,17 +124,17 @@ namespace Rollgeon.UI.Screens
         // Tutorial anchors — mismo patrón que PlayerActionButtonsView.TryGetButtonRect
         // ======================================================================
 
-        /// <summary>RectTransform de la barra de vida del jugador — anchor del overlay del tutorial.</summary>
+        /// <summary>RectTransform de la pila de vida del jugador — anchor del overlay del tutorial.</summary>
         public bool TryGetHealthBarRect(out RectTransform rect)
         {
-            rect = _healthBar != null ? _healthBar.transform as RectTransform : null;
+            rect = _healthChips != null ? _healthChips.transform as RectTransform : null;
             return rect != null;
         }
 
-        /// <summary>RectTransform de la barra de energía del jugador — anchor del overlay del tutorial.</summary>
+        /// <summary>RectTransform de la pila de energía del jugador — anchor del overlay del tutorial.</summary>
         public bool TryGetEnergyBarRect(out RectTransform rect)
         {
-            rect = _energyBar != null ? _energyBar.transform as RectTransform : null;
+            rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
             return rect != null;
         }
 
@@ -311,11 +308,11 @@ namespace Rollgeon.UI.Screens
             if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_playerActionButtons no cableado.", this);
 
-            if (_healthBar != null) _healthBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_healthBar no cableado.", this);
+            if (_healthChips != null) _healthChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_healthChips no cableado.", this);
 
-            if (_energyBar != null) _energyBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_energyBar no cableado.", this);
+            if (_energyChips != null) _energyChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_energyChips no cableado.", this);
 
             if (_diceZone != null) _diceZone.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
@@ -324,7 +321,6 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
-            if (_shieldBar != null) _shieldBar.Bind(playerGuid);
             if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
@@ -339,12 +335,11 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
-            if (_healthBar != null) _healthBar.Unbind();
-            if (_energyBar != null) _energyBar.Unbind();
+            if (_healthChips != null) _healthChips.Unbind();
+            if (_energyChips != null) _energyChips.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
-            if (_shieldBar != null) _shieldBar.Unbind();
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
