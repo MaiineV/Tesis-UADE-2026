@@ -95,6 +95,14 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "Effect tiene su propia lista de PreConditions independiente — el behavior " +
                 "ejecuta solo los Effects cuyas PreConditions pasan.",
 
+            [typeof(AINode_ActivateRainHazard)] =
+                "Activate Rain Hazard: activa RainHazardService (idempotente) — una amenaza " +
+                "ambiental independiente del boss (fuente propia) que, una vez activa, marca " +
+                "y detona zonas erráticas en su propio ciclo de rondas, en paralelo a lo que " +
+                "esté haciendo el boss.\n\n" +
+                "Pensado para envolver en If(PcOwnerHpBelow) → Once(...), igual que el " +
+                "trigger de refuerzos — dispara una sola vez al cruzar el umbral de HP.",
+
             [typeof(AINode_SpawnReinforcements)] =
                 "Spawn Reinforcements: spawnea Count copias de EnemyToSpawn en tiles del " +
                 "borde de la sala (perímetro del bounding box, walkable y libres) y los " +
