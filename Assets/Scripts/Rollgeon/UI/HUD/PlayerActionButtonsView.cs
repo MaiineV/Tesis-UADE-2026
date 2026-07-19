@@ -476,7 +476,12 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeyConfirm(InputAction.CallbackContext _)
         {
             if (_confirmButton != null && _confirmButton.interactable)
+            {
+                // Space también dispara EndTurn. Consumimos el frame para que, cuando confirmar
+                // el roll re-habilite el botón End Turn en el mismo press, éste no pase turno.
+                _hotkeys?.ConsumeFrame();
                 _confirmButton.onClick.Invoke();
+            }
         }
 
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un

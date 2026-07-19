@@ -137,6 +137,10 @@ namespace Rollgeon.UI.HUD
         // Space = click de End Turn, solo si el botón está interactable (mismo gating).
         private void OnHotkeyEndTurn(InputAction.CallbackContext _)
         {
+            // Space también confirma el roll (Confirm). Si Confirm ya consumió este press,
+            // no pasamos turno: confirmar resuelve el roll y re-habilita este botón en el
+            // mismo frame, y sin este guard el press pasaría turno de más.
+            if (_hotkeys != null && _hotkeys.WasFrameConsumed()) return;
             if (_endTurnButton != null && _endTurnButton.interactable)
                 _endTurnButton.onClick.Invoke();
         }

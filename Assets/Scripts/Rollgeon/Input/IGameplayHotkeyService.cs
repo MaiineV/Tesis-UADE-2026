@@ -28,6 +28,16 @@ namespace Rollgeon.Input
         /// <summary>Desengancha (simétrico a <see cref="Subscribe"/>).</summary>
         void Unsubscribe(GameplayHotkey hotkey, Action<InputAction.CallbackContext> handler);
 
+        /// <summary>
+        /// Marca el input del frame actual como consumido por un hotkey de mayor prioridad
+        /// (ej. Confirm), para que otro hotkey en la MISMA tecla (ej. EndTurn, que comparte
+        /// Space) no lo re-procese en el mismo press. Ver <see cref="WasFrameConsumed"/>.
+        /// </summary>
+        void ConsumeFrame();
+
+        /// <summary>True si un hotkey ya consumió el input en el frame actual.</summary>
+        bool WasFrameConsumed();
+
         /// <summary>Texto de la tecla asignada (ej. "Q", "Space") derivado del binding
         /// vigente. Cambia solo si se rebindea / agrega gamepad. "" si no resuelve.</summary>
         string GetKeyHint(GameplayHotkey hotkey);
