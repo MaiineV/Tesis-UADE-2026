@@ -280,6 +280,30 @@ MonoBehaviour:
     m_Localized: "Da\xF1o m\xEDnimo = dado m\xE1s alto"
     m_Metadata:
       m_Items: []
+  - m_Id: 2019786932191232
+    m_Localized: 'Tus dados:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134272
+    m_Localized: 'Elige el cupo del dado seleccionado:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134273
+    m_Localized: Cupo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134274
+    m_Localized: cupos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134275
+    m_Localized: Encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134276
+    m_Localized: Confirmar
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
