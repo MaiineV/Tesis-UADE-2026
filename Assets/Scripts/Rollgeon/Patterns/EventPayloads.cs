@@ -74,6 +74,22 @@ namespace Patterns
     }
 
     /// <summary>
+    /// Payload tipado para "empezó un encuentro de jefe". Lo consume la barra de vida de jefe
+    /// en pantalla (<c>BossBarView</c>) para encenderse, bindearse al jefe y poblar su nombre.
+    /// Canalizado únicamente vía <c>TypedEvent&lt;BossEncounterStartedPayload&gt;</c> — no existe
+    /// entry legacy en <see cref="EventName"/>. El apagado reusa <see cref="EventName.OnCombatEnd"/>
+    /// y <see cref="EventName.OnEntityDestroyed"/>.
+    /// </summary>
+    public struct BossEncounterStartedPayload
+    {
+        /// <summary>InstanceId del jefe al que se bindea la barra (su <c>Health</c>).</summary>
+        public Guid BossGuid;
+
+        /// <summary>Nombre del jefe ya localizado, listo para mostrar en la UI.</summary>
+        public string DisplayName;
+    }
+
+    /// <summary>
     /// Payload tipado para "combo matcheado" al resolver una tirada. Canalizado únicamente vía
     /// <c>TypedEvent&lt;ComboMatchedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
     /// </summary>

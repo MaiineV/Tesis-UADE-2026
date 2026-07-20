@@ -175,12 +175,16 @@ namespace Rollgeon.Combat.Handoff
                 // Build participant list: player + enemies.
                 var participants = new List<Guid> { _player.PlayerGuid };
                 Guid firstEnemyId = Guid.Empty;
+                EnemyDataSO firstEnemyData = null;
 
-                foreach (var (id, _) in spawned)
+                foreach (var (id, data) in spawned)
                 {
                     participants.Add(id);
                     if (firstEnemyId == Guid.Empty)
+                    {
                         firstEnemyId = id;
+                        firstEnemyData = data;
+                    }
                 }
 
                 // Push combat HUD screen.
@@ -190,6 +194,19 @@ namespace Rollgeon.Combat.Handoff
                         RoomInstanceId = roomInstanceId,
                         EncounterDisplayName = Rollgeon.Localization.LocalizedContent.Name(room.RoomId, room.DisplayName)
                     });
+
+                // Encuentro de jefe: encender la barra de vida en pantalla (BossBarView).
+                // Se bindea al primer enemigo (el jefe es el único spawn en RoomType.Boss)
+                // y le pasa el nombre ya localizado. La barra lee el Health por su cuenta.
+                if (roomType == RoomType.Boss && firstEnemyId != Guid.Empty && firstEnemyData != null)
+                {
+                    TypedEvent<BossEncounterStartedPayload>.Raise(new BossEncounterStartedPayload
+                    {
+                        BossGuid = firstEnemyId,
+                        DisplayName = Rollgeon.Localization.LocalizedContent.Name(
+                            firstEnemyData.EntityId, firstEnemyData.DisplayName),
+                    });
+                }
 
                 // Cablea delegates del HUD contra IPlayerCombatActions + reroll budget
                 // (setup doc UI#0095b §8.7). Sin esto, los clicks del HUD loggean
