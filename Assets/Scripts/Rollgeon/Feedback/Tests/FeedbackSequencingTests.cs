@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Selection;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -245,6 +247,50 @@ namespace Rollgeon.Feedback.Tests
 
             Assert.IsFalse(handled,
                 "Un step vacío no debe pisar el StoredValues del request con un snapshot nuevo.");
+        }
+
+        [Test]
+        public void InlineEffect_NestedEffect_IsInvisibleToPhaseSelectionScan()
+        {
+            // Regresión: mover el EffDealDamage de la fase a un step InlineEffect dejó al
+            // ataque sin targets seleccionables. FindPhaseSelectionAt solo recorre los
+            // efectos DE LA FASE, así que un efecto escondido en un step no se ve — quien
+            // mueva un efecto adentro de una secuencia tiene que subir su SelectionSettings
+            // al efecto contenedor.
+            var targeting = new CountingEffect();
+            targeting.Selection.SlotState = SlotState.Occupied;
+            targeting.Selection.Timing = SelectionTiming.BeforeRoll;
+            Assert.IsTrue(targeting.RequiresSelectionAt(SelectionTiming.BeforeRoll),
+                "Precondición del test: el efecto anidado sí pide selección por su cuenta.");
+
+            var sequence = new EffPlaySequence();
+            sequence.Selection.SlotState = SlotState.Self;
+
+            var phase = new ChainPhase();
+            phase.Effects = new EffectData();
+            phase.Effects.Effects = new List<IEffect> { sequence };
+
+            // El efecto que pide selección vive adentro del step, no en la fase.
+            var step = MakeInlineEffectStep(targeting);
+            typeof(EffPlaySequence)
+                .GetField("_steps", System.Reflection.BindingFlags.NonPublic
+                                    | System.Reflection.BindingFlags.Instance)
+                .SetValue(sequence, new List<FeedbackSequenceStep> { step });
+
+            var found = EffChain.FindPhaseSelectionAt(phase, SelectionTiming.BeforeRoll);
+
+            Assert.IsNull(found,
+                "El scan de la fase no ve adentro de los steps — este es el modo de falla " +
+                "que dejó al ataque sin targets.");
+
+            // Y con la selección subida al contenedor, la fase vuelve a ofrecer targets.
+            sequence.Selection.SlotState = SlotState.Occupied;
+            sequence.Selection.Timing = SelectionTiming.BeforeRoll;
+
+            found = EffChain.FindPhaseSelectionAt(phase, SelectionTiming.BeforeRoll);
+
+            Assert.IsNotNull(found);
+            Assert.AreEqual(SlotState.Occupied, found.SlotState);
         }
 
         [Test]
