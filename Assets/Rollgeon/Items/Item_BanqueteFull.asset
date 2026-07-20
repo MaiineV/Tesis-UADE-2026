@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ed187442a66944597b1888061baf1a, type: 3}
-  m_Name: Item_BotasEscaladores
+  m_Name: Item_BanqueteFull
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.ItemSO
   serializationData:
     SerializedFormat: 2
@@ -33,7 +33,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Items.PassiveItemHook, Rollgeon
     - Name: Kind
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: TriggerEvent
       Entry: 3
       Data: 0
@@ -42,13 +42,16 @@ MonoBehaviour:
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: ComboIds
       Entry: 7
       Data: 3|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
     - Name: 
       Entry: 12
-      Data: 0
+      Data: 1
+    - Name: 
+      Entry: 1
+      Data: combo.full_house
     - Name: 
       Entry: 13
       Data: 
@@ -173,7 +176,7 @@ MonoBehaviour:
       Data: 10|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 0
+      Data: 30
     - Name: 
       Entry: 8
       Data: 
@@ -252,23 +255,24 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ItemId: botas.escaladores
-  DisplayName: Botas del Escalador
-  Description: "La Escalera hace +10 da\xF1o."
+  ItemId: banquete.full
+  DisplayName: Banquete Real
+  Description: "Los Full House hacen +30 da\xF1o."
   Icon: {fileID: 0}
-  Rarity: 0
+  Rarity: 1
   Type: 0
   PassiveHooks:
-  - Kind: 0
+  - Kind: 1
     TriggerEvent: 0
     ComboFilter:
-      Mode: 1
-      ComboIds: []
+      Mode: 2
+      ComboIds:
+      - combo.full_house
     Effect:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 5371277439317049827
+      - rid: 9092771418612957923
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -288,7 +292,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 5371277439317049827
+    - rid: 9092771418612957923
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -312,8 +316,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 5371277439317049828
-    - rid: 5371277439317049828
+          rid: 9092771418612957924
+    - rid: 9092771418612957924
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 0
+        Value: 30
