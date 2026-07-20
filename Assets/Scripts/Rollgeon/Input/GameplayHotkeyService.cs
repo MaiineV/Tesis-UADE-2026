@@ -32,7 +32,17 @@ namespace Rollgeon.Input
         private readonly Dictionary<GameplayHotkey, InputAction> _byHotkey =
             new Dictionary<GameplayHotkey, InputAction>();
 
+        // Guard de doble-disparo: dos actions en la misma tecla (Confirm/EndTurn en Space)
+        // disparan ambas en el mismo press. Si Confirm resuelve el roll, el botón End Turn se
+        // re-habilita sincrónico y su callback (mismo frame) pasaría turno. Confirm marca el
+        // frame; End Turn lo chequea y cede. Se auto-resetea por frameCount (sin leaks entre
+        // play sessions).
+        private int _consumedFrame = -1;
+
         public bool IsReady => _map != null;
+
+        public void ConsumeFrame() => _consumedFrame = Time.frameCount;
+        public bool WasFrameConsumed() => _consumedFrame == Time.frameCount;
 
         private void Awake()
         {

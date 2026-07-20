@@ -27,12 +27,27 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class ClassSelectionScreenTests
     {
+        private class SpyScreenManager : IScreenManager
+        {
+            public IBaseScreen Current { get; set; }
+            public int PopCurrentCallCount { get; private set; }
+
+            public void Push<TScreen>(IScreenPayload payload = null) where TScreen : class, IBaseScreen { }
+            public void PushByStringId(string screenId, IScreenPayload payload = null) { }
+            public void PopCurrent() => PopCurrentCallCount++;
+            public void PushOverlay<TScreen>(IScreenPayload payload = null) where TScreen : class, IBaseScreen { }
+            public void PopOverlay() { }
+            public void RegisterScreen(IBaseScreen screen) { }
+            public void UnregisterScreen(IBaseScreen screen) { }
+        }
+
         private GameObject _screenGO;
         private ClassSelectionScreen _screen;
         private Button _warriorButton;
         private Button _magoButton;
         private Button _picaroButton;
         private Button _confirmButton;
+        private Button _backButton;
         private GameObject _indicator;
         private Image _portrait;
         private ContractDisplayView _contractDisplay;
@@ -58,6 +73,7 @@ namespace Rollgeon.UI.Tests
             _magoButton = AttachButton("MagoButton");
             _picaroButton = AttachButton("PicaroButton");
             _confirmButton = AttachButton("ConfirmButton");
+            _backButton = AttachButton("BackButton");
 
             _indicator = new GameObject("WarriorIndicator");
             _indicator.transform.SetParent(_screenGO.transform, false);
@@ -110,6 +126,7 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_screen, "_magoButton", _magoButton);
             AssignPrivate(_screen, "_picaroButton", _picaroButton);
             AssignPrivate(_screen, "_confirmButton", _confirmButton);
+            AssignPrivate(_screen, "_backButton", _backButton);
             AssignPrivate(_screen, "_contractDisplay", _contractDisplay);
             AssignPrivate(_screen, "_portraitDisplay", _portrait);
             // _passiveDisplay se deja null — el screen tiene null-check (TMP requiere TMP_Settings).
@@ -120,6 +137,7 @@ namespace Rollgeon.UI.Tests
         public void TearDown()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.RemoveService<IScreenManager>();
             if (_screenGO != null) UnityEngine.Object.DestroyImmediate(_screenGO);
             if (_warriorHero != null) UnityEngine.Object.DestroyImmediate(_warriorHero);
             if (_par != null) UnityEngine.Object.DestroyImmediate(_par);
@@ -140,16 +158,17 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnPushed_DisablesConfirmButton_AndLocksMagoPicaro()
+        public void OnPushed_AutoSelectsWarrior_AndLocksMagoPicaro()
         {
             InvokePushed(null);
 
-            Assert.IsFalse(_confirmButton.interactable,
-                "Confirm arranca deshabilitado hasta que el usuario seleccione al Guerrero.");
+            // Default del mock: el Guerrero arranca seleccionado.
+            Assert.IsTrue(_confirmButton.interactable,
+                "Confirm arranca habilitado — el Guerrero se auto-selecciona al pushear.");
             Assert.IsFalse(_magoButton.interactable, "Mago bloqueado en MVP.");
             Assert.IsFalse(_picaroButton.interactable, "Picaro bloqueado en MVP.");
             Assert.IsTrue(_warriorButton.interactable, "Guerrero esta disponible.");
-            Assert.IsFalse(_indicator.activeSelf, "El indicador arranca apagado — aun no hay seleccion.");
+            Assert.IsTrue(_indicator.activeSelf, "El indicador del Guerrero arranca prendido.");
         }
 
         [Test]
@@ -195,6 +214,49 @@ namespace Rollgeon.UI.Tests
             }
         }
 
+        [Test]
+        public void BackClick_CallsPopCurrent_OnScreenManager()
+        {
+            // Arrange
+            var spy = new SpyScreenManager();
+            ServiceLocator.AddService<IScreenManager>(spy);
+            InvokePushed(null);
+
+            // Act
+            _backButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, spy.PopCurrentCallCount,
+                "Atrás debe popear la screen actual para volver al menú.");
+        }
+
+        [Test]
+        public void BackClick_WithoutScreenManager_DoesNotThrow()
+        {
+            InvokePushed(null);
+
+            Assert.DoesNotThrow(() => _backButton.onClick.Invoke(),
+                "Sin IScreenManager registrado, Atrás loggea warning y no explota.");
+        }
+
+        [Test]
+        public void OnPopped_RemovesBackListener()
+        {
+            // Arrange: push + pop deja el listener removido.
+            InvokePushed(null);
+            InvokePopped();
+
+            var spy = new SpyScreenManager();
+            ServiceLocator.AddService<IScreenManager>(spy);
+
+            // Act: un click posterior al pop no debe invocar nada.
+            _backButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(0, spy.PopCurrentCallCount,
+                "Tras OnPopped el listener de Atrás debe estar removido.");
+        }
+
         // ---------------- helpers ----------------
 
         private Button AttachButton(string name)
@@ -208,6 +270,11 @@ namespace Rollgeon.UI.Tests
         {
             // OnPushed es protected — usamos el forwarder explicito de IBaseScreen.
             ((IBaseScreen)_screen)._Internal_OnPushed(payload);
+        }
+
+        private void InvokePopped()
+        {
+            ((IBaseScreen)_screen)._Internal_OnPopped();
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

@@ -299,8 +299,12 @@ namespace Rollgeon.Shop
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
             if (!grid.TryGetPosition(playerGuid, out var playerCoord)) return false;
 
+            // Distancia en el plano XZ — un spawn point elevado no debe comerse el
+            // presupuesto de rango (mismo fix que EnchantmentAltarInteractable: el
+            // altar a y=1 dejaba las diagonales exactamente en el borde del rango).
             var playerWorld = grid.GridToWorld(playerCoord);
-            float distSq = (playerWorld - transform.position).sqrMagnitude;
+            var delta = playerWorld - transform.position;
+            float distSq = delta.x * delta.x + delta.z * delta.z;
             return distSq <= _interactRange * _interactRange;
         }
     }

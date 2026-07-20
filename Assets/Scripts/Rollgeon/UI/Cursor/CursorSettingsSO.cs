@@ -3,17 +3,20 @@ using UnityEngine;
 namespace Rollgeon.UI.Cursor
 {
     /// <summary>
-    /// Config del cursor custom: los 4 sprites (indexados por
-    /// <see cref="CursorState"/>), escala y hotspot. El bootstrap lo carga desde
-    /// <c>Resources/Cursor/CursorSettings</c>.
+    /// Config del cursor custom: las 4 texturas de cursor (indexadas por
+    /// <see cref="CursorState"/>), hotspot y raycast de mundo. El bootstrap lo
+    /// carga desde <c>Resources/Cursor/CursorSettings</c>.
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/UI/Cursor Settings", fileName = "CursorSettings")]
     public class CursorSettingsSO : ScriptableObject
     {
-        [Tooltip("Sprites del sheet en orden Default(0), ClickEmpty(1), Hover(2), ClickHover(3).")]
-        public Sprite[] StateSprites = new Sprite[4];
+        [Tooltip("Texturas standalone (import type Cursor) en orden Default(0), " +
+                 "ClickEmpty(1), Hover(2), ClickHover(3). Las bakea 'Rollgeon → Cursor → Setup' " +
+                 "desde el sheet, ya escaladas.")]
+        public Texture2D[] StateCursors = new Texture2D[4];
 
-        [Tooltip("Escala del cursor (pixel-art: usar enteros). 2 = doble tamaño nativo.")]
+        [Tooltip("Escala de bake (pixel-art: usar enteros). 2 = doble tamaño nativo. " +
+                 "Se aplica al generar las texturas — cambiarla requiere re-correr el Setup.")]
         public float Scale = 2f;
 
         [Tooltip("Punto de click dentro del sprite, normalizado (0,0=abajo-izq, 1,1=arriba-der). " +
@@ -23,10 +26,10 @@ namespace Rollgeon.UI.Cursor
         [Tooltip("Alcance del raycast al mundo para detectar enemigos/interactuables.")]
         public float WorldRaycastDistance = 100f;
 
-        public Sprite SpriteFor(CursorState state)
+        public Texture2D CursorFor(CursorState state)
         {
             int i = (int)state;
-            return StateSprites != null && i >= 0 && i < StateSprites.Length ? StateSprites[i] : null;
+            return StateCursors != null && i >= 0 && i < StateCursors.Length ? StateCursors[i] : null;
         }
     }
 }

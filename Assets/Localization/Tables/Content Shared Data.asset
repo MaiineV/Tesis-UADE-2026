@@ -535,6 +535,14 @@ MonoBehaviour:
     m_Key: room_tutorial_combat_c.name
     m_Metadata:
       m_Items: []
+  - m_Id: 1211498464378880
+    m_Key: passive.warrior.low_hp_rage.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211498485350400
+    m_Key: passive.warrior.low_hp_rage.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -138,8 +138,11 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void HandleAltarActivated(params object[] args)
         {
-            if (args == null || args.Length < 2) return;
-            if (!(args[1] is Guid roomId)) return;
+            if (args == null || args.Length < 2 || !(args[1] is Guid roomId))
+            {
+                Debug.LogWarning(LogPrefix + "OnEnchantmentAltarActivated con payload inesperado — la mesa no se abre.");
+                return;
+            }
             _currentRoomInstanceId = roomId;
             OpenPanel();
         }
@@ -200,9 +203,17 @@ namespace Rollgeon.Upgrades.Dice.UI
                 || enchSvc == null || !enchSvc.IsReady || enchSvc.Bag == null)
             {
                 Debug.LogWarning(LogPrefix + "DiceEnchantmentService no listo — no se pueden listar dados.");
+                ShowEmptyStateMessage();
                 return;
             }
-            if (_diceButtonPrefab == null || _diceContainer == null) return;
+            if (_diceButtonPrefab == null || _diceContainer == null)
+            {
+                // Este return era 100% mudo — un ref desconectado en el prefab dejaba
+                // la mesa abierta y vacía sin ninguna pista (bug de la mesa del tutorial).
+                Debug.LogError(LogPrefix + "_diceButtonPrefab o _diceContainer sin asignar — la lista de dados queda vacía.", this);
+                ShowEmptyStateMessage();
+                return;
+            }
 
             var bag = enchSvc.Bag;
             for (int b = 0; b < bag.Dice.Count; b++)
@@ -222,6 +233,23 @@ namespace Rollgeon.Upgrades.Dice.UI
                     tooltipProvider: () => BuildDiceTooltip(slots));
                 _diceButtons.Add(btn);
             }
+
+            if (_diceButtons.Count == 0)
+            {
+                Debug.LogWarning(LogPrefix + "Populate terminó con 0 botones de dado — bag vacío?");
+                ShowEmptyStateMessage();
+            }
+        }
+
+        /// <summary>
+        /// Mensaje visible cuando la lista de dados no se pudo poblar — la mesa nunca
+        /// debe abrirse vacía y muda: sin esto el jugador queda mirando un panel sin
+        /// información y sin saber que es un bug (y en el tutorial, sin poder avanzar).
+        /// </summary>
+        private void ShowEmptyStateMessage()
+        {
+            if (_resultLabel == null) return;
+            _resultLabel.text = "<color=#ff8888>No se pudieron cargar los dados — cerrá la mesa y volvé a intentar.</color>";
         }
 
         private static int CountUsedSlots(RuntimeDiceBag bag, int bagIndex)
@@ -257,8 +285,16 @@ namespace Rollgeon.Upgrades.Dice.UI
             ClearSlotButtons();
 
             if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
-                || enchSvc?.Bag == null) return;
-            if (_slotButtonPrefab == null || _slotContainer == null) return;
+                || enchSvc?.Bag == null)
+            {
+                Debug.LogWarning(LogPrefix + "DiceEnchantmentService/Bag no disponible — slots del dado no se pueden listar.");
+                return;
+            }
+            if (_slotButtonPrefab == null || _slotContainer == null)
+            {
+                Debug.LogError(LogPrefix + "_slotButtonPrefab o _slotContainer sin asignar — lista de slots vacía.", this);
+                return;
+            }
 
             var bag = enchSvc.Bag;
             int slotCount = bag.GetEnchantmentSlotCount(bagIndex);

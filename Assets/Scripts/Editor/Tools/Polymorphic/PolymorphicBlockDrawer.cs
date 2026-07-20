@@ -29,7 +29,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// the drawer needs a floor; past this depth it hands the subtree back to Odin rather than
         /// recursing forever.
         /// </summary>
-        public const int MAX_DEPTH = 6;
+        /// <remarks>
+        /// Raised from 6 to 8 when effects started nesting inside feedback sequences:
+        /// <c>EffChain → ChainPhase → EffectData → EffPlaySequence → FeedbackSequenceStep →
+        /// EffectData → EffDealDamage</c> is 7 levels on its own, so the warrior's deferred
+        /// damage fell past the old cap and rendered through Odin's stock drawer — which hides
+        /// the polymorphic picker by declared type, making it unauthorable.
+        /// </remarks>
+        public const int MAX_DEPTH = 8;
 
         /// <summary>Per-host toggles for parts of an <see cref="EffectData"/> that don't apply everywhere.</summary>
         public struct Options

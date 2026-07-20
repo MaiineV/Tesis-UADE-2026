@@ -62,13 +62,13 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private PlayerActionButtonsView _playerActionButtons;
 
-        [Required("Arrastrar HealthBarView.")]
+        [Required("Arrastrar HealthChipStackView (pila de fichas de vida+escudo).")]
         [SerializeField]
-        private HealthBarView _healthBar;
+        private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar EnergyBarView.")]
+        [Required("Arrastrar EnergyChipStackView (pila de fichas de energía).")]
         [SerializeField]
-        private EnergyBarView _energyBar;
+        private EnergyChipStackView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -78,9 +78,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
-        [Tooltip("Opcional — muestra el shield actual del jugador.")]
-        [SerializeField]
-        private ShieldBarView _shieldBar;
 
         [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
                  "hero (ej. Furia del Guerrero) está activa.")]
@@ -95,6 +92,17 @@ namespace Rollgeon.UI.Screens
                  "Si null, no hay UI de items activos en el combate.")]
         [SerializeField]
         private ActiveItemsView _activeItems;
+
+        [Tooltip("Opcional — swappea el sprite del tablero de dados según el BoardType del " +
+                 "behavior seleccionado (ataque/defensa). Si null, el tablero no cambia de skin.")]
+        [SerializeField]
+        private DiceBoardSkinView _boardSkin;
+
+        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
+                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
+                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
+        [SerializeField]
+        private ChainRollPromptView _chainRollPrompt;
 
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
@@ -122,17 +130,17 @@ namespace Rollgeon.UI.Screens
         // Tutorial anchors — mismo patrón que PlayerActionButtonsView.TryGetButtonRect
         // ======================================================================
 
-        /// <summary>RectTransform de la barra de vida del jugador — anchor del overlay del tutorial.</summary>
+        /// <summary>RectTransform de la pila de vida del jugador — anchor del overlay del tutorial.</summary>
         public bool TryGetHealthBarRect(out RectTransform rect)
         {
-            rect = _healthBar != null ? _healthBar.transform as RectTransform : null;
+            rect = _healthChips != null ? _healthChips.transform as RectTransform : null;
             return rect != null;
         }
 
-        /// <summary>RectTransform de la barra de energía del jugador — anchor del overlay del tutorial.</summary>
+        /// <summary>RectTransform de la pila de energía del jugador — anchor del overlay del tutorial.</summary>
         public bool TryGetEnergyBarRect(out RectTransform rect)
         {
-            rect = _energyBar != null ? _energyBar.transform as RectTransform : null;
+            rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
             return rect != null;
         }
 
@@ -294,6 +302,12 @@ namespace Rollgeon.UI.Screens
         {
             _playerGuid = playerGuid;
 
+            // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
+            // el Inspector, se auto-resuelven en escena.
+            if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
+
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
 
@@ -306,11 +320,11 @@ namespace Rollgeon.UI.Screens
             if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_playerActionButtons no cableado.", this);
 
-            if (_healthBar != null) _healthBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_healthBar no cableado.", this);
+            if (_healthChips != null) _healthChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_healthChips no cableado.", this);
 
-            if (_energyBar != null) _energyBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_energyBar no cableado.", this);
+            if (_energyChips != null) _energyChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_energyChips no cableado.", this);
 
             if (_diceZone != null) _diceZone.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
@@ -319,7 +333,6 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
-            if (_shieldBar != null) _shieldBar.Bind(playerGuid);
             if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
@@ -334,12 +347,11 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
-            if (_healthBar != null) _healthBar.Unbind();
-            if (_energyBar != null) _energyBar.Unbind();
+            if (_healthChips != null) _healthChips.Unbind();
+            if (_energyChips != null) _energyChips.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
-            if (_shieldBar != null) _shieldBar.Unbind();
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
@@ -357,12 +369,46 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
+            // Sin behavior no hay tipo que empujar: el board conserva su skin actual
+            // (política "el skin solo cambia cuando una acción pide otro", playtest 2026-07-20).
+            if (behavior == null) return;
+            var boardType = behavior.BoardType;
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(boardType);
+            if (_damageFormula != null) _damageFormula.SetBoardType(boardType);
         }
 
         public void ClearBehaviorForFormula()
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
+            // El board skin NO vuelve a Default al terminar la acción: se queda en su
+            // tipo actual hasta que la próxima acción empuje otro.
+        }
+
+        /// <summary>
+        /// Empuja un <see cref="DiceBoardType"/> directo al board skin, sin tocar la fórmula
+        /// de daño. Lo usa el chain para cambiar el skin por fase (cada fase tira aparte y
+        /// puede overridear el board del behavior — ej. daño=Attack, escudo=Defense).
+        /// </summary>
+        public void ApplyBoardType(DiceBoardType type)
+        {
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
+            if (_damageFormula != null) _damageFormula.SetBoardType(type);
+        }
+
+        /// <summary>
+        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
+        /// fase de chain sin rolls sobrantes. No-op sin wiring.
+        /// </summary>
+        public void ShowChainRollPrompt(string phaseLabel)
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
+        }
+
+        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
+        public void HideChainRollPrompt()
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
         }
 
         // ======================================================================

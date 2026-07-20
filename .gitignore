@@ -114,3 +114,20 @@ Rollgeon/.obsidian/core-plugins.json
 # Crash dumps de Git Bash en Windows
 *.stackdump
 /video/
+
+# Tooling local (instalación por máquina, no va al repo)
+/.mcp.json
+/Packages/com.gamelovers.mcp-unity/
+
+# Estado del IDE
+.idea/.idea.Tesis-UADE-2026/.idea/workspace.xml
+
+# Docs de trabajo locales
+/docs/setup/tutorial.md
+/Rollgeon/05-Entities/TUTORIAL_Boss3_DirectorGeneral.md
+
+# Mockups de referencia (no se versionan)
+/Seleccion_personaje.jpeg
+/SELECCION_DADOS.jpeg
+/class_selection_capture.png
+/build_selection_capture.png

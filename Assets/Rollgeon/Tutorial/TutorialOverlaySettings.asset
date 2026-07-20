@@ -22,18 +22,19 @@ MonoBehaviour:
   UiCutoutPaddingPx: 18
   ShowDuration: 0.25
   HideDuration: 0.18
-  ArrowSprite: {fileID: 21300000, guid: 3b2ddece8c2661541b73a393ac2ebb0d, type: 3}
+  ArrowSprite: {fileID: 1497110309, guid: 397263427e0948042aa767806d875022, type: 3}
   ArrowSize: {x: 64, y: 64}
   ArrowGapPx: 14
   ArrowBobAmplitudePx: 10
   ArrowBobDuration: 0.6
-  PopupBackgroundSprite: {fileID: 0}
-  PopupBackgroundColor: {r: 0.08, g: 0.07, b: 0.12, a: 0.95}
+  PopupBackgroundSprite: {fileID: 1207451802, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  PopupBackgroundPpuMultiplier: 0.5
+  PopupBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
   PopupFont: {fileID: 0}
   PopupFontSize: 30
-  PopupTextColor: {r: 1, g: 1, b: 1, a: 1}
+  PopupTextColor: {r: 0.06666667, g: 0.07450981, b: 0.101960786, a: 1}
   PopupMaxWidth: 520
-  PopupPadding: {x: 28, y: 22}
+  PopupPadding: {x: 46, y: 36}
   PopupScreenMargin: 40
   QuadrantHysteresis: 0.08
   ContinueFooterText: "Hac\xE9 click para continuar"

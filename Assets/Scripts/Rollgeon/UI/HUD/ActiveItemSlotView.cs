@@ -57,6 +57,16 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private Sprite _iconInactive;
 
+        [Tooltip("Sprite cuando hay al menos 1 del ítem (swap por cantidad, ej. " +
+                 "PotionSheet_0). Si se cablea, gana sobre el swap por estado — " +
+                 "ActiveItemsView llama SetCount después de SetState siempre.")]
+        [SerializeField]
+        private Sprite _iconWhenCountPositive;
+
+        [Tooltip("Sprite cuando la cantidad es 0 (ej. PotionSheet_1). Opcional.")]
+        [SerializeField]
+        private Sprite _iconWhenCountZero;
+
         [Title("Counter (opcional)")]
         [Tooltip("Label TMP para mostrar la cantidad del ítem (ej. 'x3'). Si null, se " +
                  "auto-crea uno como hijo en runtime cuando el conteo es > 1.")]
@@ -230,6 +240,14 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void SetCount(int count)
         {
+            // Swap por cantidad ANTES del early-return del label: el sprite debe
+            // actualizarse aunque el slot no tenga contador cableado.
+            if (_icon != null && (_iconWhenCountPositive != null || _iconWhenCountZero != null))
+            {
+                var byCount = count >= 1 ? _iconWhenCountPositive : _iconWhenCountZero;
+                if (byCount != null) _icon.sprite = byCount;
+            }
+
             if (_countLabel == null) return;
 
             if (count <= _hideCountAtOrBelow)
