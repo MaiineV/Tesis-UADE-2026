@@ -255,26 +255,19 @@ namespace Rollgeon.Heroes
             return null;
         }
 
-        // El BaseAttack/SpecialAttack del guerrero envuelven el EffDealDamage en fases
-        // de EffChain (damage + shield), así que NO está al nivel top del behavior.
-        // Recursamos dentro del chain para que la UI (DamageFormulaView) encuentre el
-        // efecto y pueda leer Source/ComboMultiplier — sin esto el formula label quedaba
-        // vacío para cualquier ataque con chain.
+        // El BaseAttack/SpecialAttack del guerrero envuelven el EffDealDamage en fases de
+        // EffChain y, adentro de esas, en un step InlineEffect de EffPlaySequence (el daño
+        // se difiere al frame de impacto). O sea que NO está al nivel top del behavior.
+        // Bajamos por EffectTree para que la UI (DamageFormulaView, ComboIndicatorView)
+        // encuentre el efecto y pueda leer Source/ComboMultiplier — sin esto el formula
+        // label queda vacío, sin ningún error que lo delate.
         private static EffDealDamage FindDealDamageIn(IEffect eff)
         {
             if (eff is EffDealDamage dealDmg) return dealDmg;
-            if (eff is EffChain chain && chain.Phases != null)
+            foreach (var child in EffectTree.DirectChildren(eff))
             {
-                foreach (var phase in chain.Phases)
-                {
-                    var phaseEffects = phase?.Effects?.Effects;
-                    if (phaseEffects == null) continue;
-                    foreach (var inner in phaseEffects)
-                    {
-                        var found = FindDealDamageIn(inner);
-                        if (found != null) return found;
-                    }
-                }
+                var found = FindDealDamageIn(child);
+                if (found != null) return found;
             }
             return null;
         }

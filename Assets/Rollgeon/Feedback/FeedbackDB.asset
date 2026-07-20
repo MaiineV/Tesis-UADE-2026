@@ -496,6 +496,98 @@ MonoBehaviour:
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 1
+  - FeedbackId: anim.player.warrior.attack
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.player.warrior.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger:
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.player.warrior.hit
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
+    Volume: 0.9
+    AnimTrigger:
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.player.warrior.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger:
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
   _sequences:
   - SequenceId: death.enemy
     Steps:

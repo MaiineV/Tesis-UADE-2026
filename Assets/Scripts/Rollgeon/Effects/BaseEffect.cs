@@ -102,6 +102,7 @@ namespace Rollgeon.Effects
                 resolvedTarget = occupant;
             req.TargetGuid = resolvedTarget;
             req.StoredValues = SnapshotStoredValues(context.SourceBehavior);
+            req.Context = context;
             return req;
         }
 
@@ -110,7 +111,13 @@ namespace Rollgeon.Effects
         /// regla de §9.5 ("snapshot, no referencia viva"). Devuelve <c>null</c> si el
         /// behavior es null o no tiene valores.
         /// </summary>
-        private static IReadOnlyDictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>
+        /// <remarks>
+        /// <c>internal</c> y no <c>private</c> porque el <c>FeedbackManager</c> re-snapshotea
+        /// tras correr un step <c>StepSource.InlineEffect</c>: los valores que produce un
+        /// efecto diferido (daño → FloatingDamage, impulso) son posteriores al snapshot
+        /// original y los steps de impacto que vienen después tienen que verlos.
+        /// </remarks>
+        internal static IReadOnlyDictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>>
             SnapshotStoredValues(BaseBehavior behavior)
         {
             if (behavior == null) return null;
