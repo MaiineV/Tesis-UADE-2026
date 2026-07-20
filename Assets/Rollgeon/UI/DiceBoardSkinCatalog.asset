@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd0a0e6c6e0ffcc4eaa98136a5f37167, type: 3}
+  m_Name: DiceBoardSkinCatalog
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceBoardSkinCatalogSO
+  Skins:
+  - Type: 0
+    Sprite: {fileID: 1174350637, guid: aa643022b7e218d44b6c11ca10fc65a4, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    ImageType: 1
+    TextColor: {r: 0.94, g: 0.88, b: 0.75, a: 1}
+    Feedback:
+      EffectTag: 
+      AmplitudeMin: 0
+      AmplitudeMax: 0
+      ValueForMax: 20
+  - Type: 1
+    Sprite: {fileID: 1193707934, guid: aa643022b7e218d44b6c11ca10fc65a4, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    ImageType: 1
+    TextColor: {r: 0.89, g: 0.29, b: 0.29, a: 1}
+    Feedback:
+      EffectTag: shake
+      AmplitudeMin: 2
+      AmplitudeMax: 6
+      ValueForMax: 20
+  - Type: 2
+    Sprite: {fileID: 386037274, guid: aa643022b7e218d44b6c11ca10fc65a4, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    ImageType: 1
+    TextColor: {r: 0.37, g: 0.77, b: 0.42, a: 1}
+    Feedback:
+      EffectTag: wave
+      AmplitudeMin: 2
+      AmplitudeMax: 5
+      ValueForMax: 20

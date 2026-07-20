@@ -6,7 +6,9 @@
         "PrimeTween.Runtime",
         "Unity.InputSystem",
         "MoreMountains.Tools",
-        "Unity.Localization"
+        "Unity.Localization",
+        "Febucci.TextAnimatorForUnity.Runtime",
+        "Febucci.TextAnimatorForUnity.TMP.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

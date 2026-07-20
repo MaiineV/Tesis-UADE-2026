@@ -14,6 +14,7 @@ using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -82,6 +83,7 @@ namespace Rollgeon.Effects.Concretes
                 ActionLabel = "Forzar Puerta",
                 AllowReroll = true,
                 RerollEnergyCost = 1,
+                BoardType = DiceBoardType.Default,
             };
             return true;
         }

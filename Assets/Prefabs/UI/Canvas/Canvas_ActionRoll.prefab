@@ -470,7 +470,7 @@ MonoBehaviour:
   m_text: Roll
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -824,6 +824,8 @@ GameObject:
   - component: {fileID: 2139198502879956988}
   - component: {fileID: 1980288074604118734}
   - component: {fileID: 7338850719064030320}
+  - component: {fileID: 5638612226318378172}
+  - component: {fileID: 6368063210942008966}
   m_Layer: 0
   m_Name: FormulaLabel
   m_TagString: Untagged
@@ -847,8 +849,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -50.8705}
-  m_SizeDelta: {x: 0, y: -101.7411}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1980288074604118734
 CanvasRenderer:
@@ -881,10 +883,12 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_fontSharedMaterials: []
+  m_sharedMaterial: {fileID: 2100000, guid: 3b3fdbbeca84b9a4ba18e3a96a9eb12d, type: 2}
+  m_fontSharedMaterials:
+  - {fileID: 0}
   m_fontMaterial: {fileID: 0}
-  m_fontMaterials: []
+  m_fontMaterials:
+  - {fileID: 0}
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
@@ -950,6 +954,49 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &5638612226318378172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2453795046785807129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ace8ced0e81c847968cdca0aeda757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Febucci.TextAnimatorForUnity.TMP.Runtime::Febucci.TextAnimatorForUnity.TextMeshPro.TextAnimator_TMP
+  localSettings:
+    isResettingTimeOnNewText: 1
+    defaultEffectsMode: 1
+    timeScale: 0
+    defaultBehaviorTags: []
+    defaultAppearanceTags: []
+    defaultDisappearanceTags: []
+    isAnimatingBehaviors: 1
+    isAnimatingAppearances: 1
+    isAnimatingDisappearances: 1
+    useDynamicScaling: 1
+    referenceFontSize: 12
+  sharedSettings: {fileID: 0}
+  animationLoop: 0
+  databaseEffects: {fileID: 0}
+  styleSheet: {fileID: 0}
+--- !u!114 &6368063210942008966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2453795046785807129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8db296859d224e044bf5905db3a8eb09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ValueTextFeedbackController
+  _label: {fileID: 7338850719064030320}
+  _catalog: {fileID: 11400000, guid: 3d515a5fd5276784a80f7af844f44738, type: 2}
+  _colorTweenDuration: 0.15
 --- !u!1 &2646415750901762148
 GameObject:
   m_ObjectHideFlags: 0
@@ -1561,7 +1608,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 375, y: 75}
+  m_AnchoredPosition: {x: 420, y: 110}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &4674116217820789448
@@ -1924,7 +1971,7 @@ MonoBehaviour:
   m_text: Confirm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2065,10 +2112,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5736356933221163561}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -10.778, y: 36.533}
-  m_SizeDelta: {x: 300.0359, y: 100.93}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4639137531585797311
 CanvasRenderer:
@@ -2101,7 +2148,7 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2239,7 +2286,7 @@ MonoBehaviour:
   m_text: (C)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2339,6 +2386,7 @@ GameObject:
   - component: {fileID: 577667429610198208}
   - component: {fileID: 7395088317676354048}
   - component: {fileID: 5429327609465198990}
+  - component: {fileID: 7560095422184507784}
   m_Layer: 0
   m_Name: DiceZoneView
   m_TagString: Untagged
@@ -2371,7 +2419,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 25}
-  m_SizeDelta: {x: 600, y: 200}
+  m_SizeDelta: {x: 700, y: 200}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &4354885658637842097
 MonoBehaviour:
@@ -2414,15 +2462,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.39215687}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 1193707934, guid: aa643022b7e218d44b6c11ca10fc65a4, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2490,6 +2538,20 @@ MonoBehaviour:
   _critHitstopSeconds: 0.05
   _landHitstopSeconds: 0.04
   _musicDuckFactor: 0.6
+--- !u!114 &7560095422184507784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6539047763363858036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35616fb163870624d9aff715d64cd97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceBoardSkinView
+  _boardImage: {fileID: 221295750832956733}
+  _catalog: {fileID: 11400000, guid: 3d515a5fd5276784a80f7af844f44738, type: 2}
 --- !u!1 &6750426597172233242
 GameObject:
   m_ObjectHideFlags: 0
@@ -2559,7 +2621,7 @@ MonoBehaviour:
   m_text: (C)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2583,7 +2645,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 23.4
+  m_fontSize: 26.15
   m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2712,7 +2774,7 @@ MonoBehaviour:
   m_text: -/-
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2821,7 +2883,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 225}
-  m_SizeDelta: {x: 350, y: 175.6133}
+  m_SizeDelta: {x: 700, y: 74.227}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &6625212267566177256
 MonoBehaviour:
@@ -2837,6 +2899,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DamageFormulaView
   _formulaLabel: {fileID: 7338850719064030320}
   _thresholdLabel: {fileID: 0}
+  _feedback: {fileID: 6368063210942008966}
 --- !u!222 &850969962337355158
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2852,7 +2915,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7410688703378454397}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -2941,11 +3004,11 @@ RectTransform:
   - {fileID: 6615184383027805656}
   m_Father: {fileID: 5501653575033891095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 546.7, y: 25}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 420, y: 50}
+  m_SizeDelta: {x: 100, y: 50}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &2435846010659403855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3822,6 +3885,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -3829,7 +3900,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3932,6 +4003,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -3939,7 +4018,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4042,6 +4121,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4049,7 +4136,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4152,6 +4239,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4159,7 +4254,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4262,6 +4357,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DiceSlotView (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 6608040876227524054, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7509664499678434056, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -4269,7 +4372,7 @@ PrefabInstance:
     - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -1033537845223576130, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

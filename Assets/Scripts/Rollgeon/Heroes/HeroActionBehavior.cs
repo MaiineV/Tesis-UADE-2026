@@ -9,6 +9,7 @@ using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions;
+using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -57,6 +58,11 @@ namespace Rollgeon.Heroes
         [ToggleLeft]
         [Tooltip("Permite gastar energia para re-rolls extra mas alla del budget gratis.")]
         public bool AllowsEnergyReroll = true;
+
+        [ShowIf(nameof(NeedsDiceRoll))]
+        [Tooltip("Skin del tablero de dados para esta tirada: Attack en ataques, Defense en " +
+                 "defensa/shield, Default en el resto. Lo consume DiceBoardSkinView.")]
+        public DiceBoardType BoardType = DiceBoardType.Default;
 
         [Title("Show Conditions")]
         [InfoBox("PreConditions que determinan si el boton de este behavior aparece en la UI. " +
