@@ -902,19 +902,41 @@ namespace Rollgeon.Combat.Handoff
             if (phase?.Effects != null)
                 phase.Effects.TryExecute(effCtx, preCtx);
 
+            // El resto del avance del chain se difiere hasta que baje el feedback en vuelo.
+            // Los efectos de arriba pueden haber dejado consecuencias de gameplay atadas al
+            // frame de impacto (§10.8, StepSource.InlineEffect): sin este gate el chain
+            // avanzaría de fase ANTES de que el golpe conecte — la fase siguiente limpiaría
+            // el bag y el FloatingDamage diferido saldría pegado al feedback equivocado.
+            // Sin feedback en vuelo corre sincrónico, así que el flujo viejo no cambia.
+            if (ServiceLocator.TryGetService<TurnManager>(out var turnMgr) && turnMgr != null)
+                turnMgr.RunWhenFeedbackSettles(() => ContinueChainPhase(hud, playerGuid, remainingFreeRolls));
+            else
+                ContinueChainPhase(hud, playerGuid, remainingFreeRolls);
+        }
+
+        /// <summary>
+        /// Segunda mitad de <see cref="ExecuteChainPhase"/>: cierra el budget, emite el roll
+        /// resuelto y avanza de fase. Separada para poder diferirla hasta que termine el
+        /// feedback del golpe (ver el gate en <see cref="ExecuteChainPhase"/>).
+        /// </summary>
+        private void ContinueChainPhase(CombatHUDView hud, Guid playerGuid, int remainingFreeRolls)
+        {
             // CNF-002: el ataque ya resolvió sobre el objetivo — el crease de selección
             // se apaga acá (el Hit Flash del daño toma la posta en el mismo pawn).
             ClearAttackTargetCrease();
 
-            // Ejecutar los efectos pudo terminar el combate de inmediato: si el golpe mató
-            // al último enemigo, OnCombatEnd corre síncrono y ResetCombatPhaseState() ya
-            // limpió todo (incluido EndBudget) dejando _activeChain en null. En ese caso no
-            // hay chain que seguir procesando — salimos antes de volver a tocar _activeChain
-            // (sino NRE en _activeChain.PhaseCount). Antes el delay de muerte ocultaba este
-            // race porque el cierre se diferían 1.5s; con cierre instantáneo aflora acá.
+            // Ejecutar los efectos pudo terminar el combate: si el golpe mató al último
+            // enemigo, ResetCombatPhaseState() ya limpió todo (incluido EndBudget) dejando
+            // _activeChain en null. En ese caso no hay chain que seguir procesando — salimos
+            // antes de volver a tocar _activeChain (sino NRE en _activeChain.PhaseCount).
+            // Con el gate de feedback esto ahora también cubre el cierre diferido por la
+            // secuencia de muerte, que antes llegaba después de este punto.
             if (_activeChain == null)
                 return;
 
+            // Se re-resuelve acá en vez de capturarse: entre el golpe y esta continuación
+            // pudo pasar un frame largo, y el budget vive en el ServiceLocator.
+            ServiceLocator.TryGetService<IRerollBudgetService>(out var budget);
             budget?.EndBudget();
 
             var resolved = _lastFaces ?? Array.Empty<int>();
@@ -928,11 +950,6 @@ namespace Rollgeon.Combat.Handoff
                 FinishChain(hud, playerGuid, false);
                 return;
             }
-
-            int currentEnergy = 0;
-            if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
-                currentEnergy = energy.GetCurrent(playerGuid);
-
 
             // BUG-019: la phase siguiente (típicamente defensa post-attack) requiere
             // rolls libres sobrantes del pool de la phase anterior. Si el jugador
