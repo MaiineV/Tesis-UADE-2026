@@ -76,3 +76,62 @@ Play → combate:
 - Heal con poción / Forzar Puerta → sprite Default.
 - Cambiá un sprite en `DiceBoardSkinCatalog` y re-entrá: el tablero refleja el
   cambio sin tocar código.
+
+---
+
+## Logo por tipo + juice de transición (2026-07-20)
+
+El `DiceBoardLogo` (hijo de `DiceZoneView`, 40×40 sobre el tablero) ahora
+también swappea por tipo, y el cambio de tipo dispara feedback
+(`DiceBoardSkinJuice`: flash de tint + fade/punch del logo con PrimeTween,
+más `MMF_Player`s autorables con Feel).
+
+**Wiring ya aplicado vía MCP** (no hace falta repetirlo):
+
+- Catalog: `LogoSprite`/`LogoTint` por entry — Attack = `Board-Sheet2_3`
+  (espada), Defense = `Board-Sheet2_2` (escudo), Default sin logo (el logo se
+  **esconde** en tipos sin sprite — a diferencia del board, que degrada al
+  look actual).
+- Prefab: `_logoImage` del `DiceBoardSkinView` → Image de `DiceBoardLogo`;
+  `DiceBoardSkinJuice` agregado al mismo GameObject con `_boardImage` y
+  `_logoImage` wireados. El logo quedó con `Raycast Target` off (decorativo).
+
+**Autorado aplicado vía MCP (2026-07-20)** — hijos de
+`DiceZoneView/BoardSkinJuice/`, clonados de los springs ya tuneados del
+`ZoneJuice` y wireados al `DiceBoardSkinJuice`:
+
+- `Juice_BoardTransition` — `MMF_PositionSpring` "Board Swap Thump" sobre
+  `RollArea` (mismo spring del land thump a ~1/3 de bump: -40/-60).
+- `Juice_ToAttack` — `MMF_RotationSpring` "Attack Logo Wobble" sobre el logo
+  (bump z 18–28°, agresivo).
+- `Juice_ToDefense` — `MMF_RotationSpring` "Defense Logo Settle" sobre el logo
+  (bump z -8/-12°, suave y en dirección opuesta — el escudo "asienta").
+- `_transitionClip` = `sfx_dice_throw_whoosh` (**placeholder** — reemplazar
+  cuando haya un swish propio). **Nunca `MMF_Sound`** (TECHNICAL.md §17).
+
+Los springs de rotación no pelean con el juice procedural: PrimeTween anima
+scale (punch) y color (fade/flash); los players, posición y rotación.
+Tuning fino: editar los feedbacks en el inspector de cada `Juice_*`.
+
+### Iteración post-playtest (2026-07-20)
+
+- **Idle del logo por tipo** (`DiceBoardSkinJuice`, sección "Idle del logo"):
+  Attack = `Pulse` (latido de escala ±8%, 0.9 s), Defense = `Bob` (flote ±3 px,
+  2.2 s). Estilos disponibles: `None`/`Pulse`/`Bob`/`Sway`; cada uno usa un canal
+  distinto (scale/posición/rotación) para no pelear con la transición.
+- **El board ya NO vuelve a Default al terminar una acción**: se queda en su
+  tipo actual hasta que otra acción empuje otro (cambios en
+  `CombatHUDView.Set/ClearBehaviorForFormula` y
+  `DiceBoardSkinView.RefreshFromActionRoll`/`OnEnable` — el View re-aplica su
+  `CurrentType` al re-habilitarse).
+- **Confirm / Reroll con estética del menú**: fondo invisible + texto m6x11plus
+  con outline + underline animado + `JuicyMenuButton` (mismos settings del main
+  menu). Doble línea: label principal (top-center, 22 pt) + shortcut del
+  `HotkeyLabel` abajo (13 pt, gris #5F737A). El `UiButtonJuice` queda solo para
+  el click SFX; su pulso "available" ahora targetea el label (el
+  `JuicyMenuButton` escribe el scale del root cada frame) y `Juice_Press` se
+  eliminó (el punch lo hace `JuicyMenuButton`).
+
+**Comportamiento:** el feedback dispara SOLO en cambios reales de tipo — ni en
+el `Default` inicial de `OnEnable`, ni cuando `OnPhaseChanged` re-aplica el
+mismo tipo por fase. Sin wiring del Juice todo degrada a no-op.

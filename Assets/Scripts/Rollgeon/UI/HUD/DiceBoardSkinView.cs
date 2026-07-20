@@ -7,9 +7,10 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Swappea el sprite del tablero de dados (el rectángulo de <c>DiceZoneView</c> en
-    /// <c>Canvas_ActionRoll</c>) según el <see cref="DiceBoardType"/> de la tirada en curso.
-    /// El swap se aplica sobre el <see cref="Image"/> ya existente — nunca crea uno nuevo —
-    /// para que su posición/tamaño se editen a mano en el prefab.
+    /// <c>Canvas_ActionRoll</c>) y el del <c>DiceBoardLogo</c> según el
+    /// <see cref="DiceBoardType"/> de la tirada en curso. El swap se aplica sobre los
+    /// <see cref="Image"/> ya existentes — nunca crea uno nuevo — para que su
+    /// posición/tamaño se editen a mano en el prefab.
     /// </summary>
     /// <remarks>
     /// Dos fuentes alimentan el tipo, sin solaparse (solo un flujo de dados corre a la vez):
@@ -31,16 +32,35 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Config con el sprite de cada DiceBoardType. Sin catalog, el tablero queda como está.")]
         private DiceBoardSkinCatalogSO _catalog;
 
+        [SerializeField]
+        [Tooltip("El Image del DiceBoardLogo. Opcional: sin ref, solo se swappea el tablero.")]
+        private Image _logoImage;
+
         private IActionRollService _actionRoll;
         private System.Action<ActionRollPhase> _onPhase;
+        private bool _hasApplied;
+        private DiceBoardType _currentType;
+
+        /// <summary>
+        /// Dispara cuando el tipo APLICADO cambia — nunca en la primera aplicación (el
+        /// apply de OnEnable o el pull inicial son estado, no transición) ni en
+        /// re-aplicaciones del mismo tipo (OnPhaseChanged refresca en cada fase). Se
+        /// invoca después de aplicar los visuales: el suscriptor lee el estado final.
+        /// </summary>
+        public event System.Action<DiceBoardType> BoardTypeChanged;
+
+        /// <summary>Último tipo aplicado. Lo lee <c>DiceBoardSkinJuice</c> para retomar el idle del logo.</summary>
+        public DiceBoardType CurrentType => _currentType;
 
         private void OnEnable()
         {
             // El IActionRollService es Run-scoped: si aún no está registrado, Update lo
             // retrieva. Mismo patrón que ActionRollExplorationVisibility.
             TrySubscribeToActionRollService();
-            // Arrancamos en Default para que el tablero muestre su skin base en reposo.
-            ApplyBoardType(DiceBoardType.Default);
+            // Re-aplicamos el último tipo conocido (Default en el primer enable): el
+            // tablero conserva su skin aunque la zona se esconda y vuelva — el skin
+            // solo cambia cuando una acción pide otro tipo, nunca por reset.
+            ApplyBoardType(_currentType);
         }
 
         private void Update()
@@ -70,14 +90,19 @@ namespace Rollgeon.UI.HUD
                 _onPhase = null;
             }
             _actionRoll = null;
+            // Re-habilitar trata el apply de OnEnable como estado inicial (sin evento):
+            // restaurar el skin con el que la zona se escondió no es una transición
+            // que merezca juice.
+            _hasApplied = false;
         }
 
         private void RefreshFromActionRoll()
         {
-            // Action roll activo (Heal/ForceDoor) manda su tipo; al resolver, volvemos a Default.
-            ApplyBoardType(_actionRoll != null && _actionRoll.IsActive
-                ? _actionRoll.CurrentSpec.BoardType
-                : DiceBoardType.Default);
+            // Action roll activo (Heal/ForceDoor) manda su tipo. Al resolver NO
+            // volvemos a Default: el tablero se queda en su tipo actual hasta que
+            // otra acción pida uno distinto (pedido de playtest 2026-07-20).
+            if (_actionRoll == null || !_actionRoll.IsActive) return;
+            ApplyBoardType(_actionRoll.CurrentSpec.BoardType);
         }
 
         /// <summary>
@@ -93,6 +118,30 @@ namespace Rollgeon.UI.HUD
             _boardImage.sprite = skin.Sprite;
             _boardImage.color = skin.Tint;
             _boardImage.type = skin.ImageType;
+
+            ApplyLogo(skin);
+
+            bool changed = _hasApplied && _currentType != type;
+            _hasApplied = true;
+            _currentType = type;
+            if (changed) BoardTypeChanged?.Invoke(type);
+        }
+
+        private void ApplyLogo(DiceBoardSkinEntry skin)
+        {
+            if (_logoImage == null) return;
+
+            // A diferencia del board (que degrada al look actual), un tipo sin logo lo
+            // ESCONDE: dejar el logo del tipo anterior mentiría sobre la tirada en curso.
+            if (skin.LogoSprite == null)
+            {
+                _logoImage.enabled = false;
+                return;
+            }
+
+            _logoImage.enabled = true;
+            _logoImage.sprite = skin.LogoSprite;
+            _logoImage.color = skin.LogoTint;
         }
     }
 }
