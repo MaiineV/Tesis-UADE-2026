@@ -77,6 +77,14 @@ namespace Rollgeon.UI.HUD
                     Skins[i] = entry;
                 }
 
+                // Ídem para el logo — sin snap, las entries serializadas antes de que
+                // existiera LogoTint quedarían con el logo invisible (0,0,0,0).
+                if (entry.LogoTint == default)
+                {
+                    entry.LogoTint = Color.white;
+                    Skins[i] = entry;
+                }
+
                 if (!seen.Add(entry.Type))
                     Debug.LogWarning($"{name}: {entry.Type} duplicado — TryGet usa la primera entrada.", this);
             }
@@ -99,6 +107,14 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Modo de dibujo del Image. Sliced respeta los bordes 9-slice del sprite.")]
         public Image.Type ImageType;
 
+        [Header("Logo")]
+        [Tooltip("Sprite del DiceBoardLogo para este tipo de tirada. Vacío = el logo se " +
+                 "esconde en este tipo (un logo del tipo anterior mentiría sobre la tirada).")]
+        public Sprite LogoSprite;
+
+        [Tooltip("Tint del logo. Blanco = sprite tal cual.")]
+        public Color LogoTint;
+
         [Header("Value text")]
         [Tooltip("Color base del value text (DamageFormulaView) para este tipo de tirada. " +
                  "Blanco = texto sin teñir.")]
@@ -115,6 +131,7 @@ namespace Rollgeon.UI.HUD
             Sprite = sprite,
             Tint = Color.white,
             ImageType = Image.Type.Sliced,
+            LogoTint = Color.white,
             TextColor = Color.white,
         };
     }

@@ -766,7 +766,7 @@ MonoBehaviour:
       Data: 33|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
-      Data: Phase
+      Data: Attack
     - Name: Effects
       Entry: 7
       Data: 34|Rollgeon.Effects.EffectData, Rollgeon
@@ -1543,7 +1543,7 @@ MonoBehaviour:
       Data: 67|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
-      Data: Phase
+      Data: Shield
     - Name: Effects
       Entry: 7
       Data: 68|Rollgeon.Effects.EffectData, Rollgeon
@@ -2246,7 +2246,7 @@ MonoBehaviour:
       Data: 96|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
-      Data: Phase
+      Data: Attack
     - Name: Effects
       Entry: 7
       Data: 97|Rollgeon.Effects.EffectData, Rollgeon
@@ -4768,7 +4768,7 @@ MonoBehaviour:
     - rid: 8131244096047546721
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
-        Label: Phase
+        Label: Attack
         Effects:
           rid: 8131244096047546724
         OverrideBoardType: 0
@@ -4776,7 +4776,7 @@ MonoBehaviour:
     - rid: 8131244096047546722
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
-        Label: Phase
+        Label: Shield
         Effects:
           rid: 8131244096047546725
         OverrideBoardType: 1
@@ -4784,7 +4784,7 @@ MonoBehaviour:
     - rid: 8131244096047546723
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
-        Label: Phase
+        Label: Attack
         Effects:
           rid: 8131244096047546726
         OverrideBoardType: 0

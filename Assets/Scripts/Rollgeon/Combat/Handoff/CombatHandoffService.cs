@@ -62,6 +62,11 @@ namespace Rollgeon.Combat.Handoff
         private HeroActionBehavior _selectedBehavior;
         private bool _awaitingFirstRoll;
 
+        // True mientras una fase de chain espera su primer roll PAGO (sin rolls
+        // sobrantes del pool anterior pero con energía): el prompt del board ofrece
+        // "X Roll (1E)" y el botón Roll cobra 1E vía el paid path del budget.
+        private bool _awaitingChainPaidRoll;
+
         // True mientras una accion sin tirada (Movement) espera que el jugador elija el
         // tile destino y todavia se puede cancelar+reembolsar (BUG-013). Lo setea el
         // playerState path de DoConfirm y lo limpia el callback de RequestAction al
@@ -281,6 +286,10 @@ namespace Rollgeon.Combat.Handoff
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
+            // Sin hud a mano acá: el prompt del board se auto-esconde al desactivarse
+            // la zona (el GO arranca inactivo y FinishChain lo esconde en los paths
+            // normales); solo reseteamos el flag.
+            _awaitingChainPaidRoll = false;
 
             // Si quedó un ActionRoll abierto (ej. user nunca apretó Confirm pero el combat
             // termina por otra vía), cancelarlo para que el panel se cierre.
@@ -358,6 +367,10 @@ namespace Rollgeon.Combat.Handoff
 
                 if (_activeChain != null)
                 {
+                    // Entrada paga pendiente: sin tirada no hay nada que confirmar —
+                    // Space no debe ejecutar la fase con DiceResult null.
+                    if (_awaitingChainPaidRoll) return;
+
                     var phase = _activeChain.Phases[_chainPhaseIndex];
                     var afterRoll = FindPhaseSelectionAt(phase, SelectionTiming.AfterRoll);
 
@@ -750,6 +763,27 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnRollRequested = () =>
             {
+                // Entrada paga de fase de chain: el "primer roll" de la fase se cobra
+                // recien aca, al click, via el paid path del budget (0 free ⇒ 1E). Si
+                // el cobro falla (energia gastada en el medio) no hay nada que revertir
+                // — el jugador sale con Pass o End Turn.
+                if (_activeChain != null && _awaitingChainPaidRoll)
+                {
+                    if (ThrowBusy()) return;
+                    var chainBag = ResolvePlayerBag();
+                    var chainRoller = ResolveRoller();
+                    if (chainBag == null || chainRoller == null) return;
+                    if (!(ServiceLocator.TryGetService<IRerollBudgetService>(out var paidBudget)
+                          && paidBudget != null && paidBudget.TryExtraRoll(playerGuid)))
+                    {
+                        return;
+                    }
+                    _awaitingChainPaidRoll = false;
+                    hud.HideChainRollPrompt();
+                    RollViaThrow(playerGuid, chainBag, chainRoller);
+                    return;
+                }
+
                 if (!_awaitingFirstRoll || _selectedBehavior == null) return;
                 if (ThrowBusy()) return;
 
@@ -951,37 +985,59 @@ namespace Rollgeon.Combat.Handoff
                 return;
             }
 
-            // BUG-019: la phase siguiente (típicamente defensa post-attack) requiere
-            // rolls libres sobrantes del pool de la phase anterior. Si el jugador
-            // gastó los 3 free rolls atacando, la tirada de defensa no debe ocurrir
-            // — aunque tenga energía suficiente para reroll. La energía sola no
-            // habilita la phase: necesita haber pool libre del attack.
-            if (remainingFreeRolls == 0)
+            int currentEnergy = 0;
+            if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
+                currentEnergy = energy.GetCurrent(playerGuid);
+
+            // La phase siguiente (típicamente defensa post-attack) corre con los rolls
+            // libres sobrantes del pool anterior — su primer roll consume 1 de ellos.
+            // Sin sobrantes, la energía habilita una entrada PAGA (1E por el primer
+            // roll) si el behavior permite energy-reroll; sin rolls NI energía el
+            // chain corta acá.
+            var entryMode = ResolveChainPhaseEntry(remainingFreeRolls, currentEnergy,
+                _selectedBehavior != null && _selectedBehavior.AllowsEnergyReroll);
+            if (entryMode == ChainPhaseEntry.Finish)
             {
                 FinishChain(hud, playerGuid, false);
                 return;
             }
 
-            PrepareNextChainPhase(hud, playerGuid, remainingFreeRolls + 1);
+            PrepareNextChainPhase(hud, playerGuid, remainingFreeRolls);
         }
 
         private void StartNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
         {
-
             var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
             wrapper.ActionId = $"{_selectedBehavior.ActionName}.chain.phase{_chainPhaseIndex}";
             wrapper.EnergyCost = 0;
             wrapper.FreeRollCount = freeRollCount;
             wrapper.AllowsEnergyReroll = _selectedBehavior.AllowsEnergyReroll;
 
+            bool paidEntry = freeRollCount == 0;
+
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
             {
                 budget.StartBudget(wrapper);
                 // El budget cuenta TODOS los rolls incl. el primero. En el flow de
-                // chain el primer roll dispara automaticamente (no hay boton Roll
+                // chain la fase abre con su roll ya en curso (no hay boton Roll
                 // entre fases), asi que consumimos una unidad para preservar la
                 // semantica "FreeRollsRemaining = rerolls disponibles tras el roll".
-                budget.TryExtraRoll(playerGuid);
+                // En entrada paga no hay free rolls que consumir: el primer roll se
+                // cobra (1E) recien cuando el jugador aprieta el boton Roll.
+                if (!paidEntry)
+                    budget.TryExtraRoll(playerGuid);
+            }
+
+            if (paidEntry)
+            {
+                // Entrada paga: la fase queda abierta SIN dados. El prompt del board
+                // ofrece "X Roll (1E)" y hud.OnRollRequested cobra y tira al click;
+                // Pass / End Turn siguen disponibles como salida sin costo.
+                _awaitingChainPaidRoll = true;
+                var paidPhase = _activeChain.Phases[_chainPhaseIndex];
+                hud.ShowChainRollPrompt(paidPhase?.Label);
+                EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
+                return;
             }
 
             var bag = ResolvePlayerBag();
@@ -997,6 +1053,32 @@ namespace Rollgeon.Combat.Handoff
             // aparecen sin tirar y la fase (ej. defensa) espera el throw del jugador.
             RollViaThrow(playerGuid, bag, roller);
             EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
+        }
+
+        /// <summary>Modo de entrada a la fase siguiente de un chain.</summary>
+        public enum ChainPhaseEntry
+        {
+            /// <summary>Sin rolls sobrantes ni pago posible — el chain termina.</summary>
+            Finish = 0,
+
+            /// <summary>Quedan rolls libres del pool anterior — el primer roll de la fase consume 1.</summary>
+            Free = 1,
+
+            /// <summary>Sin rolls libres pero con energía — el primer roll se paga (1E) al apretar Roll.</summary>
+            Paid = 2,
+        }
+
+        /// <summary>
+        /// Decide la entrada a la fase siguiente del chain según el pool sobrante y la
+        /// energía. La energía solo habilita la entrada paga si el behavior permite
+        /// energy-reroll — mismo gate que aplica <see cref="RerollBudgetService"/> al cobrar.
+        /// </summary>
+        public static ChainPhaseEntry ResolveChainPhaseEntry(
+            int remainingFreeRolls, int energy, bool allowsEnergyReroll)
+        {
+            if (remainingFreeRolls > 0) return ChainPhaseEntry.Free;
+            if (energy > 0 && allowsEnergyReroll) return ChainPhaseEntry.Paid;
+            return ChainPhaseEntry.Finish;
         }
 
         private void FinishChain(CombatHUDView hud, Guid playerGuid, bool wasPass)
@@ -1020,6 +1102,7 @@ namespace Rollgeon.Combat.Handoff
             _chainPhaseIndex = 0;
             _lastFaces = null;
             _selectedBehavior = null;
+            _awaitingChainPaidRoll = false;
 
             _chainPhaseSelectionResult = null;
             if (_chainSelectionController != null)
@@ -1030,6 +1113,7 @@ namespace Rollgeon.Combat.Handoff
             _pendingChainCallback = null;
 
             hud.ClearBehaviorForFormula();
+            hud.HideChainRollPrompt();
 
             EventManager.Trigger(EventName.OnChainCompleted, playerGuid, phasesCompleted, totalPhases, wasPass);
 

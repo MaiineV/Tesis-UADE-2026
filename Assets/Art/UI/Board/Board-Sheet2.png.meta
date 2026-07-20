@@ -93,14 +93,247 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: Board-Sheet2_0
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 96
+        width: 86
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 31c084a7cc0c7334f8b8392c2b8d443e
+      internalID: 1270009346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_1
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 97
+        width: 86
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ffc32dd0f97fea246a5c953e7c94bee0
+      internalID: -1746453931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_2
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 72
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c7d3fcab6ff27b746ab48d2bccbadd58
+      internalID: -1199590904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_3
+      rect:
+        serializedVersion: 2
+        x: 244
+        y: 72
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e4ddb56052c5b2a4097b5c5dd5c30022
+      internalID: 1498743206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_4
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 96
+        width: 86
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cb259d1673d64e841bbd59bf0a452583
+      internalID: 1316527702
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_5
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 96
+        width: 86
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 65897045400d3d443b56bc0c6b53c501
+      internalID: -608287333
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_6
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 15
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bbc3fd2d7584ea34583c7058665f4010
+      internalID: -2115127473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_7
+      rect:
+        serializedVersion: 2
+        x: 105
+        y: 14
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2ebb8ac7008361c489c56afdb359e7dd
+      internalID: -1196772199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_8
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 14
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96e8f13d55dcaaa4abe5c0b21b2cf5b6
+      internalID: 825986115
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board-Sheet2_9
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 14
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 61dc7db42ee2c59479f9a36dd5dd6b33
+      internalID: -1969129406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: cac2f2ea59bcde04fb5ab57c2d152918
     internalID: 0
     vertices: []
     indices: 
@@ -109,7 +342,17 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Board-Sheet2_0: 1270009346
+      Board-Sheet2_1: -1746453931
+      Board-Sheet2_2: -1199590904
+      Board-Sheet2_3: 1498743206
+      Board-Sheet2_4: 1316527702
+      Board-Sheet2_5: -608287333
+      Board-Sheet2_6: -2115127473
+      Board-Sheet2_7: -1196772199
+      Board-Sheet2_8: 825986115
+      Board-Sheet2_9: -1969129406
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
