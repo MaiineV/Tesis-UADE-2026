@@ -95,6 +95,9 @@ MonoBehaviour:
   _selectedCreaseThreshold: 1
   _selectedCreaseSmooth: 0.3
   _selectedCreaseAlpha: 0.52
+  _glowPulseSeconds: 0.9
+  _glowAlphaMin: 0.3
+  _glowAlphaMax: 0.7
   _renderers:
   - {fileID: 3917003453947528872}
   - {fileID: 8972679122788327355}
@@ -157,7 +160,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2512063046544485164}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3170623091156437870}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6790531734578606658}
   m_SourcePrefab: {fileID: 100100000, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
 --- !u!23 &492120796197750861 stripped
 MeshRenderer:
@@ -179,6 +191,59 @@ MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 275906795802824834, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
   m_PrefabInstance: {fileID: 2700075261663444843}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3006700260585751098 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
+  m_PrefabInstance: {fileID: 2700075261663444843}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &2512063046544485164
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3006700260585751098}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 214e58833750c974389a2dd2f03e4c75, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3170623091156437870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3006700260585751098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ef38bfe268539a459e6beea7344670e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::SteppedAnimation
+  AnimCon: {fileID: 2512063046544485164}
+  FPS: 8
+--- !u!114 &6790531734578606658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3006700260585751098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdfa99d5c10801520568b6147255f699, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.AnimationFeedbackEvent
 --- !u!23 &3917003453947528872 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1379057813975841219, guid: 23f01c050d37d5c48a05ce8bda28d8f6, type: 3}
