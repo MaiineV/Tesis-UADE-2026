@@ -98,6 +98,12 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DiceBoardSkinView _boardSkin;
 
+        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
+                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
+                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
+        [SerializeField]
+        private ChainRollPromptView _chainRollPrompt;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -363,7 +369,10 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
-            var boardType = behavior != null ? behavior.BoardType : DiceBoardType.Default;
+            // Sin behavior no hay tipo que empujar: el board conserva su skin actual
+            // (política "el skin solo cambia cuando una acción pide otro", playtest 2026-07-20).
+            if (behavior == null) return;
+            var boardType = behavior.BoardType;
             if (_boardSkin != null) _boardSkin.ApplyBoardType(boardType);
             if (_damageFormula != null) _damageFormula.SetBoardType(boardType);
         }
@@ -372,7 +381,8 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
-            if (_boardSkin != null) _boardSkin.ApplyBoardType(DiceBoardType.Default);
+            // El board skin NO vuelve a Default al terminar la acción: se queda en su
+            // tipo actual hasta que la próxima acción empuje otro.
         }
 
         /// <summary>
@@ -384,6 +394,21 @@ namespace Rollgeon.UI.Screens
         {
             if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
             if (_damageFormula != null) _damageFormula.SetBoardType(type);
+        }
+
+        /// <summary>
+        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
+        /// fase de chain sin rolls sobrantes. No-op sin wiring.
+        /// </summary>
+        public void ShowChainRollPrompt(string phaseLabel)
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
+        }
+
+        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
+        public void HideChainRollPrompt()
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
         }
 
         // ======================================================================

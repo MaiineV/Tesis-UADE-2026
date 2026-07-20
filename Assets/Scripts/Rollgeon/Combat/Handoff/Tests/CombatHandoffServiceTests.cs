@@ -476,5 +476,59 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.AreEqual(0, spyBudget.EndBudgetCallCount,
                 "After Dispose the OnCombatEnd handler must be unsubscribed.");
         }
+
+        // -------------------------------------------------------------------
+        // ResolveChainPhaseEntry — entrada a la fase siguiente del chain
+        // (bugs 2026-07-20: el shield roll debe consumir un roll sobrante, y
+        // sin sobrantes la energía habilita la entrada paga en vez de cancelar)
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void ResolveChainPhaseEntry_ReturnsFree_WhenRollsRemain()
+        {
+            // Arrange / Act — los rolls sobrantes ganan, con o sin energía.
+            var withEnergy = CombatHandoffService.ResolveChainPhaseEntry(
+                remainingFreeRolls: 2, energy: 3, allowsEnergyReroll: true);
+            var withoutEnergy = CombatHandoffService.ResolveChainPhaseEntry(
+                remainingFreeRolls: 1, energy: 0, allowsEnergyReroll: false);
+
+            // Assert
+            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Free, withEnergy);
+            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Free, withoutEnergy);
+        }
+
+        [Test]
+        public void ResolveChainPhaseEntry_ReturnsPaid_WhenNoRollsButEnergyAndAllowed()
+        {
+            // Arrange / Act
+            var entry = CombatHandoffService.ResolveChainPhaseEntry(
+                remainingFreeRolls: 0, energy: 1, allowsEnergyReroll: true);
+
+            // Assert
+            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Paid, entry);
+        }
+
+        [Test]
+        public void ResolveChainPhaseEntry_ReturnsFinish_WhenNoRollsAndNoEnergy()
+        {
+            // Arrange / Act
+            var entry = CombatHandoffService.ResolveChainPhaseEntry(
+                remainingFreeRolls: 0, energy: 0, allowsEnergyReroll: true);
+
+            // Assert
+            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Finish, entry);
+        }
+
+        [Test]
+        public void ResolveChainPhaseEntry_ReturnsFinish_WhenNoRollsAndEnergyButRerollForbidden()
+        {
+            // Arrange / Act — la energía sola no habilita si el behavior prohíbe
+            // energy-reroll (mismo gate que RerollBudgetService al cobrar).
+            var entry = CombatHandoffService.ResolveChainPhaseEntry(
+                remainingFreeRolls: 0, energy: 5, allowsEnergyReroll: false);
+
+            // Assert
+            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Finish, entry);
+        }
     }
 }

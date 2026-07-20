@@ -2579,6 +2579,10 @@ PrefabInstance:
       propertyPath: _damageFormula
       value: 
       objectReference: {fileID: 3026725506370529897}
+    - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: _chainRollPrompt
+      value: 
+      objectReference: {fileID: 5820080220455282462}
     - target: {fileID: 4686748416672619893, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: m_Name
       value: Canvas_CombatHUD
@@ -3201,6 +3205,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35616fb163870624d9aff715d64cd97e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.DiceBoardSkinView
+--- !u!114 &5820080220455282462 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5483291747248237175, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+  m_PrefabInstance: {fileID: 5820080220455282460}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b62c8d579e0f243868c28738bdd182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChainRollPromptView
 --- !u!1001 &6412196152835159266
 PrefabInstance:
   m_ObjectHideFlags: 0
