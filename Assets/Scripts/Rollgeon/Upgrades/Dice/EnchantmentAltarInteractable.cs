@@ -127,11 +127,18 @@ namespace Rollgeon.Upgrades.Dice
                 if (canAfford != _lastCanAfford) UpdatePromptVisibility(true);
             }
 
-            if (!inRange) return;
-
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             if (!keyboard[_interactKey].wasPressedThisFrame) return;
+
+            // El press fuera de rango era un no-op 100% mudo — si el jugador cree
+            // estar al lado del altar y F "no hace nada", este log es la única
+            // evidencia (lección del bug de la mesa vacía del tutorial).
+            if (!inRange)
+            {
+                Debug.Log(LogPrefix + $"{_interactKey} presionado fuera de rango — player demasiado lejos del altar.");
+                return;
+            }
 
             Interact();
         }
@@ -145,8 +152,13 @@ namespace Rollgeon.Upgrades.Dice
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
             if (!grid.TryGetPosition(playerGuid, out var playerCoord)) return false;
 
+            // Distancia en el plano XZ: el altar spawnea elevado (RewardSpawnPoint a
+            // y=1 vs y≈0.5 del centro de casilla) y ese delta vertical comía 0.25 del
+            // presupuesto de rango, dejando las casillas diagonales EXACTAMENTE en el
+            // borde (2.25 <= 2.25) — un wobble de float y F muere en silencio.
             var playerWorld = grid.GridToWorld(playerCoord);
-            float distSq = (playerWorld - transform.position).sqrMagnitude;
+            var delta = playerWorld - transform.position;
+            float distSq = delta.x * delta.x + delta.z * delta.z;
             return distSq <= _interactRange * _interactRange;
         }
 
@@ -198,7 +210,10 @@ namespace Rollgeon.Upgrades.Dice
             }
             var content = BuildPromptContent();
             _lastCanAfford = content.CanAfford;
-            InteractionPromptView.Show(GetInstanceID(), content);
+            // Mismo bridge que ShopItemPedestalInteractable: el botón del prompt y la
+            // tecla física convergen en Interact() — sin esto, clickear el altar era
+            // un no-op y la única vía era F.
+            InteractionPromptView.Show(GetInstanceID(), content, Interact);
         }
 
         private void OnDisable()
