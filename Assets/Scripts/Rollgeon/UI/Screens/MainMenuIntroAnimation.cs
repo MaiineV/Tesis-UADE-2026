@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using PrimeTween;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -24,6 +26,24 @@ namespace Rollgeon.UI.Screens
     [AddComponentMenu("Rollgeon/UI/Screens/Main Menu Intro Animation")]
     public class MainMenuIntroAnimation : MonoBehaviour
     {
+        /// <summary>
+        /// Se dispara cuando termina la última animación de la secuencia (el
+        /// empuje del título). Lo escucha <see cref="Rollgeon.UI.Menu.JuicyMenuGroup"/>
+        /// para arrancar la entrada de los botones justo al final del intro, en
+        /// vez de adivinar un delay fijo.
+        /// </summary>
+        public event Action IntroFinished;
+
+        /// <summary>
+        /// Estado consultable además del evento: el orden de <c>OnEnable</c> entre
+        /// componentes hermanos (este y <see cref="Rollgeon.UI.Menu.JuicyMenuGroup"/>)
+        /// no está garantizado. Si el intro ya terminó (typ. porque
+        /// <c>_hasPlayedThisSession</c> lo saltó de una) ANTES de que
+        /// <c>JuicyMenuGroup.OnEnable</c> llegue a suscribirse, el evento ya se
+        /// disparó y nunca más — sin este flag se quedaría esperando para siempre.
+        /// </summary>
+        public bool IntroHasFinished { get; private set; }
+
         [Title("Scroll (elementos que suben)")]
         [Tooltip("Array configurable — poblar en el Inspector cuando exista el arte final.")]
         [SerializeField]
@@ -74,13 +94,49 @@ namespace Rollgeon.UI.Screens
         [SerializeField] private float _buttonsFadeDelay = 0f;
         [SerializeField] private Ease _buttonsFadeEase = Ease.InOutSine;
 
+        [Title("Skip")]
+        [Tooltip("Botón invisible full-rect arriba de todo — click en cualquier lado durante el " +
+                 "intro lo salta directo al estado final.")]
+        [SerializeField]
+        private Button _skipButton;
+
         private static readonly int ProgressId = Shader.PropertyToID("_Progress");
         private static readonly int OpacidadId = Shader.PropertyToID("_Opacidad");
         private static readonly int Float1Id = Shader.PropertyToID("_Float1");
 
+        // Todos los tweens que dispara PlayIntro — se guardan para poder
+        // completarlos de golpe si el jugador clickea el skip (o si el intro
+        // ya se vio esta sesión, ver OnEnable).
+        private readonly List<Tween> _activeTweens = new List<Tween>();
+
+        // Static: sobrevive a SceneManager.LoadScene("01_MainMenu") (derrota,
+        // victoria, salir de una run) — cada vuelta al menú recrea este
+        // componente de cero, así que una bandera de instancia no alcanza.
+        // Solo se resetea con un reinicio real del proceso/juego.
+        private static bool _hasPlayedThisSession;
+
         private void OnEnable()
         {
+            if (_skipButton != null)
+            {
+                _skipButton.gameObject.SetActive(true);
+                _skipButton.onClick.AddListener(SkipIntro);
+            }
+
             PlayIntro();
+
+            if (_hasPlayedThisSession)
+            {
+                // Ya se vio el intro largo esta sesión (volviendo de gameplay,
+                // derrota, etc.) — saltar directo al estado final en el mismo
+                // frame, sin mostrarlo de nuevo. El fade-in cortito de los
+                // botones (JuicyMenuGroup) sigue andando normal vía IntroFinished.
+                SkipIntro();
+            }
+            else
+            {
+                _hasPlayedThisSession = true;
+            }
 
             // Se desactiva apenas dispara los tweens (no en un callback): PrimeTween
             // corre en un manager central, no en este MonoBehaviour, así que la
@@ -101,6 +157,24 @@ namespace Rollgeon.UI.Screens
             PlayButtonsFadeIn();
         }
 
+        /// <summary>
+        /// Completa todos los tweens en curso de golpe (misma lógica que dejarlos
+        /// terminar solos, incluye <see cref="IntroFinished"/> vía el título) y
+        /// esconde el catcher de click para no seguir bloqueando el menú ya revelado.
+        /// </summary>
+        private void SkipIntro()
+        {
+            foreach (var tween in _activeTweens)
+                tween.Complete();
+            _activeTweens.Clear();
+
+            if (_skipButton != null)
+            {
+                _skipButton.onClick.RemoveListener(SkipIntro);
+                _skipButton.gameObject.SetActive(false);
+            }
+        }
+
         private void PlayScroll()
         {
             if (_scrollElements == null) return;
@@ -110,17 +184,32 @@ namespace Rollgeon.UI.Screens
                 if (element == null) continue;
 
                 var targetY = element.anchoredPosition.y + _slideDistance;
-                Tween.UIAnchoredPositionY(element, targetY, _slideDuration, _slideEase, startDelay: _slideDelay);
+                _activeTweens.Add(
+                    Tween.UIAnchoredPositionY(element, targetY, _slideDuration, _slideEase, startDelay: _slideDelay));
             }
         }
 
         private void PlayTitulo()
         {
-            if (_tituloTransform == null) return;
+            if (_tituloTransform == null)
+            {
+                // Sin título no hay de qué esperar — avisar igual para no colgar
+                // a quien escucha IntroFinished (ej. JuicyMenuGroup).
+                MarkIntroFinished();
+                return;
+            }
 
             var targetY = _tituloTransform.anchoredPosition.y + _tituloPushDistance;
-            Tween.UIAnchoredPositionY(_tituloTransform, targetY, _tituloPushDuration, _tituloPushEase,
-                startDelay: _tituloPushDelay);
+            _activeTweens.Add(
+                Tween.UIAnchoredPositionY(_tituloTransform, targetY, _tituloPushDuration, _tituloPushEase,
+                        startDelay: _tituloPushDelay)
+                    .OnComplete(MarkIntroFinished));
+        }
+
+        private void MarkIntroFinished()
+        {
+            IntroHasFinished = true;
+            IntroFinished?.Invoke();
         }
 
         private void PlayCurtains()
@@ -129,18 +218,20 @@ namespace Rollgeon.UI.Screens
             {
                 var targetX = _curtainLeft.anchoredPosition.x - _curtainLeft.rect.width;
                 var leftGO = _curtainLeft.gameObject;
-                Tween.UIAnchoredPositionX(_curtainLeft, targetX, _curtainSlideDuration, _curtainEase,
-                        startDelay: _curtainSlideDelay)
-                    .OnComplete(() => leftGO.SetActive(false));
+                _activeTweens.Add(
+                    Tween.UIAnchoredPositionX(_curtainLeft, targetX, _curtainSlideDuration, _curtainEase,
+                            startDelay: _curtainSlideDelay)
+                        .OnComplete(() => leftGO.SetActive(false)));
             }
 
             if (_curtainRight != null)
             {
                 var targetX = _curtainRight.anchoredPosition.x + _curtainRight.rect.width;
                 var rightGO = _curtainRight.gameObject;
-                Tween.UIAnchoredPositionX(_curtainRight, targetX, _curtainSlideDuration, _curtainEase,
-                        startDelay: _curtainSlideDelay)
-                    .OnComplete(() => rightGO.SetActive(false));
+                _activeTweens.Add(
+                    Tween.UIAnchoredPositionX(_curtainRight, targetX, _curtainSlideDuration, _curtainEase,
+                            startDelay: _curtainSlideDelay)
+                        .OnComplete(() => rightGO.SetActive(false)));
             }
         }
 
@@ -157,10 +248,12 @@ namespace Rollgeon.UI.Screens
             // no bloquee los botones del menú una vez asentado.
             _distorcionOverlay.raycastTarget = false;
 
-            Tween.MaterialProperty(material, OpacidadId, 1f, _distOpacidadDuration, _distEase,
-                startDelay: _distOpacidadDelay);
-            Tween.MaterialProperty(material, Float1Id, 0f, _distFloat1Duration, _distEase,
-                startDelay: _distFloat1Delay);
+            _activeTweens.Add(
+                Tween.MaterialProperty(material, OpacidadId, 1f, _distOpacidadDuration, _distEase,
+                    startDelay: _distOpacidadDelay));
+            _activeTweens.Add(
+                Tween.MaterialProperty(material, Float1Id, 0f, _distFloat1Duration, _distEase,
+                    startDelay: _distFloat1Delay));
         }
 
         private void PlayBurnUI()
@@ -171,8 +264,9 @@ namespace Rollgeon.UI.Screens
             material.SetFloat(ProgressId, -1f);
             var overlayGO = _burnOverlay.gameObject;
 
-            Tween.MaterialProperty(material, ProgressId, 1f, _burnDuration, _burnEase, startDelay: _burnDelay)
-                .OnComplete(() => overlayGO.SetActive(false));
+            _activeTweens.Add(
+                Tween.MaterialProperty(material, ProgressId, 1f, _burnDuration, _burnEase, startDelay: _burnDelay)
+                    .OnComplete(() => overlayGO.SetActive(false)));
         }
 
         private void PlayButtonsFadeIn()
@@ -185,7 +279,8 @@ namespace Rollgeon.UI.Screens
                 if (group == null) continue;
 
                 group.alpha = 0f;
-                Tween.Alpha(group, 1f, _buttonsFadeDuration, _buttonsFadeEase, startDelay: _buttonsFadeDelay);
+                _activeTweens.Add(
+                    Tween.Alpha(group, 1f, _buttonsFadeDuration, _buttonsFadeEase, startDelay: _buttonsFadeDelay));
             }
         }
     }
