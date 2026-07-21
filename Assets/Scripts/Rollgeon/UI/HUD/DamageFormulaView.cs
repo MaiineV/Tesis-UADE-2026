@@ -7,6 +7,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
+using Rollgeon.Items;
 using TMPro;
 using UnityEngine;
 
@@ -279,9 +280,35 @@ namespace Rollgeon.UI.HUD
             int preMitigation = PlayerComboDamage.Resolve(
                 _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier);
 
-            // Con enemigo apuntado (elegido antes de tirar), aplicar la mitigación real
-            // (weakness + escudo) SIN side-effects para que el label == golpe que va a recibir.
-            int shown = preMitigation;
+            // Bono at-played de los items passive del inventario para este combo. No entra
+            // en Resolve durante el preview (el LastPlayScratch se limpia al inicio del
+            // turno), así que lo previsualizamos aparte para mostrarlo en dorado.
+            int itemBonus = 0;
+            if (ServiceLocator.TryGetService<IInventoryService>(out var inventory) && inventory != null)
+                itemBonus = inventory.GetComboDamageBonusPreview(_lastComboId);
+
+            // Mitigación real (weakness + escudo) por separado para base y total, así el
+            // "+ N" dorado refleja la contribución de los objetos ya mitigada.
+            int shownBase = Mitigate(preMitigation);
+            int shownTotal = itemBonus != 0 ? Mitigate(preMitigation + itemBonus) : shownBase;
+            int itemPortion = shownTotal - shownBase;
+
+            string formulaText = itemPortion > 0
+                ? $"{comboName}: {shownBase} <color=#{ItemBonusColorHex}>+ {itemPortion}</color>"
+                : $"{comboName}: {shownBase}";
+            RenderLabel(formulaText, shownTotal);
+        }
+
+        // Dorado para el bono aportado por los objetos (rich text de TMP).
+        private const string ItemBonusColorHex = "FFC93C";
+
+        /// <summary>
+        /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN
+        /// side-effects, para que el label == golpe que va a recibir. Sin target devuelve
+        /// el daño pre-mitigación.
+        /// </summary>
+        private int Mitigate(int preMitigation)
+        {
             if (_currentTargetGuid != Guid.Empty
                 && ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline)
                 && pipeline != null)
@@ -296,10 +323,9 @@ namespace Rollgeon.UI.HUD
                     IsWeaknessHit = !string.IsNullOrEmpty(_lastComboId),
                 };
                 pipeline.Preview(ctx);
-                shown = ctx.FinalDamage;
+                return ctx.FinalDamage;
             }
-
-            RenderLabel($"{comboName}: {shown}", shown);
+            return preMitigation;
         }
 
         private bool TryShowActionRollMode()

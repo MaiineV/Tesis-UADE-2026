@@ -8,6 +8,7 @@ using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Player;
 using Rollgeon.PreConditions;
 using Rollgeon.Upgrades;
@@ -195,6 +196,43 @@ namespace Rollgeon.Items
                 if (slot.CurrentCooldown > 0)
                     slot.CurrentCooldown--;
             }
+        }
+
+        // ======================================================================
+        // Preview helpers
+        // ======================================================================
+
+        /// <summary>
+        /// Suma el bono de daño at-played (<see cref="EffAddComboBonus"/>) que los items
+        /// passive del inventario aportarían al <paramref name="comboId"/>. Lo usa el
+        /// preview de daño para mostrar la contribución de los objetos ANTES de jugar el
+        /// combo — el bono real se aplica recién en ComboPlayed (ver <c>LastPlayScratch</c>).
+        /// Solo suma <see cref="EffAddComboBonus"/> (evita side-effects de otros efectos del
+        /// hook); readers dinámicos se leen con un contexto mínimo.
+        /// </summary>
+        public int GetComboDamageBonusPreview(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId)) return 0;
+
+            var ctx = new EffectContext { SourceGuid = GetPlayerGuid() };
+            int total = 0;
+            foreach (var slot in _passiveItems)
+            {
+                var item = slot?.Item;
+                if (item?.PassiveHooks == null) continue;
+                foreach (var hook in item.PassiveHooks)
+                {
+                    if (hook == null || hook.Kind != PassiveHookKind.ComboPlayed) continue;
+                    if (hook.ComboFilter != null && !hook.ComboFilter.Matches(comboId)) continue;
+                    if (hook.Effect?.Effects == null) continue;
+                    foreach (var eff in hook.Effect.Effects)
+                    {
+                        if (eff is EffAddComboBonus bonus && bonus.Amount != null)
+                            total += bonus.Amount.Read(ctx);
+                    }
+                }
+            }
+            return total;
         }
 
         // ======================================================================
