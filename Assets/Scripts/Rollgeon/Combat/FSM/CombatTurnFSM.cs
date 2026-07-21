@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Patterns.FSM;
 using Rollgeon.Combat.FSM.States;
 
@@ -88,6 +89,16 @@ namespace Rollgeon.Combat.FSM
             {
                 var outcome = Context.PendingOutcome ?? CombatOutcome.Aborted;
                 OnFinished?.Invoke(outcome);
+
+                // OnCombatEnd se emite DESPUES de OnFinished, nunca desde el Enter del
+                // exit state: el CombatController hace su teardown (_fsm = null) dentro
+                // de OnFinished, y la cascada sincrónica de OnCombatEnd puede terminar
+                // en un StartCombat nuevo (Force Door hacia una sala de combate:
+                // CombatReturnService → ResumeAfterCombat → OnCombatTriggered). Si el
+                // evento saliera antes del teardown, ese StartCombat vería la FSM vieja
+                // todavía "corriendo" y se ignoraría — sala nueva con enemigos pero sin
+                // combate ni HUD funcional (soft-lock).
+                EventManager.Trigger(EventName.OnCombatEnd, Context.RoomInstanceId, outcome);
             }
         }
 

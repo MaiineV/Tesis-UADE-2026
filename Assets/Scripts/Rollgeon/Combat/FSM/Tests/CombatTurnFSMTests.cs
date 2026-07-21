@@ -210,6 +210,35 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         [Test]
+        public void CombatEnded_OnCombatEndFiresAfterOnFinished()
+        {
+            // Arrange
+            StackOrderPlayerFirst();
+            var ctx = BuildContext();
+            var fsm = new CombatTurnFSM(ctx);
+            fsm.SetParticipants(new[] { _playerId, _enemyAId });
+            fsm.Start();
+            fsm.SendInput(CombatInput.StartCombat);
+
+            var order = new List<string>();
+            fsm.OnFinished += _ => order.Add("OnFinished");
+            EventManager.EventReceiver onEndHandler = args => order.Add("OnCombatEnd");
+            EventManager.Subscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Act
+            ctx.PendingOutcome = CombatOutcome.Aborted;
+            fsm.SendInput(CombatInput.CombatEnded);
+
+            EventManager.UnSubscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Assert — el CombatController hace el teardown (_fsm = null) dentro de
+            // OnFinished; OnCombatEnd debe salir DESPUÉS para que un StartCombat
+            // disparado por su cascada (Force Door hacia sala de combate) encuentre
+            // el controller libre en vez de ignorarse contra la FSM vieja.
+            Assert.AreEqual(new[] { "OnFinished", "OnCombatEnd" }, order);
+        }
+
+        [Test]
         public void OnCombatStart_PayloadIsRoomInstanceId()
         {
             StackOrderPlayerFirst();

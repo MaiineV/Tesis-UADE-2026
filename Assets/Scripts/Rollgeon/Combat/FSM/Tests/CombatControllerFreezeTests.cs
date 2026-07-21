@@ -146,6 +146,44 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         [Test]
+        public void NotifyCombatEnded_StartCombatFromOnCombatEndHandler_StartsNewCombat()
+        {
+            // Arrange — combate viejo corriendo (la sala que el player abandona al
+            // forzar la puerta).
+            _controller.StartCombat(
+                _playerId,
+                new[] { _playerId, _enemyId },
+                Guid.NewGuid(),
+                enemyActionHandler: g => { });
+
+            // Réplica de la cascada sincrónica de Force Door hacia una sala de combate:
+            // OnCombatEnd → CombatReturnService → ResumeAfterCombat → OnCombatTriggered
+            // → CombatHandoffService.StartCombat, todo dentro del mismo Trigger.
+            var newRoomId = Guid.NewGuid();
+            EventManager.EventReceiver onEndHandler = args =>
+                _controller.StartCombat(
+                    _playerId,
+                    new[] { _playerId, _enemyId },
+                    newRoomId,
+                    enemyActionHandler: g => { });
+            EventManager.Subscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Act
+            _controller.NotifyCombatEnded(CombatOutcome.Aborted);
+
+            EventManager.UnSubscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Assert — el combate nuevo debe quedar corriendo. Con el bug original,
+            // OnCombatEnd salía antes del teardown y StartCombat se ignoraba con
+            // "Ya hay un combate corriendo", dejando FSM == null (soft-lock in-game).
+            Assert.IsNotNull(_controller.FSM,
+                "StartCombat dentro de la cascada de OnCombatEnd debe arrancar la FSM nueva.");
+            Assert.IsTrue(_controller.FSM.IsRunning);
+            Assert.AreEqual(newRoomId, _controller.FSM.Context.RoomInstanceId,
+                "La FSM corriendo debe ser la del combate NUEVO, no la del cerrado.");
+        }
+
+        [Test]
         public void Controller_WithoutBootstrap_DoesNotStartFSM()
         {
             // Nuevo host sin bootstrap asignado (activo desde el vamos = Awake

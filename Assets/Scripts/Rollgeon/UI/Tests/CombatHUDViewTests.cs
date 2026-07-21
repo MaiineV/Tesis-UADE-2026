@@ -121,6 +121,73 @@ namespace Rollgeon.UI.Tests
                 "Click sin delegate cableado no debe crashear (log warning + early return).");
         }
 
+        // ==================================================================
+        // Safety net de OnCombatEnd — guard por room (fix Force Door)
+        // ==================================================================
+
+        [Test]
+        public void CombatEndSafetyNet_OtherRoomEnded_KeepsSubViewsBound()
+        {
+            // Arrange — HUD bindeado al combate NUEVO (room B). El OnCombatEnd del
+            // combate viejo (room A) llega "tarde" en el mismo dispatch (EventManager
+            // captura el multicast al triggerear; el pop no lo saca de la invocación
+            // en curso).
+            var roomA = Guid.NewGuid();
+            var roomB = Guid.NewGuid();
+            _hud.BindAll(_playerGuid);
+            AssignPrivate(_hud, "_roomInstanceId", roomB);
+
+            // Act
+            InvokeSafetyNet(_hud, roomA);
+
+            // Assert — desbindear acá mataría el HUD del combate nuevo (End Turn
+            // muerto). El guard por room debe ignorar el evento ajeno.
+            bool bound = (bool)GetPrivateValue(_hud, "_subViewsBound");
+            Assert.IsTrue(bound,
+                "OnCombatEnd de OTRO room no debe desbindear el HUD del combate nuevo.");
+        }
+
+        [Test]
+        public void CombatEndSafetyNet_OwnRoomEnded_UnbindsSubViews()
+        {
+            // Arrange
+            var roomB = Guid.NewGuid();
+            _hud.BindAll(_playerGuid);
+            AssignPrivate(_hud, "_roomInstanceId", roomB);
+
+            // Act
+            InvokeSafetyNet(_hud, roomB);
+
+            // Assert — el combate propio terminó: el safety net conserva su rol.
+            bool bound = (bool)GetPrivateValue(_hud, "_subViewsBound");
+            Assert.IsFalse(bound, "OnCombatEnd del room propio debe desbindear.");
+        }
+
+        [Test]
+        public void CombatEndSafetyNet_NoRoomBound_UnbindsSubViews_LegacyBehavior()
+        {
+            // Arrange — push sin payload (editor / preview): _roomInstanceId queda
+            // Guid.Empty y el guard cae al comportamiento clásico del safety net.
+            _hud.BindAll(_playerGuid);
+            AssignPrivate(_hud, "_roomInstanceId", Guid.Empty);
+
+            // Act
+            InvokeSafetyNet(_hud, Guid.NewGuid());
+
+            // Assert
+            bool bound = (bool)GetPrivateValue(_hud, "_subViewsBound");
+            Assert.IsFalse(bound,
+                "Sin room bindeado el safety net debe desbindear como siempre.");
+        }
+
+        private static void InvokeSafetyNet(CombatHUDView hud, Guid endedRoomId)
+        {
+            var method = typeof(CombatHUDView).GetMethod("HandleCombatEndSafetyNet",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, "HandleCombatEndSafetyNet no encontrado.");
+            method.Invoke(hud, new object[] { new object[] { endedRoomId } });
+        }
+
         // ---------------- helpers ----------------
 
         private static T AttachChild<T>(string name, GameObject parent) where T : Component

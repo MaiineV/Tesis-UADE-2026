@@ -206,6 +206,12 @@ namespace Rollgeon.UI.Screens
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
+        // Room del combate al que este push está bindeado (payload del handoff).
+        // Discrimina el safety-net de OnCombatEnd: un OnCombatEnd de OTRO room no
+        // debe desbindear este HUD (ver HandleCombatEndSafetyNet).
+        [ShowInInspector, ReadOnly]
+        private Guid _roomInstanceId;
+
         [ShowInInspector, ReadOnly]
         private bool _subViewsBound;
 
@@ -251,6 +257,8 @@ namespace Rollgeon.UI.Screens
             if (_pushed) OnPopped();
             _pushed = true;
 
+            _roomInstanceId = payload is CombatHUDPayload p ? p.RoomInstanceId : Guid.Empty;
+
             ResolvePlayer();
 
             BindAll(_playerGuid);
@@ -289,6 +297,7 @@ namespace Rollgeon.UI.Screens
                 _flashCoroutine = null;
             }
             _playerGuid = Guid.Empty;
+            _roomInstanceId = Guid.Empty;
         }
 
         // ======================================================================
@@ -517,6 +526,22 @@ namespace Rollgeon.UI.Screens
             // desbindeamos para no dejar handlers colgados. El pop real lo hace el
             // CombatController via ScreenManager; este handler solo protege flujos
             // edge-case (editor / preview).
+            //
+            // Guard por room: EventManager.Trigger captura el multicast al momento del
+            // trigger, así que este handler puede ejecutarse "tarde" — ya desuscripto
+            // por el pop pero todavía dentro de la invocación en curso. Pasa cuando un
+            // OnCombatEnd re-pushea este mismo HUD para un combate NUEVO dentro del
+            // mismo dispatch (Force Door hacia sala de combate: pop → push → StartCombat
+            // → ...tail del dispatch llega acá). Si el room que terminó no es el que
+            // este HUD tiene bindeado AHORA, desbindear mataría el combate nuevo
+            // (End Turn muerto, slots sin turno). Con payload sin room (editor/preview)
+            // el guard cae al comportamiento clásico.
+            if (args != null && args.Length >= 1 && args[0] is Guid endedRoomId
+                && _roomInstanceId != Guid.Empty && endedRoomId != _roomInstanceId)
+            {
+                return;
+            }
+
             if (_subViewsBound)
             {
                 UnbindAll();
