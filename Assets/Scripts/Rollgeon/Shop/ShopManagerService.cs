@@ -301,10 +301,8 @@ namespace Rollgeon.Shop
         }
 
         /// <summary>
-        /// Instancia el visual 3D del reward como hijo del pedestal. Dispatch por
-        /// tipo: <see cref="ShopItemDef"/> usa el <see cref="ItemSO.WorldPrefab"/>
-        /// resolved via catálogo; <see cref="Upgrades.Combos.ComboPassiveSO"/> usa
-        /// su propio <c>WorldPrefab</c>. Posiciona via
+        /// Instancia el visual 3D del reward como hijo del pedestal. Usa el
+        /// <see cref="ItemSO.WorldPrefab"/> del item. Posiciona via
         /// <see cref="ShopConfigSO.ItemVisualLocalOffset"/> (default Y=1.5).
         /// </summary>
         private void SpawnItemVisualOnTop(Transform pedestalRoot, ShopSlot slot)
@@ -329,12 +327,8 @@ namespace Rollgeon.Shop
         {
             switch (entry)
             {
-                case ShopItemDef itemDef:
-                    if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null) return null;
-                    var itemSo = catalog.GetById(itemDef.ItemId);
-                    return itemSo != null ? itemSo.WorldPrefab : null;
-                case Rollgeon.Upgrades.Combos.ComboPassiveSO passive:
-                    return passive.WorldPrefab;
+                case ItemSO item:
+                    return item.WorldPrefab;
                 default:
                     return null;
             }
@@ -369,17 +363,6 @@ namespace Rollgeon.Shop
                     var entry = weighted.GetEntry();
                     if (entry == null) continue;
                     if (entry.EntryId == entryId) return entry;
-                }
-            }
-
-            // Pasivas del pool dinámico (re-entry de un slot roleado de ahí).
-            if (ActivePool.PassivePool != null && ActivePool.PassivePool.Entries != null)
-            {
-                foreach (var entry in ActivePool.PassivePool.Entries)
-                {
-                    var passive = entry?.Passive;
-                    if (passive == null) continue;
-                    if (((IShopRewardEntry)passive).EntryId == entryId) return passive;
                 }
             }
 

@@ -1,35 +1,40 @@
 using System.Collections.Generic;
+using System.Linq;
+using Rollgeon.Items;
 using Rollgeon.Shop;
-using Rollgeon.Upgrades.Combos;
 using UnityEditor;
 using UnityEngine;
 
 namespace Rollgeon.EditorTools.Shop
 {
     /// <summary>
-    /// Cablea el <c>ShopPool.asset</c> al modo dinámico: poción como entry
-    /// garantizada (slot 0), <c>ComboPassivePool</c> como fuente rotativa de los
-    /// demás slots, y vacía las entries manuales (las pasivas ya no se listan a
-    /// mano — agregar una nueva al ComboPassivePool la hace aparecer sola).
-    /// Idempotente.
+    /// Cablea los pools de tienda al modelo item-first: la poción (un
+    /// <see cref="ItemSO"/>) como entry garantizada (slot 0) y todos los items
+    /// passive del <c>ItemCatalog</c> como fuente de los demás slots. Ya no hay
+    /// <c>ComboPassivePool</c> — las pasivas SON items. Precio/peso/MinFloorDepth
+    /// derivan de la rareza. Idempotente.
     /// </summary>
     public static class ShopSetupTools
     {
         private const string ShopPoolPath = "Assets/Rollgeon/Rooms/Shop/ShopPool.asset";
-        private const string PotionDefPath = "Assets/Rollgeon/Rooms/Shop/Items/ShopItem_HealingPotion.asset";
-        private const string PassivePoolPath = "Assets/Rollgeon/Upgrades/Combos/ComboPassivePool.asset";
-        private const int PotionBasePrice = 8; // precio que tenía la entry manual
+        private const string TutorialPoolPath = "Assets/Rollgeon/Tutorial/SP_Tutorial.asset";
+        private const string PotionItemPath = "Assets/Rollgeon/Rooms/Shop/Items/Item_HealingPotion.asset";
+        private const string CatalogPath = "Assets/Rollgeon/Items/ItemCatalog.asset";
+        private const string TutorialItemPath = "Assets/Rollgeon/Items/Item_GuantesApostadorPar.asset";
 
-        [MenuItem("Rollgeon/Shop/Wire Dynamic Pool")]
-        public static void WireDynamicPool()
+        private const int PotionBasePrice = 8;
+        private const int TutorialItemPrice = 20;
+
+        [MenuItem("Rollgeon/Shop/Wire Item Pool")]
+        public static void WireItemPool()
         {
             var pool = AssetDatabase.LoadAssetAtPath<ShopPoolSO>(ShopPoolPath);
-            var potion = AssetDatabase.LoadAssetAtPath<ShopItemDef>(PotionDefPath);
-            var passives = AssetDatabase.LoadAssetAtPath<ComboPassivePoolSO>(PassivePoolPath);
+            var potion = AssetDatabase.LoadAssetAtPath<ItemSO>(PotionItemPath);
+            var catalog = AssetDatabase.LoadAssetAtPath<ItemCatalogSO>(CatalogPath);
 
-            if (pool == null || potion == null || passives == null)
+            if (pool == null || potion == null || catalog == null)
             {
-                Debug.LogError("[ShopSetup] Falta ShopPool, ShopItem_HealingPotion o ComboPassivePool — abortando.");
+                Debug.LogError("[ShopSetup] Falta ShopPool, Item_HealingPotion o ItemCatalog — abortando.");
                 return;
             }
 
@@ -40,12 +45,83 @@ namespace Rollgeon.EditorTools.Shop
                 BasePrice = PotionBasePrice,
                 MinFloorDepth = 0,
             };
-            pool.PassivePool = passives;
-            pool.Items = new List<WeightedShopItem>();
+
+            // Todos los items passive del catálogo (GetByType excluye la poción, que es Active).
+            var items = catalog.GetByType(ItemType.Passive)
+                .Where(i => i != null)
+                .OrderBy(i => i.ItemId)
+                .Select(ToWeightedEntry)
+                .ToList();
+
+            pool.Items = items;
 
             EditorUtility.SetDirty(pool);
             AssetDatabase.SaveAssets();
-            Debug.Log("[ShopSetup] ShopPool dinámico: poción garantizada + ComboPassivePool como fuente rotativa.");
+            Debug.Log($"[ShopSetup] ShopPool item-first: poción garantizada + {items.Count} items passive del catálogo.");
         }
+
+        [MenuItem("Rollgeon/Shop/Wire Tutorial Pool")]
+        public static void WireTutorialPool()
+        {
+            var pool = AssetDatabase.LoadAssetAtPath<ShopPoolSO>(TutorialPoolPath);
+            var item = AssetDatabase.LoadAssetAtPath<ItemSO>(TutorialItemPath);
+
+            if (pool == null || item == null)
+            {
+                Debug.LogError("[ShopSetup] Falta SP_Tutorial o Item_GuantesApostadorPar — abortando.");
+                return;
+            }
+
+            // Tutorial: 1 sola entry (Guantes del apostador = Par +20 dmg, lo que enseña
+            // el tutorial). Sin garantizado — el slot 0 degrada a este único item.
+            pool.Guaranteed = default;
+            pool.Items = new List<WeightedShopItem>
+            {
+                new WeightedShopItem { Item = item, Weight = 1f, BasePrice = TutorialItemPrice, MinFloorDepth = 0 },
+            };
+
+            EditorUtility.SetDirty(pool);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[ShopSetup] SP_Tutorial item-first: Guantes del apostador como único item.");
+        }
+
+        private static WeightedShopItem ToWeightedEntry(ItemSO item)
+        {
+            return new WeightedShopItem
+            {
+                Item = item,
+                Weight = WeightForRarity(item.Rarity),
+                BasePrice = PriceForRarity(item.Rarity),
+                MinFloorDepth = MinDepthForRarity(item.Rarity),
+            };
+        }
+
+        // Los items más raros son más caros, más escasos en el roll y aparecen en pisos más profundos.
+        private static float WeightForRarity(ItemRarity rarity) => rarity switch
+        {
+            ItemRarity.Common => 1.0f,
+            ItemRarity.Uncommon => 0.7f,
+            ItemRarity.Rare => 0.4f,
+            ItemRarity.Legendary => 0.2f,
+            _ => 1.0f,
+        };
+
+        private static int PriceForRarity(ItemRarity rarity) => rarity switch
+        {
+            ItemRarity.Common => 10,
+            ItemRarity.Uncommon => 20,
+            ItemRarity.Rare => 35,
+            ItemRarity.Legendary => 55,
+            _ => 10,
+        };
+
+        private static int MinDepthForRarity(ItemRarity rarity) => rarity switch
+        {
+            ItemRarity.Common => 0,
+            ItemRarity.Uncommon => 0,
+            ItemRarity.Rare => 1,
+            ItemRarity.Legendary => 2,
+            _ => 0,
+        };
     }
 }

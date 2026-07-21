@@ -1,17 +1,18 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Rollgeon.Items;
 using Rollgeon.Shop;
-using Rollgeon.Upgrades.Combos;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Rollgeon.Shop.Tests
 {
     /// <summary>
-    /// Pool dinámico de la tienda: entry garantizada (poción, slot 0), roll de
-    /// combo passives desde <see cref="ComboPassivePoolSO"/> con precio =
-    /// ShopCost, y fallback a las entries manuales. Sin IMetaProgressionService
-    /// registrado el gate degrada a "todo disponible" (ver PoolGatingTests).
+    /// Pool de la tienda item-first: entry garantizada (poción, slot 0) y roll de
+    /// los slots restantes desde <see cref="ShopPoolSO.Items"/> (cada entry es un
+    /// <see cref="ItemSO"/>; precio = BasePrice), con exclude de lo ya roleado y
+    /// filtro por MinFloorDepth. Sin IMetaProgressionService registrado el gate
+    /// degrada a "todo disponible" (ver PoolGatingTests).
     /// </summary>
     [TestFixture]
     public class ShopPoolDynamicTests
@@ -38,13 +39,13 @@ namespace Rollgeon.Shop.Tests
         public void TryGetGuaranteed_WithEntry_ReturnsItemAndBasePrice()
         {
             var pool = NewPool();
-            var potion = NewItemDef("item.pocion");
+            var potion = NewItem("item.pocion");
             pool.Guaranteed = new WeightedShopItem { Item = potion, Weight = 1f, BasePrice = 8 };
 
             bool found = pool.TryGetGuaranteed(out var result);
 
             Assert.IsTrue(found);
-            Assert.AreSame(potion, result.Item);
+            Assert.AreEqual("item.pocion", result.Item.EntryId);
             Assert.AreEqual(8, result.BasePrice);
         }
 
@@ -59,79 +60,80 @@ namespace Rollgeon.Shop.Tests
         // ---------------- RollDynamic ----------------
 
         [Test]
-        public void RollDynamic_UsesPassivePool_PriceComesFromShopCost()
+        public void RollDynamic_RollsFromItems_PriceComesFromBasePrice()
         {
             var pool = NewPool();
-            var passive = NewPassive("combo.gold_on_ladder", shopCost: 30);
-            pool.PassivePool = NewPassivePool(passive);
+            var item = NewItem("item.only");
+            pool.Items = new List<WeightedShopItem>
+            {
+                new WeightedShopItem { Item = item, Weight = 1f, BasePrice = 30 },
+            };
 
             var result = pool.RollDynamic(_rng, floorDepth: 0);
 
-            Assert.AreSame(passive, result.Item);
+            Assert.AreEqual("item.only", result.Item.EntryId);
             Assert.AreEqual(30, result.BasePrice);
         }
 
         [Test]
-        public void RollDynamic_ExcludesAlreadyRolledPassives()
+        public void RollDynamic_ExcludesAlreadyRolledItems()
         {
             var pool = NewPool();
-            var first = NewPassive("combo.a", shopCost: 20);
-            var second = NewPassive("combo.b", shopCost: 25);
-            pool.PassivePool = NewPassivePool(first, second);
+            var first = NewItem("item.a");
+            var second = NewItem("item.b");
+            pool.Items = new List<WeightedShopItem>
+            {
+                new WeightedShopItem { Item = first, Weight = 1f, BasePrice = 20 },
+                new WeightedShopItem { Item = second, Weight = 1f, BasePrice = 25 },
+            };
 
-            var exclude = new List<IShopRewardEntry> { first };
+            var exclude = new List<IShopRewardEntry> { (IShopRewardEntry)first };
             var result = pool.RollDynamic(_rng, floorDepth: 0, exclude);
 
-            Assert.AreSame(second, result.Item,
-                "Una pasiva ya roleada en esta tienda no debe repetirse mientras haya variedad.");
+            Assert.AreEqual("item.b", result.Item.EntryId,
+                "Un item ya roleado en esta tienda no debe repetirse mientras haya variedad.");
         }
 
         [Test]
-        public void RollDynamic_EmptyPassivePool_FallsBackToManualItems()
+        public void RollDynamic_EmptyItems_ReturnsDefault()
         {
             var pool = NewPool();
-            var manual = NewItemDef("item.manual");
+
+            var result = pool.RollDynamic(_rng, floorDepth: 0);
+
+            Assert.IsNull(result.Item);
+        }
+
+        [Test]
+        public void RollDynamic_AllItemsExcluded_FallsBackIgnoringExclude()
+        {
+            var pool = NewPool();
+            var only = NewItem("item.only");
             pool.Items = new List<WeightedShopItem>
             {
-                new WeightedShopItem { Item = manual, Weight = 1f, BasePrice = 12 },
+                new WeightedShopItem { Item = only, Weight = 1f, BasePrice = 12 },
+            };
+
+            var exclude = new List<IShopRewardEntry> { (IShopRewardEntry)only };
+            var result = pool.RollDynamic(_rng, floorDepth: 0, exclude);
+
+            Assert.AreEqual("item.only", result.Item.EntryId,
+                "Con todo excluido, el fallback ignora el exclude — mejor un duplicado que un slot vacío.");
+        }
+
+        [Test]
+        public void RollDynamic_MinFloorDepth_FiltersItems()
+        {
+            var pool = NewPool();
+            var late = NewItem("item.late");
+            pool.Items = new List<WeightedShopItem>
+            {
+                new WeightedShopItem { Item = late, Weight = 1f, BasePrice = 40, MinFloorDepth = 3 },
             };
 
             var result = pool.RollDynamic(_rng, floorDepth: 0);
 
-            Assert.AreSame(manual, result.Item);
-            Assert.AreEqual(12, result.BasePrice);
-        }
-
-        [Test]
-        public void RollDynamic_AllPassivesExcluded_FallsBackToManualItems()
-        {
-            var pool = NewPool();
-            var passive = NewPassive("combo.only", shopCost: 20);
-            pool.PassivePool = NewPassivePool(passive);
-            var manual = NewItemDef("item.manual");
-            pool.Items = new List<WeightedShopItem>
-            {
-                new WeightedShopItem { Item = manual, Weight = 1f, BasePrice = 12 },
-            };
-
-            var exclude = new List<IShopRewardEntry> { passive };
-            var result = pool.RollDynamic(_rng, floorDepth: 0, exclude);
-
-            Assert.AreSame(manual, result.Item);
-        }
-
-        [Test]
-        public void RollDynamic_MinFloorDepth_FiltersPassives()
-        {
-            var pool = NewPool();
-            var late = NewPassive("combo.late", shopCost: 40);
-            var passivePool = NewPassivePool(late);
-            passivePool.Entries[0].MinFloorDepth = 3;
-            pool.PassivePool = passivePool;
-
-            var result = pool.RollDynamic(_rng, floorDepth: 0);
-
-            Assert.IsNull(result.Item, "Una pasiva con MinFloorDepth mayor al piso no debe rolear.");
+            Assert.IsNull(result.Item, "Un item con MinFloorDepth mayor al piso no debe rolear.");
         }
 
         // ---------------- helpers ----------------
@@ -143,51 +145,13 @@ namespace Rollgeon.Shop.Tests
             return pool;
         }
 
-        private ShopItemDef NewItemDef(string itemId)
+        private ItemSO NewItem(string itemId)
         {
-            var def = ScriptableObject.CreateInstance<ShopItemDef>();
-            def.ItemId = itemId;
-            def.DisplayName = itemId;
-            _assets.Add(def);
-            return def;
-        }
-
-        private ComboPassiveSO NewPassive(string upgradeId, int shopCost)
-        {
-            var passive = ScriptableObject.CreateInstance<ComboPassiveSO>();
-            SetPrivateField(passive, "_upgradeId", upgradeId);
-            SetPrivateField(passive, "_shopCost", shopCost);
-            _assets.Add(passive);
-            return passive;
-        }
-
-        private ComboPassivePoolSO NewPassivePool(params ComboPassiveSO[] passives)
-        {
-            var pool = ScriptableObject.CreateInstance<ComboPassivePoolSO>();
-            pool.Entries = new List<WeightedComboPassive>();
-            foreach (var p in passives)
-            {
-                pool.Entries.Add(new WeightedComboPassive { Passive = p, Weight = 1f, MinFloorDepth = 0 });
-            }
-            _assets.Add(pool);
-            return pool;
-        }
-
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var type = target.GetType();
-            while (type != null)
-            {
-                var field = type.GetField(fieldName,
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                if (field != null)
-                {
-                    field.SetValue(target, value);
-                    return;
-                }
-                type = type.BaseType;
-            }
-            Assert.Fail($"Field '{fieldName}' no encontrado en {target.GetType().Name} ni sus bases.");
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = itemId;
+            item.DisplayName = itemId;
+            _assets.Add(item);
+            return item;
         }
     }
 }
