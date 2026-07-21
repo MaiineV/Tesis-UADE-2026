@@ -7,6 +7,7 @@ using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Dice.Throw;
 using Rollgeon.Dungeon;
@@ -950,8 +951,23 @@ namespace Rollgeon.Combat.Handoff
             // un número extra por cada sala jugada.
             _selectedBehavior?.ClearBehaviorValues();
 
+            // El chain no pasa por HeroActionBehavior.Execute, así que la ventana de combo
+            // jugado se abre acá — una emisión POR FASE (cada fase consume su propia tirada).
+            // EndPlay corre antes del OnRollResolved de más abajo: los hooks de roll-resolved
+            // no deben ver la ventana abierta.
             if (phase?.Effects != null)
-                phase.Effects.TryExecute(effCtx, preCtx);
+            {
+                var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+                play?.BeginPlay(effCtx);
+                try
+                {
+                    phase.Effects.TryExecute(effCtx, preCtx);
+                }
+                finally
+                {
+                    play?.EndPlay();
+                }
+            }
 
             // El resto del avance del chain se difiere hasta que baje el feedback en vuelo.
             // Los efectos de arriba pueden haber dejado consecuencias de gameplay atadas al

@@ -13,8 +13,11 @@ namespace Rollgeon.Shop
     /// <c>RewardEntrySO</c> sin cambio de data (el <c>ReservedItemId</c> se
     /// preserva).
     /// </summary>
+    [System.Obsolete("Deprecado: el reward canónico de tienda es ItemSO, que ahora " +
+        "implementa IShopRewardEntry directo. Este wrapper por string-id queda solo " +
+        "por compatibilidad con assets viejos.")]
     [CreateAssetMenu(
-        menuName = "Rollgeon/Shop/Shop Item Def",
+        menuName = "Rollgeon/Shop/Shop Item Def (deprecated)",
         fileName = "ShopItem")]
     public sealed class ShopItemDef : ScriptableObject, IShopRewardEntry
     {

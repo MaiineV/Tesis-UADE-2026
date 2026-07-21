@@ -1,4 +1,5 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Rollgeon.Meta.Conditions
@@ -11,6 +12,7 @@ namespace Rollgeon.Meta.Conditions
     [Serializable]
     public sealed class ComboNeverExecutedCondition : IUnlockCondition
     {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()")]
         [Tooltip("ComboId que NO debe ejecutarse en toda la run.")]
         public string ComboId;
 

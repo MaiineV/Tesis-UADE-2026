@@ -111,4 +111,17 @@ namespace Rollgeon.Upgrades.Combos
     {
         void OnDamageResolved(ComboPassiveContext ctx);
     }
+
+    /// <summary>
+    /// Dispara cuando el combo se JUEGA: la acción con combo matcheado se está
+    /// ejecutando, ANTES de resolver el daño — a diferencia de
+    /// <see cref="IOnComboPassiveMatchedTrigger"/>, que dispara en cada preview de
+    /// hold. Scopeado por <c>TargetComboId</c> (vacío = cualquier combo).
+    /// <c>ctx.Scratch</c> es el play scratch de la ventana: lo que se escriba ahí
+    /// llega a <c>bono_combo</c> de ESTA resolución de daño.
+    /// </summary>
+    public interface IOnComboPlayedPassiveTrigger : IComboPassiveTrigger
+    {
+        void OnComboPlayed(ComboPassiveContext ctx);
+    }
 }

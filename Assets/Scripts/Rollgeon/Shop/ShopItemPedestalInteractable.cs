@@ -5,7 +5,6 @@ using Rollgeon.Grid;
 using Rollgeon.Items;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
-using Rollgeon.Upgrades.Combos;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -126,19 +125,17 @@ namespace Rollgeon.Shop
         }
 
         /// <summary>
-        /// Dispatch polimórfico de la entrega — ítems activos van al inventory,
-        /// pasivas de combo van al <see cref="IComboPassiveService"/>. Cuando se
-        /// agreguen otros tipos de <see cref="IShopRewardEntry"/>, sumar el case acá.
+        /// Dispatch polimórfico de la entrega. El reward canónico es
+        /// <see cref="ItemSO"/> (activo o passive) → va directo al inventario, que
+        /// aplica sus <c>PassiveItemHook</c> al obtenerlo. Cuando se agreguen otros
+        /// tipos de <see cref="IShopRewardEntry"/>, sumar el case acá.
         /// </summary>
         private static void DeliverEntry(IShopRewardEntry entry)
         {
             switch (entry)
             {
-                case ShopItemDef itemDef:
-                    TryDeliverItemToInventory(itemDef.ItemId);
-                    break;
-                case ComboPassiveSO passive:
-                    TryApplyComboPassive(passive);
+                case ItemSO item:
+                    TryDeliverItemToInventory(item);
                     break;
                 case null:
                     Debug.LogWarning(LogPrefix + "Entry null — no se entrega nada.");
@@ -149,42 +146,16 @@ namespace Rollgeon.Shop
             }
         }
 
-        private static void TryApplyComboPassive(ComboPassiveSO passive)
-        {
-            if (passive == null) return;
-            if (!ServiceLocator.TryGetService<IComboPassiveService>(out var svc) || svc == null)
-            {
-                Debug.LogWarning(LogPrefix + "IComboPassiveService no registrado — la pasiva comprada no se aplica.");
-                return;
-            }
-            svc.Apply(passive);
-        }
-
         /// <summary>
-        /// Resuelve el <see cref="ItemSO"/> en el catálogo por <paramref name="shopItemId"/>
-        /// (debe matchear el <c>ItemSO.ItemId</c>) y lo agrega al inventario. Si el catálogo
-        /// o el inventario no están registrados, sólo loggea — el oro ya se cobró y el
-        /// pedestal queda como purchased.
+        /// Agrega el <see cref="ItemSO"/> comprado al inventario. Si el inventario no
+        /// está registrado, sólo loggea — el oro ya se cobró y el pedestal queda como
+        /// purchased.
         /// </summary>
-        private static void TryDeliverItemToInventory(string shopItemId)
+        private static void TryDeliverItemToInventory(ItemSO item)
         {
-            if (string.IsNullOrEmpty(shopItemId))
+            if (item == null)
             {
-                Debug.LogWarning(LogPrefix + "ShopItemDef sin ItemId — no se puede entregar al inventario.");
-                return;
-            }
-
-            if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null)
-            {
-                Debug.LogWarning(LogPrefix + "ItemCatalogSO no registrado — el ítem comprado no se entrega.");
-                return;
-            }
-
-            var itemSo = catalog.GetById(shopItemId);
-            if (itemSo == null)
-            {
-                Debug.LogWarning(LogPrefix + $"ItemSO con ItemId='{shopItemId}' no existe en ItemCatalog. " +
-                                              "Verificá que el ShopItemDef.ItemId matchee el ItemSO.ItemId del catálogo.");
+                Debug.LogWarning(LogPrefix + "Entry ItemSO null — no se puede entregar al inventario.");
                 return;
             }
 
@@ -194,9 +165,9 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            if (!inventory.AddItem(itemSo))
+            if (!inventory.AddItem(item))
             {
-                Debug.LogWarning(LogPrefix + $"AddItem('{shopItemId}') rechazado (inventario lleno?).");
+                Debug.LogWarning(LogPrefix + $"AddItem('{item.ItemId}') rechazado (inventario lleno?).");
             }
         }
 

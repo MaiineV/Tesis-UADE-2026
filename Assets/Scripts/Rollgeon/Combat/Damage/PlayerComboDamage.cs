@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
@@ -58,6 +59,17 @@ namespace Rollgeon.Combat.Damage
                 bonoCombo += enchants.LastComboScratch.BonusComboDamage;
                 scratchMultiplier *= enchants.LastComboScratch.ComboDamageMultiplier;
                 block |= enchants.LastComboScratch.BlockComboDamage;
+            }
+            // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
+            // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
+            // la ventana) porque el daño del ataque real está diferido al frame de impacto,
+            // ya cerrada la ventana. Se limpia al inicio del turno, así el preview no ve
+            // bonos jugados de un turno anterior.
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.LastPlayScratch != null)
+            {
+                bonoCombo += play.LastPlayScratch.BonusComboDamage;
+                scratchMultiplier *= play.LastPlayScratch.ComboDamageMultiplier;
+                block |= play.LastPlayScratch.BlockComboDamage;
             }
 
             if (block)

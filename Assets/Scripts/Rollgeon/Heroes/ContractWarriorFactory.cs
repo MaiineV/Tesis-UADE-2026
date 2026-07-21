@@ -26,7 +26,7 @@ namespace Rollgeon.Heroes
         {
             ComboId.Par,
             ComboId.DoublePair,
-            ComboId.SumX,
+            ComboId.HigherNumber,
             ComboId.Triple,
             ComboId.Straight,
             ComboId.FullHouse,

@@ -3,13 +3,14 @@ using UnityEngine;
 namespace Rollgeon.Shop
 {
     /// <summary>
-    /// Superficie común de todo lo que se puede ofrecer en una tienda:
-    /// <see cref="ShopItemDef"/> (items consumibles activos) y
-    /// <see cref="Rollgeon.Upgrades.Combos.ComboPassiveSO"/> (pasivas de combo
-    /// del Sistema de Mejoras In-Run). El <c>ShopPoolSO</c> y el
-    /// <c>ShopManagerService</c> operan sobre esta abstracción; el dispatch de
-    /// "qué hacer al comprar" se hace por tipo concreto en
-    /// <see cref="ShopItemPedestalInteractable"/>.
+    /// Superficie común de todo lo que se puede ofrecer en una tienda. El
+    /// implementador canónico es <c>Rollgeon.Items.ItemSO</c> (activo o passive) —
+    /// al comprarlo va al inventario, que aplica sus <c>PassiveItemHook</c>.
+    /// <see cref="ShopItemDef"/> y <see cref="Rollgeon.Upgrades.Combos.ComboPassiveSO"/>
+    /// también la implementan pero son legacy (ya no se cablean en pools nuevos).
+    /// El <c>ShopPoolSO</c> y el <c>ShopManagerService</c> operan sobre esta
+    /// abstracción; el dispatch de "qué hacer al comprar" se hace por tipo concreto
+    /// en <see cref="ShopItemPedestalInteractable"/>.
     /// </summary>
     /// <remarks>
     /// <para>

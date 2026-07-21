@@ -77,6 +77,7 @@ namespace Rollgeon.DevConsole.Tests
         public bool HasItem(string itemId) => false;
         public ItemSO GetItem(string itemId) => null;
         public bool ActivateItem(int activeSlotIndex, EffectContext ctx) => false;
+        public int GetComboDamageBonusPreview(string comboId) => 0;
         public void TickCooldowns() { }
 
 #pragma warning disable 67

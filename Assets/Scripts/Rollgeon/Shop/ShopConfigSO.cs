@@ -53,6 +53,15 @@ namespace Rollgeon.Shop
                  "Default Y=1.5 para que el ítem quede arriba del pedestal en lugar de dentro.")]
         public Vector3 ItemVisualLocalOffset = new Vector3(0f, 1.5f, 0f);
 
+        [Title("Visual fallback")]
+        [InfoBox("Cuando un ItemSO no tiene WorldPrefab propio, la tienda instancia este prefab " +
+                 "genérico (ej. la misma cápsula/poción) tinteado con DefaultItemVisualTint para " +
+                 "que se lea como placeholder. Null = sin visual (solo pedestal).")]
+        public GameObject DefaultItemVisualPrefab;
+
+        [Tooltip("Tinte aplicado al DefaultItemVisualPrefab para distinguirlo de un item con visual propio.")]
+        public Color DefaultItemVisualTint = new Color(0.55f, 0.75f, 1f, 1f);
+
         /// <summary>Resuelve el precio final con multiplicador y varianza.</summary>
         public int ResolvePrice(int basePrice, System.Random rng)
         {

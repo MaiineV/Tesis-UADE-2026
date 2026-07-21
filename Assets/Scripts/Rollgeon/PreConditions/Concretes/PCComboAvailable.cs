@@ -19,6 +19,7 @@ namespace Rollgeon.PreConditions.Concretes
     public class PCComboAvailable : BasePreCondition
     {
         [Required]
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()")]
         [Tooltip("Id estable del combo (BaseComboSO.ComboId) — debe coincidir con el del catalog.")]
         public string ComboId;
 

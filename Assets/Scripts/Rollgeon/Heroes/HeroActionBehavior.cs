@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
@@ -207,11 +208,22 @@ namespace Rollgeon.Heroes
             var effCtx = BuildEffectContext(ctx);
             var preCtx = BuildPreConditionContext(ctx);
 
-            foreach (var group in Effects)
+            // Ventana de combo jugado: abre ANTES del primer efecto que consuma ComboResult
+            // (daño, escudo, heal) para que las pasivas inyecten bono en esta ejecución.
+            var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+            play?.BeginPlay(effCtx);
+            try
             {
-                if (group == null) continue;
-                group.TryExecute(effCtx, preCtx);
-                if (!effCtx.lastResult) break;
+                foreach (var group in Effects)
+                {
+                    if (group == null) continue;
+                    group.TryExecute(effCtx, preCtx);
+                    if (!effCtx.lastResult) break;
+                }
+            }
+            finally
+            {
+                play?.EndPlay();
             }
         }
 

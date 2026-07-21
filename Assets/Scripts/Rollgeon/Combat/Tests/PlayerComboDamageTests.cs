@@ -6,7 +6,9 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
 
@@ -144,6 +146,58 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
         }
 
+        [Test]
+        public void Resolve_PlayScratchBonus_AddedAfterMultiplier()
+        {
+            var play = new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 2f }
+            };
+            ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
+
+            // (10 × 2) + 4 = 24
+            Assert.AreEqual(24, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_PlayAndMatchScratches_ComposeAcrossChannels()
+        {
+            var passives = new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 2f }
+            };
+            var play = new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 3, ComboDamageMultiplier = 1.5f }
+            };
+            ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
+
+            // (10 × 2 × 1.5) + 4 + 3 = 37
+            Assert.AreEqual(37, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_PlayScratchBlock_ReturnsZero()
+        {
+            var play = new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { BlockComboDamage = true }
+            };
+            ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
+
+            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
+        }
+
+        [Test]
+        public void Resolve_PlayWindowClosed_DoesNotAffectResult()
+        {
+            var play = new FakeComboPlayService { Scratch = null };
+            ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
+
+            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
         // Fake mínimo: solo LastComboScratch importa para la fórmula.
         private sealed class FakeComboPassiveService : IComboPassiveService
         {
@@ -153,6 +207,19 @@ namespace Rollgeon.Combat.Tests
             public void Apply(ComboPassiveSO passive) { }
             public int GetBonusDamage(string comboId) => 0;
             public EnchantmentScratch LastComboScratch => Scratch;
+        }
+
+        // Fake mínimo del canal at-played: la fórmula lee LastPlayScratch (persiste para el
+        // daño diferido). CurrentPlayScratch refleja el mismo scratch durante la ventana.
+        private sealed class FakeComboPlayService : IComboPlayService
+        {
+            public EnchantmentScratch Scratch;
+            public EnchantmentScratch CurrentPlayScratch => Scratch;
+            public EnchantmentScratch LastPlayScratch => Scratch;
+            public bool IsPlayWindowOpen => Scratch != null;
+            public string CurrentComboId => null;
+            public void BeginPlay(EffectContext effCtx) { }
+            public void EndPlay() { }
         }
     }
 }
