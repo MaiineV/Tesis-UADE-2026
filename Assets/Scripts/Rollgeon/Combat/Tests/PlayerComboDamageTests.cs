@@ -209,11 +209,13 @@ namespace Rollgeon.Combat.Tests
             public EnchantmentScratch LastComboScratch => Scratch;
         }
 
-        // Fake mínimo del canal at-played: solo CurrentPlayScratch importa para la fórmula.
+        // Fake mínimo del canal at-played: la fórmula lee LastPlayScratch (persiste para el
+        // daño diferido). CurrentPlayScratch refleja el mismo scratch durante la ventana.
         private sealed class FakeComboPlayService : IComboPlayService
         {
             public EnchantmentScratch Scratch;
             public EnchantmentScratch CurrentPlayScratch => Scratch;
+            public EnchantmentScratch LastPlayScratch => Scratch;
             public bool IsPlayWindowOpen => Scratch != null;
             public string CurrentComboId => null;
             public void BeginPlay(EffectContext effCtx) { }

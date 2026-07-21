@@ -122,11 +122,11 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void Execute_PassiveBonus_ReachesDamageFormulaDuringWindow()
+        public void Execute_PassiveBonus_PersistsAfterWindowUntilNextRoll()
         {
-            // Arrange — un suscriptor de ComboPlayed (una pasiva) inyecta +5 al play
+            // Arrange — un suscriptor de ComboPlayed (una pasiva/item) inyecta +5 al play
             // scratch; un efecto del behavior resuelve la fórmula DENTRO de la ventana,
-            // como hace EffDealDamage en el flujo real.
+            // como algunos efectos sincrónicos.
             TypedEvent<ComboPlayedPayload>.Subscribe(_ => _play.CurrentPlayScratch.BonusComboDamage += 5);
             var resolver = new ResolveDamageProbeEffect();
             var behavior = BuildBehavior(resolver);
@@ -134,9 +134,17 @@ namespace Rollgeon.Heroes.Tests
             // Act
             behavior.Execute(BuildComboContext());
 
-            // Assert — (15 base combo del contexto) + 5 de bono_combo del canal at-played.
+            // Assert — dentro de la ventana la fórmula ve el bono: (15 base) + 5.
             Assert.AreEqual(20, resolver.ResolvedDamage);
-            // Con la ventana cerrada, la fórmula vuelve al valor sin bono (el preview no lo ve).
+
+            // El bono at-played PERSISTE tras cerrar la ventana: el daño del ataque real
+            // está diferido al frame de impacto (ventana ya cerrada) y debe seguir viéndolo.
+            Assert.AreEqual(15, Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                Guid.NewGuid(), 10, null));
+
+            // Se limpia al inicio del próximo turno (OnRollResolved), así el preview del
+            // turno siguiente no arrastra el bono jugado.
+            EventManager.Trigger(EventName.OnRollResolved, Guid.NewGuid(), new List<int> { 1, 2, 3 });
             Assert.AreEqual(10, Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
                 Guid.NewGuid(), 10, null));
         }

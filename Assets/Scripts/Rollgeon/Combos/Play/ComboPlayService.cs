@@ -23,6 +23,10 @@ namespace Rollgeon.Combos.Play
 
         public EnchantmentScratch CurrentPlayScratch { get; private set; }
 
+        // Persiste más allá de EndPlay para que el daño diferido al frame de impacto lo lea.
+        // Se reemplaza en cada BeginPlay con combo y se limpia en OnRollResolved / run-end.
+        public EnchantmentScratch LastPlayScratch { get; private set; }
+
         public bool IsPlayWindowOpen => _depth > 0;
 
         public string CurrentComboId { get; private set; }
@@ -38,6 +42,7 @@ namespace Rollgeon.Combos.Play
             UnsubscribeEvents();
             _depth = 0;
             CurrentPlayScratch = null;
+            LastPlayScratch = null;
             CurrentComboId = null;
         }
 
@@ -45,6 +50,7 @@ namespace Rollgeon.Combos.Play
         {
             if (_subscribed) return;
             EventManager.Subscribe(EventName.OnRunEnd, OnRunEndHandler);
+            EventManager.Subscribe(EventName.OnRollResolved, OnRollResolvedHandler);
             _subscribed = true;
         }
 
@@ -52,6 +58,7 @@ namespace Rollgeon.Combos.Play
         {
             if (!_subscribed) return;
             EventManager.UnSubscribe(EventName.OnRunEnd, OnRunEndHandler);
+            EventManager.UnSubscribe(EventName.OnRollResolved, OnRollResolvedHandler);
             _subscribed = false;
         }
 
@@ -61,7 +68,17 @@ namespace Rollgeon.Combos.Play
             // termina a mitad de una ejecución no queremos scratch colgado en la próxima.
             _depth = 0;
             CurrentPlayScratch = null;
+            LastPlayScratch = null;
             CurrentComboId = null;
+        }
+
+        private void OnRollResolvedHandler(params object[] args)
+        {
+            // Inicio de turno (nuevo roll): el bono at-played del turno anterior ya fue
+            // consumido por el daño diferido de su impacto. Limpiarlo acá evita que el
+            // preview de este turno lo vea (contrato: el preview nunca ve bonos jugados
+            // viejos) y que se filtre a un combo distinto.
+            LastPlayScratch = null;
         }
 
         public void BeginPlay(EffectContext effCtx)
@@ -74,10 +91,15 @@ namespace Rollgeon.Combos.Play
 
             var combo = effCtx?.ComboResult;
             if (combo == null || !combo.Value.IsMatch || string.IsNullOrEmpty(combo.Value.ComboId))
+            {
+                // Acción sin combo: no hay bono at-played para el daño diferido.
+                LastPlayScratch = null;
                 return;
+            }
 
             var scratch = new EnchantmentScratch();
             CurrentPlayScratch = scratch;
+            LastPlayScratch = scratch;
             CurrentComboId = combo.Value.ComboId;
 
             TypedEvent<ComboPlayedPayload>.Raise(new ComboPlayedPayload
@@ -93,9 +115,10 @@ namespace Rollgeon.Combos.Play
 
             // Recursos (oro/stats) acumulados por los suscriptores se materializan una sola
             // vez. El bono de combo NO se aplica acá: queda en el scratch para que
-            // PlayerComboDamage.Resolve lo lea durante esta misma ventana. Asunción
-            // documentada: EffDealDamage resuelve sincrónico dentro de la ventana — si el
-            // daño se difiriera más allá del Execute, el bono se perdería.
+            // PlayerComboDamage.Resolve lo lea. El daño del ataque real está diferido al
+            // frame de impacto (fuera de esta ventana), por eso el scratch persiste en
+            // LastPlayScratch hasta el próximo roll/play — si solo viviera en
+            // CurrentPlayScratch el bono se perdería al cerrar la ventana.
             EnchantmentScratchApplier.Apply(scratch, effCtx.SourceGuid);
         }
 
@@ -110,6 +133,8 @@ namespace Rollgeon.Combos.Play
             _depth--;
             if (_depth > 0) return;
 
+            // Cierra la ventana. LastPlayScratch NO se toca: sobrevive para que el daño
+            // diferido al frame de impacto lea el bono at-played (lo limpia OnRollResolved).
             CurrentPlayScratch = null;
             CurrentComboId = null;
         }

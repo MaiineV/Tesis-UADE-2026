@@ -21,10 +21,21 @@ namespace Rollgeon.Combos.Play
     {
         /// <summary>
         /// Scratch de la ejecución en curso. NULL fuera de la ventana y en acciones sin
-        /// combo — el preview de <c>DamageFormulaView</c> llama <c>Resolve</c> con ventana
-        /// cerrada y nunca ve bonos jugados viejos.
+        /// combo. Es el destino de escritura de los suscriptores de <c>ComboPlayedPayload</c>
+        /// mientras la ventana está abierta.
         /// </summary>
         EnchantmentScratch CurrentPlayScratch { get; }
+
+        /// <summary>
+        /// Último scratch de combo jugado, PERSISTENTE más allá de <see cref="EndPlay"/>.
+        /// Existe porque el daño del ataque real está diferido al frame de impacto (el
+        /// <c>EffDealDamage</c> corre desde un InlineEffect del <c>FeedbackManager</c>, ya
+        /// cerrada la ventana): <c>PlayerComboDamage.Resolve</c> lee de acá para no perder
+        /// el bono at-played. Se reemplaza en cada <see cref="BeginPlay"/> con combo y se
+        /// limpia al inicio del turno (<c>OnRollResolved</c>) y en run-end, de modo que el
+        /// preview nunca ve un bono jugado de un turno anterior.
+        /// </summary>
+        EnchantmentScratch LastPlayScratch { get; }
 
         /// <summary><c>true</c> mientras una ejecución de acción está en curso.</summary>
         bool IsPlayWindowOpen { get; }

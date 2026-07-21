@@ -60,14 +60,16 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplier *= enchants.LastComboScratch.ComboDamageMultiplier;
                 block |= enchants.LastComboScratch.BlockComboDamage;
             }
-            // Canal at-played: bonos inyectados por pasivas durante la ventana de combo
-            // jugado (ComboPlayedPayload). Solo abierto durante la ejecución de la acción —
-            // el preview del HUD llama Resolve con ventana cerrada y no los ve.
-            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.CurrentPlayScratch != null)
+            // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
+            // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
+            // la ventana) porque el daño del ataque real está diferido al frame de impacto,
+            // ya cerrada la ventana. Se limpia al inicio del turno, así el preview no ve
+            // bonos jugados de un turno anterior.
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.LastPlayScratch != null)
             {
-                bonoCombo += play.CurrentPlayScratch.BonusComboDamage;
-                scratchMultiplier *= play.CurrentPlayScratch.ComboDamageMultiplier;
-                block |= play.CurrentPlayScratch.BlockComboDamage;
+                bonoCombo += play.LastPlayScratch.BonusComboDamage;
+                scratchMultiplier *= play.LastPlayScratch.ComboDamageMultiplier;
+                block |= play.LastPlayScratch.BlockComboDamage;
             }
 
             if (block)
