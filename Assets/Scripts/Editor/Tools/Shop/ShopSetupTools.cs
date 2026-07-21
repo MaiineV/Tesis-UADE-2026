@@ -18,6 +18,8 @@ namespace Rollgeon.EditorTools.Shop
     {
         private const string ShopPoolPath = "Assets/Rollgeon/Rooms/Shop/ShopPool.asset";
         private const string TutorialPoolPath = "Assets/Rollgeon/Tutorial/SP_Tutorial.asset";
+        private const string ShopConfigPath = "Assets/Rollgeon/Rooms/Shop/ShopConfig.asset";
+        private const string TutorialConfigPath = "Assets/Rollgeon/Tutorial/SC_Tutorial.asset";
         private const string PotionItemPath = "Assets/Rollgeon/Rooms/Shop/Items/Item_HealingPotion.asset";
         private const string CatalogPath = "Assets/Rollgeon/Items/ItemCatalog.asset";
         private const string TutorialItemPath = "Assets/Rollgeon/Items/Item_GuantesApostadorPar.asset";
@@ -56,6 +58,7 @@ namespace Rollgeon.EditorTools.Shop
             pool.Items = items;
 
             EditorUtility.SetDirty(pool);
+            WireDefaultVisual(ShopConfigPath, potion);
             AssetDatabase.SaveAssets();
             Debug.Log($"[ShopSetup] ShopPool item-first: poción garantizada + {items.Count} items passive del catálogo.");
         }
@@ -65,6 +68,7 @@ namespace Rollgeon.EditorTools.Shop
         {
             var pool = AssetDatabase.LoadAssetAtPath<ShopPoolSO>(TutorialPoolPath);
             var item = AssetDatabase.LoadAssetAtPath<ItemSO>(TutorialItemPath);
+            var potion = AssetDatabase.LoadAssetAtPath<ItemSO>(PotionItemPath);
 
             if (pool == null || item == null)
             {
@@ -81,8 +85,19 @@ namespace Rollgeon.EditorTools.Shop
             };
 
             EditorUtility.SetDirty(pool);
+            WireDefaultVisual(TutorialConfigPath, potion);
             AssetDatabase.SaveAssets();
             Debug.Log("[ShopSetup] SP_Tutorial item-first: Guantes del apostador como único item.");
+        }
+
+        // Cablea el visual fallback del config al WorldPrefab de la poción (misma cápsula
+        // que ya se usaba), para que los items sin visual propio muestren algo tinteado.
+        private static void WireDefaultVisual(string configPath, ItemSO potion)
+        {
+            var config = AssetDatabase.LoadAssetAtPath<ShopConfigSO>(configPath);
+            if (config == null || potion == null || potion.WorldPrefab == null) return;
+            config.DefaultItemVisualPrefab = potion.WorldPrefab;
+            EditorUtility.SetDirty(config);
         }
 
         private static WeightedShopItem ToWeightedEntry(ItemSO item)

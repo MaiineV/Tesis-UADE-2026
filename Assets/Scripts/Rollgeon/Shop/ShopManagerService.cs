@@ -310,6 +310,14 @@ namespace Rollgeon.Shop
             if (pedestalRoot == null || slot?.Item == null) return;
 
             var prefab = ResolveWorldPrefab(slot.Item);
+            bool isFallback = false;
+            if (prefab == null)
+            {
+                // El item no trae WorldPrefab propio: usar el visual genérico tinteado
+                // para que igual haya algo sobre el pedestal (placeholder).
+                prefab = ActiveConfig?.DefaultItemVisualPrefab;
+                isFallback = true;
+            }
             if (prefab == null) return;
 
             var visual = UnityEngine.Object.Instantiate(prefab, pedestalRoot);
@@ -317,6 +325,29 @@ namespace Rollgeon.Shop
             visual.transform.localRotation = Quaternion.identity;
             string displayName = slot.Item.DisplayName ?? slot.Item.EntryId ?? "?";
             visual.name = $"[ShopItemVisual] {displayName}";
+
+            if (isFallback && ActiveConfig != null)
+                ApplyVisualTint(visual, ActiveConfig.DefaultItemVisualTint);
+        }
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Tinta todos los renderers vía MaterialPropertyBlock (sin instanciar materiales).
+        // Setea _BaseColor (URP/Lit) y _Color (Built-in/legacy); las props inexistentes se ignoran.
+        private static void ApplyVisualTint(GameObject go, Color tint)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers == null || renderers.Length == 0) return;
+            var mpb = new MaterialPropertyBlock();
+            foreach (var r in renderers)
+            {
+                if (r == null) continue;
+                r.GetPropertyBlock(mpb);
+                mpb.SetColor(BaseColorId, tint);
+                mpb.SetColor(ColorId, tint);
+                r.SetPropertyBlock(mpb);
+            }
         }
 
         /// <summary>

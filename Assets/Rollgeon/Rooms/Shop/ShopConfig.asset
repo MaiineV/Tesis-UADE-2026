@@ -21,3 +21,5 @@ MonoBehaviour:
   FirstPurchaseDiscountPercent: 0
   PedestalPrefab: {fileID: 8567412772713499246, guid: bc3caaa25b1ee5245b825f86ced5039c, type: 3}
   ItemVisualLocalOffset: {x: 0, y: 1.5, z: 0}
+  DefaultItemVisualPrefab: {fileID: 2080456881282250630, guid: c9c5670473f1a8543848c5e72230d4fa, type: 3}
+  DefaultItemVisualTint: {r: 0.55, g: 0.75, b: 1, a: 1}
