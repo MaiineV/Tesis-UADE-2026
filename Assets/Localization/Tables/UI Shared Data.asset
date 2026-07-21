@@ -275,6 +275,30 @@ MonoBehaviour:
     m_Key: class_select.min_damage
     m_Metadata:
       m_Items: []
+  - m_Id: 2019786932191232
+    m_Key: altar.your_dice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134272
+    m_Key: altar.choose_slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134273
+    m_Key: altar.slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134274
+    m_Key: altar.slots_suffix
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134275
+    m_Key: altar.enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134276
+    m_Key: altar.confirm
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

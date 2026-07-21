@@ -233,8 +233,23 @@ namespace Rollgeon.UI.HUD
                 _panelRect.anchoredPosition = _shownAnchoredPos;
 
                 var bg = _panelGO.AddComponent<Image>();
-                bg.color = PanelColor;
                 bg.raycastTarget = false;
+
+                // Fondo con sprite 9-slice si el asset de settings existe (lo crea el
+                // installer "Rollgeon → Interaction Prompt → Create Settings"); sin
+                // asset —tests EditMode, builds viejas— se conserva el quad de color.
+                var settings = Resources.Load<InteractionPromptSettingsSO>(InteractionPromptSettingsSO.ResourcePath);
+                if (settings != null && settings.PanelSprite != null)
+                {
+                    bg.sprite = settings.PanelSprite;
+                    bg.type = Image.Type.Sliced;
+                    bg.pixelsPerUnitMultiplier = settings.PanelPixelsPerUnitMultiplier;
+                    bg.color = Color.white;
+                }
+                else
+                {
+                    bg.color = PanelColor;
+                }
 
                 var layout = _panelGO.AddComponent<VerticalLayoutGroup>();
                 layout.padding = new RectOffset(18, 18, 14, 14);

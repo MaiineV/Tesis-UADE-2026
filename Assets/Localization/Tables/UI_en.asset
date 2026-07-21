@@ -279,6 +279,30 @@ MonoBehaviour:
     m_Localized: Minimum damage = highest die
     m_Metadata:
       m_Items: []
+  - m_Id: 2019786932191232
+    m_Localized: 'Your dice:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134272
+    m_Localized: 'Choose the selected die''s slot:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134273
+    m_Localized: Slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134274
+    m_Localized: slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134275
+    m_Localized: Enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134276
+    m_Localized: Confirm
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

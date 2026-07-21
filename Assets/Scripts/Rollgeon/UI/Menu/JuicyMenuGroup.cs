@@ -1,3 +1,4 @@
+using Rollgeon.UI.Screens;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,8 +12,9 @@ namespace Rollgeon.UI.Menu
     /// </summary>
     /// <remarks>
     /// [SETUP] Los rombos son Images planas rotadas 45° en Z, hijas de este
-    /// GameObject, con raycast apagado. En el main menu la entrada espera al
-    /// intro (<see cref="_waitForIntro"/>); en pausa corre en cada apertura.
+    /// GameObject, con raycast apagado. En el main menu la entrada espera a
+    /// <see cref="MainMenuIntroAnimation.IntroFinished"/> (<see cref="_introAnimation"/>);
+    /// en pausa corre en cada apertura.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Menu/Juicy Menu Group")]
     public sealed class JuicyMenuGroup : MonoBehaviour
@@ -27,15 +29,14 @@ namespace Rollgeon.UI.Menu
         private MenuJuiceSettingsSO _settings;
 
         [SerializeField, Tooltip("Reproducir la entrada staggered en cada enable (pausa). " +
-                 "En el main menu también va true: el delay del intro se maneja con Wait For Intro.")]
+                 "En el main menu también va true: el delay del intro se maneja escuchando IntroFinished.")]
         private bool _playEntranceOnEnable = true;
 
-        [SerializeField, Optional, Tooltip("Intro de la escena (IntroAnimationController). Con esto " +
-                 "cableado, la PRIMERA entrada tras cargar la escena espera Intro Delay; las " +
-                 "siguientes (volver por push/pop) entran sin delay.")]
-        private GameObject _waitForIntro;
-
-        [SerializeField] private float _introDelay = 1.2f;
+        [SerializeField, Optional, Tooltip("Intro de la escena (MainMenuIntroAnimation). Con esto " +
+                 "cableado, la PRIMERA entrada tras cargar la escena espera a que dispare " +
+                 "IntroFinished (el título termina de empujar); las siguientes (volver por " +
+                 "push/pop) entran sin esperar.")]
+        private MainMenuIntroAnimation _introAnimation;
 
 
         private JuicyMenuButton _current;
@@ -43,18 +44,9 @@ namespace Rollgeon.UI.Menu
         private Image _rightDiamondImage;
         private Vector3 _leftDiamondBaseScale = Vector3.one;
         private Vector3 _rightDiamondBaseScale = Vector3.one;
-        private float _spawnUnscaledTime;
 
         private void Awake()
         {
-            // Ancla del delay de intro. Time.timeSinceLevelLoad no sirve: en el
-            // OnEnable de una escena recién cargada con LoadScene todavía arrastra
-            // el reloj de la escena anterior (la carga real se difiere un frame),
-            // así que al volver de una run el delay clampeaba a 0 y los botones
-            // entraban antes que el logo. Awake corre una sola vez por carga de
-            // escena, incluso con el churn de SetActive del ScreenHost.
-            _spawnUnscaledTime = Time.unscaledTime;
-
             if (_leftDiamond != null)
             {
                 _leftDiamondImage = _leftDiamond.GetComponent<Image>();
@@ -80,17 +72,27 @@ namespace Rollgeon.UI.Menu
 
             if (_playEntranceOnEnable)
             {
-                // El delay se ancla al reloj propio (ver Awake), no a estados de
-                // otros objetos: activeSelf del intro depende del orden de OnEnable
-                // (no garantizado) y un flag "primer enable" se consume de más si
-                // un overlay churnea la screen durante la carga. La primera entrada
-                // tras cargar la escena espera Intro Delay completo; al volver al
-                // menú por push/pop el reloj ya superó el delay y es inmediata.
-                float elapsedSinceSpawn = Time.unscaledTime - _spawnUnscaledTime;
-                float baseDelay = _waitForIntro != null
-                    ? Mathf.Max(0f, _introDelay - elapsedSinceSpawn)
-                    : 0f;
-                PlayEntrance(baseDelay);
+                // Ocultar YA, sin importar si hay que esperar el evento o no —
+                // PlayEntrance recién oculta+anima cuando se llama, así que si
+                // sólo se la esperaba disparar al final, los botones quedaban
+                // visibles durante toda la espera del intro.
+                foreach (var button in _buttons)
+                {
+                    if (button == null) continue;
+                    button.HideForEntrance();
+                }
+
+                // Chequeo directo del estado en vez de confiar solo en el evento:
+                // el orden de OnEnable entre componentes hermanos (este y
+                // MainMenuIntroAnimation) no está garantizado — si el intro ya
+                // terminó (ej. se saltó de una al volver de gameplay) ANTES de
+                // que este OnEnable llegue a suscribirse, el evento ya disparó
+                // y nunca más, y nos quedaríamos esperando para siempre.
+                bool introAlreadyDone = _introAnimation == null || _introAnimation.IntroHasFinished;
+                if (introAlreadyDone)
+                    PlayEntrance(0f);
+                else
+                    _introAnimation.IntroFinished += HandleIntroFinished;
             }
         }
 
@@ -101,6 +103,15 @@ namespace Rollgeon.UI.Menu
                 if (button == null) continue;
                 button.HighlightChanged -= HandleHighlightChanged;
             }
+
+            if (_introAnimation != null)
+                _introAnimation.IntroFinished -= HandleIntroFinished;
+        }
+
+        private void HandleIntroFinished()
+        {
+            _introAnimation.IntroFinished -= HandleIntroFinished;
+            PlayEntrance(0f);
         }
 
         /// <summary>Entrada staggered: delay = base + índice * step.</summary>
