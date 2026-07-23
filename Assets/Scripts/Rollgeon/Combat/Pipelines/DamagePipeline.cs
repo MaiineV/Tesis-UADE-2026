@@ -2,7 +2,6 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Weakness;
 using UnityEngine;
@@ -56,17 +55,6 @@ namespace Rollgeon.Combat.Pipelines
 
             // ── 0. Zero / negative guard ──────────────────────────────────────
             if (damage <= 0)
-            {
-                ctx.FinalDamage = 0;
-                ctx.WeaknessMultiplier = 1f;
-                ctx.WasLethal = false;
-                return ctx;
-            }
-
-            // ── 0b. Repeat-combo guard (no repetir el mismo combo 2 veces seguidas) ──
-            // Record() ya corrió para este golpe (CombatHandoffService, antes de llegar
-            // acá) — comparamos contra el anterior al que acaba de empujar al frente.
-            if (IsRepeatOfPreviousCombo(ctx.ComboId, alreadyRecordedThisAttack: true))
             {
                 ctx.FinalDamage = 0;
                 ctx.WeaknessMultiplier = 1f;
@@ -201,18 +189,6 @@ namespace Rollgeon.Combat.Pipelines
                 return ctx;
             }
 
-            // Repeat-combo guard: a diferencia de Resolve, acá el jugador todavía está
-            // eligiendo dados — Record() para ESTE intento todavía no corrió, así que
-            // comparamos directo contra el último combo ya confirmado.
-            if (IsRepeatOfPreviousCombo(ctx.ComboId, alreadyRecordedThisAttack: false))
-            {
-                ctx.FinalDamage = 0;
-                ctx.WeaknessMultiplier = 1f;
-                ctx.ShieldAbsorbed = 0;
-                ctx.BlockedByShield = false;
-                return ctx;
-            }
-
             // Stage 2 — weakness (read-only: PeekMultiplier NO dispara OnWeaknessHit).
             float weakMult = 1f;
             if (ctx.IsWeaknessHit && _weaknessChecker != null)
@@ -232,27 +208,6 @@ namespace Rollgeon.Combat.Pipelines
             ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
             ctx.FinalDamage = damage;
             return ctx;
-        }
-
-        // "Combo repetido = 0 daño" — memoria de un solo paso contra IComboLogService
-        // (ya existe, poblado por CombatHandoffService en cada ataque primario con tirada).
-        // Resolve() corre DESPUÉS de que Record() ya empujó el combo de este golpe al
-        // frente del historial — el "anterior real" queda en el índice 1. Preview() corre
-        // ANTES de que Record() confirme el intento — el "anterior real" es directamente
-        // LastCombo (índice 0). ComboId vacío (ataques sin combo / no-jugador) nunca activa
-        // la regla.
-        private static bool IsRepeatOfPreviousCombo(string comboId, bool alreadyRecordedThisAttack)
-        {
-            if (string.IsNullOrEmpty(comboId)) return false;
-            if (!ServiceLocator.TryGetService<IComboLogService>(out var log) || log == null) return false;
-
-            if (alreadyRecordedThisAttack)
-            {
-                var lastTwo = log.Last(2);
-                return lastTwo.Count >= 2 && lastTwo[1] == comboId;
-            }
-
-            return log.LastCombo == comboId;
         }
 
         private int ReadShield(Guid targetId)

@@ -1264,9 +1264,10 @@ namespace Rollgeon.Combat.Handoff
         // Detección de combo del path chain. Además, SOLO en la fase 0, registra el combo
         // en IComboLogService: los behaviors con chain nunca llegan al Record del path
         // primario (DoConfirm hace early-return con _activeChain activo), así que sin este
-        // registro el historial queda vacío y la regla "combo repetido = 0 daño" del
-        // DamagePipeline no dispara jamás. Las fases > 0 son continuaciones con tirada
-        // nueva — matchean para su propio daño pero no redefinen "el combo del turno".
+        // registro el historial queda vacío. El log alimenta al forbid-combo del jefe de
+        // piso 2 (AINode_RotateBlock Target=Combo) y al snapshot de resume — no borrar el
+        // Record aunque el combo del turno "no se use" acá. Las fases > 0 son continuaciones
+        // con tirada nueva — matchean para su propio daño pero no redefinen "el combo del turno".
         internal static ComboDetectionResult? DetectChainCombo(
             Heroes.ContractSheet sheet, int[] keptDice, IReadOnlyList<DiceType> keptTypes,
             int chainPhaseIndex)

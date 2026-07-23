@@ -11,11 +11,12 @@ using UnityEngine;
 namespace Rollgeon.Combat.Handoff.Tests
 {
     /// <summary>
-    /// Regresión del bug "repetir combo no anula el daño" en héroes cuyo ataque usa chain:
-    /// el path chain (<c>ExecuteChainPhase</c>) detectaba el combo pero nunca lo registraba
-    /// en <see cref="IComboLogService"/> — el Record del path primario no corre para chains
-    /// porque <c>DoConfirm</c> hace early-return con el chain activo. El historial quedaba
-    /// vacío y la regla "combo repetido = 0 daño" del DamagePipeline no disparaba jamás.
+    /// Regresión: los héroes cuyo ataque usa chain deben registrar su combo en
+    /// <see cref="IComboLogService"/>. El path chain (<c>ExecuteChainPhase</c>) detectaba el
+    /// combo pero nunca lo registraba — el Record del path primario no corre para chains
+    /// porque <c>DoConfirm</c> hace early-return con el chain activo. Sin este registro el
+    /// historial queda vacío y los consumidores del log (forbid-combo del jefe de piso 2 y
+    /// el snapshot de resume) no ven el combo del turno.
     /// </summary>
     [TestFixture]
     public class ChainComboRecordTests
@@ -58,7 +59,7 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.IsTrue(result.HasValue && result.Value.IsMatch, "Par debe matchear [3,3].");
             Assert.AreEqual("combo.par", _comboLog.LastCombo,
                 "La fase 0 del chain debe registrar el combo del ataque — sin esto el " +
-                "historial queda vacío y la regla 'combo repetido = 0 daño' nunca dispara.");
+                "historial queda vacío para el forbid-combo del jefe 2 y el resume.");
         }
 
         [Test]
