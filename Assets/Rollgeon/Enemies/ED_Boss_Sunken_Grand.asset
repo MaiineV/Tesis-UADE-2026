@@ -500,10 +500,16 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
-    - Name: 
+      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+    - Name: Target
+      Entry: 3
+      Data: 0
+    - Name: Count
+      Entry: 3
+      Data: 1
+    - Name:
       Entry: 8
-      Data: 
+      Data:
     - Name: Else
       Entry: 7
       Data: 50|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
