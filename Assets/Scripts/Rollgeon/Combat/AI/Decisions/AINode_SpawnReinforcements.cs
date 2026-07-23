@@ -77,6 +77,15 @@ namespace Rollgeon.Combat.AI.Decisions
                 grid.Register(id, coord);
                 visuals?.SpawnEnemy(id, EnemyToSpawn, coord);
 
+                // Reinforcements spawn at full HP; the world-space bar is a caller-initialized
+                // widget, so mirror DefaultEnemySpawnResolver — otherwise the bar renders its
+                // default (0 HP) and never binds to damage events.
+                if (visuals != null && visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
+                {
+                    int maxHp = EnemyToSpawn.ResolveMaxHP(tier);
+                    pawn.HealthBar.Initialize(id, maxHp, maxHp);
+                }
+
                 turnOrder.Append(id);
             }
 
