@@ -531,7 +531,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger:
+    AnimTrigger: 
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -554,7 +554,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 1
     AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
     Volume: 0.9
-    AnimTrigger:
+    AnimTrigger: 
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -577,9 +577,55 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 1
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger:
+    AnimTrigger: 
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.sunken_grand.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.sunken_grand.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
     DeathSpinDegrees: 720
     DeathEndScale: 0
@@ -598,6 +644,12 @@ MonoBehaviour:
       InlineAnimOnSource: 1
       InlineBehaviorValueKey: 0
       InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
       StartMode: 0
       StartDependsOnStepIndex: 0
       StartOnEventKey: 
@@ -613,6 +665,12 @@ MonoBehaviour:
       InlineAnimOnSource: 1
       InlineBehaviorValueKey: 0
       InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
       StartMode: 0
       StartDependsOnStepIndex: 0
       StartOnEventKey: 
@@ -628,6 +686,12 @@ MonoBehaviour:
       InlineAnimOnSource: 1
       InlineBehaviorValueKey: 0
       InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
       StartMode: 0
       StartDependsOnStepIndex: 0
       StartOnEventKey: 
@@ -643,6 +707,12 @@ MonoBehaviour:
       InlineAnimOnSource: 1
       InlineBehaviorValueKey: 0
       InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
       StartMode: 0
       StartDependsOnStepIndex: 0
       StartOnEventKey: 
@@ -651,3 +721,8 @@ MonoBehaviour:
       DurationOverride: 0
       EndOnEventKey: 
       BlockSequence: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

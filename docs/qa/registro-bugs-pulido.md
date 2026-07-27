@@ -104,6 +104,25 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix propuesto**: paso post-build en `RollgeonBuild.CopySteamAppId`-style que estampe el version info con `rcedit` (dependencia externa, ~1 MB). Alternativa: firmar el ejecutable, que resuelve esto y el warning de SmartScreen a la vez.
 - **Branch**: detectado en `Feature#0036_SteamBuild`. **Estado**: abierto, no bloquea la primera subida a Steam.
 
+### PUL-013 — El ataque telegrafiado del Sunken Grand no anima
+
+- **Severidad**: Baja (cosmético — el daño y el telegraph funcionan bien)
+- **Área**: Combat / Enemies / Anim
+- El árbol de `ED_Boss_Sunken_Grand` pega por **dos** caminos: el `AINode_Behavior` con la acción `Ranged` (que en `Feature#0038` quedó sincronizada al frame de impacto, eligiendo `Attack_Melee` o `Attack_Range` según la distancia Manhattan al target) y el par `AINode_TelegraphMark` → `AINode_ExecuteTelegraph`, que resuelve el daño por su cuenta **sin pasar por ningún `EffectData`**.
+- **Consecuencia**: cuando el boss cobra una marca telegrafiada, el modelo se queda en Idle y el daño aparece sin windup. Contrasta feo con el otro camino, que ahora sí anticipa el golpe.
+- **Estado**: **cerrado** en `Feature#0038_SunkedGrandAnimSync`. `AINode_ExecuteTelegraph` ganó dos campos autorables (`WindupFeedbackId` + `ImpactEventKey`) y un `TickCoroutine` que corre ese feedback **antes** de resolver el daño, bloqueando en el Animation Event — el mismo gate que usa la acción autorada. El `Tick` síncrono (EditMode) queda igual que antes, sin windup, porque ahí no hay dónde esperar el evento. El Sunken Grand quedó autorado con `anim.enemy.sunken_grand.range` / `hit`; el General Director y el Security Boss quedan vacíos, o sea sin cambio de comportamiento hasta que se les autore su propia entry.
+
+### PUL-014 — Un nodo de movimiento que devuelve `Failed` congela el turno entero del enemigo
+
+- **Severidad**: Alta cuando pega (el enemigo deja de jugar), pero depende de cómo esté armado cada árbol
+- **Área**: Combat / AI
+- Los nodos de movimiento devuelven `AIResult.Failed` en el caso **benigno** de "no hay nada que hacer" — `AINode_KeepDistance` cuando ya está a distancia ideal o no encuentra un tile mejor, `AINode_Move` cuando no hay path. Es lo que manda el contrato de `AIActionNode` ("`Failed` si no se ejecutó, ej. fuera de rango"), pero **`AINode_Sequence` aborta al primer `Failed`**: todo lo que venga después en el sequence no corre.
+- **Cómo se manifestó**: el Sunken Grand tenía `KeepDistance` en el índice 1 de 5, antes del ataque, con `IdealDistance = 5`. Parándose a 5+ casillas del boss, el nodo devolvía `Failed` y se llevaba puesto el buff de fase, el ataque/telegraph y el rotate block: **el boss se quedaba literalmente quieto**. Arreglado en `Feature#0038` envolviéndolo en `Selector(KeepDistance, Wait)`, el idiom de "intentá esto, no importa si falla".
+- **Sigue latente en otros lados**: `ED_RangedEnemy` tiene `Sequence[Move, If[...Attack]]` — si `AINode_Move` no encuentra path, el ataque de esa rama no corre. `ED_RangedEnemy` y `ED_Healer` esquivan el caso de `KeepDistance` poniéndolo **último** en su sequence, así que hoy no se nota, pero es por acomodo, no por diseño.
+- **Fix de fondo a evaluar**: separar "no había nada que hacer" de "falló de verdad" (un `AIResult.Skipped`, o que estos nodos devuelvan `Succeeded` cuando el no-op es benigno). Ojo: cambiar la semántica ripplea a los `While` del ranged y del healer, que hoy cortan su loop con el `Failed` del body. Por eso en `Feature#0038` se arregló el árbol y no el nodo.
+- **Mitigación puesta**: `<remarks>` de advertencia en `AINode_KeepDistance` con el idiom del `Selector`.
+- **Branch**: detectado en playtest durante `Feature#0038_SunkedGrandAnimSync`. **Estado**: el caso del Sunken Grand está cerrado; la deuda de fondo (semántica de los nodos de movimiento) queda abierta.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana

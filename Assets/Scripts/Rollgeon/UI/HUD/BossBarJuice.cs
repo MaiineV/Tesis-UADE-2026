@@ -167,7 +167,14 @@ namespace Rollgeon.UI.HUD
         private float _lowHpPulsePeriod = 0.7f;
 
         // Rest poses capturadas.
-        private Vector3 _shakeRestPos;
+        // OJO: la del shake NO va acá. El Root está anclado arriba-centro, así que su
+        // localPosition.y es medio alto del canvas — un valor que deriva el CanvasScaler y
+        // que cambia con la resolución y con el primer layout pass. Cachearlo en OnEnable y
+        // después escribirlo de vuelta reposicionaba la barra (con el canvas todavía sin
+        // resolver quedaba en cero y la barra saltaba al centro de la pantalla). Se captura
+        // fresco en cada shake, y sobre anchoredPosition, que es lo que el layout respeta.
+        private Vector2 _shakeRestAnchored;
+        private bool _shakeRestValid;
         private Vector3 _shakeRestScale = Vector3.one;
         private Vector3 _hpRestScale = Vector3.one;
         private Color _fillRestColor = Color.white;
@@ -188,7 +195,7 @@ namespace Rollgeon.UI.HUD
         private void CaptureRest()
         {
             if (_restCaptured) return;
-            if (_shakeTarget != null) { _shakeRestPos = _shakeTarget.localPosition; _shakeRestScale = _shakeTarget.localScale; }
+            if (_shakeTarget != null) _shakeRestScale = _shakeTarget.localScale;
             if (_hpText != null) _hpRestScale = _hpText.transform.localScale;
             if (_fillImage != null) _fillRestColor = _fillImage.color;
             if (_lifeBorder != null) _borderRestColor = _lifeBorder.color;
@@ -338,11 +345,22 @@ namespace Rollgeon.UI.HUD
         private void Shake(float strength)
         {
             if (!Active || !Motion || _shakeTarget == null || strength <= 0f) return;
-            if (_shakeTween.isAlive) _shakeTween.Stop();
-            _shakeTarget.localPosition = _shakeRestPos;
-            _shakeTween = Tween.ShakeLocalPosition(_shakeTarget,
-                strength: new Vector3(strength, strength, 0f),
-                duration: _shakeDuration, frequency: _shakeFrequency);
+
+            // El rest se toma acá y no en CaptureRest: en este punto el layout ya corrió, así
+            // que anchoredPosition es la posición real. Si hay un shake vivo hay que restaurar
+            // primero, o capturaríamos una pose ya desplazada por el tween anterior.
+            if (_shakeTween.isAlive) { _shakeTween.Stop(); RestoreShakePos(); }
+            _shakeRestAnchored = _shakeTarget.anchoredPosition;
+            _shakeRestValid = true;
+
+            _shakeTween = Tween.ShakeCustom(_shakeTarget, (Vector3)_shakeRestAnchored,
+                new ShakeSettings(new Vector3(strength, strength, 0f), _shakeDuration, _shakeFrequency),
+                (rect, value) => rect.anchoredPosition = value);
+        }
+
+        private void RestoreShakePos()
+        {
+            if (_shakeRestValid && _shakeTarget != null) _shakeTarget.anchoredPosition = _shakeRestAnchored;
         }
 
         // Shake de la cámara del juego vía el servicio compartido (loudest-wins). Corre en
@@ -410,7 +428,7 @@ namespace Rollgeon.UI.HUD
             StopTransformTweens();
             StopLowHp();
 
-            if (_shakeTarget != null) { _shakeTarget.localPosition = _shakeRestPos; _shakeTarget.localScale = _shakeRestScale; }
+            if (_shakeTarget != null) { RestoreShakePos(); _shakeTarget.localScale = _shakeRestScale; }
             if (_hpText != null) _hpText.transform.localScale = _hpRestScale;
             if (_fillImage != null) _fillImage.color = _fillRestColor;
             if (_lifeBorder != null) _lifeBorder.color = _borderRestColor;
