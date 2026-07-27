@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using Patterns;
 using Rollgeon.UI.HUD;
 using TMPro;
 using UnityEngine;
@@ -12,12 +13,19 @@ namespace Rollgeon.UI.Tests
     {
         private readonly List<Object> _created = new();
 
+        [SetUp]
+        public void SetUp()
+        {
+            EventManager.ResetEventDictionary();
+        }
+
         [TearDown]
         public void TearDown()
         {
             foreach (var obj in _created)
                 if (obj != null) Object.DestroyImmediate(obj);
             _created.Clear();
+            EventManager.ResetEventDictionary();
         }
 
         private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, bool withLabel = true)
@@ -97,6 +105,66 @@ namespace Rollgeon.UI.Tests
             view.Hide();
 
             // Assert
+            Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        // PUL-016: el prompt no puede sobrevivir al chain que lo mostró. Estos cubren los
+        // caminos de salida que no pasan por un Hide explícito.
+
+        [Test]
+        public void Show_ThenOnChainCompleted_HidesPrompt()
+        {
+            // Arrange
+            var view = MakePrompt(out _);
+            view.Show("Shield");
+
+            // Act
+            EventManager.Trigger(EventName.OnChainCompleted, System.Guid.NewGuid(), 1, 2, false);
+
+            // Assert
+            Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void Show_ThenOnCombatEnd_HidesPrompt()
+        {
+            // Arrange — el repro original: el combate cierra con la entrada paga pendiente.
+            var view = MakePrompt(out _);
+            view.Show("Shield");
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatEnd);
+
+            // Assert
+            Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void ShowTwice_ThenOnCombatEnd_HidesPrompt()
+        {
+            // Arrange — dos Show seguidos no deben apilar suscripciones: si se apilaran, un
+            // solo Hide dejaría una viva y el handler correría sobre un prompt ya apagado.
+            var view = MakePrompt(out _);
+            view.Show("Shield");
+            view.Show("Shield");
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatEnd);
+
+            // Assert
+            Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void Hide_ThenOnCombatEnd_StaysHiddenAndDoesNotThrow()
+        {
+            // Arrange
+            var view = MakePrompt(out _);
+            view.Show("Shield");
+            view.Hide();
+
+            // Act / Assert — ya desuscripto: el evento no debe tocar nada.
+            Assert.DoesNotThrow(() => EventManager.Trigger(EventName.OnCombatEnd));
             Assert.IsFalse(view.gameObject.activeSelf);
         }
     }
