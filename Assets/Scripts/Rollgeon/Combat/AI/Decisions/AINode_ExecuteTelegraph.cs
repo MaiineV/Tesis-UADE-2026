@@ -55,9 +55,10 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Camino de play mode. Corre el windup <b>antes</b> de resolver, así el daño del
-        /// telegraph aterriza en el frame del golpe igual que el de la acción autorada, en
-        /// vez de aparecer con el boss quieto en Idle.
+        /// Camino de play mode. Corre el windup y aterriza el daño en el frame del golpe,
+        /// pero <b>retiene el turno hasta que la animación termina</b>: el hijo siguiente del
+        /// sequence del boss es <see cref="AINode_KeepDistance"/>, y soltar en el impacto lo
+        /// dejaba moviéndose con medio ataque todavía reproduciéndose.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -67,10 +68,22 @@ namespace Rollgeon.Combat.AI.Decisions
                 yield break;
             }
 
-            var windup = PlayWindup(context);
+            FaceTarget(context);
+
+            bool resolved = false;
+            Action resolveOnce = () =>
+            {
+                if (resolved) return;
+                resolved = true;
+                Resolve(context, area);
+            };
+
+            var windup = PlayWindup(context, resolveOnce);
             while (windup.MoveNext()) yield return windup.Current;
 
-            Resolve(context, area);
+            // Red de seguridad: si la key nunca se publicó (clip sin Animation Event, key mal
+            // autorada, sin feedback service) el daño igual cae — tarde, pero cae.
+            resolveOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
 
@@ -107,23 +120,22 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <c>EffectContext</c> que pasarle (mismo caso que la secuencia de muerte del
         /// <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
-        private IEnumerator PlayWindup(AIContext context)
+        private IEnumerator PlayWindup(AIContext context, Action onImpact)
         {
             if (!HasWindup()) yield break;
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
+            // El step bloquea la duración COMPLETA de la entry, no hasta el evento de impacto.
+            // El daño no sale de acá: lo dispara el latch del bus (abajo), así que se puede
+            // aterrizar en el golpe y aun así retener el turno hasta que el clip termine.
             var step = new FeedbackSequenceStep
             {
                 Source = StepSource.FeedbackRef,
                 FeedbackRefId = WindupFeedbackId,
                 StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
                 BlockSequence = true,
             };
-            if (!string.IsNullOrEmpty(ImpactEventKey))
-            {
-                step.EndMode = StepEndMode.OnEvent;
-                step.EndOnEventKey = ImpactEventKey;
-            }
 
             ServiceLocator.TryGetService<TurnManager>(out var turn);
             turn?.BeginFeedbackWait();
@@ -139,8 +151,39 @@ namespace Rollgeon.Combat.AI.Decisions
             // no queda sincronizado. Mismo degradado que EffPlaySequence.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
+            bool impactFired = string.IsNullOrEmpty(ImpactEventKey);
+
+            // Se envuelve el wait canónico (trae su propio timeout + force-reset del depth) en
+            // vez de rehacer el loop: el bus es latched, así que pollear HasFired por frame
+            // alcanza para enganchar el Animation Event sin suscribirse a nada.
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
-            while (wait.MoveNext()) yield return wait.Current;
+            while (wait.MoveNext())
+            {
+                if (!impactFired)
+                {
+                    var bus = FeedbackSequenceRuntime.Current;
+                    if (bus != null && bus.HasFired(ImpactEventKey))
+                    {
+                        impactFired = true;
+                        onImpact?.Invoke();
+                    }
+                }
+                yield return wait.Current;
+            }
+        }
+
+        /// <summary>
+        /// Gira al boss hacia el jugador antes del windup. Sin esto queda mirando en la
+        /// dirección en la que kiteó el turno anterior y ataca de espaldas.
+        /// </summary>
+        private static void FaceTarget(AIContext context)
+        {
+            if (context?.Grid == null || context.PlayerGuid == Guid.Empty) return;
+            if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
+            if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
+            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+            pawn.FaceCoord(from, to);
         }
 
         /// <remarks>
