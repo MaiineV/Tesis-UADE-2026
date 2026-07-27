@@ -90,7 +90,8 @@ namespace Rollgeon.EditorTools
                 return;
             }
 
-            CopySteamAppId(dir);
+            // steam_appid.txt lo copia SteamAppIdPostProcessor, que ya corrió como
+            // parte de BuildPlayer.
 
             var mb = summary.totalSize / (1024f * 1024f);
             Debug.Log($"[RollgeonBuild] Listo — {options.locationPathName} " +
@@ -186,7 +187,7 @@ namespace Rollgeon.EditorTools
         /// fuera del cliente de Steam. El depot lo excluye por vdf (ver SteamPipe/) —
         /// una sola salida de build, la exclusión vive en el borde que le importa.
         /// </summary>
-        private static void CopySteamAppId(string outputDir)
+        internal static void CopySteamAppId(string outputDir)
         {
             var source = Path.Combine(ProjectRoot(), SteamAppIdFile);
             if (!File.Exists(source))
@@ -199,7 +200,7 @@ namespace Rollgeon.EditorTools
             File.Copy(source, Path.Combine(outputDir, SteamAppIdFile), overwrite: true);
         }
 
-        private static string ProjectRoot() => Directory.GetParent(Application.dataPath)!.FullName;
+        internal static string ProjectRoot() => Directory.GetParent(Application.dataPath)!.FullName;
 
         /// <summary>Default Build/Windows64 en la raíz; -buildPath lo redirige para CI.</summary>
         private static string ResolveOutputDir()
@@ -215,6 +216,40 @@ namespace Rollgeon.EditorTools
         {
             Debug.LogError($"[RollgeonBuild] {message}");
             if (Application.isBatchMode) EditorApplication.Exit(1);
+        }
+    }
+
+    /// <summary>
+    /// Copia <c>steam_appid.txt</c> junto al player en <b>toda</b> build de Windows,
+    /// no solo en las que salen de Rollgeon → Build.
+    /// <para>
+    /// Sin ese archivo en el working directory del proceso,
+    /// <c>SteamAPI.RestartAppIfNecessary</c> relanza el juego vía <c>steam://run/</c>
+    /// y mata este proceso (ver <c>SteamServiceBootstrap</c>): la build local se cierra
+    /// sola y arranca la copia instalada de Steam, con un síntoma que no señala a la
+    /// causa. Como callback del pipeline cubre también File → Build Settings, Build
+    /// Profiles y cualquier script de CI que llame a BuildPipeline por su cuenta.
+    /// </para>
+    /// </summary>
+    public sealed class SteamAppIdPostProcessor : IPostprocessBuildWithReport
+    {
+        public int callbackOrder => 0;
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            var platform = report.summary.platform;
+            if (platform != BuildTarget.StandaloneWindows64 &&
+                platform != BuildTarget.StandaloneWindows)
+            {
+                return;
+            }
+
+            // outputPath es el .exe; el appid va en su carpeta, que es el cwd cuando
+            // se lo lanza con doble click.
+            var outputDir = Path.GetDirectoryName(report.summary.outputPath);
+            if (string.IsNullOrEmpty(outputDir)) return;
+
+            RollgeonBuild.CopySteamAppId(outputDir);
         }
     }
 }
