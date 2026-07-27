@@ -82,15 +82,23 @@ namespace Rollgeon.Combat.AI.Decisions
             if (context == null) return false;
 
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
+            {
+                ClearOverlay(context);
                 return false;
+            }
 
-            // Apagar el overlay de advertencia siempre que ejecutemos (haya o no
-            // impacto). Antes esto era TileHighlightService.ClearAll(), que además
-            // se llevaba puesto cualquier highlight ajeno al telegraph.
+            if (threat.TryConsume(context.SelfGuid, out area)) return true;
+
+            // Nada pendiente: el overlay igual se apaga. Defensivo — un overlay sin área
+            // pendiente no deberia existir, pero si quedara no lo limpiaria nadie mas.
+            ClearOverlay(context);
+            return false;
+        }
+
+        private static void ClearOverlay(AIContext context)
+        {
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
                 overlay.Clear(context.SelfGuid);
-
-            return threat.TryConsume(context.SelfGuid, out area);
         }
 
         /// <remarks>
@@ -135,8 +143,17 @@ namespace Rollgeon.Combat.AI.Decisions
             while (wait.MoveNext()) yield return wait.Current;
         }
 
+        /// <remarks>
+        /// El overlay se apaga acá y no al consumir la marca: con el windup de por medio,
+        /// apagarlo antes dejaba medio segundo de tiles muertos mientras el boss carga el
+        /// golpe. Se apaga siempre que ejecutemos, haya o no impacto. (Antes esto era
+        /// <c>TileHighlightService.ClearAll()</c>, que además se llevaba puesto cualquier
+        /// highlight ajeno al telegraph.)
+        /// </remarks>
         private static void Resolve(AIContext context, ThreatenedArea area)
         {
+            ClearOverlay(context);
+
             bool hit = false;
             var grid = context.Grid;
             if (grid != null
