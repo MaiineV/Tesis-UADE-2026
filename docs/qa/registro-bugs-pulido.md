@@ -104,6 +104,15 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix propuesto**: paso post-build en `RollgeonBuild.CopySteamAppId`-style que estampe el version info con `rcedit` (dependencia externa, ~1 MB). Alternativa: firmar el ejecutable, que resuelve esto y el warning de SmartScreen a la vez.
 - **Branch**: detectado en `Feature#0036_SteamBuild`. **Estado**: abierto, no bloquea la primera subida a Steam.
 
+### PUL-013 — El ataque telegrafiado del Sunken Grand no anima
+
+- **Severidad**: Baja (cosmético — el daño y el telegraph funcionan bien)
+- **Área**: Combat / Enemies / Anim
+- El árbol de `ED_Boss_Sunken_Grand` pega por **dos** caminos: el `AINode_Behavior` con la acción `Ranged` (que en `Feature#0038` quedó sincronizada al frame de impacto, eligiendo `Attack_Melee` o `Attack_Range` según la distancia Manhattan al target) y el par `AINode_TelegraphMark` → `AINode_ExecuteTelegraph`, que resuelve el daño por su cuenta **sin pasar por ningún `EffectData`**.
+- **Consecuencia**: cuando el boss cobra una marca telegrafiada, el modelo se queda en Idle y el daño aparece sin windup. Contrasta feo con el otro camino, que ahora sí anticipa el golpe.
+- **Fix propuesto**: colgarle una `EffPlaySequence` al path de telegraph — necesita que `AINode_ExecuteTelegraph` acepte efectos autorados o que emita un evento que el feedback pueda enganchar. No es un cambio de dos líneas: hoy el nodo no tiene punto de extensión.
+- **Branch**: detectado al implementar `Feature#0038_SunkedGrandAnimSync`. **Estado**: abierto, alcance excluido a propósito (la sesión cubría solo la acción autorada).
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
