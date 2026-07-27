@@ -4176,7 +4176,7 @@ MonoBehaviour:
         DampingX: 0.4
         FrequencyX: 6
         DampingY: 0.55
-        FrequencyY: 14
+        FrequencyY: 10
         DampingZ: 0.4
         FrequencyZ: 6
         Mode: 2

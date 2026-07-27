@@ -10,6 +10,16 @@ namespace Rollgeon.UI.HUD
     /// target queda squashado/rotado permanente para el resto de la sesión (bug del
     /// "primer dado squashado", 2026-07-13).
     /// </summary>
+    /// <remarks>
+    /// Al autorar feedbacks de spring (Position/Scale/Rotation), <b>mantener la
+    /// frecuencia por debajo de ~11 Hz</b> si el damping es ≥ 0.4. <c>MMMaths.Spring</c>
+    /// integra con Euler semi-implícito y clampea el sub-step a 1/60 fijo, así que a
+    /// partir de ahí h·ω sale de la región de estabilidad y el spring <i>diverge</i>:
+    /// duplica la amplitud en cada sub-step hasta Inf y de ahí a NaN. Un NaN en el
+    /// anchoredPosition contamina la matriz de toda la subjerarquía del canvas y deja
+    /// de dibujarse (PUL-015: el "Zone Roll Shake" a 14 Hz apagaba los dice boards
+    /// enteros ~1.6 s después de cada tirada).
+    /// </remarks>
     internal static class MmfJuice
     {
         /// <summary>

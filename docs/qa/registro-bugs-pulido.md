@@ -123,6 +123,17 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Mitigación puesta**: `<remarks>` de advertencia en `AINode_KeepDistance` con el idiom del `Selector`.
 - **Branch**: detectado en playtest durante `Feature#0038_SunkedGrandAnimSync`. **Estado**: el caso del Sunken Grand está cerrado; la deuda de fondo (semántica de los nodos de movimiento) queda abierta.
 
+### PUL-015 — Un `MMF_PositionSpring` mal tuneado escupe NaN y apaga todo el canvas de dados
+
+- **Severidad**: Crítica cuando pega (bloquea el playtest entero: los boards no se dibujan)
+- **Área**: UI / Juice / Feel
+- **Repro**: entrar a la zona de dados, tirar una vez y **dejarla quieta ~1.6 s** sin volver a tirar. Reproducible al 100% grabando con Unity Recorder; intermitente en playtest normal.
+- **Observado**: `Invalid worldAABB. Object is too large or too far away from the origin.` + `transform.localPosition assign attempt for 'DiceZoneView' is not valid. Input localPosition is { 0, NaN, 0 }` desde `MMF_PositionSpring.ApplyValue`. Los dice boards no aparecen.
+- **Causa**: el feedback `Zone Roll Shake` (`Canvas_ActionRoll.prefab`, target `DiceZoneView`) estaba autorado con **`DampingY 0.55` / `FrequencyY 14`**. `MMMaths.Spring` (`Assets/Feel/MMTools/Core/MMHelpers/MMMaths.cs:44`) integra con Euler semi-implícito y **clampea el sub-step a 1/60 fijo**. A 14 Hz eso da h·ω = 1.47, fuera de la región de estabilidad para ζ = 0.55: el autovalor dominante queda en **|z| ≈ 2.06**, o sea la amplitud se duplica en cada sub-step. A los ~97 sub-steps llega a `Inf`, y el `Inf - Inf` del paso siguiente da **NaN**. El NaN entra en el `anchoredPosition3D` de `DiceZoneView` y contamina la matriz de toda la subjerarquía → el `Invalid worldAABB` es el síntoma, no un bug aparte.
+- **Por qué "solo con el Recorder"**: el spring necesita correr ~1.6 s sin interrupción, y `MmfJuice.Replay` reinicia el reloj en cada roll (`StopFeedbacks` + `RestoreInitialValues`), igual que `Rest()` en el `OnDisable` de la zona. El Recorder fija `Time.captureDeltaTime` al frame rate objetivo, así que cada frame alimenta un múltiplo **exacto** de 1/60 y pega justo en la resonancia patológica. Con jitter real depende: dt exacto 1/60 → NaN al frame 97; jitter 14-20 ms → NaN al 123; jitter 17-33 ms → se estabiliza. **No era exclusivo del Recorder**: una máquina a 60 fps parejos también lo dispara.
+- **Estado**: **cerrado**. `FrequencyY: 14 → 10` (amplitud 0.57 px → 0.8 px, dentro del "≤2 px" que pide el tooltip; el resto de los parámetros sin tocar). Validado por simulación del integrador en dt = 1/60, 1/50, 1/30, 1/24, 0.02, 0.025, 0.05, 0.1, 0.2 y 0.333: converge en todos.
+- **Restricción que queda para autoría**: con el sub-step de 1/60 que clampea Feel, **una frecuencia ≥ 11 Hz con damping ≥ 0.4 diverge**. Los otros springs del proyecto (0.45/12 y 0.50/10) quedan por debajo del umbral, pero el de 12 Hz está al borde. Barrido de todos los `.prefab`/`.unity`/`.asset` fuera de `Assets/Feel`: tras el fix, **0 springs divergentes**.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana
