@@ -110,8 +110,7 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Área**: Combat / Enemies / Anim
 - El árbol de `ED_Boss_Sunken_Grand` pega por **dos** caminos: el `AINode_Behavior` con la acción `Ranged` (que en `Feature#0038` quedó sincronizada al frame de impacto, eligiendo `Attack_Melee` o `Attack_Range` según la distancia Manhattan al target) y el par `AINode_TelegraphMark` → `AINode_ExecuteTelegraph`, que resuelve el daño por su cuenta **sin pasar por ningún `EffectData`**.
 - **Consecuencia**: cuando el boss cobra una marca telegrafiada, el modelo se queda en Idle y el daño aparece sin windup. Contrasta feo con el otro camino, que ahora sí anticipa el golpe.
-- **Fix propuesto**: colgarle una `EffPlaySequence` al path de telegraph — necesita que `AINode_ExecuteTelegraph` acepte efectos autorados o que emita un evento que el feedback pueda enganchar. No es un cambio de dos líneas: hoy el nodo no tiene punto de extensión.
-- **Branch**: detectado al implementar `Feature#0038_SunkedGrandAnimSync`. **Estado**: abierto, alcance excluido a propósito (la sesión cubría solo la acción autorada).
+- **Estado**: **cerrado** en `Feature#0038_SunkedGrandAnimSync`. `AINode_ExecuteTelegraph` ganó dos campos autorables (`WindupFeedbackId` + `ImpactEventKey`) y un `TickCoroutine` que corre ese feedback **antes** de resolver el daño, bloqueando en el Animation Event — el mismo gate que usa la acción autorada. El `Tick` síncrono (EditMode) queda igual que antes, sin windup, porque ahí no hay dónde esperar el evento. El Sunken Grand quedó autorado con `anim.enemy.sunken_grand.range` / `hit`; el General Director y el Security Boss quedan vacíos, o sea sin cambio de comportamiento hasta que se les autore su propia entry.
 
 ---
 

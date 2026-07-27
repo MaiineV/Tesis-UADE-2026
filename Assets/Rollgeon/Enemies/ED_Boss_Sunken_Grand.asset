@@ -47,6 +47,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.enemy.sunken_grand.range
+    - Name: ImpactEventKey
+      Entry: 1
+      Data: hit
     - Name: 
       Entry: 8
       Data: 
