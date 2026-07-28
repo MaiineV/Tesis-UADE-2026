@@ -304,10 +304,16 @@ namespace Rollgeon.Combat.Handoff
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
-            // Sin hud a mano acá: el prompt del board se auto-esconde al desactivarse
-            // la zona (el GO arranca inactivo y FinishChain lo esconde en los paths
-            // normales); solo reseteamos el flag.
+            // El prompt del board se apaga en la MISMA operación que el flag: son el
+            // mismo estado y no pueden divergir. Antes acá solo se reseteaba el flag,
+            // asumiendo que el GO "se auto-esconde al desactivarse la zona" — falso:
+            // desactivar un canvas ancestro no limpia el m_IsActive propio del hijo, así
+            // que un combate que cerraba con la entrada paga pendiente (el enemigo muere
+            // antes de que el player consuma todas las fases) se lo filtraba al siguiente
+            // combate, encima del roll de ataque (PUL-016).
             _awaitingChainPaidRoll = false;
+            if (_screenManager?.Current is CombatHUDView resetHud)
+                resetHud.HideChainRollPrompt();
 
             // Si quedó un ActionRoll abierto (ej. user nunca apretó Confirm pero el combat
             // termina por otra vía), cancelarlo para que el panel se cierre.

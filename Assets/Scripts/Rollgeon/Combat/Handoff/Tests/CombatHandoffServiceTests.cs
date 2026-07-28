@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Actions;
@@ -10,6 +11,8 @@ using Rollgeon.Entities;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.UI;
+using Rollgeon.UI.HUD;
+using Rollgeon.UI.Screens;
 using UnityEngine;
 
 namespace Rollgeon.Combat.Handoff.Tests
@@ -103,7 +106,9 @@ namespace Rollgeon.Combat.Handoff.Tests
 
         private class SpyScreenManager : IScreenManager
         {
-            public IBaseScreen Current { get; private set; }
+            // set público: los tests que ejercitan paths que resuelven el hud desde el
+            // screen manager (ej. el reset de fase de combate) necesitan plantarlo.
+            public IBaseScreen Current { get; set; }
             public int PushByStringIdCallCount { get; private set; }
             public string LastScreenId { get; private set; }
             public IScreenPayload LastPayload { get; private set; }
@@ -475,6 +480,71 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             Assert.AreEqual(0, spyBudget.EndBudgetCallCount,
                 "After Dispose the OnCombatEnd handler must be unsubscribed.");
+        }
+
+        // -------------------------------------------------------------------
+        // Regression PUL-016: el combate cierra con la entrada paga de una fase de
+        // chain pendiente (el enemigo muere antes de que el player consuma todas las
+        // fases). El reset apagaba el flag pero dejaba el prompt "… Roll (1E)" prendido,
+        // y reaparecía en el combate siguiente encima del roll de ataque.
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void OnCombatEnd_WithChainPaidPromptVisible_HidesPrompt()
+        {
+            // Arrange — el prompt se prende SIN pasar por Show() a propósito: así no queda
+            // suscripto al bus por su cuenta y el único que puede apagarlo es el reset del
+            // servicio. Es lo que hace fallar este test contra el código viejo.
+            var prompt = MakeHudWithChainPrompt();
+            Assert.IsTrue(prompt.gameObject.activeSelf, "pre-condition: el prompt arranca visible");
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
+
+            // Assert
+            Assert.IsFalse(prompt.gameObject.activeSelf,
+                "El fin de combate debe apagar el prompt de roll pago; si no, se filtra al " +
+                "combate siguiente porque desactivar el canvas no limpia el m_IsActive del hijo.");
+        }
+
+        [Test]
+        public void OnCombatEnd_WithoutChainPromptWired_DoesNotThrow()
+        {
+            // Arrange — hud sin prompt wireado (el default del prefab).
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
+
+            // Act / Assert
+            Assert.DoesNotThrow(() =>
+                EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
+        }
+
+        /// <summary>
+        /// CombatHUDView real con un ChainRollPromptView hijo ya visible, plantado como
+        /// pantalla actual del screen manager. Devuelve el prompt.
+        /// </summary>
+        private ChainRollPromptView MakeHudWithChainPrompt()
+        {
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            var hud = hudGo.AddComponent<CombatHUDView>();
+
+            var promptGo = new GameObject("ChainRollPrompt");
+            promptGo.transform.SetParent(hudGo.transform);
+            var prompt = promptGo.AddComponent<ChainRollPromptView>();
+
+            SetPrivateField(hud, "_chainRollPrompt", prompt);
+            _spyScreen.Current = hud;
+            return prompt;
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {target.GetType().Name}.");
+            field.SetValue(target, value);
         }
 
         // -------------------------------------------------------------------
