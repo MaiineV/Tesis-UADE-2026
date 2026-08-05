@@ -131,12 +131,13 @@ namespace Rollgeon.UI.Cursor
                 screenPos, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
             var ray = cam.ScreenPointToRay(rt);
 
-            if (!Physics.Raycast(ray, out var hit, _settings.WorldRaycastDistance)) return false;
-
-            // Enemigos/héroe (EntityPawn) e interactuables (ICursorHoverable). Los
-            // tiles del piso no matchean ninguno → apuntar al piso es "nada".
-            return hit.collider.GetComponentInParent<EntityPawn>() != null
-                   || hit.collider.GetComponentInParent<ICursorHoverable>() != null;
+            // Enemigos/héroe (EntityPawn implementa ICursorHoverable) e interactuables.
+            // Los tiles del piso no matchean → apuntar al piso es "nada".
+            //
+            // Recorre TODOS los hits (PawnPicker), no el primero: con un solo hit, una
+            // pared o un prop delante del enemigo apagaba el cursor de hover aunque el
+            // click SÍ lo fuera a targetear. El cursor tiene que decir lo mismo que el click.
+            return PawnPicker.TryPick<ICursorHoverable>(ray, out _, _settings.WorldRaycastDistance);
         }
 
         private Camera ResolveWorldCamera()

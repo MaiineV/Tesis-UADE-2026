@@ -106,8 +106,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 1.8, z: 1}
+  m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!114 &2342407727602210712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,6 +167,9 @@ MonoBehaviour:
   _selectedCreaseThreshold: 1
   _selectedCreaseSmooth: 0.3
   _selectedCreaseAlpha: 0.52
+  _glowPulseSeconds: 0.9
+  _glowAlphaMin: 0.3
+  _glowAlphaMax: 0.7
   _renderers:
   - {fileID: 4417068601581464449}
   - {fileID: 2986062283219781409}
