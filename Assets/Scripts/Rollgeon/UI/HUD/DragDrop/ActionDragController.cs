@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
-using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;
@@ -275,34 +274,17 @@ namespace Rollgeon.UI.HUD.DragDrop
                 eventData.position, Screen.width, Screen.height, cam.pixelWidth, cam.pixelHeight);
             var ray = cam.ScreenPointToRay(rtPos);
 
-            // CNF-002 v2: primero raycast SIN máscara — soltar SOBRE el modelo del enemigo
-            // debe targetear SU celda. Con la máscara de tiles sola, el ray atraviesa el
-            // modelo (los pawns no son layer Tile) y pega en la celda que queda DETRÁS,
-            // cancelando el drop en silencio (cámara en ángulo).
-            if (Physics.Raycast(ray, out var hitAny, 100f))
-            {
-                var pawn = hitAny.collider.GetComponentInParent<EntityPawn>();
-                if (pawn != null
-                    && ServiceLocator.TryGetService<IGridManager>(out var pawnGrid) && pawnGrid != null
-                    && pawnGrid.TryGetPosition(pawn.EntityGuid, out coord))
-                {
-                    return true;
-                }
-            }
-
-            // El piso es un único plano (GridCoord 2D). Intersectar contra el plano en vez
-            // de los colliders de los tiles evita que el collider de 1u de alto de un tile
-            // de adelante tape al de atrás desde la cámara en ángulo. Mismo criterio que
-            // TileClickHandler.ResolveCoordUnderCursor.
+            // CNF-002 v2: el pawn manda sobre el piso — soltar SOBRE el modelo del enemigo
+            // debe targetear SU celda y no la que queda DETRÁS con la cámara en ángulo.
+            // Mismo criterio que TileClickHandler: ver PawnPicker.
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
                 return false;
 
-            var floor = new Plane(Vector3.up, grid.GridOrigin);
-            if (!floor.Raycast(ray, out float enter))
-                return false;
+            var resolved = PawnPicker.ResolveCoord(ray, grid);
+            if (resolved == null) return false;
 
-            coord = grid.WorldToGrid(ray.GetPoint(enter));
-            return grid.InBounds(coord);
+            coord = resolved.Value;
+            return true;
         }
 
         // ---- Ghost ----------------------------------------------------------
