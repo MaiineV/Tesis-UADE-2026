@@ -499,6 +499,14 @@ namespace Rollgeon.Dungeon
         {
             if (!_instances.TryGetValue(neighborId, out var neighbor)) return false;
 
+            // BUG-021 (hardening): choke point de TODO cruce de sala (click en casilla
+            // de puerta, Pass Door, Force Door, dev commands). Un path del pawn en vuelo
+            // se remapea al GridOrigin de la sala nueva y el player "sigue de largo" —
+            // se cancela acá, antes del swap, sin depender de que PlayerRoomTransitioner
+            // llegue a snapear (su early-return por prefab/layout faltante dejaba vivo
+            // el path viejo).
+            StopPlayerPawnMovement();
+
             DeactivateCurrentRoomCombat();
 
             _currentId = neighborId;
@@ -509,6 +517,18 @@ namespace Rollgeon.Dungeon
             EventManager.Trigger(EventName.OnRoomEntered, _currentId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
             return true;
+        }
+
+        private static void StopPlayerPawnMovement()
+        {
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var player)
+                || player == null || player.PlayerGuid == Guid.Empty) return;
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals)
+                && visuals != null
+                && visuals.TryGetPawn(player.PlayerGuid, out var pawn) && pawn != null)
+            {
+                pawn.StopMovement();
+            }
         }
 
         private void DeactivateCurrentRoomCombat()
@@ -818,12 +838,16 @@ namespace Rollgeon.Dungeon
             // los pedestales de reward, y dispara OnFloorCleared recién cuando el player
             // elige una mejora (o de inmediato si no hay rewards para ofrecer). Solo lo
             // disparamos nosotros como fallback si ese canal no está activo (builds/tests
-            // sin el bootstrap), para no dejar el floor sin cerrar. floorIndex=0 placeholder
-            // hasta multi-floor.
+            // sin el bootstrap), para no dejar el floor sin cerrar.
             if (instance.Template != null && instance.Template.Type == RoomType.Boss
                 && (!ServiceLocator.TryGetService<ICharacterRewardService>(out var rewards) || rewards == null))
             {
-                EventManager.Trigger(EventName.OnFloorCleared, roomInstanceId, 0);
+                // Schema OnFloorCleared: [Guid runId, int floorIndex] (BUG-022: antes
+                // mandaba roomInstanceId y 0 — achievements/analytics parseaban mal).
+                ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var runCtx);
+                EventManager.Trigger(EventName.OnFloorCleared,
+                    runCtx != null ? runCtx.RunId : Guid.Empty,
+                    runCtx != null ? runCtx.FloorIndex : 0);
             }
         }
 

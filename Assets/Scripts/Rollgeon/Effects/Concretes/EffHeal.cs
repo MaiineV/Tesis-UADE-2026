@@ -7,6 +7,7 @@ using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -147,6 +148,7 @@ namespace Rollgeon.Effects.Concretes
                 AllowReroll = true,
                 RerollEnergyCost = 1,
                 AlwaysSucceeds = true,
+                BoardType = DiceBoardType.Default,
             };
             return true;
         }

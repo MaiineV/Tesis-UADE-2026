@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentSO
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -32,57 +32,84 @@ MonoBehaviour:
       Data: Para escaleras, este dado cuenta como su valor y como valor+1 simultaneamente.
     - Name: _icon
       Entry: 6
-      Data:
+      Data: 
+    - Name: _statGrants
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.StatGrant, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: _allowedDiceTypes
       Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
         mscorlib
-    - Name:
+    - Name: 
       Entry: 12
       Data: 2
-    - Name:
+    - Name: 
       Entry: 3
       Data: 0
-    - Name:
+    - Name: 
       Entry: 3
       Data: 1
-    - Name:
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
     - Name: _faceFilter
       Entry: 6
-      Data:
+      Data: 
     - Name: _triggers
       Entry: 7
-      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.Triggers.IEnchantmentTrigger,
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.Triggers.IEnchantmentTrigger,
         Rollgeon]], mscorlib
-    - Name:
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _capabilities
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+        Rollgeon]], mscorlib
+    - Name: 
       Entry: 12
       Data: 1
-    - Name:
+    - Name: 
       Entry: 7
-      Data: 2|Rollgeon.Upgrades.Dice.Triggers.Concretes.EscaladorStep, Rollgeon
-    - Name:
+      Data: 4|Rollgeon.Upgrades.Dice.CapLadderStep, Rollgeon
+    - Name: 
       Entry: 8
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
   _faceFilter:
     rid: -2
-  _triggers:
-  - rid: 5000000000000000055
+  _triggers: []
+  _capabilities:
+  - rid: 8131244039720141475
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 5000000000000000055
-      type: {class: EscaladorStep, ns: Rollgeon.Upgrades.Dice.Triggers.Concretes, asm: Rollgeon}
-      data: {}
+    - rid: 8131244039720141475
+      type: {class: CapLadderStep, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
+      data: 

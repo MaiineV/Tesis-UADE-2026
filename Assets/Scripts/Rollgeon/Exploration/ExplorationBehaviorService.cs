@@ -65,6 +65,19 @@ namespace Rollgeon.Exploration
         {
             Debug.LogWarning($"[ExplorationBehaviorService] OnBehaviorSelected(slot={slot}) — _state={_state}");
 
+            // BUG-019: backstop del gate del tutorial. Esta ruta no pasa por
+            // TurnManager.CanExecute (cobra energía y arma selección directo), así
+            // que sin este chequeo una acción lockeada podía ejecutarse igual vía
+            // hotkey/ArmMovement. Primero de todo: un click en acción lockeada no
+            // debe cancelar un flow en curso. Fuera del tutorial el service no está
+            // registrado y esto degrada a no-op.
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null && tutorialGate.IsSlotLocked((HeroBehaviorSlot)slot))
+            {
+                Debug.Log($"[ExplorationBehaviorService] Slot {(HeroBehaviorSlot)slot} lockeado por el tutorial — click ignorado.");
+                return;
+            }
+
             // Si hay un flow anterior colgado (Selecting / Rolling sin terminar), lo
             // cancelamos automaticamente antes de procesar el nuevo click. Asi el user
             // puede clickear otro boton para "abandonar" la accion en curso.

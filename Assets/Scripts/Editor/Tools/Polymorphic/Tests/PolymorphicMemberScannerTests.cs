@@ -42,7 +42,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
         {
             var names = NamesOf(PolymorphicMemberScanner.Scan(typeof(EnchantmentSO)));
 
-            CollectionAssert.AreEquivalent(new[] { "_faceFilter", "_triggers" }, names);
+            CollectionAssert.AreEquivalent(new[] { "_faceFilter", "_triggers", "_capabilities" }, names);
         }
 
         [Test]

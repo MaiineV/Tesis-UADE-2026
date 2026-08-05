@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combos;
+using Rollgeon.Combos.Play;
 using Rollgeon.Economy;
 using Rollgeon.Effects;
 using Rollgeon.Patterns.Bootstrap;
@@ -90,6 +91,7 @@ namespace Rollgeon.Upgrades.Combos
             EventManager.Subscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatched);
             TypedEvent<DamageResolvedPayload>.Subscribe(OnDamageResolvedHandler);
+            TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayed);
             _subscribed = true;
         }
 
@@ -108,6 +110,7 @@ namespace Rollgeon.Upgrades.Combos
             EventManager.UnSubscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatched);
             TypedEvent<DamageResolvedPayload>.Unsubscribe(OnDamageResolvedHandler);
+            TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayed);
             _subscribed = false;
         }
 
@@ -357,7 +360,68 @@ namespace Rollgeon.Upgrades.Combos
             }
 
             LastComboScratch = scratch;
-            ApplyScratchSideEffects(scratch);
+            // BUG-017 (canal combos): ComboMatched es preview y se re-dispara en cada
+            // toggle de hold — los recursos del scratch se materializan solo at-played
+            // (ComboPlayService); acá solo queda el canal de daño (LastComboScratch).
+        }
+
+        private void OnComboPlayed(ComboPlayedPayload payload)
+        {
+            if (string.IsNullOrEmpty(payload.ComboId)) return;
+            if (!ServiceLocator.TryGetService<RunComboPassivesState>(out var state) || state == null) return;
+            var all = state.GetAll();
+            if (all.Count == 0) return;
+
+            var effectCtx = new EffectContext
+            {
+                SourceGuid = payload.SourceGuid,
+                TargetGuid = payload.TargetGuid,
+                DiceResult = payload.DiceResult,
+                KeptDice = payload.KeptDice,
+                KeptDiceOriginalIndices = payload.KeptDiceOriginalIndices,
+                ComboResult = payload.ComboResult,
+            };
+
+            // El play scratch pertenece al ComboPlayService (dueño único del apply de
+            // recursos). Fallback local para tests sin el service — ahí aplicamos nosotros.
+            EnchantmentScratch scratch;
+            bool ownScratch = false;
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.CurrentPlayScratch != null)
+            {
+                scratch = play.CurrentPlayScratch;
+            }
+            else
+            {
+                scratch = new EnchantmentScratch();
+                ownScratch = true;
+            }
+
+            var ctx = new ComboPassiveContext
+            {
+                Effect = effectCtx,
+                ComboId = payload.ComboId,
+                Scratch = scratch,
+            };
+
+            for (int i = 0; i < all.Count; i++)
+            {
+                var passive = all[i];
+                if (passive == null) continue;
+                // Scope por combo: TargetComboId vacío = reacciona a cualquier combo jugado.
+                if (!string.IsNullOrEmpty(passive.TargetComboId) && passive.TargetComboId != payload.ComboId)
+                    continue;
+
+                var triggers = passive.ExtraTriggers;
+                if (triggers == null) continue;
+                for (int t = 0; t < triggers.Count; t++)
+                {
+                    if (triggers[t] is IOnComboPlayedPassiveTrigger played)
+                        played.OnComboPlayed(ctx);
+                }
+            }
+
+            // NO se toca LastComboScratch (contrato del preview / damage pipeline at-match).
+            if (ownScratch) ApplyScratchSideEffects(scratch);
         }
 
         private void ApplyScratchSideEffects(EnchantmentScratch scratch)

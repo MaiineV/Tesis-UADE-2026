@@ -54,40 +54,47 @@ namespace Rollgeon.Editor.Tools.Enchantment
         {
             if (asset == null) return;
 
-            if (asset.FaceFilter == null && (asset.Triggers == null || asset.Triggers.Count == 0))
+            bool hasTriggers = asset.Triggers != null && asset.Triggers.Count > 0;
+            bool hasCapabilities = asset.Capabilities != null && asset.Capabilities.Count > 0;
+            if (asset.FaceFilter == null && !hasTriggers && !hasCapabilities)
                 EditorGUILayout.HelpBox(
-                    "No face filter and no triggers — this enchantment does nothing.", MessageType.Warning);
+                    "No face filter, no triggers and no capabilities — this enchantment does nothing.",
+                    MessageType.Warning);
 
-            WarnAboutUnwiredTriggers(asset);
+            WarnAboutUnwired(asset);
         }
 
         /// <summary>
-        /// Surfaces triggers that compile and configure but are no-ops in game.
+        /// Surfaces triggers/capabilities that compile and configure but are no-ops in game.
         /// </summary>
         /// <remarks>
-        /// Without this, an author can tune <c>WildcardForCombo</c>, drop it in a pool and playtest
+        /// Without this, an author can tune <c>CapWildcard</c>, drop it in a pool and playtest
         /// it, and nothing in the inspector hints that <c>ContractSheet</c> never reads the flag.
         /// Until now the only record was a hand-maintained table in
         /// <c>docs/balance/item-inventory.html</c>; the marker lives next to the stub instead.
         /// </remarks>
-        static void WarnAboutUnwiredTriggers(EnchantmentSO asset)
+        static void WarnAboutUnwired(EnchantmentSO asset)
         {
-            if (asset.Triggers == null) return;
-
             List<string> unwired = null;
-            foreach (var trigger in asset.Triggers)
+
+            void Collect(object entry)
             {
-                if (trigger == null) continue;
-                var attr = trigger.GetType().GetCustomAttributes(typeof(NotYetWiredAttribute), true);
-                if (attr.Length == 0) continue;
+                if (entry == null) return;
+                var attr = entry.GetType().GetCustomAttributes(typeof(NotYetWiredAttribute), true);
+                if (attr.Length == 0) return;
                 (unwired ??= new List<string>()).Add(
-                    $"• {trigger.GetType().Name} — {((NotYetWiredAttribute)attr[0]).Reason}");
+                    $"• {entry.GetType().Name} — {((NotYetWiredAttribute)attr[0]).Reason}");
             }
+
+            if (asset.Triggers != null)
+                foreach (var trigger in asset.Triggers) Collect(trigger);
+            if (asset.Capabilities != null)
+                foreach (var capability in asset.Capabilities) Collect(capability);
 
             if (unwired == null) return;
 
             EditorGUILayout.HelpBox(
-                "Estos triggers todavía no hacen nada in-game:\n" + string.Join("\n", unwired),
+                "Estas piezas todavía no hacen nada in-game:\n" + string.Join("\n", unwired),
                 MessageType.Warning);
         }
     }

@@ -7,6 +7,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
+using Rollgeon.Items;
 using TMPro;
 using UnityEngine;
 
@@ -30,6 +31,10 @@ namespace Rollgeon.UI.HUD
                  "se intenta auto-resolver buscando un hijo llamado 'ThresholdLabel'.")]
         [SerializeField] private TextMeshProUGUI _thresholdLabel;
 
+        [Tooltip("Feedback visual del value text (color por board type + efectos por momento). " +
+                 "Opcional: sin cablear, el label se comporta como antes (sin color/efectos).")]
+        [SerializeField] private ValueTextFeedbackController _feedback;
+
         private Guid _playerGuid;
         private HeroActionBehavior _currentBehavior;
         private string _lastComboDisplayName;
@@ -51,6 +56,11 @@ namespace Rollgeon.UI.HUD
         private bool _inDefensePhase;
         private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onChainCompleted;
+
+        // Board type vigente del value text (color + tag por tipo). Dedup para no re-lanzar
+        // el tween de color en cada update.
+        private DiceBoardType _boardType = DiceBoardType.Default;
+        private bool _boardTypeSet;
 
         private void Awake()
         {
@@ -90,7 +100,13 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<IActionRollService>(out _actionRollService)
                 && _actionRollService != null)
             {
-                _onActionRollPhase = _ => UpdateFormula();
+                _onActionRollPhase = _ =>
+                {
+                    // Exploración (Heal/Forzar Puerta): el board type sale del spec activo.
+                    if (_actionRollService != null && _actionRollService.IsActive)
+                        SetBoardType(_actionRollService.CurrentSpec.BoardType);
+                    UpdateFormula();
+                };
                 _actionRollService.OnPhaseChanged += _onActionRollPhase;
             }
 
@@ -218,9 +234,11 @@ namespace Rollgeon.UI.HUD
             if (_inDefensePhase)
             {
                 HideThreshold();
-                _formulaLabel.text = !string.IsNullOrEmpty(_lastComboDisplayName)
+                bool hasCombo = !string.IsNullOrEmpty(_lastComboDisplayName);
+                string text = hasCombo
                     ? $"{_lastComboDisplayName}: escudo {_lastShieldPreview} (máx {PlayerComboShield.ShieldCap})"
                     : "Defensa - armá un combo para generar escudo";
+                RenderLabel(text, hasCombo ? _lastShieldPreview : 0);
                 return;
             }
 
@@ -232,20 +250,24 @@ namespace Rollgeon.UI.HUD
 
             if (dmgEff.Source == DamageSource.Constant)
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} ({dmgEff.BaseAmount})";
+                RenderLabel($"{_currentBehavior.ActionName} ({dmgEff.BaseAmount})", 0);
                 return;
             }
 
             if (dmgEff.Source == DamageSource.FromReader)
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} (stat)";
-                Debug.Log($"[DamageFormulaView] UpdateFormula — FromReader → \"{_formulaLabel.text}\"");
+                string statText = $"{_currentBehavior.ActionName} (stat)";
+                RenderLabel(statText, 0);
+                Debug.Log($"[DamageFormulaView] UpdateFormula — FromReader → \"{statText}\"");
                 return;
             }
 
-            if (_lastComboBaseDamage <= 0)
+            // BUG-040: gate por PRESENCIA de combo, no por base plano > 0 — un combo de
+            // base dinámica (Higher Number: flat 0 en tabla + valor del dado) matchea con
+            // base plano 0 y el label decía "(sin combo)" aunque el daño sí lo sumaba.
+            if (string.IsNullOrEmpty(_lastComboId))
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} (sin combo)";
+                RenderLabel($"{_currentBehavior.ActionName} (sin combo)", 0);
                 return;
             }
 
@@ -261,9 +283,35 @@ namespace Rollgeon.UI.HUD
             int preMitigation = PlayerComboDamage.Resolve(
                 _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier);
 
-            // Con enemigo apuntado (elegido antes de tirar), aplicar la mitigación real
-            // (weakness + escudo) SIN side-effects para que el label == golpe que va a recibir.
-            int shown = preMitigation;
+            // Bono at-played de los items passive del inventario para este combo. No entra
+            // en Resolve durante el preview (el LastPlayScratch se limpia al inicio del
+            // turno), así que lo previsualizamos aparte para mostrarlo en dorado.
+            int itemBonus = 0;
+            if (ServiceLocator.TryGetService<IInventoryService>(out var inventory) && inventory != null)
+                itemBonus = inventory.GetComboDamageBonusPreview(_lastComboId);
+
+            // Mitigación real (weakness + escudo) por separado para base y total, así el
+            // "+ N" dorado refleja la contribución de los objetos ya mitigada.
+            int shownBase = Mitigate(preMitigation);
+            int shownTotal = itemBonus != 0 ? Mitigate(preMitigation + itemBonus) : shownBase;
+            int itemPortion = shownTotal - shownBase;
+
+            string formulaText = itemPortion > 0
+                ? $"{comboName}: {shownBase} <color=#{ItemBonusColorHex}>+ {itemPortion}</color>"
+                : $"{comboName}: {shownBase}";
+            RenderLabel(formulaText, shownTotal);
+        }
+
+        // Dorado para el bono aportado por los objetos (rich text de TMP).
+        private const string ItemBonusColorHex = "FFC93C";
+
+        /// <summary>
+        /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN
+        /// side-effects, para que el label == golpe que va a recibir. Sin target devuelve
+        /// el daño pre-mitigación.
+        /// </summary>
+        private int Mitigate(int preMitigation)
+        {
             if (_currentTargetGuid != Guid.Empty
                 && ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline)
                 && pipeline != null)
@@ -278,10 +326,9 @@ namespace Rollgeon.UI.HUD
                     IsWeaknessHit = !string.IsNullOrEmpty(_lastComboId),
                 };
                 pipeline.Preview(ctx);
-                shown = ctx.FinalDamage;
+                return ctx.FinalDamage;
             }
-
-            _formulaLabel.text = $"{comboName}: {shown}";
+            return preMitigation;
         }
 
         private bool TryShowActionRollMode()
@@ -302,9 +349,9 @@ namespace Rollgeon.UI.HUD
             string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
 
             if (combo != null)
-                _formulaLabel.text = $"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})";
+                RenderLabel($"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})", effective);
             else
-                _formulaLabel.text = $"{actionTag} - seleccioná los dados de tu combo";
+                RenderLabel($"{actionTag} - seleccioná los dados de tu combo", 0);
             return true;
         }
 
@@ -315,7 +362,29 @@ namespace Rollgeon.UI.HUD
 
         private void ClearFormula()
         {
-            if (_formulaLabel != null) _formulaLabel.text = string.Empty;
+            if (_feedback != null) _feedback.Clear();
+            else if (_formulaLabel != null) _formulaLabel.text = string.Empty;
+        }
+
+        /// <summary>
+        /// Fija el board type vigente del value text (color + efectos por tipo). Lo empuja
+        /// combate vía <c>CombatHUDView</c>; exploración lo deriva del spec activo. Dedup para
+        /// no re-lanzar el tween de color en cada update.
+        /// </summary>
+        public void SetBoardType(DiceBoardType type)
+        {
+            if (_boardTypeSet && type == _boardType) return;
+            _boardType = type;
+            _boardTypeSet = true;
+            _feedback?.SetBoardType(type);
+        }
+
+        // Renderiza el value text por el controller de feedback (color + tag del tipo con amplitud
+        // según el valor del combo) si está cableado, o directo al TMP si no.
+        private void RenderLabel(string text, int value)
+        {
+            if (_feedback != null) _feedback.Show(text, value);
+            else if (_formulaLabel != null) _formulaLabel.text = text;
         }
     }
 }

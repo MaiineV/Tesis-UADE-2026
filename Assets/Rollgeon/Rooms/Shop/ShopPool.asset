@@ -16,8 +16,24 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 11400000, guid: 89b4385b83bcc2640a07f385a7787d29, type: 2}
-    - {fileID: 11400000, guid: aee1eefd99d9d7f4badf337802bf75ab, type: 2}
+    - {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
+    - {fileID: 11400000, guid: df3440ad4981d3d4da438161d8d72169, type: 2}
+    - {fileID: 11400000, guid: 04f7c53880e630842a97ec0d254ba713, type: 2}
+    - {fileID: 11400000, guid: e3f43d277e104ce49ad9ad2371b84f51, type: 2}
+    - {fileID: 11400000, guid: 4aeb388a7c3a85c45b060416c58677ac, type: 2}
+    - {fileID: 11400000, guid: ec99a59ef8ef861449583c0c274d517f, type: 2}
+    - {fileID: 11400000, guid: c49874f8bcdaae24ab3fdf207429388a, type: 2}
+    - {fileID: 11400000, guid: 2a1a1dc99158c2444890bd74889e8dd7, type: 2}
+    - {fileID: 11400000, guid: 7bd3f557367e854479202ac8631b3f8a, type: 2}
+    - {fileID: 11400000, guid: 8e16490d3725d444999e4a1f898a2eed, type: 2}
+    - {fileID: 11400000, guid: 7aa7b8ac2c3691040b9a054eb5484b9a, type: 2}
+    - {fileID: 11400000, guid: 4ef6adcaa75741f489ef3fd38255db44, type: 2}
+    - {fileID: 11400000, guid: 4638ba6000d6b46419325d61ba792a18, type: 2}
+    - {fileID: 11400000, guid: 581d4aed3b87f0446bba1532b4de0c13, type: 2}
+    - {fileID: 11400000, guid: 5b381a51f3758d64681f4aa2a9ce5df5, type: 2}
+    - {fileID: 11400000, guid: 6c679df4635247742bfb3c632ba8e5da, type: 2}
+    - {fileID: 11400000, guid: bd1f80825eec2ed46b4516d7d3b9fa6f, type: 2}
+    - {fileID: 11400000, guid: 5993b2851552f0f42bdc366198a16836, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -41,16 +57,319 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: PassivePool
-      Entry: 10
-      Data: 1
     - Name: Items
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[Rollgeon.Shop.WeightedShopItem,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
+      Data: 17
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 1
+    - Name: Weight
+      Entry: 4
+      Data: 0.7
+    - Name: BasePrice
+      Entry: 3
+      Data: 20
+    - Name: MinFloorDepth
+      Entry: 3
       Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 2
+    - Name: Weight
+      Entry: 4
+      Data: 0.4
+    - Name: BasePrice
+      Entry: 3
+      Data: 35
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 3
+    - Name: Weight
+      Entry: 4
+      Data: 0.7
+    - Name: BasePrice
+      Entry: 3
+      Data: 20
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 4
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 15
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 5
+    - Name: Weight
+      Entry: 4
+      Data: 0.7
+    - Name: BasePrice
+      Entry: 3
+      Data: 25
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 6
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 25
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 7
+    - Name: Weight
+      Entry: 4
+      Data: 0.4
+    - Name: BasePrice
+      Entry: 3
+      Data: 35
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 8
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 20
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 9
+    - Name: Weight
+      Entry: 4
+      Data: 0.4
+    - Name: BasePrice
+      Entry: 3
+      Data: 35
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 10
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 20
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 11
+    - Name: Weight
+      Entry: 4
+      Data: 0.7
+    - Name: BasePrice
+      Entry: 3
+      Data: 25
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 12
+    - Name: Weight
+      Entry: 4
+      Data: 0.7
+    - Name: BasePrice
+      Entry: 3
+      Data: 20
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 13
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 15
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 14
+    - Name: Weight
+      Entry: 4
+      Data: 0.4
+    - Name: BasePrice
+      Entry: 3
+      Data: 35
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 15
+    - Name: Weight
+      Entry: 4
+      Data: 0.2
+    - Name: BasePrice
+      Entry: 3
+      Data: 55
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 16
+    - Name: Weight
+      Entry: 4
+      Data: 0.4
+    - Name: BasePrice
+      Entry: 3
+      Data: 35
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 17
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 25
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -58,9 +377,76 @@ MonoBehaviour:
       Entry: 8
       Data: 
   Guaranteed:
-    Item: {fileID: 11400000, guid: 89b4385b83bcc2640a07f385a7787d29, type: 2}
+    Item: {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
     Weight: 1
     BasePrice: 8
     MinFloorDepth: 0
-  PassivePool: {fileID: 11400000, guid: aee1eefd99d9d7f4badf337802bf75ab, type: 2}
-  Items: []
+  Items:
+  - Item: {fileID: 11400000, guid: df3440ad4981d3d4da438161d8d72169, type: 2}
+    Weight: 0.7
+    BasePrice: 20
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 04f7c53880e630842a97ec0d254ba713, type: 2}
+    Weight: 0.4
+    BasePrice: 35
+    MinFloorDepth: 1
+  - Item: {fileID: 11400000, guid: e3f43d277e104ce49ad9ad2371b84f51, type: 2}
+    Weight: 0.7
+    BasePrice: 20
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 4aeb388a7c3a85c45b060416c58677ac, type: 2}
+    Weight: 1
+    BasePrice: 15
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: ec99a59ef8ef861449583c0c274d517f, type: 2}
+    Weight: 0.7
+    BasePrice: 25
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: c49874f8bcdaae24ab3fdf207429388a, type: 2}
+    Weight: 1
+    BasePrice: 25
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 2a1a1dc99158c2444890bd74889e8dd7, type: 2}
+    Weight: 0.4
+    BasePrice: 35
+    MinFloorDepth: 1
+  - Item: {fileID: 11400000, guid: 7bd3f557367e854479202ac8631b3f8a, type: 2}
+    Weight: 1
+    BasePrice: 20
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 8e16490d3725d444999e4a1f898a2eed, type: 2}
+    Weight: 0.4
+    BasePrice: 35
+    MinFloorDepth: 1
+  - Item: {fileID: 11400000, guid: 7aa7b8ac2c3691040b9a054eb5484b9a, type: 2}
+    Weight: 1
+    BasePrice: 20
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 4ef6adcaa75741f489ef3fd38255db44, type: 2}
+    Weight: 0.7
+    BasePrice: 25
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 4638ba6000d6b46419325d61ba792a18, type: 2}
+    Weight: 0.7
+    BasePrice: 20
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 581d4aed3b87f0446bba1532b4de0c13, type: 2}
+    Weight: 1
+    BasePrice: 15
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 5b381a51f3758d64681f4aa2a9ce5df5, type: 2}
+    Weight: 0.4
+    BasePrice: 35
+    MinFloorDepth: 1
+  - Item: {fileID: 11400000, guid: 6c679df4635247742bfb3c632ba8e5da, type: 2}
+    Weight: 0.2
+    BasePrice: 55
+    MinFloorDepth: 2
+  - Item: {fileID: 11400000, guid: bd1f80825eec2ed46b4516d7d3b9fa6f, type: 2}
+    Weight: 0.4
+    BasePrice: 35
+    MinFloorDepth: 1
+  - Item: {fileID: 11400000, guid: 5993b2851552f0f42bdc366198a16836, type: 2}
+    Weight: 1
+    BasePrice: 25
+    MinFloorDepth: 0

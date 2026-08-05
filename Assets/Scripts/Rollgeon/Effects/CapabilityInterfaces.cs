@@ -4,7 +4,7 @@ namespace Rollgeon.Effects
 {
     // TECHNICAL.md §8.5 — Capability markers.
     //
-    // Las 20 interfaces de este archivo son PURAS MARKER INTERFACES (salvo
+    // Las 21 interfaces de este archivo son PURAS MARKER INTERFACES (salvo
     // IRequiresTriggerContext<TCtx> que lleva un type parameter). No declaran métodos.
     // Su existencia permite al inspector de un efecto concreto revelar condicionalmente
     // secciones (attribute source, value source, feedback, …). Cada sistema downstream
@@ -77,4 +77,11 @@ namespace Rollgeon.Effects
     /// devuelve false si no hay match, y el efecto decide (típicamente <c>return false</c>).
     /// </summary>
     public interface IRequiresTriggerContext<TCtx> where TCtx : BehaviorContext { }
+
+    /// <summary>
+    /// El efecto escribe SOLO al scratch de combo del trigger context (bono / multiplicador /
+    /// block) — sin side effects sobre sistemas reales. Habilita validación de inspector y un
+    /// futuro dry-run de preview (dispatchar solo EffectData cuyos efectos sean todos writers).
+    /// </summary>
+    public interface IComboScratchWriter { }
 }

@@ -432,6 +432,27 @@ namespace Rollgeon.UI.HUD
             RunComboDetection();
         }
 
+        /// <summary>
+        /// Suelta todos los holds sin apagar los slots (a diferencia de
+        /// <c>ClearAll</c>). BUG-030: el forced reroll del Torpe re-tira la mano
+        /// completa — los holds que el jugador marcó en la ventana previa quedarían
+        /// fuera de sync con el reveal nuevo.
+        /// </summary>
+        public void ClearHolds()
+        {
+            if (_heldStates == null) return;
+            for (int i = 0; i < _heldStates.Length; i++)
+            {
+                if (!_heldStates[i]) continue;
+                _heldStates[i] = false;
+                if (_resolvedSlots != null && i < _resolvedSlots.Length)
+                    _resolvedSlots[i]?.SetHeld(false);
+                _animator?.SetRaised(i, false);
+            }
+            PropagateHoldsToActionRoll();
+            RunComboDetection();
+        }
+
         // Si hay un ActionRollService activo (Heal / Forzar Puerta), propagamos los
         // holds. El service usa esos holds para computar el effective total contra el
         // threshold — sin esta llamada, el service mantiene un _currentHolds vacío y
@@ -483,9 +504,14 @@ namespace Rollgeon.UI.HUD
                 ? sheet.MatchBest(keptDice, keptTypes)
                 : MatchBestFromCatalog(keptDice, keptTypes);
 
-            // Capa 1: base plano de la tabla por clase (Spec Daño v2). Capa 2 (Boss 3 §4):
-            // la preview del daño refleja la capa de modificadores del Contrato.
-            int baseDmg = best == null ? 0 : (sheet != null ? sheet.GetBaseDamage(best) : best.BaseDamage);
+            // Capa 1: Detect con el override plano de la tabla por clase (Spec Daño v2) —
+            // usa el BaseDamage del RESULTADO para que los combos dinámicos (Higher Number,
+            // SumaX) incluyan su parte variable en el preview, igual que el golpe real
+            // (DetectWithContractMods). Capa 2 (Boss 3 §4): modificadores del Contrato.
+            var detection = best != null
+                ? best.Detect(keptDice, keptTypes, sheet?.GetBaseDamageOverride(best.ComboId))
+                : ComboDetectionResult.NoMatch();
+            int baseDmg = detection.IsMatch ? detection.BaseDamage : 0;
             if (best != null
                 && ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var cmods)
                 && cmods != null)
@@ -498,7 +524,7 @@ namespace Rollgeon.UI.HUD
             System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
             if (best != null)
             {
-                var comboResult = best.Detect(keptDice, keptTypes, null);
+                var comboResult = detection;
                 if (comboResult.IsMatch && hasBag)
                 {
                     contributingDice = ContributingDiceResolver.Resolve(

@@ -8,8 +8,10 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Cubre el fix de tooltips cortados: AutoFit re-posiciona el panel para que entre
-    /// completo en el canvas; Fixed respeta la posición configurada exacta.
+    /// Cubre el fix de tooltips cortados y descentrados (BUG-029): AutoFit re-posiciona
+    /// el panel para que entre completo en el canvas; Fixed no suma el offset global de
+    /// AutoFit pero sí se clampea al canvas como red de seguridad. También cubre el
+    /// anclaje al centro real del rect (no al pivot) que usan ambos modos.
     /// </summary>
     [TestFixture]
     public sealed class TooltipPlacementTests
@@ -88,12 +90,12 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void Show_FixedPlacement_PositionsRootExactlyAtScreenPos()
+        public void Show_FixedPlacement_FarFromEdge_DoesNotClamp()
         {
-            // Arrange — en Fixed no se aplica ni el offset global ni el clamp: la
-            // posición configurada por el diseñador es exacta.
-            var controller = CreateOverlayTooltipController(out var root);
-            var target = new Vector2(123f, 456f);
+            // Arrange — en Fixed no se suma el offset global, pero el clamp SIGUE
+            // aplicando como red de seguridad. Lejos del borde no debería moverla.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+            var target = new Vector2(0f, 0f); // centro del canvas, margen de sobra en todos los ejes
 
             // Act
             controller.Show("texto", target, ownerId: 1, TooltipPlacementMode.Fixed);
@@ -102,6 +104,23 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(root.gameObject.activeSelf, "El panel debe mostrarse.");
             Assert.AreEqual(target.x, root.position.x, 1e-3f);
             Assert.AreEqual(target.y, root.position.y, 1e-3f);
+        }
+
+        [Test]
+        public void Show_FixedPlacement_NearEdge_ClampsToStayOnScreen()
+        {
+            // Arrange — BUG-029: Fixed nunca clampeaba y el panel podía quedar cortado
+            // contra el borde del canvas. Target pegado al borde derecho: el panel de
+            // 100px de ancho se saldría del canvas si no se clampea.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+            var target = new Vector2(380f, 0f); // panel iría de 330 a 430; borde útil = 400 - 8 (padding)
+
+            // Act
+            controller.Show("texto", target, ownerId: 1, TooltipPlacementMode.Fixed);
+
+            // Assert — shift = (Bounds.xMax - padding) - max.x = (400 - 8) - 430 = -38.
+            Assert.AreEqual(342f, root.position.x, 1e-3f);
+            Assert.AreEqual(0f, root.position.y, 1e-3f, "El eje Y no debía moverse.");
         }
 
         [Test]
@@ -144,6 +163,49 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void ScreenPosOf_TriggerWithPivotZeroZero_AnchorsToRectCenterNotPivot()
+        {
+            // Arrange — BUG-029: ScreenPosOf usaba rect.position (el PIVOT), no el
+            // centro visual. Triggers con pivot (0,0), como PocionSlot, quedaban con el
+            // tooltip descolgado hacia la esquina en vez de centrado sobre el elemento.
+            var go = new GameObject("Trigger", typeof(RectTransform));
+            _objects.Add(go);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            rect.sizeDelta = new Vector2(60f, 20f);
+            rect.position = new Vector3(100f, 100f, 0f); // posición del pivot: esquina inferior-izquierda
+
+            // Act
+            var screenPos = TooltipPlacementSettings.ScreenPosOf(rect);
+
+            // Assert — el centro real está a mitad de ancho/alto de esa esquina.
+            Assert.AreEqual(130f, screenPos.x, 1e-3f);
+            Assert.AreEqual(110f, screenPos.y, 1e-3f);
+        }
+
+        [Test]
+        public void ScreenPosOf_TriggerWithPivotCenter_MatchesRectPosition()
+        {
+            // Arrange — caso control: con pivot (0.5, 0.5) el centro coincide con
+            // rect.position, así que el fix no debe romper triggers "normales".
+            var go = new GameObject("Trigger", typeof(RectTransform));
+            _objects.Add(go);
+            var rect = (RectTransform)go.transform;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(60f, 20f);
+            rect.position = new Vector3(200f, 300f, 0f);
+
+            // Act
+            var screenPos = TooltipPlacementSettings.ScreenPosOf(rect);
+
+            // Assert
+            Assert.AreEqual(200f, screenPos.x, 1e-3f);
+            Assert.AreEqual(300f, screenPos.y, 1e-3f);
+        }
+
+        [Test]
         public void ResolveFixedScreenPos_NoAnchorConfigured_FallsBackToProvidedRect()
         {
             // Arrange
@@ -171,17 +233,28 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(105f, pos.y, 1e-3f);
         }
 
-        private TooltipController CreateOverlayTooltipController(out RectTransform root)
+        /// <param name="panelSize">
+        /// Tamaño del panel (sizeDelta), relevante para los tests de clamp — sin tamaño
+        /// el rect queda en un punto y el clamp nunca dispara.
+        /// </param>
+        private TooltipController CreateOverlayTooltipController(out RectTransform root, Vector2? panelSize = null)
         {
             var canvasGo = new GameObject("Canvas", typeof(Canvas));
             _objects.Add(canvasGo);
             canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+
+            // El canvas raíz se dimensiona igual que Bounds (pivot default 0.5,0.5) para
+            // que los tests de clamp reusen la misma constante que ComputeClampShift.
+            var canvasRect = (RectTransform)canvasGo.transform;
+            canvasRect.sizeDelta = new Vector2(Bounds.width, Bounds.height);
+            canvasRect.position = new Vector3(Bounds.center.x, Bounds.center.y, 0f);
 
             var controllerGo = new GameObject("TooltipController", typeof(RectTransform));
             controllerGo.transform.SetParent(canvasGo.transform, false);
             var panelGo = new GameObject("Panel", typeof(RectTransform));
             panelGo.transform.SetParent(controllerGo.transform, false);
             root = (RectTransform)panelGo.transform;
+            if (panelSize.HasValue) root.sizeDelta = panelSize.Value;
 
             var controller = controllerGo.AddComponent<TooltipController>();
             // Awake no corre en EditMode — resolver refs como lo haría el preview de editor.

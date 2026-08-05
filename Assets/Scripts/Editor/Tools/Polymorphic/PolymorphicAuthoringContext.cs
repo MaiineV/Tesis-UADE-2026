@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -137,7 +140,76 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
         public void UpdateTree() => Tree?.UpdateTree();
 
-        public void ApplyChanges() => Tree?.ApplyChanges();
+        public void ApplyChanges()
+        {
+            FlushNestedCollectionQueues();
+            Tree?.ApplyChanges();
+        }
+
+        // ---- colas de colección anidadas -----------------------------------
+
+        static readonly Dictionary<Type, FieldInfo> _changeQueueFields = new Dictionary<Type, FieldInfo>();
+
+        /// <summary>
+        /// Aplica los cambios de colección que el "+"/"✕" de Odin dejó ENCOLADOS en listas
+        /// anidadas (ComboIds de un hook, PersistentModifiers, …).
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Odin no aplica el click de una lista al instante: lo encola en el
+        /// <see cref="ICollectionResolver"/> de ESA propiedad. <c>PropertyTree.ApplyChanges</c>
+        /// solo vacía los resolvers del nivel raíz, y el flush de los anidados ocurre dentro
+        /// de la draw-session completa de Odin (<c>BeginDraw</c>/<c>EndDraw</c>) — que estos
+        /// paneles, al dibujar <c>prop.Draw()</c> a mano, nunca abren. Sin esto, el + de una
+        /// lista anidada queda encolado para siempre y el click "no hace nada".
+        /// </para>
+        /// <para>
+        /// Gate de eventos: mutar la lista durante <c>Layout</c> desalinea el control-count
+        /// de IMGUI con el <c>Repaint</c> del mismo frame; al final de cualquier otro evento
+        /// (el click ya consumido, o el Repaint) es seguro — el próximo par Layout/Repaint ve
+        /// la lista nueva completa.
+        /// </para>
+        /// </remarks>
+        void FlushNestedCollectionQueues()
+        {
+            if (Tree == null) return;
+            var evt = Event.current;
+            if (evt != null && evt.type == EventType.Layout) return;
+
+            List<IApplyableResolver> pending = null;
+            foreach (var prop in Tree.EnumerateTree(true))
+            {
+                if (prop.ChildResolver is ICollectionResolver collection && HasQueuedChanges(collection))
+                    (pending ?? (pending = new List<IApplyableResolver>())).Add(collection);
+            }
+            if (pending == null) return;
+
+            // Mismo modelo de undo whole-object que toda mutación de estas tools.
+            RecordUndo("Edit Collection");
+            foreach (var resolver in pending) resolver.ApplyChanges();
+            MarkDirty();
+            Notify();
+        }
+
+        /// <summary>
+        /// Mira la <c>changeQueue</c> privada del resolver — <see cref="IApplyableResolver"/>
+        /// no expone un <c>HasChanges</c>, y llamar <c>ApplyChanges</c> a ciegas impediría
+        /// registrar el undo ANTES de la mutación. Si Odin renombra el campo en un upgrade,
+        /// el fallback aplica igual (sin undo de ese paso, pero el + vuelve a funcionar).
+        /// </summary>
+        static bool HasQueuedChanges(ICollectionResolver resolver)
+        {
+            var type = resolver.GetType();
+            if (!_changeQueueFields.TryGetValue(type, out var field))
+            {
+                for (var t = type; t != null && field == null; t = t.BaseType)
+                    field = t.GetField("changeQueue", BindingFlags.Instance | BindingFlags.NonPublic);
+                _changeQueueFields[type] = field;
+            }
+
+            if (field == null) return resolver.ApplyChanges();
+            return field.GetValue(resolver) is ICollection queue && queue.Count > 0;
+        }
 
         public void Dispose() => DisposeTree();
 

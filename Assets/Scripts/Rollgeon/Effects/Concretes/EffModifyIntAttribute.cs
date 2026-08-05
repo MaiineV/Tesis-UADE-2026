@@ -221,11 +221,12 @@ namespace Rollgeon.Effects.Concretes
 
             if (ServiceLocator.TryGetService<IPlayerService>(out var players)
                 && players != null
-                && players.PlayerGuid == target
-                && players.CurrentHero != null
-                && players.CurrentHero.BaseMaxHp > 0)
+                && players.PlayerGuid == target)
             {
-                return players.CurrentHero.BaseMaxHp;
+                // BUG-022: incluye los grants in-run (MaxHealth.ModifiedValue), con
+                // fallback interno a BaseMaxHp.
+                int resolved = Rollgeon.Player.PlayerMaxHp.Resolve(target);
+                if (resolved > 0) return resolved;
             }
 
             return int.MaxValue;

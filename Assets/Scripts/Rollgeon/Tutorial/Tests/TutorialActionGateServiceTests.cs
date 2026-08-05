@@ -96,6 +96,87 @@ namespace Rollgeon.Tutorial.Tests
             Assert.AreEqual(1, _unlockedEvents, "El segundo Unlock no debe re-disparar el evento.");
         }
 
+        // ================================================================
+        // Regression BUG-019 — ventana exclusiva por paso (snapshot/restore)
+        // ================================================================
+
+        [Test]
+        public void LockAllExcept_LeavesOnlyAllowedSlotFree()
+        {
+            var gate = CreateGate(HeroBehaviorSlot.Healing);
+
+            gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
+
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.SpecialAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
+        }
+
+        [Test]
+        public void RestoreTo_Snapshot_RoundtripsExactSet()
+        {
+            // Arrange — estado "mitad de tutorial": solo Healing y ForceDoor locked.
+            var gate = CreateGate(HeroBehaviorSlot.Healing, HeroBehaviorSlot.ForceDoor);
+            var snapshot = gate.SnapshotLocked();
+
+            // Act — ventana exclusiva y restore.
+            gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
+            gate.RestoreTo(snapshot);
+
+            // Assert — set exacto del snapshot.
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
+        }
+
+        [Test]
+        public void RestoreTo_UnlockBeforeSnapshot_SurvivesRestore()
+        {
+            // Arrange — el unlock de progresión permanente corre ANTES del snapshot
+            // (regla de orden de BeginExclusiveStep) y debe sobrevivir el restore.
+            var gate = CreateGate(HeroBehaviorSlot.BaseAttack, HeroBehaviorSlot.Healing);
+            gate.Unlock(HeroBehaviorSlot.BaseAttack);
+            var snapshot = gate.SnapshotLocked();
+
+            // Act
+            gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
+            gate.RestoreTo(snapshot);
+
+            // Assert
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack),
+                "El unlock permanente pre-snapshot no debe perderse en el restore.");
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+        }
+
+        [Test]
+        public void RestoreTo_NullSnapshot_IsNoop()
+        {
+            var gate = CreateGate(HeroBehaviorSlot.Healing);
+
+            gate.RestoreTo(null);
+
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
+        }
+
+        [Test]
+        public void LockAllExcept_FiresEventsOnlyForSlotsThatChange()
+        {
+            // Arrange — Healing ya estaba locked: no debe re-disparar evento.
+            var gate = CreateGate(HeroBehaviorSlot.Healing);
+            _unlockedEvents = 0;
+
+            // Act
+            gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
+
+            // Assert — cambian Movement, SpecialAttack y ForceDoor (3), no Healing
+            // (ya locked) ni BaseAttack (permitido).
+            Assert.AreEqual(3, _unlockedEvents);
+        }
+
         [Test]
         public void CreateAndRegister_RegistersRunScopedWithTutorialDefaults()
         {

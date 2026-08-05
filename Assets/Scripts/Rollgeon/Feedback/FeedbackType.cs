@@ -66,6 +66,9 @@ namespace Rollgeon.Feedback
         InlineWait,
         InlineAnimation,
         InlineBehaviorValue,
+
+        // Se serializa por índice — los valores nuevos van SIEMPRE al final.
+        InlineEffect,
     }
 
     /// <summary>Cuándo arranca un step de una secuencia. TECHNICAL.md §10.8.</summary>

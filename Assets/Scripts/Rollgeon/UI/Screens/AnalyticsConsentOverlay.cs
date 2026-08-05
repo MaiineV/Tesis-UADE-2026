@@ -53,6 +53,7 @@ namespace Rollgeon.UI.Screens
         protected override void OnPushed(IScreenPayload payload)
         {
             RefreshLabels();
+            LocalizationRefresh.Subscribe(RefreshLabels);
 
             if (_acceptButton != null) _acceptButton.onClick.AddListener(OnAcceptClicked);
             if (_declineButton != null) _declineButton.onClick.AddListener(OnDeclineClicked);
@@ -64,6 +65,8 @@ namespace Rollgeon.UI.Screens
             if (_acceptButton != null) _acceptButton.onClick.RemoveListener(OnAcceptClicked);
             if (_declineButton != null) _declineButton.onClick.RemoveListener(OnDeclineClicked);
             if (_privacyButton != null) _privacyButton.onClick.RemoveListener(OnPrivacyClicked);
+
+            LocalizationRefresh.Unsubscribe(RefreshLabels);
         }
 
         // Labels code-set (docs/setup/localization-setup.md §Labels code-set):

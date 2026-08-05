@@ -2,14 +2,35 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Effects;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Items
 {
+    /// <summary>Qué canal dispara el hook. APPEND-ONLY: se serializa el int del enum.</summary>
+    public enum PassiveHookKind
+    {
+        /// <summary>Evento legacy del bus (<see cref="EventName"/>). Default — preserva assets existentes.</summary>
+        EventBus = 0,
+
+        /// <summary>
+        /// Combo jugado (acción confirmada, pre-daño) vía <c>TypedEvent&lt;ComboPlayedPayload&gt;</c>,
+        /// con filtro por combo. El efecto corre dentro de la ventana: un <c>EffAddComboBonus</c>
+        /// acá suma al daño del golpe en curso.
+        /// </summary>
+        ComboPlayed = 1,
+    }
+
     [Serializable, HideReferenceObjectPicker]
     public class PassiveItemHook
     {
+        [Tooltip("EventBus = evento legacy del EventManager. ComboPlayed = combo jugado (pre-daño) con filtro por combo.")]
+        [OdinSerialize]
+        public PassiveHookKind Kind = PassiveHookKind.EventBus;
+
+        [ShowIf(nameof(Kind), PassiveHookKind.EventBus)]
         [InfoBox("Evento del bus que dispara el efecto. Usables: OnTurnStarted, OnTurnFinished, " +
                  "OnRollStarted, OnDiceRolled, OnRollResolved, OnDamageIncoming, OnDamageOutgoing, " +
                  "OnComboCrossed, OnWeaknessHit, OnPlayerHealthChanged.")]
@@ -17,6 +38,12 @@ namespace Rollgeon.Items
                  "arranca con un Guid dispara siempre — no hay a quién comparar.",
                  InfoMessageType.Warning)]
         public EventName TriggerEvent;
+
+        [ShowIf(nameof(Kind), PassiveHookKind.ComboPlayed)]
+        [InfoBox("Qué combos escucha este hook. AnyCombo = cualquier combo jugado; " +
+                 "ComboIds = solo los ids listados.")]
+        [OdinSerialize]
+        public ComboFilter ComboFilter = new ComboFilter();
 
         [OdinSerialize]
         public EffectData Effect = new();

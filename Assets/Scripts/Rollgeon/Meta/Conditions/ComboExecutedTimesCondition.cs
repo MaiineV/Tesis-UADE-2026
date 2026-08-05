@@ -12,6 +12,7 @@ namespace Rollgeon.Meta.Conditions
     [Serializable]
     public sealed class ComboExecutedTimesCondition : IUnlockCondition
     {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()")]
         [Tooltip("ComboId del catálogo (ej. 'combo.generala').")]
         public string ComboId;
 

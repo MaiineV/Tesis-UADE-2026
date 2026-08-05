@@ -104,6 +104,47 @@ Origen del planteo del profesor (ver `docs/design/pas-defensa-pura.md`): la regl
 - **Fix propuesto**: paso post-build en `RollgeonBuild.CopySteamAppId`-style que estampe el version info con `rcedit` (dependencia externa, ~1 MB). Alternativa: firmar el ejecutable, que resuelve esto y el warning de SmartScreen a la vez.
 - **Branch**: detectado en `Feature#0036_SteamBuild`. **Estado**: abierto, no bloquea la primera subida a Steam.
 
+### PUL-013 — El ataque telegrafiado del Sunken Grand no anima
+
+- **Severidad**: Baja (cosmético — el daño y el telegraph funcionan bien)
+- **Área**: Combat / Enemies / Anim
+- El árbol de `ED_Boss_Sunken_Grand` pega por **dos** caminos: el `AINode_Behavior` con la acción `Ranged` (que en `Feature#0038` quedó sincronizada al frame de impacto, eligiendo `Attack_Melee` o `Attack_Range` según la distancia Manhattan al target) y el par `AINode_TelegraphMark` → `AINode_ExecuteTelegraph`, que resuelve el daño por su cuenta **sin pasar por ningún `EffectData`**.
+- **Consecuencia**: cuando el boss cobra una marca telegrafiada, el modelo se queda en Idle y el daño aparece sin windup. Contrasta feo con el otro camino, que ahora sí anticipa el golpe.
+- **Estado**: **cerrado** en `Feature#0038_SunkedGrandAnimSync`. `AINode_ExecuteTelegraph` ganó dos campos autorables (`WindupFeedbackId` + `ImpactEventKey`) y un `TickCoroutine` que corre ese feedback **antes** de resolver el daño, bloqueando en el Animation Event — el mismo gate que usa la acción autorada. El `Tick` síncrono (EditMode) queda igual que antes, sin windup, porque ahí no hay dónde esperar el evento. El Sunken Grand quedó autorado con `anim.enemy.sunken_grand.range` / `hit`; el General Director y el Security Boss quedan vacíos, o sea sin cambio de comportamiento hasta que se les autore su propia entry.
+
+### PUL-014 — Un nodo de movimiento que devuelve `Failed` congela el turno entero del enemigo
+
+- **Severidad**: Alta cuando pega (el enemigo deja de jugar), pero depende de cómo esté armado cada árbol
+- **Área**: Combat / AI
+- Los nodos de movimiento devuelven `AIResult.Failed` en el caso **benigno** de "no hay nada que hacer" — `AINode_KeepDistance` cuando ya está a distancia ideal o no encuentra un tile mejor, `AINode_Move` cuando no hay path. Es lo que manda el contrato de `AIActionNode` ("`Failed` si no se ejecutó, ej. fuera de rango"), pero **`AINode_Sequence` aborta al primer `Failed`**: todo lo que venga después en el sequence no corre.
+- **Cómo se manifestó**: el Sunken Grand tenía `KeepDistance` en el índice 1 de 5, antes del ataque, con `IdealDistance = 5`. Parándose a 5+ casillas del boss, el nodo devolvía `Failed` y se llevaba puesto el buff de fase, el ataque/telegraph y el rotate block: **el boss se quedaba literalmente quieto**. Arreglado en `Feature#0038` envolviéndolo en `Selector(KeepDistance, Wait)`, el idiom de "intentá esto, no importa si falla".
+- **Sigue latente en otros lados**: `ED_RangedEnemy` tiene `Sequence[Move, If[...Attack]]` — si `AINode_Move` no encuentra path, el ataque de esa rama no corre. `ED_RangedEnemy` y `ED_Healer` esquivan el caso de `KeepDistance` poniéndolo **último** en su sequence, así que hoy no se nota, pero es por acomodo, no por diseño.
+- **Fix de fondo a evaluar**: separar "no había nada que hacer" de "falló de verdad" (un `AIResult.Skipped`, o que estos nodos devuelvan `Succeeded` cuando el no-op es benigno). Ojo: cambiar la semántica ripplea a los `While` del ranged y del healer, que hoy cortan su loop con el `Failed` del body. Por eso en `Feature#0038` se arregló el árbol y no el nodo.
+- **Mitigación puesta**: `<remarks>` de advertencia en `AINode_KeepDistance` con el idiom del `Selector`.
+- **Branch**: detectado en playtest durante `Feature#0038_SunkedGrandAnimSync`. **Estado**: el caso del Sunken Grand está cerrado; la deuda de fondo (semántica de los nodos de movimiento) queda abierta.
+
+### PUL-015 — Un `MMF_PositionSpring` mal tuneado escupe NaN y apaga todo el canvas de dados
+
+- **Severidad**: Crítica cuando pega (bloquea el playtest entero: los boards no se dibujan)
+- **Área**: UI / Juice / Feel
+- **Repro**: entrar a la zona de dados, tirar una vez y **dejarla quieta ~1.6 s** sin volver a tirar. Reproducible al 100% grabando con Unity Recorder; intermitente en playtest normal.
+- **Observado**: `Invalid worldAABB. Object is too large or too far away from the origin.` + `transform.localPosition assign attempt for 'DiceZoneView' is not valid. Input localPosition is { 0, NaN, 0 }` desde `MMF_PositionSpring.ApplyValue`. Los dice boards no aparecen.
+- **Causa**: el feedback `Zone Roll Shake` (`Canvas_ActionRoll.prefab`, target `DiceZoneView`) estaba autorado con **`DampingY 0.55` / `FrequencyY 14`**. `MMMaths.Spring` (`Assets/Feel/MMTools/Core/MMHelpers/MMMaths.cs:44`) integra con Euler semi-implícito y **clampea el sub-step a 1/60 fijo**. A 14 Hz eso da h·ω = 1.47, fuera de la región de estabilidad para ζ = 0.55: el autovalor dominante queda en **|z| ≈ 2.06**, o sea la amplitud se duplica en cada sub-step. A los ~97 sub-steps llega a `Inf`, y el `Inf - Inf` del paso siguiente da **NaN**. El NaN entra en el `anchoredPosition3D` de `DiceZoneView` y contamina la matriz de toda la subjerarquía → el `Invalid worldAABB` es el síntoma, no un bug aparte.
+- **Por qué "solo con el Recorder"**: el spring necesita correr ~1.6 s sin interrupción, y `MmfJuice.Replay` reinicia el reloj en cada roll (`StopFeedbacks` + `RestoreInitialValues`), igual que `Rest()` en el `OnDisable` de la zona. El Recorder fija `Time.captureDeltaTime` al frame rate objetivo, así que cada frame alimenta un múltiplo **exacto** de 1/60 y pega justo en la resonancia patológica. Con jitter real depende: dt exacto 1/60 → NaN al frame 97; jitter 14-20 ms → NaN al 123; jitter 17-33 ms → se estabiliza. **No era exclusivo del Recorder**: una máquina a 60 fps parejos también lo dispara.
+- **Estado**: **cerrado**. `FrequencyY: 14 → 10` (amplitud 0.57 px → 0.8 px, dentro del "≤2 px" que pide el tooltip; el resto de los parámetros sin tocar). Validado por simulación del integrador en dt = 1/60, 1/50, 1/30, 1/24, 0.02, 0.025, 0.05, 0.1, 0.2 y 0.333: converge en todos.
+- **Restricción que queda para autoría**: con el sub-step de 1/60 que clampea Feel, **una frecuencia ≥ 11 Hz con damping ≥ 0.4 diverge**. Los otros springs del proyecto (0.45/12 y 0.50/10) quedan por debajo del umbral, pero el de 12 Hz está al borde. Barrido de todos los `.prefab`/`.unity`/`.asset` fuera de `Assets/Feel`: tras el fix, **0 springs divergentes**.
+
+### PUL-016 — El prompt "… Roll (1E)" queda pegado y reaparece sobre el roll de ataque siguiente
+
+- **Severidad**: Media (cosmético, pero engañoso — el jugador lee que le van a cobrar 1E por una tirada que es gratis)
+- **Área**: UI / Combat / Chain
+- **Repro**: entrar a una fase de chain **paga** (defensa post-ataque sin free rolls sobrantes pero con energía > 0) → aparece el prompt central `"{fase} Roll (1E)"`, que es correcto → **no** pagarlo → el roll de ataque siguiente arranca con el prompt todavía prendido.
+- **Causa**: el GO `ChainRollPrompt` arranca inactivo y **solo** lo prende `ChainRollPromptView.Show()`, llamado desde un único lugar (`CombatHandoffService.cs:1071`). `Hide()` se llamaba en dos: `:800` (el jugador paga y tira) y `:1149` (`FinishChain`). Pero `ResetCombatPhaseState()` (`:280-310`) apagaba el flag `_awaitingChainPaidRoll` **sin** esconder el prompt, con este comentario: *"el prompt del board se auto-esconde al desactivarse la zona"*. Es falso — desactivar un canvas ancestro no limpia el `m_IsActive` propio del hijo, y `ChainRollPrompt` vive dentro de `Canvas_ActionRoll`, un canvas persistente de la escena. `ResetCombatPhaseState` corre en `OnCombatEnd` y al arranque de cada combate, así que un combate que cerraba con la entrada paga pendiente se lo filtraba al siguiente.
+- **Cómo se llega a ese estado**: el comentario de `:230-236` ya lo describía — el enemigo muere antes de que el jugador consuma todas las fases del chain. Con el gate de feedback la secuencia de muerte se difiere, así que `ContinueChainPhase` alcanza a mostrar el prompt pago y recién después llega `OnCombatEnd`.
+- **Lo que quedó sin probar**: el usuario también reportó el bug saliendo por **Pass del chain**. Ese path (`:837-852`) pasa por `FinishChain`, que sí esconde — no se pudo reproducir el leak leyendo el código. Por eso el fix se hizo independiente del camino en vez de tapar un call site puntual: si el de Pass tenía otra causa raíz, queda cubierto igual.
+- **Estado**: **cerrado** en `Fix#0039_ChainRollPromptStuck`. Dos capas: (1) `ChainRollPromptView` se apaga solo con `OnChainCompleted` / `OnCombatEnd` — se suscribe en `Show()` y se suelta en `Hide()`, así la ventana de escucha es exactamente "el prompt está arriba" (no se usó OnEnable/OnDisable porque en EditMode no corren; `OnDisable` queda solo como guard de teardown); (2) `ResetCombatPhaseState` resuelve el hud vía `_screenManager.Current` y esconde el prompt en la misma operación que resetea el flag, para que el servicio sea correcto por sí mismo. Cubierto por 4 tests nuevos en `ChainRollPromptViewTests` y 2 en `CombatHandoffServiceTests`.
+- **Restricción que queda**: el prompt y `_awaitingChainPaidRoll` son el mismo estado. Cualquier camino de salida nuevo que apague el flag tiene que apagar el prompt — y si se olvida, la suscripción de la view lo tapa.
+
 ---
 
 **Pendiente del usuario**: link/columnas del sheet compartido y qué ventana

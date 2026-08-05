@@ -7,6 +7,7 @@ using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.FSM.States;
 using Rollgeon.Combos;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Dice.Throw;
 using Rollgeon.Dungeon;
@@ -62,11 +63,21 @@ namespace Rollgeon.Combat.Handoff
         private HeroActionBehavior _selectedBehavior;
         private bool _awaitingFirstRoll;
 
+        // True mientras una fase de chain espera su primer roll PAGO (sin rolls
+        // sobrantes del pool anterior pero con energía): el prompt del board ofrece
+        // "X Roll (1E)" y el botón Roll cobra 1E vía el paid path del budget.
+        private bool _awaitingChainPaidRoll;
+
         // True mientras una accion sin tirada (Movement) espera que el jugador elija el
         // tile destino y todavia se puede cancelar+reembolsar (BUG-013). Lo setea el
         // playerState path de DoConfirm y lo limpia el callback de RequestAction al
         // completarse o cancelarse la accion.
         private bool _awaitingPlayerSelection;
+        // BUG-018: lock de re-entrada del Confirm de chain. Los efectos de la fase corren
+        // sincrónicos en ExecuteChainPhase, pero _chainPhaseIndex y _selectedBehavior se
+        // actualizan recién en la continuación diferida por el feedback — sin este flag,
+        // cada Confirm/Espacio durante la animación del golpe re-ejecutaba la misma fase.
+        private bool _isResolvingChainPhase;
         private EffChain _activeChain;
         private int _chainPhaseIndex;
         private TargetSelectionResult _chainPhaseSelectionResult;
@@ -76,6 +87,15 @@ namespace Rollgeon.Combat.Handoff
         // CNF-002: guid del enemigo marcado con el crease de selección (objetivo del
         // ataque elegido antes de tirar). Guid.Empty = nadie marcado.
         private Guid _creaseTargetGuid;
+
+        // BUG-030 (Torpe): true mientras hay un relanzamiento completo forzado
+        // agendado y sin ejecutar. Congela Confirm/EnergyReroll/EndTurn durante la
+        // ventana del delay para que el jugador no consuma la mano que está por volar.
+        private bool _forcedRerollPending;
+
+        // Seam de tests: los EditMode no tienen player loop — inyectan un scheduler
+        // sincrónico o capturan el callback. Default (null): PrimeTween.Tween.Delay.
+        internal Action<float, Action> ForcedRerollScheduler { get; set; }
 
         public bool IsHandoffInProgress { get; private set; }
 
@@ -170,12 +190,16 @@ namespace Rollgeon.Combat.Handoff
                 // Build participant list: player + enemies.
                 var participants = new List<Guid> { _player.PlayerGuid };
                 Guid firstEnemyId = Guid.Empty;
+                EnemyDataSO firstEnemyData = null;
 
-                foreach (var (id, _) in spawned)
+                foreach (var (id, data) in spawned)
                 {
                     participants.Add(id);
                     if (firstEnemyId == Guid.Empty)
+                    {
                         firstEnemyId = id;
+                        firstEnemyData = data;
+                    }
                 }
 
                 // Push combat HUD screen.
@@ -185,6 +209,19 @@ namespace Rollgeon.Combat.Handoff
                         RoomInstanceId = roomInstanceId,
                         EncounterDisplayName = Rollgeon.Localization.LocalizedContent.Name(room.RoomId, room.DisplayName)
                     });
+
+                // Encuentro de jefe: encender la barra de vida en pantalla (BossBarView).
+                // Se bindea al primer enemigo (el jefe es el único spawn en RoomType.Boss)
+                // y le pasa el nombre ya localizado. La barra lee el Health por su cuenta.
+                if (roomType == RoomType.Boss && firstEnemyId != Guid.Empty && firstEnemyData != null)
+                {
+                    TypedEvent<BossEncounterStartedPayload>.Raise(new BossEncounterStartedPayload
+                    {
+                        BossGuid = firstEnemyId,
+                        DisplayName = Rollgeon.Localization.LocalizedContent.Name(
+                            firstEnemyData.EntityId, firstEnemyData.DisplayName),
+                    });
+                }
 
                 // Cablea delegates del HUD contra IPlayerCombatActions + reroll budget
                 // (setup doc UI#0095b §8.7). Sin esto, los clicks del HUD loggean
@@ -278,9 +315,23 @@ namespace Rollgeon.Combat.Handoff
             _selectedBehavior = null;
             _awaitingFirstRoll = false;
             _awaitingPlayerSelection = false;
+            // BUG-030: un forced reroll agendado no sobrevive a su combate — el
+            // callback del scheduler chequea el flag y hace no-op si llegó tarde.
+            _forcedRerollPending = false;
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
+            // El prompt del board se apaga en la MISMA operación que el flag: son el
+            // mismo estado y no pueden divergir. Antes acá solo se reseteaba el flag,
+            // asumiendo que el GO "se auto-esconde al desactivarse la zona" — falso:
+            // desactivar un canvas ancestro no limpia el m_IsActive propio del hijo, así
+            // que un combate que cerraba con la entrada paga pendiente (el enemigo muere
+            // antes de que el player consuma todas las fases) se lo filtraba al siguiente
+            // combate, encima del roll de ataque (PUL-016).
+            _awaitingChainPaidRoll = false;
+            _isResolvingChainPhase = false;
+            if (_screenManager?.Current is CombatHUDView resetHud)
+                resetHud.HideChainRollPrompt();
 
             // Si quedó un ActionRoll abierto (ej. user nunca apretó Confirm pero el combat
             // termina por otra vía), cancelarlo para que el panel se cierre.
@@ -305,6 +356,10 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnEndTurnRequested = () =>
             {
+                // BUG-030: la ventana del forced reroll es corta (~0.35s) — cerrar el
+                // turno en el medio dejaría el callback re-tirando sin turno activo.
+                if (_forcedRerollPending) return;
+
                 // BUG-013: si hay un Movement pendiente de selección, End Turn lo cancela
                 // (con reembolso) en vez de quedar inerte. El jugador puede volver a apretar
                 // End Turn para cerrar el turno.
@@ -354,10 +409,22 @@ namespace Rollgeon.Combat.Handoff
 
             void DoConfirm()
             {
+                // BUG-030: con un relanzamiento forzado agendado, la mano actual está
+                // por volar — confirmar ahora ejecutaría un combo que no va a existir.
+                if (_forcedRerollPending) return;
                 if (_selectedBehavior == null) return;
 
                 if (_activeChain != null)
                 {
+                    // Entrada paga pendiente: sin tirada no hay nada que confirmar —
+                    // Space no debe ejecutar la fase con DiceResult null.
+                    if (_awaitingChainPaidRoll) return;
+
+                    // BUG-018: la fase actual ya se despachó (selección abierta o efectos
+                    // aplicados) y la continuación diferida todavía no avanzó el índice.
+                    if (_isResolvingChainPhase) return;
+                    _isResolvingChainPhase = true;
+
                     var phase = _activeChain.Phases[_chainPhaseIndex];
                     var afterRoll = FindPhaseSelectionAt(phase, SelectionTiming.AfterRoll);
 
@@ -647,6 +714,10 @@ namespace Rollgeon.Combat.Handoff
                     {
                         _activeChain = chain;
                         _chainPhaseIndex = 0;
+                        // SetBehaviorForFormula ya empujó el board del behavior; si la fase 0
+                        // overridea, lo corregimos acá (vale para ambos entry points del primer
+                        // roll: selección BeforeRoll y el botón Roll manual).
+                        ApplyChainPhaseBoardSkin(hud, 0);
                         // OnChainStarted se emite recien cuando arranca el primer roll
                         // del chain (no aca). Si lo emitieramos al seleccionar, los
                         // demas botones quedarian lockeados antes de que el jugador
@@ -746,6 +817,27 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnRollRequested = () =>
             {
+                // Entrada paga de fase de chain: el "primer roll" de la fase se cobra
+                // recien aca, al click, via el paid path del budget (0 free ⇒ 1E). Si
+                // el cobro falla (energia gastada en el medio) no hay nada que revertir
+                // — el jugador sale con Pass o End Turn.
+                if (_activeChain != null && _awaitingChainPaidRoll)
+                {
+                    if (ThrowBusy()) return;
+                    var chainBag = ResolvePlayerBag();
+                    var chainRoller = ResolveRoller();
+                    if (chainBag == null || chainRoller == null) return;
+                    if (!(ServiceLocator.TryGetService<IRerollBudgetService>(out var paidBudget)
+                          && paidBudget != null && paidBudget.TryExtraRoll(playerGuid)))
+                    {
+                        return;
+                    }
+                    _awaitingChainPaidRoll = false;
+                    hud.HideChainRollPrompt();
+                    RollViaThrow(playerGuid, chainBag, chainRoller);
+                    return;
+                }
+
                 if (!_awaitingFirstRoll || _selectedBehavior == null) return;
                 if (ThrowBusy()) return;
 
@@ -804,11 +896,60 @@ namespace Rollgeon.Combat.Handoff
                 grabThrowSvc.GrabRerollHandler = keepOverride => TryEnergyReroll(hud, playerGuid, keepOverride);
         }
 
+        // ======================================================================
+        // BUG-030 (Torpe): relanzamiento completo forzado
+        // ======================================================================
+
+        /// <inheritdoc />
+        public bool TryScheduleForcedFullHandReroll(Guid playerGuid, float delaySeconds = 0.35f)
+        {
+            if (_forcedRerollPending) return false;
+            if (_selectedBehavior == null || !_selectedBehavior.NeedsDiceRoll) return false;
+            if (_lastFaces == null || _lastFaces.Length == 0) return false;
+            if (ThrowBusy()) return false;
+
+            // Diferido fuera del dispatch de OnDiceRolled: un reroll sincrónico
+            // anidaría el reveal nuevo dentro del evento viejo y los handlers
+            // restantes (DiceZoneView) pintarían las caras viejas encima.
+            _forcedRerollPending = true;
+            var scheduler = ForcedRerollScheduler
+                ?? ((delay, callback) => PrimeTween.Tween.Delay(delay, callback));
+            scheduler(Mathf.Max(0f, delaySeconds), () => ExecuteForcedFullHandReroll(playerGuid));
+            return true;
+        }
+
+        private void ExecuteForcedFullHandReroll(Guid playerGuid)
+        {
+            // ResetCombatPhaseState pudo bajar el pending (fin de combate, cancel):
+            // el callback tardío no debe re-tirar sobre un contexto muerto.
+            if (!_forcedRerollPending) return;
+            _forcedRerollPending = false;
+            if (_lastFaces == null || _selectedBehavior == null) return;
+            if (ThrowBusy()) return;
+
+            var bag = ResolvePlayerBag();
+            var roller = ResolveRoller();
+            if (bag == null || roller == null) return;
+
+            // keep all-false = vuela la mano entera; los dados bloqueados (Boss 1)
+            // quedan forzados a keep=true como en cualquier reroll.
+            var keep = KeepForcingBlockedDice(new bool[_lastFaces.Length], _lastFaces.Length);
+
+            // Holds marcados durante la ventana del delay quedarían fuera de sync
+            // con el reveal nuevo — se limpian antes de re-tirar.
+            if (_screenManager?.Current is CombatHUDView hud)
+                hud.ClearDiceHolds();
+
+            // Sin TryExtraRoll ni energía: el reroll del Torpe es gratis por diseño.
+            RerollViaThrow(playerGuid, bag, roller, keep);
+        }
+
         // Cuerpo compartido del reroll de combate: el botón Roll/Reroll lo invoca sin
         // keepOverride (usa los holds del HUD) y el grab-to-reroll con el mask armado
         // por el presenter. Devuelve true si el reroll efectivamente arrancó.
         private bool TryEnergyReroll(CombatHUDView hud, Guid playerGuid, bool[] keepOverride = null)
         {
+            if (_forcedRerollPending) return false;
             if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return false;
             if (ThrowBusy()) return false;
             if (_lastFaces == null) return false; // nada rolleado todavía — no hay qué re-tirar
@@ -893,22 +1034,63 @@ namespace Rollgeon.Combat.Handoff
             // un número extra por cada sala jugada.
             _selectedBehavior?.ClearBehaviorValues();
 
+            // El chain no pasa por HeroActionBehavior.Execute, así que la ventana de combo
+            // jugado se abre acá — una emisión POR FASE (cada fase consume su propia tirada).
+            // EndPlay corre antes del OnRollResolved de más abajo: los hooks de roll-resolved
+            // no deben ver la ventana abierta.
             if (phase?.Effects != null)
-                phase.Effects.TryExecute(effCtx, preCtx);
+            {
+                var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+                play?.BeginPlay(effCtx);
+                try
+                {
+                    phase.Effects.TryExecute(effCtx, preCtx);
+                }
+                finally
+                {
+                    play?.EndPlay();
+                }
+            }
+
+            // El resto del avance del chain se difiere hasta que baje el feedback en vuelo.
+            // Los efectos de arriba pueden haber dejado consecuencias de gameplay atadas al
+            // frame de impacto (§10.8, StepSource.InlineEffect): sin este gate el chain
+            // avanzaría de fase ANTES de que el golpe conecte — la fase siguiente limpiaría
+            // el bag y el FloatingDamage diferido saldría pegado al feedback equivocado.
+            // Sin feedback en vuelo corre sincrónico, así que el flujo viejo no cambia.
+            if (ServiceLocator.TryGetService<TurnManager>(out var turnMgr) && turnMgr != null)
+                turnMgr.RunWhenFeedbackSettles(() => ContinueChainPhase(hud, playerGuid, remainingFreeRolls));
+            else
+                ContinueChainPhase(hud, playerGuid, remainingFreeRolls);
+        }
+
+        /// <summary>
+        /// Segunda mitad de <see cref="ExecuteChainPhase"/>: cierra el budget, emite el roll
+        /// resuelto y avanza de fase. Separada para poder diferirla hasta que termine el
+        /// feedback del golpe (ver el gate en <see cref="ExecuteChainPhase"/>).
+        /// </summary>
+        private void ContinueChainPhase(CombatHUDView hud, Guid playerGuid, int remainingFreeRolls)
+        {
+            // BUG-018: el avance de fase corre sincrónico dentro de este método — recién
+            // al salir queda estado consistente para aceptar otro Confirm.
+            _isResolvingChainPhase = false;
 
             // CNF-002: el ataque ya resolvió sobre el objetivo — el crease de selección
             // se apaga acá (el Hit Flash del daño toma la posta en el mismo pawn).
             ClearAttackTargetCrease();
 
-            // Ejecutar los efectos pudo terminar el combate de inmediato: si el golpe mató
-            // al último enemigo, OnCombatEnd corre síncrono y ResetCombatPhaseState() ya
-            // limpió todo (incluido EndBudget) dejando _activeChain en null. En ese caso no
-            // hay chain que seguir procesando — salimos antes de volver a tocar _activeChain
-            // (sino NRE en _activeChain.PhaseCount). Antes el delay de muerte ocultaba este
-            // race porque el cierre se diferían 1.5s; con cierre instantáneo aflora acá.
+            // Ejecutar los efectos pudo terminar el combate: si el golpe mató al último
+            // enemigo, ResetCombatPhaseState() ya limpió todo (incluido EndBudget) dejando
+            // _activeChain en null. En ese caso no hay chain que seguir procesando — salimos
+            // antes de volver a tocar _activeChain (sino NRE en _activeChain.PhaseCount).
+            // Con el gate de feedback esto ahora también cubre el cierre diferido por la
+            // secuencia de muerte, que antes llegaba después de este punto.
             if (_activeChain == null)
                 return;
 
+            // Se re-resuelve acá en vez de capturarse: entre el golpe y esta continuación
+            // pudo pasar un frame largo, y el budget vive en el ServiceLocator.
+            ServiceLocator.TryGetService<IRerollBudgetService>(out var budget);
             budget?.EndBudget();
 
             var resolved = _lastFaces ?? Array.Empty<int>();
@@ -927,38 +1109,55 @@ namespace Rollgeon.Combat.Handoff
             if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
                 currentEnergy = energy.GetCurrent(playerGuid);
 
-
-            // BUG-019: la phase siguiente (típicamente defensa post-attack) requiere
-            // rolls libres sobrantes del pool de la phase anterior. Si el jugador
-            // gastó los 3 free rolls atacando, la tirada de defensa no debe ocurrir
-            // — aunque tenga energía suficiente para reroll. La energía sola no
-            // habilita la phase: necesita haber pool libre del attack.
-            if (remainingFreeRolls == 0)
+            // La phase siguiente (típicamente defensa post-attack) corre con los rolls
+            // libres sobrantes del pool anterior — su primer roll consume 1 de ellos.
+            // Sin sobrantes, la energía habilita una entrada PAGA (1E por el primer
+            // roll) si el behavior permite energy-reroll; sin rolls NI energía el
+            // chain corta acá.
+            var entryMode = ResolveChainPhaseEntry(remainingFreeRolls, currentEnergy,
+                _selectedBehavior != null && _selectedBehavior.AllowsEnergyReroll);
+            if (entryMode == ChainPhaseEntry.Finish)
             {
                 FinishChain(hud, playerGuid, false);
                 return;
             }
 
-            PrepareNextChainPhase(hud, playerGuid, remainingFreeRolls + 1);
+            PrepareNextChainPhase(hud, playerGuid, remainingFreeRolls);
         }
 
         private void StartNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
         {
-
             var wrapper = UnityEngine.ScriptableObject.CreateInstance<ActionDefinitionSO>();
             wrapper.ActionId = $"{_selectedBehavior.ActionName}.chain.phase{_chainPhaseIndex}";
             wrapper.EnergyCost = 0;
             wrapper.FreeRollCount = freeRollCount;
             wrapper.AllowsEnergyReroll = _selectedBehavior.AllowsEnergyReroll;
 
+            bool paidEntry = freeRollCount == 0;
+
             if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget) && budget != null)
             {
                 budget.StartBudget(wrapper);
                 // El budget cuenta TODOS los rolls incl. el primero. En el flow de
-                // chain el primer roll dispara automaticamente (no hay boton Roll
+                // chain la fase abre con su roll ya en curso (no hay boton Roll
                 // entre fases), asi que consumimos una unidad para preservar la
                 // semantica "FreeRollsRemaining = rerolls disponibles tras el roll".
-                budget.TryExtraRoll(playerGuid);
+                // En entrada paga no hay free rolls que consumir: el primer roll se
+                // cobra (1E) recien cuando el jugador aprieta el boton Roll.
+                if (!paidEntry)
+                    budget.TryExtraRoll(playerGuid);
+            }
+
+            if (paidEntry)
+            {
+                // Entrada paga: la fase queda abierta SIN dados. El prompt del board
+                // ofrece "X Roll (1E)" y hud.OnRollRequested cobra y tira al click;
+                // Pass / End Turn siguen disponibles como salida sin costo.
+                _awaitingChainPaidRoll = true;
+                var paidPhase = _activeChain.Phases[_chainPhaseIndex];
+                hud.ShowChainRollPrompt(paidPhase?.Label);
+                EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
+                return;
             }
 
             var bag = ResolvePlayerBag();
@@ -974,6 +1173,32 @@ namespace Rollgeon.Combat.Handoff
             // aparecen sin tirar y la fase (ej. defensa) espera el throw del jugador.
             RollViaThrow(playerGuid, bag, roller);
             EventManager.Trigger(EventName.OnChainPhaseStarted, playerGuid, _chainPhaseIndex, _activeChain.PhaseCount);
+        }
+
+        /// <summary>Modo de entrada a la fase siguiente de un chain.</summary>
+        public enum ChainPhaseEntry
+        {
+            /// <summary>Sin rolls sobrantes ni pago posible — el chain termina.</summary>
+            Finish = 0,
+
+            /// <summary>Quedan rolls libres del pool anterior — el primer roll de la fase consume 1.</summary>
+            Free = 1,
+
+            /// <summary>Sin rolls libres pero con energía — el primer roll se paga (1E) al apretar Roll.</summary>
+            Paid = 2,
+        }
+
+        /// <summary>
+        /// Decide la entrada a la fase siguiente del chain según el pool sobrante y la
+        /// energía. La energía solo habilita la entrada paga si el behavior permite
+        /// energy-reroll — mismo gate que aplica <see cref="RerollBudgetService"/> al cobrar.
+        /// </summary>
+        public static ChainPhaseEntry ResolveChainPhaseEntry(
+            int remainingFreeRolls, int energy, bool allowsEnergyReroll)
+        {
+            if (remainingFreeRolls > 0) return ChainPhaseEntry.Free;
+            if (energy > 0 && allowsEnergyReroll) return ChainPhaseEntry.Paid;
+            return ChainPhaseEntry.Finish;
         }
 
         private void FinishChain(CombatHUDView hud, Guid playerGuid, bool wasPass)
@@ -997,6 +1222,8 @@ namespace Rollgeon.Combat.Handoff
             _chainPhaseIndex = 0;
             _lastFaces = null;
             _selectedBehavior = null;
+            _awaitingChainPaidRoll = false;
+            _isResolvingChainPhase = false;
 
             _chainPhaseSelectionResult = null;
             if (_chainSelectionController != null)
@@ -1007,6 +1234,7 @@ namespace Rollgeon.Combat.Handoff
             _pendingChainCallback = null;
 
             hud.ClearBehaviorForFormula();
+            hud.HideChainRollPrompt();
 
             EventManager.Trigger(EventName.OnChainCompleted, playerGuid, phasesCompleted, totalPhases, wasPass);
 
@@ -1168,9 +1396,27 @@ namespace Rollgeon.Combat.Handoff
             EventManager.Trigger(EventName.OnCombatTargetChanged, _player.PlayerGuid, Guid.Empty);
         }
 
+        // Empuja al board skin el tipo efectivo de la fase de chain indicada: el propio de la
+        // fase si overridea, si no el del behavior. Cada fase tira aparte y puede querer un
+        // board distinto (ej. daño=Attack, escudo=Defense).
+        private void ApplyChainPhaseBoardSkin(CombatHUDView hud, int phaseIndex)
+        {
+            if (_activeChain == null || _selectedBehavior == null) return;
+            if (phaseIndex < 0 || phaseIndex >= _activeChain.PhaseCount) return;
+
+            var phase = _activeChain.Phases[phaseIndex];
+            var type = phase != null
+                ? phase.ResolveBoardType(_selectedBehavior.BoardType)
+                : _selectedBehavior.BoardType;
+            hud.ApplyBoardType(type);
+        }
+
         private void PrepareNextChainPhase(CombatHUDView hud, Guid playerGuid, int freeRollCount)
         {
             var nextPhase = _activeChain.Phases[_chainPhaseIndex];
+            // Board skin de la fase entrante antes de abrir su target-select, así el tablero
+            // ya muestra el skin correcto (ej. Defense en la fase de escudo) mientras se apunta.
+            ApplyChainPhaseBoardSkin(hud, _chainPhaseIndex);
             var beforeRoll = FindPhaseSelectionAt(nextPhase, SelectionTiming.BeforeRoll);
 
 

@@ -78,7 +78,9 @@ namespace Rollgeon.UI.Unlocks
                 if (_bodyLabel != null)
                 {
                     var fallback = string.IsNullOrEmpty(payload.DisplayName) ? payload.TargetId : payload.DisplayName;
-                    _bodyLabel.text = LocalizedContent.Name(payload.TargetId, fallback);
+                    // Por UnlockId, no por TargetId: las keys de la tabla son las de la
+                    // definición ("unlock.dice.d8"), no las del elemento ("D8").
+                    _bodyLabel.text = LocalizedContent.Name(payload.UnlockId, fallback);
                 }
 
                 if (_panelRoot != null) _panelRoot.SetActive(true);

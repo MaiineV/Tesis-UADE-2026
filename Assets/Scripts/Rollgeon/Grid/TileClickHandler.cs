@@ -186,32 +186,10 @@ namespace Rollgeon.Grid
         }
 
         /// <summary>
-        /// Resuelve la celda bajo el cursor. Primero el modelo de un pawn (click/hover
-        /// sobre el enemigo = su celda, CNF-002). Si no, intersecta el rayo con el PLANO
-        /// del piso — no con los colliders de los tiles.
+        /// Resuelve la celda bajo el cursor: la del pawn apuntado (click/hover sobre el
+        /// enemigo = su celda, CNF-002), si no la del piso. Ver <see cref="PawnPicker"/>.
         /// </summary>
-        /// <remarks>
-        /// El collider de cada tile es una caja de 1u de alto que sobresale 0.5 por encima
-        /// del piso visible; desde la cámara en ángulo, el collider de un tile de adelante
-        /// tapaba al de atrás y esa celda quedaba imposible de seleccionar/pintar. La grilla
-        /// es un único plano (GridCoord es 2D), así que intersectar contra el plano a la
-        /// altura de <see cref="IGridManager.GridOrigin"/> da la celda correcta ignorando
-        /// cualquier cosa que haya en el medio.
-        /// </remarks>
         private GridCoord? ResolveCoordUnderCursor(Ray ray, IGridManager grid)
-        {
-            if (Physics.Raycast(ray, out var hitAny, 100f))
-            {
-                var pawn = hitAny.collider.GetComponentInParent<Rollgeon.Entities.Visuals.EntityPawn>();
-                if (pawn != null && grid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
-                    return pawnCoord;
-            }
-
-            var floor = new Plane(Vector3.up, grid.GridOrigin);
-            if (!floor.Raycast(ray, out float enter)) return null;
-
-            var coord = grid.WorldToGrid(ray.GetPoint(enter));
-            return grid.InBounds(coord) ? coord : (GridCoord?)null;
-        }
+            => PawnPicker.ResolveCoord(ray, grid);
     }
 }

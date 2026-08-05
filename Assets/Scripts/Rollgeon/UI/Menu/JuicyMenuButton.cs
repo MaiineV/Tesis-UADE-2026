@@ -43,6 +43,10 @@ namespace Rollgeon.UI.Menu
 
         private Vector2 _restAnchoredPos;
         private Vector3 _baseScale;
+        // Reposo REAL del label: cero solo si el pivot del botón es (0.5, 0.5) —
+        // en botones con otro pivot (Confirm/Reroll del dice board, pivot bottom)
+        // el label estirado reposa desplazado y asumir cero lo descentraba.
+        private Vector3 _labelRestLocalPos;
         private bool _restCaptured;
 
         private bool _pointerOver;
@@ -92,6 +96,7 @@ namespace Rollgeon.UI.Menu
             {
                 _restAnchoredPos = _rect.anchoredPosition;
                 _baseScale = transform.localScale;
+                if (_label != null) _labelRestLocalPos = _label.transform.localPosition;
                 _restCaptured = true;
             }
 
@@ -109,7 +114,7 @@ namespace Rollgeon.UI.Menu
             transform.localScale = _baseScale;
             if (_label != null)
             {
-                _label.transform.localPosition = Vector3.zero;
+                _label.transform.localPosition = _labelRestLocalPos;
                 _label.color = _settings.TextColor;
             }
             if (_underline != null)
@@ -221,6 +226,7 @@ namespace Rollgeon.UI.Menu
             {
                 _restAnchoredPos = _rect.anchoredPosition;
                 _baseScale = transform.localScale;
+                if (_label != null) _labelRestLocalPos = _label.transform.localPosition;
                 _restCaptured = true;
             }
 
@@ -249,7 +255,7 @@ namespace Rollgeon.UI.Menu
             if (_label != null)
             {
                 Tween.StopAll(onTarget: _label.transform);
-                _label.transform.localPosition = Vector3.zero;
+                _label.transform.localPosition = _labelRestLocalPos;
                 Tween.ShakeLocalPosition(_label.transform,
                     strength: new Vector3(_settings.ShakeStrength, _settings.ShakeStrength, 0f),
                     duration: _settings.ShakeDuration, frequency: 25f, useUnscaledTime: true);

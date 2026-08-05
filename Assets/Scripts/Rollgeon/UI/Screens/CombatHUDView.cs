@@ -93,6 +93,17 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ActiveItemsView _activeItems;
 
+        [Tooltip("Opcional — swappea el sprite del tablero de dados según el BoardType del " +
+                 "behavior seleccionado (ataque/defensa). Si null, el tablero no cambia de skin.")]
+        [SerializeField]
+        private DiceBoardSkinView _boardSkin;
+
+        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
+                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
+                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
+        [SerializeField]
+        private ChainRollPromptView _chainRollPrompt;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -195,6 +206,12 @@ namespace Rollgeon.UI.Screens
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
+        // Room del combate al que este push está bindeado (payload del handoff).
+        // Discrimina el safety-net de OnCombatEnd: un OnCombatEnd de OTRO room no
+        // debe desbindear este HUD (ver HandleCombatEndSafetyNet).
+        [ShowInInspector, ReadOnly]
+        private Guid _roomInstanceId;
+
         [ShowInInspector, ReadOnly]
         private bool _subViewsBound;
 
@@ -206,6 +223,12 @@ namespace Rollgeon.UI.Screens
         {
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
+
+            // BUG-034: el prompt "X Roll (1E)" es la affordance visible del pago —
+            // clickearlo debe pagar igual que el botón Roll. Mismo entry point para
+            // conservar el dispatch roll/reroll y el warning de "no cableado".
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.AddListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -221,6 +244,9 @@ namespace Rollgeon.UI.Screens
         {
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
+
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.RemoveListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -239,6 +265,8 @@ namespace Rollgeon.UI.Screens
             // del flash de daño y el safety-net de OnCombatEnd. Re-push → rebind limpio.
             if (_pushed) OnPopped();
             _pushed = true;
+
+            _roomInstanceId = payload is CombatHUDPayload p ? p.RoomInstanceId : Guid.Empty;
 
             ResolvePlayer();
 
@@ -278,6 +306,7 @@ namespace Rollgeon.UI.Screens
                 _flashCoroutine = null;
             }
             _playerGuid = Guid.Empty;
+            _roomInstanceId = Guid.Empty;
         }
 
         // ======================================================================
@@ -358,12 +387,55 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
+            // Sin behavior no hay tipo que empujar: el board conserva su skin actual
+            // (política "el skin solo cambia cuando una acción pide otro", playtest 2026-07-20).
+            if (behavior == null) return;
+            var boardType = behavior.BoardType;
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(boardType);
+            if (_damageFormula != null) _damageFormula.SetBoardType(boardType);
         }
 
         public void ClearBehaviorForFormula()
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
+            // El board skin NO vuelve a Default al terminar la acción: se queda en su
+            // tipo actual hasta que la próxima acción empuje otro.
+        }
+
+        /// <summary>
+        /// Empuja un <see cref="DiceBoardType"/> directo al board skin, sin tocar la fórmula
+        /// de daño. Lo usa el chain para cambiar el skin por fase (cada fase tira aparte y
+        /// puede overridear el board del behavior — ej. daño=Attack, escudo=Defense).
+        /// </summary>
+        public void ApplyBoardType(DiceBoardType type)
+        {
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
+            if (_damageFormula != null) _damageFormula.SetBoardType(type);
+        }
+
+        /// <summary>
+        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
+        /// fase de chain sin rolls sobrantes. No-op sin wiring.
+        /// </summary>
+        public void ShowChainRollPrompt(string phaseLabel)
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
+        }
+
+        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
+        public void HideChainRollPrompt()
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
+        }
+
+        /// <summary>
+        /// Suelta todos los holds de la zona de dados (BUG-030: el forced reroll del
+        /// Torpe re-tira la mano completa). No-op sin wiring.
+        /// </summary>
+        public void ClearDiceHolds()
+        {
+            if (_diceZone != null) _diceZone.ClearHolds();
         }
 
         // ======================================================================
@@ -472,6 +544,22 @@ namespace Rollgeon.UI.Screens
             // desbindeamos para no dejar handlers colgados. El pop real lo hace el
             // CombatController via ScreenManager; este handler solo protege flujos
             // edge-case (editor / preview).
+            //
+            // Guard por room: EventManager.Trigger captura el multicast al momento del
+            // trigger, así que este handler puede ejecutarse "tarde" — ya desuscripto
+            // por el pop pero todavía dentro de la invocación en curso. Pasa cuando un
+            // OnCombatEnd re-pushea este mismo HUD para un combate NUEVO dentro del
+            // mismo dispatch (Force Door hacia sala de combate: pop → push → StartCombat
+            // → ...tail del dispatch llega acá). Si el room que terminó no es el que
+            // este HUD tiene bindeado AHORA, desbindear mataría el combate nuevo
+            // (End Turn muerto, slots sin turno). Con payload sin room (editor/preview)
+            // el guard cae al comportamiento clásico.
+            if (args != null && args.Length >= 1 && args[0] is Guid endedRoomId
+                && _roomInstanceId != Guid.Empty && endedRoomId != _roomInstanceId)
+            {
+                return;
+            }
+
             if (_subViewsBound)
             {
                 UnbindAll();

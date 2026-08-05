@@ -71,6 +71,32 @@ namespace Rollgeon.Upgrades.Dice.Tests
             Assert.AreEqual(0, result.Count);
         }
 
+        // ---- MinHalfMaxFilter --------------------------------------------------
+
+        [Test]
+        public void MinHalfMaxFilter_OnD4_RetainsFromHalfRoundedUp()
+        {
+            var filter = new MinHalfMaxFilter();
+            var input = Faces(1, 2, 3, 4);
+
+            var result = filter.GetAllowedFaces(DiceType.D4, input);
+
+            // ceil(4/2) = 2 → mínimo permitido es 2.
+            CollectionAssert.AreEquivalent(new[] { 2, 3, 4 }, result);
+        }
+
+        [Test]
+        public void MinHalfMaxFilter_OnD6_RetainsFromHalfRoundedUp()
+        {
+            var filter = new MinHalfMaxFilter();
+            var input = Faces(1, 2, 3, 4, 5, 6);
+
+            var result = filter.GetAllowedFaces(DiceType.D6, input);
+
+            // ceil(6/2) = 3 → mínimo permitido es 3.
+            CollectionAssert.AreEquivalent(new[] { 3, 4, 5, 6 }, result);
+        }
+
         // ---- OnlyPrimesFilter ------------------------------------------------
 
         [Test]

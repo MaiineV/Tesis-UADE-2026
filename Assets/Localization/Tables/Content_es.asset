@@ -211,35 +211,35 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623680
-    m_Localized: Attack+
+    m_Localized: Ataque +3
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: Energy+
+    m_Localized: "Energ\xEDa +1"
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
-    m_Localized: Max Health
+    m_Localized: "Vida m\xE1xima +5"
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623683
-    m_Localized: Speed+
+    m_Localized: Velocidad +2
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623684
-    m_Localized: Greed on Ladder
+    m_Localized: Codicia en Escalera
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623685
-    m_Localized: Each Ladder combo gives gold
+    m_Localized: Cada combo de Escalera otorga oro.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623686
-    m_Localized: Pair Bonus
+    m_Localized: Bonus de Par
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623687
-    m_Localized: +50 damage when matching Pair
+    m_Localized: "+50 de da\xF1o al armar un Par."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623688
@@ -247,8 +247,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623689
-    m_Localized: El resultado minimo es siempre la mitad del maximo redondeado arriba.
-      Un d6 afilado nunca saca menos de 3.
+    m_Localized: "El resultado m\xEDnimo es siempre la mitad del m\xE1ximo redondeado
+      hacia arriba. Un d6 afilado nunca saca menos de 3."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623690
@@ -256,8 +256,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: Si este dado se holdea entre rolls, su resultado aumenta +1 por
-      roll holdeado (max +3).
+    m_Localized: "Si este dado se holdea entre tiradas, su resultado aumenta +1 por
+      tirada holdeada (m\xE1x +3)."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
@@ -265,7 +265,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623693
-    m_Localized: Otorga 3 de oro extra al completar un combo de trio o superior.
+    m_Localized: "Otorga 3 de oro extra al completar un combo de tr\xEDo o superior."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623694
@@ -281,8 +281,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623697
-    m_Localized: Una vez por combate podes relanzar este dado y quedarte con el mayor
-      resultado.
+    m_Localized: "Una vez por combate pod\xE9s relanzar este dado y quedarte con
+      el mayor resultado."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623698
@@ -298,8 +298,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623701
-    m_Localized: Este dado cuenta como cualquier numero para propositos de combo
-      (escaleras, trio, generala).
+    m_Localized: "Este dado cuenta como cualquier n\xFAmero para prop\xF3sitos de
+      combo (escaleras, tr\xEDo, generala)."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623702
@@ -307,7 +307,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623703
-    m_Localized: Para escaleras, este dado cuenta como su valor y como valor+1 simultaneamente.
+    m_Localized: "Para escaleras, este dado cuenta como su valor y como valor+1 simult\xE1neamente."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623704
@@ -315,7 +315,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623705
-    m_Localized: Si se utiliza en un combo de full house da 2 mas de escudo.
+    m_Localized: "Si se utiliza en un combo de full house da 2 m\xE1s de escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623706
@@ -331,8 +331,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623709
-    m_Localized: El dado muestra su valor maximo y participa en combo, genera 2 puntos
-      de escudo.
+    m_Localized: "El dado muestra su valor m\xE1ximo y participa en combo; genera
+      2 puntos de escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623710
@@ -348,16 +348,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623713
-    m_Localized: Si este dado muestra el mismo numero que otro en la tirada, ambos
-      valen x1.5 para el combo.
+    m_Localized: "Si este dado muestra el mismo n\xFAmero que otro en la tirada,
+      ambos valen x1.5 para el combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623714
-    m_Localized: Greed
+    m_Localized: Ambicioso
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623715
-    m_Localized: If the dice is not in a combo, win 2 gold.
+    m_Localized: "Si el dado no participa en ning\xFAn combo, otorga 2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623716
@@ -373,8 +373,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623719
-    m_Localized: El resultado es maximo+1 menos resultado. Un d6 que saca 1 cuenta
-      como 6.
+    m_Localized: "El resultado es m\xE1ximo+1 menos el resultado. Un d6 que saca
+      1 cuenta como 6."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623720
@@ -382,7 +382,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: Este dado no se puede holdear entre rolls.
+    m_Localized: Este dado no se puede holdear entre tiradas.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
@@ -398,8 +398,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623725
-    m_Localized: Copia el resultado del ultimo dado rerolled en esta tirada para
-      propositos de combo.
+    m_Localized: "Copia el resultado del \xFAltimo dado re-tirado en esta tirada
+      para prop\xF3sitos de combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623726
@@ -421,11 +421,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623730
-    m_Localized: Multiplo de 3
+    m_Localized: "M\xFAltiplo de 3"
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623731
-    m_Localized: Solo muestra multiplos de 3. d12:{3,6,9,12}
+    m_Localized: "Solo muestra m\xFAltiplos de 3. d12:{3,6,9,12}"
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623732
@@ -433,15 +433,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623733
-    m_Localized: Solo muestra numeros no primos (incluye el 1). d8:{1,4,6,8}
+    m_Localized: "Solo muestra n\xFAmeros no primos (incluye el 1). d8:{1,4,6,8}"
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623734
-    m_Localized: Only Evens
+    m_Localized: Solo Pares
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623735
-    m_Localized: This Dice only rolls Even numbers.
+    m_Localized: "Este dado solo saca n\xFAmeros pares."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817984
@@ -449,7 +449,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: El dado pierde 1 de su resultado final (minimo 1).
+    m_Localized: "El dado pierde 1 de su resultado final (m\xEDnimo 1)."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -461,11 +461,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817988
-    m_Localized: Parity Gamble
+    m_Localized: Apuesta de Paridad
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817989
-    m_Localized: If this dice rolls an Odd number multiplies x3, if not x0
+    m_Localized: "Si el dado saca un n\xFAmero impar multiplica x3; si no, x0."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817990
@@ -481,7 +481,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817993
-    m_Localized: Solo muestra numeros primos. d12:{2,3,5,7,11}
+    m_Localized: "Solo muestra n\xFAmeros primos. d12:{2,3,5,7,11}"
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817994
@@ -489,8 +489,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817995
-    m_Localized: Si 2+ dados muestran el mismo numero en la tirada final, este dado
-      suma su valor dos veces al combo.
+    m_Localized: "Si 2 o m\xE1s dados muestran el mismo n\xFAmero en la tirada final,
+      este dado suma su valor dos veces al combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817996
@@ -498,8 +498,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: Cada vez que participa en combo consume 2 de oro. Sin oro no puede
-      participar.
+    m_Localized: Cada vez que participa en un combo consume 2 de oro. Sin oro no
+      puede participar.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -507,56 +507,56 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817999
-    m_Localized: Fuerza un reroll completo en el turno 2 del combate.
+    m_Localized: Fuerza un re-tiro completo en el turno 2 del combate.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818000
-    m_Localized: Volatil
+    m_Localized: "Vol\xE1til"
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: Al sacar el maximo el resultado se duplica. Al sacar el minimo vale
-      0.
+    m_Localized: "Al sacar el m\xE1ximo, el resultado se duplica. Al sacar el m\xEDnimo,
+      vale 0."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
-    m_Localized: Boss
+    m_Localized: Sala del Jefe
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315457
-    m_Localized: RoomCombat
+    m_Localized: Sala de Combate
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315458
-    m_Localized: RoomCombat
+    m_Localized: Sala de Combate
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315459
-    m_Localized: RoomCombat
+    m_Localized: Sala de Combate
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315460
-    m_Localized: RoomCombat
+    m_Localized: Sala de Combate
     m_Metadata:
       m_Items: []
   - m_Id: 5531983704064
-    m_Localized: Enchantment Room
+    m_Localized: Sala de Encantamiento
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590144
-    m_Localized: Potion
+    m_Localized: Sala de Pociones
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590145
-    m_Localized: Shop
+    m_Localized: Tienda
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590146
-    m_Localized: Start
+    m_Localized: Sala Inicial
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590147
-    m_Localized: Start
+    m_Localized: Sala Inicial
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590148
@@ -574,6 +574,25 @@ MonoBehaviour:
   - m_Id: 1211498485350400
     m_Localized: Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos.
       Al curarte por encima de ese umbral, vuelve a la normalidad.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250105098240
+    m_Localized: "Domin\xE1 el dado est\xE1ndar: gan\xE1 una run confiando solo en
+      el cl\xE1sico de seis caras."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846976
+    m_Localized: "Hay una receta exacta de dados que abre esta puerta. Experiment\xE1
+      con la mezcla."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846977
+    m_Localized: "Demostr\xE1 fuerza de ocho caras: llev\xE1 el dado nuevo a una
+      victoria."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846978
+    m_Localized: Un verdadero apostador no deja ninguna jugada del Contrato sin cobrar.
     m_Metadata:
       m_Items: []
   references:

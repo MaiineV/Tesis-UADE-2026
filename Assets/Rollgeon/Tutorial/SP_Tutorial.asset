@@ -22,6 +22,24 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
+    - Name: Guaranteed
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 6
+      Data: 
+    - Name: Weight
+      Entry: 4
+      Data: 0
+    - Name: BasePrice
+      Entry: 3
+      Data: 0
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: Items
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[Rollgeon.Shop.WeightedShopItem,
@@ -53,6 +71,11 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+  Guaranteed:
+    Item: {fileID: 0}
+    Weight: 0
+    BasePrice: 0
+    MinFloorDepth: 0
   Items:
   - Item: {fileID: 11400000, guid: b4d5ef204eb691346befce16015f8222, type: 2}
     Weight: 1

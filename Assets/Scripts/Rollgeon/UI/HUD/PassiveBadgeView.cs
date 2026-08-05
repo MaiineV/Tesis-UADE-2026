@@ -52,6 +52,7 @@ namespace Rollgeon.UI.HUD
 
             EventManager.Subscribe(EventName.OnModifierAdded, OnModifierAdded);
             EventManager.Subscribe(EventName.OnModifierRemoved, OnModifierRemoved);
+            Rollgeon.Localization.LocalizationRefresh.Subscribe(Refresh);
             _bound = true;
 
             Refresh();
@@ -63,6 +64,7 @@ namespace Rollgeon.UI.HUD
 
             EventManager.UnSubscribe(EventName.OnModifierAdded, OnModifierAdded);
             EventManager.UnSubscribe(EventName.OnModifierRemoved, OnModifierRemoved);
+            Rollgeon.Localization.LocalizationRefresh.Unsubscribe(Refresh);
             _bound = false;
         }
 

@@ -663,6 +663,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -907,6 +910,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -958,6 +964,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1009,6 +1018,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1060,6 +1072,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1190,7 +1205,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 60
-  BaseAttack: 3
+  BaseAttack: 2
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3
@@ -1227,7 +1242,7 @@ MonoBehaviour:
     HP:
       Mode: 1
       Multiplier: 1
-      ManualValue: 300
+      ManualValue: 180
     Attack:
       Mode: 1
       Multiplier: 1

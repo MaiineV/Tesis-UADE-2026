@@ -111,6 +111,7 @@ namespace Rollgeon.UI
             popped._Internal_OnLoseFocus();
             popped._Internal_OnPopped();
             popped._Internal_SetVisible(false);
+            Debug.Log($"{LogPrefix}Pop '{popped.ScreenStringId}' → depth={_stack.Count}.");
 
             if (_stack.Count > 0)
             {
@@ -152,6 +153,16 @@ namespace Rollgeon.UI
 
         private void PushInternal(IBaseScreen screen, IScreenPayload payload, bool asOverlay)
         {
+            // BUG-020: re-pushear la screen que ya es top duplica su entry en el stack —
+            // los pops posteriores quedan desbalanceados (un pop "de más" desactiva el HUD
+            // y lo des-bindea). Ningún flujo legítimo re-pushea el top actual.
+            if (_stack.Count > 0 && ReferenceEquals(_stack.Peek(), screen))
+            {
+                Debug.LogWarning($"{LogPrefix}Push ignorado: '{screen.ScreenStringId}' ya es el top " +
+                                 $"del stack (depth={_stack.Count}).");
+                return;
+            }
+
             if (_stack.Count > 0)
             {
                 var previousTop = _stack.Peek();
@@ -169,6 +180,7 @@ namespace Rollgeon.UI
             screen._Internal_SetVisible(true);
             screen._Internal_OnPushed(payload);
             screen._Internal_OnGainFocus();
+            Debug.Log($"{LogPrefix}Push '{screen.ScreenStringId}' (overlay={asOverlay}) → depth={_stack.Count}.");
         }
     }
 }

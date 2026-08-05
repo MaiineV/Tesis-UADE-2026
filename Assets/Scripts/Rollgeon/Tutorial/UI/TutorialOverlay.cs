@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 
 namespace Rollgeon.Tutorial.UI
 {
@@ -70,6 +71,7 @@ namespace Rollgeon.Tutorial.UI
 
         private void OnDestroy()
         {
+            SetHotkeysSuppressed(false);
             SceneManager.activeSceneChanged -= OnActiveSceneChanged;
             if (_dimMaterial != null) Destroy(_dimMaterial);
             if (_instance == this) _instance = null;
@@ -208,6 +210,7 @@ namespace Rollgeon.Tutorial.UI
         {
             if (!IsVisible) return;
             IsVisible = false;
+            SetHotkeysSuppressed(false);
             _showTween.Stop();
             _showTween = Tween.MaterialProperty(
                     _dimMaterial, ShowId, 0f, _settings.HideDuration, Ease.InQuad)
@@ -216,6 +219,7 @@ namespace Rollgeon.Tutorial.UI
 
         private void HideInstant()
         {
+            SetHotkeysSuppressed(false);
             _showTween.Stop();
             IsVisible = false;
             _request = null;
@@ -349,12 +353,25 @@ namespace Rollgeon.Tutorial.UI
 
             bool blocking = request.InputPolicy == TutorialInputPolicy.BlockUntilContinue;
             _popupFooter.enabled = blocking;
-            _popupFooter.text = blocking ? _settings.ContinueFooterText : string.Empty;
+            _popupFooter.text = blocking
+                ? LocalizedContent.Ui(TutorialTextKeys.ContinueFooter, _settings.ContinueFooterText)
+                : string.Empty;
         }
 
         private void ApplyInputPolicy(TutorialInputPolicy policy)
         {
             _dim.raycastTarget = policy == TutorialInputPolicy.BlockUntilContinue;
+
+            // BUG-019: el dim solo intercepta pointer — los hotkeys entraban igual por
+            // InputSystem durante los pasos "click para continuar". Suprimimos el map
+            // Gameplay completo mientras el paso bloquea (la pausa no usa ese map).
+            SetHotkeysSuppressed(policy == TutorialInputPolicy.BlockUntilContinue);
+        }
+
+        private static void SetHotkeysSuppressed(bool suppressed)
+        {
+            if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out var hotkeys) && hotkeys != null)
+                hotkeys.SetSuppressed(suppressed);
         }
 
         private void HandleContinueClick()

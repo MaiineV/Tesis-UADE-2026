@@ -543,6 +543,22 @@ MonoBehaviour:
     m_Key: passive.warrior.low_hp_rage.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 7800250105098240
+    m_Key: unlock.dice.d8.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846976
+    m_Key: unlock.dice.d10.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846977
+    m_Key: unlock.class.berserker.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846978
+    m_Key: unlock.class.gambler.hint
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

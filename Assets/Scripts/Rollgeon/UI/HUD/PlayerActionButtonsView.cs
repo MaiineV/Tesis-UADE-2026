@@ -476,7 +476,12 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeyConfirm(InputAction.CallbackContext _)
         {
             if (_confirmButton != null && _confirmButton.interactable)
+            {
+                // Space también dispara EndTurn. Consumimos el frame para que, cuando confirmar
+                // el roll re-habilite el botón End Turn en el mismo press, éste no pase turno.
+                _hotkeys?.ConsumeFrame();
                 _confirmButton.onClick.Invoke();
+            }
         }
 
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
@@ -506,6 +511,13 @@ namespace Rollgeon.UI.HUD
                 return;
             }
             _onConfirmPressed?.Invoke();
+
+            // BUG-018: en chain el OnRollResolved que apagaría el botón viene diferido por
+            // el feedback del golpe — lo apagamos ya para que el spam ni llegue al service
+            // (que igual tiene su propio lock de re-entrada). El próximo Recompute con
+            // estado fresco lo re-habilita cuando corresponda.
+            if (_inChain && _confirmButton != null)
+                _confirmButton.interactable = false;
         }
 
         // ======================================================================

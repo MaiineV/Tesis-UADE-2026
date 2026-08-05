@@ -46,5 +46,17 @@ namespace Rollgeon.Feedback
 
         /// <summary>Player autor (para <see cref="SpawnPosition.FromReader"/>). Default <c>Player</c>.</summary>
         public FeedbackPlayer Player;
+
+        /// <summary>
+        /// Contexto del effect pass que armó el request. Lo consumen los steps
+        /// <see cref="StepSource.InlineEffect"/> para ejecutar sus efectos diferidos.
+        /// </summary>
+        /// <remarks>
+        /// A diferencia de <see cref="StoredValues"/> esto <b>sí</b> es una referencia viva:
+        /// el efecto diferido tiene que ver el contexto real (dados, combo, selección) del
+        /// pass que lo originó. Puede ser <c>null</c> en requests armados a mano (ej. la
+        /// secuencia de muerte del <c>CombatDeathWatcher</c>).
+        /// </remarks>
+        public Rollgeon.Effects.EffectContext Context;
     }
 }

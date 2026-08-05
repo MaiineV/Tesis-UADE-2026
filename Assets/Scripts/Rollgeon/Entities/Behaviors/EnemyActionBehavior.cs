@@ -109,6 +109,7 @@ namespace Rollgeon.Entities.Behaviors
                 var preCtx = aiCtx.BuildPcContext(setTarget);
                 if (!ed.CanBeExecuted(preCtx)) continue;
 
+                FaceTarget(ownerGuid, setTarget);
                 var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
                 ed.Execute(effCtx);
             }
@@ -136,10 +137,33 @@ namespace Rollgeon.Entities.Behaviors
                 var preCtx = aiCtx.BuildPcContext(setTarget);
                 if (!ed.CanBeExecuted(preCtx)) continue;
 
+                FaceTarget(ownerGuid, setTarget);
                 var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
                 var co = ed.ExecuteCoroutine(effCtx);
                 while (co.MoveNext()) yield return co.Current;
             }
+        }
+
+        /// <summary>
+        /// Gira el pawn hacia lo que el grupo va a afectar, antes de que corran sus efectos
+        /// (y por lo tanto antes de la animación). Sin esto el enemigo ataca mirando hacia
+        /// donde se movió: el nodo de movimiento deja el facing en la dirección del último
+        /// step del path, que en un kiter apunta justo al lado contrario del jugador.
+        /// </summary>
+        /// <remarks>
+        /// Se hace acá y no en el pipeline de feedback para que respete el target real de
+        /// cada <see cref="EffectData"/> — un healer gira hacia el aliado que cura, no hacia
+        /// el jugador. No-op sin capa visual registrada (EditMode).
+        /// </remarks>
+        private static void FaceTarget(Guid ownerGuid, Guid targetGuid)
+        {
+            if (ownerGuid == Guid.Empty || targetGuid == Guid.Empty || ownerGuid == targetGuid) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid) || grid == null) return;
+            if (!ServiceLocator.TryGetService<Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(ownerGuid, out var pawn) || pawn == null) return;
+            if (!grid.TryGetPosition(ownerGuid, out var from)) return;
+            if (!grid.TryGetPosition(targetGuid, out var to)) return;
+            pawn.FaceCoord(from, to);
         }
 
         private EffectContext BuildEffectContext(AIContext aiCtx, Guid targetGuid, Entity source, Entity trigger)

@@ -28,6 +28,18 @@ namespace Rollgeon.Localization.Tests
         }
 
         [Test]
+        public void Hint_missing_key_returns_fallback()
+        {
+            Assert.AreEqual("FB", LocalizedContent.Hint("rollgeon.tests.__missing__", "FB"));
+        }
+
+        [Test]
+        public void Hint_null_id_returns_fallback()
+        {
+            Assert.AreEqual("FB", LocalizedContent.Hint(null, "FB"));
+        }
+
+        [Test]
         public void Ui_missing_key_returns_fallback()
         {
             Assert.AreEqual("FB", LocalizedContent.Ui("rollgeon.tests.__missing_ui__", "FB"));

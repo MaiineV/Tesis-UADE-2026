@@ -6,6 +6,7 @@ using Rollgeon.Audio;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Visuals;
+using Rollgeon.PreConditions;
 using Rollgeon.UI.HUD;
 using UnityEngine;
 
@@ -283,6 +284,60 @@ namespace Rollgeon.Feedback
             }
         }
 
+        /// <summary>
+        /// Corre los efectos de un step <see cref="StepSource.InlineEffect"/>. Es lo que
+        /// permite atar una consecuencia de gameplay al frame de impacto: el step se gatea
+        /// con <c>StartMode = OnEvent</c> y el daño cae cuando la animación conecta, no
+        /// cuando el jugador hace click. TECHNICAL.md §10.8.
+        /// </summary>
+        private void DispatchInlineEffect(FeedbackSequenceStep step, SequenceRequestBox box)
+        {
+            if (RunInlineEffects(step, box.Request.Context, out var refreshed))
+            {
+                // Re-snapshot: el daño recién ejecutado appendeó FloatingDamage e impulso al
+                // bag del behavior, y los steps de impacto que arrancan con este mismo key los
+                // leen del request. Sin esto el número flotante y el empujón salen vacíos.
+                box.Request.StoredValues = refreshed;
+            }
+        }
+
+        /// <summary>
+        /// Corre los efectos de un step <see cref="StepSource.InlineEffect"/> y devuelve el
+        /// snapshot fresco del bag del behavior. Devuelve <c>false</c> si no había nada que
+        /// correr (step vacío o request sin contexto), en cuyo caso <paramref name="refreshed"/>
+        /// no debe usarse.
+        /// </summary>
+        internal static bool RunInlineEffects(
+            FeedbackSequenceStep step,
+            Rollgeon.Effects.EffectContext ctx,
+            out IReadOnlyDictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>> refreshed)
+        {
+            refreshed = null;
+            if (step == null || step.InlineEffects == null) return false;
+
+            if (ctx == null)
+            {
+                Debug.LogWarning("[FeedbackManager] Step InlineEffect sin EffectContext en el " +
+                                 "request — no-op. Solo los requests armados por un BaseEffect " +
+                                 "lo transportan.");
+                return false;
+            }
+
+            // El step es un pass nuevo: si el pass original cortocircuitó después de armar
+            // el request, ese false no debe arrastrarse y comerse los efectos diferidos.
+            ctx.lastResult = true;
+
+            var preCtx = new PreConditionContext
+            {
+                OwnerGuid = ctx.SourceGuid,
+                OpponentGuid = ctx.TargetGuid,
+            };
+
+            step.InlineEffects.TryExecute(ctx, preCtx);
+            refreshed = Rollgeon.Effects.BaseEffect.SnapshotStoredValues(ctx.SourceBehavior);
+            return true;
+        }
+
         private void DispatchBehaviorValue(FeedbackEntry entry, FeedbackRequest request)
         {
             if (request.StoredValues == null) return;
@@ -419,17 +474,29 @@ namespace Rollgeon.Feedback
             StartCoroutine(FeedbackTimeoutCoroutine(instanceId, budget));
         }
 
+        /// <summary>
+        /// Request compartido por todos los steps de una secuencia. Existe porque un step
+        /// <see cref="StepSource.InlineEffect"/> produce stored values que los steps
+        /// posteriores tienen que ver — con un <see cref="FeedbackRequest"/> por valor cada
+        /// step tendría su propia copia y el re-snapshot se perdería.
+        /// </summary>
+        private sealed class SequenceRequestBox
+        {
+            public FeedbackRequest Request;
+        }
+
         private IEnumerator ExecuteLocalSequence(
             int instanceId, List<FeedbackSequenceStep> steps, FeedbackRequest request)
         {
             var bus = new FeedbackEventBus();
             var handles = new StepHandle[steps.Count];
             for (int i = 0; i < steps.Count; i++) handles[i] = new StepHandle();
+            var box = new SequenceRequestBox { Request = request };
 
             FeedbackSequenceRuntime.SetCurrent(bus);
 
             for (int i = 0; i < steps.Count; i++)
-                StartCoroutine(RunStep(i, steps, handles, bus, request));
+                StartCoroutine(RunStep(i, steps, handles, bus, box));
 
             while (true)
             {
@@ -455,14 +522,14 @@ namespace Rollgeon.Feedback
             List<FeedbackSequenceStep> steps,
             StepHandle[] handles,
             FeedbackEventBus bus,
-            FeedbackRequest request)
+            SequenceRequestBox box)
         {
             var step = steps[stepIndex];
 
             yield return WaitStartTrigger(step, stepIndex, handles, bus);
             if (step.StartDelay > 0f) yield return new WaitForSeconds(step.StartDelay);
 
-            var playbackHandle = DispatchStep(step, request);
+            var playbackHandle = DispatchStep(step, box);
             yield return WaitEndTrigger(step, playbackHandle, bus);
 
             handles[stepIndex].Done = true;
@@ -520,8 +587,9 @@ namespace Rollgeon.Feedback
             }
         }
 
-        private PlaybackHandle DispatchStep(FeedbackSequenceStep step, FeedbackRequest request)
+        private PlaybackHandle DispatchStep(FeedbackSequenceStep step, SequenceRequestBox box)
         {
+            var request = box.Request;
             var handle = new PlaybackHandle();
             switch (step.Source)
             {
@@ -551,6 +619,9 @@ namespace Rollgeon.Feedback
                         };
                         DispatchBehaviorValue(inlineEntry, request);
                     }
+                    break;
+                case StepSource.InlineEffect:
+                    DispatchInlineEffect(step, box);
                     break;
             }
             return handle;

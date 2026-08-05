@@ -54,8 +54,23 @@ Para inspeccionar el contenido: **Window → Asset Management → Addressables �
 
 ## `steam_appid.txt`
 
-El post-build lo copia **siempre** al lado del `.exe`. Sin él, `SteamAPI.Init()` falla
-al correr el juego fuera del cliente de Steam (el juego sigue andando, pero sin Steam).
+`SteamAppIdPostProcessor` (un `IPostprocessBuildWithReport` en `RollgeonBuild.cs`) lo
+copia al lado del `.exe` en **toda** build de Windows — también las que salen de
+File → Build Settings, Build Profiles o un script de CI que llame a `BuildPipeline`
+por su cuenta. Antes la copia vivía adentro del método del menú `Rollgeon → Build`,
+así que cualquier otro camino producía un player sin el archivo.
+
+Sin él pasan **dos** cosas, y la segunda es la que confunde:
+
+1. `SteamAPI.Init()` falla si corrés el juego fuera del cliente de Steam.
+2. `SteamAPI.RestartAppIfNecessary` (`SteamServiceBootstrap.cs`) devuelve `true`,
+   dispara `steam://run/4889850` y hace `Application.Quit()`. **Tu build de prueba se
+   cierra sola y arranca la copia instalada de Steam**, sin ningún error que lo explique.
+
+Steam busca el archivo en el **working directory del proceso**, no en la carpeta del
+`.exe`. Son lo mismo al hacer doble click, pero un acceso directo con "Iniciar en"
+apuntando a otro lado, o lanzarlo desde una consola parada en otra carpeta, vuelve a
+relanzar por Steam aunque el archivo esté al lado del ejecutable.
 
 El depot lo **excluye** por vdf. Una sola salida de build, dos consumidores, y la
 exclusión vive en el borde que le importa — así no hay dos variantes de build entre

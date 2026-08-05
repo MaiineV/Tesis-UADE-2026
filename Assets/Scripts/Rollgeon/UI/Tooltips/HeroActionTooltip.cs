@@ -79,20 +79,19 @@ namespace Rollgeon.UI.Tooltips
 
         private static string TooltipFrom(IEffect eff, in TooltipContext context)
         {
-            if (eff is EffChain chain && chain.Phases != null)
+            // Los efectos compuestos (chain con fases, secuencia con steps InlineEffect)
+            // concatenan el texto de lo que anidan. EffectTree es quien sabe cuáles anidan
+            // — acá solo se recorre.
+            var children = EffectTree.DirectChildren(eff);
+            if (children.Count > 0)
             {
                 var sb = new StringBuilder();
-                foreach (var phase in chain.Phases)
+                foreach (var child in children)
                 {
-                    var inner = phase?.Effects?.Effects;
-                    if (inner == null) continue;
-                    foreach (var innerEff in inner)
-                    {
-                        var text = TooltipFrom(innerEff, context);
-                        if (string.IsNullOrEmpty(text)) continue;
-                        if (sb.Length > 0) sb.AppendLine();
-                        sb.Append(text);
-                    }
+                    var text = TooltipFrom(child, context);
+                    if (string.IsNullOrEmpty(text)) continue;
+                    if (sb.Length > 0) sb.AppendLine();
+                    sb.Append(text);
                 }
                 return sb.Length > 0 ? sb.ToString() : null;
             }

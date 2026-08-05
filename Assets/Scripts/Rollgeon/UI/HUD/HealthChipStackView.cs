@@ -187,6 +187,8 @@ namespace Rollgeon.UI.HUD
             if (healthAttr == null) return;
 
             _hasData = true;
+            // BUG-022: el max puede haber subido por un reward in-run — re-resolver siempre.
+            ResolveMaxHp();
             int hp = Mathf.Max(0, healthAttr.Value);
             var shieldAttr = attrs.GetAttribute<Shield>(_playerGuid);
             int shield = Mathf.Max(0, shieldAttr?.Value ?? 0);
@@ -211,10 +213,8 @@ namespace Rollgeon.UI.HUD
 
         private void ResolveMaxHp()
         {
-            _maxHp = 1;
-            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
-            if (ps.CurrentHero == null) return;
-            _maxHp = ps.CurrentHero.BaseMaxHp > 0 ? ps.CurrentHero.BaseMaxHp : 1;
+            int resolved = PlayerMaxHp.Resolve(_playerGuid);
+            _maxHp = resolved > 0 ? resolved : 1;
         }
     }
 }

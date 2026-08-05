@@ -1,5 +1,6 @@
 using System;
 using Rollgeon.Attributes;
+using Rollgeon.Effects;
 using Rollgeon.Entities;
 
 namespace Rollgeon.PreConditions
@@ -44,5 +45,15 @@ namespace Rollgeon.PreConditions
         /// deben tolerar null permisivamente — semántica "sin servicio → no veta".
         /// </summary>
         public AttributesManager Attributes;
+
+        /// <summary>
+        /// <c>EffectContext</c> del evento que disparó la evaluación. Lo populan los
+        /// bridges de triggers (encantamientos / pasivas / items) para que las PCs
+        /// dependientes del roll/combo (<c>PcNoComboThisRoll</c>, <c>PcCarrierFace</c>,
+        /// <c>PcSlotCounterCompare</c>) lean DiceResult / ComboResult / TriggerContext.
+        /// <c>null</c> en callers que no vienen de un trigger — cada PC define si eso
+        /// es permisivo (true) o veto (false) según su semántica de gating.
+        /// </summary>
+        public EffectContext Effect;
     }
 }

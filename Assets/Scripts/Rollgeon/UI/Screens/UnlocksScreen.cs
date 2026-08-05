@@ -41,12 +41,16 @@ namespace Rollgeon.UI.Screens
         protected override void OnPushed(IScreenPayload payload)
         {
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
+
+            Rollgeon.Localization.LocalizationRefresh.Subscribe(Rebuild);
             Rebuild();
         }
 
         protected override void OnPopped()
         {
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
+
+            Rollgeon.Localization.LocalizationRefresh.Unsubscribe(Rebuild);
             ClearRows();
         }
 
@@ -74,7 +78,9 @@ namespace Rollgeon.UI.Screens
                 var row = Instantiate(_entryRowPrefab, _entriesContainer);
                 row.Bind(
                     Rollgeon.Localization.LocalizedContent.Name(def.UnlockId, def.DisplayName),
-                    unlocked ? Rollgeon.Localization.LocalizedContent.Description(def.UnlockId, def.Description) : def.HintText,
+                    unlocked
+                        ? Rollgeon.Localization.LocalizedContent.Description(def.UnlockId, def.Description)
+                        : Rollgeon.Localization.LocalizedContent.Hint(def.UnlockId, def.HintText),
                     locked: !unlocked);
                 _rows.Add(row);
             }
