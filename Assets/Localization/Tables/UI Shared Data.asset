@@ -419,6 +419,10 @@ MonoBehaviour:
     m_Key: tutorial.continue_footer
     m_Metadata:
       m_Items: []
+  - m_Id: 7867763907198976
+    m_Key: class_select.locked_tooltip
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

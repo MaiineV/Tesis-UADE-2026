@@ -559,6 +559,30 @@ MonoBehaviour:
     m_Key: unlock.class.gambler.hint
     m_Metadata:
       m_Items: []
+  - m_Id: 7867749369741312
+    m_Key: unlock.class.mage.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867749415878656
+    m_Key: unlock.class.rogue.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539513700352
+    m_Key: unlock.class.mage.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643392
+    m_Key: unlock.class.mage.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643393
+    m_Key: unlock.class.rogue.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643394
+    m_Key: unlock.class.rogue.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

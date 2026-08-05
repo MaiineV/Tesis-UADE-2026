@@ -5,6 +5,7 @@ using Rollgeon.Heroes;
 using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
+using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -135,6 +136,10 @@ namespace Rollgeon.UI.Screens
             [Tooltip("ClassHeroSO de la clase (ej. CH_Berserker).")]
             public ClassHeroSO Hero;
 
+            [Tooltip("TargetId del unlock cuando la clase aún no tiene ClassHeroSO " +
+                     "(ej. \"Mage\"). Ignorado si Hero está cableado.")]
+            public string ClassId;
+
             [Tooltip("Button de la clase en el panel izquierdo.")]
             public Button Button;
 
@@ -143,6 +148,10 @@ namespace Rollgeon.UI.Screens
 
             [Tooltip("Candado visual mostrado mientras la clase está bloqueada. Opcional.")]
             public GameObject LockIndicator;
+
+            /// <summary>TargetId efectivo contra el sistema de unlocks.</summary>
+            public string ResolvedTargetId =>
+                Hero != null && !string.IsNullOrEmpty(Hero.EntityId) ? Hero.EntityId : ClassId;
         }
 
         /// <inheritdoc/>
@@ -172,23 +181,8 @@ namespace Rollgeon.UI.Screens
 
             WireUnlockableClasses();
 
-            if (_magoButton != null)
-            {
-                _magoButton.interactable = false;
-            }
-            else
-            {
-                Debug.LogWarning(LogPrefix + "_magoButton no esta cableado.", this);
-            }
-
-            if (_picaroButton != null)
-            {
-                _picaroButton.interactable = false;
-            }
-            else
-            {
-                Debug.LogWarning(LogPrefix + "_picaroButton no esta cableado.", this);
-            }
+            ApplyLegacyLock(_magoButton, "_magoButton");
+            ApplyLegacyLock(_picaroButton, "_picaroButton");
 
             if (_confirmButton != null)
             {
@@ -295,12 +289,18 @@ namespace Rollgeon.UI.Screens
             {
                 if (entry?.Button == null) continue;
 
-                bool available = entry.Hero != null &&
-                    MetaUnlockGate.IsAvailable(UnlockableCategory.HeroClass, entry.Hero.EntityId);
+                string targetId = entry.ResolvedTargetId;
+                bool gateOpen = !string.IsNullOrEmpty(targetId) &&
+                    MetaUnlockGate.IsAvailable(UnlockableCategory.HeroClass, targetId);
+                // Sin ClassHeroSO no hay nada que seleccionar, aunque el gate degrade
+                // a "disponible" (ej. servicio meta sin registrar en tests/escenas sueltas).
+                bool available = gateOpen && entry.Hero != null;
 
                 entry.Button.interactable = available;
                 if (entry.LockIndicator != null) entry.LockIndicator.SetActive(!available);
                 if (entry.SelectionIndicator != null) entry.SelectionIndicator.SetActive(false);
+
+                ConfigureLockTooltip(entry.Button, available, targetId);
 
                 if (!available) continue;
 
@@ -309,6 +309,73 @@ namespace Rollgeon.UI.Screens
                 entry.Button.onClick.AddListener(handler);
                 _classButtonHandlers.Add((entry.Button, handler));
             }
+        }
+
+        /// <summary>
+        /// Fuerza el lock legacy de Mago/Pícaro solo cuando el botón no está
+        /// gestionado por <see cref="_unlockableClasses"/> — el gating real vive en
+        /// <see cref="WireUnlockableClasses"/>; esto cubre escenas/tests sin wiring #164.
+        /// </summary>
+        private void ApplyLegacyLock(Button button, string fieldName)
+        {
+            if (button == null)
+            {
+                Debug.LogWarning(LogPrefix + fieldName + " no esta cableado.", this);
+                return;
+            }
+
+            foreach (var entry in _unlockableClasses)
+            {
+                if (entry?.Button == button) return;
+            }
+
+            button.interactable = false;
+        }
+
+        /// <summary>
+        /// Deja el tooltip de "cómo se desbloquea" en el botón de la clase. En
+        /// available se anula el provider (string vacío) para que el trigger no caiga
+        /// al AutoResolve de otro componente. El provider se evalúa en cada hover,
+        /// así que sigue el idioma activo sin LocalizationRefresh.
+        /// </summary>
+        private static void ConfigureLockTooltip(Button button, bool available, string targetId)
+        {
+            var trigger = button.GetComponent<UITooltipTrigger>();
+            if (available)
+            {
+                if (trigger != null) trigger.TextProvider = () => string.Empty;
+                return;
+            }
+
+            if (trigger == null) trigger = button.gameObject.AddComponent<UITooltipTrigger>();
+            trigger.TextProvider = () => ResolveLockedTooltip(targetId);
+        }
+
+        /// <summary>
+        /// Pista de desbloqueo para una clase bloqueada: el hint localizado de su
+        /// <see cref="UnlockDefinitionSO"/> si existe, sino el fallback genérico de
+        /// la tabla UI.
+        /// </summary>
+        public static string ResolveLockedTooltip(string targetId)
+        {
+            if (!string.IsNullOrEmpty(targetId) &&
+                ServiceLocator.TryGetService<IMetaProgressionService>(out var meta) &&
+                meta != null)
+            {
+                var defs = meta.Definitions;
+                for (int i = 0; i < defs.Count; i++)
+                {
+                    var def = defs[i];
+                    if (def != null &&
+                        def.Category == UnlockableCategory.HeroClass &&
+                        string.Equals(def.TargetId, targetId, StringComparison.Ordinal))
+                    {
+                        return LocalizedContent.Hint(def.UnlockId, def.HintText);
+                    }
+                }
+            }
+
+            return LocalizedContent.Ui("class_select.locked_tooltip", "Próximamente");
         }
 
         /// <summary>

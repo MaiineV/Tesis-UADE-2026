@@ -595,6 +595,30 @@ MonoBehaviour:
     m_Localized: Un verdadero apostador no deja ninguna jugada del Contrato sin cobrar.
     m_Metadata:
       m_Items: []
+  - m_Id: 7867749369741312
+    m_Localized: "Pr\xF3ximamente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867749415878656
+    m_Localized: "Pr\xF3ximamente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539513700352
+    m_Localized: Mago
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643392
+    m_Localized: "El Mago quedar\xE1 seleccionable en una futura versi\xF3n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643393
+    m_Localized: "P\xEDcaro"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643394
+    m_Localized: "El P\xEDcaro quedar\xE1 seleccionable en una futura versi\xF3n."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

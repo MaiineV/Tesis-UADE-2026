@@ -1574,8 +1574,7 @@ MonoBehaviour:
   _rightDiamond: {fileID: 4478328358523395197}
   _settings: {fileID: 11400000, guid: 10caaefb5bd514845b3a841d2dbeda59, type: 2}
   _playEntranceOnEnable: 1
-  _waitForIntro: {fileID: 0}
-  _introDelay: 1.2
+  _introAnimation: {fileID: 0}
 --- !u!114 &9168193915941231245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1858,8 +1857,7 @@ MonoBehaviour:
   _rightDiamond: {fileID: 44080119043056500}
   _settings: {fileID: 11400000, guid: 10caaefb5bd514845b3a841d2dbeda59, type: 2}
   _playEntranceOnEnable: 1
-  _waitForIntro: {fileID: 0}
-  _introDelay: 1.2
+  _introAnimation: {fileID: 0}
 --- !u!1 &3932850713079458226
 GameObject:
   m_ObjectHideFlags: 0
@@ -4343,10 +4341,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 8194356559736530752}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1000, y: 1000}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5089136940890676469
 CanvasRenderer:

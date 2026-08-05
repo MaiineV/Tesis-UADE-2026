@@ -355,6 +355,19 @@ namespace Rollgeon.EditorTools.Localization
             Content("unlock.class.gambler.hint",
                 "Un verdadero apostador no deja ninguna jugada del Contrato sin cobrar.",
                 "A true gambler never leaves a Contract play uncashed.");
+
+            // Clases aún no implementadas (Mage/Rogue) — gateadas con
+            // ComingSoonCondition hasta que exista su ClassHeroSO.
+            Content("unlock.class.mage.name", "Mago", "Mage");
+            Content("unlock.class.mage.desc",
+                "El Mago quedará seleccionable en una futura versión.",
+                "The Mage will become selectable in a future version.");
+            Content("unlock.class.mage.hint", "Próximamente", "Coming soon");
+            Content("unlock.class.rogue.name", "Pícaro", "Rogue");
+            Content("unlock.class.rogue.desc",
+                "El Pícaro quedará seleccionable en una futura versión.",
+                "The Rogue will become selectable in a future version.");
+            Content("unlock.class.rogue.hint", "Próximamente", "Coming soon");
         }
 
         // ==================================================================

@@ -98,7 +98,34 @@ namespace Rollgeon.Editor.Tools
                 def.Condition = new AllContractCombosExecutedCondition();
             });
 
-            foreach (var def in new[] { d8, d10, berserker, gambler })
+            // ---- Clases aún no implementadas: gateadas con ComingSoonCondition
+            // (nunca se cumple) hasta que exista su ClassHeroSO y una condición real.
+
+            var mage = LoadOrCreate<UnlockDefinitionSO>($"{UnlocksFolder}/Unlock_Class_Mage.asset", def =>
+            {
+                def.UnlockId = "unlock.class.mage";
+                def.DisplayName = "Mago";
+                def.Category = UnlockableCategory.HeroClass;
+                def.TargetId = "Mage";
+                def.Description = "El Mago quedará seleccionable en una futura versión.";
+                def.HintText = "Próximamente";
+                def.AppliesTo = UnlockOutcomeFilter.Any;
+                def.Condition = new ComingSoonCondition();
+            });
+
+            var rogue = LoadOrCreate<UnlockDefinitionSO>($"{UnlocksFolder}/Unlock_Class_Rogue.asset", def =>
+            {
+                def.UnlockId = "unlock.class.rogue";
+                def.DisplayName = "Pícaro";
+                def.Category = UnlockableCategory.HeroClass;
+                def.TargetId = "Rogue";
+                def.Description = "El Pícaro quedará seleccionable en una futura versión.";
+                def.HintText = "Próximamente";
+                def.AppliesTo = UnlockOutcomeFilter.Any;
+                def.Condition = new ComingSoonCondition();
+            });
+
+            foreach (var def in new[] { d8, d10, berserker, gambler, mage, rogue })
             {
                 catalog.AddEntry(def);
             }
@@ -108,7 +135,7 @@ namespace Rollgeon.Editor.Tools
             AddDiceOfferings();
 
             AssetDatabase.SaveAssets();
-            Debug.Log(LogPrefix + "Setup completo: catálogo + 4 unlocks base + bootstrap + pools de dados.");
+            Debug.Log(LogPrefix + "Setup completo: catálogo + 6 unlocks base + bootstrap + pools de dados.");
         }
 
         // ------------------------------------------------------------------
