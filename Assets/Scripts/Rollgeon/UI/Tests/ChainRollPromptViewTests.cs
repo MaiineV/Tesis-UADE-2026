@@ -28,7 +28,18 @@ namespace Rollgeon.UI.Tests
             EventManager.ResetEventDictionary();
         }
 
+        /// <summary>
+        /// Costo tal como queda renderizado: el <c>{ENERGY}</c> ya expandido al glifo del
+        /// atlas. Se compone con la misma API que usa la vista para no acoplar el test al
+        /// nombre del sprite — lo que se verifica es que el token <b>no</b> sobreviva.
+        /// </summary>
+        private static string ExpandedCost => Utility.IconSpriteTags.ReplacePlaceholders("-1 {ENERGY}");
+
         private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, bool withLabel = true)
+            => MakePrompt(out label, out _, withLabel, withHint: false);
+
+        private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, out TextMeshProUGUI hint,
+            bool withLabel = true, bool withHint = true)
         {
             var go = new GameObject("ChainRollPrompt");
             _created.Add(go);
@@ -41,6 +52,15 @@ namespace Rollgeon.UI.Tests
                 labelGo.transform.SetParent(go.transform);
                 label = labelGo.AddComponent<TextMeshProUGUI>();
                 SetPrivateField(view, "_label", label);
+            }
+
+            hint = null;
+            if (withHint)
+            {
+                var hintGo = new GameObject("PaidHint");
+                hintGo.transform.SetParent(go.transform);
+                hint = hintGo.AddComponent<TextMeshProUGUI>();
+                SetPrivateField(view, "_paidHintLabel", hint);
             }
             return view;
         }
@@ -64,7 +84,7 @@ namespace Rollgeon.UI.Tests
             view.Show("Shield");
 
             // Assert
-            Assert.AreEqual("Shield Roll (1E)", label.text);
+            Assert.AreEqual($"Shield Roll  {ExpandedCost}", label.text);
             Assert.IsTrue(view.gameObject.activeSelf);
         }
 
@@ -78,8 +98,66 @@ namespace Rollgeon.UI.Tests
             view.Show(null);
 
             // Assert — el fallback default es "Phase".
-            Assert.AreEqual("Phase Roll (1E)", label.text);
+            Assert.AreEqual($"Phase Roll  {ExpandedCost}", label.text);
             Assert.IsTrue(view.gameObject.activeSelf);
+        }
+
+        // El "(1E)" sin contexto se leía como bug de traducción: el prompt ahora muestra
+        // el costo con el icono de energía y una línea que lo explica.
+
+        [Test]
+        public void Show_ExpandsTheEnergyPlaceholderIntoASpriteTag()
+        {
+            // Arrange
+            var view = MakePrompt(out var label);
+
+            // Act
+            view.Show("Shield");
+
+            // Assert — un {ENERGY} crudo en pantalla significa que falta el glifo en el atlas.
+            StringAssert.DoesNotContain("{ENERGY}", label.text);
+            StringAssert.Contains("<sprite name=", label.text);
+        }
+
+        [Test]
+        public void Show_FillsAndActivatesThePaidHint()
+        {
+            // Arrange — el prompt solo existe para la entrada paga, así que el hint que
+            // explica el costo va siempre que el prompt esté arriba.
+            var view = MakePrompt(out _, out var hint);
+            hint.gameObject.SetActive(false);
+
+            // Act
+            view.Show("Shield");
+
+            // Assert
+            Assert.IsTrue(hint.gameObject.activeSelf);
+            Assert.IsNotEmpty(hint.text);
+        }
+
+        [Test]
+        public void Hide_DeactivatesThePaidHint()
+        {
+            // Arrange
+            var view = MakePrompt(out _, out var hint);
+            view.Show("Shield");
+
+            // Act
+            view.Hide();
+
+            // Assert — el hint no puede sobrevivir al prompt que lo mostró.
+            Assert.IsFalse(hint.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void Show_WithoutHintRef_DoesNotThrow()
+        {
+            // Arrange — prefab sin el label de ayuda wireado (setup viejo).
+            var view = MakePrompt(out _, out _, withLabel: true, withHint: false);
+
+            // Act / Assert
+            Assert.DoesNotThrow(() => view.Show("Shield"));
+            Assert.DoesNotThrow(() => view.Hide());
         }
 
         [Test]
