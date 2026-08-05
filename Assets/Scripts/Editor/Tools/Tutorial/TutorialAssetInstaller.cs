@@ -71,11 +71,13 @@ namespace Rollgeon.Editor.Tools
             EnsureFolder();
 
             // --- Héroe fijo con Force Door de éxito garantizado -------------
-            var hero = CloneAsset(warrior, "CH_Warrior_Tutorial");
-            hero.EntityId = "warrior_tutorial";
-            hero.DisplayName = "Guerrero (Tutorial)";
-            TuneForceDoor(hero);
-            TuneAttackRolls(hero);
+            var hero = CloneAsset(warrior, "CH_Warrior_Tutorial", h =>
+            {
+                h.EntityId = "warrior_tutorial";
+                h.DisplayName = "Guerrero (Tutorial)";
+                TuneForceDoor(h);
+                TuneAttackRolls(h);
+            });
             EditorUtility.SetDirty(hero);
 
             // --- Enemigos tuneados -------------------------------------------
@@ -84,20 +86,24 @@ namespace Rollgeon.Editor.Tools
             int enchantCost = enchantConfig.ResolveCost(0);
             int goldPerEnemyC = Mathf.CeilToInt(enchantCost / 2f);
 
-            var enemyB = CloneAsset(melee, "ED_Tutorial_MeleeB");
-            enemyB.EntityId = "enemy_tutorial_melee_b";
-            enemyB.DisplayName = "Recluta (Tutorial)";
-            enemyB.BaseHP = EnemyBHp;
-            enemyB.MinGoldDrop = ShopItemPrice;
-            enemyB.MaxGoldDrop = ShopItemPrice;
+            var enemyB = CloneAsset(melee, "ED_Tutorial_MeleeB", e =>
+            {
+                e.EntityId = "enemy_tutorial_melee_b";
+                e.DisplayName = "Recluta (Tutorial)";
+                e.BaseHP = EnemyBHp;
+                e.MinGoldDrop = ShopItemPrice;
+                e.MaxGoldDrop = ShopItemPrice;
+            });
             EditorUtility.SetDirty(enemyB);
 
-            var enemyC = CloneAsset(melee, "ED_Tutorial_MeleeC");
-            enemyC.EntityId = "enemy_tutorial_melee_c";
-            enemyC.DisplayName = "Matón (Tutorial)";
-            enemyC.BaseHP = EnemyCHp;
-            enemyC.MinGoldDrop = goldPerEnemyC;
-            enemyC.MaxGoldDrop = goldPerEnemyC;
+            var enemyC = CloneAsset(melee, "ED_Tutorial_MeleeC", e =>
+            {
+                e.EntityId = "enemy_tutorial_melee_c";
+                e.DisplayName = "Matón (Tutorial)";
+                e.BaseHP = EnemyCHp;
+                e.MinGoldDrop = goldPerEnemyC;
+                e.MaxGoldDrop = goldPerEnemyC;
+            });
             EditorUtility.SetDirty(enemyC);
 
             // --- Setups (1 enemigo en B, 2 en C) ------------------------------
@@ -119,18 +125,22 @@ namespace Rollgeon.Editor.Tools
             // ForcePossibleSetups: el prefab compartido puede traer SpawnPointConfigs
             // (que normalmente ganan) — el tutorial exige EXACTAMENTE su setup
             // (1 enemigo en B, 2 en C).
-            var roomB = CloneAsset(combatRoomB, "Room_Tutorial_CombatB");
-            roomB.RoomId = "room_tutorial_combat_b";
-            roomB.DisplayName = "Tutorial — Combate 1";
-            roomB.PossibleSetups = new List<EnemySetupSO> { setupB };
-            roomB.ForcePossibleSetups = true;
+            var roomB = CloneAsset(combatRoomB, "Room_Tutorial_CombatB", r =>
+            {
+                r.RoomId = "room_tutorial_combat_b";
+                r.DisplayName = "Tutorial — Combate 1";
+                r.PossibleSetups = new List<EnemySetupSO> { setupB };
+                r.ForcePossibleSetups = true;
+            });
             EditorUtility.SetDirty(roomB);
 
-            var roomC = CloneAsset(combatRoomC, "Room_Tutorial_CombatC");
-            roomC.RoomId = "room_tutorial_combat_c";
-            roomC.DisplayName = "Tutorial — Combate 2";
-            roomC.PossibleSetups = new List<EnemySetupSO> { setupC };
-            roomC.ForcePossibleSetups = true;
+            var roomC = CloneAsset(combatRoomC, "Room_Tutorial_CombatC", r =>
+            {
+                r.RoomId = "room_tutorial_combat_c";
+                r.DisplayName = "Tutorial — Combate 2";
+                r.PossibleSetups = new List<EnemySetupSO> { setupC };
+                r.ForcePossibleSetups = true;
+            });
             EditorUtility.SetDirty(roomC);
 
             // --- Floor plan ----------------------------------------------------
@@ -153,10 +163,12 @@ namespace Rollgeon.Editor.Tools
             };
             EditorUtility.SetDirty(tutorialShopPool);
 
-            var tutorialShopConfig = CloneAsset(shopConfig, "SC_Tutorial");
-            tutorialShopConfig.MaxItemSlots = 1;
-            tutorialShopConfig.PriceMultiplier = 1f;
-            tutorialShopConfig.PriceVariance = 0f;
+            var tutorialShopConfig = CloneAsset(shopConfig, "SC_Tutorial", c =>
+            {
+                c.MaxItemSlots = 1;
+                c.PriceMultiplier = 1f;
+                c.PriceVariance = 0f;
+            });
             EditorUtility.SetDirty(tutorialShopConfig);
 
             // --- Overlay (material + flecha + settings + bootstrap) -----------
@@ -214,13 +226,23 @@ namespace Rollgeon.Editor.Tools
         /// Clon profundo de un SO (Instantiate serializa/deserializa también la data
         /// Odin, así los effects inline quedan con instancias propias). Reemplaza el
         /// asset si ya existía, para que el installer sea re-ejecutable.
+        /// <para>
+        /// El tuning va en <paramref name="configure"/> y corre ANTES de CreateAsset:
+        /// la primera serialización ya sale completa. Mutar después dependía del
+        /// SetDirty+SaveAssets del final, y un import intermedio del AssetDatabase
+        /// podía escribir el clon CRUDO y perder el tuning (visto ago 2026: rooms sin
+        /// ForcePossibleSetups → spawns random en B; enemigo B sin drop de 20 → softlock
+        /// de la tienda).
+        /// </para>
         /// </summary>
-        private static T CloneAsset<T>(T source, string assetName) where T : ScriptableObject
+        private static T CloneAsset<T>(T source, string assetName, System.Action<T> configure = null)
+            where T : ScriptableObject
         {
             var path = PathFor(assetName);
             AssetDatabase.DeleteAsset(path);
             var clone = Object.Instantiate(source);
             clone.name = assetName;
+            configure?.Invoke(clone);
             AssetDatabase.CreateAsset(clone, path);
             return clone;
         }
