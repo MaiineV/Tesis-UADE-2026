@@ -262,7 +262,10 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            if (_lastComboBaseDamage <= 0)
+            // BUG-040: gate por PRESENCIA de combo, no por base plano > 0 — un combo de
+            // base dinámica (Higher Number: flat 0 en tabla + valor del dado) matchea con
+            // base plano 0 y el label decía "(sin combo)" aunque el daño sí lo sumaba.
+            if (string.IsNullOrEmpty(_lastComboId))
             {
                 RenderLabel($"{_currentBehavior.ActionName} (sin combo)", 0);
                 return;

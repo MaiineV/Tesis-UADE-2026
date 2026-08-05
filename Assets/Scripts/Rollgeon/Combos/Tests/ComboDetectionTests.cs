@@ -524,6 +524,103 @@ namespace Rollgeon.Combos.Tests
     }
 
     // =============================================================================
+    // Combo_HigherNumber (regression BUG-040: Combo_HighNumber estaba autorado como
+    // SumaX(X=4) — matcheaba dados que MUESTRAN 4 y no el de mayor valor, y no
+    // aparecia sin ningun 4 en la seleccion.)
+    // =============================================================================
+    [TestFixture]
+    public class Combo_HigherNumber_Tests
+    {
+        private Combo_HigherNumber _sut;
+
+        [SetUp]
+        public void Setup()
+        {
+            _sut = ScriptableObject.CreateInstance<Combo_HigherNumber>();
+            ComboTestUtils.SetField(_sut, "_comboId", ComboId.HigherNumber);
+            ComboTestUtils.SetField(_sut, "_baseDamage", 5);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_sut);
+        }
+
+        [Test]
+        public void HigherNumber_PicksHighestValue_NotHighestOwnFace()
+        {
+            // Repro del tester (BUG-040): D4=4, D4=2, D6=5, D6=3, D6=1 — el ganador es
+            // el D6 en 5 (mayor VALOR), no el D4 maxeado en 4.
+            var result = _sut.Detect(new[] { 4, 2, 5, 3, 1 });
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(5 + 5, result.BaseDamage);
+            Assert.AreEqual(1, result.CountUsed);
+            CollectionAssert.AreEqual(new[] { 2 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void HigherNumber_MatchesWithSingleDie()
+        {
+            // Regression: antes solo aparecia si habia un 4 en la seleccion (SumaX).
+            var result = _sut.Detect(new[] { 2 });
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(5 + 2, result.BaseDamage);
+            CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void HigherNumber_Tie_PicksFirstOccurrence()
+        {
+            var result = _sut.Detect(new[] { 3, 6, 6 });
+
+            Assert.IsTrue(result.IsMatch);
+            CollectionAssert.AreEqual(new[] { 1 }, result.ContributingIndices);
+        }
+
+        [Test]
+        public void HigherNumber_FlatBaseOverride_ReplacesOnlyFlatPart()
+        {
+            var result = _sut.Detect(new[] { 4, 2 }, flatBaseOverride: 12);
+
+            Assert.IsTrue(result.IsMatch);
+            Assert.AreEqual(12 + 4, result.BaseDamage);
+        }
+
+        [Test]
+        public void HigherNumber_EmptyOrNull_NoMatch()
+        {
+            Assert.IsFalse(_sut.Detect(new int[0]).IsMatch);
+            Assert.IsFalse(_sut.Detect(null).IsMatch);
+        }
+
+        /// <summary>
+        /// Regression BUG-040 (asset real): Combo_HighNumber.asset fue repunteado de
+        /// Combo_SumaX a Combo_HigherNumber editando el guid del m_Script a mano.
+        /// Este test verifica que el import del editor lo deserializa con la clase
+        /// nueva y que matchea con un solo dado — si falla acá, el asset quedó con
+        /// script Missing o import viejo (Reimport desde el Project window).
+        /// </summary>
+        [Test]
+        public void HigherNumber_RealAsset_LoadsAsNewClass_AndMatchesSingleDie()
+        {
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<BaseComboSO>(
+                "Assets/Rollgeon/Combos/Combo_HighNumber.asset");
+
+            Assert.IsNotNull(asset, "Combo_HighNumber.asset no encontrado.");
+            Assert.IsInstanceOf<Combo_HigherNumber>(asset,
+                $"El asset deserializó como {asset.GetType().Name} — el repunte de clase no importó.");
+            Assert.AreEqual("combo.higher_number", asset.ComboId);
+
+            var result = asset.Detect(new[] { 6 });
+            Assert.IsTrue(result.IsMatch, "Un solo dado debe matchear Higher Number.");
+            Assert.AreEqual(1, result.CountUsed);
+        }
+    }
+
+    // =============================================================================
     // Combo_FuerzaBruta (spec Santi 2026-07-13: matchea solo si TODOS los dados caen
     // en la mitad superior de su propio rango — valor > MaxFace/2. No hay subconjunto
     // parcial: un solo dado por debajo del umbral anula el combo entero.)
