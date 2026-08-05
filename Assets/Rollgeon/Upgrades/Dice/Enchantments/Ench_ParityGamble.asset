@@ -27,10 +27,10 @@ MonoBehaviour:
       Data: ench.parity_gamble
     - Name: _displayName
       Entry: 1
-      Data: Parity Gamble
+      Data: Apuesta de Paridad
     - Name: _description
       Entry: 1
-      Data: If this dice rolls an Odd number multiplies x3, if not x0
+      Data: "Si el dado saca un n\xFAmero impar multiplica x3; si no, x0."
     - Name: _icon
       Entry: 10
       Data: 0
@@ -433,14 +433,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 8131244039720141442
+  - rid: 6878114965000815251
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141442
+    - rid: 6878114965000815251
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -451,24 +451,24 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 8131244039720141443
+          - rid: 6878114965000815252
           Effects:
-          - rid: 8131244039720141444
+          - rid: 6878114965000815253
           TargetSelector:
             rid: -2
         - Label: Effect Group
           PreConditions:
-          - rid: 8131244039720141445
+          - rid: 6878114965000815254
           Effects:
-          - rid: 8131244039720141446
+          - rid: 6878114965000815255
           TargetSelector:
             rid: -2
-    - rid: 8131244039720141443
+    - rid: 6878114965000815252
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 2
-    - rid: 8131244039720141444
+    - rid: 6878114965000815253
       type: {class: EffMultiplyComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -492,12 +492,12 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _multiplier: 3
-    - rid: 8131244039720141445
+    - rid: 6878114965000815254
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 1
-    - rid: 8131244039720141446
+    - rid: 6878114965000815255
       type: {class: EffMultiplyComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

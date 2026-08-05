@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 
 namespace Rollgeon.Tutorial.UI
 {
@@ -352,7 +353,9 @@ namespace Rollgeon.Tutorial.UI
 
             bool blocking = request.InputPolicy == TutorialInputPolicy.BlockUntilContinue;
             _popupFooter.enabled = blocking;
-            _popupFooter.text = blocking ? _settings.ContinueFooterText : string.Empty;
+            _popupFooter.text = blocking
+                ? LocalizedContent.Ui(TutorialTextKeys.ContinueFooter, _settings.ContinueFooterText)
+                : string.Empty;
         }
 
         private void ApplyInputPolicy(TutorialInputPolicy policy)

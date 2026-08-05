@@ -299,6 +299,126 @@ MonoBehaviour:
     m_Key: altar.confirm
     m_Metadata:
       m_Items: []
+  - m_Id: 7800251619241984
+    m_Key: tutorial.movement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905280
+    m_Key: tutorial.enemies_intro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905281
+    m_Key: tutorial.move_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905282
+    m_Key: tutorial.move_tiles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905283
+    m_Key: tutorial.move_too_far
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905284
+    m_Key: tutorial.stats_hp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905285
+    m_Key: tutorial.stats_energy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905286
+    m_Key: tutorial.attack_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905287
+    m_Key: tutorial.target_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905288
+    m_Key: tutorial.throw_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905289
+    m_Key: tutorial.dice_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905290
+    m_Key: tutorial.defense_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905291
+    m_Key: tutorial.end_turn_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905292
+    m_Key: tutorial.combat1_free
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905293
+    m_Key: tutorial.heal_unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905294
+    m_Key: tutorial.heal_dice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905295
+    m_Key: tutorial.go_to_c
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905296
+    m_Key: tutorial.escape_teach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905297
+    m_Key: tutorial.escape_dice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905298
+    m_Key: tutorial.combat2_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905299
+    m_Key: tutorial.combat2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905300
+    m_Key: tutorial.shop_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905301
+    m_Key: tutorial.shop_pedestal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905302
+    m_Key: tutorial.shop_purchased
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905303
+    m_Key: tutorial.go_to_e
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905304
+    m_Key: tutorial.enchant_room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905305
+    m_Key: tutorial.enchant_table
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905306
+    m_Key: tutorial.enchant_done
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905307
+    m_Key: tutorial.exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905308
+    m_Key: tutorial.continue_footer
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

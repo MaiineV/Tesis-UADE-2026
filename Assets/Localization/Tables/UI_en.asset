@@ -303,6 +303,155 @@ MonoBehaviour:
     m_Localized: Confirm
     m_Metadata:
       m_Items: []
+  - m_Id: 7800251619241984
+    m_Localized: Click a tile to move. Walk to the highlighted door to leave the
+      room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905280
+    m_Localized: Combat! This is your enemy. In the tutorial you always act first.
+      (Click to continue.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905281
+    m_Localized: 'Your hero fights in melee: you need to close the distance first.
+      Select MOVE ({0}).'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905282
+    m_Localized: The highlighted tiles are where you can reach this turn. Click a
+      tile next to the enemy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905283
+    m_Localized: "You ended up far from the enemy \u2014 and you can only move once
+      per turn. Press END TURN ({0}) and let them come to you."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905284
+    m_Localized: 'This is your HEALTH: if it hits zero, the run is over. Look after
+      it. (Click to continue.)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905285
+    m_Localized: 'This is your ENERGY: moving, attacking and rerolling dice all spend
+      it. Manage it every turn. (Click to continue.)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905286
+    m_Localized: ATTACK ({0}) is unlocked. Select it to choose who to hit.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905287
+    m_Localized: 'First you pick the target: click the enemy highlighted in red.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905288
+    m_Localized: 'Target locked! These are your dice: grab them by holding left click
+      and throw them with a quick flick of the mouse.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905289
+    m_Localized: "Build generala combos (pair, trio, straight...). Click a die to
+      lock it and keep it. Want to reroll? Grab the dice you want to change and throw
+      them again \u2014 you get up to 3 rolls. When you like the combo, press CONFIRM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905290
+    m_Localized: 'Hit landed! You had rolls left over from the attack, so the DEFENSE
+      phase begins: grab and throw the dice to build a SHIELD that absorbs the next
+      hit. Lock, reroll and CONFIRM your defense combo.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905291
+    m_Localized: Attack complete! When there's nothing else you want to do, press
+      END TURN ({0}) to hand the turn over to the enemy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905292
+    m_Localized: "That's how you fight! Repeat the process \u2014 move, attack, build
+      combos \u2014 until the enemy is down. (Click to continue.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905293
+    m_Localized: 'You got hit! HEAL ({0}) is unlocked: use it on your turn when you''re
+      low on health.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905294
+    m_Localized: 'Healing uses the dice too: grab them with a held click, throw them
+      and beat the threshold to recover health. Lock the high dice, reroll the rest
+      if you need to, and confirm.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905295
+    m_Localized: "Well done! Head through the highlighted door. The other one is
+      locked \u2014 you'll open it later."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905296
+    m_Localized: "There are too many of them! FORCE DOOR ({0}) is unlocked: use it
+      to escape the way you came. It only works if you're next to a door \u2014 and
+      right now you are."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905297
+    m_Localized: 'Forcing the door is resolved with the dice: grab them, throw them
+      and beat the threshold to escape the fight.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905298
+    m_Localized: 'The room is unlocked: go in and finish what you started.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905299
+    m_Localized: Now you're ready! With the PAIR upgrade you can take on both enemies.
+      (Click to continue.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905300
+    m_Localized: 'You escaped! The shop door is open. Head in: something that will
+      give you the edge is waiting.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905301
+    m_Localized: 'This is the shop. Walk up to the pedestal and press F to buy the
+      upgrade: your PAIR combo will deal +50 damage.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905302
+    m_Localized: 'Upgrade bought! Now you''re ready: head back the way you came and
+      finish those enemies.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905303
+    m_Localized: 'Excellent! Move on to the last room: the enchantment room.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905304
+    m_Localized: 'This is the enchantment table: it upgrades one of your dice for
+      gold, for the rest of the run. Walk up to the altar and press F to open it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905305
+    m_Localized: "Pick one of your dice, pick the enchantment and confirm: the die
+      stays upgraded for the rest of the run. The stronger the die, the more enchantment
+      slots it has. Each enchantment costs gold \u2014 what you saved is enough for
+      exactly ONE. (Click to continue.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905306
+    m_Localized: "Die enchanted! You know everything you need \u2014 close the table."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905307
+    m_Localized: Step through the highlighted door to begin your real adventure.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905308
+    m_Localized: Click to continue
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

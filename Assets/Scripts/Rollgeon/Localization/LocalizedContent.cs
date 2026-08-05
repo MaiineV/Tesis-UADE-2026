@@ -22,6 +22,7 @@ namespace Rollgeon.Localization
         public const string UITable = "UI";
         public const string NameSuffix = ".name";
         public const string DescSuffix = ".desc";
+        public const string HintSuffix = ".hint";
 
         /// <summary>Nombre localizado del contenido, o <paramref name="fallback"/>.</summary>
         public static string Name(string entityId, string fallback)
@@ -30,6 +31,14 @@ namespace Rollgeon.Localization
         /// <summary>Descripción localizada del contenido, o <paramref name="fallback"/>.</summary>
         public static string Description(string entityId, string fallback)
             => Resolve(entityId, DescSuffix, fallback);
+
+        /// <summary>
+        /// Pista localizada del contenido, o <paramref name="fallback"/>. La usan los
+        /// desbloqueables, que muestran una pista mientras están bloqueados y recién
+        /// revelan la <see cref="Description"/> al cumplirse.
+        /// </summary>
+        public static string Hint(string entityId, string fallback)
+            => Resolve(entityId, HintSuffix, fallback);
 
         /// <summary>
         /// Devuelve <c>Content[entityId + suffix]</c> en el locale activo, o

@@ -209,19 +209,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623680
-    m_Localized: Attack+
+    m_Localized: Attack +3
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: Energy+
+    m_Localized: Energy +1
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
-    m_Localized: Max Health
+    m_Localized: Max Health +5
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623683
-    m_Localized: Speed+
+    m_Localized: Speed +2
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623684
@@ -229,7 +229,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623685
-    m_Localized: Each Ladder combo gives gold
+    m_Localized: Each Ladder combo grants gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623686
@@ -237,117 +237,117 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623687
-    m_Localized: +50 damage when matching Pair
+    m_Localized: +50 damage when matching a Pair.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623688
-    m_Localized: Afilado
+    m_Localized: Sharpened
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623689
-    m_Localized: El resultado minimo es siempre la mitad del maximo redondeado arriba.
-      Un d6 afilado nunca saca menos de 3.
+    m_Localized: The minimum result is always half the maximum, rounded up. A sharpened
+      d6 never rolls below 3.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623690
-    m_Localized: Ancla
+    m_Localized: Anchor
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: Si este dado se holdea entre rolls, su resultado aumenta +1 por
-      roll holdeado (max +3).
+    m_Localized: If this die is held between rolls, its result increases by +1 per
+      held roll (max +3).
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
-    m_Localized: Avaro
+    m_Localized: Miser
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623693
-    m_Localized: Otorga 3 de oro extra al completar un combo de trio o superior.
+    m_Localized: Grants 3 extra gold when you complete a trio combo or better.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623694
-    m_Localized: Caras Centrales
+    m_Localized: Middle Faces
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623695
-    m_Localized: Bloquea el cuarto superior e inferior. d8:{3,4,5,6} d12:{4,5,6,7,8,9}
+    m_Localized: Blocks the top and bottom quarter. d8:{3,4,5,6} d12:{4,5,6,7,8,9}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623696
-    m_Localized: Cargado
+    m_Localized: Loaded
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623697
-    m_Localized: Una vez por combate podes relanzar este dado y quedarte con el mayor
-      resultado.
+    m_Localized: Once per combat you can reroll this die and keep the higher result.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623698
-    m_Localized: Codicioso
+    m_Localized: Covetous
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623699
-    m_Localized: El dado participa en cualquier combo y suma +3 de oro.
+    m_Localized: The die joins any combo and grants +3 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623700
-    m_Localized: "Comod\xEDn"
+    m_Localized: Wild
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623701
-    m_Localized: Este dado cuenta como cualquier numero para propositos de combo
-      (escaleras, trio, generala).
+    m_Localized: This die counts as any number for combo purposes (straights, trio,
+      generala).
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623702
-    m_Localized: Escalador
+    m_Localized: Climber
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623703
-    m_Localized: Para escaleras, este dado cuenta como su valor y como valor+1 simultaneamente.
+    m_Localized: For straights, this die counts as both its value and its value+1
+      at the same time.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623704
-    m_Localized: Escudado
+    m_Localized: Shielded
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623705
-    m_Localized: Si se utiliza en un combo de full house da 2 mas de escudo.
+    m_Localized: If used in a full house combo it grants 2 extra shield.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623706
-    m_Localized: Extremos
+    m_Localized: Extremes
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623707
-    m_Localized: Solo muestra el cuarto superior e inferior. d8:{1,2,7,8} d12:{1,2,3,10,11,12}
+    m_Localized: Only shows the top and bottom quarter. d8:{1,2,7,8} d12:{1,2,3,10,11,12}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623708
-    m_Localized: Fortaleza
+    m_Localized: Fortress
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623709
-    m_Localized: El dado muestra su valor maximo y participa en combo, genera 2 puntos
-      de escudo.
+    m_Localized: The die shows its maximum value and joins the combo; it generates
+      2 shield points.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623710
-    m_Localized: "Fr\xE1gil"
+    m_Localized: Fragile
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: 50% de chance de que el dado no cuente para el combo.
+    m_Localized: 50% chance the die doesn't count toward the combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
-    m_Localized: Gemelo
+    m_Localized: Twin
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623713
-    m_Localized: Si este dado muestra el mismo numero que otro en la tirada, ambos
-      valen x1.5 para el combo.
+    m_Localized: If this die shows the same number as another in the roll, both count
+      x1.5 toward the combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623714
@@ -355,83 +355,81 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623715
-    m_Localized: If the dice is not in a combo, win 2 gold.
+    m_Localized: If the die isn't part of a combo, it grants 2 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623716
-    m_Localized: Impar
+    m_Localized: Odd
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623717
-    m_Localized: Solo muestra caras impares. d6:{1,3,5} d8:{1,3,5,7} d12:{1,3,5,7,9,11}
+    m_Localized: Only shows odd faces. d6:{1,3,5} d8:{1,3,5,7} d12:{1,3,5,7,9,11}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623718
-    m_Localized: Invertido
+    m_Localized: Inverted
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623719
-    m_Localized: El resultado es maximo+1 menos resultado. Un d6 que saca 1 cuenta
-      como 6.
+    m_Localized: The result becomes max+1 minus the result. A d6 that rolls 1 counts
+      as 6.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623720
-    m_Localized: Lento
+    m_Localized: Sluggish
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: Este dado no se puede holdear entre rolls.
+    m_Localized: This die cannot be held between rolls.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
-    m_Localized: Mercader
+    m_Localized: Merchant
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623723
-    m_Localized: Otorga 5 de oro al completar una escalera.
+    m_Localized: Grants 5 gold when you complete a straight.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623724
-    m_Localized: "Mim\xE9tico"
+    m_Localized: Mimic
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623725
-    m_Localized: Copia el resultado del ultimo dado rerolled en esta tirada para
-      propositos de combo.
+    m_Localized: Copies the result of the last rerolled die in this roll for combo
+      purposes.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623726
-    m_Localized: Mitad Inferior
+    m_Localized: Lower Half
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623727
-    m_Localized: Solo muestra la mitad inferior del dado. d6:{1,2,3} d8:{1,2,3,4}
-      d12:{1,2,3,4,5,6}
+    m_Localized: Only shows the lower half of the die. d6:{1,2,3} d8:{1,2,3,4} d12:{1,2,3,4,5,6}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623728
-    m_Localized: Mitad Superior
+    m_Localized: Upper Half
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623729
-    m_Localized: Solo muestra la mitad superior del dado. d6:{4,5,6} d8:{5,6,7,8}
-      d12:{7,8,9,10,11,12}
+    m_Localized: Only shows the upper half of the die. d6:{4,5,6} d8:{5,6,7,8} d12:{7,8,9,10,11,12}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623730
-    m_Localized: Multiplo de 3
+    m_Localized: Multiple of 3
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623731
-    m_Localized: Solo muestra multiplos de 3. d12:{3,6,9,12}
+    m_Localized: Only shows multiples of 3. d12:{3,6,9,12}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623732
-    m_Localized: No Primo
+    m_Localized: Non-Prime
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623733
-    m_Localized: Solo muestra numeros no primos (incluye el 1). d8:{1,4,6,8}
+    m_Localized: Only shows non-prime numbers (1 included). d8:{1,4,6,8}
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623734
@@ -439,23 +437,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623735
-    m_Localized: This Dice only rolls Even numbers.
+    m_Localized: This die only rolls even numbers.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817984
-    m_Localized: Oxidado
+    m_Localized: Rusty
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: El dado pierde 1 de su resultado final (minimo 1).
+    m_Localized: The die loses 1 from its final result (minimum 1).
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
-    m_Localized: Par
+    m_Localized: Even
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817987
-    m_Localized: Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}
+    m_Localized: Only shows even faces. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817988
@@ -463,78 +461,78 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817989
-    m_Localized: If this dice rolls an Odd number multiplies x3, if not x0
+    m_Localized: If this die rolls an odd number it multiplies x3; otherwise x0.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817990
-    m_Localized: Pesado
+    m_Localized: Heavy
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817991
-    m_Localized: Suma +2 al resultado final del dado.
+    m_Localized: Adds +2 to the die's final result.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817992
-    m_Localized: Primo
+    m_Localized: Prime
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817993
-    m_Localized: Solo muestra numeros primos. d12:{2,3,5,7,11}
+    m_Localized: Only shows prime numbers. d12:{2,3,5,7,11}
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817994
-    m_Localized: Resonante
+    m_Localized: Resonant
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817995
-    m_Localized: Si 2+ dados muestran el mismo numero en la tirada final, este dado
-      suma su valor dos veces al combo.
+    m_Localized: If 2 or more dice show the same number in the final roll, this die
+      adds its value to the combo twice.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817996
-    m_Localized: Sediento
+    m_Localized: Thirsty
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: Cada vez que participa en combo consume 2 de oro. Sin oro no puede
-      participar.
+    m_Localized: Each time it joins a combo it consumes 2 gold. With no gold it can't
+      take part.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
-    m_Localized: Torpe
+    m_Localized: Clumsy
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817999
-    m_Localized: Fuerza un reroll completo en el turno 2 del combate.
+    m_Localized: Forces a full reroll on turn 2 of the combat.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818000
-    m_Localized: Volatil
+    m_Localized: Volatile
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: Al sacar el maximo el resultado se duplica. Al sacar el minimo vale
+    m_Localized: On a maximum roll the result doubles. On a minimum roll it's worth
       0.
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
-    m_Localized: Boss
+    m_Localized: Boss Room
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315457
-    m_Localized: RoomCombat
+    m_Localized: Combat Room
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315458
-    m_Localized: RoomCombat
+    m_Localized: Combat Room
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315459
-    m_Localized: RoomCombat
+    m_Localized: Combat Room
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315460
-    m_Localized: RoomCombat
+    m_Localized: Combat Room
     m_Metadata:
       m_Items: []
   - m_Id: 5531983704064
@@ -542,7 +540,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590144
-    m_Localized: Potion
+    m_Localized: Potion Room
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590145
@@ -550,19 +548,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590146
-    m_Localized: Start
+    m_Localized: Starting Room
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590147
-    m_Localized: Start
+    m_Localized: Starting Room
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590148
-    m_Localized: "Tutorial \u2014 Combate 1"
+    m_Localized: "Tutorial \u2014 Combat 1"
     m_Metadata:
       m_Items: []
   - m_Id: 5532067590149
-    m_Localized: "Tutorial \u2014 Combate 2"
+    m_Localized: "Tutorial \u2014 Combat 2"
     m_Metadata:
       m_Items: []
   - m_Id: 1211498464378880
@@ -572,6 +570,24 @@ MonoBehaviour:
   - m_Id: 1211498485350400
     m_Localized: When your health is 3 or less, your base damage increases by 5 points.
       Healing above that threshold returns it to normal.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250105098240
+    m_Localized: 'Master the standard die: win a run relying only on the classic
+      six-sider.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846976
+    m_Localized: There's an exact dice recipe that opens this door. Experiment with
+      the mix.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846977
+    m_Localized: 'Prove your eight-sided strength: carry the new die to a victory.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846978
+    m_Localized: A true gambler never leaves a Contract play uncashed.
     m_Metadata:
       m_Items: []
   references:

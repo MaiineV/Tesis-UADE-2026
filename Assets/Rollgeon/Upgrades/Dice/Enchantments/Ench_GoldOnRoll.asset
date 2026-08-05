@@ -27,10 +27,10 @@ MonoBehaviour:
       Data: ench.gold_on_roll
     - Name: _displayName
       Entry: 1
-      Data: Greed
+      Data: Ambicioso
     - Name: _description
       Entry: 1
-      Data: If the dice is not in a combo, win 2 gold.
+      Data: "Si el dado no participa en ning\xFAn combo, otorga 2 de oro."
     - Name: _icon
       Entry: 10
       Data: 0
@@ -287,14 +287,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 8131244039720141452
+  - rid: 6878114965000815256
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141452
+    - rid: 6878114965000815256
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 2
@@ -305,16 +305,16 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 8131244039720141453
+          - rid: 6878114965000815257
           Effects:
-          - rid: 8131244039720141454
+          - rid: 6878114965000815258
           TargetSelector:
             rid: -2
-    - rid: 8131244039720141453
+    - rid: 6878114965000815257
       type: {class: PcNoComboThisRoll, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
-    - rid: 8131244039720141454
+    - rid: 6878114965000815258
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -339,9 +339,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 8131244039720141455
+          rid: 6878114965000815259
         _failChainIfInsufficient: 1
-    - rid: 8131244039720141455
+    - rid: 6878114965000815259
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2
