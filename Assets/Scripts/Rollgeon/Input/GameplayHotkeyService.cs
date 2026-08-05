@@ -39,10 +39,22 @@ namespace Rollgeon.Input
         // play sessions).
         private int _consumedFrame = -1;
 
+        // BUG-019: el overlay del tutorial suprime el map entero durante los pasos
+        // "click para continuar" — el dim solo bloquea pointer, no teclado.
+        private bool _suppressed;
+
         public bool IsReady => _map != null;
 
         public void ConsumeFrame() => _consumedFrame = Time.frameCount;
         public bool WasFrameConsumed() => _consumedFrame == Time.frameCount;
+
+        public void SetSuppressed(bool suppressed)
+        {
+            if (_suppressed == suppressed) return;
+            _suppressed = suppressed;
+            if (suppressed) _map?.Disable();
+            else if (isActiveAndEnabled) _map?.Enable();
+        }
 
         private void Awake()
         {
@@ -55,7 +67,7 @@ namespace Rollgeon.Input
         private void OnEnable()
         {
             if (_map == null) Resolve();
-            _map?.Enable();
+            if (!_suppressed) _map?.Enable();
         }
 
         private void OnDisable()

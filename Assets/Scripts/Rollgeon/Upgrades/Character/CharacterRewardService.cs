@@ -175,10 +175,11 @@ namespace Rollgeon.Upgrades.Character
             // Marcar TODOS los slots de la room como claimed + destruir pedestales hermanos.
             MarkAllSlotsClaimedAndDespawn(room);
 
-            // Reward elegida tras el boss → floor completo. Disparamos OnFloorCleared para
-            // que reaccione la VictoryScreen. En esta versión es el fin de la run; a futuro
-            // será el handoff al próximo floor. floorIndex=0 placeholder hasta multi-floor.
-            EventManager.Trigger(EventName.OnFloorCleared, roomInstanceId, 0);
+            // Reward elegida tras el boss → floor completo. OnFloorCleared NO termina la
+            // run: lo escuchan achievements/analytics; el pase al piso siguiente lo maneja
+            // FloorProgressionService cuando el player toma la salida. Schema documentado:
+            // [Guid runId, int floorIndex] (BUG-022: antes mandaba roomInstanceId y 0).
+            EventManager.Trigger(EventName.OnFloorCleared, ResolveRunId(), ResolveFloorIndex());
         }
 
         // ====================================================================
@@ -228,9 +229,18 @@ namespace Rollgeon.Upgrades.Character
             // cuando este canal está activo.
             if (spawned == 0)
             {
-                EventManager.Trigger(EventName.OnFloorCleared, roomId, 0);
+                EventManager.Trigger(EventName.OnFloorCleared, ResolveRunId(), ResolveFloorIndex());
             }
         }
+
+        // Schema OnFloorCleared: [Guid runId, int floorIndex] (achievements gatean por índice).
+        private static Guid ResolveRunId()
+            => ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var rc) && rc != null
+                ? rc.RunId : Guid.Empty;
+
+        private static int ResolveFloorIndex()
+            => ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var rc) && rc != null
+                ? rc.FloorIndex : 0;
 
         private int InitializeOrHydrate(RoomInstance room)
         {

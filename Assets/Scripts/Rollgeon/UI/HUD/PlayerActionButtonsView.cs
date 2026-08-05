@@ -511,6 +511,13 @@ namespace Rollgeon.UI.HUD
                 return;
             }
             _onConfirmPressed?.Invoke();
+
+            // BUG-018: en chain el OnRollResolved que apagaría el botón viene diferido por
+            // el feedback del golpe — lo apagamos ya para que el spam ni llegue al service
+            // (que igual tiene su propio lock de re-entrada). El próximo Recompute con
+            // estado fresco lo re-habilita cuando corresponda.
+            if (_inChain && _confirmButton != null)
+                _confirmButton.interactable = false;
         }
 
         // ======================================================================

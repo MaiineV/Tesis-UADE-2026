@@ -73,6 +73,11 @@ namespace Rollgeon.Combat.Handoff
         // playerState path de DoConfirm y lo limpia el callback de RequestAction al
         // completarse o cancelarse la accion.
         private bool _awaitingPlayerSelection;
+        // BUG-018: lock de re-entrada del Confirm de chain. Los efectos de la fase corren
+        // sincrónicos en ExecuteChainPhase, pero _chainPhaseIndex y _selectedBehavior se
+        // actualizan recién en la continuación diferida por el feedback — sin este flag,
+        // cada Confirm/Espacio durante la animación del golpe re-ejecutaba la misma fase.
+        private bool _isResolvingChainPhase;
         private EffChain _activeChain;
         private int _chainPhaseIndex;
         private TargetSelectionResult _chainPhaseSelectionResult;
@@ -312,6 +317,7 @@ namespace Rollgeon.Combat.Handoff
             // antes de que el player consuma todas las fases) se lo filtraba al siguiente
             // combate, encima del roll de ataque (PUL-016).
             _awaitingChainPaidRoll = false;
+            _isResolvingChainPhase = false;
             if (_screenManager?.Current is CombatHUDView resetHud)
                 resetHud.HideChainRollPrompt();
 
@@ -394,6 +400,11 @@ namespace Rollgeon.Combat.Handoff
                     // Entrada paga pendiente: sin tirada no hay nada que confirmar —
                     // Space no debe ejecutar la fase con DiceResult null.
                     if (_awaitingChainPaidRoll) return;
+
+                    // BUG-018: la fase actual ya se despachó (selección abierta o efectos
+                    // aplicados) y la continuación diferida todavía no avanzó el índice.
+                    if (_isResolvingChainPhase) return;
+                    _isResolvingChainPhase = true;
 
                     var phase = _activeChain.Phases[_chainPhaseIndex];
                     var afterRoll = FindPhaseSelectionAt(phase, SelectionTiming.AfterRoll);
@@ -994,6 +1005,10 @@ namespace Rollgeon.Combat.Handoff
         /// </summary>
         private void ContinueChainPhase(CombatHUDView hud, Guid playerGuid, int remainingFreeRolls)
         {
+            // BUG-018: el avance de fase corre sincrónico dentro de este método — recién
+            // al salir queda estado consistente para aceptar otro Confirm.
+            _isResolvingChainPhase = false;
+
             // CNF-002: el ataque ya resolvió sobre el objetivo — el crease de selección
             // se apaga acá (el Hit Flash del daño toma la posta en el mismo pawn).
             ClearAttackTargetCrease();
@@ -1142,6 +1157,7 @@ namespace Rollgeon.Combat.Handoff
             _lastFaces = null;
             _selectedBehavior = null;
             _awaitingChainPaidRoll = false;
+            _isResolvingChainPhase = false;
 
             _chainPhaseSelectionResult = null;
             if (_chainSelectionController != null)

@@ -41,5 +41,13 @@ namespace Rollgeon.Input
         /// <summary>Texto de la tecla asignada (ej. "Q", "Space") derivado del binding
         /// vigente. Cambia solo si se rebindea / agrega gamepad. "" si no resuelve.</summary>
         string GetKeyHint(GameplayHotkey hotkey);
+
+        /// <summary>
+        /// Suprime (o restaura) el map "Gameplay" completo. BUG-019: el overlay del
+        /// tutorial lo usa durante los pasos "click para continuar" — el dim bloquea
+        /// pointer pero el teclado entraba igual por InputSystem. No afecta la pausa
+        /// (PauseHotkey pollea <c>Keyboard.current</c> directo, no usa el map).
+        /// </summary>
+        void SetSuppressed(bool suppressed);
     }
 }

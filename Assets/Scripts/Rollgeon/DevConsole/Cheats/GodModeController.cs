@@ -61,9 +61,10 @@ namespace Rollgeon.DevConsole.Cheats
             var id = _ctx.PlayerGuid;
             if (id == Guid.Empty) return;
             if (!_ctx.TryResolve<AttributesManager>(out var am) || am == null) return;
-            if (!_ctx.TryResolve<IPlayerService>(out var ps) || ps?.CurrentHero == null) return;
 
-            int max = ps.CurrentHero.BaseMaxHp;
+            // BUG-022: pin contra el max efectivo (base + grants in-run), no la constante.
+            int max = Rollgeon.Player.PlayerMaxHp.Resolve(id);
+            if (max <= 0) return;
             int cur = am.GetAttributeValue<Health, int>(id);
             if (cur < max)
             {

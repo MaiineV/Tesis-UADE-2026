@@ -145,13 +145,18 @@ namespace Rollgeon.Combat.EnergyLib
                 return;
             }
 
-            int max = _ruleset.Energy.EnergyMax;
+            var attrs = _attributes.GetAttributes(entityId);
+            if (attrs == null) return;
+
+            // BUG-022 (followup R8): cap como atributo — los rewards del jefe (canal
+            // Character) lo suben vía modifiers Intrinsic; GetMax lee ModifiedValue.
+            if (!attrs.HasAttribute<MaxEnergy>())
+                attrs.SetAttribute<MaxEnergy>(new MaxEnergy(_ruleset.Energy.EnergyMax));
+
+            int max = GetMax(entityId);
             int start = _ruleset.Energy.EnergyAtRunStart;
             if (start > max) start = max;
             if (start < 0) start = 0;
-
-            var attrs = _attributes.GetAttributes(entityId);
-            if (attrs == null) return;
 
             if (!attrs.HasAttribute<EnergyStat>())
             {
@@ -182,7 +187,7 @@ namespace Rollgeon.Combat.EnergyLib
 
             int newVal = current - cost;
             _attributes.SetAttributeValue<EnergyStat, int>(entityId, newVal);
-            TriggerEnergyChanged(entityId, newVal, _ruleset.Energy.EnergyMax);
+            TriggerEnergyChanged(entityId, newVal, GetMax(entityId));
             return true;
         }
 
@@ -196,7 +201,7 @@ namespace Rollgeon.Combat.EnergyLib
             if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
 
             int current = _attributes.GetAttributeValue<EnergyStat, int>(entityId);
-            int max = _ruleset.Energy.EnergyMax;
+            int max = GetMax(entityId);
             int regenBase = _ruleset.Energy.EnergyRegenBase;
             int newVal = EnergyRegenPolicy.ComputeNewCurrent(current, max, regenBase);
 
@@ -215,9 +220,21 @@ namespace Rollgeon.Combat.EnergyLib
             return _attributes.GetAttributeValue<EnergyStat, int>(entityId);
         }
 
-        // [FOLLOWUP] EnergyMaxBonus stat para items que suban el cap (plan R8).
+        /// <summary>
+        /// Cap efectivo: <see cref="MaxEnergy"/>.ModifiedValue (base + grants in-run,
+        /// BUG-022 / followup R8) con fallback al ruleset para entidades sin el atributo.
+        /// </summary>
         public int GetMax(Guid entityId)
         {
+            if (_attributes != null && entityId != Guid.Empty && _attributes.IsRegistered(entityId))
+            {
+                var attrs = _attributes.GetAttributes(entityId);
+                if (attrs != null && attrs.HasAttribute<MaxEnergy>())
+                {
+                    int modified = attrs.GetAttribute<MaxEnergy>().ModifiedValue;
+                    if (modified > 0) return modified;
+                }
+            }
             return _ruleset != null ? _ruleset.Energy.EnergyMax : 0;
         }
 
@@ -233,7 +250,7 @@ namespace Rollgeon.Combat.EnergyLib
             var attrs = _attributes.GetAttributes(entityId);
             if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
 
-            int max = _ruleset.Energy.EnergyMax;
+            int max = GetMax(entityId);
             int clamped = Math.Clamp(value, 0, max);
             _attributes.SetAttributeValue<EnergyStat, int>(entityId, clamped);
             TriggerEnergyChanged(entityId, clamped, max);
@@ -287,7 +304,7 @@ namespace Rollgeon.Combat.EnergyLib
             var attrs = _attributes.GetAttributes(_playerId);
             if (attrs == null || !attrs.HasAttribute<EnergyStat>()) return;
 
-            int max = _ruleset.Energy.EnergyMax;
+            int max = GetMax(_playerId);
             _attributes.SetAttributeValue<EnergyStat, int>(_playerId, max);
             TriggerEnergyChanged(_playerId, max, max);
         }

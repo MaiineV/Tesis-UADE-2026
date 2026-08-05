@@ -317,6 +317,9 @@ namespace Rollgeon.Run
             var playerAttrs = new ModifiableAttributes();
             playerAttrs.EnsureInitialized();
             playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
+            // BUG-022: máximo separado del actual — los rewards del jefe (canal Character)
+            // suben el max vía modifiers sobre MaxHealth; Health.Value queda como HP actual.
+            playerAttrs.SetAttribute<MaxHealth>(new MaxHealth(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
             playerAttrs.SetAttribute<Shield>(new Shield(0));
             // Attack = dmg_base_PJ (Spec Daño v2): piso garantizado del turno, aplica incluso sin combo.
@@ -382,20 +385,19 @@ namespace Rollgeon.Run
 
         /// <summary>
         /// Construye el resolver de max HP que el <see cref="HealPipeline"/> usa para
-        /// clampear el heal contra el HP máximo. Para el player, devuelve
-        /// <c>hero.BaseMaxHp</c>. Para otros guids, devuelve un cap permisivo (los
-        /// enemigos hoy no se curan en gameplay del FP).
+        /// clampear el heal contra el HP máximo. Para el player, resuelve vía
+        /// <see cref="Rollgeon.Player.PlayerMaxHp"/> (base + grants in-run, BUG-022).
+        /// Para otros guids, devuelve un cap permisivo (los enemigos hoy no se curan
+        /// en gameplay del FP).
         /// </summary>
         private static Func<Guid, int> BuildMaxHpResolver(IPlayerService playerService)
         {
             return guid =>
             {
-                if (playerService != null
-                    && playerService.PlayerGuid == guid
-                    && playerService.CurrentHero != null
-                    && playerService.CurrentHero.BaseMaxHp > 0)
+                if (playerService != null && playerService.PlayerGuid == guid)
                 {
-                    return playerService.CurrentHero.BaseMaxHp;
+                    int resolved = Rollgeon.Player.PlayerMaxHp.Resolve(guid);
+                    if (resolved > 0) return resolved;
                 }
                 return int.MaxValue;
             };

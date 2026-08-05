@@ -67,7 +67,7 @@ MonoBehaviour:
         Rollgeon
     - Name: Event
       Entry: 3
-      Data: 0
+      Data: 10
     - Name: Effects
       Entry: 7
       Data: 3|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -248,7 +248,7 @@ MonoBehaviour:
     - rid: 8131244039720141471
       type: {class: ExecuteEffectsOnEvent, ns: Rollgeon.Upgrades.Combos.Triggers.Concretes, asm: Rollgeon}
       data:
-        Event: 0
+        Event: 10
         Effects:
         - Label: Effect Group
           PreConditions: []

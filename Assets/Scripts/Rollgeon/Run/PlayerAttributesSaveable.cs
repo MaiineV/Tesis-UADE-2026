@@ -48,6 +48,10 @@ namespace Rollgeon.Run
             CaptureStat<Energy>(snapshot, nameof(Energy));
             CaptureStat<Attack>(snapshot, nameof(Attack));
             CaptureStat<Speed>(snapshot, nameof(Speed));
+            // BUG-022: los máximos llevan los grants del canal Character como modifiers Run.
+            // Saves viejos sin estas entries siguen funcionando (queda el seed base).
+            CaptureStat<MaxHealth>(snapshot, nameof(MaxHealth));
+            CaptureStat<MaxEnergy>(snapshot, nameof(MaxEnergy));
             return snapshot;
         }
 
@@ -145,6 +149,14 @@ namespace Rollgeon.Run
                         _attrs.SetAttribute<Energy>(new Energy(0));
                     }
                     return _attrs.GetAttribute<Energy>();
+                case nameof(MaxHealth):
+                    if (!_attrs.HasAttribute<MaxHealth>())
+                        _attrs.SetAttribute<MaxHealth>(new MaxHealth(0));
+                    return _attrs.GetAttribute<MaxHealth>();
+                case nameof(MaxEnergy):
+                    if (!_attrs.HasAttribute<MaxEnergy>())
+                        _attrs.SetAttribute<MaxEnergy>(new MaxEnergy(0));
+                    return _attrs.GetAttribute<MaxEnergy>();
                 default: return null;
             }
         }

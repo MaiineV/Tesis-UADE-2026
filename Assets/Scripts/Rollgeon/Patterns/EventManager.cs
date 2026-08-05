@@ -69,9 +69,25 @@ namespace Patterns
         /// </remarks>
         public static void Trigger(EventName eventType, params object[] parameters)
         {
-            if (EventDictionary.TryGetValue(eventType, out var receiver))
+            if (!EventDictionary.TryGetValue(eventType, out var receiver) || receiver == null)
+                return;
+
+            // BUG-020: aislamiento por subscriber. Con el multicast crudo, una excepción en
+            // un subscriber temprano abortaba el resto de la cadena — en OnRoomEntered eso
+            // dejaba el HUD oculto y el click-to-move sin re-armar (softlock del piso 2).
+            // El culpable queda logueado con su stack trace en vez de matar a los demás.
+            var subscribers = receiver.GetInvocationList();
+            for (int i = 0; i < subscribers.Length; i++)
             {
-                receiver?.Invoke(parameters);
+                try
+                {
+                    ((EventReceiver)subscribers[i]).Invoke(parameters);
+                }
+                catch (System.Exception ex)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"[EventManager] Subscriber de {eventType} lanzó — se aísla y sigue la cadena: {ex}");
+                }
             }
         }
 

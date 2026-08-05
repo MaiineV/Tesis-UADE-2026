@@ -87,5 +87,42 @@ namespace Rollgeon.Tutorial
             Debug.Log(LogPrefix + $"Acción re-bloqueada: {slot}.");
             EventManager.Trigger(EventName.OnTutorialActionUnlocked, slot);
         }
+
+        // ==================================================================
+        // BUG-019 — lock temporal por paso (ventana exclusiva)
+        // ==================================================================
+
+        /// <summary>
+        /// Copia del set de slots bloqueados, para restaurar tras un lock temporal
+        /// por paso (<see cref="LockAllExcept"/> → <see cref="RestoreTo"/>).
+        /// </summary>
+        public HashSet<HeroBehaviorSlot> SnapshotLocked()
+            => new HashSet<HeroBehaviorSlot>(_lockedSlots);
+
+        /// <summary>
+        /// Bloquea todos los slots salvo <paramref name="allowed"/>. Reusa
+        /// <see cref="Lock"/>: idempotente y con evento por slot que cambia.
+        /// </summary>
+        public void LockAllExcept(HeroBehaviorSlot allowed)
+        {
+            foreach (HeroBehaviorSlot slot in Enum.GetValues(typeof(HeroBehaviorSlot)))
+            {
+                if (slot != allowed) Lock(slot);
+            }
+        }
+
+        /// <summary>
+        /// Restaura el set exacto de un snapshot: lockea lo que estaba lockeado y
+        /// deslockea el resto. No-op con snapshot null.
+        /// </summary>
+        public void RestoreTo(HashSet<HeroBehaviorSlot> lockedSnapshot)
+        {
+            if (lockedSnapshot == null) return;
+            foreach (HeroBehaviorSlot slot in Enum.GetValues(typeof(HeroBehaviorSlot)))
+            {
+                if (lockedSnapshot.Contains(slot)) Lock(slot);
+                else Unlock(slot);
+            }
+        }
     }
 }

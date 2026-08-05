@@ -74,7 +74,7 @@ MonoBehaviour:
       Data: 3|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
     - Name: Event
       Entry: 3
-      Data: 3
+      Data: 5
     - Name: Filter
       Entry: 7
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -290,7 +290,7 @@ MonoBehaviour:
     - rid: 8131244039720141462
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
-        Event: 3
+        Event: 5
         Filter:
           Mode: 2
           ComboIds:

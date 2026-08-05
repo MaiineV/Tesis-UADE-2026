@@ -55,6 +55,12 @@ namespace Rollgeon.Tutorial
         private bool _disposed;
         private bool _healTaught;
 
+        // BUG-019: ventana exclusiva por paso — durante un paso guiado que pide UNA
+        // acción, el resto se lockea temporalmente y se restaura con el snapshot.
+        // null = sin ventana activa. Regla de orden: los Unlock de progresión
+        // permanente corren ANTES de BeginExclusiveStep (así el restore los conserva).
+        private HashSet<HeroBehaviorSlot> _exclusiveSnapshot;
+
         // El enemigo golpeó al jugador mientras corría la secuencia de enseñanza
         // del combate 1 — la lección de curar se difiere al cierre de esa secuencia.
         private bool _pendingHealTeach;
@@ -383,10 +389,9 @@ namespace Rollgeon.Tutorial
 
                 // El player entra ya adyacente a la puerta — si se mueve pierde la
                 // adyacencia y la lección se rompe (feedback playtest): durante el
-                // escape solo queda FORZAR PUERTA disponible.
-                _gate?.Lock(HeroBehaviorSlot.Movement);
-                _gate?.Lock(HeroBehaviorSlot.BaseAttack);
-                if (_healTaught) _gate?.Lock(HeroBehaviorSlot.Healing);
+                // escape solo queda FORZAR PUERTA disponible (BUG-019: ventana
+                // exclusiva con snapshot, en vez de locks manuales por slot).
+                BeginExclusiveStep(HeroBehaviorSlot.ForceDoor);
 
                 // Señala el BOTÓN de la acción, no la puerta: el player entra ya
                 // adyacente a ella (feedback playtest). Al clickearlo, la lección
@@ -414,9 +419,20 @@ namespace Rollgeon.Tutorial
             if (args == null || args.Length < 2 || args[0] is not Guid roomId) return;
             if (args[1] is not CombatOutcome outcome) return;
 
+            // BUG-019: los locks del escape se levantan ante CUALQUIER outcome del
+            // combate C — antes solo en la rama Aborted, y una victoria dejaba
+            // Movement/BaseAttack lockeados para siempre (softlock).
+            if (_step == TutorialStep.EscapeTeach && roomId == _roomC)
+                EndExclusiveStep();
+
             if ((IsCombat1TeachStep(_step) || _step == TutorialStep.Combat1 || _step == TutorialStep.HealUnlocked)
                 && roomId == _roomB && outcome == CombatOutcome.Victory)
             {
+                // BUG-019: el enemigo puede morir en medio de la secuencia guiada de
+                // ataque — cerrar la ventana exclusiva antes de pasar a exploración
+                // (idempotente; sin esto Movement quedaría lockeado = softlock nuevo).
+                EndExclusiveStep();
+
                 _step = TutorialStep.GoToC;
                 ShowStep(TutorialStep.GoToC, new TutorialStepDisplayRequest
                 {
@@ -427,11 +443,7 @@ namespace Rollgeon.Tutorial
             }
             else if (_step == TutorialStep.EscapeTeach && roomId == _roomC && outcome == CombatOutcome.Aborted)
             {
-                // El lock del escape terminó — devolver las acciones enseñadas.
-                _gate?.Unlock(HeroBehaviorSlot.Movement);
-                _gate?.Unlock(HeroBehaviorSlot.BaseAttack);
-                if (_healTaught) _gate?.Unlock(HeroBehaviorSlot.Healing);
-
+                // El restore de las acciones ya corrió arriba (EndExclusiveStep).
                 // Escapó: C queda gateada y se abre la tienda. El jugador está en B.
                 if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon))
                 {
@@ -452,7 +464,10 @@ namespace Rollgeon.Tutorial
                       // La victoria puede llegar con una lección interceptada visible
                       // (curar/defensa enseñadas en el loop libre del combate 2).
                       || (_freeLoopStep == TutorialStep.Combat2
-                          && _step is TutorialStep.HealUnlocked or TutorialStep.DefenseTeach))
+                          && _step is TutorialStep.HealUnlocked or TutorialStep.DefenseTeach)
+                      // BUG-019 (borde casi inalcanzable): victoria durante EscapeTeach —
+                      // C quedó clareada, seguimos a E salteando la lección de tienda.
+                      || _step == TutorialStep.EscapeTeach)
                      && roomId == _roomC && outcome == CombatOutcome.Victory)
             {
                 _step = TutorialStep.GoToE;
@@ -463,6 +478,28 @@ namespace Rollgeon.Tutorial
                     Text = "¡Excelente! Pasá a la última sala: la de encantamientos.",
                 });
             }
+        }
+
+        /// <summary>
+        /// BUG-019: abre la ventana exclusiva — snapshotea el estado del gate (una
+        /// sola vez si se encadena) y lockea todo salvo <paramref name="allowed"/>.
+        /// </summary>
+        private void BeginExclusiveStep(HeroBehaviorSlot allowed)
+        {
+            if (_gate == null) return;
+            if (_exclusiveSnapshot == null) _exclusiveSnapshot = _gate.SnapshotLocked();
+            _gate.LockAllExcept(allowed);
+        }
+
+        /// <summary>
+        /// BUG-019: cierra la ventana exclusiva restaurando el snapshot. Idempotente —
+        /// se llama incondicionalmente en todos los exit paths de una secuencia guiada.
+        /// </summary>
+        private void EndExclusiveStep()
+        {
+            if (_exclusiveSnapshot == null) return;
+            _gate?.RestoreTo(_exclusiveSnapshot);
+            _exclusiveSnapshot = null;
         }
 
         private void OnDamageResolved(DamageResolvedPayload payload)
@@ -629,6 +666,13 @@ namespace Rollgeon.Tutorial
         {
             _step = TutorialStep.AttackTeach;
             _gate?.Unlock(HeroBehaviorSlot.BaseAttack);
+
+            // BUG-019: durante la secuencia guiada de ataque (AttackTeach → … →
+            // EndTurnTeach) solo ATACAR queda disponible — sin esto el jugador podía
+            // moverse/curarse en vez de atacar y estancar el paso (el unlock de arriba
+            // es la progresión permanente y corre antes del snapshot a propósito).
+            BeginExclusiveStep(HeroBehaviorSlot.BaseAttack);
+
             ShowStep(TutorialStep.AttackTeach, ButtonStepRequest(HeroBehaviorSlot.BaseAttack,
                 "Se desbloqueó ATACAR ({0}). Seleccionalo para elegir a quién golpear.",
                 GameplayHotkey.Attack));
@@ -852,6 +896,11 @@ namespace Rollgeon.Tutorial
         /// </summary>
         private void CompleteAttackTeach()
         {
+            // BUG-019: fin de la secuencia guiada — restaurar antes de cualquier
+            // lección siguiente (ShowHealTeach desbloquea Healing de forma permanente
+            // y debe correr FUERA de la ventana para que el restore no lo pise).
+            EndExclusiveStep();
+
             if (_pendingHealTeach)
             {
                 ShowHealTeach();

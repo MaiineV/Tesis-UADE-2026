@@ -127,16 +127,17 @@ namespace Rollgeon.UI.HUD
             if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
                 return;
 
+            // BUG-022: el max puede haber subido por un reward in-run (canal Character) —
+            // se re-resuelve en cada refresh en vez de confiar en el cache del Bind.
+            ResolveMaxHp();
             int current = attrs.GetAttributeValue<Health, int>(_playerGuid);
             SetValue(current, _maxHp);
         }
 
         private void ResolveMaxHp()
         {
-            _maxHp = 1;
-            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
-            if (ps.CurrentHero == null) return;
-            _maxHp = ps.CurrentHero.BaseMaxHp > 0 ? ps.CurrentHero.BaseMaxHp : 1;
+            int resolved = PlayerMaxHp.Resolve(_playerGuid);
+            _maxHp = resolved > 0 ? resolved : 1;
         }
 
         private void FetchInitialState()

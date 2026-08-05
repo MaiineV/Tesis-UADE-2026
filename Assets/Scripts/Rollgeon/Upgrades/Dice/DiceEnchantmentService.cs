@@ -210,7 +210,8 @@ namespace Rollgeon.Upgrades.Dice
             };
             var scratch = DispatchComboMatched(effectCtx, payload.ComboId);
             LastComboScratch = scratch;
-            ApplyScratchSideEffects(scratch);
+            // BUG-017: ComboMatched es preview (se re-dispara en cada toggle de hold) — los
+            // recursos del scratch se materializan solo at-played (ComboPlayService); acá no.
         }
 
         private void OnComboPlayedHandler(ComboPlayedPayload payload)

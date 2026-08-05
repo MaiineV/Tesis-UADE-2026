@@ -58,9 +58,27 @@ namespace Rollgeon.Entities.Visuals
             transform.position = world;
         }
 
+        /// <summary>
+        /// Cancela la animación de path en curso (si la hay) dejando al pawn donde está.
+        /// </summary>
+        /// <remarks>
+        /// BUG-021: la coroutine de <see cref="AnimatePath"/> recalcula
+        /// <c>grid.GridToWorld(next)</c> por step. Al cruzar una sala, LoadRoom cambia el
+        /// GridOrigin y los steps restantes del path viejo se remapean al espacio de la
+        /// sala nueva — el pawn "seguía de largo" hasta la puerta siguiente.
+        /// </remarks>
+        public void StopMovement()
+        {
+            if (_moveAnim == null) return;
+            StopCoroutine(_moveAnim);
+            _moveAnim = null;
+        }
+
         public void SnapToGrid(IGridManager grid, GridCoord coord)
         {
             if (grid == null) return;
+            // Un snap es posición autoritativa: cualquier path en vuelo quedó obsoleto.
+            StopMovement();
             var pos = grid.GridToWorld(coord);
             pos.y += PawnYOffset;
             transform.position = pos;
@@ -111,11 +129,7 @@ namespace Rollgeon.Entities.Visuals
         {
             if (grid == null || path == null || path.Count == 0) return;
 
-            if (_moveAnim != null)
-            {
-                StopCoroutine(_moveAnim);
-                _moveAnim = null;
-            }
+            StopMovement();
 
             // Sin coroutines (EditMode) o path trivial → snap al destino y listo.
             if (!Application.isPlaying || path.Count < 2)

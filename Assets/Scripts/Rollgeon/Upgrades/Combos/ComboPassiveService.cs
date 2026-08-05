@@ -360,7 +360,9 @@ namespace Rollgeon.Upgrades.Combos
             }
 
             LastComboScratch = scratch;
-            ApplyScratchSideEffects(scratch);
+            // BUG-017 (canal combos): ComboMatched es preview y se re-dispara en cada
+            // toggle de hold — los recursos del scratch se materializan solo at-played
+            // (ComboPlayService); acá solo queda el canal de daño (LastComboScratch).
         }
 
         private void OnComboPlayed(ComboPlayedPayload payload)

@@ -107,9 +107,12 @@ namespace Rollgeon.Run
             //    reportables desde acá (push, frame wait, generar dungeon, restaurar
             //    fase) — el último llega a 1f y dispara el reveal solo.
             const int totalSteps = 4;
-            ServiceLocator.TryGetService<IScreenManager>(out var screens);
             ServiceLocator.TryGetService<ILoadingScreenService>(out var loading);
-            loading?.Show(onRevealComplete: () => screens?.PushByStringId("ExplorationHUD"));
+            // BUG-020: acá había un re-push de "ExplorationHUD" al completar el reveal. El
+            // HUD nunca sale del stack durante la run (el LoadingScreen es un canvas aparte,
+            // no una BaseScreen), así que el push duplicaba la entry en el ScreenManager —
+            // corrupción latente que crecía +1 por piso y desbalanceaba los pops de combate.
+            loading?.Show();
             loading?.ReportProgress(1 / (float)totalSteps);
 
             // Un frame para que la pantalla de carga renderice y tape el swap del piso.

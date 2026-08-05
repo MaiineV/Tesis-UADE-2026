@@ -1,6 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
+using Patterns;
+using Rollgeon.Combos;
+using Rollgeon.Economy;
+using Rollgeon.Effects;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Combos.Triggers.Concretes;
 using UnityEditor;
@@ -42,6 +47,172 @@ namespace Rollgeon.Upgrades.Dice.Tests
             }
 
             Assert.IsEmpty(offenders.ToString(), "Assets con triggers legacy sin migrar:\n" + offenders);
+        }
+
+        /// <summary>
+        /// Repro del reporte "encantamiento con combo asignado otorga en cualquier combo":
+        /// carga el ASSET REAL (Ench_Avaro, oro solo con trío/poker/generala) y despacha
+        /// su trigger con un combo fuera y uno dentro de la whitelist. Valida juntos la
+        /// serialización del ComboFilter (Odin + SerializeReference) y el gate de RunIf.
+        /// </summary>
+        [Test]
+        public void Ench_Avaro_RealAsset_GrantsGoldOnlyForWhitelistedCombos()
+        {
+            // Arrange — asset real + economía fake.
+            var avaro = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(
+                "Assets/Rollgeon/Upgrades/Dice/Enchantments/Ench_Avaro.asset");
+            Assert.IsNotNull(avaro, "Ench_Avaro.asset no encontrado — ¿se movió el catálogo?");
+
+            Triggers.ExecuteEffectsOnDiceEvent bridge = null;
+            foreach (var trigger in avaro.Triggers)
+            {
+                if (trigger is Triggers.ExecuteEffectsOnDiceEvent b) { bridge = b; break; }
+            }
+            Assert.IsNotNull(bridge, "Ench_Avaro no tiene ExecuteEffectsOnDiceEvent.");
+            Assert.AreEqual(Triggers.EnchantmentHookEvent.ComboPlayed, bridge.Event,
+                "BUG-017: el trigger de recursos debe estar en ComboPlayed.");
+            Assert.IsNotNull(bridge.Filter, "El ComboFilter deserializó null — con filtro null RunIf otorga en CUALQUIER combo.");
+            Assert.AreEqual(ComboFilterMode.ComboIds, bridge.Filter.Mode,
+                "El filtro deserializó en modo AnyCombo — otorgaría en cualquier combo.");
+            CollectionAssert.Contains(bridge.Filter.ComboIds, "combo.trio");
+
+            var economy = new AuditFakeEconomy();
+            ServiceLocator.AddService<IEconomyService>(economy, ServiceScope.Global);
+            try
+            {
+                // Act 1 — combo FUERA de la whitelist (par): no debe otorgar oro.
+                bridge.OnComboPlayed(BuildPlayedCtx("combo.pair"));
+                int goldAfterPair = economy.CurrentGold;
+
+                // Act 2 — combo DENTRO de la whitelist (trío): otorga.
+                bridge.OnComboPlayed(BuildPlayedCtx("combo.trio"));
+
+                // Assert
+                Assert.AreEqual(0, goldAfterPair,
+                    "Un par NO está en la whitelist de Avaro — el oro no debe otorgarse.");
+                Assert.Greater(economy.CurrentGold, 0,
+                    "Un trío SÍ está en la whitelist de Avaro — el oro debe otorgarse.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        private static EnchantmentTriggerContext BuildPlayedCtx(string comboId)
+        {
+            return new EnchantmentTriggerContext
+            {
+                Effect = new EffectContext
+                {
+                    SourceGuid = Guid.NewGuid(),
+                    DiceResult = new[] { 3, 3, 3, 2, 2 },
+                    KeptDice = new[] { 3, 3, 3 },
+                    KeptDiceOriginalIndices = new[] { 0, 1, 2 },
+                    ComboResult = ComboDetectionResult.Match(comboId, baseDamage: 10, countUsed: 3,
+                        contributingIndices: new[] { 0, 1, 2 }),
+                },
+                Scratch = new EnchantmentScratch(),
+                Slot = new EnchantmentSlotRef(Rollgeon.Dice.DiceType.D6, 0, 0),
+                ComboId = comboId,
+            };
+        }
+
+        private sealed class AuditFakeEconomy : IEconomyService
+        {
+            public int CurrentGold { get; private set; }
+            public void Add(int amount) { if (amount > 0) CurrentGold += amount; }
+            public bool Spend(int amount)
+            {
+                if (amount > CurrentGold) return false;
+                CurrentGold -= amount;
+                return true;
+            }
+            public bool CanAfford(int amount) => amount <= 0 || CurrentGold >= amount;
+            public void ResetTo(int amount) => CurrentGold = amount;
+        }
+
+        /// <summary>
+        /// Regression BUG-017: ComboMatched es preview y se re-dispara en cada toggle de
+        /// hold del reroll. Un efecto de apply directo (oro, escudo…) en ese hook es
+        /// farmeable infinito — los recursos van en ComboPlayed. En preview solo se
+        /// admiten writers de scratch.
+        /// </summary>
+        [Test]
+        public void EnchantmentAssets_ComboMatchedTriggers_OnlyContainScratchWriters()
+        {
+            var offenders = new StringBuilder();
+
+            foreach (var guid in AssetDatabase.FindAssets("t:EnchantmentSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var ench = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(path);
+                if (ench?.Triggers == null) continue;
+
+                foreach (var trigger in ench.Triggers)
+                {
+                    if (!(trigger is Triggers.ExecuteEffectsOnDiceEvent bridge)) continue;
+                    if (bridge.Event != Triggers.EnchantmentHookEvent.ComboMatched) continue;
+                    if (bridge.Effects == null) continue;
+
+                    foreach (var group in bridge.Effects)
+                    {
+                        if (group?.Effects == null) continue;
+                        foreach (var effect in group.Effects)
+                        {
+                            if (effect == null || effect is Rollgeon.Effects.IComboScratchWriter) continue;
+                            offenders.AppendLine(
+                                $"{path}: {effect.GetType().Name} en hook ComboMatched " +
+                                "(apply directo en preview = farmeable por toggle de hold)");
+                        }
+                    }
+                }
+            }
+
+            Assert.IsEmpty(offenders.ToString(),
+                "Encantamientos con efectos de apply directo en ComboMatched:\n" + offenders);
+        }
+
+        /// <summary>
+        /// Espejo del audit BUG-017 para el canal combos: en pasivas, el hook
+        /// ComboMatched es preview (re-dispara por toggle de hold) — los efectos de
+        /// apply directo (oro, escudo…) van en ComboPlayed; en preview solo writers
+        /// de scratch (FlatDamageBonus vive aparte y es scratch-only).
+        /// </summary>
+        [Test]
+        public void ComboPassiveAssets_ComboMatchedTriggers_OnlyContainScratchWriters()
+        {
+            var offenders = new StringBuilder();
+
+            foreach (var guid in AssetDatabase.FindAssets("t:ComboPassiveSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var passive = AssetDatabase.LoadAssetAtPath<ComboPassiveSO>(path);
+                if (passive?.ExtraTriggers == null) continue;
+
+                foreach (var trigger in passive.ExtraTriggers)
+                {
+                    if (!(trigger is ExecuteEffectsOnEvent bridge)) continue;
+                    if (bridge.Event != Rollgeon.Upgrades.Combos.Triggers.Concretes
+                            .ComboPassiveHookEvent.ComboMatched) continue;
+                    if (bridge.Effects == null) continue;
+
+                    foreach (var group in bridge.Effects)
+                    {
+                        if (group?.Effects == null) continue;
+                        foreach (var effect in group.Effects)
+                        {
+                            if (effect == null || effect is Rollgeon.Effects.IComboScratchWriter) continue;
+                            offenders.AppendLine(
+                                $"{path}: {effect.GetType().Name} en hook ComboMatched " +
+                                "(apply directo en preview = farmeable por toggle de hold)");
+                        }
+                    }
+                }
+            }
+
+            Assert.IsEmpty(offenders.ToString(),
+                "Pasivas con efectos de apply directo en ComboMatched:\n" + offenders);
         }
 
         [Test]
