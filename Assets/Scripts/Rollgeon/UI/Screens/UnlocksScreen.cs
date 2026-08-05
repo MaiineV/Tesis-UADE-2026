@@ -41,12 +41,16 @@ namespace Rollgeon.UI.Screens
         protected override void OnPushed(IScreenPayload payload)
         {
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
+
+            Rollgeon.Localization.LocalizationRefresh.Subscribe(Rebuild);
             Rebuild();
         }
 
         protected override void OnPopped()
         {
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
+
+            Rollgeon.Localization.LocalizationRefresh.Unsubscribe(Rebuild);
             ClearRows();
         }
 

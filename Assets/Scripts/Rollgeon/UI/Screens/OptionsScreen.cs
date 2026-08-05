@@ -78,6 +78,10 @@ namespace Rollgeon.UI.Screens
             if (_resetSaveButton != null) _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
 
+            // Los botones ES/EN viven en este mismo panel: sin esto, cambiar el idioma
+            // dejaba todo el panel con el texto del idioma anterior hasta reabrirlo.
+            LocalizationRefresh.Subscribe(RefreshLabels);
+
             DisarmReset();
             RefreshLabels();
             PlayEntrance();
@@ -90,6 +94,7 @@ namespace Rollgeon.UI.Screens
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
 
+            LocalizationRefresh.Unsubscribe(RefreshLabels);
             DisarmReset();
         }
 
@@ -143,6 +148,21 @@ namespace Rollgeon.UI.Screens
 
             RefreshTutorialToggleLabel();
             RefreshAnalyticsToggleLabel();
+            RefreshResetSaveLabel();
+        }
+
+        /// <summary>
+        /// El label de borrar partida tiene dos textos según el estado de la
+        /// confirmación de dos clicks, así que su refresco depende de <c>_resetArmed</c>
+        /// y no puede vivir suelto en <see cref="RefreshLabels"/>.
+        /// </summary>
+        private void RefreshResetSaveLabel()
+        {
+            if (_resetSaveLabel == null) return;
+
+            _resetSaveLabel.text = _resetArmed
+                ? LocalizedContent.Ui("menu.reset_confirm", "¿Seguro?")
+                : LocalizedContent.Ui("menu.delete", "Borrar partida");
         }
 
         // ================================================================
@@ -222,11 +242,10 @@ namespace Rollgeon.UI.Screens
         {
             _resetArmed = true;
             _armedAtUnscaled = Time.unscaledTime;
+            RefreshResetSaveLabel();
 
             if (_resetSaveLabel != null)
             {
-                _resetSaveLabel.text = LocalizedContent.Ui("menu.reset_confirm", "¿Seguro?");
-
                 // Shake extra al del click del JuicyMenuButton: el estado armado
                 // tiene que leerse más fuerte que un click normal.
                 if (_settings != null)
@@ -271,11 +290,7 @@ namespace Rollgeon.UI.Screens
         private void DisarmReset()
         {
             _resetArmed = false;
-
-            if (_resetSaveLabel != null)
-            {
-                _resetSaveLabel.text = LocalizedContent.Ui("menu.delete", "Borrar partida");
-            }
+            RefreshResetSaveLabel();
 
             if (_resetSaveJuice != null)
             {

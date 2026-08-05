@@ -76,6 +76,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.Subscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
             EventManager.Subscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
+            Rollgeon.Localization.LocalizationRefresh.Subscribe(RefreshRoomInfo);
 
             if (_pauseButton != null) _pauseButton.onClick.AddListener(OnPauseClicked);
             if (_proceedButton != null) _proceedButton.interactable = false;
@@ -92,6 +93,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.UnSubscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
             EventManager.UnSubscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
+            Rollgeon.Localization.LocalizationRefresh.Unsubscribe(RefreshRoomInfo);
 
             if (_pauseButton != null) _pauseButton.onClick.RemoveListener(OnPauseClicked);
 
