@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using Rollgeon.Tutorial;
+using Rollgeon.UI;
 
 namespace Rollgeon.EditorTools.Localization
 {
@@ -26,6 +27,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedEnchantments();
             SeedUnlockHints();
             SeedMiscContent();
+            SeedRollCost();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -388,6 +390,39 @@ namespace Rollgeon.EditorTools.Localization
             Content("Enchantment.name", "Sala de Encantamiento", "Enchantment Room");
             Content("room_tutorial_combat_b.name", "Tutorial — Combate 1", "Tutorial — Combat 1");
             Content("room_tutorial_combat_c.name", "Tutorial — Combate 2", "Tutorial — Combat 2");
+        }
+
+        // ==================================================================
+        // Costo en energía de los rolls extra (tabla UI)
+        // ==================================================================
+
+        /// <remarks>
+        /// El <c>{ENERGY}</c> lo expande <c>IconSpriteTags</c> al glifo del atlas
+        /// <b>después</b> de traducir, y el <c>{0}</c> del chain prompt lo reemplaza
+        /// <c>ChainRollPromptView.Show</c> con el nombre de la fase — los dos tokens
+        /// tienen que sobrevivir la traducción.
+        /// <para>
+        /// "Reroll" y "Roll" quedan iguales en ES y EN a propósito: son los términos que
+        /// el juego ya venía mostrando sin traducir. Están listados en
+        /// <c>LocalizationTablesTests.IdenticalByDesign</c> para que el guard de
+        /// "columna EN copiada del español" no los marque.
+        /// </para>
+        /// </remarks>
+        private static void SeedRollCost()
+        {
+            Ui(UiTextKeys.RerollPaid,
+                "Reroll  -1 {ENERGY}",
+                "Reroll  -1 {ENERGY}");
+            Ui(UiTextKeys.RerollPaidHint,
+                "Cada roll adicional cuesta 1 de Energía.",
+                "Each additional roll costs 1 Energy.");
+
+            Ui(UiTextKeys.ChainRollPaid,
+                "{0} Roll  -1 {ENERGY}",
+                "{0} Roll  -1 {ENERGY}");
+            Ui(UiTextKeys.ChainRollPaidHint,
+                "Cada roll adicional cuesta 1 de Energía.",
+                "Each additional roll costs 1 Energy.");
         }
 
         // ==================================================================

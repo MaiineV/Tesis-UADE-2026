@@ -458,6 +458,22 @@ MonoBehaviour:
     m_Localized: "Hac\xE9 click para continuar"
     m_Metadata:
       m_Items: []
+  - m_Id: 7859475544043520
+    m_Localized: Reroll  -1 {ENERGY}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7859475594375168
+    m_Localized: "Cada roll adicional cuesta 1 de Energ\xEDa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7859475594375169
+    m_Localized: '{0} Roll  -1 {ENERGY}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7859475594375170
+    m_Localized: "Cada roll adicional cuesta 1 de Energ\xEDa."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
