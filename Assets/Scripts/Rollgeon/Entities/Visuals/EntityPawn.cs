@@ -30,10 +30,19 @@ namespace Rollgeon.Entities.Visuals
         // el ritmo (≈8 tiles/s a 0.12). Override por arg si querés tunear.
         private const float DefaultSecondsPerStep = 0.12f;
 
+        // Bool del Animator que gatea Idle ⇄ Run. Lo declaran AnimCon_Warrior, _Goblin
+        // (CardEnemy), _Healer, _Mecha y _RangedMachine. Los que todavía no tienen clip de
+        // caminata (SunkedGrand, GeneralDirector) no lo declaran — ver _hasMovementParam.
+        private const string MovementParam = "Movement";
+
         [SerializeField, Tooltip("Barra de HP world-space. Null en heroes o pawns sin barra.")]
         private WorldSpaceHealthBar _healthBar;
 
         private Coroutine _moveAnim;
+
+        private Animator _animator;
+        private bool _animatorResolved;
+        private bool _hasMovementParam;
 
         public WorldSpaceHealthBar HealthBar => _healthBar;
 
@@ -69,6 +78,11 @@ namespace Rollgeon.Entities.Visuals
         /// </remarks>
         public void StopMovement()
         {
+            // Incondicional (antes del guard): StopCoroutine no corre el cierre de la
+            // corutina, así que este es el único lugar que garantiza que el pawn no quede
+            // corriendo en el lugar cuando se le corta el path.
+            SetMovementAnim(false);
+
             if (_moveAnim == null) return;
             StopCoroutine(_moveAnim);
             _moveAnim = null;
@@ -138,6 +152,7 @@ namespace Rollgeon.Entities.Visuals
                 return;
             }
 
+            SetMovementAnim(true);
             _moveAnim = StartCoroutine(AnimatePathCoroutine(grid, path, Mathf.Max(0.01f, secondsPerStep), movement));
         }
 
@@ -194,7 +209,45 @@ namespace Rollgeon.Entities.Visuals
                 transform.position = endPos;
                 i++;
             }
+            SetMovementAnim(false);
             _moveAnim = null;
+        }
+
+        /// <summary>
+        /// Prende/apaga el bool <see cref="MovementParam"/> del Animator del modelo.
+        /// No-op si el pawn no tiene Animator (primitives del FP) o si su controller no
+        /// declara el param — setearlo igual haría que Unity logueara un warning por step.
+        /// </summary>
+        private void SetMovementAnim(bool moving)
+        {
+            if (!_animatorResolved)
+            {
+                _animatorResolved = true;
+                // El Animator vive en el hijo del modelo rigeado, no en la raíz del pawn.
+                // Mismo cuidado con el fake-null que FeedbackManager.ResolveAnimator: con
+                // `??` el fallback al hijo no dispara porque GetComponent devuelve un
+                // UnityEngine.Object "null" que no es null para el operador.
+                var own = GetComponent<Animator>();
+                _animator = own != null ? own : GetComponentInChildren<Animator>(includeInactive: true);
+                _hasMovementParam = HasBoolParam(_animator, MovementParam);
+            }
+
+            if (_animator == null || !_hasMovementParam) return;
+            _animator.SetBool(MovementParam, moving);
+        }
+
+        private static bool HasBoolParam(Animator animator, string param)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return false;
+
+            var parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].type == AnimatorControllerParameterType.Bool
+                    && parameters[i].name == param)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>
