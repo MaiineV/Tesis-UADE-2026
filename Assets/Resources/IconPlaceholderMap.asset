@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5176c59aceb9bb4782f64acfb1c9811, type: 3}
+  m_Name: IconPlaceholderMap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Utility.IconPlaceholderMapSO
+  mappings:
+  - placeholder: ENERGY
+    spriteName: Energy
+  - placeholder: GOLD
+    spriteName: Gold
+  - placeholder: HEALTH
+    spriteName: Health
+  - placeholder: SMILING FACE WITH SMILING EYES
+    spriteName: Smiling face with smiling eyes
+  - placeholder: 1F60B
+    spriteName: 1f60b
+  - placeholder: 1F60D
+    spriteName: 1f60d
+  - placeholder: 1F60E
+    spriteName: 1f60e
+  - placeholder: GRINNING FACE
+    spriteName: Grinning face
+  - placeholder: 1F601
+    spriteName: 1f601
+  - placeholder: FACE WITH TEARS OF JOY
+    spriteName: Face with tears of joy
+  - placeholder: 1F603
+    spriteName: 1f603
+  - placeholder: 1F604
+    spriteName: 1f604
+  - placeholder: 1F605
+    spriteName: 1f605
+  - placeholder: 1F606
+    spriteName: 1f606
+  - placeholder: 1F609
+    spriteName: 1f609
+  - placeholder: .NOTDEF
+    spriteName: .notdef
+  - placeholder: 1F923
+    spriteName: 1f923
+  - placeholder: 263A
+    spriteName: 263a
+  - placeholder: 2639
+    spriteName: 2639
