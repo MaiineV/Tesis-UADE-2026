@@ -99,6 +99,34 @@ namespace Rollgeon.Upgrades.Dice.Tests
             }
         }
 
+        /// <summary>
+        /// BUG-030b: Afilado ("el mínimo es siempre la mitad del máximo redondeado
+        /// arriba") tenía <c>_faceFilter</c> null y solo compensaba con un bonus de
+        /// daño post-roll (<see cref="Readers.ReadCarrierRollDelta"/>) — no restringía
+        /// caras. Carga el ASSET REAL y valida que ahora tenga <see cref="MinHalfMaxFilter"/>
+        /// puesto y el trigger compensatorio retirado (con el filtro puesto, el delta
+        /// del trigger legacy sería siempre 0).
+        /// </summary>
+        [Test]
+        public void Ench_Afilado_RealAsset_RestrictsFacesInsteadOfCompensatingWithBonus()
+        {
+            var afilado = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(
+                "Assets/Rollgeon/Upgrades/Dice/Enchantments/Ench_Afilado.asset");
+            Assert.IsNotNull(afilado, "Ench_Afilado.asset no encontrado — ¿se movió el catálogo?");
+
+            Assert.IsNotNull(afilado.FaceFilter, "Afilado debe tener un FaceFilter que restrinja caras.");
+            Assert.IsInstanceOf<Filters.MinHalfMaxFilter>(afilado.FaceFilter,
+                "Afilado debe usar MinHalfMaxFilter (mínimo = mitad del máximo redondeada arriba).");
+
+            var allowed = afilado.FaceFilter.GetAllowedFaces(
+                Rollgeon.Dice.DiceType.D4, new[] { 1, 2, 3, 4 });
+            CollectionAssert.AreEquivalent(new[] { 2, 3, 4 }, allowed);
+
+            CollectionAssert.IsEmpty(afilado.Triggers,
+                "El trigger compensatorio (ExecuteEffectsOnDiceEvent/EffAddComboBonus/ReadCarrierRollDelta) " +
+                "debe retirarse — con el filtro puesto el delta siempre daría 0.");
+        }
+
         private static EnchantmentTriggerContext BuildPlayedCtx(string comboId)
         {
             return new EnchantmentTriggerContext

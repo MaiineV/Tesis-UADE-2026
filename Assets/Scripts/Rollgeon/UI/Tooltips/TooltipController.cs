@@ -13,8 +13,9 @@ namespace Rollgeon.UI.Tooltips
     /// </summary>
     /// <remarks>
     /// <b>Layout esperado:</b> un sub-GameObject "Panel" con Image de fondo + TMP_Text hijo.
-    /// El panel debe tener pivot top-left (o ajustar el cursorOffset) para que el cursor
-    /// no quede tapado por el tooltip.
+    /// El panel debe tener pivot inferior-centro (0.5, 0): crece hacia arriba, centrado
+    /// sobre el punto de anclaje (ver <see cref="TooltipPlacement.ScreenPosOf"/>), y no
+    /// tapa el cursor porque el offset por default lo levanta por encima del anchor.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Tooltips/Tooltip Controller")]
     public sealed class TooltipController : MonoBehaviour
@@ -31,10 +32,12 @@ namespace Rollgeon.UI.Tooltips
         [Required("Arrastrar el TMP_Text donde se escribe el texto.")]
         [SerializeField] private TMP_Text _text;
 
-        [Tooltip("Offset en píxeles desde el punto-pantalla del anchor. Default (16, -16): " +
-                 "un poco a la derecha y abajo del objeto. Solo aplica en modo AutoFit — " +
-                 "en Fixed la posición configurada en el trigger es exacta.")]
-        [SerializeField] private Vector2 _anchorOffset = new Vector2(16f, -16f);
+        [Tooltip("Offset en píxeles desde el punto-pantalla del anchor. Default (0, 12): " +
+                 "con el anclaje al centro del rect y pivot inferior-centro del panel, " +
+                 "el offset es vertical puro — levanta el tooltip por encima del elemento. " +
+                 "Solo aplica en modo AutoFit — en Fixed no se suma (el trigger ya resolvió " +
+                 "su propia posición), pero igual se clampea a pantalla.")]
+        [SerializeField] private Vector2 _anchorOffset = new Vector2(0f, 12f);
 
         [Tooltip("Margen mínimo en píxeles del canvas entre el panel y el borde de la " +
                  "pantalla cuando AutoFit re-posiciona el tooltip.")]
@@ -118,7 +121,10 @@ namespace Rollgeon.UI.Tooltips
         /// Variante con modo de posicionamiento. <see cref="TooltipPlacementMode.AutoFit"/>
         /// aplica el offset global y re-posiciona para que el panel entre completo en el
         /// canvas; <see cref="TooltipPlacementMode.Fixed"/> usa <paramref name="screenPos"/>
-        /// exacto sin offset ni clamp (el trigger ya resolvió anchor + offset configurados).
+        /// exacto sin offset (el trigger ya resolvió anchor + offset configurados). Ambos
+        /// modos clampean al canvas — Fixed también puede irse de pantalla en resoluciones
+        /// chicas o cerca de un borde, y el clamp es una red de seguridad, no invalida la
+        /// posición configurada salvo que efectivamente se salga.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId, TooltipPlacementMode placement)
         {
@@ -130,9 +136,7 @@ namespace Rollgeon.UI.Tooltips
                 ? screenPos
                 : screenPos + _anchorOffset;
             PositionAt(target);
-
-            if (placement == TooltipPlacementMode.AutoFit)
-                ClampToCanvas();
+            ClampToCanvas();
         }
 
         /// <summary>
@@ -195,6 +199,13 @@ namespace Rollgeon.UI.Tooltips
         /// rect del canvas (con <see cref="_screenPadding"/> de margen). El default de
         /// anchor abajo-derecha hacía que tooltips cerca del borde quedaran cortados.
         /// </summary>
+        /// <remarks>
+        /// <see cref="RectTransform.GetWorldCorners"/> devuelve los 4 vértices reales del
+        /// rect ya resueltos (pivot incluido) — el cálculo de bordes es agnóstico al pivot
+        /// del panel, así que el pivot inferior-centro (0.5, 0) no necesita casos especiales
+        /// acá; el shift se aplica sobre <c>_root.position</c> (el pivot), que desplaza el
+        /// rect completo por igual sin importar dónde esté el pivot dentro de él.
+        /// </remarks>
         private void ClampToCanvas()
         {
             if (_root == null || _hostCanvasRect == null) return;

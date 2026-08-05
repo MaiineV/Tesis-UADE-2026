@@ -18,6 +18,8 @@ namespace Rollgeon.DevConsole.Tests
         [SetUp]
         public void SetUp()
         {
+            ServiceLocator.Clear();
+
             _pid = Guid.NewGuid();
             var attrs = new ModifiableAttributes();
             attrs.SetAttribute<Health>(new Health(50));
@@ -27,9 +29,16 @@ namespace Rollgeon.DevConsole.Tests
             var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
             hero.BaseMaxHp = 100;
 
+            var player = new FakePlayerService { PlayerGuid = _pid, CurrentHero = hero };
             _ctx = new FakeConsoleContext { PlayerGuid = _pid, IsRunActive = true };
             _ctx.Register<AttributesManager>(_am);
-            _ctx.Register<Rollgeon.Player.IPlayerService>(new FakePlayerService { PlayerGuid = _pid, CurrentHero = hero });
+            _ctx.Register<Rollgeon.Player.IPlayerService>(player);
+
+            // BUG-022: PinToMax resuelve el máximo vía PlayerMaxHp.Resolve, que lee
+            // del ServiceLocator (no del console context) — sin este registro el max
+            // da 0 y el pin no corre.
+            ServiceLocator.AddService<Rollgeon.Player.IPlayerService>(player);
+            ServiceLocator.AddService<AttributesManager>(_am);
         }
 
         [TearDown]
@@ -37,6 +46,7 @@ namespace Rollgeon.DevConsole.Tests
         {
             _am.Dispose();
             EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
         }
 
         [Test]

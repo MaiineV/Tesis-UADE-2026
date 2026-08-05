@@ -63,15 +63,17 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void AllSevenCapabilities_CarryNotYetWired()
+        public void RemainingUnwiredCapabilities_CarryNotYetWired()
         {
             // El tooling del editor detecta lo no-wireado por reflexión sobre este
-            // atributo — las 7 capabilities deben declararlo hasta tener consumidor.
+            // atributo — las capabilities sin consumidor deben declararlo.
+            // CapForceRerollOnTurn ya no está: la wireó ForcedRerollCapabilityService
+            // (BUG-030).
             var capabilityTypes = new[]
             {
                 typeof(CapPreventHolding), typeof(CapWildcard), typeof(CapLadderStep),
                 typeof(CapMimeticCopy), typeof(CapRerollKeepHighest),
-                typeof(CapForceRerollOnTurn), typeof(CapAnchorAccumulate),
+                typeof(CapAnchorAccumulate),
             };
 
             foreach (var type in capabilityTypes)
@@ -80,6 +82,14 @@ namespace Rollgeon.Upgrades.Dice.Tests
                     $"{type.Name} debe estar marcada [NotYetWired] hasta que exista su consumidor.");
                 Assert.IsTrue(typeof(IEnchantmentCapability).IsAssignableFrom(type));
             }
+        }
+
+        [Test]
+        public void CapForceRerollOnTurn_IsWired_DoesNotCarryNotYetWired()
+        {
+            // BUG-030: si este test rompe, alguien re-marcó la capability como no
+            // wireada — el consumidor real es ForcedRerollCapabilityService.
+            Assert.IsNull(typeof(CapForceRerollOnTurn).GetCustomAttribute<NotYetWiredAttribute>());
         }
     }
 }

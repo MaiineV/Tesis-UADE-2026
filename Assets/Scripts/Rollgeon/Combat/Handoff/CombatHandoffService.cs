@@ -88,6 +88,15 @@ namespace Rollgeon.Combat.Handoff
         // ataque elegido antes de tirar). Guid.Empty = nadie marcado.
         private Guid _creaseTargetGuid;
 
+        // BUG-030 (Torpe): true mientras hay un relanzamiento completo forzado
+        // agendado y sin ejecutar. Congela Confirm/EnergyReroll/EndTurn durante la
+        // ventana del delay para que el jugador no consuma la mano que está por volar.
+        private bool _forcedRerollPending;
+
+        // Seam de tests: los EditMode no tienen player loop — inyectan un scheduler
+        // sincrónico o capturan el callback. Default (null): PrimeTween.Tween.Delay.
+        internal Action<float, Action> ForcedRerollScheduler { get; set; }
+
         public bool IsHandoffInProgress { get; private set; }
 
         public CombatHandoffService(
@@ -306,6 +315,9 @@ namespace Rollgeon.Combat.Handoff
             _selectedBehavior = null;
             _awaitingFirstRoll = false;
             _awaitingPlayerSelection = false;
+            // BUG-030: un forced reroll agendado no sobrevive a su combate — el
+            // callback del scheduler chequea el flag y hace no-op si llegó tarde.
+            _forcedRerollPending = false;
             _activeChain = null;
             _chainPhaseIndex = 0;
             _chainPhaseSelectionResult = null;
@@ -344,6 +356,10 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnEndTurnRequested = () =>
             {
+                // BUG-030: la ventana del forced reroll es corta (~0.35s) — cerrar el
+                // turno en el medio dejaría el callback re-tirando sin turno activo.
+                if (_forcedRerollPending) return;
+
                 // BUG-013: si hay un Movement pendiente de selección, End Turn lo cancela
                 // (con reembolso) en vez de quedar inerte. El jugador puede volver a apretar
                 // End Turn para cerrar el turno.
@@ -393,6 +409,9 @@ namespace Rollgeon.Combat.Handoff
 
             void DoConfirm()
             {
+                // BUG-030: con un relanzamiento forzado agendado, la mano actual está
+                // por volar — confirmar ahora ejecutaría un combo que no va a existir.
+                if (_forcedRerollPending) return;
                 if (_selectedBehavior == null) return;
 
                 if (_activeChain != null)
@@ -877,11 +896,60 @@ namespace Rollgeon.Combat.Handoff
                 grabThrowSvc.GrabRerollHandler = keepOverride => TryEnergyReroll(hud, playerGuid, keepOverride);
         }
 
+        // ======================================================================
+        // BUG-030 (Torpe): relanzamiento completo forzado
+        // ======================================================================
+
+        /// <inheritdoc />
+        public bool TryScheduleForcedFullHandReroll(Guid playerGuid, float delaySeconds = 0.35f)
+        {
+            if (_forcedRerollPending) return false;
+            if (_selectedBehavior == null || !_selectedBehavior.NeedsDiceRoll) return false;
+            if (_lastFaces == null || _lastFaces.Length == 0) return false;
+            if (ThrowBusy()) return false;
+
+            // Diferido fuera del dispatch de OnDiceRolled: un reroll sincrónico
+            // anidaría el reveal nuevo dentro del evento viejo y los handlers
+            // restantes (DiceZoneView) pintarían las caras viejas encima.
+            _forcedRerollPending = true;
+            var scheduler = ForcedRerollScheduler
+                ?? ((delay, callback) => PrimeTween.Tween.Delay(delay, callback));
+            scheduler(Mathf.Max(0f, delaySeconds), () => ExecuteForcedFullHandReroll(playerGuid));
+            return true;
+        }
+
+        private void ExecuteForcedFullHandReroll(Guid playerGuid)
+        {
+            // ResetCombatPhaseState pudo bajar el pending (fin de combate, cancel):
+            // el callback tardío no debe re-tirar sobre un contexto muerto.
+            if (!_forcedRerollPending) return;
+            _forcedRerollPending = false;
+            if (_lastFaces == null || _selectedBehavior == null) return;
+            if (ThrowBusy()) return;
+
+            var bag = ResolvePlayerBag();
+            var roller = ResolveRoller();
+            if (bag == null || roller == null) return;
+
+            // keep all-false = vuela la mano entera; los dados bloqueados (Boss 1)
+            // quedan forzados a keep=true como en cualquier reroll.
+            var keep = KeepForcingBlockedDice(new bool[_lastFaces.Length], _lastFaces.Length);
+
+            // Holds marcados durante la ventana del delay quedarían fuera de sync
+            // con el reveal nuevo — se limpian antes de re-tirar.
+            if (_screenManager?.Current is CombatHUDView hud)
+                hud.ClearDiceHolds();
+
+            // Sin TryExtraRoll ni energía: el reroll del Torpe es gratis por diseño.
+            RerollViaThrow(playerGuid, bag, roller, keep);
+        }
+
         // Cuerpo compartido del reroll de combate: el botón Roll/Reroll lo invoca sin
         // keepOverride (usa los holds del HUD) y el grab-to-reroll con el mask armado
         // por el presenter. Devuelve true si el reroll efectivamente arrancó.
         private bool TryEnergyReroll(CombatHUDView hud, Guid playerGuid, bool[] keepOverride = null)
         {
+            if (_forcedRerollPending) return false;
             if (_selectedBehavior != null && !_selectedBehavior.NeedsDiceRoll) return false;
             if (ThrowBusy()) return false;
             if (_lastFaces == null) return false; // nada rolleado todavía — no hay qué re-tirar

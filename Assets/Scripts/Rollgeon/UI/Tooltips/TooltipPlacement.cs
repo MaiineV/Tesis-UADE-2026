@@ -14,8 +14,9 @@ namespace Rollgeon.UI.Tooltips
         AutoFit = 0,
 
         /// <summary>
-        /// Posición fija relativa a un RectTransform configurado + offset X/Y. No se
-        /// clampea: lo que el diseñador configuró es ley.
+        /// Posición fija relativa a un RectTransform configurado + offset X/Y. No suma
+        /// el offset global de AutoFit, pero SÍ se clampea al canvas (red de seguridad
+        /// de borde — la posición configurada por diseño sigue siendo la base).
         /// </summary>
         Fixed = 1,
     }
@@ -62,9 +63,11 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Punto-pantalla de un rect de UI. Para Canvas Screen Space Overlay,
-        /// RectTransform.position ya está en screen-space; para Camera/World se
-        /// proyecta con la cámara del canvas.
+        /// Punto-pantalla del CENTRO de un rect de UI (no su pivot — <c>rect.position</c>
+        /// es el pivot, y triggers con pivot (0,0) o (0.5,0) (PocionSlot, botones de
+        /// combate) quedaban con el tooltip descolgado hacia un costado). Para Canvas
+        /// Screen Space Overlay, el world point ya está en screen-space; para Camera/World
+        /// se proyecta con la cámara del canvas.
         /// </summary>
         public static Vector2 ScreenPosOf(RectTransform rect)
         {
@@ -75,9 +78,10 @@ namespace Rollgeon.UI.Tooltips
         private static Vector2 ScreenPosOf(RectTransform rect, Canvas canvas)
         {
             if (rect == null) return Vector2.zero;
+            Vector3 worldCenter = rect.TransformPoint(rect.rect.center);
             if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                return rect.position;
-            return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, rect.position);
+                return worldCenter;
+            return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, worldCenter);
         }
     }
 }

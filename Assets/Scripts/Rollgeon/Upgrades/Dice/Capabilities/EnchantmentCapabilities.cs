@@ -50,8 +50,11 @@ namespace Rollgeon.Upgrades.Dice
     {
     }
 
-    /// <summary>"Torpe": fuerza un reroll del dado en el turno configurado.</summary>
-    [NotYetWired("No integrado con el roll service: solo declara la intencion, no fuerza el reroll.")]
+    /// <summary>
+    /// "Torpe": en el turno configurado, al revelarse la mano del jugador, TODA la
+    /// mano se relanza sola una vez (gratis, una vez por combate). Consumidor:
+    /// <see cref="ForcedRerollCapabilityService"/>.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CapForceRerollOnTurn : IEnchantmentCapability
     {

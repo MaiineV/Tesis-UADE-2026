@@ -34,8 +34,8 @@ MonoBehaviour:
     TextColor: {r: 0.89, g: 0.29, b: 0.29, a: 1}
     Feedback:
       EffectTag: shake
-      AmplitudeMin: 2
-      AmplitudeMax: 6
+      AmplitudeMin: 0
+      AmplitudeMax: 3
       ValueForMax: 20
   - Type: 2
     Sprite: {fileID: 1270009346, guid: dac8bb8f9f8670c4b865c496b361929c, type: 3}
@@ -46,6 +46,6 @@ MonoBehaviour:
     TextColor: {r: 0.37, g: 0.77, b: 0.42, a: 1}
     Feedback:
       EffectTag: wave
-      AmplitudeMin: 2
-      AmplitudeMax: 5
+      AmplitudeMin: 0
+      AmplitudeMax: 3
       ValueForMax: 20

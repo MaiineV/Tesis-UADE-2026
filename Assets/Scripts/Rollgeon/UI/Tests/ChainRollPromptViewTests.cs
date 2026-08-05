@@ -167,5 +167,79 @@ namespace Rollgeon.UI.Tests
             Assert.DoesNotThrow(() => EventManager.Trigger(EventName.OnCombatEnd));
             Assert.IsFalse(view.gameObject.activeSelf);
         }
+
+        // BUG-034: el prompt es la affordance visible del pago — su click debe
+        // rutearse al mismo entry point que el botón Roll, y solo mientras está arriba.
+
+        private UnityEngine.UI.Button AttachButton(ChainRollPromptView view)
+        {
+            var button = view.gameObject.AddComponent<UnityEngine.UI.Button>();
+            SetPrivateField(view, "_button", button);
+            return button;
+        }
+
+        [Test]
+        public void ButtonClick_WhileShown_InvokesOnPromptClickedOnce()
+        {
+            // Arrange
+            var view = MakePrompt(out _);
+            var button = AttachButton(view);
+            int clicks = 0;
+            view.OnPromptClicked.AddListener(() => clicks++);
+            view.Show("Shield");
+
+            // Act
+            button.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, clicks);
+        }
+
+        [Test]
+        public void ButtonClick_AfterHide_DoesNotInvokeOnPromptClicked()
+        {
+            // Arrange
+            var view = MakePrompt(out _);
+            var button = AttachButton(view);
+            int clicks = 0;
+            view.OnPromptClicked.AddListener(() => clicks++);
+            view.Show("Shield");
+            view.Hide();
+
+            // Act — el listener del botón se soltó junto con las suscripciones del bus.
+            button.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(0, clicks);
+        }
+
+        [Test]
+        public void ShowTwice_ButtonClick_InvokesOnPromptClickedOnce()
+        {
+            // Arrange — dos Show seguidos no deben apilar listeners del botón.
+            var view = MakePrompt(out _);
+            var button = AttachButton(view);
+            int clicks = 0;
+            view.OnPromptClicked.AddListener(() => clicks++);
+            view.Show("Shield");
+            view.Show("Shield");
+
+            // Act
+            button.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, clicks);
+        }
+
+        [Test]
+        public void Show_WithoutButtonRef_DoesNotThrow()
+        {
+            // Arrange — prefab sin botón wireado (rollback / setup viejo).
+            var view = MakePrompt(out _);
+
+            // Act / Assert
+            Assert.DoesNotThrow(() => view.Show("Shield"));
+            Assert.DoesNotThrow(() => view.Hide());
+        }
     }
 }

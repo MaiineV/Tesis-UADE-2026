@@ -432,6 +432,27 @@ namespace Rollgeon.UI.HUD
             RunComboDetection();
         }
 
+        /// <summary>
+        /// Suelta todos los holds sin apagar los slots (a diferencia de
+        /// <c>ClearAll</c>). BUG-030: el forced reroll del Torpe re-tira la mano
+        /// completa — los holds que el jugador marcó en la ventana previa quedarían
+        /// fuera de sync con el reveal nuevo.
+        /// </summary>
+        public void ClearHolds()
+        {
+            if (_heldStates == null) return;
+            for (int i = 0; i < _heldStates.Length; i++)
+            {
+                if (!_heldStates[i]) continue;
+                _heldStates[i] = false;
+                if (_resolvedSlots != null && i < _resolvedSlots.Length)
+                    _resolvedSlots[i]?.SetHeld(false);
+                _animator?.SetRaised(i, false);
+            }
+            PropagateHoldsToActionRoll();
+            RunComboDetection();
+        }
+
         // Si hay un ActionRollService activo (Heal / Forzar Puerta), propagamos los
         // holds. El service usa esos holds para computar el effective total contra el
         // threshold — sin esta llamada, el service mantiene un _currentHolds vacío y

@@ -2,6 +2,8 @@ using Patterns;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
@@ -39,6 +41,12 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Nombre de fase fallback cuando la ChainPhase no tiene Label.")]
         private string _fallbackPhaseLabel = "Phase";
 
+        [SerializeField, Optional, Tooltip("Botón del prompt (BUG-034). Sin ref, el prompt no es clickeable.")]
+        private Button _button;
+
+        [Tooltip("Click sobre el prompt — CombatHUDView lo rutea al mismo entry point que el botón Roll.")]
+        public UnityEvent OnPromptClicked = new UnityEvent();
+
         private bool _subscribed;
 
         public void Show(string phaseLabel)
@@ -58,6 +66,11 @@ namespace Rollgeon.UI.HUD
             gameObject.SetActive(false);
         }
 
+        // El botón solo escucha mientras el prompt está arriba — misma ventana que
+        // las suscripciones del bus, y por el mismo motivo (BUG-034: el texto es
+        // una affordance de pago; fuera de la entrada paga no debe reaccionar).
+        private void HandleButtonClick() => OnPromptClicked?.Invoke();
+
         private void OnDisable() => Unsubscribe();
 
         private void Subscribe()
@@ -65,6 +78,7 @@ namespace Rollgeon.UI.HUD
             if (_subscribed) return;
             EventManager.Subscribe(EventName.OnChainCompleted, HandleChainOver);
             EventManager.Subscribe(EventName.OnCombatEnd, HandleChainOver);
+            if (_button != null) _button.onClick.AddListener(HandleButtonClick);
             _subscribed = true;
         }
 
@@ -73,6 +87,7 @@ namespace Rollgeon.UI.HUD
             if (!_subscribed) return;
             EventManager.UnSubscribe(EventName.OnChainCompleted, HandleChainOver);
             EventManager.UnSubscribe(EventName.OnCombatEnd, HandleChainOver);
+            if (_button != null) _button.onClick.RemoveListener(HandleButtonClick);
             _subscribed = false;
         }
 

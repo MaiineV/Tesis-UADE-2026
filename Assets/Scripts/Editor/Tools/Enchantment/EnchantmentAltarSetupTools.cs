@@ -425,7 +425,10 @@ namespace Rollgeon.EditorTools.Enchantment
                 panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
                 panel.pivot = new Vector2(0.5f, 0.5f);
                 panel.anchoredPosition = Vector2.zero;
-                panel.sizeDelta = new Vector2(680f, 950f);
+                // BUG-035: presupuesto vertical con FacesContainer en su máximo de 2
+                // filas (D20, 102px) — 12 filas (40+80+24+140+24+122+40+24+102+80+56+56
+                // = 788) + 11 spacings×6 (66) + padding vertical 24+16 (40) = 894 ≤ 900.
+                panel.sizeDelta = new Vector2(680f, 900f);
 
                 if (!panel.TryGetComponent<Image>(out var panelBg)) panelBg = panel.gameObject.AddComponent<Image>();
                 panelBg.sprite = panelSprite;
@@ -438,7 +441,7 @@ namespace Rollgeon.EditorTools.Enchantment
                 var layout = panel.GetComponent<VerticalLayoutGroup>();
                 if (layout == null) layout = panel.gameObject.AddComponent<VerticalLayoutGroup>();
                 layout.padding = new RectOffset(30, 30, 24, 16);
-                layout.spacing = 8f;
+                layout.spacing = 6f; // BUG-035: 8→6 para cerrar el presupuesto vertical a 900 (ver cuenta arriba)
                 layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
                 layout.childControlHeight = false;
@@ -453,25 +456,33 @@ namespace Rollgeon.EditorTools.Enchantment
                     "CostRow", "ButtonRow", "ResultLabel",
                 };
 
-                var title = EnsureLayoutTmp(panel, "Title", "Altar de Encantamiento", 40f, TextColor, font, outlineMat, 50f, wrap: false);
+                var title = EnsureLayoutTmp(panel, "Title", "Altar de Encantamiento", 40f, TextColor, font, outlineMat, 40f, wrap: false);
                 var goldRow = EnsureChildRect(panel, "GoldRow");
-                SetLayoutChildHeight(goldRow, 96f);
+                SetLayoutChildHeight(goldRow, 80f);
                 var goldParts = BuildGoldPileRow(goldRow, "GoldStack", "GoldLabel", 28f, chipSettings, font);
 
-                var diceCaption = EnsureLayoutTmp(panel, "DiceCaption", "Tus dados:", 22f, TextColor, font, null, 28f, wrap: false);
+                var diceCaption = EnsureLayoutTmp(panel, "DiceCaption", "Tus dados:", 22f, TextColor, font, null, 24f, wrap: false);
                 var diceContainer = EnsureCardsContainer(panel, "DiceContainer", 140f, 12f);
-                var slotCaption = EnsureLayoutTmp(panel, "SlotCaption", "Elige el cupo del dado seleccionado:", 22f, TextColor, font, null, 28f, wrap: false);
-                var slotContainer = EnsureCardsContainer(panel, "SlotContainer", 122f, 16f);
-                var slotDescription = EnsureLayoutTmp(panel, "SlotDescription", string.Empty, 18f, DescColor, font, null, 46f, wrap: true);
-                var facesCaption = EnsureLayoutTmp(panel, "FacesCaption", "Caras actuales:", 22f, TextColor, font, null, 28f, wrap: false);
-                var facesContainer = EnsureCardsContainer(panel, "FacesContainer", 54f, 10f);
+                var slotCaption = EnsureLayoutTmp(panel, "SlotCaption", "Elige el cupo del dado seleccionado:", 22f, TextColor, font, null, 24f, wrap: false);
+                // BUG-035: grid en vez de horizontal — D20 = 4 cupos de 148 no entraban
+                // en una fila de Horizontal sin control de ancho (736px > 620 útiles).
+                // 4×148 + 3×8 = 616 ≤ 620, siempre 1 fila.
+                var slotContainer = EnsureGridCardsContainer(panel, "SlotContainer",
+                    new Vector2(148f, 116f), new Vector2(8f, 8f), 122f, dynamicHeight: false);
+                var slotDescription = EnsureLayoutTmp(panel, "SlotDescription", string.Empty, 18f, DescColor, font, null, 40f, wrap: true);
+                var facesCaption = EnsureLayoutTmp(panel, "FacesCaption", "Caras actuales:", 22f, TextColor, font, null, 24f, wrap: false);
+                // BUG-035: D20 = 20 caras de 48 no entraban en 1 fila (1150px > 620
+                // útiles). 10×48 + 9×10 = 570 ≤ 620 → 10 por fila, D20 = 2 filas;
+                // alto dinámico via ContentSizeFitter (ver EnsureGridCardsContainer).
+                var facesContainer = EnsureGridCardsContainer(panel, "FacesContainer",
+                    new Vector2(48f, 48f), new Vector2(10f, 6f), 54f, dynamicHeight: true);
                 var costRow = EnsureChildRect(panel, "CostRow");
-                SetLayoutChildHeight(costRow, 96f);
+                SetLayoutChildHeight(costRow, 80f);
                 var costParts = BuildGoldPileRow(costRow, "CostStack", "CostLabel", 24f, chipSettings, font);
                 var buttonRow = EnsureChildRect(panel, "ButtonRow");
-                SetLayoutChildHeight(buttonRow, 62f);
+                SetLayoutChildHeight(buttonRow, 56f);
                 var buttons = BuildButtonRow(buttonRow, font, outlineMat, menuJuice);
-                var resultLabel = EnsureLayoutTmp(panel, "ResultLabel", string.Empty, 18f, TextColor, font, null, 64f, wrap: true);
+                var resultLabel = EnsureLayoutTmp(panel, "ResultLabel", string.Empty, 18f, TextColor, font, null, 56f, wrap: true);
 
                 DestroyUnexpectedChildren(panel, expected);
 
@@ -745,6 +756,11 @@ namespace Rollgeon.EditorTools.Enchantment
             var rect = EnsureChildRect(parent, name);
             SetLayoutChildHeight(rect, height);
 
+            // Limpiar leftovers de un rebuild anterior que haya usado la variante grid.
+            if (rect.TryGetComponent<GridLayoutGroup>(out var oldGrid)) Object.DestroyImmediate(oldGrid);
+            if (rect.TryGetComponent<ContentSizeFitter>(out var oldFitter)) Object.DestroyImmediate(oldFitter);
+            if (rect.TryGetComponent<LayoutElement>(out var oldElement)) Object.DestroyImmediate(oldElement);
+
             var layout = rect.GetComponent<HorizontalLayoutGroup>();
             if (layout == null) layout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = spacing;
@@ -753,6 +769,54 @@ namespace Rollgeon.EditorTools.Enchantment
             layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
+            return rect;
+        }
+
+        /// <summary>
+        /// Container en grilla que envuelve (wrap) a la fila siguiente cuando el
+        /// contenido excede el ancho útil del panel — BUG-035: con dados grandes
+        /// (D20 = 4 cupos, 20 caras) el HorizontalLayoutGroup sin control de ancho
+        /// desbordaba el panel en vez de comprimir. <paramref name="dynamicHeight"/>
+        /// suma un ContentSizeFitter vertical (usado por FacesContainer, que crece a
+        /// 2 filas con D20): el padre (panel) tiene childControlHeight=false, así que
+        /// el CSF controla el propio rect del container sin pelear con el
+        /// VerticalLayoutGroup — mismo patrón que el resto de las filas fixed-height.
+        /// </summary>
+        private static RectTransform EnsureGridCardsContainer(RectTransform parent, string name,
+            Vector2 cellSize, Vector2 spacing, float height, bool dynamicHeight)
+        {
+            var rect = EnsureChildRect(parent, name);
+
+            // Leftover de la versión Horizontal previa (pre BUG-035).
+            if (rect.TryGetComponent<HorizontalLayoutGroup>(out var oldHorizontal))
+                Object.DestroyImmediate(oldHorizontal);
+
+            var grid = rect.GetComponent<GridLayoutGroup>();
+            if (grid == null) grid = rect.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = cellSize;
+            grid.spacing = spacing;
+            grid.childAlignment = TextAnchor.MiddleCenter;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.constraint = GridLayoutGroup.Constraint.Flexible; // columnas = ancho disponible / (cell + spacing)
+
+            if (dynamicHeight)
+            {
+                var fitter = rect.GetComponent<ContentSizeFitter>();
+                if (fitter == null) fitter = rect.gameObject.AddComponent<ContentSizeFitter>();
+                fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained; // el ancho lo fuerza el VLG padre
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                var element = rect.GetComponent<LayoutElement>();
+                if (element == null) element = rect.gameObject.AddComponent<LayoutElement>();
+                element.minHeight = height; // piso visual para el caso vacío / 1 fila
+            }
+            else
+            {
+                if (rect.TryGetComponent<ContentSizeFitter>(out var oldFitter)) Object.DestroyImmediate(oldFitter);
+                if (rect.TryGetComponent<LayoutElement>(out var oldElement)) Object.DestroyImmediate(oldElement);
+                SetLayoutChildHeight(rect, height);
+            }
+
             return rect;
         }
 

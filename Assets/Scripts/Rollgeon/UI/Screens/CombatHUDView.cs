@@ -224,6 +224,12 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
 
+            // BUG-034: el prompt "X Roll (1E)" es la affordance visible del pago —
+            // clickearlo debe pagar igual que el botón Roll. Mismo entry point para
+            // conservar el dispatch roll/reroll y el warning de "no cableado".
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.AddListener(InvokeRollOrReroll);
+
             if (_playerActionButtons != null)
             {
                 _playerActionButtons.OnConfirmPressed.AddListener(InvokeConfirmRequested);
@@ -238,6 +244,9 @@ namespace Rollgeon.UI.Screens
         {
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
+
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.RemoveListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -418,6 +427,15 @@ namespace Rollgeon.UI.Screens
         public void HideChainRollPrompt()
         {
             if (_chainRollPrompt != null) _chainRollPrompt.Hide();
+        }
+
+        /// <summary>
+        /// Suelta todos los holds de la zona de dados (BUG-030: el forced reroll del
+        /// Torpe re-tira la mano completa). No-op sin wiring.
+        /// </summary>
+        public void ClearDiceHolds()
+        {
+            if (_diceZone != null) _diceZone.ClearHolds();
         }
 
         // ======================================================================

@@ -167,7 +167,7 @@ MonoBehaviour:
   _placement:
     Mode: 1
     FixedAnchor: {fileID: 0}
-    FixedOffset: {x: -125, y: 250}
+    FixedOffset: {x: 0, y: 250}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &6258298617148004125
@@ -1002,7 +1002,7 @@ MonoBehaviour:
   _placement:
     Mode: 1
     FixedAnchor: {fileID: 0}
-    FixedOffset: {x: -125, y: 250}
+    FixedOffset: {x: 0, y: 250}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &4689467003917721267
@@ -1202,7 +1202,7 @@ MonoBehaviour:
   _placement:
     Mode: 1
     FixedAnchor: {fileID: 0}
-    FixedOffset: {x: -125, y: 250}
+    FixedOffset: {x: 0, y: 250}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &4334005309866986422
@@ -1793,7 +1793,7 @@ MonoBehaviour:
   _placement:
     Mode: 1
     FixedAnchor: {fileID: 0}
-    FixedOffset: {x: -125, y: 250}
+    FixedOffset: {x: 0, y: 250}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &2089542654759402228
@@ -2496,7 +2496,7 @@ MonoBehaviour:
   _placement:
     Mode: 1
     FixedAnchor: {fileID: 0}
-    FixedOffset: {x: -125, y: 250}
+    FixedOffset: {x: 0, y: 250}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &4602799607671542530
