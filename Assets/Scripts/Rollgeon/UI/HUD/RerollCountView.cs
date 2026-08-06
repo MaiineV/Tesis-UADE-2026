@@ -2,6 +2,8 @@ using System;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Input;
+using Rollgeon.Localization;
+using Rollgeon.UI.Utility;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -12,7 +14,8 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Sub-view que muestra "{used}/{cap}" rerolls + un boton "extra roll (1E)".
+    /// Sub-view que muestra "{used}/{cap}" rerolls + un boton de roll cuyo label indica
+    /// el costo del proximo tiro ("Reroll  -1 [icono energia]" cuando se paga).
     /// Consume <see cref="IRerollBudgetService"/> via <see cref="Patterns.ServiceLocator"/>
     /// y escucha <see cref="EventName.OnDiceRolled"/> / <see cref="EventName.OnRollResolved"/>
     /// + el evento tipado <see cref="IRerollBudgetService.OnRerollStarted"/>.
@@ -29,13 +32,16 @@ namespace Rollgeon.UI.HUD
     {
         private const string LogPrefix = "[RerollCountView] ";
 
+        /// <summary>Costo compacto del roll pago. Sin palabras — no hay nada que traducir.</summary>
+        private const string PaidCostBadge = "-1 {ENERGY}";
+
         [Title("Reroll Count — Widgets")]
         [SerializeField]
         [Tooltip("Label '{used}/{cap}'. Fallback '-/-' si no hay IRerollBudgetService.")]
         private TextMeshProUGUI _countLabel;
 
         [SerializeField]
-        [Tooltip("Boton 'extra roll (1E)'. Mirrea ActionButtonsView._energyRerollButton " +
+        [Tooltip("Boton de roll/reroll. Mirrea ActionButtonsView._energyRerollButton " +
                  "pero es una afordance separada pegada a la dice zone.")]
         private Button _extraRollButton;
 
@@ -49,12 +55,12 @@ namespace Rollgeon.UI.HUD
         private string _fallbackText = "-/-";
 
         [SerializeField]
-        [Tooltip("Label opcional de costo del proximo reroll (ej. 'Free', '1E'). Null = skip.")]
+        [Tooltip("Label opcional de costo del proximo reroll (ej. 'Free', '-1 {ENERGY}'). Null = skip.")]
         private TextMeshProUGUI _costLabel;
 
         [SerializeField]
         [Tooltip("Label opcional del boton — cambia entre 'Roll', 'Reroll (Free)' y " +
-                 "'Reroll (1E)' segun el estado del budget. Null = skip.")]
+                 "'Reroll  -1 {ENERGY}' segun el estado del budget. Null = skip.")]
         private TextMeshProUGUI _buttonLabel;
 
         [Title("Reroll Count — Button Texts")]
@@ -67,8 +73,9 @@ namespace Rollgeon.UI.HUD
         private string _rerollFreeText = "Reroll (Free)";
 
         [SerializeField]
-        [Tooltip("Texto del boton para un reroll pago con energia.")]
-        private string _rerollPaidText = "Reroll (1E)";
+        [Tooltip("Texto del boton para un reroll pago con energia. {ENERGY} se expande al " +
+                 "icono del atlas. Fallback si la tabla UI no tiene la key.")]
+        private string _rerollPaidText = "Reroll  -1 {ENERGY}";
 
         [Title("Reroll Count — Events")]
         [SerializeField]
@@ -93,6 +100,7 @@ namespace Rollgeon.UI.HUD
         private bool _diceAnimHooked;
         private Action<ComboMatchedPayload> _onComboMatched;
         private IGameplayHotkeyService _hotkeys;
+        private Action _onLanguageChanged;
 
         /// <summary>RectTransform del botón Roll/Reroll — anchor del overlay del tutorial.</summary>
         public bool TryGetRollButtonRect(out RectTransform rect)
@@ -158,11 +166,15 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys) && _hotkeys != null)
                 _hotkeys.Subscribe(GameplayHotkey.Roll, OnHotkeyRoll);
 
+            // Los textos de costo se setean por codigo, asi que el package no los repinta
+            // solo al cambiar de idioma — hay que re-correr el render a mano.
+            _onLanguageChanged = RefreshTexts;
+            LocalizationRefresh.Subscribe(_onLanguageChanged);
+
             _bound = true;
             RefreshLabel();
             RefreshButtonInteractable();
-            RefreshCostLabel();
-            RefreshButtonText();
+            RefreshTexts();
         }
 
         public void Unbind()
@@ -197,6 +209,11 @@ namespace Rollgeon.UI.HUD
             {
                 _hotkeys.Unsubscribe(GameplayHotkey.Roll, OnHotkeyRoll);
                 _hotkeys = null;
+            }
+            if (_onLanguageChanged != null)
+            {
+                LocalizationRefresh.Unsubscribe(_onLanguageChanged);
+                _onLanguageChanged = null;
             }
             _budget = null;
             if (_diceZone != null && _diceAnimHooked)
@@ -266,8 +283,7 @@ namespace Rollgeon.UI.HUD
             EnsureBudgetSubscribed();
             RefreshLabel();
             RefreshButtonInteractable();
-            RefreshCostLabel();
-            RefreshButtonText();
+            RefreshTexts();
         }
 
         // Si Bind() corrió antes de que el bootstrap registrara IRerollBudgetService,
@@ -306,8 +322,7 @@ namespace Rollgeon.UI.HUD
             if (payload.PlayerGuid != _playerGuid) return;
             RefreshLabel();
             RefreshButtonInteractable();
-            RefreshCostLabel();
-            RefreshButtonText();
+            RefreshTexts();
         }
 
         private void HandleBudgetStartedTyped(RerollBudget budget)
@@ -317,8 +332,7 @@ namespace Rollgeon.UI.HUD
             // desde la seleccion como pide el flow manual de roll.
             RefreshLabel();
             RefreshButtonInteractable();
-            RefreshCostLabel();
-            RefreshButtonText();
+            RefreshTexts();
         }
 
         // ======================================================================
@@ -338,6 +352,17 @@ namespace Rollgeon.UI.HUD
             SetCount(remaining, total);
         }
 
+        /// <summary>
+        /// Repinta todo lo que depende del idioma y del costo del proximo roll. Van juntos
+        /// porque las dos piezas (texto del boton y costo) leen el mismo
+        /// <c>QueryExtraRoll</c> — separarlas invitaba a que una quedara desfasada.
+        /// </summary>
+        private void RefreshTexts()
+        {
+            RefreshCostLabel();
+            RefreshButtonText();
+        }
+
         private void RefreshCostLabel()
         {
             if (_costLabel == null) return;
@@ -350,10 +375,17 @@ namespace Rollgeon.UI.HUD
             if (query.IsFreeRoll)
                 _costLabel.text = "Free";
             else if (query.CostsEnergy)
-                _costLabel.text = "1E";
+                _costLabel.text = IconSpriteTags.ReplacePlaceholders(PaidCostBadge);
             else
                 _costLabel.text = "";
         }
+
+        /// <summary>
+        /// Traduce y despues expande los <c>{ICON}</c>. En ese orden: el placeholder viaja
+        /// dentro del texto traducido, asi que expandirlo antes no encontraria nada.
+        /// </summary>
+        private static string Localized(string key, string fallback)
+            => IconSpriteTags.ReplacePlaceholders(LocalizedContent.Ui(key, fallback));
 
         private void RefreshButtonInteractable()
         {
@@ -450,9 +482,9 @@ namespace Rollgeon.UI.HUD
 
             // Sino, es reroll — gratis si quedan free, paid si toca energia.
             var query = _budget.QueryExtraRoll(_playerGuid);
-            if (query.IsFreeRoll) _buttonLabel.text = _rerollFreeText;
-            else if (query.CostsEnergy) _buttonLabel.text = _rerollPaidText;
-            else _buttonLabel.text = _rerollFreeText;
+            _buttonLabel.text = query.CostsEnergy && !query.IsFreeRoll
+                ? Localized(UiTextKeys.RerollPaid, _rerollPaidText)
+                : _rerollFreeText;
         }
     }
 }

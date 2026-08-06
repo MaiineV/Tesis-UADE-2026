@@ -456,6 +456,14 @@ MonoBehaviour:
     m_Localized: Coming soon
     m_Metadata:
       m_Items: []
+  - m_Id: 8159026612039680
+    m_Localized: Reroll  -1 {ENERGY}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026649788416
+    m_Localized: '{0} Roll  -1 {ENERGY}'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

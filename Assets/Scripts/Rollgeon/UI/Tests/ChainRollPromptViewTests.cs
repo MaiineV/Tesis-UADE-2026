@@ -28,6 +28,13 @@ namespace Rollgeon.UI.Tests
             EventManager.ResetEventDictionary();
         }
 
+        /// <summary>
+        /// Costo tal como queda renderizado: el <c>{ENERGY}</c> ya expandido al glifo del
+        /// atlas. Se compone con la misma API que usa la vista para no acoplar el test al
+        /// nombre del sprite — lo que se verifica es que el token <b>no</b> sobreviva.
+        /// </summary>
+        private static string ExpandedCost => Utility.IconSpriteTags.ReplacePlaceholders("-1 {ENERGY}");
+
         private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, bool withLabel = true)
         {
             var go = new GameObject("ChainRollPrompt");
@@ -64,7 +71,7 @@ namespace Rollgeon.UI.Tests
             view.Show("Shield");
 
             // Assert
-            Assert.AreEqual("Shield Roll (1E)", label.text);
+            Assert.AreEqual($"Shield Roll  {ExpandedCost}", label.text);
             Assert.IsTrue(view.gameObject.activeSelf);
         }
 
@@ -78,8 +85,25 @@ namespace Rollgeon.UI.Tests
             view.Show(null);
 
             // Assert — el fallback default es "Phase".
-            Assert.AreEqual("Phase Roll (1E)", label.text);
+            Assert.AreEqual($"Phase Roll  {ExpandedCost}", label.text);
             Assert.IsTrue(view.gameObject.activeSelf);
+        }
+
+        // El "(1E)" sin contexto se leía como bug de traducción: el prompt ahora muestra
+        // el costo con el icono de energía.
+
+        [Test]
+        public void Show_ExpandsTheEnergyPlaceholderIntoASpriteTag()
+        {
+            // Arrange
+            var view = MakePrompt(out var label);
+
+            // Act
+            view.Show("Shield");
+
+            // Assert — un {ENERGY} crudo en pantalla significa que falta el glifo en el atlas.
+            StringAssert.DoesNotContain("{ENERGY}", label.text);
+            StringAssert.Contains("<sprite name=", label.text);
         }
 
         [Test]

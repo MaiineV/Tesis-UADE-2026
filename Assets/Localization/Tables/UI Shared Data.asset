@@ -423,6 +423,14 @@ MonoBehaviour:
     m_Key: class_select.locked_tooltip
     m_Metadata:
       m_Items: []
+  - m_Id: 8159026612039680
+    m_Key: roll.reroll_paid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026649788416
+    m_Key: roll.chain_paid
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

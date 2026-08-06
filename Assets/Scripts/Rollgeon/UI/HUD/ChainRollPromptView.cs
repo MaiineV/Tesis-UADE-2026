@@ -1,4 +1,7 @@
+using System;
 using Patterns;
+using Rollgeon.Localization;
+using Rollgeon.UI.Utility;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -9,9 +12,9 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Prompt central del tablero para la entrada PAGA a una fase de chain (sin rolls
-    /// sobrantes del pool anterior pero con energía): "Shield Roll (1E)". Lo muestra y
-    /// esconde <c>CombatHandoffService</c> vía <c>CombatHUDView.Show/HideChainRollPrompt</c>.
-    /// Strings serializados sin localización — mismo criterio que <see cref="RerollCountView"/>.
+    /// sobrantes del pool anterior pero con energía): "Shield Roll  -1 [icono energía]".
+    /// Lo muestra y esconde <c>CombatHandoffService</c> vía
+    /// <c>CombatHUDView.Show/HideChainRollPrompt</c>.
     /// </summary>
     /// <remarks>
     /// Además del Show/Hide explícito, el prompt se apaga solo con
@@ -35,8 +38,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Label del prompt. Sin ref, solo se activa/desactiva el GO.")]
         private TextMeshProUGUI _label;
 
-        [SerializeField, Tooltip("Formato del prompt. {0} = Label de la ChainPhase.")]
-        private string _format = "{0} Roll (1E)";
+        [SerializeField, Tooltip("Formato del prompt. {0} = Label de la ChainPhase, {ENERGY} = " +
+                                 "icono del atlas. Fallback si la tabla UI no tiene la key.")]
+        private string _format = "{0} Roll  -1 {ENERGY}";
 
         [SerializeField, Tooltip("Nombre de fase fallback cuando la ChainPhase no tiene Label.")]
         private string _fallbackPhaseLabel = "Phase";
@@ -49,13 +53,16 @@ namespace Rollgeon.UI.HUD
 
         private bool _subscribed;
 
+        // El label de la fase que pidió el último Show — necesario para repintar el
+        // prompt al cambiar de idioma sin que el caller vuelva a llamar a Show.
+        private string _currentPhaseLabel;
+
+        private Action _onLanguageChanged;
+
         public void Show(string phaseLabel)
         {
-            if (_label != null)
-            {
-                var name = string.IsNullOrEmpty(phaseLabel) ? _fallbackPhaseLabel : phaseLabel;
-                _label.text = string.Format(_format, name);
-            }
+            _currentPhaseLabel = phaseLabel;
+            Render();
             gameObject.SetActive(true);
             Subscribe();
         }
@@ -64,6 +71,21 @@ namespace Rollgeon.UI.HUD
         {
             Unsubscribe();
             gameObject.SetActive(false);
+        }
+
+        /// <summary>Pinta el prompt desde <see cref="_currentPhaseLabel"/>.</summary>
+        private void Render()
+        {
+            if (_label == null) return;
+
+            var phase = string.IsNullOrEmpty(_currentPhaseLabel) ? _fallbackPhaseLabel : _currentPhaseLabel;
+
+            // Orden obligatorio: traducir → expandir {ICON} → string.Format.
+            // El {ENERGY} tiene que desaparecer ANTES del Format: string.Format lee
+            // cualquier {…} como placeholder suyo y tira FormatException al no poder
+            // parsear "ENERGY" como índice de argumento.
+            var format = LocalizedContent.Ui(UiTextKeys.ChainRollPaid, _format);
+            _label.text = string.Format(IconSpriteTags.ReplacePlaceholders(format), phase);
         }
 
         // El botón solo escucha mientras el prompt está arriba — misma ventana que
@@ -79,6 +101,10 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnChainCompleted, HandleChainOver);
             EventManager.Subscribe(EventName.OnCombatEnd, HandleChainOver);
             if (_button != null) _button.onClick.AddListener(HandleButtonClick);
+            // El prompt se setea por código, así que el package no lo repinta solo al
+            // cambiar de idioma. Misma ventana que el resto: solo mientras está arriba.
+            _onLanguageChanged = Render;
+            LocalizationRefresh.Subscribe(_onLanguageChanged);
             _subscribed = true;
         }
 
@@ -88,6 +114,11 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnChainCompleted, HandleChainOver);
             EventManager.UnSubscribe(EventName.OnCombatEnd, HandleChainOver);
             if (_button != null) _button.onClick.RemoveListener(HandleButtonClick);
+            if (_onLanguageChanged != null)
+            {
+                LocalizationRefresh.Unsubscribe(_onLanguageChanged);
+                _onLanguageChanged = null;
+            }
             _subscribed = false;
         }
 
