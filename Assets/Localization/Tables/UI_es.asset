@@ -458,12 +458,8 @@ MonoBehaviour:
     m_Localized: "Hac\xE9 click para continuar"
     m_Metadata:
       m_Items: []
-  - m_Id: 7859475544043520
-    m_Localized: Reroll  -1 {ENERGY}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7859475594375169
-    m_Localized: '{0} Roll  -1 {ENERGY}'
+  - m_Id: 7867763907198976
+    m_Localized: "Pr\xF3ximamente"
     m_Metadata:
       m_Items: []
   references:

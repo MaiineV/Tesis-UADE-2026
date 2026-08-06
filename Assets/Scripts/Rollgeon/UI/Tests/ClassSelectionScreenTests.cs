@@ -7,8 +7,10 @@ using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Combos.Tests;
 using Rollgeon.Heroes;
+using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -138,6 +140,7 @@ namespace Rollgeon.UI.Tests
         {
             EventManager.ResetEventDictionary();
             ServiceLocator.RemoveService<IScreenManager>();
+            ServiceLocator.RemoveService<IMetaProgressionService>();
             if (_screenGO != null) UnityEngine.Object.DestroyImmediate(_screenGO);
             if (_warriorHero != null) UnityEngine.Object.DestroyImmediate(_warriorHero);
             if (_par != null) UnityEngine.Object.DestroyImmediate(_par);
@@ -255,6 +258,131 @@ namespace Rollgeon.UI.Tests
             // Assert
             Assert.AreEqual(0, spy.PopCurrentCallCount,
                 "Tras OnPopped el listener de Atrás debe estar removido.");
+        }
+
+        [Test]
+        public void OnPushed_UnlockableEntryWithoutHero_LocksButtonAndShowsLockIndicator()
+        {
+            // Arrange: Mago gestionado por _unlockableClasses, sin ClassHeroSO
+            // (clase no implementada). Sin IMetaProgressionService el gate degrada
+            // a "disponible", pero Hero==null debe mantenerlo bloqueado igual.
+            var lockGO = new GameObject("LockIcon");
+            lockGO.transform.SetParent(_screenGO.transform, false);
+            lockGO.SetActive(false);
+            var selectionGO = new GameObject("MagoUnderline");
+            selectionGO.transform.SetParent(_screenGO.transform, false);
+
+            AssignPrivate(_screen, "_unlockableClasses",
+                new List<ClassSelectionScreen.SelectableClassEntry>
+                {
+                    new ClassSelectionScreen.SelectableClassEntry
+                    {
+                        Hero = null,
+                        ClassId = "Mage",
+                        Button = _magoButton,
+                        SelectionIndicator = selectionGO,
+                        LockIndicator = lockGO,
+                    },
+                });
+
+            // Act
+            InvokePushed(null);
+            _magoButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsFalse(_magoButton.interactable, "Sin ClassHeroSO la clase queda bloqueada.");
+            Assert.IsTrue(lockGO.activeSelf, "El candado se muestra mientras está bloqueada.");
+            Assert.IsFalse(selectionGO.activeSelf,
+                "El click en un botón bloqueado no debe seleccionar la clase (sin listener).");
+            Assert.IsTrue(_indicator.activeSelf, "El Guerrero sigue auto-seleccionado.");
+        }
+
+        [Test]
+        public void OnPushed_LockedEntry_AddsTooltipTriggerWithFallbackText()
+        {
+            // Arrange
+            AssignPrivate(_screen, "_unlockableClasses",
+                new List<ClassSelectionScreen.SelectableClassEntry>
+                {
+                    new ClassSelectionScreen.SelectableClassEntry
+                    {
+                        Hero = null,
+                        ClassId = "Mage",
+                        Button = _magoButton,
+                    },
+                });
+
+            // Act
+            InvokePushed(null);
+
+            // Assert: sin IMetaProgressionService ni Localization inicializada, el
+            // provider cae al fallback hardcodeado de la tabla UI.
+            var trigger = _magoButton.GetComponent<UITooltipTrigger>();
+            Assert.IsNotNull(trigger, "El botón bloqueado debe tener UITooltipTrigger.");
+            Assert.IsNotNull(trigger.TextProvider, "El trigger debe tener TextProvider cableado.");
+            Assert.AreEqual("Próximamente", trigger.TextProvider(),
+                "Sin servicio meta el tooltip usa el fallback genérico.");
+        }
+
+        [Test]
+        public void ResolveLockedTooltip_WithHeroClassDefinition_ReturnsDefinitionHint()
+        {
+            // Arrange
+            var def = ScriptableObject.CreateInstance<UnlockDefinitionSO>();
+            def.UnlockId = "unlock.class.mage";
+            def.Category = UnlockableCategory.HeroClass;
+            def.TargetId = "Mage";
+            def.HintText = "Hint de prueba del Mago";
+            ServiceLocator.AddService<IMetaProgressionService>(new StubMetaService(def));
+
+            try
+            {
+                // Act
+                string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
+
+                // Assert: Localization sin inicializar en EditMode ⇒ el hint
+                // localizado degrada al HintText autorado.
+                Assert.AreEqual("Hint de prueba del Mago", tooltip);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(def);
+            }
+        }
+
+        [Test]
+        public void ResolveLockedTooltip_WithoutService_ReturnsUiFallback()
+        {
+            // Arrange: sin IMetaProgressionService registrado (TearDown lo garantiza).
+
+            // Act
+            string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
+
+            // Assert
+            Assert.AreEqual("Próximamente", tooltip,
+                "Sin servicio meta se usa el fallback de la tabla UI.");
+        }
+
+        private sealed class StubMetaService : IMetaProgressionService
+        {
+            private readonly List<UnlockDefinitionSO> _definitions;
+
+            public StubMetaService(params UnlockDefinitionSO[] definitions)
+                => _definitions = new List<UnlockDefinitionSO>(definitions);
+
+            public bool IsAvailable(UnlockableCategory category, string targetId) => false;
+            public bool IsDefinitionCompleted(UnlockDefinitionSO definition) => false;
+            public IReadOnlyList<UnlockDefinitionSO> Definitions => _definitions;
+            public bool TryUnlock(UnlockDefinitionSO definition, bool duringRun) => false;
+            public int ConsecutiveWins => 0;
+            public IReadOnlyCollection<string> ClassesPlayed => Array.Empty<string>();
+            public void RecordRunCompleted(bool won, string classId) { }
+            public bool IsTutorialCompleted => true;
+            public void MarkTutorialCompleted() { }
+            public bool IsTutorialEnabled => true;
+            public void SetTutorialEnabled(bool enabled) { }
+            public void SaveNow() { }
+            public void ResetProgression() { }
         }
 
         // ---------------- helpers ----------------

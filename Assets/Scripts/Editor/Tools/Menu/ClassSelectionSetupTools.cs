@@ -28,6 +28,9 @@ namespace Rollgeon.EditorTools.Menu
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string OutlineMaterialPath = "Assets/Fonts/m6x11plus SDF - MenuOutline.mat";
         private const string JuiceSettingsPath = "Assets/Rollgeon/Services/MenuJuiceSettings.asset";
+        private const string LockSpritePath = "Assets/Art/UI/Unlocks/LockImage.png";
+        private const string ClassIconsPath = "Assets/Art/UI/ClassIcons/ClassIcons.png";
+        private const string TooltipCanvasPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_Tooltip.prefab";
 
         private static readonly Color AccentColor = new Color32(0xE0, 0xC0, 0xA9, 0xFF);
         private static readonly Color TextColor = new Color32(0xE7, 0xE3, 0xE2, 0xFF);
@@ -116,6 +119,8 @@ namespace Rollgeon.EditorTools.Menu
                 "Contrato", "Contract");
             LocalizationSetupTools.UpsertEntry("UI", "class_select.min_damage",
                 "Daño mínimo = dado más alto", "Minimum damage = highest die");
+            LocalizationSetupTools.UpsertEntry("UI", "class_select.locked_tooltip",
+                "Próximamente", "Coming soon");
             LocalizationSetupTools.UpsertEntry("Content", "passive.warrior.low_hp_rage.name",
                 "Furia del Guerrero", "Warrior's Fury");
             LocalizationSetupTools.UpsertEntry("Content", "passive.warrior.low_hp_rage.desc",
@@ -275,11 +280,14 @@ namespace Rollgeon.EditorTools.Menu
             var leftPanel = EnsureRect(screenRect, "LeftPanel", new Vector2(-800f, 0f), new Vector2(280f, 420f));
             StripLayoutComponents(leftPanel.gameObject);
             var warrior = EnsureClassEntry(screenRect, leftPanel, new[] { "WarriorButton" },
-                "WarriorButton", new Vector2(0f, 140f), "class.warrior", locked: false, font, outlineMat);
+                "WarriorButton", new Vector2(0f, 140f), "class.warrior", "ClassIcons_0",
+                locked: false, font, outlineMat);
             var picaro = EnsureClassEntry(screenRect, leftPanel, new[] { "PicaroButton", "RogueButton" },
-                "PicaroButton", new Vector2(0f, 0f), "class.rogue", locked: true, font, outlineMat);
+                "PicaroButton", new Vector2(0f, 0f), "class.rogue", "ClassIcons_1",
+                locked: true, font, outlineMat);
             var mago = EnsureClassEntry(screenRect, leftPanel, new[] { "MagoButton", "MageButton" },
-                "MagoButton", new Vector2(0f, -140f), "class.mage", locked: true, font, outlineMat);
+                "MagoButton", new Vector2(0f, -140f), "class.mage", "ClassIcons_2",
+                locked: true, font, outlineMat);
 
             DestroyChildrenNotIn(leftPanel, "WarriorButton", "PicaroButton", "MagoButton");
 
@@ -448,11 +456,68 @@ namespace Rollgeon.EditorTools.Menu
             so.FindProperty("_rootCanvasGroup").objectReferenceValue = rootGroup;
             so.FindProperty("_portraitFrame").objectReferenceValue = portraitFrame;
             so.FindProperty("_contractPanel").objectReferenceValue = contractPanel;
+
+            // Clases bloqueadas via sistema de unlocks (#164): Mago/Pícaro entran a
+            // _unlockableClasses con Hero=null (no existe el SO todavía) y ClassId
+            // como TargetId. Cuando exista CH_Mage/CH_Rogue, re-correr este paso
+            // los engancha solo vía FindHeroByEntityId.
+            var unlockables = so.FindProperty("_unlockableClasses");
+            unlockables.arraySize = 2;
+            WireUnlockableEntry(unlockables.GetArrayElementAtIndex(0), "Mage", mago);
+            WireUnlockableEntry(unlockables.GetArrayElementAtIndex(1), "Rogue", picaro);
             so.ApplyModifiedProperties();
+
+            EnsureTooltipCanvas(scene);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log("[ClassSelectionSetup] Pantalla de selección de clase reconstruida según el mockup.");
+        }
+
+        private static void WireUnlockableEntry(SerializedProperty element, string classId, ClassEntry entry)
+        {
+            element.FindPropertyRelative("Hero").objectReferenceValue = FindHeroByEntityId(classId);
+            element.FindPropertyRelative("ClassId").stringValue = classId;
+            element.FindPropertyRelative("Button").objectReferenceValue = entry.Button;
+            element.FindPropertyRelative("SelectionIndicator").objectReferenceValue =
+                entry.Underline != null ? entry.Underline.gameObject : null;
+            element.FindPropertyRelative("LockIndicator").objectReferenceValue = entry.LockIcon;
+        }
+
+        private static Rollgeon.Heroes.ClassHeroSO FindHeroByEntityId(string entityId)
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:ClassHeroSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var hero = AssetDatabase.LoadAssetAtPath<Rollgeon.Heroes.ClassHeroSO>(path);
+                if (hero != null && hero.EntityId == entityId) return hero;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 01_MainMenu no trae Canvas_Tooltip (solo 02_Gameplay lo tiene) — sin el
+        /// <see cref="Rollgeon.UI.Tooltips.TooltipController"/> en escena, los
+        /// tooltips de clases bloqueadas no-opean en silencio.
+        /// </summary>
+        private static void EnsureTooltipCanvas(UnityEngine.SceneManagement.Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                if (root.GetComponentInChildren<Rollgeon.UI.Tooltips.TooltipController>(true) != null)
+                    return;
+            }
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TooltipCanvasPrefabPath);
+            if (prefab == null)
+            {
+                Debug.LogError("[ClassSelectionSetup] No se encontró " + TooltipCanvasPrefabPath +
+                               " — los tooltips de clases bloqueadas no van a mostrarse.");
+                return;
+            }
+
+            PrefabUtility.InstantiatePrefab(prefab, scene);
+            Debug.Log("[ClassSelectionSetup] Canvas_Tooltip instanciado en 01_MainMenu.");
         }
 
         // ================================================================
@@ -463,17 +528,19 @@ namespace Rollgeon.EditorTools.Menu
         {
             public readonly Button Button;
             public readonly RectTransform Underline;
+            public readonly GameObject LockIcon;
 
-            public ClassEntry(Button button, RectTransform underline)
+            public ClassEntry(Button button, RectTransform underline, GameObject lockIcon)
             {
                 Button = button;
                 Underline = underline;
+                LockIcon = lockIcon;
             }
         }
 
         private static ClassEntry EnsureClassEntry(RectTransform searchRoot, RectTransform leftPanel,
-            string[] candidateNames, string canonicalName, Vector2 pos, string locKey, bool locked,
-            TMP_FontAsset font, Material outlineMat)
+            string[] candidateNames, string canonicalName, Vector2 pos, string locKey,
+            string iconSpriteName, bool locked, TMP_FontAsset font, Material outlineMat)
         {
             RectTransform entry = null;
             foreach (var candidate in candidateNames)
@@ -514,7 +581,7 @@ namespace Rollgeon.EditorTools.Menu
             frameImage.type = Image.Type.Simple;
             frameImage.preserveAspect = true;
             frameImage.raycastTarget = false;
-            frameImage.color = Color.white;
+            frameImage.color = locked ? LockedColor : Color.white;
 
             if (!entry.TryGetComponent<ClassSelectionFrameView>(out var frameView))
                 frameView = entry.gameObject.AddComponent<ClassSelectionFrameView>();
@@ -524,13 +591,47 @@ namespace Rollgeon.EditorTools.Menu
             frameSo.FindProperty("_deselectedSprite").objectReferenceValue = LoadSprite("UI-Sheet-sheet_8");
             frameSo.ApplyModifiedProperties();
 
-            // Ícono placeholder: imagen blanca visible hasta que llegue el arte.
+            // Ícono de la clase (sheet ClassIcons). Fallback: si el slice no existe
+            // se conserva el sprite que ya tenga la escena — nunca pisar con null,
+            // que deja el cuadrado blanco.
             var placeholder = EnsureRect(iconFrame, "IconPlaceholder", Vector2.zero, new Vector2(54f, 54f));
             if (!placeholder.TryGetComponent<Image>(out var placeholderImage))
                 placeholderImage = placeholder.gameObject.AddComponent<Image>();
-            placeholderImage.sprite = null;
-            placeholderImage.color = Color.white;
+            var iconSprite = LoadClassIcon(iconSpriteName);
+            if (iconSprite != null) placeholderImage.sprite = iconSprite;
+            placeholderImage.preserveAspect = true;
+            placeholderImage.color = locked ? LockedColor : Color.white;
             placeholderImage.raycastTarget = false;
+
+            // Candado de clase bloqueada — hijo de IconFrame a propósito: sobrevive
+            // al DestroyChildrenNotIn(entry, ...) del final sin ampliar la whitelist.
+            // Badge claro + candado encima: el sprite del candado es negro puro y
+            // desaparece sobre el icono oscurecido; el badge le da contraste.
+            GameObject lockIcon = null;
+            var existingLock = iconFrame.Find("LockIcon");
+            if (locked)
+            {
+                var lockRect = EnsureRect(iconFrame, "LockIcon", new Vector2(27f, -27f), new Vector2(36f, 36f));
+                if (!lockRect.TryGetComponent<Image>(out var badgeImage))
+                    badgeImage = lockRect.gameObject.AddComponent<Image>();
+                badgeImage.sprite = null;
+                badgeImage.color = AccentColor;
+                badgeImage.raycastTarget = false;
+
+                var glyphRect = EnsureRect(lockRect, "LockGlyph", Vector2.zero, new Vector2(26f, 26f));
+                if (!glyphRect.TryGetComponent<Image>(out var glyphImage))
+                    glyphImage = glyphRect.gameObject.AddComponent<Image>();
+                glyphImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(LockSpritePath);
+                glyphImage.preserveAspect = true;
+                glyphImage.raycastTarget = false;
+
+                lockRect.SetAsLastSibling();
+                lockIcon = lockRect.gameObject;
+            }
+            else if (existingLock != null)
+            {
+                Object.DestroyImmediate(existingLock.gameObject);
+            }
 
             // Label de la clase.
             var existingLabelRect = entry.Find("NameLabel") as RectTransform;
@@ -540,7 +641,7 @@ namespace Rollgeon.EditorTools.Menu
             var nameLabel = EnsureTmpLabel(entry, "NameLabel",
                 existingLabel != null ? (RectTransform)existingLabel.transform : null,
                 canonicalName, 34f, new Vector2(55f, 0f), new Vector2(170f, 44f), font, outlineMat,
-                TextColor);
+                locked ? LockedColor : TextColor);
             nameLabel.alignment = TextAlignmentOptions.MidlineLeft;
             LocalizationSetupTools.BindTMP(nameLabel, "UI", locKey);
 
@@ -556,12 +657,23 @@ namespace Rollgeon.EditorTools.Menu
             // Limpiar hijos legacy (outlines/portraits del layout viejo).
             DestroyChildrenNotIn(entry, "IconFrame", "NameLabel", "Underline");
 
-            return new ClassEntry(button, underline);
+            return new ClassEntry(button, underline, lockIcon);
         }
 
         // ================================================================
         // Helpers (copias locales — los de JuicyMenuSetupTools son private)
         // ================================================================
+
+        private static Sprite LoadClassIcon(string spriteName)
+        {
+            if (string.IsNullOrEmpty(spriteName)) return null;
+            var sprite = AssetDatabase.LoadAllAssetRepresentationsAtPath(ClassIconsPath)
+                .OfType<Sprite>()
+                .FirstOrDefault(s => s.name == spriteName);
+            if (sprite == null)
+                Debug.LogWarning($"[ClassSelectionSetup] Slice '{spriteName}' no encontrado en {ClassIconsPath} — se conserva el sprite actual.");
+            return sprite;
+        }
 
         private static Sprite LoadSprite(string spriteName)
         {
@@ -788,7 +900,10 @@ namespace Rollgeon.EditorTools.Menu
                 array.GetArrayElementAtIndex(i).objectReferenceValue = buttons[i];
             so.FindProperty("_settings").objectReferenceValue = settings;
             so.FindProperty("_playEntranceOnEnable").boolValue = true;
-            so.FindProperty("_waitForIntro").objectReferenceValue = null;
+            // El rework del menú renombró _waitForIntro → _introAnimation; null-guard
+            // para que un próximo rename no vuelva a abortar el rebuild entero.
+            var intro = so.FindProperty("_introAnimation") ?? so.FindProperty("_waitForIntro");
+            if (intro != null) intro.objectReferenceValue = null;
             so.ApplyModifiedProperties();
         }
     }

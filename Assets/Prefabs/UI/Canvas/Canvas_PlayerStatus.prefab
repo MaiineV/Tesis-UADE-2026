@@ -207,7 +207,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}
+  m_Sprite: {fileID: -1010130055, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -304,7 +304,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -623,7 +623,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 53.2, y: -33.5}
+  m_AnchoredPosition: {x: 40, y: -18.5}
   m_SizeDelta: {x: 60, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2279794645770669679
@@ -676,7 +676,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1130,7 +1130,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1303,7 +1303,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1601,10 +1601,10 @@ MonoBehaviour:
   _displayOnly: 1
   _inactiveOverlay: {fileID: 3504728877279096493}
   _depletedOverlay: {fileID: 8382959903688892462}
-  _iconActive: {fileID: 0}
-  _iconInactive: {fileID: 0}
-  _iconWhenCountPositive: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}
-  _iconWhenCountZero: {fileID: 33138378, guid: b6568abed2869da409ddf4c38de78986, type: 3}
+  _iconActive: {fileID: -1010130055, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
+  _iconInactive: {fileID: -359211130, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
+  _iconWhenCountPositive: {fileID: -1010130055, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
+  _iconWhenCountZero: {fileID: -359211130, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
   _countLabel: {fileID: 1741393096217379453}
   _countLabelFormat: x{0}
   _hideCountAtOrBelow: 0

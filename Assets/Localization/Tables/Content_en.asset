@@ -590,6 +590,30 @@ MonoBehaviour:
     m_Localized: A true gambler never leaves a Contract play uncashed.
     m_Metadata:
       m_Items: []
+  - m_Id: 7867749369741312
+    m_Localized: Coming soon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867749415878656
+    m_Localized: Coming soon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539513700352
+    m_Localized: Mage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643392
+    m_Localized: The Mage will become selectable in a future version.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643393
+    m_Localized: Rogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643394
+    m_Localized: The Rogue will become selectable in a future version.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

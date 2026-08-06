@@ -419,12 +419,8 @@ MonoBehaviour:
     m_Key: tutorial.continue_footer
     m_Metadata:
       m_Items: []
-  - m_Id: 7859475544043520
-    m_Key: roll.reroll_paid
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7859475594375169
-    m_Key: roll.chain_paid
+  - m_Id: 7867763907198976
+    m_Key: class_select.locked_tooltip
     m_Metadata:
       m_Items: []
   m_Metadata:
