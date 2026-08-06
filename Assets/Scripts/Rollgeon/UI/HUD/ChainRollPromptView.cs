@@ -12,9 +12,9 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Prompt central del tablero para la entrada PAGA a una fase de chain (sin rolls
-    /// sobrantes del pool anterior pero con energía): "Shield Roll  -1 [icono energía]",
-    /// más una línea que explica el costo. Lo muestra y esconde <c>CombatHandoffService</c>
-    /// vía <c>CombatHUDView.Show/HideChainRollPrompt</c>.
+    /// sobrantes del pool anterior pero con energía): "Shield Roll  -1 [icono energía]".
+    /// Lo muestra y esconde <c>CombatHandoffService</c> vía
+    /// <c>CombatHUDView.Show/HideChainRollPrompt</c>.
     /// </summary>
     /// <remarks>
     /// Además del Show/Hide explícito, el prompt se apaga solo con
@@ -45,13 +45,6 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Nombre de fase fallback cuando la ChainPhase no tiene Label.")]
         private string _fallbackPhaseLabel = "Phase";
 
-        [SerializeField, Optional, Tooltip("Línea que explica el costo. Vive prendida mientras " +
-                                           "el prompt está arriba. Sin ref, no se muestra.")]
-        private TextMeshProUGUI _paidHintLabel;
-
-        [SerializeField, Tooltip("Texto de la línea de ayuda. Fallback si la tabla UI no tiene la key.")]
-        private string _paidHintText = "Cada roll adicional cuesta 1 de Energía.";
-
         [SerializeField, Optional, Tooltip("Botón del prompt (BUG-034). Sin ref, el prompt no es clickeable.")]
         private Button _button;
 
@@ -77,36 +70,22 @@ namespace Rollgeon.UI.HUD
         public void Hide()
         {
             Unsubscribe();
-            if (_paidHintLabel != null) _paidHintLabel.gameObject.SetActive(false);
             gameObject.SetActive(false);
         }
 
-        /// <summary>
-        /// Pinta prompt y línea de ayuda desde <see cref="_currentPhaseLabel"/>. El prompt
-        /// solo existe para la entrada PAGA, así que el hint no es condicional: si el
-        /// prompt está arriba, hay un costo que explicar.
-        /// </summary>
+        /// <summary>Pinta el prompt desde <see cref="_currentPhaseLabel"/>.</summary>
         private void Render()
         {
+            if (_label == null) return;
+
             var phase = string.IsNullOrEmpty(_currentPhaseLabel) ? _fallbackPhaseLabel : _currentPhaseLabel;
 
-            if (_label != null)
-            {
-                // Orden obligatorio: traducir → expandir {ICON} → string.Format.
-                // El {ENERGY} tiene que desaparecer ANTES del Format: string.Format lee
-                // cualquier {…} como placeholder suyo y tira FormatException al no poder
-                // parsear "ENERGY" como índice de argumento.
-                var format = LocalizedContent.Ui(UiTextKeys.ChainRollPaid, _format);
-                _label.text = string.Format(IconSpriteTags.ReplacePlaceholders(format), phase);
-            }
-
-            if (_paidHintLabel != null)
-            {
-                _paidHintLabel.text = LocalizedContent.Ui(UiTextKeys.ChainRollPaidHint, _paidHintText);
-                // Activar explícito y no confiar en que herede del padre: así el prefab
-                // puede dejarlo apagado por default sin que el prompt salga sin ayuda.
-                _paidHintLabel.gameObject.SetActive(true);
-            }
+            // Orden obligatorio: traducir → expandir {ICON} → string.Format.
+            // El {ENERGY} tiene que desaparecer ANTES del Format: string.Format lee
+            // cualquier {…} como placeholder suyo y tira FormatException al no poder
+            // parsear "ENERGY" como índice de argumento.
+            var format = LocalizedContent.Ui(UiTextKeys.ChainRollPaid, _format);
+            _label.text = string.Format(IconSpriteTags.ReplacePlaceholders(format), phase);
         }
 
         // El botón solo escucha mientras el prompt está arriba — misma ventana que

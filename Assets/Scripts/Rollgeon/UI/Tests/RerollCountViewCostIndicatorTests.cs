@@ -12,17 +12,16 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Cubre el indicador de costo de <see cref="RerollCountView"/>: el botón muestra el
-    /// costo con el icono de energía y la línea de ayuda aparece solo cuando el próximo
-    /// roll efectivamente se paga.
+    /// Cubre el indicador de costo de <see cref="RerollCountView"/>: cuando el próximo
+    /// roll se paga, el botón lo muestra con el icono de energía.
     /// </summary>
     /// <remarks>
-    /// El "(1E)" pelado se leía como bug de traducción — el fix fue icono + explicación.
-    /// Los tests asertan <b>visibilidad y expansión del placeholder</b>, no la copia:
-    /// el texto depende del locale activo y ya lo guarda <c>LocalizationTablesTests</c>.
+    /// El "(1E)" pelado se leía como bug de traducción — el fix fue mostrar el costo con
+    /// el glifo del atlas. Los tests asertan la <b>expansión del placeholder</b>, no la
+    /// copia: el texto depende del locale activo y ya lo guarda <c>LocalizationTablesTests</c>.
     /// </remarks>
     [TestFixture]
-    public class RerollCountViewPaidHintTests
+    public class RerollCountViewCostIndicatorTests
     {
         /// <summary>Budget de mentira: solo tiene que contestar el query de costo.</summary>
         private sealed class FakeBudget : IRerollBudgetService
@@ -45,7 +44,6 @@ namespace Rollgeon.UI.Tests
         private GameObject _go;
         private RerollCountView _view;
         private TextMeshProUGUI _buttonLabel;
-        private TextMeshProUGUI _hint;
         private FakeBudget _budget;
         private Guid _playerGuid;
 
@@ -67,9 +65,6 @@ namespace Rollgeon.UI.Tests
 
             _buttonLabel = MakeLabel("ButtonLabel");
             AssignPrivate(_view, "_buttonLabel", _buttonLabel);
-
-            _hint = MakeLabel("PaidHint");
-            AssignPrivate(_view, "_paidHintLabel", _hint);
         }
 
         [TearDown]
@@ -78,62 +73,6 @@ namespace Rollgeon.UI.Tests
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
-        }
-
-        [Test]
-        public void test_reroll_hint_is_visible_when_the_next_roll_costs_energy()
-        {
-            // Arrange
-            _budget.NextQuery = RerollQueryResult.Paid();
-
-            // Act
-            _view.Bind(_playerGuid);
-
-            // Assert
-            Assert.IsTrue(_hint.gameObject.activeSelf,
-                "Con el próximo roll pago, la línea que explica el costo tiene que estar.");
-            Assert.IsNotEmpty(_hint.text);
-        }
-
-        [Test]
-        public void test_reroll_hint_is_hidden_when_the_next_roll_is_free()
-        {
-            // Arrange — con rolls gratis disponibles la explicación de costo sería ruido.
-            _budget.NextQuery = RerollQueryResult.Free();
-
-            // Act
-            _view.Bind(_playerGuid);
-
-            // Assert
-            Assert.IsFalse(_hint.gameObject.activeSelf);
-        }
-
-        [Test]
-        public void test_reroll_hint_is_hidden_when_no_reroll_is_available()
-        {
-            // Arrange
-            _budget.NextQuery = RerollQueryResult.Blocked("no-energy");
-
-            // Act
-            _view.Bind(_playerGuid);
-
-            // Assert
-            Assert.IsFalse(_hint.gameObject.activeSelf);
-        }
-
-        [Test]
-        public void test_reroll_hint_is_hidden_after_the_roll_resolves()
-        {
-            // Arrange — resuelto el roll ya no hay costo pendiente que explicar.
-            _budget.NextQuery = RerollQueryResult.Paid();
-            _view.Bind(_playerGuid);
-            Assume.That(_hint.gameObject.activeSelf, Is.True, "Precondición: el hint arranca visible.");
-
-            // Act
-            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
-
-            // Assert
-            Assert.IsFalse(_hint.gameObject.activeSelf);
         }
 
         [Test]
@@ -151,14 +90,33 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_reroll_view_does_not_throw_when_the_hint_label_is_not_wired()
+        public void test_reroll_button_label_omits_the_cost_when_the_roll_is_free()
         {
-            // Arrange — prefab sin el label de ayuda (setup viejo / rollback).
-            AssignPrivate(_view, "_paidHintLabel", null);
-            _budget.NextQuery = RerollQueryResult.Paid();
+            // Arrange — con rolls gratis no hay costo que anunciar.
+            _budget.NextQuery = RerollQueryResult.Free();
 
-            // Act / Assert
-            Assert.DoesNotThrow(() => _view.Bind(_playerGuid));
+            // Act
+            _view.Bind(_playerGuid);
+
+            // Assert
+            StringAssert.DoesNotContain("<sprite name=", _buttonLabel.text);
+            StringAssert.DoesNotContain("-1", _buttonLabel.text);
+        }
+
+        [Test]
+        public void test_reroll_button_label_resets_to_the_first_roll_text_after_the_roll_resolves()
+        {
+            // Arrange
+            _budget.NextQuery = RerollQueryResult.Paid();
+            _view.Bind(_playerGuid);
+            Assume.That(_buttonLabel.text, Does.Contain("<sprite name="),
+                "Precondición: el botón arranca mostrando el costo.");
+
+            // Act
+            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
+
+            // Assert — resuelto el roll ya no hay costo pendiente.
+            StringAssert.DoesNotContain("<sprite name=", _buttonLabel.text);
         }
 
         private TextMeshProUGUI MakeLabel(string name)

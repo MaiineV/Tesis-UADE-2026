@@ -413,16 +413,10 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RerollPaid,
                 "Reroll  -1 {ENERGY}",
                 "Reroll  -1 {ENERGY}");
-            Ui(UiTextKeys.RerollPaidHint,
-                "Cada roll adicional cuesta 1 de Energía.",
-                "Each additional roll costs 1 Energy.");
 
             Ui(UiTextKeys.ChainRollPaid,
                 "{0} Roll  -1 {ENERGY}",
                 "{0} Roll  -1 {ENERGY}");
-            Ui(UiTextKeys.ChainRollPaidHint,
-                "Cada roll adicional cuesta 1 de Energía.",
-                "Each additional roll costs 1 Energy.");
         }
 
         // ==================================================================

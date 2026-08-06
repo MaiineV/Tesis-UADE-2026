@@ -77,16 +77,6 @@ namespace Rollgeon.UI.HUD
                  "icono del atlas. Fallback si la tabla UI no tiene la key.")]
         private string _rerollPaidText = "Reroll  -1 {ENERGY}";
 
-        [Title("Reroll Count — Paid Hint")]
-        [SerializeField, Optional]
-        [Tooltip("Linea que explica el costo. Solo visible cuando el proximo roll se paga. " +
-                 "Null = skip.")]
-        private TextMeshProUGUI _paidHintLabel;
-
-        [SerializeField]
-        [Tooltip("Texto de la linea de ayuda. Fallback si la tabla UI no tiene la key.")]
-        private string _paidHintText = "Cada roll adicional cuesta 1 de Energía.";
-
         [Title("Reroll Count — Events")]
         [SerializeField]
         private UnityEvent _onExtraRollPressed = new UnityEvent();
@@ -323,8 +313,6 @@ namespace Rollgeon.UI.HUD
             if (guid != _playerGuid) return;
             SetFallback();
             RefreshCostLabel();
-            // El roll se resolvio: ya no hay costo pendiente que explicar.
-            SetPaidHintVisible(false);
             if (_buttonLabel != null) _buttonLabel.text = _firstRollText;
             if (_extraRollButton != null) _extraRollButton.interactable = false;
         }
@@ -365,16 +353,14 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// Repinta todo lo que depende del idioma y del costo del proximo roll. Se llama
-        /// junto siempre porque las tres piezas (texto del boton, costo, linea de ayuda)
-        /// leen el mismo <c>QueryExtraRoll</c> — separarlas invitaba a que una quedara
-        /// desfasada de las otras.
+        /// Repinta todo lo que depende del idioma y del costo del proximo roll. Van juntos
+        /// porque las dos piezas (texto del boton y costo) leen el mismo
+        /// <c>QueryExtraRoll</c> — separarlas invitaba a que una quedara desfasada.
         /// </summary>
         private void RefreshTexts()
         {
             RefreshCostLabel();
             RefreshButtonText();
-            RefreshPaidHint();
         }
 
         private void RefreshCostLabel()
@@ -392,37 +378,6 @@ namespace Rollgeon.UI.HUD
                 _costLabel.text = IconSpriteTags.ReplacePlaceholders(PaidCostBadge);
             else
                 _costLabel.text = "";
-        }
-
-        /// <summary>
-        /// La linea que explica el costo solo aparece cuando el proximo roll efectivamente
-        /// se paga: con rolls gratis disponibles seria ruido, y despues de resolver el roll
-        /// no hay costo pendiente (BUG del "(1E)" sin contexto).
-        /// </summary>
-        private void RefreshPaidHint()
-        {
-            if (_paidHintLabel == null) return;
-
-            if (_budget == null)
-            {
-                SetPaidHintVisible(false);
-                return;
-            }
-
-            var query = _budget.QueryExtraRoll(_playerGuid);
-            if (!query.CostsEnergy)
-            {
-                SetPaidHintVisible(false);
-                return;
-            }
-
-            _paidHintLabel.text = Localized(UiTextKeys.RerollPaidHint, _paidHintText);
-            SetPaidHintVisible(true);
-        }
-
-        private void SetPaidHintVisible(bool visible)
-        {
-            if (_paidHintLabel != null) _paidHintLabel.gameObject.SetActive(visible);
         }
 
         /// <summary>

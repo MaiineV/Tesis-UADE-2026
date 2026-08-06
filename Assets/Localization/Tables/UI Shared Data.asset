@@ -423,16 +423,8 @@ MonoBehaviour:
     m_Key: roll.reroll_paid
     m_Metadata:
       m_Items: []
-  - m_Id: 7859475594375168
-    m_Key: roll.reroll_paid_hint
-    m_Metadata:
-      m_Items: []
   - m_Id: 7859475594375169
     m_Key: roll.chain_paid
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7859475594375170
-    m_Key: roll.chain_paid_hint
     m_Metadata:
       m_Items: []
   m_Metadata:

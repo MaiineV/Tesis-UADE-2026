@@ -16,14 +16,12 @@ namespace Rollgeon.UI
     {
         // Costo en energía de un roll extra (fase de defensa y cualquier otra chain).
         public const string RerollPaid = "roll.reroll_paid";
-        public const string RerollPaidHint = "roll.reroll_paid_hint";
         public const string ChainRollPaid = "roll.chain_paid";
-        public const string ChainRollPaidHint = "roll.chain_paid_hint";
 
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
-            RerollPaid, RerollPaidHint, ChainRollPaid, ChainRollPaidHint,
+            RerollPaid, ChainRollPaid,
         };
     }
 }
