@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.AntiRepeat;
+using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dice;
@@ -273,6 +275,19 @@ namespace Rollgeon.UI.HUD
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
 
+            // Pasivo anti-repetición (Mode Combo): repetir el ÚLTIMO combo confirmado hace 0
+            // daño. Mostramos la advertencia explícita en vez del número — hacemos el chequeo
+            // acá (no dependemos de que Preview/Mitigate devuelva 0). El jugador todavía está
+            // eligiendo dados, así que el "anterior real" es directamente LastCombo (Record
+            // para este intento aún no corrió), igual que el guard de Preview en DamagePipeline.
+            if (AntiRepeatComboModeActive() && IsRepeatOfLastCombo(_lastComboId))
+            {
+                RenderLabel(
+                    Rollgeon.Localization.LocalizedContent.Ui("combat.combo_repeated_zero", "Combo repetido: 0 daño"),
+                    0);
+                return;
+            }
+
             // Daño pre-mitigación EXACTO: misma función que el golpe real, así el número
             // arrastra ATQ base del PJ, scratchMultiplier de encantamientos y el bono de
             // combo sin re-derivar la fórmula acá (era la causa del desfase reportado).
@@ -329,6 +344,23 @@ namespace Rollgeon.UI.HUD
                 return ctx.FinalDamage;
             }
             return preMitigation;
+        }
+
+        // El pasivo anti-repetición está en Mode Combo (A/B). Si el servicio no está registrado
+        // tratamos la regla como apagada (mismo criterio que DamagePipeline).
+        private static bool AntiRepeatComboModeActive()
+        {
+            return ServiceLocator.TryGetService<IAntiRepeatModeService>(out var svc)
+                   && svc != null && svc.Mode == AntiRepeatMode.Combo;
+        }
+
+        // ¿El combo actual repite el último ya confirmado? Espejo del guard de Preview en
+        // DamagePipeline (compara contra IComboLogService.LastCombo). Combo vacío nunca repite.
+        private static bool IsRepeatOfLastCombo(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId)) return false;
+            if (!ServiceLocator.TryGetService<IComboLogService>(out var log) || log == null) return false;
+            return log.LastCombo == comboId;
         }
 
         private bool TryShowActionRollMode()

@@ -140,6 +140,9 @@ namespace Patterns
         OnContractModifierChanged,
         /// <summary>args: [Guid bossGuid, int phaseIndex]. El Boss cruzó un umbral de fase (1-based). Hook para feedback visual + diálogo.</summary>
         OnBossPhaseChanged,
+        /// <summary>args: []. Cambió el modo del pasivo anti-repetición (A/B: Combo/Dice) vía el
+        /// comando de consola 'passive'. Hook para que el HUD / handlers re-lean IAntiRepeatModeService.</summary>
+        OnAntiRepeatModeChanged,
 
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
