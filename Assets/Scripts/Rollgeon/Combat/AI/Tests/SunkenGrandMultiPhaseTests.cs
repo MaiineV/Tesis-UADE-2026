@@ -65,31 +65,31 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
-        // Gate de lluvia @ 70%
+        // Gate de lluvia @ 85%
         // -----------------------------------------------------------------
 
         [Test]
-        public void Boss_HasRainGate_At70Percent()
+        public void Boss_HasRainGate_At85Percent()
         {
             // Arrange
             var allNodes = CollectAllNodes(_root);
 
-            // Act — la acción existe, y está gateada por un If con PcOwnerHpBelow ~= 0.70.
+            // Act — la acción existe, y está gateada por un If con PcOwnerHpBelow ~= 0.85.
             var rain = allNodes.OfType<AINode_ActivateRainHazard>().FirstOrDefault();
             var gate = FindGatingIf<AINode_ActivateRainHazard>(_root);
 
             // Assert
             Assert.IsNotNull(rain, "No se encontró ningún AINode_ActivateRainHazard en el árbol del boss.");
             Assert.IsNotNull(gate, "El AINode_ActivateRainHazard no está bajo el Then de ningún AINode_If.");
-            AssertGatedAtPercent(gate, 0.70f, "rain hazard");
+            AssertGatedAtPercent(gate, 0.85f, "rain hazard");
         }
 
         // -----------------------------------------------------------------
-        // Gate de refuerzos @ 50%
+        // Gate de refuerzos @ 65% (respawn loop: sin AINode_Once)
         // -----------------------------------------------------------------
 
         [Test]
-        public void Boss_HasReinforcementsGate_At50Percent_WithEnemyAndCount()
+        public void Boss_HasReinforcementsGate_At65Percent_WithEnemyAndCount()
         {
             // Arrange
             var allNodes = CollectAllNodes(_root);
@@ -104,7 +104,11 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(2, spawn.Count, "SpawnReinforcements.Count debería ser 2.");
 
             Assert.IsNotNull(gate, "El AINode_SpawnReinforcements no está bajo el Then de ningún AINode_If.");
-            AssertGatedAtPercent(gate, 0.50f, "reinforcements");
+            AssertGatedAtPercent(gate, 0.65f, "reinforcements");
+
+            // El gate NO debe estar envuelto en AINode_Once (si no, no habría respawn loop).
+            Assert.IsFalse(gate.Then is AINode_Once,
+                "El gate de refuerzos quedó con AINode_Once — rompe el respawn loop; el nodo debe tickear cada turno.");
         }
 
         // -----------------------------------------------------------------

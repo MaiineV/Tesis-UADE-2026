@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Entities;
 using Rollgeon.Grid;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
@@ -178,6 +181,130 @@ namespace Rollgeon.Combat.AI.Tests
             var node = new AINode_SpawnReinforcements { EnemyToSpawn = _enemyToSpawn, Count = 2 };
 
             Assert.AreEqual(AIResult.Failed, node.Tick(NewContext(Guid.NewGuid())));
+        }
+
+        // --- Respawn loop -----------------------------------------------------------
+
+        [Test]
+        public void Tick_FirstTickBelowGate_SpawnsExactlyCount()
+        {
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            var node = new AINode_SpawnReinforcements { EnemyToSpawn = _enemyToSpawn, Count = 2 };
+
+            var result = node.Tick(NewContext(Guid.NewGuid()));
+
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+        }
+
+        [Test]
+        public void Tick_WaveStillAlive_SpawnsNothingOnSubsequentTicks()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var boss = Guid.NewGuid();
+            var node = new AINode_SpawnReinforcements
+            {
+                EnemyToSpawn = _enemyToSpawn, Count = 2, RespawnDelayTurns = 2,
+            };
+
+            node.Tick(NewContext(boss)); // Oleada 1.
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+
+            // Con la oleada aún viva, más ticks del boss no spawnean nada.
+            for (int i = 0; i < 5; i++)
+            {
+                Assert.AreEqual(AIResult.Succeeded, node.Tick(NewContext(boss)));
+                Assert.AreEqual(2, _turnOrder.ParticipantCount,
+                    "No debe spawnear mientras haya un refuerzo vivo.");
+            }
+        }
+
+        [Test]
+        public void Tick_AfterWaveDies_WaitsRespawnDelayTurns_ThenSpawnsExactlyCount()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var boss = Guid.NewGuid();
+            var node = new AINode_SpawnReinforcements
+            {
+                EnemyToSpawn = _enemyToSpawn, Count = 2, RespawnDelayTurns = 2,
+            };
+
+            node.Tick(NewContext(boss)); // Oleada 1.
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+
+            WipeCurrentWave(); // Player aniquila la oleada.
+            Assert.AreEqual(0, _turnOrder.ParticipantCount);
+
+            // Espera exactamente RespawnDelayTurns (2) turnos del boss sin spawnear.
+            node.Tick(NewContext(boss));
+            Assert.AreEqual(0, _turnOrder.ParticipantCount, "Turno de espera 1: no respawnea todavía.");
+            node.Tick(NewContext(boss));
+            Assert.AreEqual(0, _turnOrder.ParticipantCount, "Turno de espera 2: no respawnea todavía.");
+
+            // Cumplido el delay, la siguiente ejecución spawnea otra oleada de Count.
+            var result = node.Tick(NewContext(boss));
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(2, _turnOrder.ParticipantCount, "Oleada 2 spawnea exactamente Count.");
+        }
+
+        [Test]
+        public void Tick_AfterWaveDies_WithZeroDelay_RespawnsNextTurn()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var boss = Guid.NewGuid();
+            var node = new AINode_SpawnReinforcements
+            {
+                EnemyToSpawn = _enemyToSpawn, Count = 2, RespawnDelayTurns = 0,
+            };
+
+            node.Tick(NewContext(boss)); // Oleada 1.
+            WipeCurrentWave();
+            Assert.AreEqual(0, _turnOrder.ParticipantCount);
+
+            node.Tick(NewContext(boss)); // Delay 0 ⇒ respawnea de inmediato el próximo turno.
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+        }
+
+        [Test]
+        public void Tick_RuntimeStateResetsForFreshCombat()
+        {
+            _grid.LoadRoom(NavGraph.Rect(9, 9));
+            var boss = Guid.NewGuid();
+            var node = new AINode_SpawnReinforcements
+            {
+                EnemyToSpawn = _enemyToSpawn, Count = 2, RespawnDelayTurns = 2,
+            };
+
+            node.Tick(NewContext(boss)); // Ensucia el estado runtime: oleada viva, _hasSpawnedOnce.
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+
+            // Combate nuevo = copia deep del árbol (mismo path que EnemyDataSO.CreateRuntimeAIRoot).
+            var fresh = SerializationUtility.CreateCopy(node) as AINode_SpawnReinforcements;
+            Assert.IsNotNull(fresh);
+
+            // Servicios de combate nuevos (otra pelea).
+            _turnOrder = new TurnOrderService();
+            ServiceLocator.AddService<TurnOrderService>(_turnOrder);
+
+            // La copia arranca limpia: su primer tick spawnea la oleada inicial (no cree que
+            // ya haya una oleada viva del combate anterior).
+            fresh.Tick(NewContext(boss));
+            Assert.AreEqual(2, _turnOrder.ParticipantCount,
+                "El clon runtime no debe heredar la oleada del combate previo.");
+        }
+
+        /// <summary>
+        /// Aniquila la oleada viva espejando el entierro de <c>CombatDeathWatcher</c>:
+        /// Health a 0 (fuente de verdad del alive-check) y salida del turn order.
+        /// </summary>
+        private void WipeCurrentWave()
+        {
+            var snapshot = new List<Guid>(_turnOrder.OrderForRound);
+            foreach (var guid in snapshot)
+            {
+                _attributes.SetAttributeValue<Health, int>(guid, 0);
+                _turnOrder.Remove(guid);
+            }
         }
     }
 }

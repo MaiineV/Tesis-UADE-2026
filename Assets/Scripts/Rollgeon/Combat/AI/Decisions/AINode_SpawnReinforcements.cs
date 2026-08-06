@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Entities;
 using Rollgeon.Grid;
@@ -18,8 +20,19 @@ namespace Rollgeon.Combat.AI.Decisions
     /// rotando de forma regular y estable.
     /// </summary>
     /// <remarks>
-    /// Pensado para usarse envuelto en <c>If(PcOwnerHpBelow) → Once(...)</c>, igual que el
-    /// trigger de fase existente — dispara una sola vez al cruzar el umbral de HP.
+    /// <para>
+    /// Loop de refuerzos (piso 1). El nodo se tickea CADA turno del boss (va en el Sequence
+    /// sin envoltura <c>Once</c>) y se auto-gatea: spawnea la primera oleada al cruzar el
+    /// umbral de HP, no vuelve a spawnear mientras quede algún refuerzo vivo, y cuando la
+    /// oleada entera muere espera <see cref="RespawnDelayTurns"/> turnos del boss antes de
+    /// spawnear la siguiente. Repite mientras el boss viva y siga bajo el umbral.
+    /// </para>
+    /// <para>
+    /// Pensado para ir envuelto en <c>If(PcOwnerHpBelow) → SpawnReinforcements</c> (SIN
+    /// <c>Once</c>): el gate de HP decide cuándo el loop está activo; el propio nodo decide
+    /// cuándo spawnea. Devuelve <see cref="AIResult.Succeeded"/> en los ticks de espera para
+    /// no abortar el Sequence del boss.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpawnReinforcements : AIActionNode
@@ -31,6 +44,20 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Cantidad de refuerzos a spawnear en tiles del borde de la sala.")]
         [MinValue(1)]
         public int Count = 2;
+
+        [Tooltip("Turnos del boss a esperar tras aniquilar la oleada antes de spawnear la " +
+                 "siguiente. 0 = respawnea de inmediato el próximo turno.")]
+        [MinValue(0)]
+        // Turns to wait after the wave is wiped before the next wave. 0 = respawn immediately next turn.
+        public int RespawnDelayTurns = 2;
+
+        // --- Runtime state (per-combat). NonSerialized: vive solo en la copia runtime del
+        // árbol (EnemyDataSO.CreateRuntimeAIRoot → SerializationUtility.CreateCopy), nunca en
+        // el asset. Mismo patrón que AINode_Once/_Alternate/_PromulgateRule: una pelea nueva
+        // arranca con estos campos en su default (lista null ⇒ re-creada lazy; contadores 0).
+        [NonSerialized] private List<Guid> _currentWave;
+        [NonSerialized] private int _turnsSinceWaveDied;
+        [NonSerialized] private bool _hasSpawnedOnce;
 
         public override string NodeName =>
             $"Spawn Reinforcements ({Count}x {(EnemyToSpawn != null ? EnemyToSpawn.name : "?")})";
@@ -48,17 +75,73 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!ServiceLocator.TryGetService<TurnOrderService>(out var turnOrder) || turnOrder == null)
                 return AIResult.Failed;
 
-            ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
-            var visuals = context.VisualService;
+            _currentWave ??= new List<Guid>();
 
-            var rng = context.Rng ?? new System.Random();
-            var tiles = PickEdgeSpawnTiles(grid, rng, Count);
-            if (tiles.Count == 0)
+            // ¿Queda algún refuerzo vivo de la oleada actual?
+            if (CountAliveInWave(context.Attributes) > 0)
             {
+                // Oleada en pie: no spawnear y resetear el contador de respawn (el delay solo
+                // corre desde que la oleada queda limpia, no acumula durante su vida).
+                _turnsSinceWaveDied = 0;
+                return AIResult.Succeeded;
+            }
+
+            // Oleada vacía: nunca spawneada, o toda muerta. La primera spawnea ya; las
+            // siguientes esperan RespawnDelayTurns turnos del boss desde la aniquilación.
+            if (_hasSpawnedOnce && _turnsSinceWaveDied < RespawnDelayTurns)
+            {
+                _turnsSinceWaveDied++;
+                return AIResult.Succeeded;
+            }
+
+            var spawned = SpawnWave(context, grid, registry, turnOrder);
+            if (spawned == null)
+            {
+                // Sin tiles de borde válidos: no cambiamos estado, se reintenta el próximo tick.
                 Debug.LogWarning("[AINode_SpawnReinforcements] Sin tiles de borde válidos — no se spawnea nada.");
                 return AIResult.Failed;
             }
 
+            _currentWave.Clear();
+            _currentWave.AddRange(spawned);
+            _hasSpawnedOnce = true;
+            _turnsSinceWaveDied = 0;
+            return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Cuenta los guids de la oleada actual que siguen vivos. "Vivo" = misma fuente de
+        /// verdad que la AI de targeting (<c>TargetSelector_Nearest.IsDead</c>): tiene
+        /// <see cref="Health"/> registrada y &gt; 0. Un refuerzo enterrado por
+        /// <c>CombatDeathWatcher</c> conserva su Health en &lt;= 0 (no lo desregistra de
+        /// <see cref="AttributesManager"/>), así que HP &lt;= 0 o sin registro = muerto.
+        /// </summary>
+        private int CountAliveInWave(AttributesManager attrs)
+        {
+            int alive = 0;
+            for (int i = 0; i < _currentWave.Count; i++)
+            {
+                var health = attrs.GetAttribute<Health>(_currentWave[i]);
+                if (health != null && health.Value > 0) alive++;
+            }
+            return alive;
+        }
+
+        /// <summary>
+        /// Spawnea una oleada de <see cref="Count"/> refuerzos y devuelve sus guids, o
+        /// <c>null</c> si la sala no tiene tiles de borde válidos (el caller reintenta).
+        /// </summary>
+        private List<Guid> SpawnWave(AIContext context, IGridManager grid,
+            InMemoryEntityRegistry registry, TurnOrderService turnOrder)
+        {
+            var rng = context.Rng ?? new System.Random();
+            var tiles = PickEdgeSpawnTiles(grid, rng, Count);
+            if (tiles.Count == 0) return null;
+
+            ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
+            var visuals = context.VisualService;
+
+            var spawned = new List<Guid>(tiles.Count);
             const int tier = 1;
             foreach (var coord in tiles)
             {
@@ -94,9 +177,11 @@ namespace Rollgeon.Combat.AI.Decisions
                 // activación al recibir el evento — el refuerzo "aparece" sin actuar y recién
                 // pega cuando el jugador ya tuvo un turno para reaccionar.
                 EventManager.Trigger(EventName.OnReinforcementSpawned, id);
+
+                spawned.Add(id);
             }
 
-            return AIResult.Succeeded;
+            return spawned;
         }
 
         /// <summary>Distancia Chebyshev mínima entre dos refuerzos — evita que 2 spawns
