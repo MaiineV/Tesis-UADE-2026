@@ -141,11 +141,11 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
-        // Fase de buff de velocidad @ 10%
+        // Fase de buff de velocidad @ 30%
         // -----------------------------------------------------------------
 
         [Test]
-        public void Boss_HasSpeedPhase_At10Percent()
+        public void Boss_HasSpeedPhase_At30Percent()
         {
             // Arrange
             var speedPhase = CollectAllNodes(_root).OfType<AINode_ApplyStatModifier>().FirstOrDefault();
@@ -156,7 +156,7 @@ namespace Rollgeon.Combat.AI.Tests
                 "Falta el AINode_ApplyStatModifier (fase de speed-buff a vida baja).");
             Assert.IsNotNull(speedGate,
                 "El AINode_ApplyStatModifier no está gateado por ningún AINode_If.");
-            AssertGatedAtPercent(speedGate, 0.10f, "speed phase");
+            AssertGatedAtPercent(speedGate, 0.30f, "speed phase");
         }
 
         // -----------------------------------------------------------------

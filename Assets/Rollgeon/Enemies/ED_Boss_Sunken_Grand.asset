@@ -69,7 +69,7 @@ MonoBehaviour:
       Data: true
     - Name: Percent
       Entry: 4
-      Data: 0.1
+      Data: 0.3
     - Name: 
       Entry: 8
       Data: 
