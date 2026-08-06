@@ -430,6 +430,13 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.ChainRollPaid,
                 "{0} Roll  -1 {ENERGY}",
                 "{0} Roll  -1 {ENERGY}");
+
+            // Dos líneas: primero el por qué aparece el prompt, después la regla.
+            // El salto va en la traducción y no en la vista para que cada idioma
+            // pueda cortar donde le quede bien.
+            Ui(UiTextKeys.ChainRollPaidHint,
+                "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.",
+                "You have no free rolls left!\nEach additional roll costs 1 Energy.");
         }
 
         // ==================================================================

@@ -464,6 +464,13 @@ MonoBehaviour:
     m_Localized: '{0} Roll  -1 {ENERGY}'
     m_Metadata:
       m_Items: []
+  - m_Id: 8187299979096064
+    m_Localized: 'You have no free rolls left!
+
+      Each additional roll costs
+      1 Energy.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

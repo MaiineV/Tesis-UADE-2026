@@ -12,7 +12,8 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Prompt central del tablero para la entrada PAGA a una fase de chain (sin rolls
-    /// sobrantes del pool anterior pero con energía): "Shield Roll  -1 [icono energía]".
+    /// sobrantes del pool anterior pero con energía): "Shield Roll  -1 [icono energía]",
+    /// con un subtítulo que explica la regla detrás del número.
     /// Lo muestra y esconde <c>CombatHandoffService</c> vía
     /// <c>CombatHUDView.Show/HideChainRollPrompt</c>.
     /// </summary>
@@ -45,6 +46,14 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Nombre de fase fallback cuando la ChainPhase no tiene Label.")]
         private string _fallbackPhaseLabel = "Phase";
 
+        [SerializeField, Optional, Tooltip("Subtítulo bajo el prompt que explica el costo. " +
+                                           "Sin ref, el prompt muestra solo la línea principal.")]
+        private TextMeshProUGUI _hintLabel;
+
+        [SerializeField, TextArea(2, 3)]
+        [Tooltip("Texto del subtítulo. Fallback si la tabla UI no tiene la key.")]
+        private string _hintText = "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.";
+
         [SerializeField, Optional, Tooltip("Botón del prompt (BUG-034). Sin ref, el prompt no es clickeable.")]
         private Button _button;
 
@@ -74,8 +83,18 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>Pinta el prompt desde <see cref="_currentPhaseLabel"/>.</summary>
+        /// <remarks>
+        /// El hint no tiene visibilidad propia: vive como hijo del GO del prompt, así que
+        /// el <c>SetActive</c> de <see cref="Show"/>/<see cref="Hide"/> ya lo prende y apaga.
+        /// Es deliberado — el prompt <b>siempre</b> es la entrada paga, de modo que "hay
+        /// prompt" y "el costo aplica" son la misma condición y no pueden desincronizarse.
+        /// </remarks>
         private void Render()
         {
+            if (_hintLabel != null)
+                _hintLabel.text = IconSpriteTags.ReplacePlaceholders(
+                    LocalizedContent.Ui(UiTextKeys.ChainRollPaidHint, _hintText));
+
             if (_label == null) return;
 
             var phase = string.IsNullOrEmpty(_currentPhaseLabel) ? _fallbackPhaseLabel : _currentPhaseLabel;
