@@ -245,6 +245,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 26|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: ImpactEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -329,7 +335,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 6
+      Data: 4
     - Name: Kind
       Entry: 3
       Data: 1
@@ -358,6 +364,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 37|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: ImpactEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
