@@ -18,10 +18,15 @@ namespace Rollgeon.UI
         public const string RerollPaid = "roll.reroll_paid";
         public const string ChainRollPaid = "roll.chain_paid";
 
+        // Subtítulo del prompt del tablero: explica de dónde sale el "-1 {ENERGY}".
+        // Solo aplica al prompt, que por construcción siempre es la entrada paga —
+        // el botón lateral no lo lleva porque ahí el roll también puede ser gratis.
+        public const string ChainRollPaidHint = "roll.chain_paid_hint";
+
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
-            RerollPaid, ChainRollPaid,
+            RerollPaid, ChainRollPaid, ChainRollPaidHint,
         };
     }
 }
