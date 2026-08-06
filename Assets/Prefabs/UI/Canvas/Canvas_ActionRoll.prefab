@@ -1898,7 +1898,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4293059559
   m_fontColor: {r: 0.906, g: 0.89, b: 0.886, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1911,7 +1911,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1939,13 +1939,13 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 00000000
+  m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
   m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
-  m_isOrthographic: 0
+  m_isOrthographic: 1
   m_isCullingEnabled: 0
   m_horizontalMapping: 0
   m_verticalMapping: 0
@@ -2254,7 +2254,7 @@ MonoBehaviour:
   _format: '{0} Roll  -1 {ENERGY}'
   _fallbackPhaseLabel: Phase
   _hintLabel: {fileID: 2301825427625305666}
-  _hintText: "Cada roll adicional cuesta 1 de Energ\xEDa."
+  _hintText: "\xA1No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energ\xEDa."
   _button: {fileID: 7594613285102947301}
   OnPromptClicked:
     m_PersistentCalls:
@@ -3610,7 +3610,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -26}
-  m_SizeDelta: {x: 380, y: 34}
+  m_SizeDelta: {x: 380, y: 46}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &5151432483558836607
 CanvasRenderer:
@@ -3640,7 +3640,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Cada roll adicional cuesta 1 de Energ\xEDa."
+  m_text: "\xA1No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energ\xEDa."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: a06e036e36adf474e8ef067efc45ec46, type: 2}
@@ -3649,7 +3649,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 3521307623
   m_fontColor: {r: 0.906, g: 0.89, b: 0.886, a: 0.82}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -3662,7 +3662,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3690,13 +3690,13 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 00000000
+  m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
   m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
-  m_isOrthographic: 0
+  m_isOrthographic: 1
   m_isCullingEnabled: 0
   m_horizontalMapping: 0
   m_verticalMapping: 0

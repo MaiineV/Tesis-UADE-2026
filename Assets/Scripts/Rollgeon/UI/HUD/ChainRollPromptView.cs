@@ -50,8 +50,9 @@ namespace Rollgeon.UI.HUD
                                            "Sin ref, el prompt muestra solo la línea principal.")]
         private TextMeshProUGUI _hintLabel;
 
-        [SerializeField, Tooltip("Texto del subtítulo. Fallback si la tabla UI no tiene la key.")]
-        private string _hintText = "Cada roll adicional cuesta 1 de Energía.";
+        [SerializeField, TextArea(2, 3)]
+        [Tooltip("Texto del subtítulo. Fallback si la tabla UI no tiene la key.")]
+        private string _hintText = "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.";
 
         [SerializeField, Optional, Tooltip("Botón del prompt (BUG-034). Sin ref, el prompt no es clickeable.")]
         private Button _button;
