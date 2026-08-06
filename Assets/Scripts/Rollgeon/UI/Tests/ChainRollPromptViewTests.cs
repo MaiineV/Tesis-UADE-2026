@@ -36,6 +36,12 @@ namespace Rollgeon.UI.Tests
         private static string ExpandedCost => Utility.IconSpriteTags.ReplacePlaceholders("-1 {ENERGY}");
 
         private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, bool withLabel = true)
+            => MakePrompt(out label, out _, withLabel);
+
+        /// <param name="hint">Subtítulo del prompt. Se crea como <b>hijo</b> del GO, igual
+        /// que en el prefab: de ahí sale su visibilidad, no de código.</param>
+        private ChainRollPromptView MakePrompt(out TextMeshProUGUI label, out TextMeshProUGUI hint,
+            bool withLabel = true, bool withHint = true)
         {
             var go = new GameObject("ChainRollPrompt");
             _created.Add(go);
@@ -48,6 +54,15 @@ namespace Rollgeon.UI.Tests
                 labelGo.transform.SetParent(go.transform);
                 label = labelGo.AddComponent<TextMeshProUGUI>();
                 SetPrivateField(view, "_label", label);
+            }
+
+            hint = null;
+            if (withHint)
+            {
+                var hintGo = new GameObject("HintText");
+                hintGo.transform.SetParent(go.transform);
+                hint = hintGo.AddComponent<TextMeshProUGUI>();
+                SetPrivateField(view, "_hintLabel", hint);
             }
             return view;
         }
@@ -104,6 +119,50 @@ namespace Rollgeon.UI.Tests
             // Assert — un {ENERGY} crudo en pantalla significa que falta el glifo en el atlas.
             StringAssert.DoesNotContain("{ENERGY}", label.text);
             StringAssert.Contains("<sprite name=", label.text);
+        }
+
+        // El "-1 [icono]" dice cuánto sale pero no por qué: el subtítulo explica la regla.
+        // Va fijo porque el prompt solo existe en la entrada paga.
+
+        [Test]
+        public void Show_PaintsTheHintLabel()
+        {
+            // Arrange
+            var view = MakePrompt(out _, out var hint);
+
+            // Act
+            view.Show("Shield");
+
+            // Assert — el texto exacto depende del locale y ya lo cubre
+            // LocalizationTablesTests; acá importa que el hint quede pintado.
+            Assert.IsNotEmpty(hint.text);
+        }
+
+        [Test]
+        public void Hide_AlsoHidesTheHint()
+        {
+            // Arrange — el hint no tiene visibilidad propia: cuelga del GO del prompt.
+            var view = MakePrompt(out _, out var hint);
+            view.Show("Shield");
+            Assume.That(hint.gameObject.activeInHierarchy, Is.True,
+                "Precondición: con el prompt arriba el hint se ve.");
+
+            // Act
+            view.Hide();
+
+            // Assert
+            Assert.IsFalse(hint.gameObject.activeInHierarchy);
+        }
+
+        [Test]
+        public void Show_WithoutHintRef_DoesNotThrowAndStillPaintsThePrompt()
+        {
+            // Arrange — prefab viejo / rollback: el hint es opcional.
+            var view = MakePrompt(out var label, out _, withHint: false);
+
+            // Act / Assert
+            Assert.DoesNotThrow(() => view.Show("Shield"));
+            Assert.AreEqual($"Shield Roll  {ExpandedCost}", label.text);
         }
 
         [Test]
