@@ -273,5 +273,16 @@ namespace Patterns
         OnTutorialActionUnlocked,
         /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El jugador clickeó (y seleccionó efectivamente) un botón de acción del HUD de combate — el tutorial encadena el paso siguiente (p.e. señalar los dados).</summary>
         OnHeroBehaviorClicked,
+
+        // --- Combat: refuerzos --------------------------------------------------
+        // NOTA: agregar SIEMPRE al final del enum. EventName se serializa por VALOR en assets
+        // Odin (ej. PassiveHook.TriggerEvent), así que insertar en el medio correría los ints
+        // de los miembros siguientes y corrompería data ya guardada.
+        /// <summary>args: [Guid reinforcementGuid]. Un refuerzo fue spawneado mid-combate
+        /// (<c>AINode_SpawnReinforcements</c>) y se sumó al turn order en curso. Lo consume
+        /// <c>TreeDrivenEnemyAI</c> para diferir la PRIMERA activación del refuerzo: en la ronda
+        /// en que aparece no actúa (no hace daño gratis), así el jugador tiene un turno para
+        /// reaccionar antes de que el golpe caiga.</summary>
+        OnReinforcementSpawned,
     }
 }

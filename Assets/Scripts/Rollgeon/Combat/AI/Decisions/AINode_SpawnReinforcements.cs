@@ -87,6 +87,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 }
 
                 turnOrder.Append(id);
+
+                // El refuerzo se appendea a la ronda EN CURSO, así que actúa antes de que el
+                // jugador vuelva a jugar. Sin este aviso pegaría de una en su turno de aparición
+                // (daño gratis, imposible de esquivar). TreeDrivenEnemyAI difiere esa primera
+                // activación al recibir el evento — el refuerzo "aparece" sin actuar y recién
+                // pega cuando el jugador ya tuvo un turno para reaccionar.
+                EventManager.Trigger(EventName.OnReinforcementSpawned, id);
             }
 
             return AIResult.Succeeded;
