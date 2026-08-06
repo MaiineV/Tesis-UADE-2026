@@ -19,9 +19,10 @@ namespace Rollgeon.Combat.AI.Tests
     /// deserializa vía Odin al hacer <see cref="AssetDatabase.LoadAssetAtPath"/>.
     /// </summary>
     /// <remarks>
-    /// Regression guard central: la decisión de hoy fue voltear el dice-block del boss a
-    /// combo-block. <see cref="Boss_ComboBlock_AllRotateBlocksTargetCombo"/> falla si algún
-    /// <see cref="AINode_RotateBlock"/> vuelve a <see cref="AINode_RotateBlock.BlockTarget.Dice"/>.
+    /// Valida el patrón del boss de PR #46: pool de ataque <see cref="AINode_Alternate"/> A/B
+    /// (área + slash) con telegraph→golpe (<see cref="AINode_TelegraphMark"/> /
+    /// <see cref="AINode_ExecuteTelegraph"/>) y chase (<see cref="AINode_Move"/>), más las fases
+    /// por HP: lluvia 70%, refuerzos 50%, speed-buff 10%.
     /// </remarks>
     [TestFixture]
     public class SunkenGrandMultiPhaseTests
@@ -107,56 +108,51 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
-        // Combo-block: regression guard de la decisión de hoy
+        // Pool de ataque: Alternate A/B con telegraph y chase (el patrón de #46)
         // -----------------------------------------------------------------
 
         [Test]
-        public void Boss_ComboBlock_AllRotateBlocksTargetCombo()
-        {
-            // Arrange
-            var rotateBlocks = CollectAllNodes(_root).OfType<AINode_RotateBlock>().ToList();
-
-            // Assert — develop mantiene 2 RotateBlock (If(HP<10%) -> Count=2 Else Count=1).
-            Assert.AreEqual(2, rotateBlocks.Count,
-                "Se esperaban exactamente 2 AINode_RotateBlock (fase 1 y fase 2).");
-
-            foreach (var rb in rotateBlocks)
-            {
-                Assert.AreEqual(AINode_RotateBlock.BlockTarget.Combo, rb.Target,
-                    $"RotateBlock (Count={rb.Count}) sigue en Dice — el boss debe bloquear COMBOS, no dados. " +
-                    "Regresión de la decisión de hoy.");
-            }
-        }
-
-        // -----------------------------------------------------------------
-        // Preservación de la estructura pre-existente de develop
-        // -----------------------------------------------------------------
-
-        [Test]
-        public void Boss_PreservesDevelopStructure()
+        public void Boss_HasAlternatingAttackPool_WithTelegraphAndChase()
         {
             // Arrange
             var allNodes = CollectAllNodes(_root);
 
             // Act
-            var speedPhase = allNodes.OfType<AINode_ApplyStatModifier>().FirstOrDefault();
-            var speedGate = FindGatingIf<AINode_ApplyStatModifier>(_root);
-            bool hasAttackNode =
-                allNodes.OfType<AINode_Random>().Any() ||
-                allNodes.OfType<AINode_Behavior>().Any() ||
-                allNodes.OfType<AINode_Alternate>().Any();
+            bool hasAlternate = allNodes.OfType<AINode_Alternate>().Any();
+            int telegraphMarks = allNodes.OfType<AINode_TelegraphMark>().Count();
+            int executes = allNodes.OfType<AINode_ExecuteTelegraph>().Count();
+            int chases = allNodes.OfType<AINode_Move>().Count();
 
-            // Assert — fase de buff de velocidad @ 10%.
+            // Assert — rotación A/B de ataques (área + slash).
+            Assert.IsTrue(hasAlternate,
+                "Falta el AINode_Alternate: el boss no tiene el pool de ataque rotativo A/B.");
+
+            // Assert — cada pata: telegraph (aviso→golpe) + chase.
+            Assert.AreEqual(2, telegraphMarks,
+                "Deberían existir 2 AINode_TelegraphMark (un ataque de área y uno de slash).");
+            Assert.AreEqual(2, executes,
+                "Deberían existir 2 AINode_ExecuteTelegraph (resuelven el golpe telegrafiado).");
+            Assert.AreEqual(2, chases,
+                "Deberían existir 2 AINode_Move (el chase de cada pata).");
+        }
+
+        // -----------------------------------------------------------------
+        // Fase de buff de velocidad @ 10%
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void Boss_HasSpeedPhase_At10Percent()
+        {
+            // Arrange
+            var speedPhase = CollectAllNodes(_root).OfType<AINode_ApplyStatModifier>().FirstOrDefault();
+            var speedGate = FindGatingIf<AINode_ApplyStatModifier>(_root);
+
+            // Assert
             Assert.IsNotNull(speedPhase,
-                "Falta el AINode_ApplyStatModifier (fase de speed-buff de develop).");
+                "Falta el AINode_ApplyStatModifier (fase de speed-buff a vida baja).");
             Assert.IsNotNull(speedGate,
                 "El AINode_ApplyStatModifier no está gateado por ningún AINode_If.");
             AssertGatedAtPercent(speedGate, 0.10f, "speed phase");
-
-            // Assert — subtree de ataque intacto.
-            Assert.IsTrue(hasAttackNode,
-                "No se encontró ningún nodo de ataque (Random/Behavior/Alternate) — " +
-                "el subtree de ataque de develop se perdió.");
         }
 
         // -----------------------------------------------------------------
