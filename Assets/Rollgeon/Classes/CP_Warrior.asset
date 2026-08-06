@@ -33,7 +33,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Heroes.PassiveHook, Rollgeon
     - Name: TriggerEvent
       Entry: 3
-      Data: 39
+      Data: 40
     - Name: Effect
       Entry: 7
       Data: 2|Rollgeon.Effects.EffectData, Rollgeon
@@ -134,7 +134,7 @@ MonoBehaviour:
   Description: Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos.
     Al curarte por encima de ese umbral, vuelve a la normalidad.
   Hooks:
-  - TriggerEvent: 39
+  - TriggerEvent: 40
     Effect:
       Label: Effect Group
       PreConditions: []
