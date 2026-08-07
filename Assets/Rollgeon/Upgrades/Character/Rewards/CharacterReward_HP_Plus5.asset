@@ -34,15 +34,28 @@ MonoBehaviour:
     - Name: _icon
       Entry: 6
       Data: 
+    - Name: _statGrants
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.StatGrant, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: _targetStat
       Entry: 3
       Data: 0
     - Name: _amount
       Entry: 7
-      Data: 0|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+      Data: 1|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 5
+      Data: 50
     - Name: 
       Entry: 8
       Data: 
@@ -50,11 +63,11 @@ MonoBehaviour:
       Entry: 10
       Data: 0
   _amount:
-    rid: 2879776407734714810
+    rid: 6878114991212856052
   references:
     version: 2
     RefIds:
-    - rid: 2879776407734714810
+    - rid: 6878114991212856052
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 5
+        Value: 50

@@ -47,6 +47,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: ImpactEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -297,7 +303,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 10
+      Data: 100
     - Name: Kind
       Entry: 3
       Data: 1
@@ -391,7 +397,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
-  BaseAttack: 4
+  BaseAttack: 40
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3
