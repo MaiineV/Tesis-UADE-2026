@@ -18,6 +18,7 @@
 - **Esperado**: escudo acotado (spec v2: `min(base_escudo × multi, 8)`).
 - **Observado**: escudo = `BaseDamage` del combo de ATAQUE × multiplier (`EffAddShield.cs:78-79`). Generala → 90 de escudo ≈ 45 turnos de inmunidad vs Melee (Attack 2).
 - **Branch**: `feature/damage-formula-v2` (pre-fix). **Estado**: **FIXED 09/07** — `PlayerComboShield` (min(tabla × multi, 8)) + rewire de `EffAddShield` + tabla seedeada en CH_Warrior. 1743/1743 tests EditMode verdes, incl. regresión `ComboValue_UsesShieldTable_IgnoresAttackBaseDamage`. Sin commitear aún.
+- **Nota 2026-08-07 (Spec Escudo v3)**: la fórmula separada y el cap 8 se revirtieron por decisión de diseño — el escudo ahora usa la fórmula completa de daño (sin cap; el anti-inmunidad es el reset por turno de `ShieldResetHandler` + daño enemigo ×10). La parte del fix que sigue vigente y blindada por tests es la causa raíz: el escudo jamás lee la tabla/BaseDamage de ATAQUE, su base sale de la `ShieldBaseTable`.
 
 ### ~~BUG-020 — Fase escudo hereda el ComboResult del ataque~~ INVALIDADO 09/07
 **Falso positivo del análisis estático.** Verificado en código: el chain hace roll POR FASE
