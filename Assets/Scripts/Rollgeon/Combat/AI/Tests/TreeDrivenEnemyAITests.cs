@@ -95,55 +95,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void ReinforcementSpawned_DefersFirstTurn_NoDamage_ThenActs()
-        {
-            // Arrange — un refuerzo con árbol registrado, avisado por el bus igual que lo hace
-            // AINode_SpawnReinforcements al sumarlo a la ronda en curso.
-            var spy = new SpyNode();
-            _registry.Register(_enemyId, spy, maxHp: 50);
-            using var handler = NewHandler();
-            EventManager.Trigger(EventName.OnReinforcementSpawned, _enemyId);
-
-            // Act — turno de aparición.
-            handler.HandleEnemyTurn(_enemyId);
-
-            // Assert — NO tickeó el árbol (nada de daño gratis) pero el turno se cerró.
-            Assert.AreEqual(0, spy.TickCount,
-                "El refuerzo no debe actuar en la ronda en que aparece.");
-            Assert.AreEqual(1, _turnCompleteCount,
-                "El turno diferido igual debe cerrarse para avanzar la cola.");
-
-            // Act — turno siguiente.
-            handler.HandleEnemyTurn(_enemyId);
-
-            // Assert — ya actúa normal.
-            Assert.AreEqual(1, spy.TickCount,
-                "En su segundo turno el refuerzo debe tickear su árbol.");
-            Assert.AreEqual(2, _turnCompleteCount);
-        }
-
-        [Test]
-        public void ReinforcementSpawned_DefersOnlyTheSpawnedGuid()
-        {
-            // Arrange — el aviso es para _enemyId; otro enemigo NO debe verse afectado.
-            var other = Guid.NewGuid();
-            var spawnedSpy = new SpyNode();
-            var otherSpy = new SpyNode();
-            _registry.Register(_enemyId, spawnedSpy, maxHp: 50);
-            _registry.Register(other, otherSpy, maxHp: 50);
-            using var handler = NewHandler();
-            EventManager.Trigger(EventName.OnReinforcementSpawned, _enemyId);
-
-            // Act
-            handler.HandleEnemyTurn(other);
-
-            // Assert — el enemigo no-refuerzo actúa de inmediato.
-            Assert.AreEqual(1, otherSpy.TickCount,
-                "Un enemigo que no es el refuerzo avisado no debe diferirse.");
-            Assert.AreEqual(0, spawnedSpy.TickCount);
-        }
-
-        [Test]
         public void TreeThrows_StillCallsTurnComplete()
         {
             _registry.Register(_enemyId, new ThrowingNode(), maxHp: 50);

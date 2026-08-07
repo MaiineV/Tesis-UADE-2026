@@ -1014,7 +1014,9 @@ namespace Rollgeon.Combat.Handoff
                 effCtx.KeptDice = keptDice;
                 effCtx.KeptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                 var keptTypes = ResolveKeptTypes(effCtx.KeptDiceOriginalIndices, keptDice.Length);
-                effCtx.ComboResult = DetectChainCombo(hero.Sheet, keptDice, keptTypes, _chainPhaseIndex);
+                var combo = hero.Sheet?.MatchBest(keptDice, keptTypes);
+                if (combo != null)
+                    effCtx.ComboResult = DetectWithContractMods(hero.Sheet, combo, keptDice, keptTypes);
             }
 
             var preCtx = new PreConditionContext
@@ -1505,32 +1507,6 @@ namespace Rollgeon.Combat.Handoff
             if (keep == null || keep.Length == 0) return false;
             for (int i = 0; i < keep.Length; i++) if (!keep[i]) return false;
             return true;
-        }
-
-        // Detección de combo del path chain. Además, SOLO en la fase 0, registra el combo
-        // en IComboLogService: los behaviors con chain nunca llegan al Record del path
-        // primario (DoConfirm hace early-return con _activeChain activo), así que sin este
-        // registro el historial queda vacío. El log alimenta al forbid-combo del jefe de
-        // piso 2 (AINode_RotateBlock Target=Combo) y al snapshot de resume — no borrar el
-        // Record aunque el combo del turno "no se use" acá. Las fases > 0 son continuaciones
-        // con tirada nueva — matchean para su propio daño pero no redefinen "el combo del turno".
-        internal static ComboDetectionResult? DetectChainCombo(
-            Heroes.ContractSheet sheet, int[] keptDice, IReadOnlyList<DiceType> keptTypes,
-            int chainPhaseIndex)
-        {
-            var combo = sheet?.MatchBest(keptDice, keptTypes);
-            var result = combo != null
-                ? DetectWithContractMods(sheet, combo, keptDice, keptTypes)
-                : null;
-
-            if (chainPhaseIndex == 0
-                && ServiceLocator.TryGetService<Rollgeon.Combat.ComboLog.IComboLogService>(out var comboLog)
-                && comboLog != null)
-            {
-                comboLog.Record(combo != null ? combo.ComboId : null);
-            }
-
-            return result;
         }
 
         // Capa 1 — tabla por clase (Spec Daño v2): Detect con el base plano de la clase.

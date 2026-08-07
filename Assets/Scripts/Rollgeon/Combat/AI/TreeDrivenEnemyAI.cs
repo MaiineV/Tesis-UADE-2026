@@ -42,14 +42,6 @@ namespace Rollgeon.Combat.AI
         // puede aplicar daño extra fuera de su turno.
         private readonly Dictionary<Guid, Coroutine> _running = new Dictionary<Guid, Coroutine>();
 
-        // Refuerzos spawneados mid-combate (AINode_SpawnReinforcements) que todavía no
-        // consumieron su turno de aparición. Se los appendea a la ronda en curso, así que
-        // actuarían antes de que el jugador vuelva a jugar: sin diferir, pegan de una (daño
-        // gratis). El primer HandleEnemyTurn de un guid en este set NO tickea el árbol — el
-        // refuerzo "aparece" sin actuar y recién pega en su siguiente turno, cuando el jugador
-        // ya tuvo una ronda para reaccionar.
-        private readonly HashSet<Guid> _deferredFirstTurn = new HashSet<Guid>();
-
         public TreeDrivenEnemyAI(
             IEnemyAIRegistry registry,
             AttributesManager attributes,
@@ -67,7 +59,6 @@ namespace Rollgeon.Combat.AI
 
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
             EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEnd);
-            EventManager.Subscribe(EventName.OnReinforcementSpawned, OnReinforcementSpawned);
             _subscribed = true;
         }
 
@@ -78,23 +69,12 @@ namespace Rollgeon.Combat.AI
             if (!_subscribed) return;
             EventManager.UnSubscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
             EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEnd);
-            EventManager.UnSubscribe(EventName.OnReinforcementSpawned, OnReinforcementSpawned);
             StopAllRunning();
-            _deferredFirstTurn.Clear();
             _subscribed = false;
         }
 
         public void HandleEnemyTurn(Guid enemyId)
         {
-            // Un refuerzo recién spawneado difiere su PRIMERA activación: aparece en la ronda
-            // en curso pero no actúa (no hace daño gratis). El turno se cierra de inmediato para
-            // que la cola avance; en su siguiente turno el refuerzo ya tickea su árbol normal.
-            if (_deferredFirstTurn.Remove(enemyId))
-            {
-                _onTurnComplete();
-                return;
-            }
-
             if (!_registry.TryGet(enemyId, out var root, out var maxHp) || root == null)
             {
                 _fallback.HandleEnemyTurn(enemyId);
@@ -192,13 +172,6 @@ namespace Rollgeon.Combat.AI
         {
             if (args == null || args.Length < 2) return;
             if (args[1] is int idx) _roundIndex = idx + 1; // 1-based for condition UX
-        }
-
-        private void OnReinforcementSpawned(params object[] args)
-        {
-            if (args == null || args.Length < 1) return;
-            if (args[0] is Guid guid && guid != Guid.Empty)
-                _deferredFirstTurn.Add(guid);
         }
     }
 }
