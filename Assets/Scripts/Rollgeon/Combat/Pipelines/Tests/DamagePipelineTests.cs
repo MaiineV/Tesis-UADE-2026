@@ -3,8 +3,6 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.AntiRepeat;
-using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Weakness;
 
@@ -25,7 +23,6 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
-            ServiceLocator.Clear();
 
             _attrManager = new AttributesManager();
             _sourceId = Guid.NewGuid();
@@ -52,202 +49,6 @@ namespace Rollgeon.Combat.Pipelines.Tests
             _attrManager.Dispose();
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
-            ServiceLocator.Clear();
-        }
-
-        // ── Repeat-combo guard, gated por Mode (pasivo anti-repetición A/B) ──
-        //
-        // El zeroing por combo repetido SOLO aplica en Mode Combo. En Mode Dice (o sin
-        // servicio registrado) la regla está apagada y el daño pega completo.
-
-        private static void RegisterMode(AntiRepeatMode mode)
-        {
-            ServiceLocator.AddService<IAntiRepeatModeService>(new FakeAntiRepeatModeService(mode), ServiceScope.Global);
-        }
-
-        [Test]
-        public void Resolve_ModeCombo_SameComboAsLastTurn_ZeroesDamage()
-        {
-            RegisterMode(AntiRepeatMode.Combo);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par");   // turno anterior
-            comboLog.Record("combo.par");   // CombatHandoffService ya registró ESTE golpe antes de Resolve
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(0, ctx.FinalDamage, "Mode Combo: mismo combo 2 veces seguidas debe anular el daño.");
-        }
-
-        [Test]
-        public void Resolve_ModeCombo_DifferentComboThanLastTurn_FullDamage()
-        {
-            RegisterMode(AntiRepeatMode.Combo);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.doblepar"); // turno anterior
-            comboLog.Record("combo.par");      // este golpe (ya registrado)
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage, "Combo distinto al anterior debe pegar completo.");
-        }
-
-        [Test]
-        public void Resolve_ModeCombo_SameComboWithDifferentComboInBetween_FullDamage()
-        {
-            RegisterMode(AntiRepeatMode.Combo);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par");       // T1
-            comboLog.Record("combo.doblepar");  // T2
-            comboLog.Record("combo.par");       // T3 — este golpe
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage,
-                "Par->DoblePar->Par: el anterior inmediato es DoblePar, no Par — debe pegar completo.");
-        }
-
-        [Test]
-        public void Resolve_ModeCombo_NoComboFallback_NeverZeroed()
-        {
-            RegisterMode(AntiRepeatMode.Combo);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record(null); // fallback "sin combo"
-            comboLog.Record(null); // otro fallback seguido
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = null,
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage,
-                "Ataques sin combo (ComboId null) nunca deben anularse por esta regla.");
-        }
-
-        [Test]
-        public void Preview_ModeCombo_PredictsRepeatZero_MatchesResolve()
-        {
-            RegisterMode(AntiRepeatMode.Combo);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par"); // último combo confirmado
-
-            var pipeline = new DamagePipeline(_attrManager);
-
-            // Preview: el intento todavía no se confirmó (Record no corrió para él).
-            var previewCtx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-            pipeline.Preview(previewCtx);
-
-            // Ahora se confirma de verdad: Record corre, después Resolve.
-            comboLog.Record("combo.par");
-            var resolveCtx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-            pipeline.Resolve(resolveCtx);
-
-            Assert.AreEqual(0, previewCtx.FinalDamage);
-            Assert.AreEqual(0, resolveCtx.FinalDamage);
-            Assert.AreEqual(resolveCtx.FinalDamage, previewCtx.FinalDamage,
-                "Preview debe predecir exactamente lo que Resolve termina aplicando.");
-        }
-
-        [Test]
-        public void Resolve_ModeDice_SameComboAsLastTurn_FullDamage()
-        {
-            RegisterMode(AntiRepeatMode.Dice); // regla de combo repetido APAGADA en Mode Dice
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par");
-            comboLog.Record("combo.par");
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage,
-                "Mode Dice: repetir combo NO debe anular el daño (la regla es exclusiva de Mode Combo).");
-        }
-
-        [Test]
-        public void Preview_ModeDice_SameComboAsLastTurn_FullDamage()
-        {
-            RegisterMode(AntiRepeatMode.Dice);
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par");
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Preview(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage, "Mode Dice: Preview no debe anular el combo repetido.");
-        }
-
-        [Test]
-        public void Resolve_NoModeServiceRegistered_SameComboAsLastTurn_FullDamage()
-        {
-            // Sin IAntiRepeatModeService la regla queda apagada (legacy) — protege los tests
-            // del pipeline que no wirean el pasivo.
-            var comboLog = new ComboLogService();
-            comboLog.Register();
-            comboLog.Record("combo.par");
-            comboLog.Record("combo.par");
-
-            var pipeline = new DamagePipeline(_attrManager);
-            var ctx = new DamageContext
-            {
-                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
-                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
-            };
-
-            pipeline.Resolve(ctx);
-
-            Assert.AreEqual(30, ctx.FinalDamage,
-                "Sin servicio de modo registrado, la regla de combo repetido debe estar apagada.");
         }
 
         // ── 1. Apply_ReducesTargetHealth ─────────────────────────────────
@@ -636,13 +437,6 @@ namespace Rollgeon.Combat.Pipelines.Tests
         }
 
         // ── Fake implementations ─────────────────────────────────────────
-
-        private sealed class FakeAntiRepeatModeService : IAntiRepeatModeService
-        {
-            public FakeAntiRepeatModeService(AntiRepeatMode mode) => Mode = mode;
-            public AntiRepeatMode Mode { get; private set; }
-            public void SetMode(AntiRepeatMode mode) => Mode = mode;
-        }
 
         private class FakeWeaknessChecker : IWeaknessChecker
         {

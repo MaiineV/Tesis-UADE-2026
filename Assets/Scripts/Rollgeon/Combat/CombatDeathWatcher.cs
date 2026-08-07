@@ -122,19 +122,6 @@ namespace Rollgeon.Combat
                 && room.State == RoomState.Uncleared
                 && room.SpawnedEnemies.Count == 0;
 
-            // El boss es el único enemigo trackeado en SpawnedEnemies; los refuerzos que spawnea
-            // mid-combate (AINode_SpawnReinforcements) viven en el turn order / grid / aiRegistry
-            // y como pawns, pero NUNCA se agregan a SpawnedEnemies. Por eso matar al boss deja
-            // SpawnedEnemies vacío ⇒ isFinalKill=true y se dispara Victory con los refuerzos aún
-            // vivos: quedaban como pawns huérfanos (nadie los despawnea) y, al seguir en la cola
-            // en curso, alcanzaban a actuar durante la animación de muerte del boss — daño en un
-            // combate ya ganado y estado colgado cuando CombatExitState hace TurnOrder.Reset().
-            // Decisión de diseño (lockeada): al morir el boss se despawnean los refuerzos
-            // restantes y el combate cierra limpio como Victory. Se hace YA (no diferido) para
-            // que ningún refuerzo llegue a actuar entre el golpe letal y la Victory.
-            if (isFinalKill)
-                DespawnRemainingCombatants(deadGuid);
-
             // Token del combate en curso. El cierre por Victory se difiere hasta que termina
             // la animación de muerte (callback abajo), y esa coroutine del FeedbackManager no
             // se cancela. Si el combate se cerró por otra vía (Defeat simultáneo, EffForceDoor)
@@ -168,30 +155,6 @@ namespace Rollgeon.Combat
                 _turn?.OnFeedbackComplete();
                 FinishDeath(deadGuid, isFinalKill, combatRoomId);
             });
-        }
-
-        /// <summary>
-        /// Despawnea a todos los combatientes vivos que aún quedan en el turn order y que no son
-        /// el jugador (típicamente los refuerzos del boss). Espeja EXACTAMENTE el entierro de una
-        /// muerte normal (sale del turn order, del grid, del registry de AI y su pawn se despawnea)
-        /// pero sin la secuencia de muerte ni el drop: no fue una kill, es una limpieza de fin de
-        /// combate. Los marca en <see cref="_processed"/> para descartar cualquier evento letal
-        /// tardío contra un refuerzo ya despawneado.
-        /// </summary>
-        private void DespawnRemainingCombatants(Guid justDied)
-        {
-            // Snapshot: Remove muta la cola viva del servicio.
-            var remaining = new List<Guid>(_turnOrder.OrderForRound);
-            foreach (var guid in remaining)
-            {
-                if (guid == Guid.Empty || guid == justDied || guid == _player.PlayerGuid) continue;
-
-                _processed.Add(guid);
-                _turnOrder.Remove(guid);
-                _grid?.Unregister(guid);
-                _aiRegistry?.Unregister(guid);
-                _visuals?.Despawn(guid);
-            }
         }
 
         private void FinishDeath(Guid deadGuid, bool isFinalKill, Guid combatRoomId)

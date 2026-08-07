@@ -191,21 +191,6 @@ namespace Rollgeon.Combat
             return true;
         }
 
-        /// <summary>
-        /// Agrega <paramref name="guid"/> al final de la ronda en curso (refuerzos que se
-        /// suman a mitad de combate). No toca <see cref="_cursor"/> — quien esté actuando
-        /// sigue actuando — y no re-rollea iniciativa: el nuevo guid queda en esa posición
-        /// de forma estable en las rondas siguientes, igual que el resto de la cola.
-        /// No-op silencioso si el guid ya es participante o es <see cref="Guid.Empty"/>.
-        /// </summary>
-        public void Append(Guid guid)
-        {
-            if (guid == Guid.Empty || _orderForRound.Contains(guid)) return;
-
-            _orderForRound.Add(guid);
-            FireTurnQueueBuilt();
-        }
-
         /// <summary>Limpia el estado al cerrar combate.</summary>
         public void Reset()
         {

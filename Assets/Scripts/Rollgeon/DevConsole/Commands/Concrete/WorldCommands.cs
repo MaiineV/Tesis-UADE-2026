@@ -141,29 +141,6 @@ namespace Rollgeon.DevConsole.Commands
         }
     }
 
-    public sealed class BossCommand : DevCommandBase
-    {
-        public override string Name => "boss";
-        public override string Description => "Teleporta directo a la sala de boss del piso actual.";
-
-        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
-        {
-            if (!RequireRun(ctx, out var e1)) return e1;
-            if (!RequireService<IDungeonService>(ctx, out var dungeon, out var e2)) return e2;
-
-            foreach (var kv in dungeon.GetAllRoomInstances())
-            {
-                if (kv.Value?.Template != null && kv.Value.Template.Type == RoomType.Boss)
-                {
-                    return dungeon.EnterRoomByInstanceId(kv.Key)
-                        ? CommandResult.Ok("Teleport a la sala de boss.")
-                        : CommandResult.Fail("No se pudo entrar a la sala de boss.");
-                }
-            }
-            return CommandResult.Fail("No se encontró sala de boss en el piso actual.");
-        }
-    }
-
     public sealed class ClassCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args = { new ArgSpec("heroId", ArgKind.String, options: ArgProviders.Heroes) };
