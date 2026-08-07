@@ -337,23 +337,47 @@ namespace Rollgeon.EditorTools.Localization
         // ==================================================================
 
         /// <remarks>
-        /// La pista es lo que ve el jugador mientras el unlock está BLOQUEADO — o sea,
-        /// lo único visible hasta cumplirlo. La resuelve <c>LocalizedContent.Hint</c>.
+        /// Siembra el trío completo de cada unlock: <c>.name</c> (título), <c>.desc</c>
+        /// (texto una vez desbloqueado) y <c>.hint</c> (lo único visible mientras está
+        /// BLOQUEADO). Los resuelven <c>LocalizedContent.Name/Description/Hint</c>.
+        /// <para>
+        /// El <c>.name</c>/<c>.desc</c> de d8/d10/berserker/gambler vivía solo en las tablas
+        /// (cargado a mano en el commit i18n original), NO acá — así que una regeneración de
+        /// tablas desde el seeder los borraba y su descripción caía al fallback español bajo
+        /// inglés (BUG-026). Ahora el seeder es la fuente de verdad COMPLETA: los valores son
+        /// idénticos a los de las tablas, así que re-sembrar es idempotente.
+        /// </para>
         /// </remarks>
         private static void SeedUnlockHints()
         {
+            Content("unlock.dice.d8.name", "Dado D8", "D8 Die");
+            Content("unlock.dice.d8.desc",
+                "El D8 queda disponible en la pantalla de armado de build.",
+                "The D8 becomes available on the build screen.");
             Content("unlock.dice.d8.hint",
                 "Dominá el dado estándar: ganá una run confiando solo en el clásico de seis caras.",
                 "Master the standard die: win a run relying only on the classic six-sider.");
 
+            Content("unlock.dice.d10.name", "Dado D10", "D10 Die");
+            Content("unlock.dice.d10.desc",
+                "El D10 queda disponible en la pantalla de armado de build.",
+                "The D10 becomes available on the build screen.");
             Content("unlock.dice.d10.hint",
                 "Hay una receta exacta de dados que abre esta puerta. Experimentá con la mezcla.",
                 "There's an exact dice recipe that opens this door. Experiment with the mix.");
 
+            Content("unlock.class.berserker.name", "Berserker", "Berserker");
+            Content("unlock.class.berserker.desc",
+                "El Berserker queda seleccionable en la pantalla de selección de personaje.",
+                "The Berserker becomes selectable on the character selection screen.");
             Content("unlock.class.berserker.hint",
                 "Demostrá fuerza de ocho caras: llevá el dado nuevo a una victoria.",
                 "Prove your eight-sided strength: carry the new die to a victory.");
 
+            Content("unlock.class.gambler.name", "Gambler", "Gambler");
+            Content("unlock.class.gambler.desc",
+                "El Gambler queda seleccionable en la pantalla de selección de personaje.",
+                "The Gambler becomes selectable on the character selection screen.");
             Content("unlock.class.gambler.hint",
                 "Un verdadero apostador no deja ninguna jugada del Contrato sin cobrar.",
                 "A true gambler never leaves a Contract play uncashed.");

@@ -3,6 +3,8 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -18,11 +20,14 @@ namespace Rollgeon.EditorTools
     /// Valida pero NO muta PlayerSettings: mutar en cada build ensuciaría
     /// ProjectSettings.asset y generaría ruido de git en cada corrida.
     ///
-    /// El contenido Addressables lo construye el package junto con el player
-    /// (BuildAddressablesWithPlayerBuild = BuildWithPlayer, ver Feature#0036). Si
-    /// algún día CI necesita que el content build sea una etapa que falle por
-    /// separado, poner ese setting en DoNotBuildWithPlayer y llamar acá a
-    /// BuildPlayerContent chequeando result.Error antes de BuildPlayer.
+    /// El contenido Addressables se reconstruye por partida doble (belt &amp; suspenders,
+    /// Fix#0042): el setting está en BuildWithPlayer, así que File → Build / Build
+    /// Profiles regeneran las bundles solos; y este script llama explícitamente a
+    /// BuildPlayerContent con fail-fast antes de BuildPlayer, para que un content build
+    /// roto corte ACÁ (CI-friendly) en vez de shippear localización stale (BUG-025/026:
+    /// las tablas del repo estaban bien pero el build shippeaba bundles de semanas atrás).
+    /// Costo: en el path scripteado el contenido se buildea dos veces. Si el tiempo
+    /// molesta, dejar el call explícito y poner el setting en DoNotBuildWithPlayer.
     ///
     /// Menú: Rollgeon → Build. Los métodos públicos sirven de entry point para
     /// -executeMethod desde CLI, con -buildPath opcional.
@@ -76,6 +81,16 @@ namespace Rollgeon.EditorTools
                     ? BuildOptions.Development | BuildOptions.AllowDebugging
                     : BuildOptions.None,
             };
+
+            // Fail-fast del contenido Addressables ANTES del player build (que tarda ~20 min).
+            // Sin esto, un content build roto/stale shippea localización vieja en silencio.
+            AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult contentResult);
+            if (!string.IsNullOrEmpty(contentResult.Error))
+            {
+                Fail($"Build de contenido Addressables falló: {contentResult.Error}. " +
+                     "No se buildeó el player — se habría shippeado localización stale.");
+                return;
+            }
 
             Debug.Log($"[RollgeonBuild] Buildeando {(development ? "Development" : "Release")} " +
                       $"→ {options.locationPathName} ({scenes.Length} escenas).");
