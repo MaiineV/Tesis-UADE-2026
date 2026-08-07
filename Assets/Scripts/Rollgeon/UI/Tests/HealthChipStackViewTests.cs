@@ -50,14 +50,14 @@ namespace Rollgeon.UI.Tests
             _playerGuid = Guid.NewGuid();
 
             _hero = ScriptableObject.CreateInstance<ClassHeroSO>();
-            _hero.BaseMaxHp = 10;
+            _hero.BaseMaxHp = 100;
             _playerService = new FakePlayerService { PlayerGuid = _playerGuid, CurrentHero = _hero };
             ServiceLocator.AddService<IPlayerService>(_playerService);
 
             _attrs = new AttributesManager();
             var attrs = new ModifiableAttributes();
             attrs.EnsureInitialized();
-            attrs.SetAttribute<Health>(new Health(10));
+            attrs.SetAttribute<Health>(new Health(100));
             attrs.SetAttribute<Shield>(new Shield(0));
             _attrs.Register(_playerGuid, attrs);
             ServiceLocator.AddService<AttributesManager>(_attrs);
@@ -100,8 +100,9 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
 
+            // 100 HP a 10 puntos por ficha = 10 fichas; el label muestra números reales.
             Assert.AreEqual(10, _stack.DisplayedCount);
-            Assert.AreEqual("10/10", _label.text);
+            Assert.AreEqual("100/100", _label.text);
         }
 
         [Test]
@@ -109,16 +110,16 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
 
-            _attrs.SetAttributeValue<Health, int>(_playerGuid, 5);
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 50);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = Guid.NewGuid(),
                 TargetGuid = _playerGuid,
-                FinalDamage = 5,
+                FinalDamage = 50,
             });
 
             Assert.AreEqual(5, _stack.DisplayedCount);
-            Assert.AreEqual("5/10", _label.text);
+            Assert.AreEqual("50/100", _label.text);
         }
 
         [Test]
@@ -126,36 +127,36 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
 
-            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 2);
-            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 2);
+            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 20);
+            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 20);
 
             Assert.AreEqual(12, _stack.DisplayedCount, "10 de vida + 2 de escudo apiladas.");
-            Assert.AreEqual("<color=#A3B3B1>12</color>/10", _label.text);
+            Assert.AreEqual("<color=#A3B3B1>120</color>/100", _label.text);
         }
 
         [Test]
         public void AbsorbBurst_ShieldEventThenDamagePayload_NoDoubleCount()
         {
             _view.Bind(_playerGuid);
-            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 2);
-            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 2);
+            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 20);
+            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 20);
 
-            // Golpe de 4: 2 absorbidos por escudo, 2 a la vida. El pipeline emite
+            // Golpe de 40: 20 absorbidos por escudo, 20 a la vida. El pipeline emite
             // OnShieldChanged y DamageResolvedPayload en el mismo burst síncrono.
             _attrs.SetAttributeValue<Shield, int>(_playerGuid, 0);
-            _attrs.SetAttributeValue<Health, int>(_playerGuid, 8);
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 80);
             EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 0);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = Guid.NewGuid(),
                 TargetGuid = _playerGuid,
-                FinalDamage = 2,
-                ShieldAbsorbed = 2,
+                FinalDamage = 20,
+                ShieldAbsorbed = 20,
                 ShieldBroken = true,
             });
 
             Assert.AreEqual(8, _stack.DisplayedCount);
-            Assert.AreEqual("8/10", _label.text);
+            Assert.AreEqual("80/100", _label.text);
         }
 
         [Test]
@@ -163,32 +164,32 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
 
-            _attrs.SetAttributeValue<Health, int>(_playerGuid, 5);
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 50);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = Guid.NewGuid(),
                 TargetGuid = Guid.NewGuid(),
-                FinalDamage = 5,
+                FinalDamage = 50,
             });
 
             Assert.AreEqual(10, _stack.DisplayedCount,
                 "Un evento de otra entidad no debe refrescar la pila del jugador.");
-            Assert.AreEqual("10/10", _label.text);
+            Assert.AreEqual("100/100", _label.text);
         }
 
         [Test]
-        public void HighValues_StackGrowsUnbounded_OneChipPerPoint()
+        public void HighValues_StackGrowsUnbounded_OneChipPerTenPoints()
         {
             _view.Bind(_playerGuid);
 
-            // Sin tope visual: la pila representa cada punto aunque el valor sea
-            // alto (el cap real lo pone el diseño del juego, no el HUD).
-            _attrs.SetAttributeValue<Health, int>(_playerGuid, 45);
-            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 5);
-            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 5);
+            // Sin tope visual: la pila crece con el recurso a razón de 1 ficha cada
+            // 10 puntos (el cap real lo pone el diseño del juego, no el HUD).
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 450);
+            _attrs.SetAttributeValue<Shield, int>(_playerGuid, 50);
+            EventManager.Trigger(EventName.OnShieldChanged, _playerGuid, 50);
 
             Assert.AreEqual(50, _stack.DisplayedCount);
-            Assert.AreEqual("<color=#A3B3B1>50</color>/10", _label.text);
+            Assert.AreEqual("<color=#A3B3B1>500</color>/100", _label.text);
         }
 
         [Test]
@@ -201,12 +202,12 @@ namespace Rollgeon.UI.Tests
             {
                 SourceGuid = Guid.NewGuid(),
                 TargetGuid = _playerGuid,
-                FinalDamage = 10,
+                FinalDamage = 100,
                 WasLethal = true,
             });
 
             Assert.AreEqual(0, _stack.DisplayedCount);
-            Assert.AreEqual("0/10", _label.text);
+            Assert.AreEqual("0/100", _label.text);
         }
 
         // ---------------- helpers ----------------

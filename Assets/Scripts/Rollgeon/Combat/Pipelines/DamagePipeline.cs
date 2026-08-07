@@ -21,6 +21,13 @@ namespace Rollgeon.Combat.Pipelines
     /// </summary>
     public class DamagePipeline : IDamagePipeline
     {
+        /// <summary>
+        /// HP con los que queda un target salvado por <see cref="ILethalDamageOverride"/>
+        /// (tutorial). 10% del pool base de 100 — el mismo ratio que tenía 1 HP sobre
+        /// el pool viejo de 10.
+        /// </summary>
+        public const int LethalOverrideRemainingHp = 10;
+
         private readonly AttributesManager _attributes;
         private readonly IWeaknessChecker _weaknessChecker;
 
@@ -127,13 +134,17 @@ namespace Rollgeon.Combat.Pipelines
                     if (newHp < 0) newHp = 0;
 
                     // Override de letalidad (tutorial): el golpe letal deja al target
-                    // en 1 HP y WasLethal queda false — el DeathWatcher nunca lo ve.
+                    // con un resto de vida y WasLethal queda false — el DeathWatcher
+                    // nunca lo ve. Clampeado a la vida actual para no curar a un target
+                    // que ya estaba por debajo del resto.
                     if (newHp <= 0
                         && ServiceLocator.TryGetService<ILethalDamageOverride>(out var lethalOverride)
                         && lethalOverride != null
                         && lethalOverride.ShouldPreventLethal(ctx.TargetId))
                     {
-                        newHp = 1;
+                        newHp = currentHp < LethalOverrideRemainingHp
+                            ? currentHp
+                            : LethalOverrideRemainingHp;
                         ctx.FinalDamage = currentHp - newHp;
                     }
 
