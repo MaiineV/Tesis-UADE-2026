@@ -24,6 +24,7 @@ namespace Rollgeon.EditorTools.Localization
         public static void SeedAll()
         {
             SeedTutorial();
+            SeedCombatUi();
             SeedEnchantments();
             SeedUnlockHints();
             SeedMiscContent();
@@ -185,6 +186,19 @@ namespace Rollgeon.EditorTools.Localization
             Ui(TutorialTextKeys.ContinueFooter,
                 "Hacé click para continuar",
                 "Click to continue");
+        }
+
+        // ==================================================================
+        // Combate — chrome seteado por código (tabla UI)
+        // ==================================================================
+
+        private static void SeedCombatUi()
+        {
+            // Pasivo anti-repetición (Mode Combo): la fórmula de daño muestra esto en vez del
+            // número cuando el jugador repite el último combo (DamageFormulaView).
+            Ui("combat.combo_repeated_zero",
+                "Combo repetido: 0 daño",
+                "Repeated combo: 0 damage");
         }
 
         // ==================================================================

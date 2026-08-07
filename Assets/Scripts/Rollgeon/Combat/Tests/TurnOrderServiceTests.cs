@@ -511,6 +511,97 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(a, _service.Current, "Cursor should wrap to index 0.");
         }
 
+        // --- Append (refuerzos a mitad de combate) -------------------------
+
+        [Test]
+        public void Append_AddsGuidToEndOfCurrentRound_WithoutMovingCursor()
+        {
+            var player = RegisterEntityWithSpeed(10);
+            var boss = RegisterEntityWithSpeed(5);
+            InstallProvider(1, 1);
+
+            _service.BuildForCombat(new[] { player, boss });
+            _service.Advance(); // cursor → boss (index 1), simula "boss actuando"
+
+            var reinforcementA = Guid.NewGuid();
+            var reinforcementB = Guid.NewGuid();
+            _service.Append(reinforcementA);
+            _service.Append(reinforcementB);
+
+            Assert.AreEqual(4, _service.ParticipantCount);
+            CollectionAssert.AreEqual(
+                new[] { player, boss, reinforcementA, reinforcementB }, _service.OrderForRound);
+            Assert.AreEqual(boss, _service.Current, "Append no debe mover el cursor actual.");
+        }
+
+        [Test]
+        public void Append_FiresOnTurnQueueBuilt()
+        {
+            var a = RegisterEntityWithSpeed(5);
+            InstallProvider(1);
+            _service.BuildForCombat(new[] { a });
+
+            bool fired = false;
+            EventManager.Subscribe(EventName.OnTurnQueueBuilt, _ => fired = true);
+
+            _service.Append(Guid.NewGuid());
+
+            Assert.IsTrue(fired, "Append debe disparar OnTurnQueueBuilt para que el HUD refleje la cola nueva.");
+        }
+
+        [Test]
+        public void Append_ReinforcementsActAfterCurrentRoundFinishes_ThenJoinNormalRotation()
+        {
+            var player = RegisterEntityWithSpeed(10);
+            var boss = RegisterEntityWithSpeed(5);
+            InstallProvider(1, 1);
+
+            _service.BuildForCombat(new[] { player, boss });
+            _service.Advance(); // cursor → boss: boss dispara el spawn en su propio turno
+
+            var reinforcementA = Guid.NewGuid();
+            var reinforcementB = Guid.NewGuid();
+            _service.Append(reinforcementA);
+            _service.Append(reinforcementB);
+
+            // El resto de ESTA ronda: primero los refuerzos, después wrap a player.
+            var next1 = _service.Advance();
+            Assert.AreEqual(reinforcementA, next1);
+            var next2 = _service.Advance();
+            Assert.AreEqual(reinforcementB, next2);
+            var wrapped = _service.Advance();
+            Assert.AreEqual(player, wrapped, "Tras los refuerzos, wrap normal a player.");
+            Assert.AreEqual(1, _service.RoundIndex);
+
+            // Ronda siguiente: los 4 rotan de forma regular y estable.
+            CollectionAssert.AreEqual(
+                new[] { player, boss, reinforcementA, reinforcementB }, _service.OrderForRound);
+        }
+
+        [Test]
+        public void Append_DuplicateGuid_IsNoOp()
+        {
+            var a = RegisterEntityWithSpeed(5);
+            InstallProvider(1);
+            _service.BuildForCombat(new[] { a });
+
+            _service.Append(a); // ya es participante
+
+            Assert.AreEqual(1, _service.ParticipantCount);
+        }
+
+        [Test]
+        public void Append_EmptyGuid_IsNoOp()
+        {
+            var a = RegisterEntityWithSpeed(5);
+            InstallProvider(1);
+            _service.BuildForCombat(new[] { a });
+
+            _service.Append(Guid.Empty);
+
+            Assert.AreEqual(1, _service.ParticipantCount);
+        }
+
         // --- Reset --------------------------------------------------------
 
         [Test]
