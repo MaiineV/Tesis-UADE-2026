@@ -24,22 +24,35 @@ namespace Rollgeon.Upgrades.Dice
     /// </remarks>
     public sealed class EnchantmentScratch
     {
-        /// <summary>Bonus plano que se suma al daño del combo resuelto. Suma entre triggers.</summary>
+        /// <summary>
+        /// Bonus plano que se suma al resultado del combo resuelto. Suma entre triggers.
+        /// Desde la Spec Escudo v3 la fórmula es compartida: en fase de defensa este bono
+        /// suma ESCUDO en vez de daño.
+        /// </summary>
         public int BonusComboDamage;
 
-        /// <summary>Multiplicador aplicado al daño final del combo. Se compone multiplicativamente entre triggers.</summary>
+        /// <summary>
+        /// Multiplicador aplicado al término base del combo. Se compone multiplicativamente
+        /// entre triggers. Aplica igual al escudo de fase defensa (fórmula compartida v3).
+        /// </summary>
         public float ComboDamageMultiplier = 1f;
 
         /// <summary>
-        /// Si algún trigger setea este flag a <c>true</c>, el daño del combo se anula
+        /// Si algún trigger setea este flag a <c>true</c>, el resultado del combo se anula
         /// a 0 después de aplicar multipliers/bonuses. Used by "no gold = no damage".
+        /// Bloquea también el escudo de fase defensa (fórmula compartida v3).
         /// </summary>
         public bool BlockComboDamage;
 
         /// <summary>Oro neto que el service le suma al jugador tras el evento. Puede ser negativo (costos).</summary>
         public int BonusGold;
 
-        /// <summary>Shield extra que el service le aplica al jugador tras el evento.</summary>
+        /// <summary>
+        /// Shield extra que el service le aplica al jugador tras el evento. Grant plano de
+        /// recurso, FUERA de la fórmula de combo (no confundir con el escudo de EffAddShield
+        /// ComboValue). Ojo al autorar: un encantamiento con BonusShield y BonusComboDamage
+        /// juntos aporta por ambos canales en fase de defensa.
+        /// </summary>
         public int BonusShield;
 
         /// <summary>

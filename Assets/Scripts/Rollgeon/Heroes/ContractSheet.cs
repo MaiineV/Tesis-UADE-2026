@@ -48,11 +48,12 @@ namespace Rollgeon.Heroes
                  "Para SumaX reemplaza solo el piso plano — X × hits suma encima.")]
         public List<ComboBaseDamageEntry> BaseDamageTable = new List<ComboBaseDamageEntry>();
 
-        [Title("Escudo por clase (Spec Escudo v2)")]
+        [Title("Escudo por clase (Spec Escudo v3)")]
         [InfoBox("escudo_combo_base por clase: tabla FIJA, independiente de BaseDamageTable — " +
                  "el escudo NUNCA deriva del daño (causa raíz del bug de escudo trivial). " +
                  "Sin entrada = 0: esta clase no genera escudo con ese combo. " +
-                 "Fórmula completa en PlayerComboShield: min(base × multi_dmg_combo, cap 8).")]
+                 "Fórmula completa en PlayerComboShield: misma que el daño (ATQ + base × " +
+                 "multi × scratch), sin cap — el freno es el reset de escudo por turno.")]
         public List<ComboShieldBaseEntry> ShieldBaseTable = new List<ComboShieldBaseEntry>();
 
         /// <summary>Etiqueta legible para UI (screen #98).</summary>
@@ -267,9 +268,10 @@ namespace Rollgeon.Heroes
     }
 
     /// <summary>
-    /// Entrada de la tabla <c>escudo_combo_base</c> por clase (Spec Escudo v2). Struct plano
+    /// Entrada de la tabla <c>escudo_combo_base</c> por clase (Spec Escudo v3). Struct plano
     /// — mismo criterio de serialización que <see cref="ComboBaseDamageEntry"/>. Tabla
-    /// independiente de la de daño por mandato de la spec: el escudo nunca deriva del ataque.
+    /// independiente de la de daño: la entrada decide si el combo genera escudo y con qué
+    /// base; la fórmula (compartida con el daño) decide cuánto.
     /// </summary>
     [Serializable]
     public struct ComboShieldBaseEntry
@@ -279,8 +281,8 @@ namespace Rollgeon.Heroes
         public string ComboId;
 
         [Range(0, 50)]
-        [Tooltip("escudo_combo_base de esta clase para el combo. El resultado final se " +
-                 "capea en PlayerComboShield.ShieldCap tras aplicar multi_dmg_combo.")]
+        [Tooltip("escudo_combo_base de esta clase para el combo. Entra a la fórmula " +
+                 "compartida daño/escudo como término base del combo, sin cap.")]
         public int ShieldBase;
     }
 }
