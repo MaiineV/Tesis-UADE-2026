@@ -280,9 +280,10 @@ namespace Rollgeon.Heroes
         [Tooltip("ComboId del combo (ej. 'combo.par').")]
         public string ComboId;
 
-        [Range(0, 50)]
+        [Range(0, 200)]
         [Tooltip("escudo_combo_base de esta clase para el combo. Entra a la fórmula " +
-                 "compartida daño/escudo como término base del combo, sin cap.")]
+                 "compartida daño/escudo como término base del combo, sin cap. " +
+                 "Escala 100: calibrado a la par de las bases de daño (Par 8 … Generala 90).")]
         public int ShieldBase;
     }
 }

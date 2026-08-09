@@ -4167,21 +4167,21 @@ MonoBehaviour:
     BaseDamageTable: []
     ShieldBaseTable:
     - ComboId: combo.pair
-      ShieldBase: 1
+      ShieldBase: 8
     - ComboId: combo.higher_number
       ShieldBase: 0
     - ComboId: combo.double_pair
-      ShieldBase: 2
+      ShieldBase: 15
     - ComboId: combo.trio
-      ShieldBase: 3
+      ShieldBase: 22
     - ComboId: combo.full_house
-      ShieldBase: 4
+      ShieldBase: 35
     - ComboId: combo.ladder
-      ShieldBase: 5
+      ShieldBase: 40
     - ComboId: combo.poker
-      ShieldBase: 6
+      ShieldBase: 55
     - ComboId: combo.generala
-      ShieldBase: 8
+      ShieldBase: 90
   VisualPrefab: {fileID: 34603293247297731, guid: 3df3062a618028c41961bcdaffb0c069, type: 3}
   PhaseBehaviors:
   - Trigger: 0
