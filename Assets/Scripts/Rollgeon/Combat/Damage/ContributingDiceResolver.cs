@@ -41,6 +41,41 @@ namespace Rollgeon.Combat.Damage
         }
 
         /// <summary>
+        /// Variante detallada de <see cref="Resolve"/>: además del tipo conserva el bag slot
+        /// y la cara tirada de cada dado contribuyente. La fórmula v3 suma las caras y la UI
+        /// de breakdown necesita el slot para animar el dado físico.
+        /// </summary>
+        /// <param name="contributingIndices">Índices relativos al subset holdeado.</param>
+        /// <param name="keptDiceOriginalIndices">Mapeo subset→bag slot. Null ⇒ identidad
+        /// (los índices ya son bag slots directos).</param>
+        /// <param name="keptFaces">Caras del subset holdeado, alineadas con
+        /// <paramref name="contributingIndices"/> (mismo espacio de índices locales).</param>
+        /// <param name="bagDice">Tipos de dado del bag, en orden de slot.</param>
+        public static IReadOnlyList<ContributingDie> ResolveDetailed(
+            IReadOnlyList<int> contributingIndices,
+            IReadOnlyList<int> keptDiceOriginalIndices,
+            IReadOnlyList<int> keptFaces,
+            IReadOnlyList<DiceType> bagDice)
+        {
+            if (contributingIndices == null || contributingIndices.Count == 0 || bagDice == null)
+                return null;
+
+            var result = new List<ContributingDie>(contributingIndices.Count);
+            for (int i = 0; i < contributingIndices.Count; i++)
+            {
+                int localIndex = contributingIndices[i];
+                int bagSlot = (keptDiceOriginalIndices != null
+                                && localIndex >= 0 && localIndex < keptDiceOriginalIndices.Count)
+                    ? keptDiceOriginalIndices[localIndex]
+                    : localIndex;
+                if (bagSlot < 0 || bagSlot >= bagDice.Count) continue;
+                if (keptFaces == null || localIndex < 0 || localIndex >= keptFaces.Count) continue;
+                result.Add(new ContributingDie(bagSlot, keptFaces[localIndex], bagDice[bagSlot]));
+            }
+            return result.Count > 0 ? result : null;
+        }
+
+        /// <summary>
         /// Tipos de dado alineados 1:1 con el subset holdeado (caso identidad de
         /// <see cref="Resolve"/>). Usado por los call sites de detección para pasar los tipos
         /// a los overloads tipados de <c>BaseComboSO</c> (Fuerza Bruta necesita el rango de
