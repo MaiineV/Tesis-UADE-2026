@@ -43,7 +43,7 @@ namespace Rollgeon.Combat.Damage
     public static class PlayerComboDamage
     {
         public static int Resolve(Guid sourceId, int comboBaseDamage,
-            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f,
             PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
         {
             int dmgBasePJ = 0;
@@ -116,6 +116,15 @@ namespace Rollgeon.Combat.Damage
             if (contributingDice == null || contributingDice.Count == 0) return 1f;
             float sum = 0f;
             for (int i = 0; i < contributingDice.Count; i++) sum += contributingDice[i].ExpectedValue();
+            return (sum / contributingDice.Count) / DiceTypeExt.BaselineExpectedValue;
+        }
+
+        /// <summary>Overload para la lista detallada — misma aritmética, pondera por Type.</summary>
+        public static float ComputeMultiDmgCombo(IReadOnlyList<ContributingDie> contributingDice)
+        {
+            if (contributingDice == null || contributingDice.Count == 0) return 1f;
+            float sum = 0f;
+            for (int i = 0; i < contributingDice.Count; i++) sum += contributingDice[i].Type.ExpectedValue();
             return (sum / contributingDice.Count) / DiceTypeExt.BaselineExpectedValue;
         }
     }

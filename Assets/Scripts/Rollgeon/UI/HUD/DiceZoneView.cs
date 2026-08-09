@@ -520,14 +520,14 @@ namespace Rollgeon.UI.HUD
             float multiDmgCombo = 1f;
             // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
             // recomputar el daño y el escudo reales vía la fórmula compartida).
-            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice = null;
             if (best != null)
             {
                 var comboResult = detection;
                 if (comboResult.IsMatch && hasBag)
                 {
-                    contributingDice = ContributingDiceResolver.Resolve(
-                        comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
+                    contributingDice = ContributingDiceResolver.ResolveDetailed(
+                        comboResult.ContributingIndices, keptOriginalIndices, keptDice, enchants.Bag.Dice);
                     multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
                 }
             }

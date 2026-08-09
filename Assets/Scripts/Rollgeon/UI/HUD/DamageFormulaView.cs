@@ -41,7 +41,7 @@ namespace Rollgeon.UI.HUD
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
-        private IReadOnlyList<DiceType> _lastContributingDice;
+        private IReadOnlyList<ContributingDie> _lastContributingDice;
         private Action<ComboMatchedPayload> _onComboMatched;
 
         // Enemigo objetivo elegido antes de tirar (CNF-002). Guid.Empty = sin target →

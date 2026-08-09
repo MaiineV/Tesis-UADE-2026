@@ -22,7 +22,7 @@ namespace Rollgeon.Combat.Damage
     public static class PlayerComboShield
     {
         public static int Resolve(Guid sourceId, int shieldBase,
-            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f)
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f)
         {
             if (shieldBase <= 0) return 0;
             return PlayerComboDamage.Resolve(sourceId, shieldBase, contributingDice,

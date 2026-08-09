@@ -111,11 +111,11 @@ namespace Patterns
         public float MultiDmgCombo;
 
         /// <summary>
-        /// Dados que contribuyen al combo, para que el preview del HUD recompute el daño real
-        /// con <c>PlayerComboDamage.Resolve</c> (misma fórmula que el golpe) en vez de una copia
-        /// paralela. <c>null</c> = sin combo o sin bag disponible.
+        /// Dados que contribuyen al combo (slot + cara + tipo), para que el preview del HUD
+        /// recompute el daño real con <c>PlayerComboDamage.Resolve</c> (misma fórmula que el
+        /// golpe) en vez de una copia paralela. <c>null</c> = sin combo o sin bag disponible.
         /// </summary>
-        public IReadOnlyList<Rollgeon.Dice.DiceType> ContributingDice;
+        public IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ContributingDice;
     }
 
     /// <summary>

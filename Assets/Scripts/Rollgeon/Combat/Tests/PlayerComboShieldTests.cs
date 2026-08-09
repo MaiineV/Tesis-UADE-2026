@@ -61,6 +61,15 @@ namespace Rollgeon.Combat.Tests
             _attrs.AddModifier<Attack, int>(_player, mod);
         }
 
+        // Caras arbitrarias: la aritmética vigente solo pondera por Type. Cuando la fórmula
+        // pase a sumar caras (v3), los tests fijan caras explícitas.
+        private static ContributingDie[] DiceOf(params DiceType[] types)
+        {
+            var result = new ContributingDie[types.Length];
+            for (int i = 0; i < types.Length; i++) result[i] = new ContributingDie(i, 1, types[i]);
+            return result;
+        }
+
         [Test]
         public void Resolve_NoAttackNoDice_ReturnsShieldBaseOnly()
         {
@@ -79,7 +88,7 @@ namespace Rollgeon.Combat.Tests
         public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
         {
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
-            var dice = new[] { DiceType.D20 };
+            var dice = DiceOf(DiceType.D20);
 
             int result = PlayerComboShield.Resolve(_player, shieldBase: 10,
                 contributingDice: dice, abilityMultiplier: 2f);
@@ -101,7 +110,7 @@ namespace Rollgeon.Combat.Tests
         public void Resolve_MultiDmgCombo_AllD20_TriplesShieldTerm_Uncapped()
         {
             // Con la fórmula v2 esto capeaba en 8; ahora pasa entero.
-            var dice = new[] { DiceType.D20, DiceType.D20 };
+            var dice = DiceOf(DiceType.D20, DiceType.D20);
             // 10 × (10.5/3.5) = 30
             Assert.AreEqual(30, PlayerComboShield.Resolve(_player, 10, dice));
         }
@@ -109,7 +118,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Resolve_MultiDmgCombo_MixedDice_AveragesExpectedValue()
         {
-            var dice = new[] { DiceType.D6, DiceType.D20 };
+            var dice = DiceOf(DiceType.D6, DiceType.D20);
             // EV avg = (3.5 + 10.5) / 2 = 7.0 → 7.0/3.5 = 2.0 → 10 × 2.0 = 20
             Assert.AreEqual(20, PlayerComboShield.Resolve(_player, 10, dice));
         }
@@ -136,7 +145,7 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 99, DiceOf(DiceType.D20), abilityMultiplier: 5f));
         }
 
         [Test]
@@ -164,7 +173,7 @@ namespace Rollgeon.Combat.Tests
             // (fallback 0) el combo NO genera escudo — ni siquiera el término de Attack.
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
 
-            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 0, new[] { DiceType.D20 }));
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 0, DiceOf(DiceType.D20)));
         }
 
         [Test]
@@ -177,7 +186,7 @@ namespace Rollgeon.Combat.Tests
                 Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 1.5f }
             };
             ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
-            var dice = new[] { DiceType.D6, DiceType.D20 };
+            var dice = DiceOf(DiceType.D6, DiceType.D20);
 
             int shield = PlayerComboShield.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
             int damage = PlayerComboDamage.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
@@ -191,7 +200,7 @@ namespace Rollgeon.Combat.Tests
             // Con la Spec v2, BUG-021 se contenía con el cap (90 → 8). En v3 no hay cap:
             // el freno anti-inmunidad es el reset de escudo por turno + la escala ×10 del
             // daño enemigo.
-            var dice = new List<DiceType> { DiceType.D20, DiceType.D20, DiceType.D20 };
+            var dice = DiceOf(DiceType.D20, DiceType.D20, DiceType.D20);
 
             int shield = PlayerComboShield.Resolve(_player, 90, dice);
 
