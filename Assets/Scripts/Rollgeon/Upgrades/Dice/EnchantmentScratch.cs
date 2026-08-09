@@ -66,6 +66,19 @@ namespace Rollgeon.Upgrades.Dice
 
         public IReadOnlyDictionary<ResourceTarget, ResourceAccumulator> Resources => _resources;
 
+        // Lazy: null hasta la primera entrada — un evento sin fuentes de combo no aloca nada.
+        private List<ScratchContribution> _journal;
+
+        /// <summary>
+        /// Atribución por fuente de lo que este scratch acumuló en los campos de combo
+        /// (bonus / multiplicador / block). Lo llenan los dispatchers vía snapshot-delta
+        /// (<see cref="ScratchSnapshot.RecordDelta"/>); <c>null</c> = nadie aportó.
+        /// </summary>
+        public IReadOnlyList<ScratchContribution> Journal => _journal;
+
+        public void RecordContribution(in ScratchContribution c)
+            => (_journal ??= new List<ScratchContribution>(4)).Add(c);
+
         /// <summary>Aplica una operación sobre un recurso, acumulándola para el evento.</summary>
         public void Modify(ResourceTarget target, ResourceOperation op, int amount)
         {
@@ -82,6 +95,7 @@ namespace Rollgeon.Upgrades.Dice
             BonusGold = 0;
             BonusShield = 0;
             _resources.Clear();
+            _journal?.Clear();
         }
     }
 }

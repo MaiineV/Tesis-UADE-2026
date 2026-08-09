@@ -342,6 +342,7 @@ namespace Rollgeon.Upgrades.Combos
             {
                 var passive = passives[i];
                 if (passive == null) continue;
+                var before = ScratchSnapshot.Of(scratch);
 
                 // Flat damage bonus también suma acá para que LastComboScratch sea autocontenido.
                 if (passive.FlatDamageBonus != null)
@@ -351,12 +352,17 @@ namespace Rollgeon.Upgrades.Combos
 
                 // Extra triggers (gold-on-match, shield-on-match, etc.)
                 var triggers = passive.ExtraTriggers;
-                if (triggers == null) continue;
-                for (int t = 0; t < triggers.Count; t++)
+                if (triggers != null)
                 {
-                    if (triggers[t] is IOnComboPassiveMatchedTrigger matched)
-                        matched.OnComboMatched(ctx);
+                    for (int t = 0; t < triggers.Count; t++)
+                    {
+                        if (triggers[t] is IOnComboPassiveMatchedTrigger matched)
+                            matched.OnComboMatched(ctx);
+                    }
                 }
+
+                ScratchSnapshot.RecordDelta(scratch, in before,
+                    ScratchSourceKind.ComboPassive, passive.name, passive, bagSlot: -1);
             }
 
             LastComboScratch = scratch;
@@ -413,11 +419,14 @@ namespace Rollgeon.Upgrades.Combos
 
                 var triggers = passive.ExtraTriggers;
                 if (triggers == null) continue;
+                var before = ScratchSnapshot.Of(scratch);
                 for (int t = 0; t < triggers.Count; t++)
                 {
                     if (triggers[t] is IOnComboPlayedPassiveTrigger played)
                         played.OnComboPlayed(ctx);
                 }
+                ScratchSnapshot.RecordDelta(scratch, in before,
+                    ScratchSourceKind.ComboPassive, passive.name, passive, bagSlot: -1);
             }
 
             // NO se toca LastComboScratch (contrato del preview / damage pipeline at-match).

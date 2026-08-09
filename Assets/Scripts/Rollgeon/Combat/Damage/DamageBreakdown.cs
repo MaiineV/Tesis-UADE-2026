@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Damage
 {
@@ -39,5 +40,12 @@ namespace Rollgeon.Combat.Damage
 
         /// <summary>Pass-through de los dados contribuyentes (slot + cara + tipo). Puede ser null.</summary>
         public IReadOnlyList<ContributingDie> Dice;
+
+        /// <summary>
+        /// Journal agregado de atribución por fuente (encantos, pasivas, items), en orden de
+        /// agregación de la fórmula: pasivas at-match → encantos at-match → canal at-played.
+        /// <c>null</c> = ninguna fuente aportó. No es un timeline global.
+        /// </summary>
+        public IReadOnlyList<ScratchContribution> Sources;
     }
 }

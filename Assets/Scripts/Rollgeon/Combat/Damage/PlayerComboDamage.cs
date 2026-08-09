@@ -72,29 +72,39 @@ namespace Rollgeon.Combat.Damage
             int bonoCombo = 0;
             float scratchMultiplier = 1f;
             bool block = false;
+            List<ScratchContribution> sources = null;
 
-            if (ServiceLocator.TryGetService<IComboPassiveService>(out var passives) && passives?.LastComboScratch != null)
+            var sPassives = ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
+                ? passives?.LastComboScratch : null;
+            if (sPassives != null)
             {
-                bonoCombo += passives.LastComboScratch.BonusComboDamage;
-                scratchMultiplier *= passives.LastComboScratch.ComboDamageMultiplier;
-                block |= passives.LastComboScratch.BlockComboDamage;
+                bonoCombo += sPassives.BonusComboDamage;
+                scratchMultiplier *= sPassives.ComboDamageMultiplier;
+                block |= sPassives.BlockComboDamage;
+                AppendJournal(ref sources, sPassives);
             }
-            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) && enchants?.LastComboScratch != null)
+            var sEnchants = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                ? enchants?.LastComboScratch : null;
+            if (sEnchants != null)
             {
-                bonoCombo += enchants.LastComboScratch.BonusComboDamage;
-                scratchMultiplier *= enchants.LastComboScratch.ComboDamageMultiplier;
-                block |= enchants.LastComboScratch.BlockComboDamage;
+                bonoCombo += sEnchants.BonusComboDamage;
+                scratchMultiplier *= sEnchants.ComboDamageMultiplier;
+                block |= sEnchants.BlockComboDamage;
+                AppendJournal(ref sources, sEnchants);
             }
             // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
             // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
             // la ventana) porque el daño del ataque real está diferido al frame de impacto,
             // ya cerrada la ventana. Se limpia al inicio del turno, así el preview no ve
             // bonos jugados de un turno anterior.
-            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.LastPlayScratch != null)
+            var sPlay = ServiceLocator.TryGetService<IComboPlayService>(out var play)
+                ? play?.LastPlayScratch : null;
+            if (sPlay != null)
             {
-                bonoCombo += play.LastPlayScratch.BonusComboDamage;
-                scratchMultiplier *= play.LastPlayScratch.ComboDamageMultiplier;
-                block |= play.LastPlayScratch.BlockComboDamage;
+                bonoCombo += sPlay.BonusComboDamage;
+                scratchMultiplier *= sPlay.ComboDamageMultiplier;
+                block |= sPlay.BlockComboDamage;
+                AppendJournal(ref sources, sPlay);
             }
 
             int facesSum = 0;
@@ -120,6 +130,7 @@ namespace Rollgeon.Combat.Damage
                 Blocked = block,
                 Final = total,
                 Dice = contributingDice,
+                Sources = sources,
             };
 
             DamageDebugLogger.LogPlayerComposition(sourceId, in breakdown);
@@ -133,5 +144,14 @@ namespace Rollgeon.Combat.Damage
         /// </summary>
         public static int RoundNxM(int n, float m)
             => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
+
+        // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.
+        private static void AppendJournal(ref List<ScratchContribution> sources, EnchantmentScratch scratch)
+        {
+            var journal = scratch.Journal;
+            if (journal == null || journal.Count == 0) return;
+            sources ??= new List<ScratchContribution>(journal.Count);
+            for (int i = 0; i < journal.Count; i++) sources.Add(journal[i]);
+        }
     }
 }

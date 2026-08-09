@@ -153,6 +153,44 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
+        public void Resolve_Sources_AggregatesJournals_PassivesThenPlay()
+        {
+            // Arrange — cada canal trae su journal ya capturado por el dispatch
+            var passiveScratch = new EnchantmentScratch { BonusComboDamage = 4 };
+            passiveScratch.RecordContribution(new ScratchContribution(
+                ScratchSourceKind.ComboPassive, "pasiva.trio", null, -1, 4, 1f, false));
+            var playScratch = new EnchantmentScratch { BonusComboDamage = 3 };
+            playScratch.RecordContribution(new ScratchContribution(
+                ScratchSourceKind.Item, "item.ritual", null, -1, 3, 1f, false));
+            ServiceLocator.AddService<IComboPassiveService>(
+                new FakeComboPassiveService { Scratch = passiveScratch }, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(
+                new FakeComboPlayService { Scratch = playScratch }, ServiceScope.Global);
+
+            // Act
+            PlayerComboDamage.Resolve(_player, 10, null, 1f, PlayerComboFormulaKind.Damage, out var b);
+
+            // Assert — orden de agregación de la fórmula: pasivas → (enchants) → play
+            Assert.AreEqual(2, b.Sources.Count);
+            Assert.AreEqual("pasiva.trio", b.Sources[0].SourceId);
+            Assert.AreEqual("item.ritual", b.Sources[1].SourceId);
+
+            // Resolve es lectura pura: repetir NO duplica la atribución.
+            PlayerComboDamage.Resolve(_player, 10, null, 1f, PlayerComboFormulaKind.Damage, out var again);
+            Assert.AreEqual(2, again.Sources.Count);
+        }
+
+        [Test]
+        public void Resolve_Sources_NullWhenNoJournalEntries()
+        {
+            RegisterScratches(); // scratches con valores pero SIN journal capturado
+
+            PlayerComboDamage.Resolve(_player, 10, null, 1f, PlayerComboFormulaKind.Damage, out var b);
+
+            Assert.IsNull(b.Sources);
+        }
+
+        [Test]
         public void ShieldResolve_BaseZeroGate_ReturnsEmptyShieldBreakdown()
         {
             RegisterPlayerAttackWithFlatBonus(5, 3);
