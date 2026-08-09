@@ -255,11 +255,26 @@ namespace Rollgeon.Tutorial.UI
 
             TutorialAnchorResolver.TryResolve(_request, out anchorPos);
 
-            float radius = _request.CutoutRadiusPx > 0f
-                ? _request.CutoutRadiusPx
-                : _request.AnchorKind == TutorialAnchorKind.RectTransform
-                    ? TutorialAnchorResolver.ResolveUiCutoutRadius(_request.UiTarget, _request.UiTargetsExtra, _settings.UiCutoutPaddingPx)
-                    : _settings.DefaultCutoutRadiusPx;
+            // El recorte que dibuja el shader es circular, pero la flecha se ubica contra
+            // la caja cuando el anchor es de UI — ver ResolveArrowPositionForBox.
+            float radius;
+            var halfSize = Vector2.zero;
+            bool hasBox = false;
+
+            if (_request.CutoutRadiusPx > 0f)
+            {
+                radius = _request.CutoutRadiusPx;
+            }
+            else if (_request.AnchorKind == TutorialAnchorKind.RectTransform)
+            {
+                hasBox = TutorialAnchorResolver.TryResolveUiCutout(
+                    _request.UiTarget, _request.UiTargetsExtra, _settings.UiCutoutPaddingPx,
+                    out _, out halfSize, out radius);
+            }
+            else
+            {
+                radius = _settings.DefaultCutoutRadiusPx;
+            }
 
             // Clamp del centro a pantalla (anchor fuera de cuadro sigue señalizable).
             anchorPos.x = Mathf.Clamp(anchorPos.x, 0f, screenSize.x);
@@ -284,8 +299,13 @@ namespace Rollgeon.Tutorial.UI
                     bob = Mathf.PingPong(_arrowBobPhase, 1f) * _settings.ArrowBobAmplitudePx;
                 }
 
-                var arrowPos = TutorialOverlayLayout.ResolveArrowPosition(
-                    anchorPos, radius + bob, popupCenter, _settings.ArrowGapPx);
+                // El bob va sumado al gap (no al radio) para que en la caja empuje
+                // igual sobre el lado que cruza el rayo, sea el corto o el largo.
+                var arrowPos = hasBox
+                    ? TutorialOverlayLayout.ResolveArrowPositionForBox(
+                        anchorPos, halfSize, popupCenter, _settings.ArrowGapPx + bob)
+                    : TutorialOverlayLayout.ResolveArrowPosition(
+                        anchorPos, radius + bob, popupCenter, _settings.ArrowGapPx);
                 _arrow.rectTransform.position = arrowPos;
                 _arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f,
                     TutorialOverlayLayout.ResolveArrowRotationZ(arrowPos, anchorPos));

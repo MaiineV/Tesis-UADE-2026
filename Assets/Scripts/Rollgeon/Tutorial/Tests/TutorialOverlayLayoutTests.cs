@@ -87,6 +87,92 @@ namespace Rollgeon.Tutorial.Tests
             Assert.AreEqual(400f, arrowPos.y, 0.01f);
         }
 
+        // ── Arrow contra la caja ──────────────────────────────────────────
+
+        [Test]
+        public void ResolveArrowPositionForBox_PopupToTheSide_SitsOnHorizontalEdge()
+        {
+            // Arrange — caja de 900×140 (la tira de dados del armado de bolsa).
+            var cutout = new Vector2(960f, 400f);
+            var halfSize = new Vector2(450f, 70f);
+            var popup = new Vector2(1900f, 400f); // directamente a la derecha
+
+            // Act
+            var arrowPos = TutorialOverlayLayout.ResolveArrowPositionForBox(
+                cutout, halfSize, popup, gap: 20f);
+
+            // Assert
+            Assert.AreEqual(1430f, arrowPos.x, 0.01f, "Media caja 450 + gap 20 hacia +x.");
+            Assert.AreEqual(400f, arrowPos.y, 0.01f);
+        }
+
+        [Test]
+        public void ResolveArrowPositionForBox_PopupAbove_SitsOnShortEdgeNotOnCircumscribedCircle()
+        {
+            // Arrange — misma tira, pero el popup arriba: el lado corto (70) es el que
+            // cruza el rayo. Con el círculo circunscripto la flecha se iba a ~473 px.
+            var cutout = new Vector2(960f, 400f);
+            var halfSize = new Vector2(450f, 70f);
+            var popup = new Vector2(960f, 1000f);
+
+            // Act
+            var arrowPos = TutorialOverlayLayout.ResolveArrowPositionForBox(
+                cutout, halfSize, popup, gap: 20f);
+
+            // Assert
+            Assert.AreEqual(960f, arrowPos.x, 0.01f);
+            Assert.AreEqual(490f, arrowPos.y, 0.01f, "Media caja 70 + gap 20 hacia +y.");
+        }
+
+        [Test]
+        public void ResolveArrowPositionForBox_DiagonalPopup_CrossesTheNearerPairOfSides()
+        {
+            // Arrange — caja ancha y popup en diagonal a 45°: el rayo sale por arriba
+            // (lado corto), no por el costado.
+            var cutout = new Vector2(500f, 500f);
+            var halfSize = new Vector2(400f, 100f);
+            var popup = new Vector2(1000f, 1000f);
+
+            // Act
+            var arrowPos = TutorialOverlayLayout.ResolveArrowPositionForBox(
+                cutout, halfSize, popup, gap: 0f);
+
+            // Assert — a 45° el borde horizontal se cruza en y = +100, o sea x = +100.
+            Assert.AreEqual(600f, arrowPos.x, 0.01f);
+            Assert.AreEqual(600f, arrowPos.y, 0.01f);
+        }
+
+        [Test]
+        public void ResolveArrowPositionForBox_PopupOnCenter_FallsBackToUpwards()
+        {
+            // Arrange — popup exactamente sobre el centro: sin dirección que seguir.
+            var cutout = new Vector2(500f, 500f);
+            var halfSize = new Vector2(400f, 100f);
+
+            // Act
+            var arrowPos = TutorialOverlayLayout.ResolveArrowPositionForBox(
+                cutout, halfSize, popupCenter: cutout, gap: 20f);
+
+            // Assert
+            Assert.AreEqual(500f, arrowPos.x, 0.01f);
+            Assert.AreEqual(620f, arrowPos.y, 0.01f, "Default Vector2.up: media caja 100 + gap 20.");
+        }
+
+        [Test]
+        public void ResolveArrowPositionForBox_ZeroSizedBox_SitsAtGapFromCenter()
+        {
+            // Arrange — un rect degenerado (aún sin layout) no debe tirar NaN.
+            var cutout = new Vector2(500f, 500f);
+
+            // Act
+            var arrowPos = TutorialOverlayLayout.ResolveArrowPositionForBox(
+                cutout, Vector2.zero, new Vector2(1000f, 500f), gap: 20f);
+
+            // Assert
+            Assert.AreEqual(520f, arrowPos.x, 0.01f);
+            Assert.AreEqual(500f, arrowPos.y, 0.01f);
+        }
+
         [Test]
         public void ResolveArrowRotationZ_ArrowRightOfCutout_PointsLeft()
         {
