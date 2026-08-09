@@ -4,10 +4,8 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combos.Play;
-using Rollgeon.Dice;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
-using UnityEngine;
 
 namespace Rollgeon.Combat.Damage
 {
@@ -22,23 +20,26 @@ namespace Rollgeon.Combat.Damage
     }
 
     /// <summary>
-    /// Fórmula v2 del daño de combo del jugador (Spec de Daño, Santi):
+    /// Fórmula v3 del daño de combo del jugador (decisión de diseño 2026-08-09, N×M exacto):
     /// <code>
-    /// dmg_base_PJ + bonos_PJ + (daño_combo_base × multi_dmg_combo) + bono_combo
+    /// N = daño_combo_base + dmg_base_PJ + bonos_PJ + Σ(caras contribuyentes) + bono_combo
+    /// M = scratch_multiplier × ability_multiplier
+    /// DAÑO = round(N × M)   (mitades siempre para arriba: 6.5 → 7)
     /// </code>
-    /// <c>dmg_base_PJ + bonos_PJ</c> (= <c>Attack.Value</c> + resto de <c>Attack.ModifiedValue</c>)
-    /// y <c>bono_combo</c> son aditivos puros — nunca se multiplican. Solo <c>daño_combo_base</c>
-    /// se escala, por <c>multi_dmg_combo</c> (EV de <paramref name="contributingDice"/> / EV(d6))
-    /// y por <paramref name="abilityMultiplier"/> (perilla por habilidad, ej. golpe rápido = 0.75
-    /// en <c>CH_Warrior.asset</c>). <c>scratchMultiplier</c> (encantamientos Gemelo/Par-Impar) es
-    /// la única excepción autorada que también multiplica ese término — no usar como plantilla.
+    /// Todo lo aditivo vive en N y TODO N se escala por M — a diferencia de v2, donde
+    /// <c>dmg_base_PJ + bonos_PJ + bono_combo</c> quedaban fuera del producto. El multiplicador
+    /// por tipo de dado (EV/3.5) desaparece: un d20 pesa más porque sus caras son más altas.
+    /// <c>ability_multiplier</c> es la perilla por habilidad (ej. golpe rápido = 0.75 en
+    /// <c>CH_Warrior.asset</c>); <c>scratch_multiplier</c> es el producto de los
+    /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch.
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
     /// jugador (DamageSource.ComboValue); los enemigos usan Constant/FromReader y no pasan por acá.
-    /// Desde la Spec de Escudo v3 esta es la fórmula compartida daño/escudo:
     /// <see cref="PlayerComboShield"/> delega acá con <see cref="PlayerComboFormulaKind.Shield"/>
-    /// (mismos términos, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
+    /// (misma fórmula, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
+    /// Ojo balance: los combos de base dinámica (Higher Number, SumaX) llevan la cara dentro de
+    /// <c>BaseDamage</c> Y en Σcaras — la pesan doble. Aceptado hasta el próximo pase de balance.
     /// </remarks>
     public static class PlayerComboDamage
     {
@@ -86,46 +87,35 @@ namespace Rollgeon.Combat.Damage
                 block |= play.LastPlayScratch.BlockComboDamage;
             }
 
+            int facesSum = 0;
+            if (contributingDice != null)
+                for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
+
             if (block)
             {
-                DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
-                    1f, abilityMultiplier, scratchMultiplier, bonoCombo, blocked: true, finalBase: 0,
-                    kind: kind);
+                DamageDebugLogger.LogPlayerComposition(sourceId, comboBaseDamage, dmgBasePJ, bonosPJ,
+                    facesSum, bonoCombo, scratchMultiplier, abilityMultiplier,
+                    blocked: true, finalBase: 0, kind: kind);
                 return 0;
             }
 
-            float multiDmgCombo = ComputeMultiDmgCombo(contributingDice);
-            float comboTerm = comboBaseDamage * multiDmgCombo * abilityMultiplier * scratchMultiplier;
-            float total = dmgBasePJ + bonosPJ + comboTerm + bonoCombo;
-            int dmg = Mathf.RoundToInt(total);
-            int clamped = dmg < 0 ? 0 : dmg;
+            int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
+            float m = scratchMultiplier * abilityMultiplier;
+            int total = RoundNxM(n, m);
 
-            DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
-                multiDmgCombo, abilityMultiplier, scratchMultiplier, bonoCombo,
-                blocked: false, finalBase: clamped, kind: kind);
+            DamageDebugLogger.LogPlayerComposition(sourceId, comboBaseDamage, dmgBasePJ, bonosPJ,
+                facesSum, bonoCombo, scratchMultiplier, abilityMultiplier,
+                blocked: false, finalBase: total, kind: kind);
 
-            return clamped;
+            return total;
         }
 
         /// <summary>
-        /// multi_dmg_combo = EV promedio de <paramref name="contributingDice"/> / EV(d6). Público
-        /// para que el preview de <c>DiceZoneView</c> muestre el mismo número que <see cref="Resolve"/>.
+        /// Redondeo canónico de la fórmula: mitades siempre para arriba en magnitud (6.5 → 7),
+        /// nunca banker's rounding (<c>Mathf.RoundToInt</c> haría 6.5 → 6). Público para que el
+        /// preview del HUD reproduzca exactamente el mismo número que el golpe real.
         /// </summary>
-        public static float ComputeMultiDmgCombo(IReadOnlyList<DiceType> contributingDice)
-        {
-            if (contributingDice == null || contributingDice.Count == 0) return 1f;
-            float sum = 0f;
-            for (int i = 0; i < contributingDice.Count; i++) sum += contributingDice[i].ExpectedValue();
-            return (sum / contributingDice.Count) / DiceTypeExt.BaselineExpectedValue;
-        }
-
-        /// <summary>Overload para la lista detallada — misma aritmética, pondera por Type.</summary>
-        public static float ComputeMultiDmgCombo(IReadOnlyList<ContributingDie> contributingDice)
-        {
-            if (contributingDice == null || contributingDice.Count == 0) return 1f;
-            float sum = 0f;
-            for (int i = 0; i < contributingDice.Count; i++) sum += contributingDice[i].Type.ExpectedValue();
-            return (sum / contributingDice.Count) / DiceTypeExt.BaselineExpectedValue;
-        }
+        public static int RoundNxM(int n, float m)
+            => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
     }
 }

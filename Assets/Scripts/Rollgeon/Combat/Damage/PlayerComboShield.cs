@@ -5,11 +5,11 @@ using Rollgeon.Dice;
 namespace Rollgeon.Combat.Damage
 {
     /// <summary>
-    /// Fórmula v3 del escudo de combo del jugador (decisión de diseño 2026-08-06, revierte la
-    /// separación de la Spec v2): el escudo se resuelve con la <b>misma fórmula que el daño</b>
-    /// (<see cref="PlayerComboDamage.Resolve"/>), afectado por Attack (base + bonos), el multi
-    /// de dados, la perilla por habilidad y todos los canales de scratch (pasivas,
-    /// encantamientos, items at-played) — <c>BlockComboDamage</c> también bloquea escudo.
+    /// Escudo de combo del jugador: se resuelve con la <b>misma fórmula que el daño</b>
+    /// (<see cref="PlayerComboDamage.Resolve"/>, N×M desde la v3 de 2026-08-09), afectado por
+    /// Attack (base + bonos), las caras de los dados contribuyentes, la perilla por habilidad
+    /// y todos los canales de scratch (pasivas, encantamientos, items at-played) —
+    /// <c>BlockComboDamage</c> también bloquea escudo.
     /// <c>escudo_combo_base</c> sigue saliendo de <c>ContractSheet.GetShieldBase</c>.
     /// </summary>
     /// <remarks>

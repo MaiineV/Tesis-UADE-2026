@@ -517,7 +517,6 @@ namespace Rollgeon.UI.HUD
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
-            float multiDmgCombo = 1f;
             // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
             // recomputar el daño y el escudo reales vía la fórmula compartida).
             System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice = null;
@@ -528,7 +527,6 @@ namespace Rollgeon.UI.HUD
                 {
                     contributingDice = ContributingDiceResolver.ResolveDetailed(
                         comboResult.ContributingIndices, keptOriginalIndices, keptDice, enchants.Bag.Dice);
-                    multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
                 }
             }
 
@@ -538,7 +536,6 @@ namespace Rollgeon.UI.HUD
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
                 BaseDamage = baseDmg,
-                MultiDmgCombo = multiDmgCombo,
                 ContributingDice = contributingDice,
             });
         }

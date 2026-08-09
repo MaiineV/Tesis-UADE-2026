@@ -107,9 +107,6 @@ namespace Patterns
         /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
         public int BaseDamage;
 
-        /// <summary>Multiplicador de daño por calidad de dados. 0 = no calculado (tratar como 1.0).</summary>
-        public float MultiDmgCombo;
-
         /// <summary>
         /// Dados que contribuyen al combo (slot + cara + tipo), para que el preview del HUD
         /// recompute el daño real con <c>PlayerComboDamage.Resolve</c> (misma fórmula que el

@@ -417,8 +417,10 @@ namespace Rollgeon.Analytics
             {
                 [AnalyticsEvents.Params.ComboId] = payload.ComboId,
                 [AnalyticsEvents.Params.BaseDamage] = payload.BaseDamage,
-                // MultiDmgCombo == 0 significa "no calculado" → tratar como 1.0.
-                [AnalyticsEvents.Params.Multiplier] = payload.MultiDmgCombo <= 0f ? 1f : payload.MultiDmgCombo,
+                // v3: el multi por tipo de dado no existe más (las caras suman a N).
+                // TODO(analytics): reportar el M real cuando este tracker consuma el
+                // DamageBreakdown en vez del payload de match.
+                [AnalyticsEvents.Params.Multiplier] = 1f,
                 [AnalyticsEvents.Params.FloorIndex] = _currentFloorIndex,
             });
         }

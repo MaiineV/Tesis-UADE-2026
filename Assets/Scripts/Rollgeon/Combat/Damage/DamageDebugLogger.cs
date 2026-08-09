@@ -36,16 +36,17 @@ namespace Rollgeon.Combat.Damage
         private const string ShieldCol = "56b6c2";   // cyan — escudo
 
         /// <summary>
-        /// Desglosa la fórmula v2 compartida del combo del jugador (ver <see cref="PlayerComboDamage"/>):
-        /// <c>dmg_base_PJ + bonos_PJ + (comboBase × multi_dmg × ability × scratch) + bono_combo</c>.
-        /// <paramref name="kind"/> distingue si el resultado es daño o escudo (Spec Escudo v3).
+        /// Desglosa la fórmula v3 compartida del combo del jugador (ver <see cref="PlayerComboDamage"/>):
+        /// <c>N = comboBase + dmg_base_PJ + bonos_PJ + Σcaras + bono_combo</c>,
+        /// <c>M = scratch × ability</c>, <c>total = round(N × M)</c>.
+        /// <paramref name="kind"/> distingue si el resultado es daño o escudo.
         /// </summary>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
         public static void LogPlayerComposition(
-            Guid sourceId, int dmgBasePJ, int bonosPJ, int comboBaseDamage,
-            float multiDmgCombo, float abilityMultiplier, float scratchMultiplier,
-            int bonoCombo, bool blocked, int finalBase,
+            Guid sourceId, int comboBaseDamage, int dmgBasePJ, int bonosPJ,
+            int facesSum, int bonoCombo, float scratchMultiplier, float abilityMultiplier,
+            bool blocked, int finalBase,
             PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
         {
             if (!Enabled) return;
@@ -65,25 +66,25 @@ namespace Rollgeon.Combat.Damage
                 return;
             }
 
-            float comboTerm = comboBaseDamage * multiDmgCombo * abilityMultiplier * scratchMultiplier;
+            int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
+            float m = scratchMultiplier * abilityMultiplier;
 
-            // Términos aditivos puros (nunca se multiplican).
-            sb.Append(Row("dmg_base_PJ  (ATQ.Value)", dmgBasePJ));
-            sb.Append(Row("+ bonos_PJ   (ATQ.Modified − Value)", bonosPJ));
+            // Términos de N — todo lo aditivo escala junto.
+            sb.Append(Row("combo_base", comboBaseDamage));
+            sb.Append(Row("+ dmg_base_PJ  (ATQ.Value)", dmgBasePJ));
+            sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", bonosPJ));
+            sb.Append(Row("+ Σ caras contribuyentes", facesSum));
+            sb.Append(Row("+ bono_combo   (passives + enchants + items)", bonoCombo));
+            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + n + "</b>"));
 
-            // Único término que escala.
-            sb.Append('\n').Append(Col(Label, "  término_combo = comboBase × multi_dmg × ability × scratch"));
-            sb.Append('\n').Append(Col(Label, "    = "))
-              .Append(Num(comboBaseDamage)).Append(Col(Label, " × "))
-              .Append(Num(multiDmgCombo)).Append(Col(Label, " (multi_dmg) × "))
-              .Append(Num(abilityMultiplier)).Append(Col(Label, " (ability) × "))
-              .Append(Num(scratchMultiplier)).Append(Col(Label, " (scratch) = "))
-              .Append(Col(Accent, "<b>" + F(comboTerm) + "</b>"));
+            // Términos de M.
+            sb.Append('\n').Append(Col(Label, "  M = "))
+              .Append(Num(scratchMultiplier)).Append(Col(Label, " (scratch) × "))
+              .Append(Num(abilityMultiplier)).Append(Col(Label, " (ability) = "))
+              .Append(Col(Accent, "<b>" + F(m) + "</b>"));
 
-            sb.Append(Row("+ bono_combo (passives + enchants)", bonoCombo));
-
-            sb.Append('\n').Append(Col(isShield ? ShieldCol : BandCompose, "  ═ TOTAL BASE = "))
-              .Append(Col(Label, $"{dmgBasePJ} + {bonosPJ} + {F(comboTerm)} + {bonoCombo} = "))
+            sb.Append('\n').Append(Col(isShield ? ShieldCol : BandCompose, "  ═ TOTAL = N × M = "))
+              .Append(Col(Label, $"{n} × {F(m)} = "))
               .Append(Col(Accent, "<b>" + finalBase + "</b>"))
               .Append(Col(Label, isShield
                   ? "   → se suma al atributo Shield (EffAddShield)"

@@ -119,7 +119,7 @@ namespace Rollgeon.Effects.Concretes
                         ResolveContributingDice(context, combo.ContributingIndices), _comboMultiplier),
                 // Sin combo el ataque NO es 0 — daño mínimo del GD §5 ("número más
                 // alto"): el dado más alto de los holdeados entra a la misma fórmula
-                // como comboBase (TECHNICAL §12: rawDamage = combo?.BaseDamage ?? max).
+                // (v3: UNA sola vez, vía Σcaras cuando hay detalle de bag).
                 DamageSource.ComboValue => ResolveNoComboFallback(context),
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
@@ -148,8 +148,12 @@ namespace Rollgeon.Effects.Concretes
                 ? ResolveContributingDice(context, new[] { maxIndex })
                 : null;
 
+            // v3: la cara del dado más alto entra UNA sola vez a N. Con detalle de bag va
+            // por Σcaras (comboBase 0, conserva la atribución del dado para la UI); sin bag
+            // entra como comboBase — mismo N por ambos caminos.
             return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
-                ResolveSourceId(context), max, contributingDice, _comboMultiplier);
+                ResolveSourceId(context), contributingDice != null ? 0 : max,
+                contributingDice, _comboMultiplier);
         }
 
         private static IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ResolveContributingDice(

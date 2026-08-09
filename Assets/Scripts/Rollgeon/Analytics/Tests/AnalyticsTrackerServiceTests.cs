@@ -226,7 +226,6 @@ namespace Rollgeon.Analytics.Tests
                 SourceGuid = _playerGuid,
                 ComboId = "combo.pair",
                 BaseDamage = 5,
-                MultiDmgCombo = 0f, // "no calculado" → 1.0
             });
 
             var sent = _sink.Last(AnalyticsEvents.ComboMatched);

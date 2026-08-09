@@ -15,10 +15,10 @@ using Rollgeon.Upgrades.Dice;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Tests de <see cref="PlayerComboShield.Resolve"/> (Spec Escudo v3): fórmula compartida
-    /// con el daño — Attack + bonos + (shieldBase × multi × ability × scratch) + bono_combo —
-    /// con una única divergencia: el gate de base 0 (sin entrada en la ShieldBaseTable no
-    /// hay escudo, ni siquiera el término de Attack).
+    /// Tests de <see cref="PlayerComboShield.Resolve"/>: fórmula compartida con el daño
+    /// (v3, N×M exacto — N = shieldBase + ATQ + bonos + Σcaras + bono_combo; M = scratch ×
+    /// ability) con una única divergencia: el gate de base 0 (sin entrada en la
+    /// ShieldBaseTable no hay escudo, ni siquiera el término de Attack).
     /// </summary>
     [TestFixture]
     public class PlayerComboShieldTests
@@ -61,12 +61,11 @@ namespace Rollgeon.Combat.Tests
             _attrs.AddModifier<Attack, int>(_player, mod);
         }
 
-        // Caras arbitrarias: la aritmética vigente solo pondera por Type. Cuando la fórmula
-        // pase a sumar caras (v3), los tests fijan caras explícitas.
-        private static ContributingDie[] DiceOf(params DiceType[] types)
+        private static ContributingDie[] DiceOf(params (DiceType type, int face)[] spec)
         {
-            var result = new ContributingDie[types.Length];
-            for (int i = 0; i < types.Length; i++) result[i] = new ContributingDie(i, 1, types[i]);
+            var result = new ContributingDie[spec.Length];
+            for (int i = 0; i < spec.Length; i++)
+                result[i] = new ContributingDie(i, spec[i].face, spec[i].type);
             return result;
         }
 
@@ -85,46 +84,47 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
+        public void Resolve_GoldenRuleV3_EverythingAdditive_ScaledByMultipliers()
         {
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
-            var dice = DiceOf(DiceType.D20);
+            var dice = DiceOf((DiceType.D20, 15));
 
             int result = PlayerComboShield.Resolve(_player, shieldBase: 10,
                 contributingDice: dice, abilityMultiplier: 2f);
 
-            // (5 + 3) + (10 × 3.0 × 2) = 68
-            Assert.AreEqual(68, result);
+            // N = 10 + 5 + 3 + 15 = 33; M = 2 → 66
+            Assert.AreEqual(66, result);
         }
 
         [Test]
-        public void Resolve_AbilityMultiplier_ScalesShieldTermOnly_NotPlayerBase()
+        public void Resolve_AbilityMultiplier_ScalesWholeN_IncludingPlayerBase()
         {
             RegisterPlayerAttack(5);
 
-            // 5 + (10 × 1 × 2) = 25
-            Assert.AreEqual(25, PlayerComboShield.Resolve(_player, 10, null, abilityMultiplier: 2f));
+            // N = 10 + 5 = 15; M = 2 → 30
+            Assert.AreEqual(30, PlayerComboShield.Resolve(_player, 10, null, abilityMultiplier: 2f));
         }
 
         [Test]
-        public void Resolve_MultiDmgCombo_AllD20_TriplesShieldTerm_Uncapped()
+        public void Resolve_FacesSum_AddsRolledFaces_Uncapped()
         {
-            // Con la fórmula v2 esto capeaba en 8; ahora pasa entero.
-            var dice = DiceOf(DiceType.D20, DiceType.D20);
-            // 10 × (10.5/3.5) = 30
-            Assert.AreEqual(30, PlayerComboShield.Resolve(_player, 10, dice));
+            var dice = DiceOf((DiceType.D20, 18), (DiceType.D20, 7));
+
+            // N = 10 + 18 + 7 = 35 — pasa entero, sin cap.
+            Assert.AreEqual(35, PlayerComboShield.Resolve(_player, 10, dice));
         }
 
         [Test]
-        public void Resolve_MultiDmgCombo_MixedDice_AveragesExpectedValue()
+        public void Resolve_FacesSum_MixedDiceTypes_OnlyFacesCount()
         {
-            var dice = DiceOf(DiceType.D6, DiceType.D20);
-            // EV avg = (3.5 + 10.5) / 2 = 7.0 → 7.0/3.5 = 2.0 → 10 × 2.0 = 20
-            Assert.AreEqual(20, PlayerComboShield.Resolve(_player, 10, dice));
+            var dice = DiceOf((DiceType.D6, 3), (DiceType.D20, 20));
+
+            // N = 10 + 3 + 20 = 33
+            Assert.AreEqual(33, PlayerComboShield.Resolve(_player, 10, dice));
         }
 
         [Test]
-        public void Resolve_PassiveScratch_BonusAddedAfterMultiplier()
+        public void Resolve_PassiveScratch_BonusEntersN_AndIsMultiplied()
         {
             var fake = new FakeComboPassiveService
             {
@@ -132,8 +132,8 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            // (10 × 2) + 4 = 24
-            Assert.AreEqual(24, PlayerComboShield.Resolve(_player, 10, null));
+            // N = 10 + 4 = 14; M = 2 → 28
+            Assert.AreEqual(28, PlayerComboShield.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -145,7 +145,7 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 99, DiceOf(DiceType.D20), abilityMultiplier: 5f));
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 99, DiceOf((DiceType.D20, 20)), abilityMultiplier: 5f));
         }
 
         [Test]
@@ -162,8 +162,8 @@ namespace Rollgeon.Combat.Tests
             ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
             ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
 
-            // (10 × 2 × 1.5) + 4 + 3 = 37
-            Assert.AreEqual(37, PlayerComboShield.Resolve(_player, 10, null));
+            // N = 10 + 4 + 3 = 17; M = 3 → 51
+            Assert.AreEqual(51, PlayerComboShield.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -173,7 +173,7 @@ namespace Rollgeon.Combat.Tests
             // (fallback 0) el combo NO genera escudo — ni siquiera el término de Attack.
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
 
-            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 0, DiceOf(DiceType.D20)));
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 0, DiceOf((DiceType.D20, 20))));
         }
 
         [Test]
@@ -186,26 +186,27 @@ namespace Rollgeon.Combat.Tests
                 Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 1.5f }
             };
             ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
-            var dice = DiceOf(DiceType.D6, DiceType.D20);
+            var dice = DiceOf((DiceType.D6, 4), (DiceType.D20, 12));
 
             int shield = PlayerComboShield.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
             int damage = PlayerComboDamage.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
 
+            // N = 7 + 5 + 2 + 16 + 4 = 34; M = 1.5 × 0.75 = 1.125 → 38.25 → 38
+            Assert.AreEqual(38, shield);
             Assert.AreEqual(damage, shield);
         }
 
         [Test]
         public void Resolve_LargeBase_PassesThroughUncapped()
         {
-            // Con la Spec v2, BUG-021 se contenía con el cap (90 → 8). En v3 no hay cap:
-            // el freno anti-inmunidad es el reset de escudo por turno + la escala ×10 del
-            // daño enemigo.
-            var dice = DiceOf(DiceType.D20, DiceType.D20, DiceType.D20);
+            // Sin cap (BUG-021 se contiene con el reset de escudo por turno, no con un tope):
+            // la base grande y las caras pasan enteras.
+            var dice = DiceOf((DiceType.D20, 20), (DiceType.D20, 20), (DiceType.D20, 20));
 
             int shield = PlayerComboShield.Resolve(_player, 90, dice);
 
-            // 90 × 3.0 = 270
-            Assert.AreEqual(270, shield);
+            // N = 90 + 60 = 150; M = 1 → 150
+            Assert.AreEqual(150, shield);
         }
 
         // Fake mínimo: solo LastComboScratch importa para la fórmula.
