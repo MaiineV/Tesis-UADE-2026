@@ -176,7 +176,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 5
+      Data: 50
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -213,6 +213,9 @@ MonoBehaviour:
     - Name: _diceFaces
       Entry: 3
       Data: 10
+    - Name: _diceResultMultiplier
+      Entry: 3
+      Data: 0
     - Name: _sourceTag
       Entry: 1
       Data: eff.heal
@@ -313,7 +316,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 9092771418612957922
+      - rid: 6878114991212856048
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -333,7 +336,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 9092771418612957922
+    - rid: 6878114991212856048
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -357,7 +360,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _healSource: 0
-        _baseAmount: 5
+        _baseAmount: 50
         _comboMultiplier: 1
         _reader:
           rid: -2
@@ -371,5 +374,6 @@ MonoBehaviour:
         _useDiceRoll: 0
         _diceCount: 1
         _diceFaces: 10
+        _diceResultMultiplier: 0
         _sourceTag: eff.heal
         _selfHealOnNoTarget: 1

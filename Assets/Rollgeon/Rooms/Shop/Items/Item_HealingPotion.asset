@@ -81,12 +81,48 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -96,12 +132,39 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _healSource
+      Entry: 3
+      Data: 0
     - Name: _baseAmount
       Entry: 3
       Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
     - Name: _isPercentOfMax
       Entry: 5
       Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: false
+    - Name: _healThreshold
+      Entry: 3
+      Data: 0
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 0
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _energyCostInCombat
+      Entry: 3
+      Data: 0
     - Name: _useDiceRoll
       Entry: 5
       Data: true
@@ -111,9 +174,15 @@ MonoBehaviour:
     - Name: _diceFaces
       Entry: 3
       Data: 10
+    - Name: _diceResultMultiplier
+      Entry: 3
+      Data: 10
     - Name: _sourceTag
       Entry: 1
       Data: eff.heal
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -122,6 +191,9 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
       Data: 
     - Name: 
       Entry: 8
@@ -137,7 +209,9 @@ MonoBehaviour:
     Label: Effect Group
     PreConditions: []
     Effects:
-    - rid: 1893612559060959725
+    - rid: 6878114991212856053
+    TargetSelector:
+      rid: -2
   Cooldown: 0
   ConsumedOnUse: 1
   ConsumesAction: 0
@@ -146,7 +220,9 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 1893612559060959725
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6878114991212856053
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -155,13 +231,35 @@ MonoBehaviour:
           EntityFilter: 8
           IsGlobal: 0
           Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
           IsConstantSelectionCount: 1
           SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
           AutoResolve: 0
           AutoAccept: 1
+        _healSource: 0
         _baseAmount: 10
+        _comboMultiplier: 0
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
         _isPercentOfMax: 0
+        _useBuildDice: 0
+        _healThreshold: 0
+        _healScaleFactor: 0
+        _healMaxCap: 0
+        _energyCostInCombat: 0
         _useDiceRoll: 1
         _diceCount: 1
         _diceFaces: 10
+        _diceResultMultiplier: 10
         _sourceTag: eff.heal
+        _selfHealOnNoTarget: 0

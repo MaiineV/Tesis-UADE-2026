@@ -257,12 +257,6 @@ namespace Rollgeon.Editor.Tools
                     _issues.Add((MessageType.Warning,
                         $"ShieldBaseTable: '{entry.ComboId}' con ShieldBase={entry.ShieldBase} — " +
                         "entrada redundante, sin entrada ya es 0."));
-
-                if (entry.ShieldBase > Rollgeon.Combat.Damage.PlayerComboShield.ShieldCap)
-                    _issues.Add((MessageType.Warning,
-                        $"ShieldBaseTable: '{entry.ComboId}' con ShieldBase={entry.ShieldBase} > " +
-                        $"cap {Rollgeon.Combat.Damage.PlayerComboShield.ShieldCap} — el cap corta siempre, " +
-                        "el excedente no aporta."));
             }
         }
 

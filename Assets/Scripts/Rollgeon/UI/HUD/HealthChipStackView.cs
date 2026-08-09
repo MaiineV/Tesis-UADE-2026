@@ -200,8 +200,8 @@ namespace Rollgeon.UI.HUD
         {
             if (_settings == null) return;
 
-            // Sin tope visual: una ficha por punto, la pila crece con el recurso
-            // (el cap real lo pone el diseño del juego, no el HUD).
+            // Sin tope visual: una ficha por cada HpPerChip puntos, la pila crece con
+            // el recurso (el cap real lo pone el diseño del juego, no el HUD).
             ChipStackMath.BuildHealthChipIds(hp, shield, _chipBuffer);
 
             if (_stack != null) _stack.SetChips(_chipBuffer, animate);

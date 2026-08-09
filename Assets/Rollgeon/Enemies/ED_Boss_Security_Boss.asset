@@ -47,6 +47,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: ImpactEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -242,12 +248,45 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -417,7 +456,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 10
+      Data: 100
     - Name: Kind
       Entry: 3
       Data: 1
@@ -438,7 +477,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 7
+      Data: 70
     - Name: Kind
       Entry: 3
       Data: 1
@@ -549,7 +588,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
-  BaseAttack: 3
+  BaseAttack: 30
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3

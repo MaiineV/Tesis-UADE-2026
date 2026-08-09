@@ -78,6 +78,18 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(90, EffHeal.ComputeBuildDiceHeal(5, 15, 100, 1f, maxCap: 0));
         }
 
+        // Escala 100: la poción 1d10 con multiplicador 10 cura {10..100} preservando
+        // la distribución uniforme del d10 original.
+        [TestCase(1, 10, 10)]
+        [TestCase(7, 10, 70)]
+        [TestCase(10, 10, 100)]
+        [TestCase(4, 1, 4)]   // multiplicador neutro
+        [TestCase(4, 0, 4)]   // valores inválidos clampean a 1
+        public void ComputeDiceRollHeal_MultipliesRollSum(int sum, int multiplier, int expected)
+        {
+            Assert.AreEqual(expected, EffHeal.ComputeDiceRollHeal(sum, multiplier));
+        }
+
         [Test]
         public void ComputeBuildDiceHeal_CapDoesNotApplyBelowThreshold()
         {

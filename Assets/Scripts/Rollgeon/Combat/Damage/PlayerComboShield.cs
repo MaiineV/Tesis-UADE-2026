@@ -1,36 +1,32 @@
+using System;
 using System.Collections.Generic;
 using Rollgeon.Dice;
-using UnityEngine;
 
 namespace Rollgeon.Combat.Damage
 {
     /// <summary>
-    /// Fórmula v2 del escudo de combo del jugador (Spec de Escudo, Santi, 2026-07-08):
-    /// <code>
-    /// escudo = min( escudo_combo_base × multi_dmg_combo , ShieldCap )
-    /// </code>
-    /// Tabla y fórmula completamente separadas de las de ataque: acá NO entra
-    /// <c>Attack</c>, <c>bono_combo</c> ni multiplicadores de scratch/habilidad — reusar
-    /// la tabla de daño fue la causa raíz del bug de escudo trivial.
-    /// <c>escudo_combo_base</c> sale de <c>ContractSheet.GetShieldBase</c> (tabla por
-    /// clase); <c>multi_dmg_combo</c> es la misma fórmula que en ataque
-    /// (<see cref="PlayerComboDamage.ComputeMultiDmgCombo"/>) sobre los dados de la
-    /// tirada que generó el escudo.
+    /// Fórmula v3 del escudo de combo del jugador (decisión de diseño 2026-08-06, revierte la
+    /// separación de la Spec v2): el escudo se resuelve con la <b>misma fórmula que el daño</b>
+    /// (<see cref="PlayerComboDamage.Resolve"/>), afectado por Attack (base + bonos), el multi
+    /// de dados, la perilla por habilidad y todos los canales de scratch (pasivas,
+    /// encantamientos, items at-played) — <c>BlockComboDamage</c> también bloquea escudo.
+    /// <c>escudo_combo_base</c> sigue saliendo de <c>ContractSheet.GetShieldBase</c>.
     /// </summary>
+    /// <remarks>
+    /// Única divergencia con el daño: el gate de base 0. Sin entrada en la ShieldBaseTable el
+    /// combo NO genera escudo (la tabla es opt-in por clase); si la fórmula corriera con base 0,
+    /// todo combo daría escudo ≈ Attack.ModifiedValue. El gate decide <i>si</i> hay escudo, la
+    /// fórmula decide <i>cuánto</i>. Ya no hay cap — el freno anti-inmunidad es el reset por
+    /// turno (<c>ShieldResetHandler</c>) más la escala ×10 del daño enemigo.
+    /// </remarks>
     public static class PlayerComboShield
     {
-        /// <summary>
-        /// ESCUDO_CAP — tope duro sobre el resultado final, post-multiplicación. Ni una
-        /// Generala perfecta debe dejar al jugador inmune varios turnos.
-        /// </summary>
-        public const int ShieldCap = 8;
-
-        public static int Resolve(int shieldBase, IReadOnlyList<DiceType> contributingDice)
+        public static int Resolve(Guid sourceId, int shieldBase,
+            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f)
         {
             if (shieldBase <= 0) return 0;
-            float multi = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
-            int shield = Mathf.RoundToInt(shieldBase * multi);
-            return Mathf.Min(shield, ShieldCap);
+            return PlayerComboDamage.Resolve(sourceId, shieldBase, contributingDice,
+                abilityMultiplier, PlayerComboFormulaKind.Shield);
         }
     }
 }

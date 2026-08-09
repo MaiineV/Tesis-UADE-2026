@@ -8,6 +8,7 @@ using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
 using Rollgeon.Items;
+using Rollgeon.Player;
 using TMPro;
 using UnityEngine;
 
@@ -40,7 +41,6 @@ namespace Rollgeon.UI.HUD
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
-        private int _lastShieldPreview;
         private IReadOnlyList<DiceType> _lastContributingDice;
         private Action<ComboMatchedPayload> _onComboMatched;
 
@@ -120,7 +120,6 @@ namespace Rollgeon.UI.HUD
             _onChainCompleted = args =>
             {
                 _inDefensePhase = false;
-                _lastShieldPreview = 0;
             };
             EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
@@ -181,7 +180,6 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
-            _lastShieldPreview = 0;
             _lastContributingDice = null;
             _currentTargetGuid = Guid.Empty;
             _inDefensePhase = false;
@@ -203,7 +201,6 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
-            _lastShieldPreview = 0;
             _lastContributingDice = null;
             _inDefensePhase = false;
             ClearFormula();
@@ -216,7 +213,6 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = payload.DisplayName;
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
-            _lastShieldPreview = payload.ShieldPreview;
             _lastContributingDice = payload.ContributingDice;
             UpdateFormula();
         }
@@ -229,16 +225,41 @@ namespace Rollgeon.UI.HUD
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
 
-            // Fase de defensa del chain: la tirada activa genera ESCUDO, no daño — mostrar
-            // el escudo esperado (tabla por clase × multi, con cap) en vivo con los holds.
+            // Fase de defensa del chain: la tirada activa genera ESCUDO, no daño. Se
+            // recomputa en vivo con la MISMA fórmula compartida que la aplicación real
+            // (anti-drift, igual que la rama de ataque). Misma nota de orden que abajo:
+            // Resolve lee LastComboScratch poblado por el mismo ComboMatchedPayload.
             if (_inDefensePhase)
             {
                 HideThreshold();
-                bool hasCombo = !string.IsNullOrEmpty(_lastComboDisplayName);
-                string text = hasCombo
-                    ? $"{_lastComboDisplayName}: escudo {_lastShieldPreview} (máx {PlayerComboShield.ShieldCap})"
-                    : "Defensa - armá un combo para generar escudo";
-                RenderLabel(text, hasCombo ? _lastShieldPreview : 0);
+                if (string.IsNullOrEmpty(_lastComboId))
+                {
+                    RenderLabel("Defensa - armá un combo para generar escudo", 0);
+                    return;
+                }
+
+                string shieldComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? _lastComboDisplayName : "Combo";
+                var shieldEff = _currentBehavior?.FindFirstAddShieldEffect();
+                int shieldPreview = PlayerComboShield.Resolve(
+                    _playerGuid, ResolvePlayerShieldBase(_lastComboId),
+                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f);
+
+                // Bono at-played de items: entra al escudo real (BeginPlay abre la ventana
+                // por fase, también en defensa) — se previsualiza en dorado como en ataque.
+                // Con preview 0 (sin entrada en tabla o bloqueado) el efecto no aplica nada,
+                // así que el bono tampoco se muestra. Sin Mitigate: el escudo no pasa por
+                // el DamagePipeline.
+                int shieldItemBonus = 0;
+                if (shieldPreview > 0
+                    && ServiceLocator.TryGetService<IInventoryService>(out var shieldInv)
+                    && shieldInv != null)
+                    shieldItemBonus = shieldInv.GetComboDamageBonusPreview(_lastComboId);
+
+                string shieldText = shieldItemBonus > 0
+                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemBonus}</color>"
+                    : $"{shieldComboName}: escudo {shieldPreview}";
+                RenderLabel(shieldText, shieldPreview + shieldItemBonus);
                 return;
             }
 
@@ -304,6 +325,16 @@ namespace Rollgeon.UI.HUD
 
         // Dorado para el bono aportado por los objetos (rich text de TMP).
         private const string ItemBonusColorHex = "FFC93C";
+
+        // Sheet del player como fuente de la tabla de escudo — mismo criterio que
+        // EffAddShield.ResolveComboShield, para que preview y aplicación lean la misma base.
+        private static int ResolvePlayerShieldBase(string comboId)
+        {
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            return sheet?.GetShieldBase(comboId) ?? 0;
+        }
 
         /// <summary>
         /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN

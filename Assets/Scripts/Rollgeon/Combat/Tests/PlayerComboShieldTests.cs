@@ -1,107 +1,225 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Modifiers;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
+using Rollgeon.Upgrades.Combos;
+using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Tests de <see cref="PlayerComboShield.Resolve"/> (Spec Escudo v2):
-    /// <c>min(escudo_combo_base × multi_dmg_combo, ShieldCap)</c>. Fórmula pura —
-    /// sin Attack, sin bono_combo, sin scratch.
+    /// Tests de <see cref="PlayerComboShield.Resolve"/> (Spec Escudo v3): fórmula compartida
+    /// con el daño — Attack + bonos + (shieldBase × multi × ability × scratch) + bono_combo —
+    /// con una única divergencia: el gate de base 0 (sin entrada en la ShieldBaseTable no
+    /// hay escudo, ni siquiera el término de Attack).
     /// </summary>
     [TestFixture]
     public class PlayerComboShieldTests
     {
-        [Test]
-        public void Resolve_AllD6_ReturnsBaseTimesNeutralMultiplier()
+        private AttributesManager _attrs;
+        private Guid _player;
+
+        [SetUp]
+        public void SetUp()
         {
-            // Arrange
-            var dice = new List<DiceType> { DiceType.D6, DiceType.D6, DiceType.D6 };
+            ServiceLocator.Clear();
+            _attrs = new AttributesManager();
+            _player = Guid.NewGuid();
+        }
 
-            // Act — multi = 3.5/3.5 = 1.0
-            int shield = PlayerComboShield.Resolve(shieldBase: 4, dice);
+        [TearDown]
+        public void TearDown()
+        {
+            ServiceLocator.Clear();
+            _attrs?.Dispose();
+        }
 
-            // Assert
-            Assert.AreEqual(4, shield);
+        private void RegisterPlayerAttack(int baseValue)
+        {
+            var a = new ModifiableAttributes();
+            a.SetAttribute<Attack>(new Attack(baseValue));
+            _attrs.Register(_player, a);
+            ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
+        }
+
+        private void RegisterPlayerAttackWithFlatBonus(int baseValue, int flatBonus)
+        {
+            RegisterPlayerAttack(baseValue);
+            var mod = new Modifier<int>(
+                amount: flatBonus, op: ModifierOperation.Add, duration: 0,
+                carrierId: _player, sourceId: Guid.Empty,
+                dir: ModifierDirection.Intrinsic,
+                lifetime: ModifierLifetime.Permanent,
+                tickEvent: EventName.OnTurnFinished);
+            _attrs.AddModifier<Attack, int>(_player, mod);
         }
 
         [Test]
-        public void Resolve_NoContributingDice_UsesNeutralMultiplier()
+        public void Resolve_NoAttackNoDice_ReturnsShieldBaseOnly()
         {
-            // Arrange / Act — sin dados el multi es 1.0 (mismo contrato que el daño)
-            int shield = PlayerComboShield.Resolve(shieldBase: 5, contributingDice: null);
-
-            // Assert
-            Assert.AreEqual(5, shield);
+            Assert.AreEqual(10, PlayerComboShield.Resolve(_player, shieldBase: 10, contributingDice: null));
         }
 
         [Test]
-        public void Resolve_MixedD6D20_AveragesExpectedValue()
+        public void Resolve_AddsPlayerBaseAttack_WhenNoModifiers()
         {
-            // Arrange — EV avg = (3.5 + 10.5) / 2 = 7.0 → multi = 2.0
-            var dice = new List<DiceType> { DiceType.D6, DiceType.D20 };
+            RegisterPlayerAttack(5);
 
-            // Act
-            int shield = PlayerComboShield.Resolve(shieldBase: 3, dice);
-
-            // Assert — 3 × 2.0 = 6, bajo el cap
-            Assert.AreEqual(6, shield);
+            Assert.AreEqual(15, PlayerComboShield.Resolve(_player, 10, null));
         }
 
         [Test]
-        public void Resolve_AllD20_CapsAtShieldCap()
+        public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
         {
-            // Arrange — multi = 10.5/3.5 = 3.0
-            var dice = new List<DiceType> { DiceType.D20, DiceType.D20 };
+            RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
+            var dice = new[] { DiceType.D20 };
 
-            // Act — 4 × 3.0 = 12 > cap
-            int shield = PlayerComboShield.Resolve(shieldBase: 4, dice);
+            int result = PlayerComboShield.Resolve(_player, shieldBase: 10,
+                contributingDice: dice, abilityMultiplier: 2f);
 
-            // Assert
-            Assert.AreEqual(PlayerComboShield.ShieldCap, shield);
+            // (5 + 3) + (10 × 3.0 × 2) = 68
+            Assert.AreEqual(68, result);
         }
 
         [Test]
-        public void Resolve_CapAppliesAfterMultiplication_NotBefore()
+        public void Resolve_AbilityMultiplier_ScalesShieldTermOnly_NotPlayerBase()
         {
-            // Arrange — si el cap se aplicara antes de multiplicar, min(3,8)=3 → ×3 = 9.
-            var dice = new List<DiceType> { DiceType.D20 };
+            RegisterPlayerAttack(5);
 
-            // Act — orden correcto: 3 × 3.0 = 9 → min(9, 8) = 8
-            int shield = PlayerComboShield.Resolve(shieldBase: 3, dice);
-
-            // Assert
-            Assert.AreEqual(8, shield);
+            // 5 + (10 × 1 × 2) = 25
+            Assert.AreEqual(25, PlayerComboShield.Resolve(_player, 10, null, abilityMultiplier: 2f));
         }
 
         [Test]
-        public void Resolve_ZeroBase_ReturnsZero()
+        public void Resolve_MultiDmgCombo_AllD20_TriplesShieldTerm_Uncapped()
         {
-            // Arrange
-            var dice = new List<DiceType> { DiceType.D20 };
-
-            // Act — sin entrada en la tabla de escudo (fallback 0) no hay escudo
-            int shield = PlayerComboShield.Resolve(shieldBase: 0, dice);
-
-            // Assert
-            Assert.AreEqual(0, shield);
+            // Con la fórmula v2 esto capeaba en 8; ahora pasa entero.
+            var dice = new[] { DiceType.D20, DiceType.D20 };
+            // 10 × (10.5/3.5) = 30
+            Assert.AreEqual(30, PlayerComboShield.Resolve(_player, 10, dice));
         }
 
         [Test]
-        public void Resolve_AttackTableScaleBase_NeverExceedsCap()
+        public void Resolve_MultiDmgCombo_MixedDice_AveragesExpectedValue()
         {
-            // Regression BUG-021: con la fórmula vieja una Generala (BaseDamage 90 de la
-            // tabla de ATAQUE) daba 90 de escudo ≈ 45 turnos de inmunidad. Aún si un valor
-            // de esa escala llegara a la fórmula nueva, el cap lo corta.
-            // Arrange
+            var dice = new[] { DiceType.D6, DiceType.D20 };
+            // EV avg = (3.5 + 10.5) / 2 = 7.0 → 7.0/3.5 = 2.0 → 10 × 2.0 = 20
+            Assert.AreEqual(20, PlayerComboShield.Resolve(_player, 10, dice));
+        }
+
+        [Test]
+        public void Resolve_PassiveScratch_BonusAddedAfterMultiplier()
+        {
+            var fake = new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 2f }
+            };
+            ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
+
+            // (10 × 2) + 4 = 24
+            Assert.AreEqual(24, PlayerComboShield.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_BlockComboDamage_BlocksShieldToo()
+        {
+            var fake = new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BlockComboDamage = true }
+            };
+            ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
+
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
+        }
+
+        [Test]
+        public void Resolve_PlayAndMatchScratches_ComposeAcrossChannels()
+        {
+            var passives = new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 2f }
+            };
+            var play = new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 3, ComboDamageMultiplier = 1.5f }
+            };
+            ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
+
+            // (10 × 2 × 1.5) + 4 + 3 = 37
+            Assert.AreEqual(37, PlayerComboShield.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_ShieldBaseZero_ReturnsZero_EvenWithAttackRegistered()
+        {
+            // El gate es la única divergencia con el daño: sin entrada en la ShieldBaseTable
+            // (fallback 0) el combo NO genera escudo — ni siquiera el término de Attack.
+            RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
+
+            Assert.AreEqual(0, PlayerComboShield.Resolve(_player, 0, new[] { DiceType.D20 }));
+        }
+
+        [Test]
+        public void Resolve_ParityWithDamageFormula_ForSameInputs()
+        {
+            // Anti-drift estructural: con base > 0, escudo y daño son LA MISMA fórmula.
+            RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 2);
+            var passives = new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 1.5f }
+            };
+            ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
+            var dice = new[] { DiceType.D6, DiceType.D20 };
+
+            int shield = PlayerComboShield.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
+            int damage = PlayerComboDamage.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
+
+            Assert.AreEqual(damage, shield);
+        }
+
+        [Test]
+        public void Resolve_LargeBase_PassesThroughUncapped()
+        {
+            // Con la Spec v2, BUG-021 se contenía con el cap (90 → 8). En v3 no hay cap:
+            // el freno anti-inmunidad es el reset de escudo por turno + la escala ×10 del
+            // daño enemigo.
             var dice = new List<DiceType> { DiceType.D20, DiceType.D20, DiceType.D20 };
 
-            // Act
-            int shield = PlayerComboShield.Resolve(shieldBase: 90, dice);
+            int shield = PlayerComboShield.Resolve(_player, 90, dice);
 
-            // Assert
-            Assert.AreEqual(PlayerComboShield.ShieldCap, shield);
+            // 90 × 3.0 = 270
+            Assert.AreEqual(270, shield);
+        }
+
+        // Fake mínimo: solo LastComboScratch importa para la fórmula.
+        private sealed class FakeComboPassiveService : IComboPassiveService
+        {
+            public EnchantmentScratch Scratch;
+            public bool IsReady => true;
+            public IReadOnlyList<ComboPassiveSO> GetPassivesFor(string comboId) => Array.Empty<ComboPassiveSO>();
+            public void Apply(ComboPassiveSO passive) { }
+            public int GetBonusDamage(string comboId) => 0;
+            public EnchantmentScratch LastComboScratch => Scratch;
+        }
+
+        // Fake mínimo del canal at-played (mismo criterio que PlayerComboDamageTests).
+        private sealed class FakeComboPlayService : IComboPlayService
+        {
+            public EnchantmentScratch Scratch;
+            public EnchantmentScratch CurrentPlayScratch => Scratch;
+            public EnchantmentScratch LastPlayScratch => Scratch;
+            public bool IsPlayWindowOpen => Scratch != null;
+            public string CurrentComboId => null;
+            public void BeginPlay(EffectContext effCtx) { }
+            public void EndPlay() { }
         }
     }
 }
