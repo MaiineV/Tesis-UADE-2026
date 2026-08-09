@@ -114,6 +114,22 @@ namespace Rollgeon.UI.Menu
             PlayEntrance(0f);
         }
 
+        /// <summary>
+        /// Cuánto tarda la entrada staggered completa, del primer botón al último.
+        /// Lo consulta quien necesite esperar a que la pantalla esté quieta (p.e. la
+        /// guía de coach-marks, que anclaría a botones invisibles y en movimiento si
+        /// arrancara antes). Derivado del settings, así que sobrevive a un retune.
+        /// </summary>
+        public float EntranceTotalSeconds
+        {
+            get
+            {
+                if (_settings == null || _buttons == null || _buttons.Length == 0) return 0f;
+                return _settings.EntranceDuration
+                       + MenuJuiceMath.StaggerDelay(_buttons.Length - 1, _settings.StaggerStep);
+            }
+        }
+
         /// <summary>Entrada staggered: delay = base + índice * step.</summary>
         public void PlayEntrance(float baseDelay = 0f)
         {
