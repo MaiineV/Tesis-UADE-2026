@@ -471,6 +471,24 @@ MonoBehaviour:
       1 Energy.'
     m_Metadata:
       m_Items: []
+  - m_Id: 8535671167614976
+    m_Localized: These are your class dice. Click one to add it to your bag; the
+      number on each row shows how many of that type you can carry.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382080
+    m_Localized: Your bag is built here, always sorted from lowest to highest. Click
+      a die in the strip to send it back to the pool.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382081
+    m_Localized: Clear empties the whole bag so you can start over.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382082
+    m_Localized: Once your bag is full, Confirm unlocks and starts the run.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

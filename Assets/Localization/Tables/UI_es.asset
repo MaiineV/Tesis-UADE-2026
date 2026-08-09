@@ -475,6 +475,25 @@ MonoBehaviour:
       Energ\xEDa."
     m_Metadata:
       m_Items: []
+  - m_Id: 8535671167614976
+    m_Localized: "Estos son los dados de tu clase. Hac\xE9 click en uno para sumarlo
+      a la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos pod\xE9s llevar de ese
+      tipo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382080
+    m_Localized: "Tu bolsa se arma ac\xE1, siempre ordenada de menor a mayor. Hac\xE9
+      click en un dado de la tira para devolverlo al pool."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382081
+    m_Localized: "Limpiar vac\xEDa la bolsa entera y te deja empezar de cero."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382082
+    m_Localized: Cuando completes la bolsa, Confirmar se habilita y arranca la run.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
