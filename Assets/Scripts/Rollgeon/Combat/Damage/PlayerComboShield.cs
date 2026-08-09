@@ -23,10 +23,21 @@ namespace Rollgeon.Combat.Damage
     {
         public static int Resolve(Guid sourceId, int shieldBase,
             IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f)
+            => Resolve(sourceId, shieldBase, contributingDice, abilityMultiplier, out _);
+
+        /// <summary>Overload con desglose — espejo de <c>PlayerComboDamage.Resolve</c>.</summary>
+        public static int Resolve(Guid sourceId, int shieldBase,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier,
+            out DamageBreakdown breakdown)
         {
-            if (shieldBase <= 0) return 0;
+            if (shieldBase <= 0)
+            {
+                // Gate: sin base no hay escudo — el breakdown refleja el corte, no la fórmula.
+                breakdown = new DamageBreakdown { Kind = PlayerComboFormulaKind.Shield };
+                return 0;
+            }
             return PlayerComboDamage.Resolve(sourceId, shieldBase, contributingDice,
-                abilityMultiplier, PlayerComboFormulaKind.Shield);
+                abilityMultiplier, PlayerComboFormulaKind.Shield, out breakdown);
         }
     }
 }

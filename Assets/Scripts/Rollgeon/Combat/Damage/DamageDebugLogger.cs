@@ -36,29 +36,24 @@ namespace Rollgeon.Combat.Damage
         private const string ShieldCol = "56b6c2";   // cyan — escudo
 
         /// <summary>
-        /// Desglosa la fórmula v3 compartida del combo del jugador (ver <see cref="PlayerComboDamage"/>):
-        /// <c>N = comboBase + dmg_base_PJ + bonos_PJ + Σcaras + bono_combo</c>,
-        /// <c>M = scratch × ability</c>, <c>total = round(N × M)</c>.
-        /// <paramref name="kind"/> distingue si el resultado es daño o escudo.
+        /// Desglosa la fórmula v3 compartida del combo del jugador desde el
+        /// <see cref="DamageBreakdown"/> que produjo <see cref="PlayerComboDamage.Resolve"/> —
+        /// el log muestra los MISMOS términos que la fórmula computó, nunca una copia.
         /// </summary>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
-        public static void LogPlayerComposition(
-            Guid sourceId, int comboBaseDamage, int dmgBasePJ, int bonosPJ,
-            int facesSum, int bonoCombo, float scratchMultiplier, float abilityMultiplier,
-            bool blocked, int finalBase,
-            PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
+        public static void LogPlayerComposition(Guid sourceId, in DamageBreakdown b)
         {
             if (!Enabled) return;
 
-            bool isShield = kind == PlayerComboFormulaKind.Shield;
+            bool isShield = b.Kind == PlayerComboFormulaKind.Shield;
             var sb = new StringBuilder(640);
             sb.Append(isShield
                 ? Band(ShieldCol, "SHIELD · COMPOSICIÓN — escudo base del PLAYER")
                 : Band(BandCompose, "DMG · COMPOSICIÓN — daño base del PLAYER"));
             sb.Append("  ").Append(Col(Label, "src=" + Short(sourceId)));
 
-            if (blocked)
+            if (b.Blocked)
             {
                 sb.Append('\n').Append(Col(BandApply,
                     $"  ⛔ BLOQUEADO por scratch (BlockComboDamage) → {(isShield ? "escudo" : "daño")} base = 0"));
@@ -66,26 +61,23 @@ namespace Rollgeon.Combat.Damage
                 return;
             }
 
-            int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
-            float m = scratchMultiplier * abilityMultiplier;
-
             // Términos de N — todo lo aditivo escala junto.
-            sb.Append(Row("combo_base", comboBaseDamage));
-            sb.Append(Row("+ dmg_base_PJ  (ATQ.Value)", dmgBasePJ));
-            sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", bonosPJ));
-            sb.Append(Row("+ Σ caras contribuyentes", facesSum));
-            sb.Append(Row("+ bono_combo   (passives + enchants + items)", bonoCombo));
-            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + n + "</b>"));
+            sb.Append(Row("combo_base", b.ComboBase));
+            sb.Append(Row("+ dmg_base_PJ  (ATQ.Value)", b.AttackBase));
+            sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", b.AttackBonus));
+            sb.Append(Row("+ Σ caras contribuyentes", b.FacesSum));
+            sb.Append(Row("+ bono_combo   (passives + enchants + items)", b.AdditiveBonus));
+            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + b.N + "</b>"));
 
             // Términos de M.
             sb.Append('\n').Append(Col(Label, "  M = "))
-              .Append(Num(scratchMultiplier)).Append(Col(Label, " (scratch) × "))
-              .Append(Num(abilityMultiplier)).Append(Col(Label, " (ability) = "))
-              .Append(Col(Accent, "<b>" + F(m) + "</b>"));
+              .Append(Num(b.ScratchMultiplier)).Append(Col(Label, " (scratch) × "))
+              .Append(Num(b.AbilityMultiplier)).Append(Col(Label, " (ability) = "))
+              .Append(Col(Accent, "<b>" + F(b.M) + "</b>"));
 
             sb.Append('\n').Append(Col(isShield ? ShieldCol : BandCompose, "  ═ TOTAL = N × M = "))
-              .Append(Col(Label, $"{n} × {F(m)} = "))
-              .Append(Col(Accent, "<b>" + finalBase + "</b>"))
+              .Append(Col(Label, $"{b.N} × {F(b.M)} = "))
+              .Append(Col(Accent, "<b>" + b.Final + "</b>"))
               .Append(Col(Label, isShield
                   ? "   → se suma al atributo Shield (EffAddShield)"
                   : "   → entra al DamagePipeline como BaseDamage"));

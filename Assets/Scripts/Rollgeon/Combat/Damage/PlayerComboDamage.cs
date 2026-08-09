@@ -46,6 +46,16 @@ namespace Rollgeon.Combat.Damage
         public static int Resolve(Guid sourceId, int comboBaseDamage,
             IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f,
             PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
+            => Resolve(sourceId, comboBaseDamage, contributingDice, abilityMultiplier, kind, out _);
+
+        /// <summary>
+        /// Overload con desglose: mismos números que el overload simple, más el
+        /// <see cref="DamageBreakdown"/> con cada término por separado para UI/logging.
+        /// Lectura pura — llamarlo N veces devuelve el mismo breakdown sin side-effects.
+        /// </summary>
+        public static int Resolve(Guid sourceId, int comboBaseDamage,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier,
+            PlayerComboFormulaKind kind, out DamageBreakdown breakdown)
         {
             int dmgBasePJ = 0;
             int bonosPJ = 0;
@@ -91,22 +101,28 @@ namespace Rollgeon.Combat.Damage
             if (contributingDice != null)
                 for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
 
-            if (block)
-            {
-                DamageDebugLogger.LogPlayerComposition(sourceId, comboBaseDamage, dmgBasePJ, bonosPJ,
-                    facesSum, bonoCombo, scratchMultiplier, abilityMultiplier,
-                    blocked: true, finalBase: 0, kind: kind);
-                return 0;
-            }
-
             int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
             float m = scratchMultiplier * abilityMultiplier;
-            int total = RoundNxM(n, m);
+            int total = block ? 0 : RoundNxM(n, m);
 
-            DamageDebugLogger.LogPlayerComposition(sourceId, comboBaseDamage, dmgBasePJ, bonosPJ,
-                facesSum, bonoCombo, scratchMultiplier, abilityMultiplier,
-                blocked: false, finalBase: total, kind: kind);
+            breakdown = new DamageBreakdown
+            {
+                Kind = kind,
+                ComboBase = comboBaseDamage,
+                AttackBase = dmgBasePJ,
+                AttackBonus = bonosPJ,
+                FacesSum = facesSum,
+                AdditiveBonus = bonoCombo,
+                N = n,
+                ScratchMultiplier = scratchMultiplier,
+                AbilityMultiplier = abilityMultiplier,
+                M = m,
+                Blocked = block,
+                Final = total,
+                Dice = contributingDice,
+            };
 
+            DamageDebugLogger.LogPlayerComposition(sourceId, in breakdown);
             return total;
         }
 
