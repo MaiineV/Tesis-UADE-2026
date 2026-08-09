@@ -243,7 +243,7 @@ namespace Rollgeon.UI.HUD
                 var shieldEff = _currentBehavior?.FindFirstAddShieldEffect();
                 int shieldPreview = PlayerComboShield.Resolve(
                     _playerGuid, ResolvePlayerShieldBase(_lastComboId),
-                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f);
+                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f, out var shieldBd);
 
                 // Bono at-played de items: entra al escudo real (BeginPlay abre la ventana
                 // por fase, también en defensa) — se previsualiza en dorado como en ataque.
@@ -256,10 +256,16 @@ namespace Rollgeon.UI.HUD
                     && shieldInv != null)
                     shieldItemBonus = shieldInv.GetComboDamageBonusPreview(_lastComboId);
 
-                string shieldText = shieldItemBonus > 0
-                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemBonus}</color>"
+                // v3: el bono entra a N y escala por M — mismo redondeo que el golpe real.
+                int shieldTotal = shieldItemBonus > 0
+                    ? PlayerComboDamage.RoundNxM(shieldBd.N + shieldItemBonus, shieldBd.M)
+                    : shieldPreview;
+                int shieldItemPortion = shieldTotal - shieldPreview;
+
+                string shieldText = shieldItemPortion > 0
+                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemPortion}</color>"
                     : $"{shieldComboName}: escudo {shieldPreview}";
-                RenderLabel(shieldText, shieldPreview + shieldItemBonus);
+                RenderLabel(shieldText, shieldTotal);
                 return;
             }
 
@@ -302,19 +308,28 @@ namespace Rollgeon.UI.HUD
             // que esos services estén suscriptos antes que esta view (misma dependencia que
             // tenía el viejo ResolveComboBonusDamage).
             int preMitigation = PlayerComboDamage.Resolve(
-                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier);
+                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier,
+                PlayerComboFormulaKind.Damage, out var bd);
 
             // Bono at-played de los items passive del inventario para este combo. No entra
             // en Resolve durante el preview (el LastPlayScratch se limpia al inicio del
             // turno), así que lo previsualizamos aparte para mostrarlo en dorado.
+            // Limitación conocida: GetComboDamageBonusPreview solo suma EffAddComboBonus —
+            // un item at-played MULTIPLICATIVO sigue sin previsualizarse (follow-up).
             int itemBonus = 0;
             if (ServiceLocator.TryGetService<IInventoryService>(out var inventory) && inventory != null)
                 itemBonus = inventory.GetComboDamageBonusPreview(_lastComboId);
 
+            // v3: el bono de item entra a N y escala por M — igual que hará el golpe real
+            // cuando el item escriba al play scratch (en v2 se sumaba POST-fórmula).
+            int preWithItems = itemBonus != 0 && !bd.Blocked
+                ? PlayerComboDamage.RoundNxM(bd.N + itemBonus, bd.M)
+                : preMitigation;
+
             // Mitigación real (weakness + escudo) por separado para base y total, así el
             // "+ N" dorado refleja la contribución de los objetos ya mitigada.
             int shownBase = Mitigate(preMitigation);
-            int shownTotal = itemBonus != 0 ? Mitigate(preMitigation + itemBonus) : shownBase;
+            int shownTotal = itemBonus != 0 ? Mitigate(preWithItems) : shownBase;
             int itemPortion = shownTotal - shownBase;
 
             string formulaText = itemPortion > 0
