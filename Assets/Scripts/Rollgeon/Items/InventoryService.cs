@@ -12,6 +12,7 @@ using Rollgeon.Effects.Concretes;
 using Rollgeon.Player;
 using Rollgeon.PreConditions;
 using Rollgeon.Upgrades;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Items
