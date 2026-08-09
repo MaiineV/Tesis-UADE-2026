@@ -9,18 +9,25 @@ namespace Rollgeon.UI.Tests
 {
     public class ActionDragPolicyTests
     {
+        /// <summary>
+        /// Recorre el enum entero en vez de listar estados a mano: el gate es
+        /// load-bearing y un valor nuevo (como <c>Unaffordable</c>) tiene que quedar
+        /// cubierto sin que nadie se acuerde de venir a agregar un assert.
+        /// </summary>
         [Test]
-        public void test_canBeginDrag_available_returnsTrue()
+        public void test_canBeginDrag_onlyAvailable_returnsTrue()
         {
-            Assert.IsTrue(ActionDragPolicy.CanBeginDrag(ActionButtonState.Available));
-        }
+            // Arrange
+            var states = (ActionButtonState[])System.Enum.GetValues(typeof(ActionButtonState));
 
-        [Test]
-        public void test_canBeginDrag_lockedSelectedUsed_returnsFalse()
-        {
-            Assert.IsFalse(ActionDragPolicy.CanBeginDrag(ActionButtonState.Locked));
-            Assert.IsFalse(ActionDragPolicy.CanBeginDrag(ActionButtonState.Selected));
-            Assert.IsFalse(ActionDragPolicy.CanBeginDrag(ActionButtonState.Used));
+            // Act + Assert
+            foreach (var state in states)
+            {
+                Assert.AreEqual(
+                    state == ActionButtonState.Available,
+                    ActionDragPolicy.CanBeginDrag(state),
+                    $"estado {state}");
+            }
         }
 
         [Test]

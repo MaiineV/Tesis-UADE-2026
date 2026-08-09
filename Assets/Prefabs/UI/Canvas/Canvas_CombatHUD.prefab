@@ -142,7 +142,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 2810929262716145622}
   _slot: 3
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 840111774869173433}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -152,6 +152,10 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _unaffordableColor: {r: 0.82, g: 0.212, b: 0.353, a: 1}
+  _rejectShakeDuration: 0.28
+  _rejectShakeStrength: 6
+  _rejectShakeFrequency: 22
   _clickActivates: 1
 --- !u!114 &8365514699156368097
 MonoBehaviour:
@@ -1128,7 +1132,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 6121272190165328411}
   _slot: 2
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 2130941980289147389}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -1138,6 +1142,10 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _unaffordableColor: {r: 0.82, g: 0.212, b: 0.353, a: 1}
+  _rejectShakeDuration: 0.28
+  _rejectShakeStrength: 6
+  _rejectShakeFrequency: 22
   _clickActivates: 1
 --- !u!114 &4737555530525087601
 MonoBehaviour:
@@ -1467,7 +1475,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 6041978482812859431}
   _slot: 1
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 438272498398136390}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -1477,6 +1485,10 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _unaffordableColor: {r: 0.82, g: 0.212, b: 0.353, a: 1}
+  _rejectShakeDuration: 0.28
+  _rejectShakeStrength: 6
+  _rejectShakeFrequency: 22
   _clickActivates: 1
 --- !u!114 &7335839326275833746
 MonoBehaviour:
@@ -2272,7 +2284,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 5813600425623873150}
   _slot: 4
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 27290745131869364}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -2282,6 +2294,10 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _unaffordableColor: {r: 0.82, g: 0.212, b: 0.353, a: 1}
+  _rejectShakeDuration: 0.28
+  _rejectShakeStrength: 6
+  _rejectShakeFrequency: 22
   _clickActivates: 1
 --- !u!114 &1966835678152680097
 MonoBehaviour:
@@ -3114,7 +3130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionButton
   _button: {fileID: 1960572829015819092}
   _slot: 0
-  _costLabel: {fileID: 0}
+  _costLabel: {fileID: 9147702127200233134}
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -3124,6 +3140,10 @@ MonoBehaviour:
   _glowAlphaRange: {x: 0.35, y: 1}
   _outlineDistance: {x: 3, y: -3}
   _usedColorMultiplier: 0.45
+  _unaffordableColor: {r: 0.82, g: 0.212, b: 0.353, a: 1}
+  _rejectShakeDuration: 0.28
+  _rejectShakeStrength: 6
+  _rejectShakeFrequency: 22
   _clickActivates: 1
 --- !u!114 &2611328808317183367
 MonoBehaviour:
