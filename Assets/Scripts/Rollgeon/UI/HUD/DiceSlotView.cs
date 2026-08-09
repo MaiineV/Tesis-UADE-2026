@@ -44,6 +44,12 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
         private GameObject _lockIcon;
 
+        [Title("Breakdown")]
+        [SerializeField, Optional]
+        [Tooltip("Label '+N' bajo el dado: lo que este dado suma al combo (cara + bonos de " +
+                 "sus encantamientos). Solo se muestra en dados contribuyentes. Opcional.")]
+        private Rollgeon.UI.HUD.Breakdown.DiceContributionLabel _contribution;
+
         [HideInInspector] public UnityEvent OnToggled = new UnityEvent();
 
         private static readonly Color BlockedColor = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -250,10 +256,22 @@ namespace Rollgeon.UI.HUD
         /// Combat — apaga el slot: limpia el label y quita el tint de hold.
         /// Lo invoca <see cref="DiceZoneView"/> al iniciar y al cerrar el turno.
         /// </summary>
+        /// <summary>Ancla del label "+N" (origen del vuelo en la secuencia). Puede ser null.</summary>
+        public Rollgeon.UI.HUD.Breakdown.DiceContributionLabel ContributionLabel => _contribution;
+
+        /// <summary>Combat — pinta u oculta el "+N" bajo el dado. Null ⇒ no contribuye.</summary>
+        public void SetContribution(int? amount)
+        {
+            if (_contribution == null) return;
+            if (amount.HasValue) _contribution.Show(amount.Value);
+            else _contribution.Hide();
+        }
+
         public void Clear()
         {
             CurrentFace = 0;
             _diceLabel?.SetText(string.Empty);
+            _contribution?.Hide();
             // Un spin cancelado a mitad no debe dejar latcheado su lateral. El hover NO se
             // resetea acá: es de DiceSlotHoverJuice, que lo baja al desactivarse el slot —
             // si el slot sigue vivo y el puntero encima, el hover sigue siendo cierto.

@@ -577,6 +577,43 @@ namespace Rollgeon.UI.HUD
                 BaseDamage = baseDmg,
                 ContributingDice = contributingDice,
             });
+
+            // DESPUÉS del Raise: los services de encantos ya poblaron LastComboScratch
+            // (y su journal) procesando este mismo payload.
+            UpdateContributionLabels(contributingDice, hasBag ? enchants : null);
+        }
+
+        /// <summary>
+        /// Pinta el "+N" bajo cada dado contribuyente: cara + bonos aditivos de los
+        /// encantamientos de ESE dado (journal at-match). Los no contribuyentes lo ocultan.
+        /// </summary>
+        private void UpdateContributionLabels(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice,
+            IDiceEnchantmentService enchants)
+        {
+            if (_resolvedSlots == null) return;
+
+            var journal = enchants?.LastComboScratch?.Journal;
+            for (int slot = 0; slot < _resolvedSlots.Length; slot++)
+            {
+                int? amount = null;
+                if (contributingDice != null)
+                {
+                    for (int i = 0; i < contributingDice.Count; i++)
+                    {
+                        if (contributingDice[i].BagSlot != slot) continue;
+                        int total = contributingDice[i].Face;
+                        if (journal != null)
+                        {
+                            for (int j = 0; j < journal.Count; j++)
+                                if (journal[j].BagSlot == slot) total += journal[j].BonusDelta;
+                        }
+                        amount = total;
+                        break;
+                    }
+                }
+                _resolvedSlots[slot]?.SetContribution(amount);
+            }
         }
 
         private static ContractSheet ResolvePlayerContractSheet()

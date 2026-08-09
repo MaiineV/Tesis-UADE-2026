@@ -78,6 +78,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
+        [Tooltip("Opcional — espada + dano base del player a la izquierda del dice board " +
+                 "(breakdown N×M). Ref cross-canvas a Canvas_ActionRoll, igual que el board skin.")]
+        [SerializeField]
+        private Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView _playerBaseDamage;
+
 
         [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
                  "hero (ej. Furia del Guerrero) está activa.")]
@@ -351,6 +356,7 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
+            if (_playerBaseDamage != null) _playerBaseDamage.Bind(playerGuid);
             if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
@@ -370,6 +376,7 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
+            if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();

@@ -36,6 +36,11 @@ namespace Rollgeon.UI.HUD
                  "Opcional: sin cablear, el label se comporta como antes (sin color/efectos).")]
         [SerializeField] private ValueTextFeedbackController _feedback;
 
+        [Tooltip("Opcional — el 'N × M' que reemplaza al texto en modo daño-por-combo. Esta " +
+                 "view sigue siendo dueña de la detección de modo: en daño-combo delega acá; " +
+                 "en escudo/action-roll/degradados lo oculta y renderiza su propio label.")]
+        [SerializeField] private Rollgeon.UI.HUD.Breakdown.DamageBreakdownView _breakdownView;
+
         private Guid _playerGuid;
         private HeroActionBehavior _currentBehavior;
         private string _lastComboDisplayName;
@@ -221,6 +226,10 @@ namespace Rollgeon.UI.HUD
         {
             if (_formulaLabel == null) return;
 
+            // Default: el N×M solo aplica al modo daño-por-combo — la rama de abajo lo
+            // re-muestra; cualquier otra rama (action roll, defensa, degradados) lo apaga.
+            if (_breakdownView != null) _breakdownView.Hide();
+
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
@@ -299,6 +308,16 @@ namespace Rollgeon.UI.HUD
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
+
+            // Modo N×M: el breakdown muestra los contadores iniciales (N = base del combo,
+            // M = perilla de la habilidad) y el resto llega volando en la secuencia del
+            // confirm. El label viejo queda vacío mientras el breakdown esté a cargo.
+            if (_breakdownView != null)
+            {
+                _breakdownView.ShowPreview(_lastComboBaseDamage, dmgEff.ComboMultiplier);
+                ClearLabelKeepingBreakdown();
+                return;
+            }
 
             // Daño pre-mitigación EXACTO: misma función que el golpe real, así el número
             // arrastra ATQ base del PJ, scratchMultiplier de encantamientos y el bono de
@@ -407,6 +426,13 @@ namespace Rollgeon.UI.HUD
         }
 
         private void ClearFormula()
+        {
+            if (_breakdownView != null) _breakdownView.Hide();
+            ClearLabelKeepingBreakdown();
+        }
+
+        // Limpia SOLO el label de texto (el breakdown, si está mostrado, queda a cargo).
+        private void ClearLabelKeepingBreakdown()
         {
             if (_feedback != null) _feedback.Clear();
             else if (_formulaLabel != null) _formulaLabel.text = string.Empty;
