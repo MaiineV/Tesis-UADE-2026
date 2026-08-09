@@ -68,6 +68,7 @@ namespace Rollgeon.UI.HUD
             // El outro del confirm (todos los modos) corre DESPUÉS de OnBehaviorExecuted:
             // la zona tiene que quedar visible hasta que los dados terminen de volar.
             DiceOutroGate.Changed += Refresh;
+            Rollgeon.Feedback.BreakdownUiGate.Changed += Refresh;
 
             // El IActionRollService es Run-scoped (registered cuando arranca el Run).
             // Si OnEnable corre antes del bootstrap, _actionRoll queda null. Update()
@@ -129,6 +130,7 @@ namespace Rollgeon.UI.HUD
                 _onDiceFlowEnd = null;
             }
             DiceOutroGate.Changed -= Refresh;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= Refresh;
             _combatDiceFlowActive = false;
         }
 
@@ -144,7 +146,8 @@ namespace Rollgeon.UI.HUD
             // muestra la zona, en cualquier fase. Un outro pendiente (dados volando al
             // centro tras el confirm) mantiene la zona visible hasta que termine.
             ApplyVisible((inCombat && _combatDiceFlowActive) || actionRollActive
-                         || DiceOutroGate.OutroPending);
+                         || DiceOutroGate.OutroPending
+                         || Rollgeon.Feedback.BreakdownUiGate.Pending);
         }
 
         private void ApplyVisible(bool visible)

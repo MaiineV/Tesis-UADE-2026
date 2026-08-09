@@ -169,6 +169,7 @@ namespace Rollgeon.UI.HUD
         public void Unbind()
         {
             if (!_bound) return;
+            CancelDeferredOutro();
             if (_animator != null)
             {
                 _animator.AnimationStateChanged -= RaiseDiceAnimationStateChanged;
@@ -312,6 +313,40 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1) return;
             if (args[0] is not Guid guid || guid != _playerGuid) return;
+            // Con la secuencia de breakdown (N×M) corriendo, los dados se quedan en su
+            // slot — la animación vuela sus valores desde ahí. El outro arranca recién
+            // cuando el gate se libera.
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending)
+            {
+                if (!_outroDeferredByBreakdown)
+                {
+                    _outroDeferredByBreakdown = true;
+                    Rollgeon.Feedback.BreakdownUiGate.Changed += RunOutroWhenBreakdownEnds;
+                }
+                return;
+            }
+            BeginOutroOrClear();
+        }
+
+        // Latch del outro diferido por la secuencia de breakdown.
+        private bool _outroDeferredByBreakdown;
+
+        private void RunOutroWhenBreakdownEnds()
+        {
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+            CancelDeferredOutro();
+            BeginOutroOrClear();
+        }
+
+        private void CancelDeferredOutro()
+        {
+            if (!_outroDeferredByBreakdown) return;
+            _outroDeferredByBreakdown = false;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= RunOutroWhenBreakdownEnds;
+        }
+
+        private void BeginOutroOrClear()
+        {
             // Path animado (Classic): los holdeados vuelan al centro de la mesa y los
             // demás se descartan; el ClearAll corre diferido al terminar el outro.
             if (_animator != null && _animator.TryBeginOutro(_heldStates, BuildActiveMask(), ClearAll))
@@ -339,6 +374,10 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void ClearAll()
         {
+            // Un clear forzado (turn start, retreat) invalida el outro que esperaba a la
+            // secuencia de breakdown — sin esto, el handler colgado dispararía un outro
+            // sobre slots ya limpios.
+            CancelDeferredOutro();
             // Aborta cualquier animación en curso sin ejecutar callbacks diferidos
             // (si ClearAll llegó como completion del outro, esto ya es no-op).
             _animator?.ResetAll();

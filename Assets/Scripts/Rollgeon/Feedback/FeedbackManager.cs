@@ -470,6 +470,29 @@ namespace Rollgeon.Feedback
             steps ??= new List<FeedbackSequenceStep>();
             float budget = EstimateSequenceDuration(steps) + SequenceSafetySeconds;
 
+            StartCoroutine(RunSequenceAfterBreakdownGate(instanceId, steps, request, budget));
+        }
+
+        // Segundos que la secuencia espera a la animación de breakdown (N×M) de la UI
+        // antes de arrancar igual con warning — cinturón anti soft-lock.
+        private const float BreakdownGateFailsafeSeconds = 10f;
+
+        // La secuencia del golpe (anim de ataque → "hit" → daño) NO arranca hasta que la
+        // UI termine de sumar el breakdown y libere el gate. El timeout del feedback se
+        // arma DESPUÉS de la espera — si corriera en paralelo, un breakdown largo se
+        // comería el presupuesto de la secuencia y la mataría a mitad del golpe.
+        private IEnumerator RunSequenceAfterBreakdownGate(
+            int instanceId, List<FeedbackSequenceStep> steps, FeedbackRequest request, float budget)
+        {
+            if (BreakdownUiGate.Pending)
+            {
+                float deadline = Time.time + BreakdownGateFailsafeSeconds;
+                while (BreakdownUiGate.Pending && Time.time < deadline) yield return null;
+                if (BreakdownUiGate.Pending)
+                    Debug.LogWarning("[FeedbackManager] BreakdownUiGate sigue pendiente tras "
+                        + BreakdownGateFailsafeSeconds + "s — la secuencia arranca igual.");
+            }
+
             StartCoroutine(ExecuteLocalSequence(instanceId, steps, request));
             StartCoroutine(FeedbackTimeoutCoroutine(instanceId, budget));
         }

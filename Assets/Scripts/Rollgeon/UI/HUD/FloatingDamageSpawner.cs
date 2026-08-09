@@ -90,14 +90,16 @@ namespace Rollgeon.UI.HUD
         private bool DeferIfOutroPending(string text, Color tint, Vector3 screenPos,
             float scale, FloatingMotion motion)
         {
-            if (!Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending) return false;
+            if (!Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending
+                && !Rollgeon.Feedback.BreakdownUiGate.Pending) return false;
             _deferredSpawns.Add(() => SpawnAt(text, tint, screenPos, scale, motion));
             return true;
         }
 
         private void FlushDeferredIfIdle()
         {
-            if (Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending) return;
+            if (Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending
+                || Rollgeon.Feedback.BreakdownUiGate.Pending) return;
             if (_deferredSpawns.Count == 0) return;
             var pending = new List<Action>(_deferredSpawns);
             _deferredSpawns.Clear();
@@ -120,6 +122,7 @@ namespace Rollgeon.UI.HUD
 
             EventManager.Subscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
             Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed += FlushDeferredIfIdle;
+            Rollgeon.Feedback.BreakdownUiGate.Changed += FlushDeferredIfIdle;
             _bound = true;
         }
 
@@ -135,6 +138,7 @@ namespace Rollgeon.UI.HUD
 
             EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
             Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed -= FlushDeferredIfIdle;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= FlushDeferredIfIdle;
             _deferredSpawns.Clear();
             ClearActiveInstances();
             _bound = false;
