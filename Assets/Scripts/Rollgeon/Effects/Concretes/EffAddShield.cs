@@ -138,14 +138,7 @@ namespace Rollgeon.Effects.Concretes
         // para los índices que formaron el combo — la fórmula pondera ESOS dados.
         private static IReadOnlyList<ContributingDie> ResolveContributingDice(
             EffectContext context, IReadOnlyList<int> contributingIndices)
-        {
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
-                || enchants?.Bag == null)
-                return null;
-            return ContributingDiceResolver.ResolveDetailed(
-                contributingIndices, context?.KeptDiceOriginalIndices,
-                context?.KeptDice ?? context?.DiceResult, enchants.Bag.Dice);
-        }
+            => ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 

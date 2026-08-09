@@ -212,6 +212,10 @@ namespace Rollgeon.Heroes
             // (daño, escudo, heal) para que las pasivas inyecten bono en esta ejecución.
             var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
             play?.BeginPlay(effCtx);
+            // Con la ventana abierta y el journal at-played ya lleno, anuncia el desglose
+            // N×M del golpe ANTES de ejecutar efectos (la UI de breakdown arma su secuencia
+            // y gatea el daño real desde este payload).
+            Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, FindFirstDealDamageEffect());
             try
             {
                 foreach (var group in Effects)

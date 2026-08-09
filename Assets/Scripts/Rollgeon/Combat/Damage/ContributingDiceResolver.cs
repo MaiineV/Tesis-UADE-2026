@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
+using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Damage
 {
@@ -73,6 +76,23 @@ namespace Rollgeon.Combat.Damage
                 result.Add(new ContributingDie(bagSlot, keptFaces[localIndex], bagDice[bagSlot]));
             }
             return result.Count > 0 ? result : null;
+        }
+
+        /// <summary>
+        /// Conveniencia para efectos/announcers que parten de un <see cref="EffectContext"/>:
+        /// resuelve el detalle (slot + cara + tipo) leyendo el bag del enchantment service y
+        /// las caras de <c>KeptDice ?? DiceResult</c> (mismo espacio de índices locales que
+        /// <paramref name="contributingIndices"/>). Null si no hay bag disponible.
+        /// </summary>
+        public static IReadOnlyList<ContributingDie> ResolveFromContext(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                || enchants?.Bag == null)
+                return null;
+            return ResolveDetailed(
+                contributingIndices, context?.KeptDiceOriginalIndices,
+                context?.KeptDice ?? context?.DiceResult, enchants.Bag.Dice);
         }
 
         /// <summary>

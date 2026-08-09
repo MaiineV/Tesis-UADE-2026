@@ -158,15 +158,7 @@ namespace Rollgeon.Effects.Concretes
 
         private static IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ResolveContributingDice(
             EffectContext context, IReadOnlyList<int> contributingIndices)
-        {
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) || enchants?.Bag == null)
-                return null;
-            // Las caras viven en el mismo espacio de índices locales que contributingIndices:
-            // KeptDice cuando hubo filtrado de holds, DiceResult cuando el mapeo es identidad.
-            return Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveDetailed(
-                contributingIndices, context?.KeptDiceOriginalIndices,
-                context?.KeptDice ?? context?.DiceResult, enchants.Bag.Dice);
-        }
+            => Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 
