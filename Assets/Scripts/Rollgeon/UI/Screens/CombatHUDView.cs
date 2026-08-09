@@ -83,6 +83,12 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView _playerBaseDamage;
 
+        [Tooltip("Opcional — director de la secuencia animada del breakdown N×M. Ref " +
+                 "cross-canvas a Canvas_ActionRoll. Sin cablear, el confirm aplica el dano " +
+                 "directo como siempre (el gate nunca se levanta).")]
+        [SerializeField]
+        private Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector _breakdownDirector;
+
 
         [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
                  "hero (ej. Furia del Guerrero) está activa.")]
@@ -357,6 +363,7 @@ namespace Rollgeon.UI.Screens
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
             if (_playerBaseDamage != null) _playerBaseDamage.Bind(playerGuid);
+            if (_breakdownDirector != null) _breakdownDirector.Bind(playerGuid);
             if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
@@ -377,6 +384,7 @@ namespace Rollgeon.UI.Screens
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
+            if (_breakdownDirector != null) _breakdownDirector.Unbind();
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();

@@ -354,6 +354,15 @@ namespace Rollgeon.UI.HUD
             ClearAll();
         }
 
+        /// <summary>
+        /// Slot view por bag slot (1:1 con el índice visual). Lo consume el director del
+        /// breakdown para animar el dado físico. Null fuera de rango o sin resolver.
+        /// </summary>
+        public DiceSlotView GetSlotView(int bagSlot)
+            => _resolvedSlots != null && bagSlot >= 0 && bagSlot < _resolvedSlots.Length
+                ? _resolvedSlots[bagSlot]
+                : null;
+
         private bool[] BuildActiveMask()
         {
             int count = _resolvedSlots?.Length ?? 0;
