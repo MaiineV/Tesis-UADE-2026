@@ -284,6 +284,35 @@ namespace Rollgeon.Heroes
             return null;
         }
 
+        // El EffAddShield vive dentro de la fase de defensa del EffChain — mismo motivo
+        // que FindFirstDealDamageEffect: la UI necesita leer su ComboMultiplier para que
+        // el preview de escudo use la misma perilla que la aplicación real.
+        public EffAddShield FindFirstAddShieldEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    var found = FindAddShieldIn(eff);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        private static EffAddShield FindAddShieldIn(IEffect eff)
+        {
+            if (eff is EffAddShield addShield) return addShield;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindAddShieldIn(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         public EffChain FindChainEffect()
         {
             if (Effects == null) return null;

@@ -212,7 +212,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 5
+      Data: 50
     - Name: Kind
       Entry: 3
       Data: 1
@@ -1365,7 +1365,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
-  BaseAttack: 2
+  BaseAttack: 20
   BaseHealStrength: 3
   BaseSpeed: 5
   MaxEnergy: 3

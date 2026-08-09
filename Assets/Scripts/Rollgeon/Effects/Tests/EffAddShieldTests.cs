@@ -12,6 +12,8 @@ using Rollgeon.Effects.Concretes;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Combos;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Effects.Tests
@@ -20,6 +22,7 @@ namespace Rollgeon.Effects.Tests
     public class EffAddShieldTests
     {
         private AttributesManager _attrManager;
+        private ModifiableAttributes _sourceAttrs;
         private Guid _sourceId;
         private readonly List<ScriptableObject> _createdObjects = new List<ScriptableObject>();
 
@@ -32,10 +35,10 @@ namespace Rollgeon.Effects.Tests
             _attrManager = new AttributesManager();
             _sourceId = Guid.NewGuid();
 
-            var sourceAttrs = new ModifiableAttributes();
-            sourceAttrs.EnsureInitialized();
-            sourceAttrs.SetAttribute<Shield>(new Shield(0));
-            _attrManager.Register(_sourceId, sourceAttrs);
+            _sourceAttrs = new ModifiableAttributes();
+            _sourceAttrs.EnsureInitialized();
+            _sourceAttrs.SetAttribute<Shield>(new Shield(0));
+            _attrManager.Register(_sourceId, _sourceAttrs);
 
             ServiceLocator.AddService<AttributesManager>(_attrManager, ServiceScope.Run);
             AttributesManager.LogMissingEntityAsWarning = true;
@@ -149,8 +152,9 @@ namespace Rollgeon.Effects.Tests
 
         // ── ComboValue source ───────────────────────────────────────────
 
-        // Spec Escudo v2: el escudo sale de la tabla escudo_combo_base del ContractSheet,
-        // NUNCA del BaseDamage del ComboResult (tabla de ATAQUE — regression BUG-021).
+        // El escudo sale de la tabla escudo_combo_base del ContractSheet, NUNCA del
+        // BaseDamage del ComboResult (tabla de ATAQUE — regression BUG-021). Sigue
+        // vigente en la Spec v3: la fórmula es compartida, la BASE no.
         [Test]
         public void ComboValue_UsesShieldTable_IgnoresAttackBaseDamage()
         {
@@ -160,16 +164,17 @@ namespace Rollgeon.Effects.Tests
             ctx.ComboResult = ComboDetectionResult.Match("combo.par", 99, 2, null);
             RegisterHeroWithShieldTable(shieldBase: 4);
 
-            var eff = CreateComboEffect(1.5f); // multiplier deprecado — no debe participar
+            // Spec v3: el multiplier SÍ escala el término base del combo (igual que en daño).
+            var eff = CreateComboEffect(1.5f);
 
             // Act
             eff.ApplyEffect(ctx);
 
-            // Assert — 4 × multi 1.0 (sin dice service) = 4; jamás 99 ni 99×1.5
-            Assert.AreEqual(4, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            // Assert — 4 × multi 1.0 (sin dice service) × 1.5 = 6; jamás 99 ni 99×1.5
+            Assert.AreEqual(6, _attrManager.GetAttribute<Shield>(_sourceId).Value);
             Assert.IsTrue(bh.TryGetBehaviorValues<FloatingNumberBehaviorValue>(
                 BehaviorValueKey.FloatingShield, out var list));
-            Assert.AreEqual(4f, list[0].Value);
+            Assert.AreEqual(6f, list[0].Value);
         }
 
         [Test]
@@ -191,9 +196,11 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void ComboValue_NeverExceedsShieldCap()
+        public void ComboValue_LargeBase_PassesThroughUncapped()
         {
-            // Arrange — base tabla 50: 50 × 1.0 = 50 → cap
+            // Spec v3: sin cap — el freno anti-inmunidad es el reset por turno
+            // (ShieldResetHandler), no un techo en la fórmula.
+            // Arrange — base tabla 50: 50 × 1.0 = 50, pasa entero
             var ctx = MakeCtx();
             ctx.ComboResult = ComboDetectionResult.Match("combo.par", 50, 2, null);
             RegisterHeroWithShieldTable(shieldBase: 50);
@@ -204,8 +211,70 @@ namespace Rollgeon.Effects.Tests
             eff.ApplyEffect(ctx);
 
             // Assert
-            Assert.AreEqual(PlayerComboShield.ShieldCap,
-                _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            Assert.AreEqual(50, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_AddsSourceAttack_ToShield()
+        {
+            // Spec v3: el término Attack (base + bonos) entra al escudo igual que al daño.
+            // Arrange
+            _sourceAttrs.SetAttribute<Attack>(new Attack(5));
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 99, 2, null);
+            RegisterHeroWithShieldTable(shieldBase: 4);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — 5 (ATQ) + 4 × 1.0 = 9
+            Assert.AreEqual(9, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_PassiveScratch_BuffsShield()
+        {
+            // Spec v3: los mismos modificadores de scratch que buffean daño buffean escudo.
+            // Arrange
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 99, 2, null);
+            RegisterHeroWithShieldTable(shieldBase: 4);
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BonusComboDamage = 3, ComboDamageMultiplier = 2f }
+            }, ServiceScope.Run);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — (4 × 2) + 3 = 11
+            Assert.AreEqual(11, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+        }
+
+        [Test]
+        public void ComboValue_BlockComboDamage_BlocksShieldToo()
+        {
+            // Arrange
+            var ctx = MakeCtx();
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", 99, 2, null);
+            RegisterHeroWithShieldTable(shieldBase: 4);
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { BlockComboDamage = true }
+            }, ServiceScope.Run);
+
+            var eff = CreateComboEffect(1f);
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert — bloqueado = 0 escudo, no-op exitoso
+            Assert.IsTrue(result);
+            Assert.AreEqual(0, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         [Test]
@@ -323,6 +392,17 @@ namespace Rollgeon.Effects.Tests
 
             ServiceLocator.AddService<IPlayerService>(
                 new StubPlayerService { CurrentHero = hero }, ServiceScope.Run);
+        }
+
+        // Fake mínimo: solo LastComboScratch importa para la fórmula compartida.
+        private sealed class FakeComboPassiveService : IComboPassiveService
+        {
+            public EnchantmentScratch Scratch;
+            public bool IsReady => true;
+            public IReadOnlyList<ComboPassiveSO> GetPassivesFor(string comboId) => Array.Empty<ComboPassiveSO>();
+            public void Apply(ComboPassiveSO passive) { }
+            public int GetBonusDamage(string comboId) => 0;
+            public EnchantmentScratch LastComboScratch => Scratch;
         }
 
         private sealed class StubPlayerService : IPlayerService

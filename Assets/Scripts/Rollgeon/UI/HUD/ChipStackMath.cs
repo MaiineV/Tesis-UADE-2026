@@ -16,6 +16,13 @@ namespace Rollgeon.UI.HUD
         /// <summary>Id de sprite de las fichas de escudo (van arriba de las de vida).</summary>
         public const int ShieldChipId = 1;
 
+        /// <summary>
+        /// Puntos de vida (o escudo) por ficha. Escala 100: el pool base de 100 HP se ve
+        /// como 10 fichas, igual que se veía el pool de 10 en escala vieja. Parciales
+        /// redondean hacia arriba (95 HP = 10 fichas).
+        /// </summary>
+        public const int HpPerChip = 10;
+
         /// <summary>Fichas planas máximas de la pila de oro; de ahí en más va la inclinada.</summary>
         public const int GoldFlatChipCap = 4;
 
@@ -62,15 +69,18 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Llena <paramref name="buffer"/> con los ids de la pila de vida: fichas de
-        /// vida abajo, fichas de escudo arriba. Valores negativos clampean a 0.
+        /// vida abajo, fichas de escudo arriba, a razón de <see cref="HpPerChip"/> puntos
+        /// por ficha (ceil por separado para vida y escudo). Valores negativos clampean a 0.
         /// </summary>
         public static void BuildHealthChipIds(int hp, int shield, List<int> buffer)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
             buffer.Clear();
-            for (int i = 0; i < hp; i++) buffer.Add(HealthChipId);
-            for (int i = 0; i < shield; i++) buffer.Add(ShieldChipId);
+            int hpChips = hp <= 0 ? 0 : (hp + HpPerChip - 1) / HpPerChip;
+            int shieldChips = shield <= 0 ? 0 : (shield + HpPerChip - 1) / HpPerChip;
+            for (int i = 0; i < hpChips; i++) buffer.Add(HealthChipId);
+            for (int i = 0; i < shieldChips; i++) buffer.Add(ShieldChipId);
         }
 
         /// <summary>

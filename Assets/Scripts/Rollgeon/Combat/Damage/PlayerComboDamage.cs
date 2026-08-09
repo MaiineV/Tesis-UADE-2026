@@ -12,6 +12,16 @@ using UnityEngine;
 namespace Rollgeon.Combat.Damage
 {
     /// <summary>
+    /// Qué está resolviendo la fórmula compartida de combo. Solo afecta al rótulo del
+    /// logging de composición — la aritmética es idéntica para ambos.
+    /// </summary>
+    public enum PlayerComboFormulaKind
+    {
+        Damage,
+        Shield
+    }
+
+    /// <summary>
     /// Fórmula v2 del daño de combo del jugador (Spec de Daño, Santi):
     /// <code>
     /// dmg_base_PJ + bonos_PJ + (daño_combo_base × multi_dmg_combo) + bono_combo
@@ -26,11 +36,15 @@ namespace Rollgeon.Combat.Damage
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
     /// jugador (DamageSource.ComboValue); los enemigos usan Constant/FromReader y no pasan por acá.
+    /// Desde la Spec de Escudo v3 esta es la fórmula compartida daño/escudo:
+    /// <see cref="PlayerComboShield"/> delega acá con <see cref="PlayerComboFormulaKind.Shield"/>
+    /// (mismos términos, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
     /// </remarks>
     public static class PlayerComboDamage
     {
         public static int Resolve(Guid sourceId, int comboBaseDamage,
-            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f)
+            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f,
+            PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
         {
             int dmgBasePJ = 0;
             int bonosPJ = 0;
@@ -75,7 +89,8 @@ namespace Rollgeon.Combat.Damage
             if (block)
             {
                 DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
-                    1f, abilityMultiplier, scratchMultiplier, bonoCombo, blocked: true, finalBase: 0);
+                    1f, abilityMultiplier, scratchMultiplier, bonoCombo, blocked: true, finalBase: 0,
+                    kind: kind);
                 return 0;
             }
 
@@ -87,7 +102,7 @@ namespace Rollgeon.Combat.Damage
 
             DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
                 multiDmgCombo, abilityMultiplier, scratchMultiplier, bonoCombo,
-                blocked: false, finalBase: clamped);
+                blocked: false, finalBase: clamped, kind: kind);
 
             return clamped;
         }

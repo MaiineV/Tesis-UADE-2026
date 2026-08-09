@@ -24,8 +24,9 @@ namespace Rollgeon.Effects.Concretes
     {
         [Title("Shield")]
         [SerializeField]
-        [Tooltip("Source: Constant usa _baseAmount; ComboValue usa la fórmula de Escudo v2 " +
-                 "(tabla escudo_combo_base del ContractSheet × multi de dados, cap duro).")]
+        [Tooltip("Source: Constant usa _baseAmount; ComboValue usa la fórmula compartida " +
+                 "daño/escudo v3 (ATQ + tabla escudo_combo_base del ContractSheet × multi " +
+                 "de dados × scratch, sin cap).")]
         private DamageSource _shieldSource = DamageSource.Constant;
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.Constant)]
@@ -34,8 +35,8 @@ namespace Rollgeon.Effects.Concretes
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.ComboValue)]
         [MinValue(0.01f)]
-        [Tooltip("DEPRECADO (Spec Escudo v2): ya no participa de la fórmula. Se conserva " +
-                 "solo para no romper assets serializados — remover tras migrarlos.")]
+        [Tooltip("Perilla por habilidad: escala solo el término base del combo (igual que " +
+                 "en EffDealDamage). ATQ y bonos planos no se multiplican.")]
         private float _comboMultiplier = 1f;
 
         [OdinSerialize, SerializeReference]
@@ -66,8 +67,14 @@ namespace Rollgeon.Effects.Concretes
             switch (_shieldSource)
             {
                 case DamageSource.ComboValue:
-                    return "Escudo: base del combo × multi de dados (máx "
-                        + PlayerComboShield.ShieldCap + ")";
+                {
+                    int attack = ResolveOwnerAttack(context.OwnerGuid);
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append("Escudo: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
+                    if (!Mathf.Approximately(_comboMultiplier, 1f))
+                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                    return sb.ToString();
+                }
                 case DamageSource.FromReader when _reader != null:
                     return "Escudo: +" + Mathf.RoundToInt(
                         _reader.Read(context.ToReaderContext()) * _readerMultiplier);
@@ -82,9 +89,9 @@ namespace Rollgeon.Effects.Concretes
         {
             int amount = _shieldSource switch
             {
-                // Spec Escudo v2: el escudo NUNCA lee combo.BaseDamage (tabla de ATAQUE —
-                // causa raíz del bug de escudo trivial). Del ComboResult solo se usan los
-                // dados contribuyentes; la base sale de la tabla de escudo por clase.
+                // El escudo NUNCA lee combo.BaseDamage (tabla de ATAQUE — causa raíz del
+                // bug de escudo trivial, BUG-021). Del ComboResult solo se usan los dados
+                // contribuyentes; la base sale de la tabla de escudo por clase.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => ResolveComboShield(context, combo),
                 DamageSource.ComboValue => 0,
@@ -99,7 +106,7 @@ namespace Rollgeon.Effects.Concretes
         // Sheet del player como fuente de verdad de la tabla de escudo — mismo criterio
         // que ActionRollService. Un ComboId vacío (resultado sintético de action roll)
         // significa "sin datos por combo": no genera escudo.
-        private static int ResolveComboShield(EffectContext context, ComboDetectionResult combo)
+        private int ResolveComboShield(EffectContext context, ComboDetectionResult combo)
         {
             var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
                 ? player?.CurrentHero?.Sheet
@@ -107,8 +114,24 @@ namespace Rollgeon.Effects.Concretes
             if (sheet == null || string.IsNullOrEmpty(combo.ComboId)) return 0;
 
             return PlayerComboShield.Resolve(
+                ResolveSourceId(context),
                 sheet.GetShieldBase(combo.ComboId),
-                ResolveContributingDice(context, combo.ContributingIndices));
+                ResolveContributingDice(context, combo.ContributingIndices),
+                _comboMultiplier);
+        }
+
+        // Guid del dueño del escudo para leer su stat Attack (término base de la fórmula
+        // compartida) — mismo criterio que EffDealDamage.ResolveSourceId.
+        private static Guid ResolveSourceId(EffectContext context)
+            => context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
+
+        private static int ResolveOwnerAttack(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                || attributes == null)
+                return 0;
+            return attributes.GetAttribute<Attack>(ownerGuid)?.ModifiedValue ?? 0;
         }
 
         // Mismo mecanismo que EffDealDamage: DiceType reales de la bag para los índices

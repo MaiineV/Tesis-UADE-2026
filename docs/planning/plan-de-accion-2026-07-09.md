@@ -4,6 +4,16 @@
 > Fuentes: spec de Escudo de Santi Bocco (2026-07-08), tareas asignadas 2026-07-09,
 > análisis del código en `823e155..17cb4ed`.
 
+> **NOTA 2026-08-07 (Spec Escudo v3).** La separación total escudo/daño que define
+> este documento (§3, pregunta abierta #5: sin `abilityMultiplier`, sin scratch, con
+> `ESCUDO_CAP`) **se revirtió por decisión de diseño**: el escudo ahora se resuelve con
+> la MISMA fórmula que el daño (`PlayerComboShield` delega en `PlayerComboDamage.Resolve`),
+> afectado por Attack, ability multiplier y todos los canales de scratch. El cap se
+> eliminó — el freno anti-inmunidad pasa a ser el reset de escudo por turno
+> (`ShieldResetHandler`) más el rebalance ×10 del daño enemigo (escala de vida 100).
+> Lo que SÍ sigue vigente de esta spec: la base sale de la `ShieldBaseTable` (nunca de
+> la tabla de daño — BUG-021) y sin entrada la clase no genera escudo con ese combo.
+
 ---
 
 ## 0. Resumen ejecutivo
