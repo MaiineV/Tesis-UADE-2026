@@ -1,3 +1,5 @@
+using PrimeTween;
+using Rollgeon.UI.HUD.DiceAnim;
 using TMPro;
 using UnityEngine;
 
@@ -25,6 +27,8 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public int Amount { get; private set; }
 
+        private Tween _appear;
+
         private void Awake()
         {
             // Outline una sola vez: el label cae sobre el sprite del dado y sin borde
@@ -43,13 +47,31 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             Amount = amount;
             if (_label != null) _label.text = BuildText(amount, bonusPortion);
+            if (_appear.isAlive) _appear.Stop();
+            transform.localScale = Vector3.one;
             gameObject.SetActive(true);
+
+            // Stagger: aparece en cascada con pop OutBack. Cualquier Hide() lo cancela,
+            // así el outro/clear nunca deja un label apareciendo tarde.
+            if (appearDelay > 0f && Application.isPlaying && !DiceUiMotionPrefs.ReducedMotion)
+            {
+                transform.localScale = Vector3.zero;
+                _appear = Tween.Scale(transform, 1f, 0.15f, Ease.OutBack, startDelay: appearDelay);
+            }
         }
 
         public void Hide()
         {
             Amount = 0;
+            if (_appear.isAlive) _appear.Stop();
+            transform.localScale = Vector3.one;
             gameObject.SetActive(false);
+        }
+
+        private void OnDisable()
+        {
+            if (_appear.isAlive) _appear.Stop();
+            transform.localScale = Vector3.one;
         }
 
         private string BuildText(int amount, int bonusPortion)

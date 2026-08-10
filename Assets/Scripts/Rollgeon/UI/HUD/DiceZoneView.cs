@@ -38,6 +38,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private List<RectTransform> _diceSlots = new List<RectTransform>();
 
+        [SerializeField, Tooltip("Stagger de aparición entre los '+N' de los dados contribuyentes.")]
+        private float _contributionStaggerSeconds = 0.05f;
+
         // ---- Runtime state ---------------------------------------------------
 
         private Guid _playerGuid;
@@ -603,6 +606,7 @@ namespace Rollgeon.UI.HUD
             if (_resolvedSlots == null) return;
 
             var journal = enchants?.LastComboScratch?.Journal;
+            int visibleIndex = 0;
             for (int slot = 0; slot < _resolvedSlots.Length; slot++)
             {
                 int? amount = null;
@@ -622,7 +626,9 @@ namespace Rollgeon.UI.HUD
                         break;
                     }
                 }
-                _resolvedSlots[slot]?.SetContribution(amount, bonus);
+                // Stagger de aparición: los "+N" caen en cascada, no todos juntos.
+                float delay = amount.HasValue ? visibleIndex++ * _contributionStaggerSeconds : 0f;
+                _resolvedSlots[slot]?.SetContribution(amount, bonus, delay);
             }
         }
 
