@@ -23,6 +23,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         private Tween _punch;
         private Tween _rotJiggle;
         private Tween _flash;
+        private Tween _roll;
 
         // Identidad de color: N usa color fijo; M usa "heat" por valor (apagado en 1.0,
         // calienta hacia rojo con el multiplicador). Sin configurar, el label queda como
@@ -59,14 +60,36 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void SetValue(float value, bool isMultiplier)
         {
+            if (_roll.isAlive) _roll.Stop();
             _value = value;
             _isMultiplier = isMultiplier;
             Render();
         }
 
+        /// <summary>
+        /// Roll-up: interpola el valor mostrado hacia <paramref name="value"/> re-renderizando.
+        /// Un SetValue/AddAndPunch posterior lo corta (el impacto de la secuencia manda).
+        /// </summary>
+        public void TweenToValue(float value, bool isMultiplier, float seconds)
+        {
+            if (seconds <= 0f || !Application.isPlaying || Mathf.Approximately(value, _value))
+            {
+                SetValue(value, isMultiplier);
+                return;
+            }
+            _isMultiplier = isMultiplier;
+            if (_roll.isAlive) _roll.Stop();
+            _roll = Tween.Custom(this, _value, value, seconds, (view, v) =>
+            {
+                view._value = v;
+                view.Render();
+            }, Ease.OutQuad);
+        }
+
         /// <summary>Aplica un aporte (suma si es N, multiplica si es M) con punch.</summary>
         public void AddAndPunch(float amount, float punchIntensity = 1f, float rotationDegrees = 0f)
         {
+            if (_roll.isAlive) _roll.Stop();
             _value = _isMultiplier ? _value * amount : _value + amount;
             Render();
             Punch(punchIntensity, rotationDegrees);
@@ -124,6 +147,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (_punch.isAlive) _punch.Stop();
             if (_rotJiggle.isAlive) _rotJiggle.Stop();
             if (_flash.isAlive) _flash.Stop();
+            if (_roll.isAlive) _roll.Stop();
             transform.localScale = Vector3.one;
             transform.localRotation = Quaternion.identity;
         }

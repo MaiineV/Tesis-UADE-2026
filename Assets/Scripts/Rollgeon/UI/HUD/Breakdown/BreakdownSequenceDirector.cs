@@ -143,6 +143,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _cascade.SetVisible(false);
             }
             RestoreCounters();
+            if (_clashRoll.isAlive) _clashRoll.Stop();
             if (_clashLabel != null) _clashLabel.gameObject.SetActive(false);
             ReleaseGate();
         }
@@ -223,6 +224,12 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             int idx = _dieIndex++; // local: los closures de abajo usan ESTE índice
 
+            // Ramp: el primer dado a tiempo completo, cada siguiente más rápido — las
+            // cadenas largas aceleran solas. Multiplica ANTES de D() ⇒ compone con skip.
+            float ramp = BreakdownFeelMath.SpeedRampFactor(idx,
+                _settings != null ? _settings.DieSpeedRampPerStep : 0.12f,
+                _settings != null ? _settings.DieSpeedFloor : 0.5f);
+
             if (slot != null)
                 Tween.PunchScale(slot.transform, Vector3.one * 0.12f, D(0.12f), frequency: 1);
             slot?.SetContribution(null); // el label se "despega": desde acá vuela el valor
@@ -230,10 +237,11 @@ namespace Rollgeon.UI.HUD.Breakdown
             _juice?.OnFlightDeparted(from, towardM: false, dieIndex: idx);
 
             Fly(from, _breakdownView.CounterN.Anchor,
-                FormatAmount(step), null, FlightSeconds(), Arc(), () =>
+                FormatAmount(step), null,
+                D((_settings != null ? _settings.FlightSeconds : 0.32f) * ramp), Arc(), () =>
                 {
                     ApplyStep(step, idx);
-                    Gap(onDone);
+                    Gap(onDone, ramp);
                 }, FlightTint(step), startScale: 1.3f); // el "+N" despega desde su label
         }
 
@@ -392,14 +400,43 @@ namespace Rollgeon.UI.HUD.Breakdown
         // ==================================================================
 
         private int LastShownTotal;
+        private int _shownClashValue;
+        private Tween _clashRoll;
 
         private void ShowClashTotal(int total)
         {
+            // La semántica de LastShownTotal es inmediata (PlayMitigation calcula su delta
+            // contra el valor final YA); solo el label anima el conteo.
+            int from = _clashLabel != null && _clashLabel.gameObject.activeSelf ? _shownClashValue : 0;
             LastShownTotal = total;
             if (_clashLabel == null) return;
-            _clashLabel.text = total.ToString();
             _clashLabel.gameObject.SetActive(true);
-            Tween.PunchScale(_clashLabel.transform, Vector3.one * 0.25f, D(0.18f), frequency: 2);
+            if (_clashRoll.isAlive) _clashRoll.Stop();
+
+            float dur = D(_settings != null ? _settings.ClashRollupSeconds : 0.25f);
+            bool slam = _player.Skip == BreakdownSequencePlayer.SkipStage.Jump
+                        || DiceAnim.DiceUiMotionPrefs.ReducedMotion
+                        || dur <= 0.02f || from == total;
+            if (slam)
+            {
+                _shownClashValue = total;
+                _clashLabel.text = total.ToString();
+                Tween.PunchScale(_clashLabel.transform, Vector3.one * 0.35f, D(0.18f), frequency: 2);
+                _juice?.OnClashSlam();
+                return;
+            }
+
+            // Roll-up rápido from→total con tick acelerando; sirve también para el
+            // tick-down de mitigación (from > total cuenta hacia abajo).
+            _clashRoll = Tween.Custom(this, from, total, dur, (d, v) =>
+            {
+                int shown = Mathf.RoundToInt(v);
+                if (shown == d._shownClashValue) return;
+                d._shownClashValue = shown;
+                d._clashLabel.text = shown.ToString();
+                d._juice?.OnClashRollupTick(shown, total);
+            }, Ease.OutQuad).OnComplete(this, d =>
+                Tween.PunchScale(d._clashLabel.transform, Vector3.one * 0.25f, d.D(0.18f), frequency: 2));
         }
 
         // Impacto de un aporte en su contador: punch proporcional al peso del aporte
@@ -454,9 +491,9 @@ namespace Rollgeon.UI.HUD.Breakdown
             }, tint, startScale);
         }
 
-        private void Gap(Action onDone)
+        private void Gap(Action onDone, float factor = 1f)
         {
-            float gap = D(_settings != null ? _settings.StepGapSeconds : 0.08f);
+            float gap = D((_settings != null ? _settings.StepGapSeconds : 0.08f) * factor);
             if (gap <= 0f) onDone();
             else Tween.Delay(this, gap, d => onDone());
         }
