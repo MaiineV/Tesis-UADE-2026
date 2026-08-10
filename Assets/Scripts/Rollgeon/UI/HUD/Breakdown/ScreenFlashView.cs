@@ -18,6 +18,10 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void Flash(Color color, float peakAlpha, float seconds)
         {
+            // Unscaled ⇒ el game speed no lo comprime solo: dividir acá para que
+            // el flash no quede "largo" respecto de la secuencia acelerada.
+            // (leer la pref, no Time.timeScale — puede estar en 0 por hitstop).
+            seconds /= Rollgeon.Timing.GameSpeedPrefs.Multiplier;
             if (_image == null || peakAlpha <= 0f || seconds <= 0f) return;
             if (_tween.isAlive) _tween.Stop();
 

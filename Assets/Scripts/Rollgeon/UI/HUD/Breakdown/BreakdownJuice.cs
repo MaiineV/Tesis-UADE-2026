@@ -229,7 +229,10 @@ namespace Rollgeon.UI.HUD.Breakdown
         public void OnClashRollupTick(int shown, int total)
         {
             if (Time.unscaledTime < _nextRollupTickAt) return;
-            _nextRollupTickAt = Time.unscaledTime + 0.03f;
+            // Rate-limit unscaled vs roll-up scaled: compensar para que a x4/x8
+            // el conteo acelerado no pierda casi todos sus ticks de audio.
+            _nextRollupTickAt = Time.unscaledTime
+                + 0.03f / Rollgeon.Timing.GameSpeedPrefs.Multiplier;
             float progress = total > 0 ? Mathf.Clamp01(shown / (float)total) : 1f;
             PlaySfx(_rollupTickClip, _sfxVolume * 0.5f, Mathf.Lerp(1f, 1.5f, progress));
         }
