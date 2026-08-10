@@ -606,6 +606,7 @@ namespace Rollgeon.UI.HUD
             for (int slot = 0; slot < _resolvedSlots.Length; slot++)
             {
                 int? amount = null;
+                int bonus = 0;
                 if (contributingDice != null)
                 {
                     for (int i = 0; i < contributingDice.Count; i++)
@@ -615,13 +616,13 @@ namespace Rollgeon.UI.HUD
                         if (journal != null)
                         {
                             for (int j = 0; j < journal.Count; j++)
-                                if (journal[j].BagSlot == slot) total += journal[j].BonusDelta;
+                                if (journal[j].BagSlot == slot) bonus += journal[j].BonusDelta;
                         }
-                        amount = total;
+                        amount = total + bonus;
                         break;
                     }
                 }
-                _resolvedSlots[slot]?.SetContribution(amount);
+                _resolvedSlots[slot]?.SetContribution(amount, bonus);
             }
         }
 

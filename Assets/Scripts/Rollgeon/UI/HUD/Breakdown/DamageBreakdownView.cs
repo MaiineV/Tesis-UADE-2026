@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 
@@ -20,10 +21,26 @@ namespace Rollgeon.UI.HUD.Breakdown
         [Tooltip("Opcional — visibilidad por alpha. Sin CanvasGroup se togglea el GameObject.")]
         private CanvasGroup _group;
 
+        [SerializeField, Optional]
+        [Tooltip("Colores semánticos N/M. Necesario acá (y no solo en el director) porque " +
+                 "el preview lo muestra DamageFormulaView sin pasar por la secuencia.")]
+        private BreakdownAnimSettingsSO _settings;
+
         public BreakdownCounterView CounterN => _counterN;
         public BreakdownCounterView CounterM => _counterM;
+        public TextMeshProUGUI MultSign => _multSign;
 
         public bool IsShowing { get; private set; }
+
+        private void Awake()
+        {
+            if (_settings == null) return;
+            if (_counterN != null) _counterN.SetStaticColor(_settings.CounterNColor);
+            if (_counterM != null)
+                _counterM.SetHeatColors(_settings.CounterMNeutralColor,
+                    _settings.CounterMWarmColor, _settings.CounterMHotColor);
+            if (_multSign != null) _multSign.color = _settings.CounterMNeutralColor;
+        }
 
         public void ShowPreview(int comboBase, float abilityMultiplier)
         {

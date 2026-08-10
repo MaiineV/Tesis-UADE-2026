@@ -259,11 +259,15 @@ namespace Rollgeon.UI.HUD
         /// <summary>Ancla del label "+N" (origen del vuelo en la secuencia). Puede ser null.</summary>
         public Rollgeon.UI.HUD.Breakdown.DiceContributionLabel ContributionLabel => _contribution;
 
-        /// <summary>Combat — pinta u oculta el "+N" bajo el dado. Null ⇒ no contribuye.</summary>
-        public void SetContribution(int? amount)
+        /// <summary>
+        /// Combat — pinta u oculta el "+N" bajo el dado. Null ⇒ no contribuye.
+        /// <paramref name="bonusPortion"/> = cuánto del total vino de encantamientos
+        /// (se pinta en dorado); <paramref name="appearDelay"/> = stagger de aparición.
+        /// </summary>
+        public void SetContribution(int? amount, int bonusPortion = 0, float appearDelay = 0f)
         {
             if (_contribution == null) return;
-            if (amount.HasValue) _contribution.Show(amount.Value);
+            if (amount.HasValue) _contribution.Show(amount.Value, bonusPortion, appearDelay);
             else _contribution.Hide();
         }
 

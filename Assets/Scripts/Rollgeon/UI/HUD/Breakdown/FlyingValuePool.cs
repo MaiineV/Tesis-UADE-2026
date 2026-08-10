@@ -39,11 +39,11 @@ namespace Rollgeon.UI.HUD.Breakdown
             _pool.Push(view);
         }
 
-        public void SpawnGhost(string text, Sprite icon, Vector2 anchoredPosition)
+        public void SpawnGhost(string text, Sprite icon, Vector2 anchoredPosition, Color? tint = null)
         {
             var ghost = Rent();
             if (ghost == null) return;
-            ghost.PlayAsGhost(text, icon, anchoredPosition);
+            ghost.PlayAsGhost(text, icon, anchoredPosition, tint);
         }
 
         private FlyingValueView CreateInstance()

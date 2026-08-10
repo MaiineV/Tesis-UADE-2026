@@ -26,9 +26,11 @@ namespace Rollgeon.UI.HUD.Breakdown
         private FlyingValuePool _pool;
         private Tween _flight;
         private Tween _ghostFade;
+        private Tween _spawnScale;
         private Vector2 _p0, _p1, _p2;
         private float _nextGhostAt;
         private Action _onArrive;
+        private Color? _tint;
 
         public bool IsFlying { get; private set; }
 
@@ -42,7 +44,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         /// desplaza el punto de control perpendicular al segmento (+ = izquierda del avance).
         /// </summary>
         public void Fly(RectTransform from, RectTransform to, string text, Sprite icon,
-            float duration, float arc, Action onArrive)
+            float duration, float arc, Action onArrive, Color? tint = null, float startScale = 1f)
         {
             var layer = (RectTransform)transform.parent;
             _p0 = ProjectToLayer(layer, from);
@@ -51,13 +53,17 @@ namespace Rollgeon.UI.HUD.Breakdown
             var dir = (_p2 - _p0).normalized;
             _p1 = mid + new Vector2(-dir.y, dir.x) * arc;
 
-            Setup(text, icon, 1f);
+            Setup(text, icon, 1f, tint);
             Rect.anchoredPosition = _p0;
-            Rect.localScale = Vector3.one;
+            Rect.localScale = Vector3.one * Mathf.Max(0.1f, startScale);
             _onArrive = onArrive;
             _nextGhostAt = 0f;
             IsFlying = true;
             gameObject.SetActive(true);
+
+            if (_spawnScale.isAlive) _spawnScale.Stop();
+            if (startScale > 1.001f)
+                _spawnScale = Tween.Scale(transform, 1f, duration * 0.4f, Ease.OutQuad);
 
             if (_flight.isAlive) _flight.Stop();
             _flight = Tween.Custom(this, 0f, 1f, duration,
@@ -75,9 +81,9 @@ namespace Rollgeon.UI.HUD.Breakdown
         }
 
         /// <summary>Copia efímera del trail: fade + shrink y de vuelta al pool.</summary>
-        public void PlayAsGhost(string text, Sprite icon, Vector2 anchoredPosition)
+        public void PlayAsGhost(string text, Sprite icon, Vector2 anchoredPosition, Color? tint = null)
         {
-            Setup(text, icon, 0.55f);
+            Setup(text, icon, 0.55f, tint);
             Rect.anchoredPosition = anchoredPosition;
             Rect.localScale = Vector3.one;
             IsFlying = false;
@@ -118,7 +124,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             _nextGhostAt = Time.unscaledTime + _ghostIntervalSeconds;
             _pool.SpawnGhost(_label != null ? _label.text : string.Empty,
                 _icon != null && _icon.enabled ? _icon.sprite : null,
-                Rect.anchoredPosition);
+                Rect.anchoredPosition, _tint);
         }
 
         private void Arrive()
@@ -130,9 +136,14 @@ namespace Rollgeon.UI.HUD.Breakdown
             onArrive?.Invoke();
         }
 
-        private void Setup(string text, Sprite icon, float alpha)
+        private void Setup(string text, Sprite icon, float alpha, Color? tint)
         {
-            if (_label != null) _label.text = text;
+            _tint = tint;
+            if (_label != null)
+            {
+                _label.text = text;
+                _label.color = tint ?? Color.white;
+            }
             if (_icon != null)
             {
                 _icon.sprite = icon;
@@ -145,6 +156,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             if (_flight.isAlive) _flight.Stop();
             if (_ghostFade.isAlive) _ghostFade.Stop();
+            if (_spawnScale.isAlive) _spawnScale.Stop();
             IsFlying = false;
             gameObject.SetActive(false);
             _pool?.Release(this);
@@ -154,6 +166,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             if (_flight.isAlive) _flight.Stop();
             if (_ghostFade.isAlive) _ghostFade.Stop();
+            if (_spawnScale.isAlive) _spawnScale.Stop();
         }
     }
 }

@@ -81,6 +81,17 @@ namespace Rollgeon.UI.HUD.Breakdown
             _bound = false;
         }
 
+        private void Awake()
+        {
+            // Outline una sola vez (instancia el material del TMP): el total del choque
+            // cae sobre el arte del board y sin borde se pierde.
+            if (_clashLabel != null)
+            {
+                _clashLabel.outlineWidth = 0.2f;
+                _clashLabel.outlineColor = Color.black;
+            }
+        }
+
         private void OnDisable() => AbortSequence();
 
         // ==================================================================
@@ -182,7 +193,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     Gap(onDone);
-                });
+                }, FlightTint(step));
         }
 
         public void PlayDie(BreakdownStep step, Action onDone)
@@ -200,7 +211,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     Gap(onDone);
-                });
+                }, FlightTint(step), startScale: 1.3f); // el "+N" despega desde su label
         }
 
         public void PlayDieProc(BreakdownStep step, Action onDone)
@@ -218,7 +229,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     Gap(onDone);
-                });
+                }, FlightTint(step));
         }
 
         public void PlayGlobalMod(BreakdownStep step, Action onDone)
@@ -244,7 +255,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     _cascade.RemoveBottom(D(_settings != null ? _settings.CascadeFallSeconds : 0.15f), onDone);
-                });
+                }, FlightTint(step));
         }
 
         public void PlayFinalClash(int finalTotal, Action onDone)
@@ -345,8 +356,17 @@ namespace Rollgeon.UI.HUD.Breakdown
                 ? "×" + step.Amount.ToString("0.0#")
                 : step.Amount.ToString("+0;-0");
 
+        // Todo lo que vuela hereda el color de su destino: azul hacia N, warm hacia M.
+        private Color? FlightTint(BreakdownStep step)
+        {
+            if (_settings == null) return null;
+            return step.Target == BreakdownTarget.MultM
+                ? _settings.CounterMWarmColor
+                : _settings.CounterNColor;
+        }
+
         private void Fly(RectTransform from, RectTransform to, string text, Sprite icon,
-            float seconds, float arc, Action onArrive)
+            float seconds, float arc, Action onArrive, Color? tint = null, float startScale = 1f)
         {
             var view = _pool != null ? _pool.Rent() : null;
             if (view == null || from == null || to == null)
@@ -359,7 +379,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 _activeFlight = null;
                 onArrive();
-            });
+            }, tint, startScale);
         }
 
         private void Gap(Action onDone)
