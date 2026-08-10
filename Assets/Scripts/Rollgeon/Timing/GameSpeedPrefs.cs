@@ -3,11 +3,13 @@ using UnityEngine;
 namespace Rollgeon.Timing
 {
     /// <summary>
-    /// Velocidad global del juego (x1/x2/x4/x8) persistida en PlayerPrefs y
-    /// aplicada vía <c>Time.timeScale</c>. Única fuente de verdad del timeScale
-    /// "en reposo": <c>DiceHitstop</c> restaura leyendo <see cref="Multiplier"/>,
-    /// no una copia local. Los menús/overlays corren unscaled, así que no se
-    /// aceleran — solo la simulación (feedbacks, turnos, tweens scaled).
+    /// Velocidad de RESOLUCIÓN del juego (x1/x2/x4/x8) persistida en PlayerPrefs.
+    /// NUNCA toca <c>Time.timeScale</c> — eso aceleraba animators, partículas y
+    /// shaders y volvía ilegible el combate. En cambio, los consumidores dividen
+    /// sus duraciones de pacing por <see cref="Multiplier"/>: la secuencia del
+    /// breakdown (vía <c>D()</c> del director), los delays puros entre acciones
+    /// (turno enemigo, gaps autorados de feedback) y los holds/staggers de la
+    /// fase de dados. Las animaciones y efectos corren siempre a velocidad real.
     /// </summary>
     public static class GameSpeedPrefs
     {
@@ -29,7 +31,6 @@ namespace Rollgeon.Timing
                 _cached = SanitizeSpeed(value);
                 PlayerPrefs.SetInt(Key, _cached.Value);
                 PlayerPrefs.Save();
-                ApplyToTimeScale();
             }
         }
 
@@ -57,19 +58,7 @@ namespace Rollgeon.Timing
             return Speeds[0];
         }
 
-        public static void ApplyToTimeScale()
-        {
-            // timeScale en 0 = freeze de DiceHitstop en curso (nadie más lo deja
-            // ahí): no pisarlo — al descongelar, Restore() lee Multiplier y el
-            // valor nuevo entra solo.
-            if (Time.timeScale > 0f)
-                Time.timeScale = Multiplier;
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => _cached = null;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void ApplyAtBoot() => ApplyToTimeScale();
     }
 }

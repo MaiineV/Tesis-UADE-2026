@@ -32,7 +32,6 @@ namespace Rollgeon.UI.Tests
         private InMemoryStore _store;
         private SaveSettingsSO _settings;
         private int _savedSpeed;
-        private float _savedTimeScale;
 
         // Copia local — los test asmdefs no se referencian entre sí.
         private sealed class InMemoryStore : ISaveFileStore
@@ -79,10 +78,9 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_screen, "_gameSpeedButton", _speedButton);
             AssignPrivate(_screen, "_gameSpeedLabel", _speedLabel);
 
-            // El setter de GameSpeedPrefs escribe PlayerPrefs y Time.timeScale
-            // reales incluso en EditMode — backup acá, restore en TearDown.
+            // El setter de GameSpeedPrefs escribe PlayerPrefs reales incluso en
+            // EditMode — backup acá, restore en TearDown.
             _savedSpeed = GameSpeedPrefs.Multiplier;
-            _savedTimeScale = Time.timeScale;
         }
 
         [TearDown]
@@ -95,7 +93,6 @@ namespace Rollgeon.UI.Tests
             SaveSystem.ResetForTests();
 
             GameSpeedPrefs.Multiplier = _savedSpeed;
-            Time.timeScale = _savedTimeScale;
         }
 
         [Test]
