@@ -71,17 +71,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Boss_HasRainGate_At85Percent()
         {
-            // Arrange
-            var allNodes = CollectAllNodes(_root);
-
-            // Act — la acción existe, y está gateada por un If con PcOwnerHpBelow ~= 0.85.
-            var rain = allNodes.OfType<AINode_ActivateRainHazard>().FirstOrDefault();
-            var gate = FindGatingIf<AINode_ActivateRainHazard>(_root);
+            // Act — la lluvia se activa vía el nodo genérico AINode_ActivateHazard (la abstracción),
+            // gateada por un If con PcOwnerHpBelow ~= 0.85. Ya no pasa por el shim AINode_ActivateRainHazard.
+            var gate = FindHazardGateAtPercent(0.85f);
 
             // Assert
-            Assert.IsNotNull(rain, "No se encontró ningún AINode_ActivateRainHazard en el árbol del boss.");
-            Assert.IsNotNull(gate, "El AINode_ActivateRainHazard no está bajo el Then de ningún AINode_If.");
-            AssertGatedAtPercent(gate, 0.85f, "rain hazard");
+            Assert.IsNotNull(gate,
+                "No hay un gate a 85% que active un hazard vía AINode_ActivateHazard. " +
+                "La lluvia debe dispararse por la abstracción, no por el shim viejo.");
         }
 
         // -----------------------------------------------------------------
@@ -193,26 +190,41 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Boss_HasFireHazardPhase_GatedByHp()
         {
-            // Arrange
-            var allNodes = CollectAllNodes(_root);
-
-            // Act — el fire hazard entra por el nodo genérico AINode_ActivateHazard (no el shim
-            // de lluvia), con una HazardDefinitionSO asignada, y gateado a un umbral de HP.
-            var activate = allNodes.OfType<AINode_ActivateHazard>().FirstOrDefault(n => n.Hazard != null);
-            var gate = FindGatingIf<AINode_ActivateHazard>(_root);
+            // Act — el fuego entra por la MISMA abstracción (AINode_ActivateHazard) a un umbral
+            // distinto (~50%), coexistiendo con la lluvia — el punto del HazardService genérico.
+            var gate = FindHazardGateAtPercent(0.50f);
 
             // Assert
-            Assert.IsNotNull(activate,
-                "El boss no tiene un AINode_ActivateHazard con definición asignada — " +
-                "el fire hazard no se activaría en la pelea del boss 1.");
             Assert.IsNotNull(gate,
-                "El AINode_ActivateHazard no está bajo el Then de ningún AINode_If " +
-                "(debería activarse a un umbral de HP, como las otras fases).");
+                "No hay un gate a 50% que active un hazard vía AINode_ActivateHazard (fase de fuego).");
         }
 
         // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Busca un <see cref="AINode_If"/> gateado por una <see cref="PcOwnerHpBelow"/> con
+        /// <c>Percent</c> ~= <paramref name="percent"/> cuyo subárbol <c>Then</c> activa un hazard
+        /// vía <see cref="AINode_ActivateHazard"/> con una definición asignada. Identifica una fase
+        /// de hazard por su umbral, sin depender del orden de los hijos.
+        /// </summary>
+        private AINode_If FindHazardGateAtPercent(float percent)
+        {
+            foreach (var ifNode in CollectAllNodes(_root).OfType<AINode_If>())
+            {
+                if (ifNode.Conditions == null || ifNode.Then == null) continue;
+
+                bool atPercent = ifNode.Conditions.OfType<PcOwnerHpBelow>()
+                    .Any(p => Mathf.Abs(p.Percent - percent) < PercentTolerance);
+                if (!atPercent) continue;
+
+                bool activatesHazard = CollectAllNodes(ifNode.Then).OfType<AINode_ActivateHazard>()
+                    .Any(a => a.Hazard != null);
+                if (activatesHazard) return ifNode;
+            }
+            return null;
+        }
 
         /// <summary>
         /// Devuelve el primer <see cref="AINode_If"/> cuyo subárbol <c>Then</c> contiene un

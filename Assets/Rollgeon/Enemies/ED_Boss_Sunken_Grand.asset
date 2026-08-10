@@ -16,6 +16,7 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
+    - {fileID: 11400000, guid: cefff5e3f00c49f7bfaaf098f0f50bb9, type: 2}
     - {fileID: 11400000, guid: fd18b8a2a74b4dd79f8e9ecb18040b3e, type: 2}
     - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
     SerializedBytesString: 
@@ -161,7 +162,10 @@ MonoBehaviour:
       Data: 14|Rollgeon.Combat.AI.Decisions.AINode_Once, Rollgeon
     - Name: Child
       Entry: 7
-      Data: 15|Rollgeon.Combat.AI.Decisions.AINode_ActivateRainHazard, Rollgeon
+      Data: 15|Rollgeon.Combat.AI.Decisions.AINode_ActivateHazard, Rollgeon
+    - Name: Hazard
+      Entry: 10
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -216,7 +220,7 @@ MonoBehaviour:
       Data: 21|Rollgeon.Combat.AI.Decisions.AINode_ActivateHazard, Rollgeon
     - Name: Hazard
       Entry: 10
-      Data: 0
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -268,7 +272,7 @@ MonoBehaviour:
       Data: 26|Rollgeon.Combat.AI.Decisions.AINode_SpawnReinforcements, Rollgeon
     - Name: EnemyToSpawn
       Entry: 10
-      Data: 1
+      Data: 2
     - Name: Count
       Entry: 3
       Data: 2
