@@ -366,7 +366,10 @@ namespace Rollgeon.UI.Screens
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
             if (_playerBaseDamage != null) _playerBaseDamage.Bind(playerGuid);
             if (_breakdownDirector != null) _breakdownDirector.Bind(playerGuid);
-            if (_passiveBadge != null) _passiveBadge.Bind(playerGuid);
+            // _passiveBadge NO se bindea: lo reemplazó la fila de estados de
+            // Canvas_PlayerStatus, que se ve también en exploración. Bindearlo lo haría
+            // reaparecer (su Refresh hace SetActive(true)) encima del reemplazo. El
+            // componente y su GameObject quedan, desactivados, como rollback.
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
@@ -387,6 +390,8 @@ namespace Rollgeon.UI.Screens
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
             if (_breakdownDirector != null) _breakdownDirector.Unbind();
+            // Unbind sigue siendo seguro e idempotente: cubre el caso de haber quedado
+            // bindeado por una versión anterior de la escena.
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();

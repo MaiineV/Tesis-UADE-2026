@@ -8,8 +8,10 @@ using Rollgeon.Heroes;
 using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.Run;
+using Rollgeon.Tutorial.UI;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD;
+using Rollgeon.UI.Help;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -69,6 +71,14 @@ namespace Rollgeon.UI.Screens
         [Tooltip("Sprites por tipo + tunables de la tira. Requerido si _diceStrip está cableado.")]
         [SerializeField, Optional] private DiceBuildUiSettingsSO _diceUiSettings;
 
+        [Title("Ayuda (coach-marks)")]
+        [Tooltip("Botón '?' de la esquina. Repite la guía cuantas veces el jugador quiera. Opcional.")]
+        [SerializeField, Optional] private Button _helpButton;
+
+        [Tooltip("Colchón extra sobre la entrada juicy antes de arrancar la guía automática. " +
+                 "Sin esto los pasos anclarían a botones todavía invisibles y en movimiento.")]
+        [SerializeField] private float _helpStartExtraDelay = 0.15f;
+
         // ---- State ----
         private ClassHeroSO _selectedHero;
         private Guid _runId;
@@ -77,6 +87,10 @@ namespace Rollgeon.UI.Screens
         // Builder mode (Fase 2). _builderMode == true cuando el hero trae un DiceBagPool
         // y la screen tiene container/prefab cableados; si no, mantiene el flujo legacy.
         private bool _builderMode;
+        private BuildHelpFlow _helpFlow;
+        private IBuildHelpSeenStore _helpSeenStore;
+        private Coroutine _helpAutoStart;
+
         private readonly List<DiceType> _currentBag = new();
         private readonly List<PoolOfferingRow> _poolRows = new();
         private int _lastShownBagCount = -1;
@@ -112,12 +126,16 @@ namespace Rollgeon.UI.Screens
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
             if (_clearBagButton != null) _clearBagButton.onClick.AddListener(OnClearBagClicked);
 
+            if (_helpButton != null) _helpButton.onClick.AddListener(OnHelpClicked);
+
             if (_diceStrip != null)
             {
                 _diceStrip.Configure(_diceUiSettings);
                 // Click en un dado de la tira = quitarlo de la bolsa (mock).
                 _diceStrip.OnDieClicked += OnRemoveDice;
             }
+
+            TryAutoStartHelp();
         }
 
         protected override void OnPopped()
@@ -125,7 +143,10 @@ namespace Rollgeon.UI.Screens
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(OnConfirmClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
             if (_clearBagButton != null) _clearBagButton.onClick.RemoveListener(OnClearBagClicked);
+            if (_helpButton != null) _helpButton.onClick.RemoveListener(OnHelpClicked);
             if (_diceStrip != null) _diceStrip.OnDieClicked -= OnRemoveDice;
+
+            StopHelp();
             ClearPoolRows();
             ClearDiceSlots();
             _currentBag.Clear();
@@ -220,6 +241,125 @@ namespace Rollgeon.UI.Screens
         {
             _currentBag.Clear();
             RefreshUI();
+        }
+
+        // ======================================================================
+        // Ayuda (coach-marks)
+        // ======================================================================
+
+        // Pedida a mano: la pantalla ya está quieta hace rato, así que no hay nada que
+        // esperar. Hacerla esperar la entrada juicy se sentía como que el botón no respondía.
+        private void OnHelpClicked() => StartHelp(waitForEntrance: false);
+
+        /// <summary>
+        /// Primera visita: la guía se muestra sola. No corre en modo legacy (sin pool no
+        /// hay nada que explicar y el texto mentiría) ni si el jugador apagó el tutorial
+        /// en opciones — el botón '?' nunca se gatea, ahí la pide él.
+        /// </summary>
+        private void TryAutoStartHelp()
+        {
+            if (!_builderMode) return;
+            if (SeenStore.HasSeen) return;
+            if (!IsTutorialEnabled()) return;
+
+            // Acá sí esperamos: la screen se acaba de mostrar y todavía está armándose.
+            StartHelp(waitForEntrance: true);
+        }
+
+        private void StartHelp(bool waitForEntrance)
+        {
+            if (!_builderMode) return;
+
+            // La guía necesita una corrutina para esperar el layout, y una corrutina
+            // necesita el GameObject activo. En runtime el ScreenManager activa la screen
+            // antes del OnPushed, pero un caller que la pushee sin mostrarla (los tests
+            // del builder) no debería comerse un error por pedir ayuda que nadie ve.
+            if (!isActiveAndEnabled) return;
+
+            if (_helpAutoStart != null) StopCoroutine(_helpAutoStart);
+            _helpAutoStart = StartCoroutine(StartHelpDeferred(waitForEntrance));
+        }
+
+        /// <summary>
+        /// Espera un frame + rebuild de layout antes de anclar nada: las filas del pool se
+        /// instancian en <see cref="OnPushed"/> y su layout group no resolvió todavía
+        /// (medirían 0). Con <paramref name="waitForEntrance"/> espera además la entrada
+        /// staggered de los botones, que arrancan en alpha 0 y moviéndose — anclar ahí
+        /// deja el recorte persiguiendo un target invisible.
+        /// </summary>
+        private IEnumerator StartHelpDeferred(bool waitForEntrance)
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+
+            if (waitForEntrance)
+            {
+                float entrance = _helpStartExtraDelay;
+                if (TryGetComponent<Rollgeon.UI.Menu.JuicyMenuGroup>(out var juicyGroup))
+                    entrance += juicyGroup.EntranceTotalSeconds;
+                if (entrance > 0f) yield return new WaitForSecondsRealtime(entrance);
+            }
+
+            _helpAutoStart = null;
+
+            _helpFlow ??= new BuildHelpFlow(
+                ServiceLocator.TryGetService<ITutorialOverlayService>(out var overlay) ? overlay : null);
+
+            // Solo marcamos "visto" si de verdad se mostró: sin overlay registrado (abrir
+            // la escena suelta en el editor) no queremos quemarle el auto-disparo al jugador.
+            if (_helpFlow.Start(BuildHelpSteps())) SeenStore.MarkSeen();
+        }
+
+        private void StopHelp()
+        {
+            if (_helpAutoStart != null)
+            {
+                StopCoroutine(_helpAutoStart);
+                _helpAutoStart = null;
+            }
+            _helpFlow?.Stop();
+        }
+
+        private IEnumerable<BuildHelpFlow.Step> BuildHelpSteps()
+        {
+            yield return new BuildHelpFlow.Step(
+                _poolOfferingsContainer as RectTransform,
+                BuildHelpTextKeys.Pool,
+                "Estos son los dados de tu clase. Hacé click en uno para sumarlo a la bolsa; " +
+                "el número de cada fila dice cuántos podés llevar de ese tipo.");
+
+            // Solo la tira. Sumar el contador al recorte (que está en la esquina opuesta)
+            // hacía que el spotlight abarcara el bounding box de ambos: un círculo enorme
+            // centrado entre los dos, o sea sobre nada.
+            yield return new BuildHelpFlow.Step(
+                _diceStrip != null ? _diceStrip.transform as RectTransform : null,
+                BuildHelpTextKeys.Strip,
+                "Tu bolsa se arma acá, siempre ordenada de menor a mayor. Hacé click en un " +
+                "dado de la tira para devolverlo al pool.");
+
+            yield return new BuildHelpFlow.Step(
+                _clearBagButton != null ? _clearBagButton.transform as RectTransform : null,
+                BuildHelpTextKeys.Clear,
+                "Limpiar vacía la bolsa entera y te deja empezar de cero.");
+
+            yield return new BuildHelpFlow.Step(
+                _confirmButton != null ? _confirmButton.transform as RectTransform : null,
+                BuildHelpTextKeys.Confirm,
+                "Cuando completes la bolsa, Confirmar se habilita y arranca la run.");
+        }
+
+        private IBuildHelpSeenStore SeenStore => _helpSeenStore ??= new BuildHelpPrefs();
+
+        /// <summary>Inyección para tests — evita que el auto-disparo dependa de PlayerPrefs.</summary>
+        public void SetHelpSeenStore(IBuildHelpSeenStore store) => _helpSeenStore = store;
+
+        private static bool IsTutorialEnabled()
+        {
+            // Sin servicio (escena suelta en el editor) asumimos habilitado, igual que
+            // hace OptionsScreen al pintar el toggle.
+            return !ServiceLocator.TryGetService<IMetaProgressionService>(out var meta)
+                   || meta == null
+                   || meta.IsTutorialEnabled;
         }
 
         private void RefreshUI()

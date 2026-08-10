@@ -100,6 +100,11 @@ namespace Rollgeon.UI.HUD
         private bool _slotsHooked;
         private string _lastComboId = string.Empty;
         private int _lastDiscardFrame = -1;
+
+        // El unhold y la re-detección de combo corren sincrónicos en el mismo frame
+        // (DiceZoneView.ApplyHold), así que el frame alcanza para distinguir "combo
+        // nuevo porque sumaste" de "combo distinto porque sacaste".
+        private int _lastUnlockFrame = -1;
         private System.Action<ComboMatchedPayload> _onComboMatched;
         private Tween _highlightTween;
 
@@ -235,6 +240,7 @@ namespace Rollgeon.UI.HUD
 
         private void HandleDieUnlocked()
         {
+            _lastUnlockFrame = Time.frameCount;
             PlaySfx(_unlockClip, volume: 0.6f, pitch: 0.9f);
             RefreshHighlight();
         }
@@ -316,6 +322,13 @@ namespace Rollgeon.UI.HUD
             if (comboId == _lastComboId) return;
             _lastComboId = comboId;
             if (comboId.Length == 0) return;
+
+            // Sacar un dado de una mano de 4+ suele dejar OTRO combo (póker → trío): el
+            // id cambia y esto lo leía como logro nuevo. El chime va más fuerte que el
+            // unlock y encima después, así que tapaba el sonido de quitar y se escuchaba
+            // como si hubieras seleccionado. El id ya quedó actualizado arriba, así que
+            // volver a poner el dado sí festeja.
+            if (Time.frameCount == _lastUnlockFrame) return;
 
             Play(_comboFlourishPlayer);
             // Un combo más grande suena más alto — el tier es por cantidad de dados.

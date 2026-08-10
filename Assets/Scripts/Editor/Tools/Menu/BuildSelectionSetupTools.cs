@@ -325,6 +325,21 @@ namespace Rollgeon.EditorTools.Menu
             EnsureButtonLabel(back, "Atrás", font, outlineMat);
             LocalizationSetupTools.BindTMP(back.GetComponentInChildren<TMP_Text>(true), "UI", "screen.back");
 
+            // -- Botón de ayuda "?" arriba-derecha --
+            // A propósito FUERA del JuicyMenuGroup: no es una opción de menú, es un
+            // afordance de esquina. Metido en el grupo entraría con el stagger (y con
+            // la lógica de rombos), que es justo lo que la guía necesita esperar.
+            var help = FindAnywhere(screenRect, "HelpButton");
+            if (help == null)
+            {
+                var go = new GameObject("HelpButton", typeof(RectTransform), typeof(Image), typeof(Button));
+                help = (RectTransform)go.transform;
+            }
+            help.SetParent(screenRect, worldPositionStays: false);
+            StripLayoutComponents(help.gameObject);
+            Place(help, screenRect, new Vector2(890f, 445f), new Vector2(64f, 64f));
+            EnsureButtonLabel(help, "?", font, outlineMat);
+
             var clearJuicy = EnsureJuicyButton(clear.GetComponent<Button>(), juice, outlineMat, font);
             var confirmJuicy = EnsureJuicyButton(confirm.GetComponent<Button>(), juice, outlineMat, font);
             var backJuicy = EnsureJuicyButton(back.GetComponent<Button>(), juice, outlineMat, font);
@@ -343,6 +358,7 @@ namespace Rollgeon.EditorTools.Menu
                 AssetDatabase.LoadAssetAtPath<PoolOfferingRow>(RowPrefabPath);
             so.FindProperty("_diceStrip").objectReferenceValue = stripView;
             so.FindProperty("_diceUiSettings").objectReferenceValue = settings;
+            so.FindProperty("_helpButton").objectReferenceValue = help.GetComponent<Button>();
             so.ApplyModifiedProperties();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -526,7 +542,10 @@ namespace Rollgeon.EditorTools.Menu
                 array.GetArrayElementAtIndex(i).objectReferenceValue = buttons[i];
             so.FindProperty("_settings").objectReferenceValue = settings;
             so.FindProperty("_playEntranceOnEnable").boolValue = true;
-            so.FindProperty("_waitForIntro").objectReferenceValue = null;
+            // El rework del menú renombró _waitForIntro → _introAnimation; null-guard
+            // para que un próximo rename no vuelva a abortar el rebuild entero.
+            var intro = so.FindProperty("_introAnimation") ?? so.FindProperty("_waitForIntro");
+            if (intro != null) intro.objectReferenceValue = null;
             so.ApplyModifiedProperties();
         }
     }

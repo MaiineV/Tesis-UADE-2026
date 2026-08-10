@@ -203,7 +203,15 @@ namespace Rollgeon.UI.Screens
             _activeTweens.Add(
                 Tween.UIAnchoredPositionY(_tituloTransform, targetY, _tituloPushDuration, _tituloPushEase,
                         startDelay: _tituloPushDelay)
-                    .OnComplete(MarkIntroFinished));
+                    .OnComplete(OnIntroComplete));
+        }
+
+        private void OnIntroComplete()
+        {
+            MarkIntroFinished();
+            // Desactivar el catcher de skip — el intro terminó, los botones ya son interactivos.
+            if (_skipButton != null)
+                _skipButton.gameObject.SetActive(false);
         }
 
         private void MarkIntroFinished()

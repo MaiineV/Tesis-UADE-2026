@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using PrimeTween;
 using Rollgeon.Combat.EnergyLib;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -31,6 +32,17 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private ChipStackSettingsSO _settings;
 
+        [Title("Feedback — energía insuficiente")]
+        [SerializeField, Tooltip("Color del flash del número cuando una acción no se puede pagar. " +
+                 "Default = #D1365A, el rojo de UI de la paleta.")]
+        private Color _insufficientColor = new Color(0.820f, 0.212f, 0.353f, 1f);
+
+        [SerializeField, Tooltip("Duración del flash rojo del número (ida y vuelta).")]
+        private float _insufficientFlashDuration = 0.18f;
+
+        [SerializeField, Range(0f, 0.5f), Tooltip("Punch de escala del número al rechazar.")]
+        private float _insufficientPunch = 0.3f;
+
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
@@ -40,9 +52,48 @@ namespace Rollgeon.UI.HUD
         private bool _hasData;
         private readonly List<int> _chipBuffer = new List<int>();
 
+        private Color _labelBaseColor = Color.white;
+        private Vector3 _labelRestScale = Vector3.one;
+        private Tween _insufficientFlash;
+        private Tween _insufficientPunchTween;
+
         private void Awake()
         {
+            if (_label != null)
+            {
+                _labelBaseColor = _label.color;
+                _labelRestScale = _label.transform.localScale;
+            }
             ConfigureStack();
+        }
+
+        /// <summary>
+        /// Feedback de "no te alcanza": sacude la pila y hace flashear el número en rojo.
+        /// Lo dispara <see cref="PlayerActionButtonsView"/> cuando el jugador intenta usar
+        /// una acción impagable — la pila es la respuesta a "¿por qué no puedo?".
+        /// No-op con reduced motion (el shake de la pila ya se auto-gatea).
+        /// </summary>
+        public void PlayInsufficient()
+        {
+            if (_stack != null) _stack.Shake();
+
+            if (_label == null || !Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+            if (_insufficientFlash.isAlive) return; // spam de rechazos: un flash por vez
+
+            // Yoyo en vez de dos tweens encadenados: se auto-restaura al color base
+            // aunque lo interrumpa un cambio de escena. Apply() reescribe el texto en
+            // cada cambio de energía pero nunca el color — si el flash quedara a medias,
+            // el número se quedaría rojo para siempre y nada lo repararía.
+            _insufficientFlash = Tween.Color(_label, _insufficientColor,
+                _insufficientFlashDuration,
+                cycles: 2, cycleMode: CycleMode.Yoyo, useUnscaledTime: true);
+
+            if (_insufficientPunch <= 0f) return;
+            // El Label de energía no tiene hijos, así que escalarlo es seguro.
+            _insufficientPunchTween = Tween.PunchScale(_label.transform,
+                strength: Vector3.one * _insufficientPunch,
+                duration: _insufficientFlashDuration * 2f,
+                useUnscaledTime: true);
         }
 
         private void ConfigureStack()
@@ -74,12 +125,23 @@ namespace Rollgeon.UI.HUD
         private void OnDisable()
         {
             Unsubscribe();
+
+            // Red de seguridad: si el flash queda a medias al apagarse el HUD, el número
+            // volvería a encenderse rojo. Lo devolvemos a su color de autoría a mano.
+            if (_insufficientFlash.isAlive) _insufficientFlash.Stop();
+            if (_insufficientPunchTween.isAlive) _insufficientPunchTween.Stop();
+            if (_label != null)
+            {
+                _label.color = _labelBaseColor;
+                _label.transform.localScale = _labelRestScale;
+            }
         }
 
         private void Subscribe()
         {
             if (_bound) return;
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
+            TypedEvent<InsufficientEnergyPayload>.Subscribe(HandleInsufficientEnergy);
             _bound = true;
         }
 
@@ -87,7 +149,16 @@ namespace Rollgeon.UI.HUD
         {
             if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
+            TypedEvent<InsufficientEnergyPayload>.Unsubscribe(HandleInsufficientEnergy);
             _bound = false;
+        }
+
+        private void HandleInsufficientEnergy(InsufficientEnergyPayload payload)
+        {
+            // Antes de que el Bind resuelva, _playerGuid está vacío: ahí el único
+            // jugador posible es el del payload, así que no filtramos de más.
+            if (_playerGuid != Guid.Empty && payload.PlayerGuid != _playerGuid) return;
+            PlayInsufficient();
         }
 
         /// <summary>

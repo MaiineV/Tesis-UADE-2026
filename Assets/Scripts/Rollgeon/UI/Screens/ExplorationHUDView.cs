@@ -53,6 +53,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private ActiveItemsView _activeItems;
 
+        [SerializeField]
+        [Tooltip("Opcional. Fila de estados del player en Canvas_PlayerStatus — se " +
+                 "auto-resuelve en escena, igual que las pilas de fichas.")]
+        private Rollgeon.UI.HUD.Status.PlayerStatusIconsView _statusIcons;
+
         [Required("Arrastrar el MinimapView del widget.")]
         [SerializeField]
         private MinimapView _minimap;
@@ -180,6 +185,11 @@ namespace Rollgeon.UI.Screens
             if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
 
+            // La fila de estados también vive en Canvas_PlayerStatus. La bindea esta screen
+            // y no CombatHUDView porque es la base del stack y no se popea en toda la run —
+            // así los estados siguen vivos en combate, que es cuando más importan.
+            if (_statusIcons == null) _statusIcons = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Status.PlayerStatusIconsView>(FindObjectsInactive.Include);
+
             if (_healthChips != null) _healthChips.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_healthChips no esta cableado en el Inspector.", this);
 
@@ -188,6 +198,10 @@ namespace Rollgeon.UI.Screens
 
             // El oro no se bindea: GoldChipStackView es autónomo (OnGoldChanged no
             // trae Guid) y vive siempre activo en Canvas_PlayerStatus.
+
+            // Sin warning si falta: hay escenas de test y setups viejos sin el cluster, y la
+            // fila es informativa — su ausencia no rompe nada.
+            if (_statusIcons != null) _statusIcons.Bind(playerGuid);
 
             if (_activeItems != null) _activeItems.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_activeItems no esta cableado en el Inspector.", this);

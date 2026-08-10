@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Rollgeon.Meta;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
+using Rollgeon.UI.Help;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine.Localization;
@@ -40,6 +41,9 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // que es idéntico en los dos idiomas por ser icono + número.
             UiTextKeys.RerollPaid,
             UiTextKeys.ChainRollPaid,
+            // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
+            // usa sin traducir en el resto del HUD.
+            Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,
         };
 
         private static readonly string[] Collections = { "Content", "UI" };
@@ -124,6 +128,22 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // Assert
             Assert.IsEmpty(missing,
                 "Keys de UiTextKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
+        }
+
+        [Test]
+        public void test_localization_every_build_help_key_exists_in_the_ui_table()
+        {
+            // Arrange
+            var collection = RequireCollection("UI");
+
+            // Act
+            var missing = BuildHelpTextKeys.All
+                .Where(key => collection.SharedData.GetEntry(key) == null)
+                .ToList();
+
+            // Assert
+            Assert.IsEmpty(missing,
+                "Keys de BuildHelpTextKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
         }
 
         /// <summary>

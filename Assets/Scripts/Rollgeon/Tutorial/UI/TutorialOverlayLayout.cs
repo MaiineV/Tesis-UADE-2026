@@ -75,6 +75,38 @@ namespace Rollgeon.Tutorial.UI
         }
 
         /// <summary>
+        /// Posición de la flecha contra el borde de la CAJA del anchor: sobre la línea
+        /// popup→centro, a <paramref name="gap"/> px del lado que el rayo cruza.
+        /// </summary>
+        /// <remarks>
+        /// Preferida sobre <see cref="ResolveArrowPosition"/> para anchors de UI. Esa
+        /// usa el círculo circunscripto, cuyo radio lo manda la diagonal: en un rect
+        /// ancho y bajo (la tira de dados del armado de bolsa, 900×140) la flecha
+        /// quedaba a ~420 px del borde, señalando desde el vacío.
+        /// </remarks>
+        public static Vector2 ResolveArrowPositionForBox(
+            Vector2 cutoutCenter, Vector2 halfSize, Vector2 popupCenter, float gap)
+        {
+            var toPopup = popupCenter - cutoutCenter;
+            var dir = toPopup.sqrMagnitude > 0.0001f ? toPopup.normalized : Vector2.up;
+            return cutoutCenter + dir * (DistanceToBoxEdge(dir, halfSize) + gap);
+        }
+
+        /// <summary>
+        /// Distancia del centro al borde de la caja en la dirección dada: el menor de
+        /// los dos t que hacen que el rayo toque un par de lados. Con una componente
+        /// de <paramref name="dir"/> en ~0 ese par nunca se cruza — de ahí el guard.
+        /// </summary>
+        private static float DistanceToBoxEdge(Vector2 dir, Vector2 halfSize)
+        {
+            const float epsilon = 0.0001f;
+            float tx = Mathf.Abs(dir.x) > epsilon ? Mathf.Abs(halfSize.x / dir.x) : float.MaxValue;
+            float ty = Mathf.Abs(dir.y) > epsilon ? Mathf.Abs(halfSize.y / dir.y) : float.MaxValue;
+            float t = Mathf.Min(tx, ty);
+            return t < float.MaxValue ? t : 0f;
+        }
+
+        /// <summary>
         /// Rotación Z (grados) para un sprite que apunta a la DERECHA en 0°,
         /// de modo que apunte desde <paramref name="arrowPos"/> hacia el recorte.
         /// </summary>

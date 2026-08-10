@@ -10,10 +10,12 @@ namespace Rollgeon.Entities.Portraits
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Población.</b> Los enemigos se registran en el spawn pipeline
+    /// <b>Población.</b> Los enemigos y jefes se registran en el spawn pipeline
     /// (<c>DefaultEnemySpawnResolver.RegisterEnemyAtCoord</c>) desde
-    /// <see cref="BaseEntitySO.Portrait"/>. El player NO se registra: la impl lo
-    /// resuelve lazy vía <c>IPlayerService.CurrentHero.Portrait</c>.
+    /// <see cref="BaseEntitySO.Portrait"/> — un solo sprite les alcanza. El player NO
+    /// se registra: la impl lo resuelve lazy vía
+    /// <c>IPlayerService.CurrentHero.ResolveTurnOrderIcon()</c>, que prefiere el icono
+    /// dedicado de la clase sobre su retrato de selección.
     /// </para>
     /// <para>
     /// <b>Lifecycle.</b> Run-scoped — <c>ClearScope(Run)</c> libera el registro al

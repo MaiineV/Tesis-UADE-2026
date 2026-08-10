@@ -435,6 +435,82 @@ MonoBehaviour:
     m_Key: roll.chain_paid_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 8535671167614976
+    m_Key: build.help.pool
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382080
+    m_Key: build.help.strip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382081
+    m_Key: build.help.clear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382082
+    m_Key: build.help.confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833236307968
+    m_Key: status.active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Key: status.inactive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Key: status.duration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Key: status.duration.last
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Key: contract.header.example
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Key: contract.header.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Key: contract.header.damage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001792126976
+    m_Key: icon.contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487104
+    m_Key: icon.backpack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487105
+    m_Key: icon.dicebag
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930415779840
+    m_Key: dicebag.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Key: dicebag.slots_caption
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Key: dicebag.slots_suffix
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Key: dicebag.slot_empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Key: dicebag.no_enchantments
+    m_Metadata:
+      m_Items: []
   - m_Id: 9649666772463616
     m_Key: menu.game_speed
     m_Metadata:

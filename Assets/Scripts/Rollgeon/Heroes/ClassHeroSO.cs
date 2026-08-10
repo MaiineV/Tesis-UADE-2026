@@ -115,6 +115,18 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Portrait para UI de seleccion.")]
         public Sprite Portrait;
 
+        [Tooltip("Icono del heroe para la UI de orden de turnos. El retrato de seleccion es " +
+                 "grande y con fondo, y encogido al tamaño de un slot de turno se lee mal. " +
+                 "Vacio = cae al Portrait.")]
+        public Sprite TurnOrderIcon;
+
+        /// <summary>
+        /// Sprite para el slot de la cola de turnos: el icono dedicado si esta autorado,
+        /// y si no el retrato de seleccion (los enemigos y jefes siempre usan su Portrait,
+        /// que registran ellos mismos en el resolver).
+        /// </summary>
+        public Sprite ResolveTurnOrderIcon() => TurnOrderIcon != null ? TurnOrderIcon : Portrait;
+
         [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al DiceBagSO inicial " +
                  "de la clase (DiceBagSO aun no existe).")]
         public ScriptableObject StartingDiceBagRef;
