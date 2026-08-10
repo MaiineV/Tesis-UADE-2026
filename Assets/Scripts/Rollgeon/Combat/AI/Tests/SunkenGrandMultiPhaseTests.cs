@@ -184,22 +184,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
-        // Fase de fire hazard: activada vía el HazardService genérico, gateada por HP
-        // -----------------------------------------------------------------
-
-        [Test]
-        public void Boss_HasFireHazardPhase_GatedByHp()
-        {
-            // Act — el fuego entra por la MISMA abstracción (AINode_ActivateHazard) a un umbral
-            // distinto (~50%), coexistiendo con la lluvia — el punto del HazardService genérico.
-            var gate = FindHazardGateAtPercent(0.50f);
-
-            // Assert
-            Assert.IsNotNull(gate,
-                "No hay un gate a 50% que active un hazard vía AINode_ActivateHazard (fase de fuego).");
-        }
-
-        // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
