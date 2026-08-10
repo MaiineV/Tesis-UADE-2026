@@ -182,6 +182,39 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(xAfterFirst, panel.anchoredPosition.x, 0.001f);
         }
 
+        [Test]
+        public void should_close_the_other_drawer_when_one_opens()
+        {
+            // Arrange — contrato y bolsa comparten esquina; dos abiertos se superponen.
+            var first = MakeDrawer(out _, out var firstBackdrop);
+            var second = MakeDrawer(out _, out _);
+            first.Open();
+
+            // Act
+            second.Open();
+
+            // Assert
+            Assert.IsTrue(second.IsOpen);
+            Assert.IsFalse(first.IsOpen, "abrir uno tiene que cerrar el otro");
+            Assert.IsFalse(firstBackdrop.gameObject.activeSelf, "y llevarse su backdrop");
+        }
+
+        [Test]
+        public void should_not_close_itself_when_reopened()
+        {
+            // Arrange — el guard de "ya abierto" corta antes, pero si alguien lo saca, el
+            // barrido no puede cerrarse a sí mismo.
+            var drawer = MakeDrawer(out _, out var backdrop);
+
+            // Act
+            drawer.Open();
+            drawer.Open();
+
+            // Assert
+            Assert.IsTrue(drawer.IsOpen);
+            Assert.IsTrue(backdrop.gameObject.activeSelf);
+        }
+
         // ------------------------------------------------------------------
         // Orden por daño base
         // ------------------------------------------------------------------
@@ -269,7 +302,9 @@ namespace Rollgeon.UI.Tests
             return die;
         }
 
-        private ContractDrawerView MakeDrawer(out RectTransform panel, out Button backdrop)
+        // El gesto vive en SlidingDrawer, que comparten el contrato y la bolsa de dados;
+        // ContractDrawerView solo pone el contenido.
+        private Rollgeon.UI.HUD.SlidingDrawer MakeDrawer(out RectTransform panel, out Button backdrop)
         {
             var go = new GameObject("ContractDrawer", typeof(RectTransform));
             _spawned.Add(go);
@@ -282,7 +317,7 @@ namespace Rollgeon.UI.Tests
             backdropGo.transform.SetParent(go.transform, worldPositionStays: false);
             backdrop = backdropGo.AddComponent<Button>();
 
-            var drawer = go.AddComponent<ContractDrawerView>();
+            var drawer = go.AddComponent<Rollgeon.UI.HUD.SlidingDrawer>();
             SetPrivate(drawer, "_panel", panel);
             SetPrivate(drawer, "_backdrop", backdrop);
             // AddComponent ya corrió Awake sin ver los refs; se re-dispara con el wiring

@@ -491,6 +491,26 @@ MonoBehaviour:
     m_Key: icon.dicebag
     m_Metadata:
       m_Items: []
+  - m_Id: 9558930415779840
+    m_Key: dicebag.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Key: dicebag.slots_caption
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Key: dicebag.slots_suffix
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Key: dicebag.slot_empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Key: dicebag.no_enchantments
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

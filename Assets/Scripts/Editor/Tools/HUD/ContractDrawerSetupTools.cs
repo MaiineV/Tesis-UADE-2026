@@ -358,21 +358,27 @@ namespace Rollgeon.EditorTools.HUD
                 var rowsFitter = Ensure<ContentSizeFitter>(rowsRect.gameObject);
                 rowsFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+                // El gesto (deslizar, backdrop, Esc) vive en SlidingDrawer; la view solo
+                // pone el contenido y se engancha a su evento Opened.
+                var slider = Ensure<Rollgeon.UI.HUD.SlidingDrawer>(drawerRect.gameObject);
+                var sliderSo = new SerializedObject(slider);
+                sliderSo.FindProperty("_panel").objectReferenceValue = panel;
+                sliderSo.FindProperty("_backdrop").objectReferenceValue = backdropButton;
+                sliderSo.FindProperty("_closedX").floatValue = PanelClosedX;
+                sliderSo.FindProperty("_openX").floatValue = PanelOpenX;
+                sliderSo.ApplyModifiedPropertiesWithoutUndo();
+
                 var drawer = Ensure<ContractDrawerView>(drawerRect.gameObject);
                 var so = new SerializedObject(drawer);
-                so.FindProperty("_panel").objectReferenceValue = panel;
-                so.FindProperty("_backdrop").objectReferenceValue = backdropButton;
                 so.FindProperty("_rowsContainer").objectReferenceValue = rowsRect;
                 so.FindProperty("_rowPrefab").objectReferenceValue = rowView;
                 so.FindProperty("_settings").objectReferenceValue = settings;
-                so.FindProperty("_closedX").floatValue = PanelClosedX;
-                so.FindProperty("_openX").floatValue = PanelOpenX;
                 so.FindProperty("_exampleHeader").objectReferenceValue = exampleHeader;
                 so.FindProperty("_nameHeader").objectReferenceValue = nameHeader;
                 so.FindProperty("_damageHeader").objectReferenceValue = damageHeader;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
-                WireContractIcon(root, drawer);
+                WireContractIcon(root, slider);
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerStatusPrefabPath);
                 Debug.Log("[ContractDrawer] Drawer armado en Canvas_PlayerStatus.");
@@ -382,7 +388,7 @@ namespace Rollgeon.EditorTools.HUD
 
         // El ícono se creó como Image decorativa (raycastTarget off). Para abrir el drawer
         // necesita recibir clicks y un Button, y el onClick se persiste al prefab.
-        private static void WireContractIcon(GameObject root, ContractDrawerView drawer)
+        private static void WireContractIcon(GameObject root, Rollgeon.UI.HUD.SlidingDrawer drawer)
         {
             var icon = FindDeep(root.transform, "ContractIcon");
             if (icon == null)

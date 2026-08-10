@@ -529,6 +529,26 @@ MonoBehaviour:
     m_Localized: Dice bag
     m_Metadata:
       m_Items: []
+  - m_Id: 9558930415779840
+    m_Localized: Dice Bag
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Localized: Enchantment slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Localized: slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Localized: Empty slot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Localized: No enchantments.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

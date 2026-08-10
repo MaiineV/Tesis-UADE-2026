@@ -534,6 +534,26 @@ MonoBehaviour:
     m_Localized: Bolsa de dados
     m_Metadata:
       m_Items: []
+  - m_Id: 9558930415779840
+    m_Localized: Bolsa de Dados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Localized: Cupos de encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Localized: cupos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Localized: Cupo libre.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Localized: Sin encantamientos.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

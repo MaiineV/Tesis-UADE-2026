@@ -3,6 +3,7 @@ using UnityEngine;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD.Contract;
+using Rollgeon.UI.HUD.DiceBag;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Help;
 
@@ -35,6 +36,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedStatusIcons();
             SeedContractDrawer();
             SeedPlayerIcons();
+            SeedDiceBag();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -534,6 +536,20 @@ namespace Rollgeon.EditorTools.Localization
             Ui(PlayerIconTextKeys.Contract, "Contrato", "Contract");
             Ui(PlayerIconTextKeys.Backpack, "Inventario", "Inventory");
             Ui(PlayerIconTextKeys.DiceBag, "Bolsa de dados", "Dice bag");
+        }
+
+        // ==================================================================
+        // Panel de la bolsa de dados
+        // ==================================================================
+
+        private static void SeedDiceBag()
+        {
+            Ui(DiceBagTextKeys.Title, "Bolsa de Dados", "Dice Bag");
+            Ui(DiceBagTextKeys.SlotsCaption, "Cupos de encantamiento", "Enchantment slots");
+            // Va detrás del contador ("2/3 cupos"), así que en minúscula y sin punto.
+            Ui(DiceBagTextKeys.SlotsSuffix, "cupos", "slots");
+            Ui(DiceBagTextKeys.EmptySlot, "Cupo libre.", "Empty slot.");
+            Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.", "No enchantments.");
         }
 
         // ==================================================================
