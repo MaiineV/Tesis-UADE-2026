@@ -83,11 +83,28 @@
   pitch por tier de combo en `DiceZoneJuice`).
 
 ### Perillas nuevas (`BreakdownAnimSettings.asset`)
-Secciones Colores / Preview / Ramp de dados / Punches / Clash / Mitigación / Toggles.
-Claves: `TierThreshold1/2` (30/80) escalan el drama del choque (flash, hitstop, shake,
-partículas); `FlamingNumberMinM` (2) prende el fuego; `DieSpeedRampPerStep` +
-`DiePitchStep` hacen que las cadenas largas aceleren y suban de tono; toggles
-`EnableSfx/EnableParticles/EnableShakeAndHitstop` para debug.
+Secciones Colores / Preview / Ramp de dados / Ramp de pasos / Punches / Clash /
+Mitigación / Toggles. Claves: `TierThreshold1/2` (30/80) escalan el drama del choque
+(flash, hitstop, shake, partículas); `FlamingNumberMinM` (2) prende el fuego;
+`DiePitchStep` sube el tono por dado; toggles `EnableSfx/EnableParticles/
+EnableShakeAndHitstop` para debug.
+
+### Step ramp (2026-08-10 — aceleración por paso, estilo Balatro)
+- Cada step resuelto (base del PJ, dado, proc, modificador global) consume un índice
+  que recorta linealmente el tiempo del siguiente: `StepSpeedRampPerStep` (0.07) por
+  paso hasta `StepSpeedFloor` (0.45). A ~8 steps la secuencia corre a menos de la
+  mitad del tiempo por step.
+- **El clash y la mitigación NO rampean** — el payoff mantiene su ritmo pleno; la
+  única aceleración ahí sigue siendo el skip del jugador.
+- Reemplaza al viejo ramp per-die (`DieSpeedRampPerStep`/`DieSpeedFloor`, eliminados):
+  aquel solo tocaba dados, así que un breakdown cargado de procs/globales nunca
+  aceleraba. `_dieIndex` sigue existiendo solo para pitch y juice.
+- El factor multiplica ANTES de `D()` ⇒ compone con el skip (skip + ramp se apilan).
+
+### Game speed (x1/x2/x4/x8) — interacción
+La secuencia entera corre en scaled time, así que el selector de velocidad global
+(`docs/setup/game-speed.md`) la comprime gratis. Flash / ghost trail / tick de roll-up
+son unscaled y se compensan dividiendo por `GameSpeedPrefs.Multiplier`.
 
 ### Accesibilidad / decisiones
 - `DiceUiMotionPrefs.ReducedMotion` apaga wobble, stagger, pop-ins, slide-in, shake,
@@ -124,3 +141,11 @@ partículas); `FlamingNumberMinM` (2) prende el fuego; `DieSpeedRampPerStep` +
 - [ ] ReducedMotion ON: sin wobble/stagger/shake/hitstop/flash, secuencia funcional.
 - [ ] Toggles del SO en false: no-ops limpios.
 - [ ] Cascade: entra deslizando, se resuelve de abajo con card-slide y caída con rebote.
+
+### Smoke del step ramp + game speed (nuevo)
+- [ ] Breakdown largo (~10 steps) a x1: los últimos steps visiblemente más rápidos que
+      los primeros; el clash mantiene su ritmo completo (wind-up + roll-up enteros).
+- [ ] Skip durante un breakdown rampeado: compone (todo aún más rápido), total correcto.
+- [ ] Game speed x8: secuencia comprimida, flash y trail acompañan (no quedan "largos"),
+      tras el hitstop del clash `Time.timeScale` vuelve a 8.
+- [ ] Cambiar velocidad desde la pausa en medio de un combate: aplica al toque.
