@@ -31,10 +31,18 @@ public class SteppedAnimation : MonoBehaviour
         var updateTime=1f / FPS;    
         AnimCon.speed = 0;
 
-        if (_time > updateTime)
+        // A timeScale alto un solo frame puede deber varios steps: drenar todos
+        // (con "if", el acumulador crece sin límite y el stepping se desfasa)
+        // y avanzar el animator ese total en este frame para no perder ritmo.
+        int steps = 0;
+        while (_time > updateTime)
         {
-           _time -= updateTime;
-            AnimCon.speed = updateTime / Time.deltaTime;
-        }   
+            _time -= updateTime;
+            steps++;
+        }
+        if (steps > 0)
+        {
+            AnimCon.speed = steps * updateTime / Time.deltaTime;
+        }
     }
 }
