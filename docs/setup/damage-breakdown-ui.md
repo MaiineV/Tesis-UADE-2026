@@ -49,13 +49,73 @@
 4. Fuera de alcance: fase Shield del chain (sin sequence propia — el label de escudo
    sigue como antes), action rolls y exploración (sin payload → path intacto).
 
+## Feel (pase 2026-08-10 — backlog `docs/planning/breakdown-feel-backlog-2026-08-10.md`)
+
+### Identidad de color
+- **N azul `#4FA8FF`**, **M con "heat"**: gris `#8A8F98` en 1.0 → naranja `#FF6B47` → rojo
+  fuego `#FF3B2F` en 2+. Todo lo que vuela (y su trail) hereda el color de su destino.
+- Backplates pill `#14141E @ .88` detrás del N×M y del cascade; outline negro en los
+  "+N" y en el total del choque; "+N" separa cara (hueso) de bono de encantos (dorado).
+- **Convención de dorados**: dorado `#FFD75A` = weakness / bonus especial. El oro-moneda
+  (`FloatingNumberPalette.Gold #FFC533`) es otro concepto — no mezclar.
+
+### GOs nuevos en `Canvas_ActionRoll.prefab` (wireados vía MCP)
+| GO | Qué es |
+|---|---|
+| `DamageBreakdown/Backplate`, `GlobalModifierCascade/Backplate` | pills oscuros |
+| `ScreenFlashOverlay` (último sibling) | `ScreenFlashView` — flash del clash, unscaled |
+| `FlyingValueLayer/ImpactBurst` | `DiceThrowImpactBurst` (bursts de contadores/choque) |
+| `FlyingValueLayer/DepartSparkles` | chispas de despegue (copia de HoldSparkles) |
+| `FlyingValueLayer/ProcGlowRing` | anillo del popup de proc (Knob placeholder) |
+| `ClashLabel/ClashFire`, `CounterM/CounterFire` | fuego del flaming number (M ≥ 2 / ≥ 3) |
+| `BreakdownDirector/FireLoopSource` | AudioSource loop del fuego |
+| `FlyingValueTemplate/TrailParticles` | estela por distancia, tintada por vuelo |
+| `BreakdownDirector` + `BreakdownJuice` | todo el juice, campos 100% opcionales |
+
+### SFX
+- 11 placeholders **generados proceduralmente** en `Assets/Sounds/Breakdown/`
+  (generador: script Python de sesión; regenerables/reemplazables por audio final 1:1).
+- Reusados: `sfx_dice_preview_tick` (roll-up del preview), `sfx_combo_chime` (ahora con
+  pitch por tier de combo en `DiceZoneJuice`).
+
+### Perillas nuevas (`BreakdownAnimSettings.asset`)
+Secciones Colores / Preview / Ramp de dados / Punches / Clash / Mitigación / Toggles.
+Claves: `TierThreshold1/2` (30/80) escalan el drama del choque (flash, hitstop, shake,
+partículas); `FlamingNumberMinM` (2) prende el fuego; `DieSpeedRampPerStep` +
+`DiePitchStep` hacen que las cadenas largas aceleren y suban de tono; toggles
+`EnableSfx/EnableParticles/EnableShakeAndHitstop` para debug.
+
+### Accesibilidad / decisiones
+- `DiceUiMotionPrefs.ReducedMotion` apaga wobble, stagger, pop-ins, slide-in, shake,
+  hitstop, flash y bursts (los SFX y colores quedan).
+- **Sin MMF_Players nuevos**: todo el juice nuevo es PrimeTween en código (patrón
+  BossBarJuice); lo MMF existente (`DiceSlotJuice.PlayKeptPulse`, flourish) se reusa.
+- Hitstop = `DiceHitstop` (timeScale, idiom del repo) — los tweens escalados se congelan
+  con él a propósito; el flash y el camera shake son unscaled y siguen.
+- Cleanup garantizado: `BreakdownJuice.OnSequenceEnd` corre en los 3 caminos de cierre
+  (normal/abort/timeout) + `OnDisable` idempotente (fuego, duck, dims de dados).
+
 ## Checklist de smoke (Play Mode, run vía BootstrapRunOverride)
 - [ ] Combate normal: combo con enchants + items → secuencia completa, daño aplicado ==
       total mostrado (comparar con `DamageDebugLogger` en consola).
 - [ ] Sin combo (dado más alto): el fallback anuncia y la secuencia muestra la cara UNA vez.
 - [ ] Chain multi-fase: fase Attack con secuencia; fase Shield intacta (label viejo).
 - [ ] Action roll (Heal / Forzar Puerta): threshold intacto, sin breakdown.
-- [ ] Skip: 1 click acelera, 2 clicks saltan al choque con el total correcto.
+- [ ] Skip: 1 click acelera, 2 clicks saltan al choque con el total correcto (slam).
 - [ ] Player muere / combate se corta a mitad de secuencia: sin soft-lock (gate liberado).
 - [ ] Dados bloqueados por boss: "+N" solo en contribuyentes.
 - [ ] Salir a exploración y volver: preview N×M reaparece bien (bind/unbind limpio).
+
+### Smoke del feel (nuevo)
+- [ ] Colores: N azul / M gris→rojo por valor; vuelos tintados según destino.
+- [ ] Cadena larga de dados: acelera sola y el pitch sube por dado.
+- [ ] Clash: wind-up → flash + hitstop + shake + burst + roll-up del total; golpe grande
+      (≥80) notablemente más dramático que uno chico (<30).
+- [ ] M ≥ 2: fuego sobre el total + loop de audio; se APAGA al liberar la secuencia.
+- [ ] Mitigación: clank + "-X" azul-gris + tick-down; weakness: flash dorado.
+- [ ] Spam de toggles de hold: roll-up sin spam de ticks (rate-limit), sin parpadeos.
+- [ ] Timeout forzado (`MaxSequenceSeconds` = 1 temporal): sin fuego colgado, música
+      des-duckeada, dados sin dim.
+- [ ] ReducedMotion ON: sin wobble/stagger/shake/hitstop/flash, secuencia funcional.
+- [ ] Toggles del SO en false: no-ops limpios.
+- [ ] Cascade: entra deslizando, se resuelve de abajo con card-slide y caída con rebote.
