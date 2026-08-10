@@ -514,11 +514,16 @@ namespace Rollgeon.UI.HUD.Breakdown
             else Tween.Delay(this, gap, d => onDone());
         }
 
-        // Duración efectiva: el primer skip acelera todo lo que falta.
+        // Duración efectiva: el game speed (x1..x8) comprime toda la secuencia y
+        // el primer skip multiplica encima. El ramp por step multiplica ANTES de
+        // llamar acá ⇒ los tres factores componen.
         private float D(float seconds)
-            => _player.Skip == BreakdownSequencePlayer.SkipStage.None
-                ? seconds
-                : seconds / (_settings != null ? _settings.SkipSpeedMultiplier : 3f);
+        {
+            float speed = Rollgeon.Timing.GameSpeedPrefs.Multiplier;
+            if (_player.Skip != BreakdownSequencePlayer.SkipStage.None)
+                speed *= _settings != null ? _settings.SkipSpeedMultiplier : 3f;
+            return seconds / speed;
+        }
 
         // Factor de tiempo del step actual (y avance del índice): cada paso resuelto
         // acelera un poco los siguientes — Balatro contando un combo. Multiplica ANTES

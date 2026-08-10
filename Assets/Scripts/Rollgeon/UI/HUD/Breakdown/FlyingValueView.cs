@@ -135,8 +135,8 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             if (_ghostIntervalSeconds <= 0f || _pool == null) return;
             if (Time.unscaledTime < _nextGhostAt) return;
-            // La cadencia es unscaled pero el vuelo es scaled: sin compensar, a
-            // x4/x8 el vuelo termina antes de emitir ghosts y el trail desaparece.
+            // El vuelo llega comprimido por el game speed (vía D() del director);
+            // la cadencia acompaña o a x4/x8 el trail no llega a emitir ghosts.
             _nextGhostAt = Time.unscaledTime
                 + _ghostIntervalSeconds / Rollgeon.Timing.GameSpeedPrefs.Multiplier;
             _pool.SpawnGhost(_label != null ? _label.text : string.Empty,
