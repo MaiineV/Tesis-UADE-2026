@@ -112,6 +112,12 @@ namespace Rollgeon.UI.HUD
         private Color _costLabelBaseColor = Color.white;
         private Tween _rejectShake;
 
+        // Ortogonal al estado a proposito. Un chip puede estar Used o Locked por otra
+        // razon Y ADEMAS ser impagable; con el rojo colgado del estado Unaffordable
+        // (que es excluyente con los otros) esos casos nunca se pintaban. El estado
+        // dice que podes hacer; esto dice si te alcanza la plata.
+        private bool _affordable = true;
+
         // ======================================================================
         // Public API
         // ======================================================================
@@ -207,16 +213,25 @@ namespace Rollgeon.UI.HUD
             ApplyVisual();
         }
 
+        /// <summary>
+        /// Si al jugador le alcanza la energia para esta accion. Independiente de
+        /// <see cref="SetState"/>: un chip Used o Locked por otra razon igual pinta el
+        /// costo en rojo si no lo podes pagar, y responde al intento con el shake.
+        /// </summary>
+        public void SetAffordable(bool affordable)
+        {
+            if (_affordable == affordable) return;
+            _affordable = affordable;
+            ApplyCostLabelColor();
+        }
+
+        public bool IsAffordable => _affordable;
+
         private void ApplyVisual()
         {
             if (_button == null) return;
 
-            // El rojo del costo se pinta solo en Unaffordable; cualquier otra
-            // transicion lo devuelve a su color de autoria.
-            if (_costLabel != null)
-                _costLabel.color = _state == ActionButtonState.Unaffordable
-                    ? _unaffordableColor
-                    : _costLabelBaseColor;
+            ApplyCostLabelColor();
 
             switch (_state)
             {
@@ -272,6 +287,15 @@ namespace Rollgeon.UI.HUD
             if (_image != null) _image.color = _baseColor;
         }
 
+        // Unaffordable sigue pintando rojo aunque nadie haya llamado SetAffordable —
+        // el estado ya implica que la unica traba es la energia.
+        private void ApplyCostLabelColor()
+        {
+            if (_costLabel == null) return;
+            bool unaffordable = !_affordable || _state == ActionButtonState.Unaffordable;
+            _costLabel.color = unaffordable ? _unaffordableColor : _costLabelBaseColor;
+        }
+
         // ======================================================================
         // Cost label
         // ======================================================================
@@ -318,9 +342,15 @@ namespace Rollgeon.UI.HUD
         /// no click porque responde antes del umbral de drag — el jugador que "tira" del
         /// chip para usarlo tiene que sentir el rechazo igual.
         /// </summary>
+        /// <remarks>
+        /// Gatea por <see cref="_affordable"/> y no por el estado: un chip que ademas de
+        /// impagable esta Locked por otra razon (Heal a vida llena) igual tiene que
+        /// contestar algo. Antes salia por Unaffordable, que es excluyente, y esos casos
+        /// se sentian como un boton muerto.
+        /// </remarks>
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (_state != ActionButtonState.Unaffordable) return;
+            if (_affordable && _state != ActionButtonState.Unaffordable) return;
             PlayRejectFeedback();
         }
 

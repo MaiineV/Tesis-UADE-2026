@@ -123,6 +123,90 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
+        // Affordability — ortogonal al estado
+        // ------------------------------------------------------------------
+        //
+        // Regresión: el rojo y el shake colgaban del estado Unaffordable, que es
+        // EXCLUYENTE con Locked y Used. Un chip bloqueado por otra razón (Heal a vida
+        // llena) y encima impagable no mostraba nada y no contestaba al click.
+
+        [Test]
+        public void test_actionButton_lockedAndUnaffordable_stillPaintsCostRed()
+        {
+            // Arrange
+            var expected = (Color)GetPrivate(_button, "_unaffordableColor");
+            _button.SetState(ActionButtonState.Locked);
+
+            // Act
+            _button.SetAffordable(false);
+
+            // Assert
+            Assert.AreEqual(expected, _costLabel.color, "el costo tiene que quedar rojo aunque esté Locked");
+            Assert.IsFalse(_outline.enabled, "el outline sigue siendo del estado, no de la plata");
+        }
+
+        [Test]
+        public void test_actionButton_usedAndUnaffordable_stillPaintsCostRed()
+        {
+            // Arrange
+            var expected = (Color)GetPrivate(_button, "_unaffordableColor");
+            _button.SetAffordable(false);
+
+            // Act
+            _button.SetState(ActionButtonState.Used);
+
+            // Assert — el cambio de estado no debe pisar el rojo de la plata.
+            Assert.AreEqual(expected, _costLabel.color);
+        }
+
+        [Test]
+        public void test_actionButton_pointerDownWhileLockedAndUnaffordable_raisesRejected()
+        {
+            // Arrange
+            int rejections = 0;
+            _button.OnRejected += () => rejections++;
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(false);
+
+            // Act
+            _button.OnPointerDown(null);
+
+            // Assert — antes era un botón mudo.
+            Assert.AreEqual(1, rejections);
+        }
+
+        [Test]
+        public void test_actionButton_pointerDownWhileLockedButAffordable_staysSilent()
+        {
+            // Arrange — Locked por rango o por vida llena, con energía de sobra: la
+            // pila de energía no tiene nada que decir acá.
+            int rejections = 0;
+            _button.OnRejected += () => rejections++;
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(true);
+
+            // Act
+            _button.OnPointerDown(null);
+
+            // Assert
+            Assert.AreEqual(0, rejections);
+        }
+
+        [Test]
+        public void test_actionButton_becomingAffordableAgain_restoresAuthoredCostColor()
+        {
+            // Arrange
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(false);
+
+            // Act
+            _button.SetAffordable(true);
+
+            // Assert
+            Assert.AreEqual(_authoredCostColor, _costLabel.color);
+        }
+
+        // ------------------------------------------------------------------
         // Helpers (patrón de EnergyChipStackViewTests)
         // ------------------------------------------------------------------
 

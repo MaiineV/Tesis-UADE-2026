@@ -170,6 +170,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             EventManager.Subscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
+            EventManager.Subscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
             TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(true);
@@ -245,6 +246,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
+            EventManager.UnSubscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(false);
@@ -391,6 +393,18 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        // Los costos contextuales (Heal, Forzar Puerta) los resuelve el spec del effect
+        // preguntándole la fase VIVA al IPhaseService, así que fuera de combate valen 0.
+        // El Bind del HUD corre antes de que la fase sea Combat: sin este refresh el
+        // label del heal quedaba en el _zeroCostText (vacío) todo el combate, y el gate
+        // de energía lo trataba como gratis. PhaseService setea CurrentBase ANTES de
+        // disparar OnPhaseEnter, así que acá ya se lee el valor nuevo.
+        private void HandlePhaseEnter(params object[] args)
+        {
+            RefreshCostLabels();
+            RecomputeButtonStates();
+        }
+
         private void HandleEntityMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
             // Cualquier movimiento puede cambiar la disponibilidad (range-based attack
@@ -525,7 +539,7 @@ namespace Rollgeon.UI.HUD
                 if (button == null || button.Slot != slot) continue;
                 if (button.Button != null && button.Button.interactable)
                     button.Button.onClick.Invoke();
-                else if (button.State == ActionButtonState.Unaffordable)
+                else if (button.State == ActionButtonState.Unaffordable || !button.IsAffordable)
                     button.PlayRejectFeedback();
                 return;
             }
@@ -561,7 +575,14 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < _buttons.Length; i++)
             {
                 if (_buttons[i] == null) continue;
-                _buttons[i].SetState(ComputeStateForSlot(i));
+
+                var behavior = ResolveBehaviorForSlot(i);
+                _buttons[i].SetState(ComputeStateForSlot(i, behavior));
+
+                // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
+                // razon de la cascada, asi que un chip Locked por rango o por vida llena
+                // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
+                if (behavior != null) _buttons[i].SetAffordable(HasEnoughEnergy(behavior));
             }
 
             // Confirm se habilita cuando hay dados rolleados AND el jugador holdeó
@@ -583,7 +604,7 @@ namespace Rollgeon.UI.HUD
             return false;
         }
 
-        private ActionButtonState ComputeStateForSlot(int slotIndex)
+        private ActionButtonState ComputeStateForSlot(int slotIndex, HeroActionBehavior behavior)
         {
             if (!_isPlayerTurn)
             {
@@ -605,7 +626,6 @@ namespace Rollgeon.UI.HUD
             // o rolled — el jugador ve "esta es la accion que estoy ejecutando".
             if (_selectedSlot == slotIndex) return ActionButtonState.Selected;
 
-            var behavior = ResolveBehaviorForSlot(slotIndex);
             if (behavior == null)
             {
                 return ActionButtonState.Locked;
@@ -647,7 +667,13 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
+            // includeEnergyGate:false — HasUsableEffectGroup tiene su propio gate de
+            // energía contra behavior.EnergyCost, y al consultarlo antes que HasEnoughEnergy
+            // devolvía Locked para todo chip impagable: el Unaffordable de abajo era
+            // inalcanzable salvo cuando el costo del spec supera al legacy (Heal con
+            // exactamente 1 de energía). Sin ni outline ni shake, que es lo que se reportó.
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason,
+                                               includeEnergyGate: false))
             {
                 return ActionButtonState.Locked;
             }
