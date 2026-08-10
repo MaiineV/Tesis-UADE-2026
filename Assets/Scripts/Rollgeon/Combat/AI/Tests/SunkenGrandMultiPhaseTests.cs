@@ -187,6 +187,30 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
+        // Fase de fire hazard: activada vía el HazardService genérico, gateada por HP
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void Boss_HasFireHazardPhase_GatedByHp()
+        {
+            // Arrange
+            var allNodes = CollectAllNodes(_root);
+
+            // Act — el fire hazard entra por el nodo genérico AINode_ActivateHazard (no el shim
+            // de lluvia), con una HazardDefinitionSO asignada, y gateado a un umbral de HP.
+            var activate = allNodes.OfType<AINode_ActivateHazard>().FirstOrDefault(n => n.Hazard != null);
+            var gate = FindGatingIf<AINode_ActivateHazard>(_root);
+
+            // Assert
+            Assert.IsNotNull(activate,
+                "El boss no tiene un AINode_ActivateHazard con definición asignada — " +
+                "el fire hazard no se activaría en la pelea del boss 1.");
+            Assert.IsNotNull(gate,
+                "El AINode_ActivateHazard no está bajo el Then de ningún AINode_If " +
+                "(debería activarse a un umbral de HP, como las otras fases).");
+        }
+
+        // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
