@@ -23,3 +23,44 @@ MonoBehaviour:
   MitigationSeconds: 0.3
   SkipSpeedMultiplier: 3
   MaxSequenceSeconds: 8
+  CounterNColor: {r: 0.30980393, g: 0.65882355, b: 1, a: 1}
+  CounterMNeutralColor: {r: 0.5411765, g: 0.56078434, b: 0.59607846, a: 1}
+  CounterMWarmColor: {r: 1, g: 0.41960785, b: 0.2784314, a: 1}
+  CounterMHotColor: {r: 1, g: 0.23137255, b: 0.18431373, a: 1}
+  WeaknessColor: {r: 1, g: 0.84313726, b: 0.3529412, a: 1}
+  MitigationColor: {r: 0.6392157, g: 0.7019608, b: 0.69411767, a: 1}
+  ContributionFaceColor: {r: 0.9607843, g: 0.9372549, b: 0.8784314, a: 1}
+  ContributionBonusColor: {r: 1, g: 0.84313726, b: 0.3529412, a: 1}
+  PreviewPopSeconds: 0.18
+  PreviewRollupSeconds: 0.15
+  WobbleMaxDegrees: 3
+  WobbleHz: 1.4
+  ContributionStaggerSeconds: 0.05
+  DiePitchStep: 0.06
+  SpentDieDim: 0.7
+  StepSpeedRampPerStep: 0.07
+  StepSpeedFloor: 0.45
+  PunchIntensityMax: 2
+  PunchRotationMaxDegrees: 4
+  SwordWindupSeconds: 0.1
+  ProcPopupSeconds: 0.12
+  ClashWindupSeconds: 0.08
+  ClashWindupPixels: 12
+  ClashRollupSeconds: 0.25
+  FlashPeakAlpha: 0.15
+  FlashSeconds: 0.12
+  HitstopSeconds: 0.06
+  ShakeAmplitude: 0.6
+  ShakeSeconds: 0.25
+  TierThreshold1: 30
+  TierThreshold2: 80
+  TierScaleSmall: 0.5
+  TierScaleMedium: 1
+  TierScaleBig: 1.7
+  FlamingNumberMinM: 2
+  ClashDuckFactor: 0.4
+  ClashDuckFadeSeconds: 0.15
+  MitigationTickDownSeconds: 0.3
+  EnableSfx: 1
+  EnableParticles: 1
+  EnableShakeAndHitstop: 1
