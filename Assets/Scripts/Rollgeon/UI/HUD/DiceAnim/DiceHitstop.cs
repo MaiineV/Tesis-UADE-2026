@@ -1,4 +1,5 @@
 using System.Collections;
+using Rollgeon.Timing;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD.DiceAnim
@@ -9,15 +10,20 @@ namespace Rollgeon.UI.HUD.DiceAnim
     /// turnos — nada depende de tiempo real durante la pausa. Usa un runner
     /// propio con <c>WaitForSecondsRealtime</c> (los tweens/coroutines scaled
     /// quedan pausados, que es exactamente el efecto buscado).
+    /// Restaura leyendo <see cref="GameSpeedPrefs"/> — la única fuente de verdad
+    /// del timeScale en reposo — así un cambio de speed durante el freeze no se
+    /// pierde al descongelar.
     /// </summary>
     public static class DiceHitstop
     {
         private static Runner _runner;
-        private static float _originalScale = 1f;
         private static bool _frozen;
 
         public static void Play(float seconds)
         {
+            // El freeze es realtime: sin este ajuste, a x8 los 0.06s valdrían
+            // casi medio segundo de tiempo de juego — un stall, no un acento.
+            seconds /= GameSpeedPrefs.Multiplier;
             if (seconds <= 0f || !Application.isPlaying) return;
             if (_runner == null)
             {
@@ -26,13 +32,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
                 go.hideFlags = HideFlags.HideAndDontSave;
                 _runner = go.AddComponent<Runner>();
             }
-            if (!_frozen)
-            {
-                // Solo capturamos la escala original al entrar — un Play durante otro
-                // hitstop extiende la pausa sin pisar el valor a restaurar.
-                _originalScale = Time.timeScale > 0f ? Time.timeScale : 1f;
-                _frozen = true;
-            }
+            _frozen = true;
             Time.timeScale = 0f;
             _runner.Restart(seconds);
         }
@@ -40,7 +40,7 @@ namespace Rollgeon.UI.HUD.DiceAnim
         private static void Restore()
         {
             if (!_frozen) return;
-            Time.timeScale = _originalScale;
+            Time.timeScale = GameSpeedPrefs.Multiplier;
             _frozen = false;
         }
 
@@ -48,7 +48,6 @@ namespace Rollgeon.UI.HUD.DiceAnim
         private static void ResetStatics()
         {
             _runner = null;
-            _originalScale = 1f;
             _frozen = false;
         }
 
