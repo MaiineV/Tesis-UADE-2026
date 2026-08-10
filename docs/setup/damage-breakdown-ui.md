@@ -46,8 +46,12 @@
    (anim → "hit" → daño → floating numbers).
 3. Anti soft-lock: timeout del director (8 s) + failsafe del FeedbackManager (10 s) +
    `Abort` en Unbind/OnDisable. Skip: 1er click acelera ×3, 2do salta al choque.
-4. Fuera de alcance: fase Shield del chain (sin sequence propia — el label de escudo
-   sigue como antes), action rolls y exploración (sin payload → path intacto).
+4. **Escudo (paridad 2026-08-10)**: la fase de defensa usa la MISMA UI — preview N×M
+   (N = base de la tabla de escudo del combo, M = perilla) y secuencia completa al
+   confirmar vía `AnnounceShield` (fórmula de escudo, payload sin target ⇒ nunca hay
+   paso de mitigación). Limitación conocida: el escudo se APLICA al ejecutar la fase
+   (los chips del HUD suben antes del choque) — solo el daño real está diferido.
+5. Fuera de alcance: action rolls y exploración (sin payload → path intacto).
 
 ## Feel (pase 2026-08-10 — backlog `docs/planning/breakdown-feel-backlog-2026-08-10.md`)
 
@@ -99,7 +103,8 @@ partículas); `FlamingNumberMinM` (2) prende el fuego; `DieSpeedRampPerStep` +
 - [ ] Combate normal: combo con enchants + items → secuencia completa, daño aplicado ==
       total mostrado (comparar con `DamageDebugLogger` en consola).
 - [ ] Sin combo (dado más alto): el fallback anuncia y la secuencia muestra la cara UNA vez.
-- [ ] Chain multi-fase: fase Attack con secuencia; fase Shield intacta (label viejo).
+- [ ] Chain multi-fase: fase Attack con secuencia; fase Shield con secuencia N×M de
+      escudo (sin paso de mitigación; total del choque == escudo ganado).
 - [ ] Action roll (Heal / Forzar Puerta): threshold intacto, sin breakdown.
 - [ ] Skip: 1 click acelera, 2 clicks saltan al choque con el total correcto (slam).
 - [ ] Player muere / combate se corta a mitad de secuencia: sin soft-lock (gate liberado).

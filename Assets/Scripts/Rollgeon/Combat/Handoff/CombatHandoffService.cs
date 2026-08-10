@@ -1044,10 +1044,14 @@ namespace Rollgeon.Combat.Handoff
             {
                 var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
                 play?.BeginPlay(effCtx);
-                // Anuncio acotado a los efectos de ESTA fase: la fase de escudo no tiene
-                // EffDealDamage ⇒ no se anuncia (el breakdown de escudo queda para después).
-                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(
-                    effCtx, Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.FindDealDamage(phase.Effects));
+                // Anuncio acotado a los efectos de ESTA fase: daño si la fase pega,
+                // escudo si la fase defiende — misma secuencia N×M para ambos.
+                var phaseDmg = Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.FindDealDamage(phase.Effects);
+                if (phaseDmg != null)
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, phaseDmg);
+                else
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(
+                        effCtx, Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.FindAddShield(phase.Effects));
                 try
                 {
                     phase.Effects.TryExecute(effCtx, preCtx);

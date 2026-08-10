@@ -572,6 +572,8 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private int? ComputeMitigatedTotal(DamageBreakdownComputedPayload payload, int finalTotal)
         {
+            // El escudo no pasa por el DamagePipeline — nunca hay paso de mitigación.
+            if (payload.Breakdown.Kind == PlayerComboFormulaKind.Shield) return null;
             if (payload.TargetGuid == Guid.Empty || finalTotal <= 0) return null;
             if (!ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline) || pipeline == null)
                 return null;

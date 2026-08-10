@@ -250,6 +250,18 @@ namespace Rollgeon.UI.HUD
                 string shieldComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
                     ? _lastComboDisplayName : "Combo";
                 var shieldEff = _currentBehavior?.FindFirstAddShieldEffect();
+
+                // Paridad con ataque: el breakdown N×M toma el preview de defensa
+                // (N = base de la tabla de escudo del combo, M = perilla de la habilidad);
+                // el resto llega volando en la secuencia del confirm. El label viejo queda
+                // solo como fallback sin _breakdownView cableado.
+                if (_breakdownView != null)
+                {
+                    _breakdownView.ShowPreview(ResolvePlayerShieldBase(_lastComboId),
+                        shieldEff?.ComboMultiplier ?? 1f);
+                    ClearLabelKeepingBreakdown();
+                    return;
+                }
                 int shieldPreview = PlayerComboShield.Resolve(
                     _playerGuid, ResolvePlayerShieldBase(_lastComboId),
                     _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f, out var shieldBd);
