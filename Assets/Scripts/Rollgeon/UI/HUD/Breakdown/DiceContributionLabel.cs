@@ -28,15 +28,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         public int Amount { get; private set; }
 
         private Tween _appear;
-
-        private void Awake()
-        {
-            // Outline una sola vez: el label cae sobre el sprite del dado y sin borde
-            // se pierde. Setearlo instancia el material — por eso no va en Show().
-            if (_label == null) return;
-            _label.outlineWidth = 0.2f;
-            _label.outlineColor = Color.black;
-        }
+        private bool _outlineApplied;
 
         /// <summary>
         /// Muestra el aporte total; <paramref name="bonusPortion"/> separa cuánto vino
@@ -50,6 +42,15 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (_appear.isAlive) _appear.Stop();
             transform.localScale = Vector3.one;
             gameObject.SetActive(true);
+
+            // Outline recién con el GO activo: tocar outlineWidth con el TMP dormido
+            // (GO inactivo desde el prefab) tira NRE por material interno null.
+            if (!_outlineApplied && _label != null)
+            {
+                _outlineApplied = true;
+                _label.outlineWidth = 0.2f;
+                _label.outlineColor = Color.black;
+            }
 
             // Stagger: aparece en cascada con pop OutBack. Cualquier Hide() lo cancela,
             // así el outro/clear nunca deja un label apareciendo tarde.

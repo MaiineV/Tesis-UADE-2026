@@ -86,17 +86,6 @@ namespace Rollgeon.UI.HUD.Breakdown
             _bound = false;
         }
 
-        private void Awake()
-        {
-            // Outline una sola vez (instancia el material del TMP): el total del choque
-            // cae sobre el arte del board y sin borde se pierde.
-            if (_clashLabel != null)
-            {
-                _clashLabel.outlineWidth = 0.2f;
-                _clashLabel.outlineColor = Color.black;
-            }
-        }
-
         private void OnDisable() => AbortSequence();
 
         // ==================================================================
@@ -419,6 +408,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         private int LastShownTotal;
         private int _shownClashValue;
         private Tween _clashRoll;
+        private bool _clashOutlineApplied;
 
         private void ShowClashTotal(int total)
         {
@@ -428,6 +418,14 @@ namespace Rollgeon.UI.HUD.Breakdown
             LastShownTotal = total;
             if (_clashLabel == null) return;
             _clashLabel.gameObject.SetActive(true);
+            // Outline recién acá: el GO arranca inactivo y tocar outlineWidth antes del
+            // Awake del TMP (material interno null) tira NRE. SetActive ya lo despertó.
+            if (!_clashOutlineApplied)
+            {
+                _clashOutlineApplied = true;
+                _clashLabel.outlineWidth = 0.2f;
+                _clashLabel.outlineColor = Color.black;
+            }
             if (_clashRoll.isAlive) _clashRoll.Stop();
 
             float dur = D(_settings != null ? _settings.ClashRollupSeconds : 0.25f);
