@@ -22,6 +22,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         private float _value;
         private Tween _punch;
         private Tween _rotJiggle;
+        private Tween _flash;
 
         // Identidad de color: N usa color fijo; M usa "heat" por valor (apagado en 1.0,
         // calienta hacia rojo con el multiplicador). Sin configurar, el label queda como
@@ -86,6 +87,24 @@ namespace Rollgeon.UI.HUD.Breakdown
                 new Vector3(0f, 0f, rotationDegrees), _punchSeconds, frequency: 2);
         }
 
+        /// <summary>
+        /// Flash del label: arranca en <paramref name="flashColor"/> y vuelve al color
+        /// que le corresponde por identidad (heat/static). Para el impacto de un mult.
+        /// </summary>
+        public void Flash(Color flashColor, float seconds)
+        {
+            if (_label == null || seconds <= 0f) return;
+            if (_flash.isAlive) _flash.Stop();
+            _flash = Tween.Color(_label, flashColor, CurrentIdentityColor(), seconds, Ease.OutQuad);
+        }
+
+        private Color CurrentIdentityColor()
+        {
+            if (_hasHeat) return BreakdownFeelMath.HeatColor(_value, _heatNeutral, _heatWarm, _heatHot);
+            if (_hasStaticColor) return _staticColor;
+            return _label != null ? _label.color : Color.white;
+        }
+
         /// <summary>N entero; M con un decimal ("1.0", "2.5") para que se lea como multi.</summary>
         public static string Format(float value, bool isMultiplier)
             => isMultiplier ? value.ToString("0.0#") : Mathf.RoundToInt(value).ToString();
@@ -104,6 +123,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             if (_punch.isAlive) _punch.Stop();
             if (_rotJiggle.isAlive) _rotJiggle.Stop();
+            if (_flash.isAlive) _flash.Stop();
             transform.localScale = Vector3.one;
             transform.localRotation = Quaternion.identity;
         }

@@ -43,7 +43,12 @@ namespace Rollgeon.UI.HUD.Breakdown
         [Tooltip("Sprite del popup de mitigación post-choque (escudo). Opcional.")]
         [SerializeField] private Sprite _mitigationSprite;
 
+        [Tooltip("Juice de la secuencia (sonidos/flash/shake/partículas). Opcional — " +
+                 "fire-and-forget, nunca participa de la cadena onDone.")]
+        [SerializeField] private BreakdownJuice _juice;
+
         private readonly BreakdownSequencePlayer _player = new BreakdownSequencePlayer();
+        private int _dieIndex;
         private Guid _playerGuid;
         private bool _bound;
         private Action<DamageBreakdownComputedPayload> _onBreakdown;
@@ -112,6 +117,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             BreakdownUiGate.Begin();
             _gateHeld = true;
 
+            _dieIndex = 0;
+            _juice?.OnSequenceStart(_script.FinalN, _script.FinalM, _script.FinalTotal);
             CacheCounterHomes();
             PopulateCascade(_script);
             if (_skipButton != null) _skipButton.gameObject.SetActive(true);
@@ -123,6 +130,7 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private void EndSequence()
         {
+            _juice?.OnSequenceEnd(); // primero: apaga fuego/duck/dims en los 3 caminos
             if (_timeout != null)
             {
                 StopCoroutine(_timeout);
@@ -187,7 +195,18 @@ namespace Rollgeon.UI.HUD.Breakdown
         public void PlayPlayerBase(BreakdownStep step, Action onDone)
         {
             if (_playerBase == null || _breakdownView?.CounterN == null) { onDone(); return; }
+
+            // Anticipación: la espada carga (squash de la view) y recién ahí suelta.
+            _juice?.OnSwordWindup(_playerBase);
             _playerBase.Punch();
+            float windup = D(_settings != null ? _settings.SwordWindupSeconds : 0.1f);
+            if (windup <= 0f) LaunchPlayerBase(step, onDone);
+            else Tween.Delay(this, windup, d => d.LaunchPlayerBase(step, onDone));
+        }
+
+        private void LaunchPlayerBase(BreakdownStep step, Action onDone)
+        {
+            _juice?.OnFlightDeparted(_playerBase.Anchor, towardM: false, dieIndex: -1);
             Fly(_playerBase.Anchor, _breakdownView.CounterN.Anchor,
                 FormatAmount(step), null, FlightSeconds(), Arc(), () =>
                 {
@@ -202,14 +221,18 @@ namespace Rollgeon.UI.HUD.Breakdown
             var from = ResolveDieAnchor(slot);
             if (from == null || _breakdownView?.CounterN == null) { ApplyStep(step); onDone(); return; }
 
+            int idx = _dieIndex++; // local: los closures de abajo usan ESTE índice
+
             if (slot != null)
                 Tween.PunchScale(slot.transform, Vector3.one * 0.12f, D(0.12f), frequency: 1);
             slot?.SetContribution(null); // el label se "despega": desde acá vuela el valor
+            if (slot != null) _juice?.OnDieLaunch(slot, idx);
+            _juice?.OnFlightDeparted(from, towardM: false, dieIndex: idx);
 
             Fly(from, _breakdownView.CounterN.Anchor,
                 FormatAmount(step), null, FlightSeconds(), Arc(), () =>
                 {
-                    ApplyStep(step);
+                    ApplyStep(step, idx);
                     Gap(onDone);
                 }, FlightTint(step), startScale: 1.3f); // el "+N" despega desde su label
         }
@@ -245,7 +268,12 @@ namespace Rollgeon.UI.HUD.Breakdown
             _cascade.SetVisible(true);
             var bottom = _cascade.Bottom;
             if (bottom != null)
+            {
                 Tween.PunchScale(bottom.transform, Vector3.one * 0.1f, D(0.1f), frequency: 1);
+                _juice?.OnCascadeTelegraph(bottom);
+            }
+            _juice?.OnFlightDeparted(bottom != null ? bottom.Rect : null,
+                step.Target == BreakdownTarget.MultM, dieIndex: -1);
 
             Fly(bottom != null ? bottom.Rect : _cascade.Bottom?.Rect, target.Anchor,
                 FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
@@ -254,6 +282,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 () =>
                 {
                     ApplyStep(step);
+                    _juice?.OnCascadeFall();
                     _cascade.RemoveBottom(D(_settings != null ? _settings.CascadeFallSeconds : 0.15f), onDone);
                 }, FlightTint(step));
         }
@@ -264,21 +293,43 @@ namespace Rollgeon.UI.HUD.Breakdown
             var m = _breakdownView?.CounterM;
             if (n == null || m == null || _clashAnchor == null)
             {
+                _juice?.OnClashImpact(finalTotal, _script?.FinalM ?? 1f);
                 ShowClashTotal(finalTotal);
                 Gap(onDone);
                 return;
             }
 
+            // Wind-up: N y M se separan un toque hacia afuera antes de lanzarse.
+            float windup = D(_settings != null ? _settings.ClashWindupSeconds : 0.08f);
+            float pixels = _settings != null ? _settings.ClashWindupPixels : 12f;
+            if (windup <= 0f || pixels <= 0f || DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+            {
+                LaunchClashTravel(n, m, finalTotal, onDone);
+                return;
+            }
+
+            var clashN = ProjectToSibling(n.Anchor, _clashAnchor);
+            var clashM = ProjectToSibling(m.Anchor, _clashAnchor);
+            var awayN = n.Anchor.anchoredPosition + (n.Anchor.anchoredPosition - clashN).normalized * pixels;
+            var awayM = m.Anchor.anchoredPosition + (m.Anchor.anchoredPosition - clashM).normalized * pixels;
+            Tween.UIAnchoredPosition(n.Anchor, awayN, windup, Ease.OutQuad);
+            Tween.UIAnchoredPosition(m.Anchor, awayM, windup, Ease.OutQuad)
+                .OnComplete(this, d => d.LaunchClashTravel(n, m, finalTotal, onDone));
+        }
+
+        private void LaunchClashTravel(BreakdownCounterView n, BreakdownCounterView m,
+            int finalTotal, Action onDone)
+        {
             float travel = D(_settings != null ? _settings.ClashTravelSeconds : 0.22f);
-            var clashLocal = _clashAnchor;
 
             // N ↗ y M ↖ hacia el punto de choque, acelerando.
-            Tween.UIAnchoredPosition(n.Anchor, ProjectToSibling(n.Anchor, clashLocal), travel, Ease.InQuad);
-            Tween.UIAnchoredPosition(m.Anchor, ProjectToSibling(m.Anchor, clashLocal), travel, Ease.InQuad)
+            Tween.UIAnchoredPosition(n.Anchor, ProjectToSibling(n.Anchor, _clashAnchor), travel, Ease.InQuad);
+            Tween.UIAnchoredPosition(m.Anchor, ProjectToSibling(m.Anchor, _clashAnchor), travel, Ease.InQuad)
                 .OnComplete(this, d =>
                 {
                     if (d._breakdownView != null) d._breakdownView.Hide();
                     d.RestoreCounters();
+                    d._juice?.OnClashImpact(finalTotal, d._script?.FinalM ?? 1f);
                     d.ShowClashTotal(finalTotal);
                     float hold = d.D(d._settings != null ? d._settings.ClashHoldSeconds : 0.4f);
                     if (hold <= 0f) onDone();
@@ -298,6 +349,15 @@ namespace Rollgeon.UI.HUD.Breakdown
             // reducción del golpe real nunca es "mágica" — se explica acá.
             int delta = mitigatedTotal - LastShownTotal;
             string text = delta <= 0 ? delta.ToString("+0;-0") : "×!"; // debilidad sube: marca distinta
+            if (delta < 0)
+            {
+                _juice?.OnShieldClank(_clashLabel);
+                if (mitigatedTotal > 0) _juice?.OnMitigationShatter(_clashAnchor);
+            }
+            else
+            {
+                _juice?.OnWeaknessFlash(_clashLabel);
+            }
             var view = _pool != null ? _pool.Rent() : null;
             if (view == null)
             {
@@ -342,10 +402,22 @@ namespace Rollgeon.UI.HUD.Breakdown
             Tween.PunchScale(_clashLabel.transform, Vector3.one * 0.25f, D(0.18f), frequency: 2);
         }
 
-        private void ApplyStep(BreakdownStep step)
+        // Impacto de un aporte en su contador: punch proporcional al peso del aporte
+        // (Balatro: el score tiembla más cuanto más grande el golpe), jiggle extra si es M.
+        private void ApplyStep(BreakdownStep step, int dieIndex = -1)
         {
             var counter = TargetCounter(step);
-            counter?.AddAndPunch(step.Amount);
+            if (counter == null) return;
+
+            bool isM = step.Target == BreakdownTarget.MultM;
+            float final = isM ? (_script?.FinalM ?? 0f) : (_script?.FinalN ?? 0f);
+            float i01 = BreakdownFeelMath.PunchIntensity01(step.Amount, final);
+            float intensity = 1f + i01 * ((_settings != null ? _settings.PunchIntensityMax : 2f) - 1f);
+            float rot = (_settings != null ? _settings.PunchRotationMaxDegrees : 4f) * i01 * (isM ? 1.5f : 1f);
+
+            counter.AddAndPunch(step.Amount, intensity, rot);
+            _juice?.OnCounterImpact(counter, isM, dieIndex,
+                BreakdownFeelMath.Accumulate01(counter.Value, final));
         }
 
         private BreakdownCounterView TargetCounter(BreakdownStep step)
