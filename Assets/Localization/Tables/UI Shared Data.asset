@@ -435,6 +435,10 @@ MonoBehaviour:
     m_Key: roll.chain_paid_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 9649666772463616
+    m_Key: menu.game_speed
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
