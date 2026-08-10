@@ -517,6 +517,18 @@ MonoBehaviour:
     m_Localized: Base DMG
     m_Metadata:
       m_Items: []
+  - m_Id: 9389001792126976
+    m_Localized: Contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487104
+    m_Localized: Inventory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487105
+    m_Localized: Dice bag
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

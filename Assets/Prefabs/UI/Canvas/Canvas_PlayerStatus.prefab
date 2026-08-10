@@ -125,6 +125,8 @@ GameObject:
   - component: {fileID: 5496009092514818333}
   - component: {fileID: 8753289841295799887}
   - component: {fileID: 2627786915205679140}
+  - component: {fileID: 1743490385693429375}
+  - component: {fileID: 4903123569725169284}
   m_Layer: 0
   m_Name: DiceBagIcon
   m_TagString: Untagged
@@ -204,6 +206,38 @@ MonoBehaviour:
   _hoverScale: 1.12
   _duration: 0.12
   _button: {fileID: 0}
+--- !u!114 &1743490385693429375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580553764027043349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c1e97ac1c8cf4a4a882048ac29ab31e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.UITooltipTrigger
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
+  _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
+    del combo"
+--- !u!114 &4903123569725169284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580553764027043349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 764aad824a9ea824fb10dc47ac75cb11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.LocalizedTooltip
+  _key: icon.dicebag
+  _fallback: Bolsa de dados
 --- !u!1 &984159568906696452
 GameObject:
   m_ObjectHideFlags: 0
@@ -1462,6 +1496,8 @@ GameObject:
   - component: {fileID: 6403499917396692929}
   - component: {fileID: 1328052694833437769}
   - component: {fileID: 4870864110517388523}
+  - component: {fileID: 824648372084130929}
+  - component: {fileID: 9138304274419131127}
   m_Layer: 0
   m_Name: BackpackIcon
   m_TagString: Untagged
@@ -1541,6 +1577,38 @@ MonoBehaviour:
   _hoverScale: 1.12
   _duration: 0.12
   _button: {fileID: 0}
+--- !u!114 &824648372084130929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5561219390251452338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c1e97ac1c8cf4a4a882048ac29ab31e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.UITooltipTrigger
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
+  _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
+    del combo"
+--- !u!114 &9138304274419131127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5561219390251452338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 764aad824a9ea824fb10dc47ac75cb11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.LocalizedTooltip
+  _key: icon.backpack
+  _fallback: Inventario
 --- !u!1 &5879262579912851144
 GameObject:
   m_ObjectHideFlags: 0
@@ -2041,6 +2109,8 @@ GameObject:
   - component: {fileID: 7665273119558371727}
   - component: {fileID: 1891179477575640973}
   - component: {fileID: 7095640808784355966}
+  - component: {fileID: 811415828229055905}
+  - component: {fileID: 6187140758101736475}
   m_Layer: 0
   m_Name: ContractIcon
   m_TagString: Untagged
@@ -2176,6 +2246,38 @@ MonoBehaviour:
   _hoverScale: 1.12
   _duration: 0.12
   _button: {fileID: 0}
+--- !u!114 &811415828229055905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6740952916370108916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c1e97ac1c8cf4a4a882048ac29ab31e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.UITooltipTrigger
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
+  _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
+    del combo"
+--- !u!114 &6187140758101736475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6740952916370108916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 764aad824a9ea824fb10dc47ac75cb11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.LocalizedTooltip
+  _key: icon.contract
+  _fallback: Contrato
 --- !u!1 &6981989849688220072
 GameObject:
   m_ObjectHideFlags: 0

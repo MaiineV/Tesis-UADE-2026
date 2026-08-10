@@ -479,6 +479,18 @@ MonoBehaviour:
     m_Key: contract.header.damage
     m_Metadata:
       m_Items: []
+  - m_Id: 9389001792126976
+    m_Key: icon.contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487104
+    m_Key: icon.backpack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487105
+    m_Key: icon.dicebag
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -224,20 +224,20 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 144068138592371464
+      - rid: 144068139418386709
       TargetSelector:
         rid: -2
   ActiveIcon: {fileID: 1317923600, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
   InactiveIcon: {fileID: -1536292150, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
   AlwaysActive: 0
   ActiveConditions:
-  - rid: 144068138592371465
+  - rid: 144068139418386710
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068138592371464
+    - rid: 144068139418386709
       type: {class: EffLowHpAttackBuff, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -262,7 +262,7 @@ MonoBehaviour:
           AutoAccept: 1
         _hpThreshold: 30
         _attackBonus: 5
-    - rid: 144068138592371465
+    - rid: 144068139418386710
       type: {class: PCHasModifier, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1

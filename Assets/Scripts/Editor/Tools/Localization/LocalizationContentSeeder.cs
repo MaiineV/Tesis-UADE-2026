@@ -34,6 +34,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedBuildHelp();
             SeedStatusIcons();
             SeedContractDrawer();
+            SeedPlayerIcons();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -518,6 +519,21 @@ namespace Rollgeon.EditorTools.Localization
             // "1 turnos" — en inglés la diferencia es igual de visible.
             Ui(StatusTextKeys.Duration, "Dura {0} turnos", "Lasts {0} turns");
             Ui(StatusTextKeys.DurationLastTurn, "Último turno", "Last turn");
+        }
+
+        // ==================================================================
+        // Tooltips de los íconos del player
+        // ==================================================================
+
+        /// <remarks>
+        /// Solo el nombre. El ícono ya dice qué es de un vistazo; el tooltip está para
+        /// desambiguarlo, no para explicar lo que el panel que abre va a mostrar igual.
+        /// </remarks>
+        private static void SeedPlayerIcons()
+        {
+            Ui(PlayerIconTextKeys.Contract, "Contrato", "Contract");
+            Ui(PlayerIconTextKeys.Backpack, "Inventario", "Inventory");
+            Ui(PlayerIconTextKeys.DiceBag, "Bolsa de dados", "Dice bag");
         }
 
         // ==================================================================

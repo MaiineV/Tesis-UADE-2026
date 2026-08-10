@@ -208,9 +208,12 @@ namespace Rollgeon.EditorTools.HUD
                 cluster.anchoredPosition = ClusterPos;
                 cluster.sizeDelta = Vector2.zero;
 
-                EnsureNavIcon(cluster, "ContractIcon", ContractPos, contract, ContractScale);
-                EnsureNavIcon(cluster, "BackpackIcon", BackpackPos, backpack, SmallNavIconScale);
-                EnsureNavIcon(cluster, "DiceBagIcon", DiceBagPos, diceBag, SmallNavIconScale);
+                EnsureNavIcon(cluster, "ContractIcon", ContractPos, contract, ContractScale,
+                    PlayerIconTextKeys.Contract, "Contrato");
+                EnsureNavIcon(cluster, "BackpackIcon", BackpackPos, backpack, SmallNavIconScale,
+                    PlayerIconTextKeys.Backpack, "Inventario");
+                EnsureNavIcon(cluster, "DiceBagIcon", DiceBagPos, diceBag, SmallNavIconScale,
+                    PlayerIconTextKeys.DiceBag, "Bolsa de dados");
 
                 // Fila de estados: el layout group ordena los íconos que la vista instancia.
                 var row = EnsureChildRect(cluster, "StatusRow", StatusRowPos, StatusIconSize);
@@ -240,7 +243,8 @@ namespace Rollgeon.EditorTools.HUD
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
-        private static void EnsureNavIcon(RectTransform cluster, string name, Vector2 pos, Sprite sprite, float scale)
+        private static void EnsureNavIcon(RectTransform cluster, string name, Vector2 pos, Sprite sprite,
+            float scale, string tooltipKey, string tooltipFallback)
         {
             var rect = EnsureChildRect(cluster, name, pos, NavIconSize);
             rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
@@ -259,6 +263,15 @@ namespace Rollgeon.EditorTools.HUD
             // El componente captura la escala de reposo en Awake, así que agregarlo DESPUÉS
             // de fijar localScale importa: la mochila y la bolsa van a 0.8.
             Ensure<IconHoverScale>(rect.gameObject);
+
+            Ensure<UITooltipTrigger>(rect.gameObject);
+            var tooltip = Ensure<LocalizedTooltip>(rect.gameObject);
+            // Por SerializedObject y no por Configure(): el installer corre en edit mode y
+            // hay que dejar el prefab sucio para que el valor se persista.
+            var tooltipSo = new SerializedObject(tooltip);
+            tooltipSo.FindProperty("_key").stringValue = tooltipKey;
+            tooltipSo.FindProperty("_fallback").stringValue = tooltipFallback;
+            tooltipSo.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // ================================================================
