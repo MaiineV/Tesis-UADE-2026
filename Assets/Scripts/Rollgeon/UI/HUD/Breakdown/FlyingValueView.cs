@@ -23,6 +23,10 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         [SerializeField] private float _ghostFadeSeconds = 0.15f;
 
+        [SerializeField]
+        [Tooltip("Opcional — partículas de estela (emission over distance) tintadas con el vuelo.")]
+        private ParticleSystem _trailParticles;
+
         private FlyingValuePool _pool;
         private Tween _flight;
         private Tween _ghostFade;
@@ -64,6 +68,16 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (_spawnScale.isAlive) _spawnScale.Stop();
             if (startScale > 1.001f)
                 _spawnScale = Tween.Scale(transform, 1f, duration * 0.4f, Ease.OutQuad);
+
+            if (_trailParticles != null)
+            {
+                if (tint.HasValue)
+                {
+                    var main = _trailParticles.main;
+                    main.startColor = tint.Value;
+                }
+                _trailParticles.Play(true);
+            }
 
             if (_flight.isAlive) _flight.Stop();
             _flight = Tween.Custom(this, 0f, 1f, duration,
@@ -157,6 +171,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (_flight.isAlive) _flight.Stop();
             if (_ghostFade.isAlive) _ghostFade.Stop();
             if (_spawnScale.isAlive) _spawnScale.Stop();
+            if (_trailParticles != null)
+                _trailParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             IsFlying = false;
             gameObject.SetActive(false);
             _pool?.Release(this);
