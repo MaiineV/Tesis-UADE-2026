@@ -34,6 +34,10 @@ namespace Rollgeon.UI.HUD.Breakdown
         [Tooltip("Tick al cambiar el preview por toggle de hold (sugerido: sfx_dice_preview_tick).")]
         private AudioClip _previewTickClip;
 
+        [SerializeField, Optional]
+        [Tooltip("Nombre del combo activo, arriba del N×M — el jugador siempre sabe qué armó.")]
+        private TextMeshProUGUI _comboNameLabel;
+
         private float _nextTickAt;
         private float _wobbleAmplitude;
         private Tween _popIn;
@@ -132,6 +136,13 @@ namespace Rollgeon.UI.HUD.Breakdown
             _nextTickAt = Time.unscaledTime + 0.05f;
             if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
                 audio.PlaySfx2D(_previewTickClip, 0.5f);
+        }
+
+        /// <summary>Nombre del combo activo (vacío = sin texto). Persiste durante la secuencia.</summary>
+        public void SetComboName(string comboName)
+        {
+            if (_comboNameLabel == null) return;
+            _comboNameLabel.text = comboName ?? string.Empty;
         }
 
         public void Hide()

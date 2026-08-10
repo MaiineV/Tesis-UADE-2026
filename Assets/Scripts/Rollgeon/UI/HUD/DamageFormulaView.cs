@@ -257,6 +257,7 @@ namespace Rollgeon.UI.HUD
                 // solo como fallback sin _breakdownView cableado.
                 if (_breakdownView != null)
                 {
+                    _breakdownView.SetComboName(shieldComboName);
                     _breakdownView.ShowPreview(ResolvePlayerShieldBase(_lastComboId),
                         shieldEff?.ComboMultiplier ?? 1f);
                     ClearLabelKeepingBreakdown();
@@ -326,6 +327,7 @@ namespace Rollgeon.UI.HUD
             // confirm. El label viejo queda vacío mientras el breakdown esté a cargo.
             if (_breakdownView != null)
             {
+                _breakdownView.SetComboName(comboName);
                 _breakdownView.ShowPreview(_lastComboBaseDamage, dmgEff.ComboMultiplier);
                 ClearLabelKeepingBreakdown();
                 return;

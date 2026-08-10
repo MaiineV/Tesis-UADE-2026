@@ -27,5 +27,19 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (sourceAsset is Rollgeon.Upgrades.Dice.EnchantmentSO) return BreakdownProcFamily.Enchantment;
             return BreakdownProcFamily.Passive;
         }
+
+        /// <summary>Nombre legible (localizado si hay tabla) de la fuente del aporte.</summary>
+        public static string ResolveDisplayName(Object sourceAsset)
+        {
+            switch (sourceAsset)
+            {
+                case Rollgeon.Items.ItemSO item:
+                    return Rollgeon.Localization.LocalizedContent.Name(item.ItemId, item.DisplayName);
+                case Rollgeon.Upgrades.UpgradeSO upgrade:
+                    return Rollgeon.Localization.LocalizedContent.Name(upgrade.UpgradeId, upgrade.DisplayName);
+                default:
+                    return sourceAsset != null ? sourceAsset.name : string.Empty;
+            }
+        }
     }
 }

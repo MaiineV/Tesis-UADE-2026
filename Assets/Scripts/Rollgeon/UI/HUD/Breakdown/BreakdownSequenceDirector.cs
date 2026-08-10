@@ -564,10 +564,22 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 var step = script.Steps[i];
                 if (step.Kind != BreakdownStepKind.GlobalMod) continue;
-                entries.Add((BreakdownIconResolver.Resolve(step.SourceAsset), FormatAmount(step)));
+                entries.Add((BreakdownIconResolver.Resolve(step.SourceAsset), CascadeLabel(step)));
             }
             _cascade.SetEntries(entries, animated: true);
             _cascade.SetVisible(entries.Count > 0);
+        }
+
+        // "Nombre del objeto +X", con el monto en el color de su contador destino — se lee
+        // qué aporta cada fuente y a dónde va antes de que vuele.
+        private string CascadeLabel(BreakdownStep step)
+        {
+            string amount = FormatAmount(step);
+            var tint = FlightTint(step);
+            if (tint.HasValue)
+                amount = $"<color=#{ColorUtility.ToHtmlStringRGB(tint.Value)}>{amount}</color>";
+            string name = BreakdownIconResolver.ResolveDisplayName(step.SourceAsset);
+            return string.IsNullOrEmpty(name) ? amount : $"{name} {amount}";
         }
 
         private int? ComputeMitigatedTotal(DamageBreakdownComputedPayload payload, int finalTotal)
