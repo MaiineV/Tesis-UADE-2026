@@ -94,7 +94,9 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         private IEnumerator SpinRoutine(DiceSpinPlan plan, int finalFace, Action<int> onRevealed)
         {
-            if (plan.Delay > 0f) yield return new WaitForSeconds(plan.Delay);
+            // Stagger de arranque entre dados: pacing puro, sigue al game speed.
+            if (plan.Delay > 0f)
+                yield return new WaitForSeconds(plan.Delay / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
 
             IsSpinning = true;
             SpinStarted?.Invoke();

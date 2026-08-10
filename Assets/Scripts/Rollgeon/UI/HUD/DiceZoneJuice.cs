@@ -351,7 +351,8 @@ namespace Rollgeon.UI.HUD
                 if (contributing != null && !ContainsBagSlot(contributing, i)) continue;
                 slot.GetComponent<DiceSlotJuice>()?.PlayKeptPulse();
                 if (_comboPulseStagger > 0f)
-                    yield return new WaitForSeconds(_comboPulseStagger);
+                    yield return new WaitForSeconds(
+                        _comboPulseStagger / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
             }
         }
 
