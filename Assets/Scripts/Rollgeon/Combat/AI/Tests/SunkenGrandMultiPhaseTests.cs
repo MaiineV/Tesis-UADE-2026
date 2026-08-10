@@ -160,6 +160,33 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // -----------------------------------------------------------------
+        // Candado de dado: cada turno del boss, acotado a su pelea (no global, no gateado por HP)
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void Boss_LocksADie_EveryTurn_NotGatedByHp()
+        {
+            // Arrange
+            var seq = _root as AINode_Sequence;
+            Assert.IsNotNull(seq, "AIRoot debería ser un AINode_Sequence.");
+
+            // Act — el candado vive como HIJO DIRECTO del Sequence raíz (corre cada turno del
+            // boss). Va primero porque el Sequence corta en el primer hijo Running/Failed (un
+            // ataque telegrafiado), así que en última posición se saltearía en turnos de ataque.
+            var directRotate = seq.Children.OfType<AINode_RotateBlock>().FirstOrDefault();
+
+            // Assert
+            Assert.IsNotNull(directRotate,
+                "El boss no tiene un AINode_RotateBlock como hijo directo del Sequence raíz. " +
+                "El candado debe correr cada turno del boss, no venir del pasivo global.");
+            Assert.AreEqual(AINode_RotateBlock.BlockTarget.Dice, directRotate.Target,
+                "El candado del boss de piso 1 bloquea DADOS (Target=Dice), no combos.");
+            Assert.IsNull(FindGatingIf<AINode_RotateBlock>(_root),
+                "El RotateBlock quedó bajo el Then de un AINode_If — eso lo gatea por HP y " +
+                "rompe el 'cada turno'. Debe ser hijo directo del Sequence raíz.");
+        }
+
+        // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 

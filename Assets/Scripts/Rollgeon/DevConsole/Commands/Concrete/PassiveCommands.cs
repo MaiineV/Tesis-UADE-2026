@@ -5,21 +5,22 @@ using Rollgeon.DevConsole.Core;
 namespace Rollgeon.DevConsole.Commands
 {
     /// <summary>
-    /// Flipea el pasivo anti-repetición (A/B global del jugador) entre <c>combo</c> y
-    /// <c>dice</c> en runtime. Modelado en <see cref="DiceModeCommand"/>. Cambia el modo vivo
-    /// vía <see cref="IAntiRepeatModeService"/> — no persiste ni toca el <c>AntiRepeatConfigSO</c>.
+    /// Flipea el pasivo anti-repetición (A/B global del jugador) entre <c>combo</c>,
+    /// <c>dice</c> y <c>none</c> en runtime. Modelado en <see cref="DiceModeCommand"/>. Cambia el
+    /// modo vivo vía <see cref="IAntiRepeatModeService"/> — no persiste ni toca el <c>AntiRepeatConfigSO</c>.
     /// </summary>
     public sealed class PassiveCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args =
         {
-            new ArgSpec("dice|combo", ArgKind.Choice, optional: true),
+            new ArgSpec("dice|combo|none", ArgKind.Choice, optional: true),
         };
 
         public override string Name => "passive";
         public override string Description =>
             "Pasivo anti-repetición (A/B): combo = repetir el último combo hace 0 daño; " +
-            "dice = bloquea un dado al azar cada turno. Sin args muestra el actual.";
+            "dice = bloquea un dado al azar cada turno; none = apagado (solo el boss presiona). " +
+            "Sin args muestra el actual.";
         public override IReadOnlyList<ArgSpec> Args => _args;
 
         public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
@@ -34,14 +35,21 @@ namespace Rollgeon.DevConsole.Commands
             {
                 case "combo": mode = AntiRepeatMode.Combo; break;
                 case "dice": mode = AntiRepeatMode.Dice; break;
+                case "none":
+                case "off": mode = AntiRepeatMode.None; break;
                 default:
-                    return CommandResult.Fail("Modo inválido. Usá combo|dice.");
+                    return CommandResult.Fail("Modo inválido. Usá combo|dice|none.");
             }
 
             svc.SetMode(mode);
             return CommandResult.Ok($"Pasivo anti-repetición: {Label(mode)}.");
         }
 
-        private static string Label(AntiRepeatMode mode) => mode == AntiRepeatMode.Dice ? "dice" : "combo";
+        private static string Label(AntiRepeatMode mode) => mode switch
+        {
+            AntiRepeatMode.Dice => "dice",
+            AntiRepeatMode.None => "none",
+            _ => "combo",
+        };
     }
 }
