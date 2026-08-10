@@ -489,6 +489,34 @@ MonoBehaviour:
     m_Localized: Once your bag is full, Confirm unlocks and starts the run.
     m_Metadata:
       m_Items: []
+  - m_Id: 9367833236307968
+    m_Localized: Active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Localized: Inactive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Localized: Lasts {0} turns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Localized: Last turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Localized: Example
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Localized: Base DMG
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

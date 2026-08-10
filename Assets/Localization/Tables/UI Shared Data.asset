@@ -451,6 +451,34 @@ MonoBehaviour:
     m_Key: build.help.confirm
     m_Metadata:
       m_Items: []
+  - m_Id: 9367833236307968
+    m_Key: status.active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Key: status.inactive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Key: status.duration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Key: status.duration.last
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Key: contract.header.example
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Key: contract.header.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Key: contract.header.damage
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

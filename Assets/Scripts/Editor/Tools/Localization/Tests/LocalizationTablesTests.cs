@@ -41,6 +41,9 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // que es idéntico en los dos idiomas por ser icono + número.
             UiTextKeys.RerollPaid,
             UiTextKeys.ChainRollPaid,
+            // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
+            // usa sin traducir en el resto del HUD.
+            Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,
         };
 
         private static readonly string[] Collections = { "Content", "UI" };

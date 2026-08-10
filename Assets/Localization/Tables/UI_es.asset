@@ -494,6 +494,34 @@ MonoBehaviour:
     m_Localized: Cuando completes la bolsa, Confirmar se habilita y arranca la run.
     m_Metadata:
       m_Items: []
+  - m_Id: 9367833236307968
+    m_Localized: Activada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Localized: Desactivada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Localized: Dura {0} turnos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Localized: "\xDAltimo turno"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Localized: Ejemplo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Localized: "Da\xF1o base"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

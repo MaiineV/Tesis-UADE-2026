@@ -84,12 +84,54 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 7|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -101,7 +143,7 @@ MonoBehaviour:
       Data: 
     - Name: _hpThreshold
       Entry: 3
-      Data: 3
+      Data: 30
     - Name: _attackBonus
       Entry: 3
       Data: 5
@@ -129,6 +171,49 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: ActiveConditions
+      Entry: 7
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 9|Rollgeon.PreConditions.Concretes.PCHasModifier, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: AttributeType
+      Entry: 7
+      Data: 10|System.RuntimeType, mscorlib
+    - Name: 
+      Entry: 1
+      Data: Rollgeon.Attributes.Stats.Attack, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: SourceIdString
+      Entry: 1
+      Data: 8f2b1a3c-7d4e-4f5a-9c6b-1e2d3f4a5b6c
+    - Name: FilterByDirection
+      Entry: 5
+      Data: false
+    - Name: Direction
+      Entry: 3
+      Data: 2
+    - Name: MinCount
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   PassiveId: passive.warrior.low_hp_rage
   DisplayName: Furia del Guerrero
   Description: Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos.
@@ -139,15 +224,20 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 8131243969780646858
+      - rid: 144068138592371464
       TargetSelector:
         rid: -2
+  ActiveIcon: {fileID: 1317923600, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
+  InactiveIcon: {fileID: -1536292150, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
+  AlwaysActive: 0
+  ActiveConditions:
+  - rid: 144068138592371465
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131243969780646858
+    - rid: 144068138592371464
       type: {class: EffLowHpAttackBuff, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -157,9 +247,26 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
           IsConstantSelectionCount: 1
           SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        _hpThreshold: 3
+        _hpThreshold: 30
         _attackBonus: 5
+    - rid: 144068138592371465
+      type: {class: PCHasModifier, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+        SourceIdString: 8f2b1a3c-7d4e-4f5a-9c6b-1e2d3f4a5b6c
+        FilterByDirection: 0
+        Direction: 2
+        MinCount: 1

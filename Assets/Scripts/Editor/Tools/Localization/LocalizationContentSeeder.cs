@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEngine;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
+using Rollgeon.UI.HUD.Contract;
+using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Help;
 
 namespace Rollgeon.EditorTools.Localization
@@ -30,6 +32,8 @@ namespace Rollgeon.EditorTools.Localization
             SeedMiscContent();
             SeedRollCost();
             SeedBuildHelp();
+            SeedStatusIcons();
+            SeedContractDrawer();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -494,6 +498,39 @@ namespace Rollgeon.EditorTools.Localization
             Ui(BuildHelpTextKeys.Confirm,
                 "Cuando completes la bolsa, Confirmar se habilita y arranca la run.",
                 "Once your bag is full, Confirm unlocks and starts the run.");
+        }
+
+        // ==================================================================
+        // Estados del player (pie del tooltip de la fila de estados)
+        // ==================================================================
+
+        /// <remarks>
+        /// Solo el PIE del tooltip. El nombre y la descripción de cada estado salen de sus
+        /// propias keys (<c>name.*</c> / <c>desc.*</c>), porque son del estado y no del
+        /// sistema que los muestra.
+        /// </remarks>
+        private static void SeedStatusIcons()
+        {
+            Ui(StatusTextKeys.Active, "Activada", "Active");
+            Ui(StatusTextKeys.Inactive, "Desactivada", "Inactive");
+
+            // {0} = turnos restantes. El caso de 1 va por su propia key para no decir
+            // "1 turnos" — en inglés la diferencia es igual de visible.
+            Ui(StatusTextKeys.Duration, "Dura {0} turnos", "Lasts {0} turns");
+            Ui(StatusTextKeys.DurationLastTurn, "Último turno", "Last turn");
+        }
+
+        // ==================================================================
+        // Drawer de contrato
+        // ==================================================================
+
+        private static void SeedContractDrawer()
+        {
+            // Encabezados de la tabla. El de daño se parte en dos líneas: la columna mide
+            // 66 px y ninguna de las dos versiones entra de una.
+            Ui(ContractTextKeys.HeaderExample, "Ejemplo", "Example");
+            Ui(ContractTextKeys.HeaderName, "Combo", "Combo");
+            Ui(ContractTextKeys.HeaderDamage, "Daño base", "Base DMG");
         }
 
         // ==================================================================
