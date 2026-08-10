@@ -234,7 +234,10 @@ namespace Rollgeon.Combat.FSM
                 roomInstanceId,
                 enemyActionHandler,
                 enemyActionDelaySeconds: enemyActionDelay,
-                deltaTimeProvider: () => Time.deltaTime);
+                // Solo lo consume el countdown del grace period de EnemyTurnState:
+                // multiplicar acá hace que el pacing enemigo siga al game speed en
+                // vivo (incluso si se cambia desde la pausa a mitad de combate).
+                deltaTimeProvider: () => Time.deltaTime * Rollgeon.Timing.GameSpeedPrefs.Multiplier);
 
             _fsm = new CombatTurnFSM(_context);
             _fsm.OnFinished += HandleFsmFinished;
