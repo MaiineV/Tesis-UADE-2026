@@ -75,36 +75,87 @@ namespace Rollgeon.Combat.AI.Tests
                 "El gate de refuerzos quedó envuelto en AINode_Once — rompe el respawn loop.");
         }
 
+        /// <summary>
+        /// El caso que ya rompió una vez: en Play mode el árbol corre por <c>TickCoroutine</c> y
+        /// <see cref="AINode_Sequence"/> aborta el turno con <see cref="AIResult.Failed"/>.
+        /// <see cref="AINode_SpawnReinforcements"/> falla cuando no hay tiles de borde libres y
+        /// <see cref="AINode_ActivateHazard"/> si su servicio no está registrado — sin aislar, ese
+        /// fallo le cancela al boss el ataque y el candado, que van después en la secuencia.
+        /// </summary>
         [Test]
-        public void Boss_TicksHazardPhases_BeforeTheAttack_SoTheyAreNotSkipped()
+        public void Boss_PhaseGateFailure_CannotAbortTheTurn()
         {
-            // Arrange — el Sequence corta en el primer hijo que devuelve Running/Failed, y el
-            // ataque telegrafiado devuelve Running. Las fases deben ir ANTES para tickear siempre.
+            // Arrange — los nodos de fase cuyo fallo hay que absorber.
+            var riskyGates = _root.Children
+                .Select(Unwrap)
+                .Where(g => g != null && Descendants(g.Then).Any(n =>
+                    n is AINode_ActivateHazard || n is AINode_SpawnReinforcements))
+                .ToList();
+
+            Assert.IsNotEmpty(riskyGates, "No se encontraron los gates de lluvia/refuerzos.");
+
+            // Act + Assert — cada uno va dentro de un Selector con fallback que siempre sucede,
+            // así el Selector devuelve Succeeded y la secuencia del turno continúa.
+            foreach (var gate in riskyGates)
+            {
+                var wrapper = _root.Children.OfType<AINode_Selector>()
+                    .FirstOrDefault(s => s.Children != null && s.Children.Contains(gate));
+
+                Assert.IsNotNull(wrapper,
+                    "Un gate de lluvia/refuerzos está suelto en la secuencia raíz: si su acción " +
+                    "devuelve Failed, el boss pierde el ataque y el candado de ese turno. " +
+                    "Envolverlo en Selector[gate, Wait] (el idiom que ya usa el resto del árbol).");
+                Assert.IsTrue(wrapper.Children.Any(c => c is AINode_Wait),
+                    "El Selector que envuelve al gate no tiene un AINode_Wait de fallback — " +
+                    "sin él el Selector devuelve Failed y aborta el turno igual.");
+            }
+        }
+
+        [Test]
+        public void Boss_TicksHazardPhases_BeforeTheAttack()
+        {
+            // Arrange — en el path NO-coroutine (AINode_Sequence.Tick, el que corren los tests y
+            // cualquier simulación fuera de Play mode) un Running sí aborta la secuencia, y el
+            // ataque telegrafiado devuelve Running. Ubicar las fases antes del ataque las hace
+            // tickear en ambos paths.
             int attackIdx = _root.Children.FindIndex(c =>
-                c is AINode_Selector s && s.Children != null
-                && Descendants(s).Any(n => n is AINode_Behavior || n is AINode_TelegraphMark));
-            int rainIdx = _root.Children.IndexOf(FindGateAtPercent(0.85f));
-            int reinfIdx = _root.Children.IndexOf(FindGateAtPercent(0.65f));
+                Descendants(c).Any(n => n is AINode_Behavior || n is AINode_TelegraphMark));
+            int rainIdx = IndexOfGateAtPercent(0.85f);
+            int reinfIdx = IndexOfGateAtPercent(0.65f);
 
             // Assert
-            Assert.Greater(attackIdx, -1, "No se encontró el selector de ataque del boss.");
-            Assert.Greater(attackIdx, rainIdx,
-                "El gate de lluvia quedó después del ataque — se saltearía en turnos de ataque.");
-            Assert.Greater(attackIdx, reinfIdx,
-                "El gate de refuerzos quedó después del ataque — se saltearía en turnos de ataque.");
+            Assert.Greater(attackIdx, -1, "No se encontró el nodo de ataque del boss.");
+            Assert.Greater(attackIdx, rainIdx, "El gate de lluvia quedó después del ataque.");
+            Assert.Greater(attackIdx, reinfIdx, "El gate de refuerzos quedó después del ataque.");
         }
 
         // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
-        /// <summary>Hijo directo del Sequence raíz gateado por <see cref="PcOwnerHpBelow"/> a
-        /// <paramref name="percent"/>. Identifica una fase por su umbral, sin depender del orden.</summary>
+        /// <summary>Devuelve el <see cref="AINode_If"/> de un hijo del Sequence raíz, ya venga
+        /// suelto o envuelto en el <see cref="AINode_Selector"/> de aislamiento de fallos.</summary>
+        private static AINode_If Unwrap(AIDecisionNode child)
+        {
+            if (child is AINode_If direct) return direct;
+            if (child is AINode_Selector sel && sel.Children != null)
+                return sel.Children.OfType<AINode_If>().FirstOrDefault();
+            return null;
+        }
+
+        /// <summary>Gate de fase por su umbral de HP, sin depender del orden ni del envoltorio.</summary>
         private AINode_If FindGateAtPercent(float percent)
         {
-            return _root.Children.OfType<AINode_If>().FirstOrDefault(i =>
-                i.Conditions != null && i.Conditions.OfType<PcOwnerHpBelow>()
+            return _root.Children.Select(Unwrap).FirstOrDefault(g =>
+                g?.Conditions != null && g.Conditions.OfType<PcOwnerHpBelow>()
                     .Any(p => Mathf.Abs(p.Percent - percent) < PercentTolerance));
+        }
+
+        private int IndexOfGateAtPercent(float percent)
+        {
+            var gate = FindGateAtPercent(percent);
+            if (gate == null) return -1;
+            return _root.Children.FindIndex(c => ReferenceEquals(Unwrap(c), gate));
         }
 
         /// <summary>Tree-walker por reflexión: todo lo alcanzable desde <paramref name="root"/>,
