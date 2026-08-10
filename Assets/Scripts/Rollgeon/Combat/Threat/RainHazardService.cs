@@ -1,27 +1,24 @@
 using System;
 using Patterns;
-using Rollgeon.Combat.AI;
-using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
-using Rollgeon.Grid;
 using Rollgeon.Patterns.Bootstrap;
-using Rollgeon.Player;
+using UnityEngine;
 
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Amenaza ambiental "lluvia de zonas" — independiente del boss (fuente propia, nunca su
-    /// GUID), inactiva hasta que algo la <see cref="Activate"/> (normalmente el árbol del boss,
-    /// vía un nodo envuelto en <c>If(PcOwnerHpBelow) → Once(...)</c>, mismo patrón que el
-    /// trigger de refuerzos). Una vez activa, corre en paralelo a lo que esté haciendo el boss:
-    /// cada <see cref="CycleRounds"/> rondas detona lo marcado el ciclo anterior y marca de
-    /// nuevo (posiciones al azar, sin perseguir — por diseño, ver plan).
+    /// Back-compat shim over <see cref="HazardService"/>. This used to be a standalone
+    /// "rain of zones" hazard with its own <c>OnTurnQueueBuilt</c> loop and hardcoded constants;
+    /// that loop is now generic (<see cref="HazardService"/>) and rain is just one
+    /// <see cref="HazardDefinitionSO"/> among many. The type, its public API, and
+    /// <see cref="RainSourceId"/> are kept unchanged on purpose: <c>ED_Boss_Sunken_Grand.asset</c>
+    /// references <see cref="AI.Decisions.AINode_ActivateRainHazard"/> by full type name (Odin
+    /// polymorphic serialization), and <c>RainHazardServiceBootstrap.asset</c> references this
+    /// class by script GUID — renaming or removing either would desync those assets outside of
+    /// Unity, where we can't re-author them. Rain's behavior is unchanged: same constants, same
+    /// cadence, same source id, just routed through the generic service instead of owning its own
+    /// event loop.
     /// </summary>
-    /// <remarks>
-    /// Mismo patrón POCO + <see cref="IPreloadableService"/> que <c>ThreatenedAreaService</c>.
-    /// Reusa <see cref="AINode_ExecuteTelegraph"/>/<see cref="AINode_TelegraphMark"/> tal cual
-    /// vía una <see cref="AIContext"/> armada a mano — cero lógica de telegraph duplicada.
-    /// </remarks>
     public sealed class RainHazardService : IPreloadableService, IDisposable
     {
         /// <summary>GUID fijo de esta fuente — nunca el del boss, así ambas amenazas conviven
@@ -33,19 +30,14 @@ namespace Rollgeon.Combat.Threat
         private const int SquareSize = 1;
         private const int Damage = 6;
 
-        private readonly System.Random _rng = new System.Random();
-
-        private bool _isActive;
-
-        private EventManager.EventReceiver _onTurnQueueBuiltHandler;
-        private EventManager.EventReceiver _onCombatEndHandler;
-        private EventManager.EventReceiver _onRunEndHandler;
+        private HazardDefinitionSO _definition;
 
         /// <summary>Junto al resto de servicios de combate (ver <c>ThreatenedAreaService.Priority</c> = 80).</summary>
         public int Priority => 80;
 
         /// <summary>True una vez que algo la activó — sigue activa el resto de la pelea aunque el HP suba.</summary>
-        public bool IsActive => _isActive;
+        public bool IsActive =>
+            ServiceLocator.TryGetService<IHazardService>(out var hazard) && hazard != null && hazard.IsActive(RainSourceId);
 
         // ======================================================================
         // IPreloadableService
@@ -53,35 +45,25 @@ namespace Rollgeon.Combat.Threat
 
         public void Register()
         {
-            _onTurnQueueBuiltHandler = OnTurnQueueBuiltExternal;
-            _onCombatEndHandler = OnScopeEndedExternal;
-            _onRunEndHandler = OnScopeEndedExternal;
+            // El bootstrap histórico (RainHazardServiceBootstrap.asset) solo conoce este tipo — si
+            // nadie más registró el HazardService genérico todavía, lo hacemos nosotros acá.
+            // Idempotente: ServiceLocator.AddService hace upsert y HazardService.Register no tiene
+            // estado que duplicar por una segunda invocación externa.
+            if (!ServiceLocator.TryGetService<IHazardService>(out var hazard) || hazard == null)
+            {
+                var service = new HazardService();
+                service.Register();
+            }
 
-            EventManager.Subscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuiltHandler);
-            EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
-            EventManager.Subscribe(EventName.OnRunEnd, _onRunEndHandler);
+            _definition = BuildDefinition();
 
             ServiceLocator.AddService<RainHazardService>(this, ServiceScope.Global);
         }
 
         public void Dispose()
         {
-            if (_onTurnQueueBuiltHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuiltHandler);
-                _onTurnQueueBuiltHandler = null;
-            }
-            if (_onCombatEndHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnCombatEnd, _onCombatEndHandler);
-                _onCombatEndHandler = null;
-            }
-            if (_onRunEndHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnRunEnd, _onRunEndHandler);
-                _onRunEndHandler = null;
-            }
-            Reset();
+            // El HazardService genérico es dueño de la suscripción a eventos y del cleanup de
+            // OnCombatEnd/OnRunEnd — este shim no tiene estado propio que liberar.
         }
 
         // ======================================================================
@@ -89,51 +71,32 @@ namespace Rollgeon.Combat.Threat
         // ======================================================================
 
         /// <summary>Activa la lluvia (idempotente — llamar de nuevo mientras ya está activa no hace nada).</summary>
-        public void Activate() => _isActive = true;
+        public void Activate()
+        {
+            if (ServiceLocator.TryGetService<IHazardService>(out var hazard) && hazard != null)
+                hazard.Activate(_definition);
+        }
 
         // ======================================================================
         // Internals
         // ======================================================================
 
-        private void Reset()
+        // Instancia en memoria (no el .asset RainHazardDefinition.asset) — el shim no depende de
+        // que ese asset de ejemplo exista ni esté bien wireado; reproduce sus mismos valores en
+        // código para que el comportamiento sea idéntico al de antes del refactor.
+        private static HazardDefinitionSO BuildDefinition()
         {
-            _isActive = false;
-            if (ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) && threat != null)
-                threat.Clear(RainSourceId);
-            if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
-                overlay.Clear(RainSourceId);
-        }
-
-        private void OnScopeEndedExternal(params object[] args) => Reset();
-
-        private void OnTurnQueueBuiltExternal(params object[] args)
-        {
-            if (!_isActive) return;
-            if (args == null || args.Length < 2 || !(args[1] is int roundIndex)) return;
-            if (roundIndex <= 0 || roundIndex % CycleRounds != 0) return;
-
-            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
-            if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null) return;
-            if (!ServiceLocator.TryGetService<IDamagePipeline>(out var damagePipeline) || damagePipeline == null) return;
-
-            var ctx = new AIContext
-            {
-                SelfGuid = RainSourceId,
-                PlayerGuid = playerService.PlayerGuid,
-                Grid = grid,
-                DamagePipeline = damagePipeline,
-                Rng = _rng,
-            };
-
-            new AINode_ExecuteTelegraph().Tick(ctx);
-            new AINode_TelegraphMark
-            {
-                Shape = ThreatShape.ScatteredSquares,
-                Size = SquareSize,
-                Count = SquareCount,
-                Damage = Damage,
-                Kind = AttackKind.Environmental,
-            }.Tick(ctx);
+            var def = ScriptableObject.CreateInstance<HazardDefinitionSO>();
+            def.hideFlags = HideFlags.HideAndDontSave;
+            def.name = "RainHazardDefinition (runtime)";
+            def.Shape = ThreatShape.ScatteredSquares;
+            def.Size = SquareSize;
+            def.Count = SquareCount;
+            def.Damage = Damage;
+            def.Kind = AttackKind.Environmental;
+            def.CycleRounds = CycleRounds;
+            def.SourceId = RainSourceId.ToString();
+            return def;
         }
     }
 }
