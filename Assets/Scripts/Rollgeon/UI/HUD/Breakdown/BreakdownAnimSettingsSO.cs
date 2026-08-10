@@ -98,14 +98,17 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0f), Tooltip("Subida de pitch por dado consecutivo (~0.06 = 1 semitono).")]
         public float DiePitchStep = 0.06f;
 
-        [MinValue(0f), Tooltip("Aceleración por dado: cada uno recorta este % del tiempo.")]
-        public float DieSpeedRampPerStep = 0.12f;
-
-        [Range(0.1f, 1f), Tooltip("Piso del ramp (fracción mínima del tiempo original).")]
-        public float DieSpeedFloor = 0.5f;
-
         [Range(0f, 1f), Tooltip("Dim del dado ya 'gastado' (multiplica su color hasta el fin).")]
         public float SpentDieDim = 0.7f;
+
+        [Title("Ramp de pasos")]
+        [MinValue(0f), Tooltip("Aceleración por paso resuelto: cada step recorta este % del " +
+                               "tiempo de los siguientes (Balatro). Aplica a base/dados/procs/" +
+                               "globales — el clash y la mitigación quedan a ritmo pleno.")]
+        public float StepSpeedRampPerStep = 0.07f;
+
+        [Range(0.1f, 1f), Tooltip("Piso del ramp por paso (fracción mínima del tiempo original).")]
+        public float StepSpeedFloor = 0.45f;
 
         [Title("Punches / anticipación")]
         [MinValue(1f), Tooltip("Multiplicador del punch del contador a aporte máximo.")]

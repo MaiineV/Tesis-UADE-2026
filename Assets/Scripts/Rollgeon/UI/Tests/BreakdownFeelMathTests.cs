@@ -30,6 +30,19 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(1f, BreakdownFeelMath.SpeedRampFactor(7, 0f, 0.5f));
         }
 
+        /// <summary>
+        /// Contrato de los defaults del step ramp (StepSpeedRampPerStep .07,
+        /// StepSpeedFloor .45): primer step pleno, aceleración lineal, piso a ~8.
+        /// </summary>
+        [Test]
+        public void SpeedRampFactor_DefaultsDelStepRamp_AceleranHastaElPiso()
+        {
+            Assert.AreEqual(1f, BreakdownFeelMath.SpeedRampFactor(0, 0.07f, 0.45f));
+            Assert.AreEqual(0.65f, BreakdownFeelMath.SpeedRampFactor(5, 0.07f, 0.45f), 1e-5f);
+            Assert.AreEqual(0.45f, BreakdownFeelMath.SpeedRampFactor(8, 0.07f, 0.45f), 1e-5f);
+            Assert.AreEqual(0.45f, BreakdownFeelMath.SpeedRampFactor(20, 0.07f, 0.45f));
+        }
+
         [Test]
         public void PitchForIndex_SubeYClampea()
         {

@@ -49,6 +49,7 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private readonly BreakdownSequencePlayer _player = new BreakdownSequencePlayer();
         private int _dieIndex;
+        private int _stepIndex;
         private Guid _playerGuid;
         private bool _bound;
         private Action<DamageBreakdownComputedPayload> _onBreakdown;
@@ -107,6 +108,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             _gateHeld = true;
 
             _dieIndex = 0;
+            _stepIndex = 0;
             _juice?.OnSequenceStart(_script.FinalN, _script.FinalM, _script.FinalTotal);
             CacheCounterHomes();
             PopulateCascade(_script);
@@ -184,43 +186,40 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void PlayPlayerBase(BreakdownStep step, Action onDone)
         {
+            float ramp = ConsumeStepRamp();
             if (_playerBase == null || _breakdownView?.CounterN == null) { onDone(); return; }
 
             // Anticipación: la espada carga (squash de la view) y recién ahí suelta.
             _juice?.OnSwordWindup(_playerBase);
             _playerBase.Punch();
-            float windup = D(_settings != null ? _settings.SwordWindupSeconds : 0.1f);
-            if (windup <= 0f) LaunchPlayerBase(step, onDone);
-            else Tween.Delay(this, windup, d => d.LaunchPlayerBase(step, onDone));
+            float windup = D((_settings != null ? _settings.SwordWindupSeconds : 0.1f) * ramp);
+            if (windup <= 0f) LaunchPlayerBase(step, ramp, onDone);
+            else Tween.Delay(this, windup, d => d.LaunchPlayerBase(step, ramp, onDone));
         }
 
-        private void LaunchPlayerBase(BreakdownStep step, Action onDone)
+        private void LaunchPlayerBase(BreakdownStep step, float ramp, Action onDone)
         {
             _juice?.OnFlightDeparted(_playerBase.Anchor, towardM: false, dieIndex: -1);
             Fly(_playerBase.Anchor, _breakdownView.CounterN.Anchor,
-                FormatAmount(step), null, FlightSeconds(), Arc(), () =>
+                FormatAmount(step), null,
+                D((_settings != null ? _settings.FlightSeconds : 0.32f) * ramp), Arc(), () =>
                 {
                     ApplyStep(step);
-                    Gap(onDone);
+                    Gap(onDone, ramp);
                 }, FlightTint(step));
         }
 
         public void PlayDie(BreakdownStep step, Action onDone)
         {
+            float ramp = ConsumeStepRamp();
             var slot = _diceZone != null ? _diceZone.GetSlotView(step.BagSlot) : null;
             var from = ResolveDieAnchor(slot);
             if (from == null || _breakdownView?.CounterN == null) { ApplyStep(step); onDone(); return; }
 
-            int idx = _dieIndex++; // local: los closures de abajo usan ESTE índice
-
-            // Ramp: el primer dado a tiempo completo, cada siguiente más rápido — las
-            // cadenas largas aceleran solas. Multiplica ANTES de D() ⇒ compone con skip.
-            float ramp = BreakdownFeelMath.SpeedRampFactor(idx,
-                _settings != null ? _settings.DieSpeedRampPerStep : 0.12f,
-                _settings != null ? _settings.DieSpeedFloor : 0.5f);
+            int idx = _dieIndex++; // local: los closures de abajo usan ESTE índice (pitch/juice)
 
             if (slot != null)
-                Tween.PunchScale(slot.transform, Vector3.one * 0.12f, D(0.12f), frequency: 1);
+                Tween.PunchScale(slot.transform, Vector3.one * 0.12f, D(0.12f * ramp), frequency: 1);
             slot?.SetContribution(null); // el label se "despega": desde acá vuela el valor
             if (slot != null) _juice?.OnDieLaunch(slot, idx);
             _juice?.OnFlightDeparted(from, towardM: false, dieIndex: idx);
@@ -236,6 +235,7 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void PlayDieProc(BreakdownStep step, Action onDone)
         {
+            float ramp = ConsumeStepRamp();
             var slot = _diceZone != null ? _diceZone.GetSlotView(step.BagSlot) : null;
             var from = ResolveDieAnchor(slot);
             var target = TargetCounter(step);
@@ -244,28 +244,29 @@ namespace Rollgeon.UI.HUD.Breakdown
             // Popup con presencia: el glow/sonido telegrafiá el proc y recién ahí vuela.
             _juice?.OnProcPopup(from, BreakdownIconResolver.Resolve(step.SourceAsset),
                 step.SourceAsset, step.Target == BreakdownTarget.MultM);
-            float popup = D(_settings != null ? _settings.ProcPopupSeconds : 0.12f);
-            if (popup <= 0f) LaunchProc(step, from, target, onDone);
-            else Tween.Delay(this, popup, d => d.LaunchProc(step, from, target, onDone));
+            float popup = D((_settings != null ? _settings.ProcPopupSeconds : 0.12f) * ramp);
+            if (popup <= 0f) LaunchProc(step, from, target, ramp, onDone);
+            else Tween.Delay(this, popup, d => d.LaunchProc(step, from, target, ramp, onDone));
         }
 
         private void LaunchProc(BreakdownStep step, RectTransform from,
-            BreakdownCounterView target, Action onDone)
+            BreakdownCounterView target, float ramp, Action onDone)
         {
             _juice?.OnFlightDeparted(from, step.Target == BreakdownTarget.MultM, dieIndex: -1);
             Fly(from, target.Anchor, FormatAmount(step),
                 BreakdownIconResolver.Resolve(step.SourceAsset),
-                D(_settings != null ? _settings.ProcFlightSeconds : 0.38f),
+                D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
                 _settings != null ? _settings.ProcFlightArc : 110f,
                 () =>
                 {
                     ApplyStep(step);
-                    Gap(onDone);
+                    Gap(onDone, ramp);
                 }, FlightTint(step));
         }
 
         public void PlayGlobalMod(BreakdownStep step, Action onDone)
         {
+            float ramp = ConsumeStepRamp();
             var target = TargetCounter(step);
             if (_cascade == null || _cascade.Count == 0 || target == null)
             {
@@ -278,7 +279,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             var bottom = _cascade.Bottom;
             if (bottom != null)
             {
-                Tween.PunchScale(bottom.transform, Vector3.one * 0.1f, D(0.1f), frequency: 1);
+                Tween.PunchScale(bottom.transform, Vector3.one * 0.1f, D(0.1f * ramp), frequency: 1);
                 _juice?.OnCascadeTelegraph(bottom);
             }
             _juice?.OnFlightDeparted(bottom != null ? bottom.Rect : null,
@@ -286,14 +287,14 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             Fly(bottom != null ? bottom.Rect : _cascade.Bottom?.Rect, target.Anchor,
                 FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
-                D(_settings != null ? _settings.ProcFlightSeconds : 0.38f),
+                D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
                 -(_settings != null ? _settings.ProcFlightArc : 110f),
                 () =>
                 {
                     ApplyStep(step);
                     _juice?.OnCascadeFall();
                     // OutBounce: la caída asienta con rebote suave (si molesta, OutQuad acá).
-                    _cascade.RemoveBottom(D(_settings != null ? _settings.CascadeFallSeconds : 0.15f),
+                    _cascade.RemoveBottom(D((_settings != null ? _settings.CascadeFallSeconds : 0.15f) * ramp),
                         onDone, Ease.OutBounce);
                 }, FlightTint(step));
         }
@@ -519,7 +520,19 @@ namespace Rollgeon.UI.HUD.Breakdown
                 ? seconds
                 : seconds / (_settings != null ? _settings.SkipSpeedMultiplier : 3f);
 
-        private float FlightSeconds() => D(_settings != null ? _settings.FlightSeconds : 0.32f);
+        // Factor de tiempo del step actual (y avance del índice): cada paso resuelto
+        // acelera un poco los siguientes — Balatro contando un combo. Multiplica ANTES
+        // de D() ⇒ compone con skip. Capturarlo en un local antes de los closures.
+        // El clash y la mitigación NO rampean: el payoff conserva su ritmo pleno.
+        private float ConsumeStepRamp()
+        {
+            float factor = BreakdownFeelMath.SpeedRampFactor(_stepIndex,
+                _settings != null ? _settings.StepSpeedRampPerStep : 0.07f,
+                _settings != null ? _settings.StepSpeedFloor : 0.45f);
+            _stepIndex++;
+            return factor;
+        }
+
         private float Arc() => _settings != null ? _settings.FlightArc : 60f;
 
         private static RectTransform ResolveDieAnchor(DiceSlotView slot)
