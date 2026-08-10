@@ -2,6 +2,14 @@ using UnityEngine;
 
 namespace Rollgeon.UI.HUD.Breakdown
 {
+    /// <summary>Familia de una fuente de proc — elige el sonido del popup.</summary>
+    public enum BreakdownProcFamily
+    {
+        Item,
+        Enchantment,
+        Passive,
+    }
+
     /// <summary>
     /// Resuelve el sprite de una fuente del journal (<c>ScratchContribution.SourceAsset</c>).
     /// Hoy solo <c>ItemSO</c> tiene icono autorable (y los 22 items lo tienen vacío);
@@ -11,5 +19,13 @@ namespace Rollgeon.UI.HUD.Breakdown
     {
         public static Sprite Resolve(Object sourceAsset)
             => sourceAsset is Rollgeon.Items.ItemSO item ? item.Icon : null;
+
+        /// <summary>Familia por tipo del asset (mismo criterio de resolución que el sprite).</summary>
+        public static BreakdownProcFamily ResolveFamily(Object sourceAsset)
+        {
+            if (sourceAsset is Rollgeon.Items.ItemSO) return BreakdownProcFamily.Item;
+            if (sourceAsset is Rollgeon.Upgrades.Dice.EnchantmentSO) return BreakdownProcFamily.Enchantment;
+            return BreakdownProcFamily.Passive;
+        }
     }
 }

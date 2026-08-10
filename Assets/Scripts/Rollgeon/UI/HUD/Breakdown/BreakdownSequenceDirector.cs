@@ -252,6 +252,18 @@ namespace Rollgeon.UI.HUD.Breakdown
             var target = TargetCounter(step);
             if (from == null || target == null) { ApplyStep(step); onDone(); return; }
 
+            // Popup con presencia: el glow/sonido telegrafiá el proc y recién ahí vuela.
+            _juice?.OnProcPopup(from, BreakdownIconResolver.Resolve(step.SourceAsset),
+                step.SourceAsset, step.Target == BreakdownTarget.MultM);
+            float popup = D(_settings != null ? _settings.ProcPopupSeconds : 0.12f);
+            if (popup <= 0f) LaunchProc(step, from, target, onDone);
+            else Tween.Delay(this, popup, d => d.LaunchProc(step, from, target, onDone));
+        }
+
+        private void LaunchProc(BreakdownStep step, RectTransform from,
+            BreakdownCounterView target, Action onDone)
+        {
+            _juice?.OnFlightDeparted(from, step.Target == BreakdownTarget.MultM, dieIndex: -1);
             Fly(from, target.Anchor, FormatAmount(step),
                 BreakdownIconResolver.Resolve(step.SourceAsset),
                 D(_settings != null ? _settings.ProcFlightSeconds : 0.38f),

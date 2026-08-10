@@ -259,6 +259,9 @@ namespace Rollgeon.UI.HUD
         /// <summary>Ancla del label "+N" (origen del vuelo en la secuencia). Puede ser null.</summary>
         public Rollgeon.UI.HUD.Breakdown.DiceContributionLabel ContributionLabel => _contribution;
 
+        /// <summary>Graphic de fondo del slot — el juice del breakdown lo flashea/dimea.</summary>
+        public UnityEngine.UI.Graphic BackgroundGraphic => _background;
+
         /// <summary>
         /// Combat — pinta u oculta el "+N" bajo el dado. Null ⇒ no contribuye.
         /// <paramref name="bonusPortion"/> = cuánto del total vino de encantamientos

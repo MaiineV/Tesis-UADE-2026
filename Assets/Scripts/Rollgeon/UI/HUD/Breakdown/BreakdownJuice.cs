@@ -108,16 +108,51 @@ namespace Rollgeon.UI.HUD.Breakdown
             }
         }
 
-        /// <summary>El dado soltó su valor: flash blanco y queda "gastado". (Cuerpo en el commit de dados.)</summary>
+        /// <summary>
+        /// El dado soltó su valor: flash blanco (patrón DiceBoardSkinJuice) y queda
+        /// "gastado" (dim) hasta que <see cref="OnSequenceEnd"/> lo restaura — se lee
+        /// el progreso de la suma mirando el board.
+        /// </summary>
         public void OnDieLaunch(DiceSlotView slot, int dieIndex)
         {
-            // Implementación en el commit de juice de dados (flash + dim con restore).
+            if (!Motion || slot == null) return;
+            var graphic = slot.BackgroundGraphic;
+            if (graphic == null) return;
+
+            // Capturar el color ACTUAL como rest (puede venir tinteado por hold/blocked).
+            var rest = graphic.color;
+            RegisterDimmedSlot(graphic, rest);
+            float dim = _settings != null ? _settings.SpentDieDim : 0.7f;
+            var spent = new Color(rest.r * dim, rest.g * dim, rest.b * dim, rest.a);
+            Tween.Color(graphic, Color.Lerp(rest, Color.white, 0.8f), spent, 0.15f, Ease.OutQuad);
         }
 
-        /// <summary>Popup del proc antes de que su valor vuele. (Cuerpo en el commit de procs.)</summary>
+        /// <summary>Popup del proc antes de que su valor vuele: glow ring + sonido por familia.</summary>
         public void OnProcPopup(RectTransform at, Sprite icon, Object sourceAsset, bool towardM)
         {
-            // Implementación en el commit de juice de procs (glow ring + clip por familia).
+            var family = BreakdownIconResolver.ResolveFamily(sourceAsset);
+            var clip = family == BreakdownProcFamily.Item ? _procItemClip
+                : family == BreakdownProcFamily.Enchantment ? _procEnchantClip
+                : _procPassiveClip;
+            PlaySfx(clip, _sfxVolume);
+
+            if (!Particles || _procGlowRing == null || at == null) return;
+            if (_glowScale.isAlive) _glowScale.Stop();
+            if (_glowFade.isAlive) _glowFade.Stop();
+
+            _procGlowRing.transform.position = at.position;
+            _procGlowRing.transform.localScale = Vector3.one * 0.5f;
+            var c = _procGlowRing.color;
+            c.a = 0.9f;
+            _procGlowRing.color = c;
+            _procGlowRing.gameObject.SetActive(true);
+            _glowScale = Tween.Scale(_procGlowRing.transform, 1.6f, 0.25f, Ease.OutQuad);
+            _glowFade = Tween.Custom(this, 0.9f, 0f, 0.25f, (juice, a) =>
+            {
+                var col = juice._procGlowRing.color;
+                col.a = a;
+                juice._procGlowRing.color = col;
+            }, Ease.OutQuad);
         }
 
         /// <summary>Un aporte impactó su contador.</summary>
