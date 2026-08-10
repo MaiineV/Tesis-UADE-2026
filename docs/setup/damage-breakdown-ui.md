@@ -102,9 +102,10 @@ EnableShakeAndHitstop` para debug.
 - El factor multiplica ANTES de `D()` ⇒ compone con el skip (skip + ramp se apilan).
 
 ### Game speed (x1/x2/x4/x8) — interacción
-La secuencia entera corre en scaled time, así que el selector de velocidad global
-(`docs/setup/game-speed.md`) la comprime gratis. Flash / ghost trail / tick de roll-up
-son unscaled y se compensan dividiendo por `GameSpeedPrefs.Multiplier`.
+El selector (`docs/setup/game-speed.md`) NO toca `Time.timeScale`: `D()` del director
+divide todas las duraciones de la secuencia por `GameSpeedPrefs.Multiplier` (compone
+con skip y step-ramp). Flash / ghost trail / tick de roll-up corren en tiempo real y
+dividen también para acompañar la secuencia comprimida.
 
 ### Accesibilidad / decisiones
 - `DiceUiMotionPrefs.ReducedMotion` apaga wobble, stagger, pop-ins, slide-in, shake,
@@ -147,5 +148,5 @@ son unscaled y se compensan dividiendo por `GameSpeedPrefs.Multiplier`.
       los primeros; el clash mantiene su ritmo completo (wind-up + roll-up enteros).
 - [ ] Skip durante un breakdown rampeado: compone (todo aún más rápido), total correcto.
 - [ ] Game speed x8: secuencia comprimida, flash y trail acompañan (no quedan "largos"),
-      tras el hitstop del clash `Time.timeScale` vuelve a 8.
+      `Time.timeScale` sigue en 1 y tras el hitstop del clash vuelve a 1.
 - [ ] Cambiar velocidad desde la pausa en medio de un combate: aplica al toque.
