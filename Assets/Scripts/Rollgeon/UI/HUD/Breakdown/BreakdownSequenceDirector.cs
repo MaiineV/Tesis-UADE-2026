@@ -303,7 +303,9 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     _juice?.OnCascadeFall();
-                    _cascade.RemoveBottom(D(_settings != null ? _settings.CascadeFallSeconds : 0.15f), onDone);
+                    // OutBounce: la caída asienta con rebote suave (si molesta, OutQuad acá).
+                    _cascade.RemoveBottom(D(_settings != null ? _settings.CascadeFallSeconds : 0.15f),
+                        onDone, Ease.OutBounce);
                 }, FlightTint(step));
         }
 
@@ -387,7 +389,10 @@ namespace Rollgeon.UI.HUD.Breakdown
             }
 
             _activeFlight = view;
-            view.PlayAsGhost(text, _mitigationSprite, Vector2.zero); // popup corto sobre el layer
+            var mitigationTint = _settings != null
+                ? (delta <= 0 ? _settings.MitigationColor : _settings.WeaknessColor)
+                : (Color?)null;
+            view.PlayAsGhost(text, _mitigationSprite, Vector2.zero, mitigationTint); // popup corto sobre el layer
             Tween.Delay(this, D(_settings != null ? _settings.MitigationSeconds : 0.3f), d =>
             {
                 d._activeFlight = null;
@@ -563,7 +568,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 if (step.Kind != BreakdownStepKind.GlobalMod) continue;
                 entries.Add((BreakdownIconResolver.Resolve(step.SourceAsset), FormatAmount(step)));
             }
-            _cascade.SetEntries(entries);
+            _cascade.SetEntries(entries, animated: true);
             _cascade.SetVisible(entries.Count > 0);
         }
 

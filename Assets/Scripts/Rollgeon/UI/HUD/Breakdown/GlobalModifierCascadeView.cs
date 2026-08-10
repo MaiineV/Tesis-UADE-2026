@@ -34,6 +34,7 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private readonly List<ModifierEntryView> _active = new List<ModifierEntryView>();
         private readonly Stack<ModifierEntryView> _pool = new Stack<ModifierEntryView>();
+        private readonly List<Tween> _slideTweens = new List<Tween>();
 
         public int Count => _active.Count;
 
@@ -42,17 +43,29 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         /// <summary>
         /// Puebla el cascade. <paramref name="entries"/>[0] es la PRIMERA a resolver
-        /// (queda abajo de todo).
+        /// (queda abajo de todo). Con <paramref name="animated"/>, las entradas entran
+        /// deslizándose desde el borde derecho con stagger.
         /// </summary>
-        public void SetEntries(IReadOnlyList<(Sprite icon, string label)> entries)
+        public void SetEntries(IReadOnlyList<(Sprite icon, string label)> entries, bool animated = false)
         {
             ClearEntries();
             if (entries == null) return;
+            bool slide = animated && Application.isPlaying && !DiceAnim.DiceUiMotionPrefs.ReducedMotion;
             for (int i = 0; i < entries.Count; i++)
             {
                 var view = Rent();
                 view.Show(entries[i].icon, entries[i].label, _fallbackIcon);
-                view.Rect.anchoredPosition = SlotPosition(i);
+                var home = SlotPosition(i);
+                if (slide)
+                {
+                    view.Rect.anchoredPosition = home + Vector2.right * 80f;
+                    _slideTweens.Add(Tween.UIAnchoredPosition(view.Rect, home, 0.25f,
+                        Ease.OutCubic, startDelay: 0.04f * i));
+                }
+                else
+                {
+                    view.Rect.anchoredPosition = home;
+                }
                 _active.Add(view);
             }
         }
@@ -61,7 +74,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         /// Retira la entrada inferior y deja caer las demás un slot. El pop/vuelo del
         /// número lo maneja el director ANTES de llamar acá.
         /// </summary>
-        public void RemoveBottom(float fallSeconds, Action onDone)
+        public void RemoveBottom(float fallSeconds, Action onDone, Ease fallEase = Ease.OutQuad)
         {
             if (_active.Count == 0)
             {
@@ -77,7 +90,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 var rect = _active[i].Rect;
                 if (fallSeconds <= 0f) rect.anchoredPosition = SlotPosition(i);
-                else Tween.UIAnchoredPosition(rect, SlotPosition(i), fallSeconds, Ease.OutQuad);
+                else Tween.UIAnchoredPosition(rect, SlotPosition(i), fallSeconds, fallEase);
             }
 
             if (fallSeconds <= 0f || onDone == null) { onDone?.Invoke(); return; }
@@ -99,6 +112,11 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void ClearEntries()
         {
+            // Los slide-in pendientes se cortan: las views vuelven pooled y un tween
+            // huérfano las movería en su próximo uso.
+            for (int i = 0; i < _slideTweens.Count; i++)
+                if (_slideTweens[i].isAlive) _slideTweens[i].Stop();
+            _slideTweens.Clear();
             for (int i = 0; i < _active.Count; i++) Release(_active[i]);
             _active.Clear();
         }
