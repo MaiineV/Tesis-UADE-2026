@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f727ecd04e9228409102d3537f7f7b6, type: 3}
+  m_Name: ContractSheetUiSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Contract.ContractSheetUiSettingsSO
+  _faces:
+  - {fileID: -764550937, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  - {fileID: -886392084, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  - {fileID: 1127377722, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  - {fileID: 454605578, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  - {fileID: -825578034, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  - {fileID: 1134030377, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  _highlightFrame: {fileID: -1923593311, guid: c5099d8b499e35147807f06eb0893ca4, type: 3}
+  _dimmedAlpha: 0.45
+  _hands:
+  - ComboId: combo.higher_number
+    Faces: 0200000003000000030000000400000006000000
+    Highlighted: 0000000001
+  - ComboId: combo.pair
+    Faces: 0500000005000000020000000300000004000000
+    Highlighted: 0101000000
+  - ComboId: combo.double_pair
+    Faces: 0200000002000000050000000500000003000000
+    Highlighted: 0101010100
+  - ComboId: combo.trio
+    Faces: 0600000006000000060000000200000003000000
+    Highlighted: 0101010000
+  - ComboId: combo.brute_force
+    Faces: 0400000005000000060000000200000003000000
+    Highlighted: 0101010000
+  - ComboId: combo.full_house
+    Faces: 0300000003000000030000000500000005000000
+    Highlighted: 0101010101
+  - ComboId: combo.ladder
+    Faces: 0100000002000000030000000400000005000000
+    Highlighted: 0101010101
+  - ComboId: combo.poker
+    Faces: 0200000002000000020000000200000005000000
+    Highlighted: 0101010100
+  - ComboId: combo.generala
+    Faces: 0600000006000000060000000600000006000000
+    Highlighted: 0101010101

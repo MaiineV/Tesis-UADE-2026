@@ -57,15 +57,46 @@ namespace Rollgeon.UI.Tests
         }
 
         // ---------------- BuildHealthChipIds ----------------
+        // Escala 100: 1 ficha = HpPerChip (10) puntos, ceil por separado para vida y escudo.
 
         [Test]
         public void BuildHealthChipIds_HpAndShield_ShieldOnTop()
         {
             var buffer = new List<int>();
 
-            ChipStackMath.BuildHealthChipIds(3, 2, buffer);
+            ChipStackMath.BuildHealthChipIds(30, 20, buffer);
 
             CollectionAssert.AreEqual(new[] { 0, 0, 0, 1, 1 }, buffer);
+        }
+
+        [TestCase(0, 0)]
+        [TestCase(1, 1)]
+        [TestCase(9, 1)]
+        [TestCase(10, 1)]
+        [TestCase(11, 2)]
+        [TestCase(95, 10)]
+        [TestCase(100, 10)]
+        public void BuildHealthChipIds_HpRoundsUpToChip(int hp, int expectedChips)
+        {
+            var buffer = new List<int>();
+
+            ChipStackMath.BuildHealthChipIds(hp, 0, buffer);
+
+            Assert.AreEqual(expectedChips, buffer.Count);
+        }
+
+        [Test]
+        public void BuildHealthChipIds_PartialHpAndShield_RoundUpSeparately()
+        {
+            // 95 HP → 10 fichas de vida; 5 de escudo → 1 ficha de escudo (no se
+            // fusionan en un solo ceil de 100).
+            var buffer = new List<int>();
+
+            ChipStackMath.BuildHealthChipIds(95, 5, buffer);
+
+            Assert.AreEqual(11, buffer.Count);
+            Assert.AreEqual(ChipStackMath.HealthChipId, buffer[9]);
+            Assert.AreEqual(ChipStackMath.ShieldChipId, buffer[10]);
         }
 
         [Test]

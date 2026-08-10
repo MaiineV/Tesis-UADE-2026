@@ -15,6 +15,11 @@ namespace Rollgeon.Entities.Portraits
     /// Precedencia en <see cref="TryGetPortrait"/>: dict explícito primero, lazy
     /// player después. Así un futuro override por-run (skins, disfraces) puede
     /// pisar el portrait de la clase sin tocar el SO.
+    /// <para>
+    /// El sprite del player sale de <c>ClassHeroSO.ResolveTurnOrderIcon()</c>, no de
+    /// su <c>Portrait</c> directo: el retrato de selección es grande y con fondo, y
+    /// encogido a un slot de turno se lee mal. Los enemigos no tienen esa distinción.
+    /// </para>
     /// </remarks>
     public sealed class EntityPortraitResolver : IEntityPortraitResolver
     {
@@ -61,12 +66,14 @@ namespace Rollgeon.Entities.Portraits
                 && entityId != Guid.Empty
                 && entityId == _playerService.PlayerGuid)
             {
-                var heroPortrait = _playerService.CurrentHero != null
-                    ? _playerService.CurrentHero.Portrait
+                // El heroe usa su icono de turnos (con fallback al retrato); los enemigos
+                // y jefes siguen con su Portrait, que registran ellos al spawnear.
+                var heroIcon = _playerService.CurrentHero != null
+                    ? _playerService.CurrentHero.ResolveTurnOrderIcon()
                     : null;
-                if (heroPortrait != null)
+                if (heroIcon != null)
                 {
-                    portrait = heroPortrait;
+                    portrait = heroIcon;
                     return true;
                 }
             }

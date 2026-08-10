@@ -90,6 +90,29 @@ namespace Patterns
     }
 
     /// <summary>
+    /// Payload tipado para "el jugador intentó usar una acción que no puede pagar". Canalizado
+    /// únicamente vía <c>TypedEvent&lt;InsufficientEnergyPayload&gt;</c> — no existe entry legacy
+    /// en <see cref="EventName"/>.
+    /// </summary>
+    /// <remarks>
+    /// Lo emite el chip de la acción y lo consume la pila de energía del HUD, que vive en otro
+    /// prefab (<c>Canvas_PlayerStatus</c>) y tiene su propio ciclo de vida — la bindea tanto el
+    /// HUD de combate como el de exploración. Un evento evita la ref cruzada y deja que mañana
+    /// se enganchen audio o shake de cámara sin tocar a ninguno de los dos.
+    /// </remarks>
+    public struct InsufficientEnergyPayload
+    {
+        /// <summary>InstanceId del jugador que intentó la acción.</summary>
+        public Guid PlayerGuid;
+
+        /// <summary>Costo real de la acción rechazada (el que se iba a cobrar, no el legacy).</summary>
+        public int Cost;
+
+        /// <summary>Energía disponible al momento del rechazo.</summary>
+        public int Current;
+    }
+
+    /// <summary>
     /// Payload tipado para "combo matcheado" al resolver una tirada. Canalizado únicamente vía
     /// <c>TypedEvent&lt;ComboMatchedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
     /// </summary>
@@ -109,12 +132,6 @@ namespace Patterns
 
         /// <summary>Multiplicador de daño por calidad de dados. 0 = no calculado (tratar como 1.0).</summary>
         public float MultiDmgCombo;
-
-        /// <summary>
-        /// Escudo que generaría este combo (Spec Escudo v2: tabla por clase × multi, con cap).
-        /// 0 = el combo/clase no genera escudo o no se calculó.
-        /// </summary>
-        public int ShieldPreview;
 
         /// <summary>
         /// Dados que contribuyen al combo, para que el preview del HUD recompute el daño real

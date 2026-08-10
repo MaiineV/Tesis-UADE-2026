@@ -171,6 +171,49 @@ namespace Rollgeon.Entities.Tests
         }
 
         [Test]
+        public void TryGetPortrait_PlayerGuidWithTurnOrderIcon_PrefersIconOverPortrait()
+        {
+            // Arrange — el hero tiene los dos: retrato de selección e ícono de turnos.
+            var portrait = CreateSprite();
+            var turnIcon = CreateSprite();
+            var hero = CreateHero(portrait);
+            hero.TurnOrderIcon = turnIcon;
+            var playerService = new FakePlayerService
+            {
+                PlayerGuid = Guid.NewGuid(),
+                CurrentHero = hero,
+            };
+            var resolver = new EntityPortraitResolver(playerService);
+
+            // Act
+            resolver.TryGetPortrait(playerService.PlayerGuid, out var result);
+
+            // Assert
+            Assert.AreSame(turnIcon, result,
+                "La UI de turnos debe usar el ícono dedicado, no el retrato de selección.");
+        }
+
+        [Test]
+        public void TryGetPortrait_PlayerGuidWithoutTurnOrderIcon_FallsBackToPortrait()
+        {
+            // Arrange — clase todavía sin ícono autorado (el caso de todas hoy).
+            var portrait = CreateSprite();
+            var playerService = new FakePlayerService
+            {
+                PlayerGuid = Guid.NewGuid(),
+                CurrentHero = CreateHero(portrait),
+            };
+            var resolver = new EntityPortraitResolver(playerService);
+
+            // Act
+            bool found = resolver.TryGetPortrait(playerService.PlayerGuid, out var result);
+
+            // Assert
+            Assert.IsTrue(found);
+            Assert.AreSame(portrait, result);
+        }
+
+        [Test]
         public void TryGetPortrait_PlayerGuidWithExplicitRegistration_DictWins()
         {
             // Arrange

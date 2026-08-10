@@ -349,12 +349,23 @@ namespace Rollgeon.Editor.Tools
             return material;
         }
 
+        /// <summary>Arte real de la flecha del overlay (dorada, apunta a la DERECHA).</summary>
+        private const string ArrowArtPath = "Assets/Art/UI/Arrow/Arrow.png";
+
         /// <summary>
-        /// Genera un sprite de flecha (apunta a la DERECHA) por código — un triángulo
-        /// blanco con antialias simple, 64×64. Reemplazable por arte real después.
+        /// Devuelve el sprite de flecha del overlay: el arte dorado si está en el proyecto,
+        /// y si no un triángulo blanco generado por código (64×64) como último recurso —
+        /// el overlay esconde la flecha cuando el sprite es null, así que sin fallback un
+        /// proyecto sin el arte perdería el indicador entero.
         /// </summary>
         private static Sprite CreateArrowSprite()
         {
+            var art = LoadFirstSprite(ArrowArtPath);
+            if (art != null) return art;
+
+            Debug.LogWarning($"[TutorialAssetInstaller] No se encontró {ArrowArtPath} — " +
+                             "la flecha del overlay cae al triángulo blanco generado.");
+
             var pngPath = $"{Root}/T_TutorialArrow.png";
             var existing = AssetDatabase.LoadAssetAtPath<Sprite>(pngPath);
             if (existing != null) return existing;
@@ -387,6 +398,20 @@ namespace Rollgeon.Editor.Tools
             importer.SaveAndReimport();
 
             return AssetDatabase.LoadAssetAtPath<Sprite>(pngPath);
+        }
+
+        /// <summary>
+        /// Primer sub-sprite de una textura. Necesario porque el arte de la flecha está en
+        /// sprite mode Multiple: ahí el asset principal es la <c>Texture2D</c> y
+        /// <c>LoadAssetAtPath&lt;Sprite&gt;</c> devuelve null.
+        /// </summary>
+        private static Sprite LoadFirstSprite(string path)
+        {
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                if (asset is Sprite sprite) return sprite;
+            }
+            return null;
         }
     }
 }

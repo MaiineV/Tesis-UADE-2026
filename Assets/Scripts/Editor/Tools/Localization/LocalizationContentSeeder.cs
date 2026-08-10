@@ -2,6 +2,10 @@ using UnityEditor;
 using UnityEngine;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
+using Rollgeon.UI.HUD.Contract;
+using Rollgeon.UI.HUD.DiceBag;
+using Rollgeon.UI.HUD.Status;
+using Rollgeon.UI.Help;
 
 namespace Rollgeon.EditorTools.Localization
 {
@@ -29,6 +33,11 @@ namespace Rollgeon.EditorTools.Localization
             SeedUnlockHints();
             SeedMiscContent();
             SeedRollCost();
+            SeedBuildHelp();
+            SeedStatusIcons();
+            SeedContractDrawer();
+            SeedPlayerIcons();
+            SeedDiceBag();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -475,6 +484,99 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.ChainRollPaidHint,
                 "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.",
                 "You have no free rolls left!\nEach additional roll costs 1 Energy.");
+        }
+
+        // ==================================================================
+        // Guía de armado de bolsa (tabla UI)
+        // ==================================================================
+
+        /// <remarks>
+        /// Copy descriptiva, no imperativa: los pasos corren con el dim capturando el
+        /// click, así que el jugador no puede ejecutar la acción mientras la lee.
+        /// </remarks>
+        private static void SeedBuildHelp()
+        {
+            Ui(BuildHelpTextKeys.Pool,
+                "Estos son los dados de tu clase. Hacé click en uno para sumarlo a la bolsa; " +
+                "el número de cada fila dice cuántos podés llevar de ese tipo.",
+                "These are your class dice. Click one to add it to your bag; the number on each " +
+                "row shows how many of that type you can carry.");
+
+            Ui(BuildHelpTextKeys.Strip,
+                "Tu bolsa se arma acá, siempre ordenada de menor a mayor. Hacé click en un dado " +
+                "de la tira para devolverlo al pool.",
+                "Your bag is built here, always sorted from lowest to highest. Click a die in the " +
+                "strip to send it back to the pool.");
+
+            Ui(BuildHelpTextKeys.Clear,
+                "Limpiar vacía la bolsa entera y te deja empezar de cero.",
+                "Clear empties the whole bag so you can start over.");
+
+            Ui(BuildHelpTextKeys.Confirm,
+                "Cuando completes la bolsa, Confirmar se habilita y arranca la run.",
+                "Once your bag is full, Confirm unlocks and starts the run.");
+        }
+
+        // ==================================================================
+        // Estados del player (pie del tooltip de la fila de estados)
+        // ==================================================================
+
+        /// <remarks>
+        /// Solo el PIE del tooltip. El nombre y la descripción de cada estado salen de sus
+        /// propias keys (<c>name.*</c> / <c>desc.*</c>), porque son del estado y no del
+        /// sistema que los muestra.
+        /// </remarks>
+        private static void SeedStatusIcons()
+        {
+            Ui(StatusTextKeys.Active, "Activada", "Active");
+            Ui(StatusTextKeys.Inactive, "Desactivada", "Inactive");
+
+            // {0} = turnos restantes. El caso de 1 va por su propia key para no decir
+            // "1 turnos" — en inglés la diferencia es igual de visible.
+            Ui(StatusTextKeys.Duration, "Dura {0} turnos", "Lasts {0} turns");
+            Ui(StatusTextKeys.DurationLastTurn, "Último turno", "Last turn");
+        }
+
+        // ==================================================================
+        // Tooltips de los íconos del player
+        // ==================================================================
+
+        /// <remarks>
+        /// Solo el nombre. El ícono ya dice qué es de un vistazo; el tooltip está para
+        /// desambiguarlo, no para explicar lo que el panel que abre va a mostrar igual.
+        /// </remarks>
+        private static void SeedPlayerIcons()
+        {
+            Ui(PlayerIconTextKeys.Contract, "Contrato", "Contract");
+            Ui(PlayerIconTextKeys.Backpack, "Inventario", "Inventory");
+            Ui(PlayerIconTextKeys.DiceBag, "Bolsa de dados", "Dice bag");
+        }
+
+        // ==================================================================
+        // Panel de la bolsa de dados
+        // ==================================================================
+
+        private static void SeedDiceBag()
+        {
+            Ui(DiceBagTextKeys.Title, "Bolsa de Dados", "Dice Bag");
+            Ui(DiceBagTextKeys.SlotsCaption, "Cupos de encantamiento", "Enchantment slots");
+            // Va detrás del contador ("2/3 cupos"), así que en minúscula y sin punto.
+            Ui(DiceBagTextKeys.SlotsSuffix, "cupos", "slots");
+            Ui(DiceBagTextKeys.EmptySlot, "Cupo libre.", "Empty slot.");
+            Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.", "No enchantments.");
+        }
+
+        // ==================================================================
+        // Drawer de contrato
+        // ==================================================================
+
+        private static void SeedContractDrawer()
+        {
+            // Encabezados de la tabla. El de daño se parte en dos líneas: la columna mide
+            // 66 px y ninguna de las dos versiones entra de una.
+            Ui(ContractTextKeys.HeaderExample, "Ejemplo", "Example");
+            Ui(ContractTextKeys.HeaderName, "Combo", "Combo");
+            Ui(ContractTextKeys.HeaderDamage, "Daño base", "Base DMG");
         }
 
         // ==================================================================

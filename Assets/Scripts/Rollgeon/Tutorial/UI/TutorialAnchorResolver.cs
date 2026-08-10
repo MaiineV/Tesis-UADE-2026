@@ -50,8 +50,35 @@ namespace Rollgeon.Tutorial.UI
         /// </summary>
         public static float ResolveUiCutoutRadius(RectTransform target, RectTransform[] extras, float paddingPx)
         {
-            if (!TryGetGroupBounds(target, extras, out var min, out var max)) return paddingPx;
-            return Vector2.Distance(min, max) * 0.5f + paddingPx;
+            return TryResolveUiCutout(target, extras, paddingPx, out _, out _, out var radius)
+                ? radius
+                : paddingPx;
+        }
+
+        /// <summary>
+        /// Recorte de un grupo de rects, en una sola pasada: centro, media caja (con
+        /// padding) y radio del círculo circunscripto.
+        /// </summary>
+        /// <remarks>
+        /// El recorte que dibuja el shader es circular, pero la flecha se ubica contra
+        /// <paramref name="halfSize"/>: el radio lo manda la DIAGONAL, así que en un rect
+        /// ancho y bajo desborda cientos de píxeles por el lado corto y la flecha
+        /// terminaba flotando lejos del elemento que señala.
+        /// </remarks>
+        public static bool TryResolveUiCutout(
+            RectTransform target, RectTransform[] extras, float paddingPx,
+            out Vector2 center, out Vector2 halfSize, out float radius)
+        {
+            center = default;
+            halfSize = default;
+            radius = paddingPx;
+
+            if (!TryGetGroupBounds(target, extras, out var min, out var max)) return false;
+
+            center = (min + max) * 0.5f;
+            halfSize = (max - min) * 0.5f + new Vector2(paddingPx, paddingPx);
+            radius = Vector2.Distance(min, max) * 0.5f + paddingPx;
+            return true;
         }
 
         private static bool TryWorldToScreen(Vector3 worldPos, out Vector2 screenPos)

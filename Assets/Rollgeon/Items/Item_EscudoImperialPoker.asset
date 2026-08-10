@@ -176,7 +176,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 2
+      Data: 20
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -278,7 +278,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 9092771418612957914
+      - rid: 6878114991212856051
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -298,7 +298,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 9092771418612957914
+    - rid: 6878114991212856051
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -322,7 +322,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _shieldSource: 0
-        _baseAmount: 2
+        _baseAmount: 20
         _comboMultiplier: 1
         _reader:
           rid: -2

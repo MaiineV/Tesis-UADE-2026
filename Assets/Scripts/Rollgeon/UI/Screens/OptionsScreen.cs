@@ -282,6 +282,12 @@ namespace Rollgeon.UI.Screens
             }
 
             SaveSystem.DeleteSave();
+
+            // El flag de "ya vi la guía de armado de bolsa" vive en PlayerPrefs, así que
+            // no lo alcanza el borrado de saves — lo limpiamos a mano para que un jugador
+            // que empieza de cero la vuelva a ver.
+            Rollgeon.UI.Help.BuildHelpPrefs.ClearSeen();
+
             DisarmReset();
 
             Debug.Log(LogPrefix + "Partida borrada — meta-progresion en estado inicial y run en curso eliminada.", this);

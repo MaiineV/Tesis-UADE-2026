@@ -51,7 +51,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Daño que aplicará el ataque el próximo turno si el jugador sigue en el área.")]
         [MinValue(0)]
-        public int Damage = 10;
+        public int Damage = 100;
 
         [Tooltip("Tipo de ataque del DamageContext al ejecutar.")]
         public AttackKind Kind = AttackKind.BasicAttack;

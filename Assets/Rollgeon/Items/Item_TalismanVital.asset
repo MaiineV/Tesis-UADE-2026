@@ -179,7 +179,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 10
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -283,7 +283,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 5371277439317049674
+      - rid: 6878114991212856045
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -303,7 +303,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 5371277439317049674
+    - rid: 6878114991212856045
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -329,7 +329,7 @@ MonoBehaviour:
         TargetStat: 0
         Operation: 0
         _amountSource: 0
-        _baseAmount: 1
+        _baseAmount: 10
         _comboMultiplier: 1
         _reader:
           rid: -2

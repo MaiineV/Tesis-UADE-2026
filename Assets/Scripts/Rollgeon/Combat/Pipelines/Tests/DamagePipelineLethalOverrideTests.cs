@@ -41,7 +41,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
 
             var targetAttrs = new ModifiableAttributes();
             targetAttrs.EnsureInitialized();
-            targetAttrs.SetAttribute<Health>(new Health(10));
+            targetAttrs.SetAttribute<Health>(new Health(100));
             _attrManager.Register(_targetId, targetAttrs);
 
             _lastPayload = null;
@@ -79,29 +79,31 @@ namespace Rollgeon.Combat.Pipelines.Tests
         }
 
         [Test]
-        public void Resolve_LethalHitWithOverride_ClampsToOneHpAndNotLethal()
+        public void Resolve_LethalHitWithOverride_ClampsToRemainingHpAndNotLethal()
         {
             RegisterOverrideFor(_targetId);
 
-            var ctx = Hit(25);
+            var ctx = Hit(250);
 
-            Assert.AreEqual(1, _attrManager.GetAttribute<Health>(_targetId).Value,
-                "El golpe letal debe dejar al target en 1 HP.");
+            Assert.AreEqual(DamagePipeline.LethalOverrideRemainingHp,
+                _attrManager.GetAttribute<Health>(_targetId).Value,
+                "El golpe letal debe dejar al target con el resto de vida del override.");
             Assert.IsFalse(ctx.WasLethal);
             Assert.IsFalse(_lastPayload.Value.WasLethal,
                 "El payload no debe marcar letal — CombatDeathWatcher no debe ver la muerte.");
-            Assert.AreEqual(9, ctx.FinalDamage,
-                "FinalDamage debe reflejar el daño efectivamente aplicado (10 → 1).");
+            Assert.AreEqual(90, ctx.FinalDamage,
+                "FinalDamage debe reflejar el daño efectivamente aplicado (100 → 10).");
         }
 
         [Test]
-        public void Resolve_ExactlyLethalHitWithOverride_ClampsToOneHp()
+        public void Resolve_ExactlyLethalHitWithOverride_ClampsToRemainingHp()
         {
             RegisterOverrideFor(_targetId);
 
-            var ctx = Hit(10);
+            var ctx = Hit(100);
 
-            Assert.AreEqual(1, _attrManager.GetAttribute<Health>(_targetId).Value);
+            Assert.AreEqual(DamagePipeline.LethalOverrideRemainingHp,
+                _attrManager.GetAttribute<Health>(_targetId).Value);
             Assert.IsFalse(ctx.WasLethal);
         }
 
@@ -110,11 +112,26 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             RegisterOverrideFor(_targetId);
 
-            var ctx = Hit(4);
+            var ctx = Hit(40);
 
-            Assert.AreEqual(6, _attrManager.GetAttribute<Health>(_targetId).Value,
+            Assert.AreEqual(60, _attrManager.GetAttribute<Health>(_targetId).Value,
                 "Daño no-letal se aplica completo — el override solo actúa al llegar a 0.");
-            Assert.AreEqual(4, ctx.FinalDamage);
+            Assert.AreEqual(40, ctx.FinalDamage);
+        }
+
+        [Test]
+        public void Resolve_LethalHitWithOverride_TargetAlreadyBelowRemaining_DoesNotHeal()
+        {
+            // El override no debe CURAR: si el target ya estaba por debajo del resto
+            // (10), el golpe letal lo deja donde estaba.
+            RegisterOverrideFor(_targetId);
+            _attrManager.SetAttributeValue<Health, int>(_targetId, 5);
+
+            var ctx = Hit(50);
+
+            Assert.AreEqual(5, _attrManager.GetAttribute<Health>(_targetId).Value);
+            Assert.IsFalse(ctx.WasLethal);
+            Assert.AreEqual(0, ctx.FinalDamage);
         }
 
         [Test]
@@ -122,7 +139,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             RegisterOverrideFor(Guid.NewGuid());
 
-            var ctx = Hit(25);
+            var ctx = Hit(250);
 
             Assert.AreEqual(0, _attrManager.GetAttribute<Health>(_targetId).Value);
             Assert.IsTrue(ctx.WasLethal);
@@ -132,7 +149,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
         [Test]
         public void Resolve_LethalHitWithoutOverride_StaysLethal()
         {
-            var ctx = Hit(25);
+            var ctx = Hit(250);
 
             Assert.AreEqual(0, _attrManager.GetAttribute<Health>(_targetId).Value);
             Assert.IsTrue(ctx.WasLethal);

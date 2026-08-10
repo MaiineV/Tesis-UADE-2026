@@ -9,9 +9,10 @@ namespace Rollgeon.UI.Screens
 {
     /// <summary>
     /// Una fila del pool en <see cref="BuildSelectionScreen"/>: el sprite del
-    /// dado (clickeable — el click AGREGA a la bolsa), el nombre del tipo y el
-    /// contador "X / max". Se atenúa cuando el tipo se agota o la bolsa está
-    /// llena. Quitar se hace clickeando el dado en la tira de la bolsa, no acá.
+    /// dado (clickeable — el click izquierdo AGREGA a la bolsa, el derecho QUITA
+    /// una copia), el nombre del tipo y el contador "X / max". Se atenúa cuando el
+    /// tipo se agota o la bolsa está llena. Quitar también se puede clickeando el
+    /// dado en la tira de la bolsa: los dos caminos van al mismo handler.
     /// </summary>
     /// <remarks>
     /// La screen orquesta la logica (no la fila). La fila solo muestra el tipo,
@@ -45,6 +46,9 @@ namespace Rollgeon.UI.Screens
 
         private const float ExhaustedAlpha = 0.4f;
 
+        private PointerRightClickRelay _rightClickRelay;
+        private int _currentCount;
+
         public DiceType Type { get; private set; }
         public int MaxInBag { get; private set; }
 
@@ -60,7 +64,11 @@ namespace Rollgeon.UI.Screens
 
             if (_typeLabel != null) _typeLabel.text = type.ToString();
             if (_dieImage != null && dieSprite != null) _dieImage.sprite = dieSprite;
-            if (_addButton != null) _addButton.onClick.AddListener(HandleAddClicked);
+            if (_addButton != null)
+            {
+                _addButton.onClick.AddListener(HandleAddClicked);
+                EnsureRightClickRelay();
+            }
             if (_removeButton != null) _removeButton.onClick.AddListener(HandleRemoveClicked);
 
             Refresh(0, bagHasRoom: true);
@@ -70,8 +78,22 @@ namespace Rollgeon.UI.Screens
         {
             if (_addButton != null) _addButton.onClick.RemoveListener(HandleAddClicked);
             if (_removeButton != null) _removeButton.onClick.RemoveListener(HandleRemoveClicked);
+            if (_rightClickRelay != null) _rightClickRelay.OnRightClick = null;
             OnAddRequested = null;
             OnRemoveRequested = null;
+        }
+
+        // El relay va sobre el GameObject del Button, no sobre el root de la fila: es el
+        // unico raycast target, y uGUI entrega el click al primer ancestro que maneja
+        // IPointerClickHandler — que es el propio Button. Agregado por codigo para no
+        // pedir una re-autoria del prefab.
+        private void EnsureRightClickRelay()
+        {
+            if (_rightClickRelay == null)
+                _rightClickRelay = _addButton.gameObject.GetComponent<PointerRightClickRelay>()
+                                   ?? _addButton.gameObject.AddComponent<PointerRightClickRelay>();
+
+            _rightClickRelay.OnRightClick = HandleRightClickRemove;
         }
 
         /// <summary>
@@ -81,6 +103,7 @@ namespace Rollgeon.UI.Screens
         /// </summary>
         public void Refresh(int currentCount, bool bagHasRoom)
         {
+            _currentCount = currentCount;
             if (_countLabel != null) _countLabel.text = $"{currentCount} / {MaxInBag}";
 
             bool canAdd = bagHasRoom && currentCount < MaxInBag;
@@ -108,6 +131,22 @@ namespace Rollgeon.UI.Screens
         }
 
         private void HandleRemoveClicked() => OnRemoveRequested?.Invoke(Type);
+
+        /// <summary>
+        /// Click derecho sobre el dado del pool: saca una copia de la bolsa, igual que
+        /// clickear ese dado en la tira.
+        /// </summary>
+        /// <remarks>
+        /// A diferencia del agregar, esto NO mira <c>_addButton.interactable</c>: el add
+        /// se apaga justo cuando la bolsa está llena o el tipo se agotó, que es cuando
+        /// más querés poder sacar. El único gate es tener algo de este tipo puesto.
+        /// </remarks>
+        private void HandleRightClickRemove()
+        {
+            if (_currentCount <= 0) return;
+            PunchDie();
+            OnRemoveRequested?.Invoke(Type);
+        }
 
         private void PunchDie()
         {

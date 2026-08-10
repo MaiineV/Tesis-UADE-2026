@@ -130,7 +130,15 @@ namespace Rollgeon.Heroes
             return null;
         }
 
-        public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason)
+        /// <param name="includeEnergyGate">
+        /// <c>false</c> deja pasar la falta de energía para que el llamador la distinga del
+        /// resto. Lo usa la HUD de combate: necesita separar "no podés todavía" (Locked) de
+        /// "no te alcanza" (Unaffordable), y con el gate adentro lo segundo era inalcanzable.
+        /// Los caminos de EJECUCIÓN lo dejan en <c>true</c> — ahí el gate sigue siendo el
+        /// backstop que impide correr una acción impagable.
+        /// </param>
+        public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason,
+                                         bool includeEnergyGate = true)
         {
             reason = null;
             if (Effects == null || Effects.Count == 0) return true;
@@ -140,7 +148,8 @@ namespace Rollgeon.Heroes
             // al data setup a duplicarlo via PCHasIntAttribute era frágil (se olvidaba) y
             // dejaba botones habilitados sin energía. Si IEnergyService no está registrado
             // (ej. EditMode tests), no gateamos — defensive default.
-            if (EnergyCost > 0
+            if (includeEnergyGate
+                && EnergyCost > 0
                 && ownerGuid != Guid.Empty
                 && ServiceLocator.TryGetService<IEnergyService>(out var energySvc)
                 && energySvc != null
@@ -279,6 +288,35 @@ namespace Rollgeon.Heroes
             foreach (var child in EffectTree.DirectChildren(eff))
             {
                 var found = FindDealDamageIn(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        // El EffAddShield vive dentro de la fase de defensa del EffChain — mismo motivo
+        // que FindFirstDealDamageEffect: la UI necesita leer su ComboMultiplier para que
+        // el preview de escudo use la misma perilla que la aplicación real.
+        public EffAddShield FindFirstAddShieldEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    var found = FindAddShieldIn(eff);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        private static EffAddShield FindAddShieldIn(IEffect eff)
+        {
+            if (eff is EffAddShield addShield) return addShield;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindAddShieldIn(child);
                 if (found != null) return found;
             }
             return null;

@@ -121,6 +121,13 @@ namespace Rollgeon.Effects.Concretes
         [ShowIf(nameof(_useDiceRoll))]
         private int _diceFaces = 10;
 
+        [SerializeField, MinValue(1)]
+        [ShowIf(nameof(_useDiceRoll))]
+        [Tooltip("Multiplicador del resultado del roll (heal = suma × multiplicador). " +
+                 "Escala 100: la poción usa 10 para que 1d10 cure {10..100} preservando " +
+                 "la distribución uniforme del d10 original.")]
+        private int _diceResultMultiplier = 1;
+
         [SerializeField]
         private string _sourceTag = "eff.heal";
 
@@ -309,7 +316,7 @@ namespace Rollgeon.Effects.Concretes
             {
                 sum += UnityEngine.Random.Range(1, faces + 1);
             }
-            return sum;
+            return ComputeDiceRollHeal(sum, _diceResultMultiplier);
         }
 
         // Build dice: lee context.DiceResult (populado por IActionRollService antes de
@@ -343,6 +350,14 @@ namespace Rollgeon.Effects.Concretes
         /// </list>
         /// Spec: HP = HP_Base + ((Puntaje - Umbral_Mínimo) × Factor_de_Escala), floor abajo, cap por Tope_Máximo.
         /// </summary>
+        /// <summary>
+        /// Heal del dice roll genérico, expuesto para tests (el roll en sí es Random):
+        /// <c>suma × max(1, multiplicador)</c>. Escala 100: la poción 1d10 usa
+        /// multiplicador 10 para curar {10..100}.
+        /// </summary>
+        public static int ComputeDiceRollHeal(int sum, int multiplier)
+            => sum * Mathf.Max(1, multiplier);
+
         public static int ComputeBuildDiceHeal(int baseAmount, int healThreshold, int score,
             float scaleFactor, int maxCap)
         {

@@ -4,6 +4,7 @@ using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -12,7 +13,7 @@ namespace Rollgeon.UI.HUD
     /// Sub-view for a single die slot. Used in build selection (Bind string) and
     /// in combat (ShowFace / SetHeld / OnToggled). UI#0013a / T97c.
     /// </summary>
-    public class DiceSlotView : MonoBehaviour
+    public class DiceSlotView : MonoBehaviour, IPointerClickHandler
     {
         [SerializeField] private TextMeshProUGUI _diceLabel;
 
@@ -46,6 +47,14 @@ namespace Rollgeon.UI.HUD
 
         [HideInInspector] public UnityEvent OnToggled = new UnityEvent();
 
+        /// <summary>
+        /// Click derecho sobre el slot: el jugador quiere SACAR este dado del combo que
+        /// está armando. Va aparte de <see cref="OnToggled"/> a propósito — el derecho
+        /// solo deselecciona, nunca selecciona, así que barrer la mano con el botón
+        /// apretado no puede agregar dados sin querer.
+        /// </summary>
+        [HideInInspector] public UnityEvent OnUnholdRequested = new UnityEvent();
+
         private static readonly Color BlockedColor = new Color(0.35f, 0.35f, 0.35f, 1f);
 
         private Color _defaultColor;
@@ -68,6 +77,23 @@ namespace Rollgeon.UI.HUD
         private void OnDestroy()
         {
             if (_button != null) _button.onClick.RemoveAllListeners();
+            OnUnholdRequested.RemoveAllListeners();
+        }
+
+        /// <summary>
+        /// Deselección por click derecho. uGUI filtra los handlers por
+        /// <c>isActiveAndEnabled</c> y no por <c>interactable</c>, así que replicamos acá
+        /// el gate del <see cref="Button"/>: durante el spin de los dados
+        /// <see cref="SetHoldInteractable"/> lo apaga y el derecho tampoco debe pasar.
+        /// El izquierdo lo sigue manejando el Button.
+        /// </summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Right) return;
+            if (_blocked) return;
+            if (_button != null && !_button.interactable) return;
+
+            OnUnholdRequested.Invoke();
         }
 
         /// <summary>Build selection — set die type label.</summary>

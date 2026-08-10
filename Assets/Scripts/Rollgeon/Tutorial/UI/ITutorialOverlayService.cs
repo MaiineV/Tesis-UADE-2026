@@ -73,6 +73,12 @@ namespace Rollgeon.Tutorial.UI
     /// la acción" vive en el <c>TutorialFlowController</c>, que llama <see cref="Hide"/>
     /// y muestra el paso siguiente. Registrado Global (canvas persistente, inerte
     /// cuando está oculto).
+    /// <para>
+    /// Pese al nombre, no es exclusivo del tutorial: no tiene ningún acople al gameplay
+    /// (sus dos referencias a <c>IGameplayHotkeyService</c> son opcionales), así que
+    /// cualquier pantalla puede usarlo para coach-marks. Hoy también lo consume
+    /// <c>Rollgeon.UI.Help.BuildHelpFlow</c> en el armado de bolsa.
+    /// </para>
     /// </summary>
     public interface ITutorialOverlayService
     {

@@ -141,6 +141,7 @@ namespace Rollgeon.UI.HUD
                 }
                 int captured = i;
                 _resolvedSlots[i].OnToggled.AddListener(() => ToggleHold(captured));
+                _resolvedSlots[i].OnUnholdRequested.AddListener(() => UnholdAt(captured));
             }
 
             // Animación legacy (Classic). Vive como componente hermano agregado por
@@ -182,7 +183,10 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
             if (_resolvedSlots != null)
                 foreach (var s in _resolvedSlots)
+                {
                     s?.OnToggled.RemoveAllListeners();
+                    s?.OnUnholdRequested.RemoveAllListeners();
+                }
             _resolvedSlots = null;
             _currentFaces = null;
             _heldStates = null;
@@ -411,23 +415,46 @@ namespace Rollgeon.UI.HUD
 
         private void ToggleHold(int i)
         {
-            if (_heldStates == null || i >= _heldStates.Length)
+            if (!CanChangeHold(i, nameof(ToggleHold))) return;
+            ApplyHold(i, !_heldStates[i]);
+        }
+
+        /// <summary>
+        /// Click derecho sobre un slot: saca el dado del combo. Solo baja el hold — sobre
+        /// un dado que no está holdeado no hace nada, así que el derecho nunca agrega.
+        /// </summary>
+        private void UnholdAt(int i)
+        {
+            if (!CanChangeHold(i, nameof(UnholdAt))) return;
+            if (!_heldStates[i]) return;
+            ApplyHold(i, false);
+        }
+
+        // Gates compartidos por toggle y unhold.
+        private bool CanChangeHold(int i, string caller)
+        {
+            if (_heldStates == null || i < 0 || i >= _heldStates.Length)
             {
-                Debug.Log($"[DiceZoneView] ToggleHold({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
-                return;
+                Debug.Log($"[DiceZoneView] {caller}({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
+                return false;
             }
             // Boss 1 (§2): un dado bloqueado no puede holdearse.
             if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
                 && db != null && db.IsBlocked(i))
-                return;
+                return false;
 
             // Un dado que todavía gira no se holdea — el botón ya está deshabilitado
             // durante el spin, esto cubre invocaciones programáticas (hotkeys, tests).
-            if (_animator != null && _animator.IsSlotSpinning(i)) return;
+            if (_animator != null && _animator.IsSlotSpinning(i)) return false;
 
-            _heldStates[i] = !_heldStates[i];
-            _resolvedSlots[i]?.SetHeld(_heldStates[i]);
-            _animator?.SetRaised(i, _heldStates[i]);
+            return true;
+        }
+
+        private void ApplyHold(int i, bool held)
+        {
+            _heldStates[i] = held;
+            _resolvedSlots[i]?.SetHeld(held);
+            _animator?.SetRaised(i, held);
             PropagateHoldsToActionRoll();
             RunComboDetection();
         }
@@ -518,9 +545,8 @@ namespace Rollgeon.UI.HUD
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
             float multiDmgCombo = 1f;
-            int shieldPreview = 0;
             // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
-            // recomputar el daño real vía PlayerComboDamage.Resolve).
+            // recomputar el daño y el escudo reales vía la fórmula compartida).
             System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
             if (best != null)
             {
@@ -531,12 +557,6 @@ namespace Rollgeon.UI.HUD
                         comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
                     multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
                 }
-
-                // Preview del escudo (Spec Escudo v2) — mismos dados contribuyentes que
-                // el multi; sin sheet no hay tabla y el preview queda en 0.
-                if (comboResult.IsMatch && sheet != null)
-                    shieldPreview = PlayerComboShield.Resolve(
-                        sheet.GetShieldBase(best.ComboId), contributingDice);
             }
 
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
@@ -546,7 +566,6 @@ namespace Rollgeon.UI.HUD
                 DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
                 BaseDamage = baseDmg,
                 MultiDmgCombo = multiDmgCombo,
-                ShieldPreview = shieldPreview,
                 ContributingDice = contributingDice,
             });
         }
