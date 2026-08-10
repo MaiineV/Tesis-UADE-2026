@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Combat.Threat;
 using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
 {

@@ -66,7 +66,7 @@ namespace Rollgeon.Combat.Tests
                 disposable.Dispose();
             }
             var leftover = GameObject.Find("ThreatTelegraphOverlay");
-            if (leftover != null) Object.DestroyImmediate(leftover);
+            if (leftover != null) UnityEngine.Object.DestroyImmediate(leftover);
 
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
