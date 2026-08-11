@@ -5,6 +5,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -139,6 +140,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (tiles.Count == 0) return null;
 
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
+            ServiceLocator.TryGetService<IEntityPortraitResolver>(out var portraits);
             var visuals = context.VisualService;
 
             var spawned = new List<Guid>(tiles.Count);
@@ -150,6 +152,11 @@ namespace Rollgeon.Combat.AI.Decisions
 
                 registry.Register(id, attrs);
                 context.Attributes.Register(id, attrs);
+
+                // Sin esto el slot del refuerzo en la cola de turnos sale en blanco:
+                // IEntityPortraitResolver resuelve por guid contra un dict que puebla quien
+                // spawnea (ver DefaultEnemySpawnResolver), y el player es el único con fallback.
+                portraits?.Register(id, EnemyToSpawn.Portrait);
 
                 if (aiRegistry != null)
                 {
