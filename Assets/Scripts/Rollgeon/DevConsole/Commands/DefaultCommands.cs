@@ -45,7 +45,6 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new SetEnemyHpCommand());
             r.Register(new EnergyCommand(infEnergy));
             r.Register(new SetDiceRollCommand());
-            r.Register(new PassiveCommand());
 
             // Steam
             r.Register(new SteamCommand());

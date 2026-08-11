@@ -2,7 +2,6 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.AntiRepeat;
 using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Weakness;
@@ -64,18 +63,6 @@ namespace Rollgeon.Combat.Pipelines
 
             // ── 0. Zero / negative guard ──────────────────────────────────────
             if (damage <= 0)
-            {
-                ctx.FinalDamage = 0;
-                ctx.WeaknessMultiplier = 1f;
-                ctx.WasLethal = false;
-                return ctx;
-            }
-
-            // ── 0b. Repeat-combo guard (no repetir el mismo combo 2 veces seguidas) ──
-            // Gated: solo aplica cuando el pasivo anti-repetición está en Mode Combo (A/B).
-            // Record() ya corrió para este golpe (CombatHandoffService, antes de llegar
-            // acá) — comparamos contra el anterior al que acaba de empujar al frente.
-            if (ComboRepeatRuleActive() && IsRepeatOfPreviousCombo(ctx.ComboId, alreadyRecordedThisAttack: true))
             {
                 ctx.FinalDamage = 0;
                 ctx.WeaknessMultiplier = 1f;
@@ -214,18 +201,6 @@ namespace Rollgeon.Combat.Pipelines
                 return ctx;
             }
 
-            // Repeat-combo guard (Mode Combo): a diferencia de Resolve, acá el jugador todavía
-            // está eligiendo dados — Record() para ESTE intento todavía no corrió, así que
-            // comparamos directo contra el último combo ya confirmado.
-            if (ComboRepeatRuleActive() && IsRepeatOfPreviousCombo(ctx.ComboId, alreadyRecordedThisAttack: false))
-            {
-                ctx.FinalDamage = 0;
-                ctx.WeaknessMultiplier = 1f;
-                ctx.ShieldAbsorbed = 0;
-                ctx.BlockedByShield = false;
-                return ctx;
-            }
-
             // Stage 2 — weakness (read-only: PeekMultiplier NO dispara OnWeaknessHit).
             float weakMult = 1f;
             if (ctx.IsWeaknessHit && _weaknessChecker != null)
@@ -247,23 +222,19 @@ namespace Rollgeon.Combat.Pipelines
             return ctx;
         }
 
-        // Gate del pasivo anti-repetición (A/B). El zeroing por combo repetido SOLO aplica en
-        // Mode Combo. Si el servicio no está registrado (tests unitarios del pipeline, bootstrap
-        // parcial), tratamos la regla como APAGADA (legacy) para no anular daño inesperadamente.
-        private static bool ComboRepeatRuleActive()
-        {
-            return ServiceLocator.TryGetService<IAntiRepeatModeService>(out var svc)
-                   && svc != null
-                   && svc.Mode == AntiRepeatMode.Combo;
-        }
-
-        // "Combo repetido = 0 daño" — memoria de un solo paso contra IComboLogService
-        // (ya existe, poblado por CombatHandoffService en cada ataque primario con tirada).
-        // Resolve() corre DESPUÉS de que Record() ya empujó el combo de este golpe al
-        // frente del historial — el "anterior real" queda en el índice 1. Preview() corre
-        // ANTES de que Record() confirme el intento — el "anterior real" es directamente
-        // LastCombo (índice 0). ComboId vacío (ataques sin combo / no-jugador) nunca activa
-        // la regla.
+        /// <summary>
+        /// <b>Regla huérfana, a propósito.</b> "Combo repetido = 0 daño": nadie la llama hoy.
+        /// Vivía detrás del pasivo global anti-repetición (A/B), que se eliminó porque su presión
+        /// la ejerce ahora el propio boss desde su árbol (<c>AINode_RotateBlock</c>) y porque
+        /// anular daño sin aviso en pantalla se sentía como un bug. Se conserva el cálculo —no el
+        /// wiring— para cuando se quiera reintroducir la mecánica con UI que la comunique.
+        /// <para>
+        /// Contrato original: <c>Resolve()</c> corría DESPUÉS de que <c>Record()</c> empujara el
+        /// combo del golpe al frente del historial (el "anterior real" queda en el índice 1);
+        /// <c>Preview()</c> corría ANTES de confirmarlo (el anterior es directamente
+        /// <c>LastCombo</c>). ComboId vacío (ataques sin combo / no-jugador) nunca la activa.
+        /// </para>
+        /// </summary>
         private static bool IsRepeatOfPreviousCombo(string comboId, bool alreadyRecordedThisAttack)
         {
             if (string.IsNullOrEmpty(comboId)) return false;

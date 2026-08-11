@@ -140,8 +140,11 @@ namespace Patterns
         OnContractModifierChanged,
         /// <summary>args: [Guid bossGuid, int phaseIndex]. El Boss cruzó un umbral de fase (1-based). Hook para feedback visual + diálogo.</summary>
         OnBossPhaseChanged,
-        /// <summary>args: []. Cambió el modo del pasivo anti-repetición (A/B: Combo/Dice) vía el
-        /// comando de consola 'passive'. Hook para que el HUD / handlers re-lean IAntiRepeatModeService.</summary>
+        /// <summary>OBSOLETO — nadie lo dispara ni lo escucha. Era del pasivo global
+        /// anti-repetición (A/B Combo/Dice), eliminado. <b>NO borrar el miembro:</b> Odin
+        /// serializa los enums por su int y sacarlo del medio shiftearía los valores de todos
+        /// los de abajo, rompiendo en silencio los assets que los tengan guardados (ya pasó con
+        /// la pasiva del guerrero). Reutilizable si vuelve una mecánica parecida.</summary>
         OnAntiRepeatModeChanged,
 
         // --- Modifier / attributes ---------------------------------------------
