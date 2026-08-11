@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
@@ -23,12 +24,26 @@ namespace Rollgeon.Combat.AI.Decisions
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMark : AIActionNode
     {
-        [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala).")]
+        [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala), " +
+                 "SquareAroundSelf=Boss1 (área centrada en el propio boss).")]
         public ThreatShape Shape = ThreatShape.SquareAroundPlayer;
 
-        [Tooltip("Radio para Square (1 ⇒ 3×3) o ancho en casillas de la franja para Row/Column (1 ⇒ línea del jugador). Ignorado en HalfRoom.")]
+        [Tooltip("Radio para Square/SquareAroundSelf (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column " +
+                 "(1 ⇒ línea del jugador), medio-ancho de la banda perpendicular para DirectionalBand " +
+                 "(1 ⇒ 3 casillas de ancho), o ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2). " +
+                 "Ignorado en HalfRoom.")]
         [MinValue(0)]
         public int Size = 1;
+
+        [Tooltip("Profundidad (en casillas) de la banda direccional, arrancando pegada al boss. Solo para DirectionalBand.")]
+        [MinValue(1)]
+        [ShowIf(nameof(Shape), ThreatShape.DirectionalBand)]
+        public int Depth = 2;
+
+        [Tooltip("Cantidad de cuadrados independientes, anclados al azar en la sala. Solo para ScatteredSquares.")]
+        [MinValue(1)]
+        [ShowIf(nameof(Shape), ThreatShape.ScatteredSquares)]
+        public int Count = 3;
 
         [Tooltip("Eje de corte para HalfRoom: Vertical ⇒ izquierda/derecha, Horizontal ⇒ abajo/arriba.")]
         [ShowIf(nameof(Shape), ThreatShape.HalfRoom)]
@@ -49,9 +64,29 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var grid = context.Grid;
             if (grid == null) return AIResult.Failed;
-            if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
-            var tiles = ThreatAreaShape.Compute(grid, playerCoord, Shape, Size, HalfAxis);
+            HashSet<GridCoord> tiles;
+            if (Shape == ThreatShape.DirectionalBand)
+            {
+                if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
+                if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
+                tiles = ThreatAreaShape.ComputeDirectionalBand(grid, selfCoord, playerCoord, Size, Depth);
+            }
+            else if (Shape == ThreatShape.ScatteredSquares)
+            {
+                var rng = context.Rng ?? new System.Random();
+                tiles = ThreatAreaShape.ComputeScatteredSquares(grid, rng, Count, Size);
+            }
+            else if (Shape == ThreatShape.SquareAroundSelf)
+            {
+                if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
+                tiles = ThreatAreaShape.Compute(grid, selfCoord, Shape, Size, HalfAxis);
+            }
+            else
+            {
+                if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
+                tiles = ThreatAreaShape.Compute(grid, playerCoord, Shape, Size, HalfAxis);
+            }
             if (tiles.Count == 0)
             {
                 Debug.LogWarning($"[AINode_TelegraphMark] Área vacía (shape={Shape}) — ¿grafo sin bounds? No se marca nada.");

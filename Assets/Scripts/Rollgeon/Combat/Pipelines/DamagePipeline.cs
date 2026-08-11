@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Weakness;
 using UnityEngine;
@@ -219,6 +220,33 @@ namespace Rollgeon.Combat.Pipelines
             ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
             ctx.FinalDamage = damage;
             return ctx;
+        }
+
+        /// <summary>
+        /// <b>Regla huérfana, a propósito.</b> "Combo repetido = 0 daño": nadie la llama hoy.
+        /// Vivía detrás del pasivo global anti-repetición (A/B), que se eliminó porque su presión
+        /// la ejerce ahora el propio boss desde su árbol (<c>AINode_RotateBlock</c>) y porque
+        /// anular daño sin aviso en pantalla se sentía como un bug. Se conserva el cálculo —no el
+        /// wiring— para cuando se quiera reintroducir la mecánica con UI que la comunique.
+        /// <para>
+        /// Contrato original: <c>Resolve()</c> corría DESPUÉS de que <c>Record()</c> empujara el
+        /// combo del golpe al frente del historial (el "anterior real" queda en el índice 1);
+        /// <c>Preview()</c> corría ANTES de confirmarlo (el anterior es directamente
+        /// <c>LastCombo</c>). ComboId vacío (ataques sin combo / no-jugador) nunca la activa.
+        /// </para>
+        /// </summary>
+        private static bool IsRepeatOfPreviousCombo(string comboId, bool alreadyRecordedThisAttack)
+        {
+            if (string.IsNullOrEmpty(comboId)) return false;
+            if (!ServiceLocator.TryGetService<IComboLogService>(out var log) || log == null) return false;
+
+            if (alreadyRecordedThisAttack)
+            {
+                var lastTwo = log.Last(2);
+                return lastTwo.Count >= 2 && lastTwo[1] == comboId;
+            }
+
+            return log.LastCombo == comboId;
         }
 
         private int ReadShield(Guid targetId)

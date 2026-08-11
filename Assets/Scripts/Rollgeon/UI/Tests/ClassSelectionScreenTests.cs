@@ -7,6 +7,7 @@ using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Combos.Tests;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
@@ -315,12 +316,13 @@ namespace Rollgeon.UI.Tests
             // Act
             InvokePushed(null);
 
-            // Assert: sin IMetaProgressionService ni Localization inicializada, el
-            // provider cae al fallback hardcodeado de la tabla UI.
+            // Assert: sin IMetaProgressionService el provider usa el texto genérico de la
+            // tabla UI. Se resuelve por el mismo camino que la producción para no depender del
+            // locale activo (sale de un PlayerPref y no siempre es español).
             var trigger = _magoButton.GetComponent<UITooltipTrigger>();
             Assert.IsNotNull(trigger, "El botón bloqueado debe tener UITooltipTrigger.");
             Assert.IsNotNull(trigger.TextProvider, "El trigger debe tener TextProvider cableado.");
-            Assert.AreEqual("Próximamente", trigger.TextProvider(),
+            Assert.AreEqual(GenericLockedTooltip, trigger.TextProvider(),
                 "Sin servicio meta el tooltip usa el fallback genérico.");
         }
 
@@ -328,8 +330,12 @@ namespace Rollgeon.UI.Tests
         public void ResolveLockedTooltip_WithHeroClassDefinition_ReturnsDefinitionHint()
         {
             // Arrange
+            // UnlockId sintético a propósito: "unlock.class.mage" SÍ existe en la tabla Content
+            // (con el placeholder "Coming soon"/"Próximamente", que coincide con el tooltip
+            // genérico), así que usarlo hacía indistinguible "usó el hint de la definición" de
+            // "cayó al genérico". Con una key inexistente el hint degrada al HintText autorado.
             var def = ScriptableObject.CreateInstance<UnlockDefinitionSO>();
-            def.UnlockId = "unlock.class.mage";
+            def.UnlockId = "unlock.class.test_only_mage";
             def.Category = UnlockableCategory.HeroClass;
             def.TargetId = "Mage";
             def.HintText = "Hint de prueba del Mago";
@@ -340,9 +346,12 @@ namespace Rollgeon.UI.Tests
                 // Act
                 string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
 
-                // Assert: Localization sin inicializar en EditMode ⇒ el hint
-                // localizado degrada al HintText autorado.
-                Assert.AreEqual("Hint de prueba del Mago", tooltip);
+                // Assert: usa el hint DE ESA definición, no el genérico. El valor se resuelve
+                // por el mismo camino que la producción (si la tabla no tiene la key, degrada al
+                // HintText autorado) para que el test no dependa del locale activo.
+                Assert.AreEqual(LocalizedContent.Hint(def.UnlockId, def.HintText), tooltip);
+                Assert.AreNotEqual(GenericLockedTooltip, tooltip,
+                    "Con definición registrada no debe caer al tooltip genérico.");
             }
             finally
             {
@@ -359,9 +368,14 @@ namespace Rollgeon.UI.Tests
             string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
 
             // Assert
-            Assert.AreEqual("Próximamente", tooltip,
+            Assert.AreEqual(GenericLockedTooltip, tooltip,
                 "Sin servicio meta se usa el fallback de la tabla UI.");
         }
+
+        /// <summary>Texto genérico de clase bloqueada, resuelto igual que en producción
+        /// (<c>ClassSelectionScreen.ResolveLockedTooltip</c>) para no atarse a un idioma.</summary>
+        private static string GenericLockedTooltip =>
+            LocalizedContent.Ui("class_select.locked_tooltip", "Próximamente");
 
         private sealed class StubMetaService : IMetaProgressionService
         {

@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Weakness;
 
@@ -23,6 +24,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
 
             _attrManager = new AttributesManager();
             _sourceId = Guid.NewGuid();
@@ -49,6 +51,60 @@ namespace Rollgeon.Combat.Pipelines.Tests
             _attrManager.Dispose();
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
+        }
+
+        // ── Combo repetido: la regla de "0 daño" ya NO está wireada ──────────
+        //
+        // Vivía detrás del pasivo global anti-repetición (A/B), que se eliminó: la presión la
+        // ejerce ahora el boss desde su árbol y anular daño sin aviso se leía como un bug. El
+        // cálculo quedó huérfano en DamagePipeline para reintroducirlo con UI en el futuro.
+
+        [Test]
+        public void Resolve_SameComboTwiceInARow_DealsFullDamage()
+        {
+            // Arrange — el mismo combo dos turnos seguidos, el caso que antes anulaba el daño.
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");   // turno anterior
+            comboLog.Record("combo.par");   // este golpe (CombatHandoffService ya lo registró)
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            // Act
+            pipeline.Resolve(ctx);
+
+            // Assert
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "Repetir el mismo combo debe pegar completo — la regla de 0 daño está desactivada.");
+        }
+
+        [Test]
+        public void Preview_SameComboTwiceInARow_MatchesResolve()
+        {
+            // Arrange
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            // Act
+            pipeline.Preview(ctx);
+
+            // Assert — preview y golpe real no deben divergir por esta regla.
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "El preview tampoco debe anular el combo repetido.");
         }
 
         // ── 1. Apply_ReducesTargetHealth ─────────────────────────────────
