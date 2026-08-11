@@ -565,6 +565,38 @@ MonoBehaviour:
     m_Localized: Items
     m_Metadata:
       m_Items: []
+  - m_Id: 10000862892814336
+    m_Localized: Chest opened!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311808
+    m_Localized: +{0} gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311809
+    m_Localized: Click to skip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311810
+    m_Localized: Click to continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311811
+    m_Localized: Basic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311812
+    m_Localized: Epic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311813
+    m_Localized: Buenardo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311814
+    m_Localized: Epicardo
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

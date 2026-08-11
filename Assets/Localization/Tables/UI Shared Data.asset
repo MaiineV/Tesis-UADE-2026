@@ -527,6 +527,38 @@ MonoBehaviour:
     m_Key: inventory.items_caption
     m_Metadata:
       m_Items: []
+  - m_Id: 10000862892814336
+    m_Key: chest.reveal.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311808
+    m_Key: chest.reveal.gold_amount
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311809
+    m_Key: chest.reveal.skip_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311810
+    m_Key: chest.reveal.continue_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311811
+    m_Key: chest.rarity.common
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311812
+    m_Key: chest.rarity.uncommon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311813
+    m_Key: chest.rarity.rare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311814
+    m_Key: chest.rarity.legendary
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

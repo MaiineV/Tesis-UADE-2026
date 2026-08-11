@@ -40,6 +40,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedPlayerIcons();
             SeedDiceBag();
             SeedInventory();
+            SeedChest();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -579,6 +580,25 @@ namespace Rollgeon.EditorTools.Localization
             Ui(ContractTextKeys.HeaderExample, "Ejemplo", "Example");
             Ui(ContractTextKeys.HeaderName, "Combo", "Combo");
             Ui(ContractTextKeys.HeaderDamage, "Daño base", "Base DMG");
+        }
+
+        // ==================================================================
+        // Reveal del cofre (Feature#0046)
+        // ==================================================================
+
+        private static void SeedChest()
+        {
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.Title, "¡Cofre abierto!", "Chest opened!");
+            // El {0} es el monto de oro — tiene que sobrevivir la traducción.
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.GoldAmount, "+{0} de oro", "+{0} gold");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.SkipHint, "Click para acelerar", "Click to skip");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.ContinueHint, "Click para continuar", "Click to continue");
+            // Nombres de tier del GDD (Básico/Épico/Buenardo/Épicardo) — en EN los dos
+            // últimos quedan como nombres propios, decisión de diseño.
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityCommon, "Básico", "Basic");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Épico", "Epic");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Buenardo", "Buenardo");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Épicardo", "Epicardo");
         }
 
         // ==================================================================
