@@ -343,6 +343,144 @@ namespace Rollgeon.Chests.Tests
             Assert.IsFalse(expired);
         }
 
+        // ----- mimic -----------------------------------------------------
+
+        private Entities.EnemyDataSO _mimicData;
+
+        private void ArrangeMimic(float statScale = 0.5f)
+        {
+            _mimicData = ScriptableObject.CreateInstance<Entities.EnemyDataSO>();
+            _mimicData.EntityId = "mimic.test";
+            _mimicData.BaseHP = 60;
+            _mimicData.BaseAttack = 20;
+            _mimicData.BaseSpeed = 4;
+            _assets.Add(_mimicData);
+            _config.MimicEnemy = _mimicData;
+            foreach (var tier in _config.Tiers)
+            {
+                tier.MimicStatScale = statScale;
+                tier.MimicGoldMin = 7;
+                tier.MimicGoldMax = 7;
+            }
+
+            ServiceLocator.AddService<Combat.Initiative.InMemoryEntityRegistry>(
+                new Combat.Initiative.InMemoryEntityRegistry());
+            ServiceLocator.AddService<Combat.TurnOrderService>(new Combat.TurnOrderService());
+
+            Assert.IsTrue(_service.DebugSpawn(ItemRarity.Common, isMimic: true));
+        }
+
+        [Test]
+        public void MimicAnyPlayerHit_ShouldActivateMeleeAtChestTile()
+        {
+            // Arrange
+            ArrangeMimic(statScale: 0.5f);
+            var chestGuid = _service.ActiveChest.Guid;
+            var chestCoord = _service.ActiveChest.Coord;
+            Guid activatedChest = Guid.Empty, mimicGuid = Guid.Empty;
+            EventManager.Subscribe(EventName.OnChestMimicActivated, args =>
+            {
+                activatedChest = (Guid)args[0];
+                mimicGuid = (Guid)args[1];
+            });
+            bool reinforcementAnnounced = false;
+            EventManager.Subscribe(EventName.OnReinforcementSpawned, _ => reinforcementAnnounced = true);
+
+            // Act — golpe NO letal del jugador: igual activa (GDD §28, confirmado).
+            Hit(_player.PlayerGuid, lethal: false);
+
+            // Assert — cofre fuera, Melee escalado en su tile, en la cola y contando
+            // para el clear, con el aviso de refuerzo (sin turno sorpresa).
+            Assert.AreEqual(chestGuid, activatedChest);
+            Assert.AreNotEqual(Guid.Empty, mimicGuid);
+            Assert.IsFalse(_service.IsChest(chestGuid));
+            Assert.IsNull(_attrs.GetAttribute<Health>(chestGuid));
+            Assert.AreEqual(30, _attrs.GetAttribute<Health>(mimicGuid).Value); // 60 × 0.5
+            Assert.IsTrue(_grid.TryGetPosition(mimicGuid, out var mimicCoord));
+            Assert.AreEqual(chestCoord, mimicCoord);
+            Assert.IsTrue(reinforcementAnnounced);
+            CollectionAssert.Contains(_room.SpawnedEnemies, mimicGuid);
+            Assert.AreEqual(ChestPhase.MimicActive, _service.ActiveChest.Phase);
+        }
+
+        [Test]
+        public void MimicEnemyHit_ShouldNotActivateNorBreak()
+        {
+            // Arrange
+            ArrangeMimic();
+            var chestGuid = _service.ActiveChest.Guid;
+
+            // Act — golpe "letal" de un enemigo (en runtime el clamp del pipeline lo
+            // impide; acá validamos que el service tampoco resuelve nada).
+            Hit(Guid.NewGuid(), lethal: true);
+
+            // Assert — el Mimic sigue esperando el contacto del jugador.
+            Assert.IsTrue(_service.IsChest(chestGuid));
+            Assert.AreEqual(ChestPhase.Idle, _service.ActiveChest.Phase);
+            CollectionAssert.IsEmpty(_room.SpawnedEnemies);
+        }
+
+        [Test]
+        public void TryGetMinHp_ShouldClampOnlyUnactivatedMimic_AgainstNonPlayerSources()
+        {
+            // Arrange
+            ArrangeMimic();
+            var chestGuid = _service.ActiveChest.Guid;
+
+            // Act + Assert — enemigo: clampea a 1; jugador: no; otro guid: no.
+            Assert.IsTrue(_service.TryGetMinHp(chestGuid, Guid.NewGuid(), out int minHp));
+            Assert.AreEqual(1, minHp);
+            Assert.IsFalse(_service.TryGetMinHp(chestGuid, _player.PlayerGuid, out _));
+            Assert.IsFalse(_service.TryGetMinHp(Guid.NewGuid(), Guid.NewGuid(), out _));
+        }
+
+        [Test]
+        public void TryGetMinHp_ShouldNotClampNormalChest()
+        {
+            // Arrange — cofre normal (no mimic).
+            StartCombat();
+            var chestGuid = _service.ActiveChest.Guid;
+
+            // Act + Assert
+            Assert.IsFalse(_service.TryGetMinHp(chestGuid, Guid.NewGuid(), out _));
+        }
+
+        [Test]
+        public void MimicDeath_ShouldPayTierGold()
+        {
+            // Arrange — EnemyGoldDropService real escuchando OnEntityDestroyed.
+            using var goldDrops = new Rollgeon.Economy.EnemyGoldDropService(_economy);
+            ServiceLocator.AddService<Rollgeon.Economy.EnemyGoldDropService>(goldDrops);
+            ArrangeMimic();
+            Hit(_player.PlayerGuid, lethal: false);
+            var mimicGuid = _service.ActiveChest.MimicEnemyGuid;
+
+            // Act — muere el Mimic (camino normal de CombatDeathWatcher).
+            EventManager.Trigger(EventName.OnEntityDestroyed, mimicGuid, _player.PlayerGuid);
+
+            // Assert — solo oro, monto del tier (7).
+            Assert.AreEqual(7, _economy.CurrentGold);
+            Assert.AreEqual(0, _inventory.Added.Count);
+        }
+
+        [Test]
+        public void OnCombatEnd_WithLiveMimic_ShouldRemoveItFromSpawnedEnemies()
+        {
+            // Arrange — escape con el Mimic activado y vivo: su guid no persiste, no
+            // puede quedar colgado en SpawnedEnemies para el re-entry.
+            ArrangeMimic();
+            Hit(_player.PlayerGuid, lethal: false);
+            var mimicGuid = _service.ActiveChest.MimicEnemyGuid;
+            CollectionAssert.Contains(_room.SpawnedEnemies, mimicGuid);
+
+            // Act
+            EndCombat();
+
+            // Assert — sin expiración espuria (ya estaba resuelto como MimicActive).
+            CollectionAssert.DoesNotContain(_room.SpawnedEnemies, mimicGuid);
+            Assert.IsNull(_service.ActiveChest);
+        }
+
         // ----- stubs -----------------------------------------------------
 
         private sealed class StubDungeon : IDungeonService

@@ -45,6 +45,7 @@ namespace Rollgeon.Chests
             _instance = new ChestService(_config, _lootPool);
             ServiceLocator.AddService<IChestService>(_instance, ServiceScope.Global);
             ServiceLocator.AddService<IChestRegistry>(_instance, ServiceScope.Global);
+            ServiceLocator.AddService<IMinHpClampProvider>(_instance, ServiceScope.Global);
         }
     }
 }

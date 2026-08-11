@@ -41,7 +41,7 @@ namespace Rollgeon.Chests
     /// por eso este service es quien lo limpia en <c>OnCombatEnd</c>.
     /// </para>
     /// </remarks>
-    public sealed class ChestService : IChestService, IDisposable
+    public sealed class ChestService : IChestService, Combat.Pipelines.IMinHpClampProvider, IDisposable
     {
         private const string LogPrefix = "[ChestService] ";
         private const string StateKey = "chest_0";
@@ -107,6 +107,25 @@ namespace Rollgeon.Chests
             }
             chestGuid = Guid.Empty;
             return false;
+        }
+
+        // -----------------------------------------------------------------
+        // IMinHpClampProvider — clamp del Mimic (GDD §25)
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Daño de enemigos/eventos nunca deja a un Mimic sin activar por debajo de
+        /// <c>MimicClampHP</c> (1). No aplica a cofres normales ni a golpes del
+        /// jugador — esos activan al Mimic directamente, sin importar el HP.
+        /// </summary>
+        public bool TryGetMinHp(Guid targetId, Guid sourceId, out int minHp)
+        {
+            minHp = _config != null ? _config.MimicClampHP : 1;
+            return _active != null
+                   && _active.Phase == ChestPhase.Idle
+                   && _active.IsMimic
+                   && _active.Guid == targetId
+                   && !IsPlayer(sourceId);
         }
 
         // -----------------------------------------------------------------
@@ -357,14 +376,115 @@ namespace Rollgeon.Chests
             _active = null;
         }
 
+        /// <summary>
+        /// GDD §12.1: el cofre se reemplaza por un enemigo Melee activo en su misma
+        /// tile, con vida completa de su propio bloque de stats (escalado por tier,
+        /// placeholder TBD-15), que entra a la cola de la ronda EN CURSO sin turno
+        /// sorpresa y cuenta para el clear de la sala. Espejo de
+        /// <c>AINode_SpawnReinforcements.SpawnWave</c>.
+        /// </summary>
         private void ActivateMimic()
         {
-            // Implementación en el commit de Mimic — hasta entonces un Mimic golpeado
-            // por el jugador se comporta como cofre normal para no dejar un soft-state.
             var chest = _active;
-            Debug.LogWarning(LogPrefix + "Mimic golpeado por el jugador — activación pendiente de implementación.");
-            chest.IsMimic = false;
+            var mimicData = _config.MimicEnemy;
+            if (mimicData == null)
+            {
+                Debug.LogError(LogPrefix + "ChestConfigSO.MimicEnemy sin asignar — el Mimic se abre como cofre normal.");
+                chest.IsMimic = false;
+                return;
+            }
+
+            var tierDef = _config.GetTierDef(chest.Tier);
+            float scale = tierDef?.MimicStatScale ?? 1f;
+            var coord = chest.Coord;
+
+            // El cofre deja de existir ANTES del spawn: libera la tile y su guid sale
+            // del registry (IsChest ya no matchea).
+            chest.Phase = ChestPhase.MimicActive;
+            DespawnEntity(chest.Guid);
+
+            var mimicId = Guid.NewGuid();
+            var mimicAttrs = BuildScaledStats(mimicData, scale, out int maxHp);
+
+            if (ServiceLocator.TryGetService<Combat.Initiative.InMemoryEntityRegistry>(out var registry) && registry != null)
+                registry.Register(mimicId, mimicAttrs);
+            if (ServiceLocator.TryGetService<AttributesManager>(out var attrs) && attrs != null)
+                attrs.Register(mimicId, mimicAttrs);
+            if (ServiceLocator.TryGetService<Entities.Portraits.IEntityPortraitResolver>(out var portraits) && portraits != null)
+                portraits.Register(mimicId, mimicData.Portrait);
+            if (ServiceLocator.TryGetService<Combat.AI.IEnemyAIRegistry>(out var aiRegistry) && aiRegistry != null)
+                aiRegistry.Register(mimicId, mimicData.CreateRuntimeAIRoot(), maxHp);
+            if (ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null)
+                grid.Register(mimicId, coord);
+
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
+            {
+                visuals.SpawnEnemy(mimicId, mimicData, coord);
+                if (visuals.TryGetPawn(mimicId, out var pawn) && pawn != null && pawn.HealthBar != null)
+                    pawn.HealthBar.Initialize(mimicId, maxHp, maxHp);
+            }
+
+            // A diferencia de los refuerzos, el Mimic SÍ cuenta para el clear: entra a
+            // SpawnedEnemies (sin EnemySpawnState — no persiste entre entradas, ver
+            // OnCombatEnd) y su muerte lo saca vía DungeonManager.OnEntityDestroyed.
+            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon)
+                && dungeon != null
+                && dungeon.GetAllRoomInstances().TryGetValue(chest.RoomInstanceId, out var room))
+            {
+                room.SpawnedEnemies.Add(mimicId);
+            }
+
+            // Recompensa del Mimic: solo oro (GDD §12.1), escalado por tier (TBD-16).
+            if (ServiceLocator.TryGetService<EnemyGoldDropService>(out var goldDrops)
+                && goldDrops != null
+                && tierDef != null)
+            {
+                var rng = _rng ?? new System.Random();
+                int min = Math.Max(0, tierDef.MimicGoldMin);
+                int max = Math.Max(min, tierDef.MimicGoldMax);
+                goldDrops.RegisterDrop(mimicId, rng.Next(min, max + 1));
+            }
+
+            if (ServiceLocator.TryGetService<Combat.TurnOrderService>(out var turnOrder) && turnOrder != null)
+                turnOrder.Append(mimicId);
+
+            // Reusa el aviso de refuerzos: TreeDrivenEnemyAI difiere la primera
+            // activación — el Mimic aparece sin actuar (GDD §12.1, sin turno sorpresa).
+            EventManager.Trigger(EventName.OnReinforcementSpawned, mimicId);
+
+            if (TryGetState(chest.RoomInstanceId, out var state))
+            {
+                state.MimicActivated = true;
+                state.Consumed = true;
+            }
+
+            chest.MimicEnemyGuid = mimicId;
+            EventManager.Trigger(EventName.OnChestMimicActivated, chest.Guid, mimicId);
         }
+
+        /// <summary>
+        /// Stats runtime del Mimic: espejo de <c>EnemyDataSO.CreateRuntimeStats(1)</c>
+        /// con vida/ataque/velocidad escaladas ("más débil en las tres dimensiones",
+        /// GDD §12.1). Energía y heal quedan en base — el Melee no los usa para pegar.
+        /// </summary>
+        private static ModifiableAttributes BuildScaledStats(
+            Entities.EnemyDataSO data, float scale, out int maxHp)
+        {
+            maxHp = ScaleStat(data.ResolveMaxHP(1), scale);
+            var attrs = new ModifiableAttributes();
+            attrs.EnsureInitialized();
+            attrs.SetAttribute<Health>(new Health(maxHp));
+            attrs.SetAttribute<Attack>(new Attack(ScaleStat(data.BaseAttack, scale)));
+            attrs.SetAttribute<Speed>(new Speed(ScaleStat(data.BaseSpeed, scale)));
+            attrs.SetAttribute<Energy>(new Energy(data.MaxEnergy));
+            attrs.SetAttribute<Entities.Behaviors.HealStrength>(
+                new Entities.Behaviors.HealStrength(data.BaseHealStrength));
+            attrs.SetAttribute<Shield>(new Shield(0));
+            return attrs;
+        }
+
+        private static int ScaleStat(int baseValue, float scale) =>
+            Math.Max(1, Mathf.RoundToInt(baseValue * scale));
 
         // -----------------------------------------------------------------
         // Expiración
@@ -383,6 +503,17 @@ namespace Rollgeon.Chests
                 chest.Phase = ChestPhase.Expired;
                 DespawnEntity(chest.Guid);
                 EventManager.Trigger(EventName.OnChestExpired, chest.Guid);
+            }
+            else if (chest.Phase == ChestPhase.MimicActive && chest.MimicEnemyGuid != Guid.Empty)
+            {
+                // Escape con el Mimic vivo: no persiste como EnemySpawnState, así que
+                // su guid no puede quedar colgado en SpawnedEnemies para el re-entry.
+                if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon)
+                    && dungeon != null
+                    && dungeon.GetAllRoomInstances().TryGetValue(chest.RoomInstanceId, out var room))
+                {
+                    room.SpawnedEnemies.Remove(chest.MimicEnemyGuid);
+                }
             }
 
             _active = null;
