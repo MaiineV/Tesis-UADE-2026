@@ -85,6 +85,16 @@ namespace Rollgeon.Entities.Visuals
             return SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy);
         }
 
+        public EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord)
+        {
+            if (prefab == null)
+            {
+                Debug.LogError("[EntityVisualService] SpawnProp sin prefab asignado.");
+                return null;
+            }
+            return SpawnInternal(guid, prefab, coord, EntityPawn.PawnKind.Prop);
+        }
+
         public void Despawn(Guid guid)
         {
             if (!_byGuid.TryGetValue(guid, out var pawn)) return;

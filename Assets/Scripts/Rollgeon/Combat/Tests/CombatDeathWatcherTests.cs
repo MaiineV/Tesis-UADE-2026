@@ -402,6 +402,7 @@ namespace Rollgeon.Combat.Tests
             public HashSet<Guid> DespawnedGuids { get; } = new();
             public EntityPawn SpawnHero(Guid guid, ClassHeroSO hero, GridCoord coord) => null;
             public EntityPawn SpawnEnemy(Guid guid, EnemyDataSO data, GridCoord coord) => null;
+            public EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord) => null;
             public void Despawn(Guid guid) => DespawnedGuids.Add(guid);
             public void DespawnAll() { }
             public bool TryGetPawn(Guid guid, out EntityPawn pawn) { pawn = null; return false; }

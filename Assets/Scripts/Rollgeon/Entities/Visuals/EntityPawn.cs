@@ -269,6 +269,6 @@ namespace Rollgeon.Entities.Visuals
                 yield return null;
         }
 
-        public enum PawnKind { Hero, Enemy, Boss }
+        public enum PawnKind { Hero, Enemy, Boss, Prop }
     }
 }

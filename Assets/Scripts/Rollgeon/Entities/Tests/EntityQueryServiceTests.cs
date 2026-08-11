@@ -153,6 +153,67 @@ namespace Rollgeon.Entities.Tests
             CollectionAssert.AreEquivalent(new[] { _enemyA, _enemyB }, enemies);
         }
 
+        // ----- Chests como Props (Feature#0046) --------------------------
+
+        [Test]
+        public void GetRelationship_ChestTarget_ReturnsPropsForAnyOwner()
+        {
+            // Arrange — un cofre registrado en attrs y marcado en el registry.
+            var chest = RegisterChest();
+
+            // Act + Assert — Props para ambos owners: la IA (Player|Enemies) no lo
+            // matchea, el ataque del player solo si su filter incluye Props.
+            Assert.AreEqual(EntityFilterMask.Props, _sut.GetRelationship(_enemyA, chest));
+            Assert.AreEqual(EntityFilterMask.Props, _sut.GetRelationship(_playerGuid, chest));
+        }
+
+        [Test]
+        public void GetAllEnemiesOf_PlayerOwner_ExcludesChest()
+        {
+            // Arrange
+            var chest = RegisterChest();
+
+            // Act
+            var enemies = _sut.GetAllEnemiesOf(_playerGuid).Select(e => e.Guid).ToList();
+
+            // Assert — el cofre no infla el conteo de enemigos (AliveEnemiesCountReader).
+            CollectionAssert.AreEquivalent(new[] { _enemyA, _enemyB }, enemies);
+            CollectionAssert.DoesNotContain(enemies, chest);
+        }
+
+        [Test]
+        public void GetAllAlliesOf_EnemyOwner_ExcludesChest()
+        {
+            // Arrange
+            var chest = RegisterChest();
+
+            // Act
+            var allies = _sut.GetAllAlliesOf(_enemyA).Select(e => e.Guid).ToList();
+
+            // Assert — un healer enemigo jamás ve al cofre como aliado curable.
+            CollectionAssert.DoesNotContain(allies, chest);
+        }
+
+        private Guid RegisterChest()
+        {
+            var chest = new Guid("00000000-0000-0000-0000-0000000000c0");
+            RegisterEntity(chest, hp: 20);
+            ServiceLocator.AddService<Rollgeon.Chests.IChestRegistry>(new StubChestRegistry(chest));
+            return chest;
+        }
+
+        private sealed class StubChestRegistry : Rollgeon.Chests.IChestRegistry
+        {
+            private readonly Guid _chest;
+            public StubChestRegistry(Guid chest) => _chest = chest;
+            public bool IsChest(Guid guid) => guid == _chest;
+            public bool TryGetActiveChest(out Guid chestGuid)
+            {
+                chestGuid = _chest;
+                return true;
+            }
+        }
+
         // ----- Bootstrap registration (regresión del hueco original) -----
 
         [Test]
