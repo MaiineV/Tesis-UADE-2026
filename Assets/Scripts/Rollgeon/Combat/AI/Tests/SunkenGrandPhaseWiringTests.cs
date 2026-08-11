@@ -69,6 +69,11 @@ namespace Rollgeon.Combat.AI.Tests
                 "SpawnReinforcements.EnemyToSpawn está en null — no invocaría nada.");
             Assert.AreEqual(2, spawn.Count, "El boss debería invocar 2 refuerzos por oleada.");
 
+            // Reportado en playtest: con 0 la oleada siguiente entra al turno siguiente de morir
+            // la anterior, y se sentía como "1 turno". 2 = espera dos turnos del boss.
+            Assert.AreEqual(2, spawn.RespawnDelayTurns,
+                "Tras aniquilar la oleada el boss debe esperar 2 turnos antes de la siguiente.");
+
             // El nodo se auto-gatea y necesita tickear cada turno para respawnear la oleada
             // siguiente; envuelto en Once quedaría latcheado tras la primera y no habría loop.
             Assert.IsFalse(gate.Then is AINode_Once,
@@ -109,6 +114,25 @@ namespace Rollgeon.Combat.AI.Tests
                     "El Selector que envuelve al gate no tiene un AINode_Wait de fallback — " +
                     "sin él el Selector devuelve Failed y aborta el turno igual.");
             }
+        }
+
+        /// <summary>
+        /// Reportado en playtest: a vida baja del boss aparecía un segundo dado bloqueado, sin
+        /// nada en pantalla que lo explicara. Venía de un <c>If(HP&lt;10%)</c> que escalaba el
+        /// candado a 2 dados. El boss bloquea siempre 1, sin escalada.
+        /// </summary>
+        [Test]
+        public void Boss_LocksExactlyOneDie_WithNoHpEscalation()
+        {
+            // Arrange + Act
+            var locks = Descendants(_root).OfType<AINode_RotateBlock>().ToList();
+
+            // Assert
+            Assert.AreEqual(1, locks.Count,
+                "Debe haber un único AINode_RotateBlock — dos implican la escalada por HP que " +
+                "bloqueaba un segundo dado a vida baja.");
+            Assert.AreEqual(AINode_RotateBlock.BlockTarget.Dice, locks[0].Target);
+            Assert.AreEqual(1, locks[0].Count, "El candado del boss bloquea 1 solo dado.");
         }
 
         [Test]

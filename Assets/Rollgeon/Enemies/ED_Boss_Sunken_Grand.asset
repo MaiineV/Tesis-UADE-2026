@@ -312,7 +312,7 @@ MonoBehaviour:
       Data: 2
     - Name: RespawnDelayTurns
       Entry: 3
-      Data: 0
+      Data: 2
     - Name: 
       Entry: 8
       Data: 
@@ -624,59 +624,13 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 63|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: Conditions
-      Entry: 7
-      Data: 64|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 65|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
-    - Name: _isConstantValue
-      Entry: 5
-      Data: true
-    - Name: Percent
-      Entry: 4
-      Data: 0.1
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Then
-      Entry: 7
-      Data: 66|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
-    - Name: Target
-      Entry: 3
-      Data: 0
-    - Name: Count
-      Entry: 3
-      Data: 2
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Else
-      Entry: 7
-      Data: 67|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 63|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 0
     - Name: Count
       Entry: 3
       Data: 1
-    - Name: 
-      Entry: 8
-      Data: 
     - Name: 
       Entry: 8
       Data: 
