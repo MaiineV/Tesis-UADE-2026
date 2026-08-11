@@ -57,15 +57,20 @@ namespace Rollgeon.DevConsole.Tests
         {
             var ctx = new FakeConsoleContext();
             var engine = new AutocompleteEngine(BuildRealRegistry(ctx));
-            var r = engine.Compute("he", 2, ctx); // heal, help
+            // "he" matchea heal/help por prefijo y cualquier comando que lo contenga
+            // (ej. c-he-st) — el wrap se asserta contra el conteo real para no
+            // depender del contenido exacto del registry.
+            var r = engine.Compute("he", 2, ctx);
+            int count = r.Suggestions.Count;
+            Assert.GreaterOrEqual(count, 2);
 
             Assert.AreEqual(0, engine.SelectedIndex);
             engine.MoveDown();
             Assert.AreEqual(1, engine.SelectedIndex);
-            engine.MoveDown();
+            for (int i = 1; i < count; i++) engine.MoveDown();
             Assert.AreEqual(0, engine.SelectedIndex); // wrap
             engine.MoveUp();
-            Assert.AreEqual(r.Suggestions.Count - 1, engine.SelectedIndex);
+            Assert.AreEqual(count - 1, engine.SelectedIndex);
         }
 
         [Test]
