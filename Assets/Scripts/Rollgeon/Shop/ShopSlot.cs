@@ -8,7 +8,7 @@ namespace Rollgeon.Shop
     /// <remarks>
     /// <see cref="Item"/> es normalmente un <c>Rollgeon.Items.ItemSO</c> (activo o
     /// passive). El dispatch de "qué hacer al comprar" se hace en
-    /// <c>ShopItemPedestalInteractable</c> por tipo concreto.
+    /// <c>ShopPurchase</c> por tipo concreto.
     /// </remarks>
     public sealed class ShopSlot
     {
