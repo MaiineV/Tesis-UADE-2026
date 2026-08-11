@@ -79,6 +79,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Stagger entre bumps de dados holdeados en el flourish de combo.")]
         private float _comboPulseStagger = 0.05f;
 
+        [SerializeField, Tooltip("Subida de pitch del chime por tier de combo (par < trío < full).")]
+        private float _comboChimePitchStep = 0.05f;
+
         [Title("Hitstop")]
         [SerializeField, Tooltip("Cara desde la que un reveal congela el juego un instante. 0 = off.")]
         private int _critFace = 6;
@@ -328,22 +331,37 @@ namespace Rollgeon.UI.HUD
             if (Time.frameCount == _lastUnlockFrame) return;
 
             Play(_comboFlourishPlayer);
-            PlaySfx(_comboChimeClip, volume: 0.8f, isImportant: true);
+            // Un combo más grande suena más alto — el tier es por cantidad de dados.
+            float chimePitch = 1f + _comboChimePitchStep
+                * Breakdown.BreakdownFeelMath.ComboTier(payload.ContributingDice?.Count ?? 0);
+            PlaySfx(_comboChimeClip, volume: 0.8f, pitch: chimePitch, isImportant: true);
             if (isActiveAndEnabled && _animator != null)
-                StartCoroutine(ComboPulseRoutine());
+                StartCoroutine(ComboPulseRoutine(payload.ContributingDice));
         }
 
-        // Bumps escalonados sobre los dados holdeados: "estos hicieron el combo".
-        private IEnumerator ComboPulseRoutine()
+        // Bumps escalonados SOLO sobre los dados que arman el combo: "estos cuentan".
+        // Sin lista (payload viejo/sin bag) cae al comportamiento anterior: todos los kept.
+        private IEnumerator ComboPulseRoutine(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributing)
         {
             for (int i = 0; i < _animator.SlotCount; i++)
             {
                 var slot = _animator.GetSlotAnimator(i);
                 if (slot == null || !slot.IsRaised) continue;
+                if (contributing != null && !ContainsBagSlot(contributing, i)) continue;
                 slot.GetComponent<DiceSlotJuice>()?.PlayKeptPulse();
                 if (_comboPulseStagger > 0f)
-                    yield return new WaitForSeconds(_comboPulseStagger);
+                    yield return new WaitForSeconds(
+                        _comboPulseStagger / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
             }
+        }
+
+        private static bool ContainsBagSlot(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> list, int bagSlot)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (list[i].BagSlot == bagSlot) return true;
+            return false;
         }
 
         // ---- Helpers -----------------------------------------------------------

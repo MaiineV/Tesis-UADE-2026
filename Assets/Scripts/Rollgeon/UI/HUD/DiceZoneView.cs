@@ -38,6 +38,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private List<RectTransform> _diceSlots = new List<RectTransform>();
 
+        [SerializeField, Tooltip("Stagger de aparición entre los '+N' de los dados contribuyentes.")]
+        private float _contributionStaggerSeconds = 0.05f;
+
         // ---- Runtime state ---------------------------------------------------
 
         private Guid _playerGuid;
@@ -170,6 +173,7 @@ namespace Rollgeon.UI.HUD
         public void Unbind()
         {
             if (!_bound) return;
+            CancelDeferredOutro();
             if (_animator != null)
             {
                 _animator.AnimationStateChanged -= RaiseDiceAnimationStateChanged;
@@ -316,12 +320,55 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1) return;
             if (args[0] is not Guid guid || guid != _playerGuid) return;
+            // Con la secuencia de breakdown (N×M) corriendo, los dados se quedan en su
+            // slot — la animación vuela sus valores desde ahí. El outro arranca recién
+            // cuando el gate se libera.
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending)
+            {
+                if (!_outroDeferredByBreakdown)
+                {
+                    _outroDeferredByBreakdown = true;
+                    Rollgeon.Feedback.BreakdownUiGate.Changed += RunOutroWhenBreakdownEnds;
+                }
+                return;
+            }
+            BeginOutroOrClear();
+        }
+
+        // Latch del outro diferido por la secuencia de breakdown.
+        private bool _outroDeferredByBreakdown;
+
+        private void RunOutroWhenBreakdownEnds()
+        {
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+            CancelDeferredOutro();
+            BeginOutroOrClear();
+        }
+
+        private void CancelDeferredOutro()
+        {
+            if (!_outroDeferredByBreakdown) return;
+            _outroDeferredByBreakdown = false;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= RunOutroWhenBreakdownEnds;
+        }
+
+        private void BeginOutroOrClear()
+        {
             // Path animado (Classic): los holdeados vuelan al centro de la mesa y los
             // demás se descartan; el ClearAll corre diferido al terminar el outro.
             if (_animator != null && _animator.TryBeginOutro(_heldStates, BuildActiveMask(), ClearAll))
                 return;
             ClearAll();
         }
+
+        /// <summary>
+        /// Slot view por bag slot (1:1 con el índice visual). Lo consume el director del
+        /// breakdown para animar el dado físico. Null fuera de rango o sin resolver.
+        /// </summary>
+        public DiceSlotView GetSlotView(int bagSlot)
+            => _resolvedSlots != null && bagSlot >= 0 && bagSlot < _resolvedSlots.Length
+                ? _resolvedSlots[bagSlot]
+                : null;
 
         private bool[] BuildActiveMask()
         {
@@ -343,6 +390,10 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void ClearAll()
         {
+            // Un clear forzado (turn start, retreat) invalida el outro que esperaba a la
+            // secuencia de breakdown — sin esto, el handler colgado dispararía un outro
+            // sobre slots ya limpios.
+            CancelDeferredOutro();
             // Aborta cualquier animación en curso sin ejecutar callbacks diferidos
             // (si ClearAll llegó como completion del outro, esto ya es no-op).
             _animator?.ResetAll();
@@ -544,18 +595,16 @@ namespace Rollgeon.UI.HUD
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
-            float multiDmgCombo = 1f;
             // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
             // recomputar el daño y el escudo reales vía la fórmula compartida).
-            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> contributingDice = null;
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice = null;
             if (best != null)
             {
                 var comboResult = detection;
                 if (comboResult.IsMatch && hasBag)
                 {
-                    contributingDice = ContributingDiceResolver.Resolve(
-                        comboResult.ContributingIndices, keptOriginalIndices, enchants.Bag.Dice);
-                    multiDmgCombo = PlayerComboDamage.ComputeMultiDmgCombo(contributingDice);
+                    contributingDice = ContributingDiceResolver.ResolveDetailed(
+                        comboResult.ContributingIndices, keptOriginalIndices, keptDice, enchants.Bag.Dice);
                 }
             }
 
@@ -565,9 +614,49 @@ namespace Rollgeon.UI.HUD
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
                 BaseDamage = baseDmg,
-                MultiDmgCombo = multiDmgCombo,
                 ContributingDice = contributingDice,
             });
+
+            // DESPUÉS del Raise: los services de encantos ya poblaron LastComboScratch
+            // (y su journal) procesando este mismo payload.
+            UpdateContributionLabels(contributingDice, hasBag ? enchants : null);
+        }
+
+        /// <summary>
+        /// Pinta el "+N" bajo cada dado contribuyente: cara + bonos aditivos de los
+        /// encantamientos de ESE dado (journal at-match). Los no contribuyentes lo ocultan.
+        /// </summary>
+        private void UpdateContributionLabels(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice,
+            IDiceEnchantmentService enchants)
+        {
+            if (_resolvedSlots == null) return;
+
+            var journal = enchants?.LastComboScratch?.Journal;
+            int visibleIndex = 0;
+            for (int slot = 0; slot < _resolvedSlots.Length; slot++)
+            {
+                int? amount = null;
+                int bonus = 0;
+                if (contributingDice != null)
+                {
+                    for (int i = 0; i < contributingDice.Count; i++)
+                    {
+                        if (contributingDice[i].BagSlot != slot) continue;
+                        int total = contributingDice[i].Face;
+                        if (journal != null)
+                        {
+                            for (int j = 0; j < journal.Count; j++)
+                                if (journal[j].BagSlot == slot) bonus += journal[j].BonusDelta;
+                        }
+                        amount = total + bonus;
+                        break;
+                    }
+                }
+                // Stagger de aparición: los "+N" caen en cascada, no todos juntos.
+                float delay = amount.HasValue ? visibleIndex++ * _contributionStaggerSeconds : 0f;
+                _resolvedSlots[slot]?.SetContribution(amount, bonus, delay);
+            }
         }
 
         private static ContractSheet ResolvePlayerContractSheet()

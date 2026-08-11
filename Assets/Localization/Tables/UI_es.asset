@@ -554,6 +554,10 @@ MonoBehaviour:
     m_Localized: Sin encantamientos.
     m_Metadata:
       m_Items: []
+  - m_Id: 9649666772463616
+    m_Localized: 'Velocidad: x{0}'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

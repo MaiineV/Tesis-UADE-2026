@@ -549,6 +549,10 @@ MonoBehaviour:
     m_Localized: No enchantments.
     m_Metadata:
       m_Items: []
+  - m_Id: 9649666772463616
+    m_Localized: 'Speed: x{0}'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

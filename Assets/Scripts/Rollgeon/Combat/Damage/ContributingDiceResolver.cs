@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
+using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Damage
 {
@@ -38,6 +41,58 @@ namespace Rollgeon.Combat.Damage
                 result.Add(bagDice[bagSlot]);
             }
             return result.Count > 0 ? result : null;
+        }
+
+        /// <summary>
+        /// Variante detallada de <see cref="Resolve"/>: además del tipo conserva el bag slot
+        /// y la cara tirada de cada dado contribuyente. La fórmula v3 suma las caras y la UI
+        /// de breakdown necesita el slot para animar el dado físico.
+        /// </summary>
+        /// <param name="contributingIndices">Índices relativos al subset holdeado.</param>
+        /// <param name="keptDiceOriginalIndices">Mapeo subset→bag slot. Null ⇒ identidad
+        /// (los índices ya son bag slots directos).</param>
+        /// <param name="keptFaces">Caras del subset holdeado, alineadas con
+        /// <paramref name="contributingIndices"/> (mismo espacio de índices locales).</param>
+        /// <param name="bagDice">Tipos de dado del bag, en orden de slot.</param>
+        public static IReadOnlyList<ContributingDie> ResolveDetailed(
+            IReadOnlyList<int> contributingIndices,
+            IReadOnlyList<int> keptDiceOriginalIndices,
+            IReadOnlyList<int> keptFaces,
+            IReadOnlyList<DiceType> bagDice)
+        {
+            if (contributingIndices == null || contributingIndices.Count == 0 || bagDice == null)
+                return null;
+
+            var result = new List<ContributingDie>(contributingIndices.Count);
+            for (int i = 0; i < contributingIndices.Count; i++)
+            {
+                int localIndex = contributingIndices[i];
+                int bagSlot = (keptDiceOriginalIndices != null
+                                && localIndex >= 0 && localIndex < keptDiceOriginalIndices.Count)
+                    ? keptDiceOriginalIndices[localIndex]
+                    : localIndex;
+                if (bagSlot < 0 || bagSlot >= bagDice.Count) continue;
+                if (keptFaces == null || localIndex < 0 || localIndex >= keptFaces.Count) continue;
+                result.Add(new ContributingDie(bagSlot, keptFaces[localIndex], bagDice[bagSlot]));
+            }
+            return result.Count > 0 ? result : null;
+        }
+
+        /// <summary>
+        /// Conveniencia para efectos/announcers que parten de un <see cref="EffectContext"/>:
+        /// resuelve el detalle (slot + cara + tipo) leyendo el bag del enchantment service y
+        /// las caras de <c>KeptDice ?? DiceResult</c> (mismo espacio de índices locales que
+        /// <paramref name="contributingIndices"/>). Null si no hay bag disponible.
+        /// </summary>
+        public static IReadOnlyList<ContributingDie> ResolveFromContext(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                || enchants?.Bag == null)
+                return null;
+            return ResolveDetailed(
+                contributingIndices, context?.KeptDiceOriginalIndices,
+                context?.KeptDice ?? context?.DiceResult, enchants.Bag.Dice);
         }
 
         /// <summary>

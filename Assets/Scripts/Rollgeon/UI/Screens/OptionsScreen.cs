@@ -4,6 +4,7 @@ using PrimeTween;
 using Rollgeon.Analytics;
 using Rollgeon.Localization;
 using Rollgeon.Meta;
+using Rollgeon.Timing;
 using Rollgeon.UI.Menu;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -47,6 +48,10 @@ namespace Rollgeon.UI.Screens
         [SerializeField, Optional] private Button _analyticsToggleButton;
         [SerializeField, Optional] private TMP_Text _analyticsToggleLabel;
 
+        [Title("Velocidad")]
+        [SerializeField, Optional] private Button _gameSpeedButton;
+        [SerializeField, Optional] private TMP_Text _gameSpeedLabel;
+
         [Title("Idioma")]
         [Tooltip("Label de la fila de idioma. Los botones ES/EN los maneja LanguageSelector.")]
         [SerializeField, Optional] private TMP_Text _languageLabel;
@@ -75,6 +80,7 @@ namespace Rollgeon.UI.Screens
         {
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.AddListener(OnTutorialToggleClicked);
             if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.AddListener(OnAnalyticsToggleClicked);
+            if (_gameSpeedButton != null) _gameSpeedButton.onClick.AddListener(OnGameSpeedClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
 
@@ -91,6 +97,7 @@ namespace Rollgeon.UI.Screens
         {
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
             if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.RemoveListener(OnAnalyticsToggleClicked);
+            if (_gameSpeedButton != null) _gameSpeedButton.onClick.RemoveListener(OnGameSpeedClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
 
@@ -148,6 +155,7 @@ namespace Rollgeon.UI.Screens
 
             RefreshTutorialToggleLabel();
             RefreshAnalyticsToggleLabel();
+            RefreshGameSpeedLabel();
             RefreshResetSaveLabel();
         }
 
@@ -220,6 +228,29 @@ namespace Rollgeon.UI.Screens
             _analyticsToggleLabel.text = granted
                 ? LocalizedContent.Ui("menu.analytics_on", "Telemetría: ON")
                 : LocalizedContent.Ui("menu.analytics_off", "Telemetría: OFF");
+        }
+
+        // ================================================================
+        // Velocidad del juego
+        // ================================================================
+
+        /// <summary>
+        /// Cicla x1→x2→x4 vía <see cref="GameSpeedPrefs"/> (persiste al toque — la
+        /// pausa es soft, así que el cambio se siente sin salir del menú).
+        /// </summary>
+        private void OnGameSpeedClicked()
+        {
+            GameSpeedPrefs.CycleNext();
+            RefreshGameSpeedLabel();
+        }
+
+        private void RefreshGameSpeedLabel()
+        {
+            if (_gameSpeedLabel == null) return;
+
+            _gameSpeedLabel.text = string.Format(
+                LocalizedContent.Ui("menu.game_speed", "Velocidad: x{0}"),
+                GameSpeedPrefs.Multiplier);
         }
 
         // ================================================================

@@ -14,7 +14,10 @@ using Rollgeon.Upgrades.Dice;
 
 namespace Rollgeon.Combat.Tests
 {
-    /// <summary>Tests de <see cref="PlayerComboDamage.Resolve"/>.</summary>
+    /// <summary>
+    /// Tests de <see cref="PlayerComboDamage.Resolve"/> (fórmula v3, N×M exacto):
+    /// N = comboBase + ATQ + bonos + Σcaras + bono_combo; M = scratch × ability.
+    /// </summary>
     [TestFixture]
     public class PlayerComboDamageTests
     {
@@ -44,6 +47,14 @@ namespace Rollgeon.Combat.Tests
             ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
         }
 
+        private static ContributingDie[] DiceOf(params (DiceType type, int face)[] spec)
+        {
+            var result = new ContributingDie[spec.Length];
+            for (int i = 0; i < spec.Length; i++)
+                result[i] = new ContributingDie(i, spec[i].face, spec[i].type);
+            return result;
+        }
+
         private void RegisterPlayerAttackWithFlatBonus(int baseValue, int flatBonus)
         {
             RegisterPlayerAttack(baseValue);
@@ -71,58 +82,55 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Resolve_GoldenRule_BaseAndBonusPJ_NeverMultiplied()
+        public void Resolve_GoldenRuleV3_EverythingAdditive_ScaledByMultipliers()
         {
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 3);
-            var dice = new[] { DiceType.D20 };
+            var dice = DiceOf((DiceType.D20, 15));
 
             int result = PlayerComboDamage.Resolve(_player, comboBaseDamage: 10,
                 contributingDice: dice, abilityMultiplier: 2f);
 
-            // (5 + 3) + (10 × 3.0 × 2) = 68
-            Assert.AreEqual(68, result);
+            // N = 10 + 5 + 3 + 15 = 33; M = 2 → 66
+            Assert.AreEqual(66, result);
         }
 
         [Test]
-        public void Resolve_AbilityMultiplier_ScalesComboTermOnly_NotPlayerBase()
+        public void Resolve_AbilityMultiplier_ScalesWholeN_IncludingPlayerBase()
         {
             RegisterPlayerAttack(5);
 
-            // 5 + (10 × 1 × 2) = 25
-            Assert.AreEqual(25, PlayerComboDamage.Resolve(_player, 10, null, abilityMultiplier: 2f));
+            // N = 10 + 5 = 15; M = 2 → 30 (en v2 el ATQ quedaba fuera del producto)
+            Assert.AreEqual(30, PlayerComboDamage.Resolve(_player, 10, null, abilityMultiplier: 2f));
         }
 
         [Test]
-        public void Resolve_MultiDmgCombo_AllD6_IsBaselineOne()
+        public void Resolve_FacesSum_AddsRolledFacesToN()
         {
-            var dice = new[] { DiceType.D6, DiceType.D6 };
-            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, dice));
+            var dice = DiceOf((DiceType.D6, 4), (DiceType.D20, 18));
+
+            // N = 10 + 4 + 18 = 32
+            Assert.AreEqual(32, PlayerComboDamage.Resolve(_player, 10, dice));
         }
 
         [Test]
-        public void Resolve_MultiDmgCombo_AllD20_TriplesComboTerm()
+        public void Resolve_FacesSum_DiceTypeIrrelevant_OnlyFacesCount()
         {
-            var dice = new[] { DiceType.D20, DiceType.D20 };
-            // 10 × (10.5/3.5) = 10 × 3.0 = 30
-            Assert.AreEqual(30, PlayerComboDamage.Resolve(_player, 10, dice));
+            // El multiplicador por tipo (EV/3.5) murió en v3: misma cara ⇒ mismo daño.
+            int withD6 = PlayerComboDamage.Resolve(_player, 10, DiceOf((DiceType.D6, 5)));
+            int withD20 = PlayerComboDamage.Resolve(_player, 10, DiceOf((DiceType.D20, 5)));
+
+            Assert.AreEqual(15, withD6);
+            Assert.AreEqual(withD6, withD20);
         }
 
         [Test]
-        public void Resolve_MultiDmgCombo_MixedDice_AveragesExpectedValue()
+        public void Resolve_NoContributingDice_NoFaceTerm()
         {
-            var dice = new[] { DiceType.D6, DiceType.D20 };
-            // EV avg = (3.5 + 10.5) / 2 = 7.0 → 7.0/3.5 = 2.0 → 10 × 2.0 = 20
-            Assert.AreEqual(20, PlayerComboDamage.Resolve(_player, 10, dice));
+            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, Array.Empty<ContributingDie>()));
         }
 
         [Test]
-        public void Resolve_NoContributingDice_DefaultsToNeutralMultiplier()
-        {
-            Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, Array.Empty<DiceType>()));
-        }
-
-        [Test]
-        public void Resolve_BonoCombo_AddedAfterMultiplier_NotBefore()
+        public void Resolve_ScratchBonus_EntersN_AndIsMultiplied()
         {
             var fake = new FakeComboPassiveService
             {
@@ -130,8 +138,8 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            // (10 × 2) + 4 = 24
-            Assert.AreEqual(24, PlayerComboDamage.Resolve(_player, 10, null));
+            // N = 10 + 4 = 14; M = 2 → 28 (en v2 el bono iba después del multi: 24)
+            Assert.AreEqual(28, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -143,11 +151,11 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPassiveService>(fake, ServiceScope.Global);
 
-            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
+            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, DiceOf((DiceType.D20, 20)), abilityMultiplier: 5f));
         }
 
         [Test]
-        public void Resolve_PlayScratchBonus_AddedAfterMultiplier()
+        public void Resolve_PlayScratchBonus_EntersN_AndIsMultiplied()
         {
             var play = new FakeComboPlayService
             {
@@ -155,8 +163,8 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
 
-            // (10 × 2) + 4 = 24
-            Assert.AreEqual(24, PlayerComboDamage.Resolve(_player, 10, null));
+            // N = 10 + 4 = 14; M = 2 → 28
+            Assert.AreEqual(28, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -173,8 +181,8 @@ namespace Rollgeon.Combat.Tests
             ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
             ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
 
-            // (10 × 2 × 1.5) + 4 + 3 = 37
-            Assert.AreEqual(37, PlayerComboDamage.Resolve(_player, 10, null));
+            // N = 10 + 4 + 3 = 17; M = 2 × 1.5 = 3 → 51
+            Assert.AreEqual(51, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
         [Test]
@@ -186,7 +194,7 @@ namespace Rollgeon.Combat.Tests
             };
             ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
 
-            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, new[] { DiceType.D20 }, abilityMultiplier: 5f));
+            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 99, DiceOf((DiceType.D20, 20)), abilityMultiplier: 5f));
         }
 
         [Test]
@@ -196,6 +204,26 @@ namespace Rollgeon.Combat.Tests
             ServiceLocator.AddService<IComboPlayService>(play, ServiceScope.Global);
 
             Assert.AreEqual(10, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void RoundNxM_ExactHalf_RoundsAwayFromZero()
+        {
+            // Mathf.RoundToInt haría banker's rounding (6.5 → 6): la regla v3 es 6.5 → 7.
+            Assert.AreEqual(7, PlayerComboDamage.RoundNxM(13, 0.5f));
+        }
+
+        [Test]
+        public void RoundNxM_RegularFraction_RoundsToNearest()
+        {
+            // 13 × 0.75 = 9.75 → 10
+            Assert.AreEqual(10, PlayerComboDamage.RoundNxM(13, 0.75f));
+        }
+
+        [Test]
+        public void RoundNxM_NegativeProduct_ClampsToZero()
+        {
+            Assert.AreEqual(0, PlayerComboDamage.RoundNxM(10, -1f));
         }
 
         // Fake mínimo: solo LastComboScratch importa para la fórmula.

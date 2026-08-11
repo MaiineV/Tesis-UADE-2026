@@ -221,6 +221,15 @@ namespace Rollgeon.Heroes
             // (daño, escudo, heal) para que las pasivas inyecten bono en esta ejecución.
             var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
             play?.BeginPlay(effCtx);
+            // Con la ventana abierta y el journal at-played ya lleno, anuncia el desglose
+            // N×M ANTES de ejecutar efectos (la UI de breakdown arma su secuencia y gatea
+            // el golpe real desde este payload). Behaviors sin daño pero con escudo (acción
+            // de defensa pura) anuncian la variante de escudo — misma secuencia.
+            var announceDmg = FindFirstDealDamageEffect();
+            if (announceDmg != null)
+                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, announceDmg);
+            else
+                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(effCtx, FindFirstAddShieldEffect());
             try
             {
                 foreach (var group in Effects)

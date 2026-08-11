@@ -203,7 +203,9 @@ namespace Rollgeon.UI.HUD.DiceAnim
             // dispara acá, ANTES del hold — si saliera junto con el teardown, la
             // zona se esconde el mismo frame y nada se alcanza a ver.
             OutroFinished?.Invoke();
-            if (holdSeconds > 0f) yield return new WaitForSeconds(holdSeconds);
+            // El hold es tiempo de lectura puro (el vuelo de landSeconds no se toca).
+            if (holdSeconds > 0f)
+                yield return new WaitForSeconds(holdSeconds / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
             _outroRoutine = null;
             CompleteOutro();
         }

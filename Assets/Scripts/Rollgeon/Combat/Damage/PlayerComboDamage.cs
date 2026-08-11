@@ -4,10 +4,8 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combos.Play;
-using Rollgeon.Dice;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
-using UnityEngine;
 
 namespace Rollgeon.Combat.Damage
 {
@@ -22,29 +20,42 @@ namespace Rollgeon.Combat.Damage
     }
 
     /// <summary>
-    /// Fórmula v2 del daño de combo del jugador (Spec de Daño, Santi):
+    /// Fórmula v3 del daño de combo del jugador (decisión de diseño 2026-08-09, N×M exacto):
     /// <code>
-    /// dmg_base_PJ + bonos_PJ + (daño_combo_base × multi_dmg_combo) + bono_combo
+    /// N = daño_combo_base + dmg_base_PJ + bonos_PJ + Σ(caras contribuyentes) + bono_combo
+    /// M = scratch_multiplier × ability_multiplier
+    /// DAÑO = round(N × M)   (mitades siempre para arriba: 6.5 → 7)
     /// </code>
-    /// <c>dmg_base_PJ + bonos_PJ</c> (= <c>Attack.Value</c> + resto de <c>Attack.ModifiedValue</c>)
-    /// y <c>bono_combo</c> son aditivos puros — nunca se multiplican. Solo <c>daño_combo_base</c>
-    /// se escala, por <c>multi_dmg_combo</c> (EV de <paramref name="contributingDice"/> / EV(d6))
-    /// y por <paramref name="abilityMultiplier"/> (perilla por habilidad, ej. golpe rápido = 0.75
-    /// en <c>CH_Warrior.asset</c>). <c>scratchMultiplier</c> (encantamientos Gemelo/Par-Impar) es
-    /// la única excepción autorada que también multiplica ese término — no usar como plantilla.
+    /// Todo lo aditivo vive en N y TODO N se escala por M — a diferencia de v2, donde
+    /// <c>dmg_base_PJ + bonos_PJ + bono_combo</c> quedaban fuera del producto. El multiplicador
+    /// por tipo de dado (EV/3.5) desaparece: un d20 pesa más porque sus caras son más altas.
+    /// <c>ability_multiplier</c> es la perilla por habilidad (ej. golpe rápido = 0.75 en
+    /// <c>CH_Warrior.asset</c>); <c>scratch_multiplier</c> es el producto de los
+    /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch.
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
     /// jugador (DamageSource.ComboValue); los enemigos usan Constant/FromReader y no pasan por acá.
-    /// Desde la Spec de Escudo v3 esta es la fórmula compartida daño/escudo:
     /// <see cref="PlayerComboShield"/> delega acá con <see cref="PlayerComboFormulaKind.Shield"/>
-    /// (mismos términos, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
+    /// (misma fórmula, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
+    /// Ojo balance: los combos de base dinámica (Higher Number, SumaX) llevan la cara dentro de
+    /// <c>BaseDamage</c> Y en Σcaras — la pesan doble. Aceptado hasta el próximo pase de balance.
     /// </remarks>
     public static class PlayerComboDamage
     {
         public static int Resolve(Guid sourceId, int comboBaseDamage,
-            IReadOnlyList<DiceType> contributingDice, float abilityMultiplier = 1f,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f,
             PlayerComboFormulaKind kind = PlayerComboFormulaKind.Damage)
+            => Resolve(sourceId, comboBaseDamage, contributingDice, abilityMultiplier, kind, out _);
+
+        /// <summary>
+        /// Overload con desglose: mismos números que el overload simple, más el
+        /// <see cref="DamageBreakdown"/> con cada término por separado para UI/logging.
+        /// Lectura pura — llamarlo N veces devuelve el mismo breakdown sin side-effects.
+        /// </summary>
+        public static int Resolve(Guid sourceId, int comboBaseDamage,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier,
+            PlayerComboFormulaKind kind, out DamageBreakdown breakdown)
         {
             int dmgBasePJ = 0;
             int bonosPJ = 0;
@@ -61,62 +72,86 @@ namespace Rollgeon.Combat.Damage
             int bonoCombo = 0;
             float scratchMultiplier = 1f;
             bool block = false;
+            List<ScratchContribution> sources = null;
 
-            if (ServiceLocator.TryGetService<IComboPassiveService>(out var passives) && passives?.LastComboScratch != null)
+            var sPassives = ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
+                ? passives?.LastComboScratch : null;
+            if (sPassives != null)
             {
-                bonoCombo += passives.LastComboScratch.BonusComboDamage;
-                scratchMultiplier *= passives.LastComboScratch.ComboDamageMultiplier;
-                block |= passives.LastComboScratch.BlockComboDamage;
+                bonoCombo += sPassives.BonusComboDamage;
+                scratchMultiplier *= sPassives.ComboDamageMultiplier;
+                block |= sPassives.BlockComboDamage;
+                AppendJournal(ref sources, sPassives);
             }
-            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants) && enchants?.LastComboScratch != null)
+            var sEnchants = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                ? enchants?.LastComboScratch : null;
+            if (sEnchants != null)
             {
-                bonoCombo += enchants.LastComboScratch.BonusComboDamage;
-                scratchMultiplier *= enchants.LastComboScratch.ComboDamageMultiplier;
-                block |= enchants.LastComboScratch.BlockComboDamage;
+                bonoCombo += sEnchants.BonusComboDamage;
+                scratchMultiplier *= sEnchants.ComboDamageMultiplier;
+                block |= sEnchants.BlockComboDamage;
+                AppendJournal(ref sources, sEnchants);
             }
             // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
             // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
             // la ventana) porque el daño del ataque real está diferido al frame de impacto,
             // ya cerrada la ventana. Se limpia al inicio del turno, así el preview no ve
             // bonos jugados de un turno anterior.
-            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.LastPlayScratch != null)
+            var sPlay = ServiceLocator.TryGetService<IComboPlayService>(out var play)
+                ? play?.LastPlayScratch : null;
+            if (sPlay != null)
             {
-                bonoCombo += play.LastPlayScratch.BonusComboDamage;
-                scratchMultiplier *= play.LastPlayScratch.ComboDamageMultiplier;
-                block |= play.LastPlayScratch.BlockComboDamage;
+                bonoCombo += sPlay.BonusComboDamage;
+                scratchMultiplier *= sPlay.ComboDamageMultiplier;
+                block |= sPlay.BlockComboDamage;
+                AppendJournal(ref sources, sPlay);
             }
 
-            if (block)
+            int facesSum = 0;
+            if (contributingDice != null)
+                for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
+
+            int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
+            float m = scratchMultiplier * abilityMultiplier;
+            int total = block ? 0 : RoundNxM(n, m);
+
+            breakdown = new DamageBreakdown
             {
-                DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
-                    1f, abilityMultiplier, scratchMultiplier, bonoCombo, blocked: true, finalBase: 0,
-                    kind: kind);
-                return 0;
-            }
+                Kind = kind,
+                ComboBase = comboBaseDamage,
+                AttackBase = dmgBasePJ,
+                AttackBonus = bonosPJ,
+                FacesSum = facesSum,
+                AdditiveBonus = bonoCombo,
+                N = n,
+                ScratchMultiplier = scratchMultiplier,
+                AbilityMultiplier = abilityMultiplier,
+                M = m,
+                Blocked = block,
+                Final = total,
+                Dice = contributingDice,
+                Sources = sources,
+            };
 
-            float multiDmgCombo = ComputeMultiDmgCombo(contributingDice);
-            float comboTerm = comboBaseDamage * multiDmgCombo * abilityMultiplier * scratchMultiplier;
-            float total = dmgBasePJ + bonosPJ + comboTerm + bonoCombo;
-            int dmg = Mathf.RoundToInt(total);
-            int clamped = dmg < 0 ? 0 : dmg;
-
-            DamageDebugLogger.LogPlayerComposition(sourceId, dmgBasePJ, bonosPJ, comboBaseDamage,
-                multiDmgCombo, abilityMultiplier, scratchMultiplier, bonoCombo,
-                blocked: false, finalBase: clamped, kind: kind);
-
-            return clamped;
+            DamageDebugLogger.LogPlayerComposition(sourceId, in breakdown);
+            return total;
         }
 
         /// <summary>
-        /// multi_dmg_combo = EV promedio de <paramref name="contributingDice"/> / EV(d6). Público
-        /// para que el preview de <c>DiceZoneView</c> muestre el mismo número que <see cref="Resolve"/>.
+        /// Redondeo canónico de la fórmula: mitades siempre para arriba en magnitud (6.5 → 7),
+        /// nunca banker's rounding (<c>Mathf.RoundToInt</c> haría 6.5 → 6). Público para que el
+        /// preview del HUD reproduzca exactamente el mismo número que el golpe real.
         /// </summary>
-        public static float ComputeMultiDmgCombo(IReadOnlyList<DiceType> contributingDice)
+        public static int RoundNxM(int n, float m)
+            => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
+
+        // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.
+        private static void AppendJournal(ref List<ScratchContribution> sources, EnchantmentScratch scratch)
         {
-            if (contributingDice == null || contributingDice.Count == 0) return 1f;
-            float sum = 0f;
-            for (int i = 0; i < contributingDice.Count; i++) sum += contributingDice[i].ExpectedValue();
-            return (sum / contributingDice.Count) / DiceTypeExt.BaselineExpectedValue;
+            var journal = scratch.Journal;
+            if (journal == null || journal.Count == 0) return;
+            sources ??= new List<ScratchContribution>(journal.Count);
+            for (int i = 0; i < journal.Count; i++) sources.Add(journal[i]);
         }
     }
 }

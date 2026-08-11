@@ -134,17 +134,11 @@ namespace Rollgeon.Effects.Concretes
             return attributes.GetAttribute<Attack>(ownerGuid)?.ModifiedValue ?? 0;
         }
 
-        // Mismo mecanismo que EffDealDamage: DiceType reales de la bag para los índices
-        // que formaron el combo — el multi del escudo pondera ESOS dados.
-        private static IReadOnlyList<DiceType> ResolveContributingDice(
+        // Mismo mecanismo que EffDealDamage: dados reales de la bag (slot + cara + tipo)
+        // para los índices que formaron el combo — la fórmula pondera ESOS dados.
+        private static IReadOnlyList<ContributingDie> ResolveContributingDice(
             EffectContext context, IReadOnlyList<int> contributingIndices)
-        {
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
-                || enchants?.Bag == null)
-                return null;
-            return ContributingDiceResolver.Resolve(
-                contributingIndices, context?.KeptDiceOriginalIndices, enchants.Bag.Dice);
-        }
+            => ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 

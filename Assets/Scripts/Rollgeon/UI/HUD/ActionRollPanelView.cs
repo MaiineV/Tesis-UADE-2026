@@ -385,7 +385,9 @@ namespace Rollgeon.UI.HUD
 
         private IEnumerator AutoHideAfterDelay(float seconds)
         {
-            if (seconds > 0f) yield return new WaitForSeconds(seconds);
+            // Tiempo de lectura del resultado: pacing puro, sigue al game speed.
+            if (seconds > 0f)
+                yield return new WaitForSeconds(seconds / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
             HideAllPanels();
             SetRootVisible(false);
             _autoHideRoutine = null;

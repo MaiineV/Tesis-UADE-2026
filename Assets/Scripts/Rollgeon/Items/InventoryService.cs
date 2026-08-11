@@ -12,6 +12,7 @@ using Rollgeon.Effects.Concretes;
 using Rollgeon.Player;
 using Rollgeon.PreConditions;
 using Rollgeon.Upgrades;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Items
@@ -282,6 +283,7 @@ namespace Rollgeon.Items
         private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)
         {
             var capturedHook = hook;
+            var capturedItem = item;
             Action<ComboPlayedPayload> handler = payload =>
             {
                 var playerGuid = GetPlayerGuid();
@@ -314,7 +316,14 @@ namespace Rollgeon.Items
                     OpponentGuid = ctx.TargetGuid,
                     Effect = ctx,
                 };
+                // Snapshot-delta por (item, hook): atribuye al journal lo que ESTE item
+                // aportó al combo en curso. Sin ventana de play no hay scratch que medir.
+                var scratch = play?.CurrentPlayScratch;
+                var before = scratch != null ? ScratchSnapshot.Of(scratch) : default;
                 capturedHook.Effect.TryExecute(ctx, preCtx);
+                if (scratch != null)
+                    ScratchSnapshot.RecordDelta(scratch, in before,
+                        ScratchSourceKind.Item, capturedItem.ItemId, capturedItem, bagSlot: -1);
             };
 
             TypedEvent<ComboPlayedPayload>.Subscribe(handler);

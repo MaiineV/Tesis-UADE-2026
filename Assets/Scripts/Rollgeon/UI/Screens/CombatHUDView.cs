@@ -78,6 +78,17 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
+        [Tooltip("Opcional — espada + dano base del player a la izquierda del dice board " +
+                 "(breakdown N×M). Ref cross-canvas a Canvas_ActionRoll, igual que el board skin.")]
+        [SerializeField]
+        private Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView _playerBaseDamage;
+
+        [Tooltip("Opcional — director de la secuencia animada del breakdown N×M. Ref " +
+                 "cross-canvas a Canvas_ActionRoll. Sin cablear, el confirm aplica el dano " +
+                 "directo como siempre (el gate nunca se levanta).")]
+        [SerializeField]
+        private Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector _breakdownDirector;
+
 
         [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
                  "hero (ej. Furia del Guerrero) está activa.")]
@@ -325,6 +336,8 @@ namespace Rollgeon.UI.Screens
             if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
             if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
+            if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
+            if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);
 
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
@@ -351,6 +364,8 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
+            if (_playerBaseDamage != null) _playerBaseDamage.Bind(playerGuid);
+            if (_breakdownDirector != null) _breakdownDirector.Bind(playerGuid);
             // _passiveBadge NO se bindea: lo reemplazó la fila de estados de
             // Canvas_PlayerStatus, que se ve también en exploración. Bindearlo lo haría
             // reaparecer (su Refresh hace SetActive(true)) encima del reemplazo. El
@@ -373,6 +388,8 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
+            if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
+            if (_breakdownDirector != null) _breakdownDirector.Unbind();
             // Unbind sigue siendo seguro e idempotente: cubre el caso de haber quedado
             // bindeado por una versión anterior de la escena.
             if (_passiveBadge != null) _passiveBadge.Unbind();

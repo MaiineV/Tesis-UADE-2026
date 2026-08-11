@@ -36,12 +36,17 @@ namespace Rollgeon.UI.HUD
                  "Opcional: sin cablear, el label se comporta como antes (sin color/efectos).")]
         [SerializeField] private ValueTextFeedbackController _feedback;
 
+        [Tooltip("Opcional — el 'N × M' que reemplaza al texto en modo daño-por-combo. Esta " +
+                 "view sigue siendo dueña de la detección de modo: en daño-combo delega acá; " +
+                 "en escudo/action-roll/degradados lo oculta y renderiza su propio label.")]
+        [SerializeField] private Rollgeon.UI.HUD.Breakdown.DamageBreakdownView _breakdownView;
+
         private Guid _playerGuid;
         private HeroActionBehavior _currentBehavior;
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
-        private IReadOnlyList<DiceType> _lastContributingDice;
+        private IReadOnlyList<ContributingDie> _lastContributingDice;
         private Action<ComboMatchedPayload> _onComboMatched;
 
         // Enemigo objetivo elegido antes de tirar (CNF-002). Guid.Empty = sin target →
@@ -221,6 +226,10 @@ namespace Rollgeon.UI.HUD
         {
             if (_formulaLabel == null) return;
 
+            // Default: el N×M solo aplica al modo daño-por-combo — la rama de abajo lo
+            // re-muestra; cualquier otra rama (action roll, defensa, degradados) lo apaga.
+            if (_breakdownView != null) _breakdownView.Hide();
+
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
@@ -241,9 +250,22 @@ namespace Rollgeon.UI.HUD
                 string shieldComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
                     ? _lastComboDisplayName : "Combo";
                 var shieldEff = _currentBehavior?.FindFirstAddShieldEffect();
+
+                // Paridad con ataque: el breakdown N×M toma el preview de defensa
+                // (N = base de la tabla de escudo del combo, M = perilla de la habilidad);
+                // el resto llega volando en la secuencia del confirm. El label viejo queda
+                // solo como fallback sin _breakdownView cableado.
+                if (_breakdownView != null)
+                {
+                    _breakdownView.SetComboName(shieldComboName);
+                    _breakdownView.ShowPreview(ResolvePlayerShieldBase(_lastComboId),
+                        shieldEff?.ComboMultiplier ?? 1f);
+                    ClearLabelKeepingBreakdown();
+                    return;
+                }
                 int shieldPreview = PlayerComboShield.Resolve(
                     _playerGuid, ResolvePlayerShieldBase(_lastComboId),
-                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f);
+                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f, out var shieldBd);
 
                 // Bono at-played de items: entra al escudo real (BeginPlay abre la ventana
                 // por fase, también en defensa) — se previsualiza en dorado como en ataque.
@@ -256,10 +278,16 @@ namespace Rollgeon.UI.HUD
                     && shieldInv != null)
                     shieldItemBonus = shieldInv.GetComboDamageBonusPreview(_lastComboId);
 
-                string shieldText = shieldItemBonus > 0
-                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemBonus}</color>"
+                // v3: el bono entra a N y escala por M — mismo redondeo que el golpe real.
+                int shieldTotal = shieldItemBonus > 0
+                    ? PlayerComboDamage.RoundNxM(shieldBd.N + shieldItemBonus, shieldBd.M)
+                    : shieldPreview;
+                int shieldItemPortion = shieldTotal - shieldPreview;
+
+                string shieldText = shieldItemPortion > 0
+                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemPortion}</color>"
                     : $"{shieldComboName}: escudo {shieldPreview}";
-                RenderLabel(shieldText, shieldPreview + shieldItemBonus);
+                RenderLabel(shieldText, shieldTotal);
                 return;
             }
 
@@ -294,6 +322,17 @@ namespace Rollgeon.UI.HUD
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
 
+            // Modo N×M: el breakdown muestra los contadores iniciales (N = base del combo,
+            // M = perilla de la habilidad) y el resto llega volando en la secuencia del
+            // confirm. El label viejo queda vacío mientras el breakdown esté a cargo.
+            if (_breakdownView != null)
+            {
+                _breakdownView.SetComboName(comboName);
+                _breakdownView.ShowPreview(_lastComboBaseDamage, dmgEff.ComboMultiplier);
+                ClearLabelKeepingBreakdown();
+                return;
+            }
+
             // Daño pre-mitigación EXACTO: misma función que el golpe real, así el número
             // arrastra ATQ base del PJ, scratchMultiplier de encantamientos y el bono de
             // combo sin re-derivar la fórmula acá (era la causa del desfase reportado).
@@ -302,19 +341,28 @@ namespace Rollgeon.UI.HUD
             // que esos services estén suscriptos antes que esta view (misma dependencia que
             // tenía el viejo ResolveComboBonusDamage).
             int preMitigation = PlayerComboDamage.Resolve(
-                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier);
+                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier,
+                PlayerComboFormulaKind.Damage, out var bd);
 
             // Bono at-played de los items passive del inventario para este combo. No entra
             // en Resolve durante el preview (el LastPlayScratch se limpia al inicio del
             // turno), así que lo previsualizamos aparte para mostrarlo en dorado.
+            // Limitación conocida: GetComboDamageBonusPreview solo suma EffAddComboBonus —
+            // un item at-played MULTIPLICATIVO sigue sin previsualizarse (follow-up).
             int itemBonus = 0;
             if (ServiceLocator.TryGetService<IInventoryService>(out var inventory) && inventory != null)
                 itemBonus = inventory.GetComboDamageBonusPreview(_lastComboId);
 
+            // v3: el bono de item entra a N y escala por M — igual que hará el golpe real
+            // cuando el item escriba al play scratch (en v2 se sumaba POST-fórmula).
+            int preWithItems = itemBonus != 0 && !bd.Blocked
+                ? PlayerComboDamage.RoundNxM(bd.N + itemBonus, bd.M)
+                : preMitigation;
+
             // Mitigación real (weakness + escudo) por separado para base y total, así el
             // "+ N" dorado refleja la contribución de los objetos ya mitigada.
             int shownBase = Mitigate(preMitigation);
-            int shownTotal = itemBonus != 0 ? Mitigate(preMitigation + itemBonus) : shownBase;
+            int shownTotal = itemBonus != 0 ? Mitigate(preWithItems) : shownBase;
             int itemPortion = shownTotal - shownBase;
 
             string formulaText = itemPortion > 0
@@ -392,6 +440,13 @@ namespace Rollgeon.UI.HUD
         }
 
         private void ClearFormula()
+        {
+            if (_breakdownView != null) _breakdownView.Hide();
+            ClearLabelKeepingBreakdown();
+        }
+
+        // Limpia SOLO el label de texto (el breakdown, si está mostrado, queda a cargo).
+        private void ClearLabelKeepingBreakdown()
         {
             if (_feedback != null) _feedback.Clear();
             else if (_formulaLabel != null) _formulaLabel.text = string.Empty;

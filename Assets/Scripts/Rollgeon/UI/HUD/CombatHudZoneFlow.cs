@@ -83,11 +83,13 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnCombatEnd, _onFlowEndForced);
             EventManager.Subscribe(EventName.OnTurnStarted, _onFlowEndForced);
             DiceOutroGate.Changed += HandleOutroGateChanged;
+            Rollgeon.Feedback.BreakdownUiGate.Changed += HandleOutroGateChanged;
         }
 
         private void OnDisable()
         {
             DiceOutroGate.Changed -= HandleOutroGateChanged;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= HandleOutroGateChanged;
             _exitDeferred = false;
             if (_onFlowStart != null)
             {
@@ -136,10 +138,10 @@ namespace Rollgeon.UI.HUD
         private void ExitRolling(bool force)
         {
             if (!_rolling) return;
-            if (!force && DiceOutroGate.OutroPending)
+            if (!force && (DiceOutroGate.OutroPending || Rollgeon.Feedback.BreakdownUiGate.Pending))
             {
-                // Los dados siguen volando al centro — los chips vuelven cuando el
-                // gate se libere (HandleOutroGateChanged).
+                // Los dados siguen volando al centro, o el breakdown N×M está sumando —
+                // los chips vuelven cuando ambos gates se liberen (HandleOutroGateChanged).
                 _exitDeferred = true;
                 return;
             }
@@ -152,7 +154,8 @@ namespace Rollgeon.UI.HUD
 
         private void HandleOutroGateChanged()
         {
-            if (!_exitDeferred || DiceOutroGate.OutroPending) return;
+            if (!_exitDeferred || DiceOutroGate.OutroPending
+                || Rollgeon.Feedback.BreakdownUiGate.Pending) return;
             ExitRolling(force: true);
         }
 

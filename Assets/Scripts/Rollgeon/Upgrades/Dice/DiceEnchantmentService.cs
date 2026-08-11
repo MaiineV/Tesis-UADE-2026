@@ -332,11 +332,17 @@ namespace Rollgeon.Upgrades.Dice
                     ctx.Slot = new EnchantmentSlotRef(Bag.Dice[b], b, s);
                     var triggers = ench.Triggers;
                     if (triggers == null) continue;
+                    // Snapshot-delta por (dado, encantamiento): atribuye al journal lo que
+                    // ESTE encantamiento aportó al combo. Neutro = cero entradas.
+                    var before = ctx.Scratch != null ? ScratchSnapshot.Of(ctx.Scratch) : default;
                     for (int t = 0; t < triggers.Count; t++)
                     {
                         var trigger = triggers[t];
                         if (trigger != null) dispatch(trigger, ctx);
                     }
+                    if (ctx.Scratch != null)
+                        ScratchSnapshot.RecordDelta(ctx.Scratch, in before,
+                            ScratchSourceKind.Enchantment, ench.name, ench, b);
                 }
             }
         }

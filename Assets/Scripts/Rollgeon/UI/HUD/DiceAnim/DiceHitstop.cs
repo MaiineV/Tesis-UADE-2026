@@ -1,4 +1,5 @@
 using System.Collections;
+using Rollgeon.Timing;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD.DiceAnim
@@ -18,6 +19,9 @@ namespace Rollgeon.UI.HUD.DiceAnim
 
         public static void Play(float seconds)
         {
+            // El freeze es pacing de resolución: a velocidad alta se acorta para
+            // seguir siendo un acento y no un stall relativo.
+            seconds /= GameSpeedPrefs.Multiplier;
             if (seconds <= 0f || !Application.isPlaying) return;
             if (_runner == null)
             {

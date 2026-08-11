@@ -14,6 +14,24 @@
 > Lo que SÍ sigue vigente de esta spec: la base sale de la `ShieldBaseTable` (nunca de
 > la tabla de daño — BUG-021) y sin entrada la clase no genera escudo con ese combo.
 
+> **NOTA 2026-08-09 (Fórmula v3 — N×M exacto).** La fórmula v2 de §1.1 **quedó
+> reemplazada** por decisión de diseño (mejora de UI de breakdown estilo Dicero/Balatro):
+>
+> ```
+> N   = daño_combo_base + dmg_base_PJ + bonos_PJ + Σ(caras contribuyentes) + bono_combo
+> M   = scratch_mult × ability_mult
+> dmg = round(N × M)        (mitades para arriba: 6.5 → 7, nunca banker's)
+> ```
+>
+> Cambios clave respecto de v2: (a) los dados contribuyentes suman su CARA plana a N —
+> el `multi_dmg_combo` (EV/3.5) se eliminó, un d20 pesa más porque saca caras más altas;
+> (b) TODO lo aditivo (incluido `dmg_base_PJ + bonos_PJ + bono_combo`) entra a N y se
+> escala por M — ya no hay términos fuera del producto, lo que la UI muestra como
+> "N × M" ES el daño; (c) el fallback sin combo pasa la cara más alta UNA vez vía
+> Σcaras (comboBase 0). El escudo sigue unificado (delega en la misma fórmula). El
+> balance NO se retocó en este cambio: los números suben y quedan para un pase posterior
+> (ojo: los combos de base dinámica tipo Higher Number pesan su cara doble — conocido).
+
 ---
 
 ## 0. Resumen ejecutivo

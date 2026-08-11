@@ -1042,6 +1042,14 @@ namespace Rollgeon.Combat.Handoff
             {
                 var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
                 play?.BeginPlay(effCtx);
+                // Anuncio acotado a los efectos de ESTA fase: daño si la fase pega,
+                // escudo si la fase defiende — misma secuencia N×M para ambos.
+                var phaseDmg = Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.FindDealDamage(phase.Effects);
+                if (phaseDmg != null)
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, phaseDmg);
+                else
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(
+                        effCtx, Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.FindAddShield(phase.Effects));
                 try
                 {
                     phase.Effects.TryExecute(effCtx, preCtx);
@@ -1058,10 +1066,38 @@ namespace Rollgeon.Combat.Handoff
             // avanzaría de fase ANTES de que el golpe conecte — la fase siguiente limpiaría
             // el bag y el FloatingDamage diferido saldría pegado al feedback equivocado.
             // Sin feedback en vuelo corre sincrónico, así que el flujo viejo no cambia.
-            if (ServiceLocator.TryGetService<TurnManager>(out var turnMgr) && turnMgr != null)
-                turnMgr.RunWhenFeedbackSettles(() => ContinueChainPhase(hud, playerGuid, remainingFreeRolls));
-            else
-                ContinueChainPhase(hud, playerGuid, remainingFreeRolls);
+            // ANTES de eso, esperar la secuencia de breakdown si está corriendo: la fase de
+            // escudo no tiene feedback de golpe (EffAddShield aplica sincrónico), así que sin
+            // esta espera el chain avanzaba en el mismo frame y el reset del board cortaba
+            // la cuenta a mitad de la animación. El gate SIEMPRE baja (timeout del director
+            // 8s + failsafe del FeedbackManager 10s + abort en teardown) — no hay soft-lock.
+            RunAfterBreakdownSequence(() =>
+            {
+                if (ServiceLocator.TryGetService<TurnManager>(out var turnMgr) && turnMgr != null)
+                    turnMgr.RunWhenFeedbackSettles(() => ContinueChainPhase(hud, playerGuid, remainingFreeRolls));
+                else
+                    ContinueChainPhase(hud, playerGuid, remainingFreeRolls);
+            });
+        }
+
+        // Difiere la continuación hasta que la secuencia de breakdown libere su gate.
+        // Sin secuencia en curso (fase sin combo, director sin bindear) corre sincrónico.
+        private static void RunAfterBreakdownSequence(Action continuation)
+        {
+            if (!BreakdownUiGate.Pending)
+            {
+                continuation();
+                return;
+            }
+
+            Action handler = null;
+            handler = () =>
+            {
+                if (BreakdownUiGate.Pending) return; // ref-count: esperar la transición a 0
+                BreakdownUiGate.Changed -= handler;
+                continuation();
+            };
+            BreakdownUiGate.Changed += handler;
         }
 
         /// <summary>

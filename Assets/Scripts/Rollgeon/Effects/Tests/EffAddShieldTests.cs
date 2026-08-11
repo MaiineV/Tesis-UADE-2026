@@ -251,8 +251,8 @@ namespace Rollgeon.Effects.Tests
             // Act
             eff.ApplyEffect(ctx);
 
-            // Assert — (4 × 2) + 3 = 11
-            Assert.AreEqual(11, _attrManager.GetAttribute<Shield>(_sourceId).Value);
+            // Assert — v3: el bono entra a N y se multiplica: (4 + 3) × 2 = 14
+            Assert.AreEqual(14, _attrManager.GetAttribute<Shield>(_sourceId).Value);
         }
 
         [Test]

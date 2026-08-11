@@ -159,7 +159,8 @@ namespace Rollgeon.Dice.Throw
             bool sessionActive = _service.IsBusy && _dice.Count > 0;
             // Con el outro del confirm en curso los slots están volando al centro o
             // desvaneciéndose — armar un grab ahí agarraría dados en pleno teardown.
-            bool outroPending = Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending;
+            bool outroPending = Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending
+                                || Rollgeon.Feedback.BreakdownUiGate.Pending;
             bool canArm = _service.Mode == DiceThrowMode.TwoD && _service.CanGrabReroll && !outroPending;
 
             if (!sessionActive && !canArm && _armed.Count == 0) return;
