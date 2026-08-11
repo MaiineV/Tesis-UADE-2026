@@ -49,6 +49,12 @@ namespace Rollgeon.UI.HUD
         private bool[] _heldStates;
         private DiceZoneAnimator _animator;
 
+        // Reroll invertido: selección vigente al momento de arrancar el reroll
+        // (= dados que van a volar). La stashea HandleRerollStarted antes de
+        // consumir los holds y la usa el próximo HandleDiceRolled para no
+        // re-spinear los dados que se quedaron. One-shot: se consume al reveal.
+        private bool[] _pendingRerollMask;
+
         /// <summary>True mientras corre el spin del roll o el outro del confirm (modo
         /// Classic). Las views de botones lo usan para lockear Roll/Confirm.</summary>
         public bool IsDiceAnimating => _animator != null && (_animator.IsSpinning || _animator.IsOutroPlaying);
@@ -69,10 +75,12 @@ namespace Rollgeon.UI.HUD
         public IReadOnlyList<RectTransform> GetDiceSlots() => _diceSlots;
 
         /// <summary>
-        /// Snapshot del estado de hold por slot. Devuelve una copia defensiva — el
-        /// caller puede mutarla. Si <c>Bind</c> aún no corrió, devuelve un array vacío.
-        /// Consumido por el <see cref="Rollgeon.Combat.Handoff.CombatHandoffService"/>
-        /// para pasar el <c>keep[]</c> al <c>IDiceRoller.Reroll</c>.
+        /// Snapshot del estado de hold (selección) por slot. Devuelve una copia
+        /// defensiva — el caller puede mutarla. Si <c>Bind</c> aún no corrió, devuelve
+        /// un array vacío. Consumido por el
+        /// <see cref="Rollgeon.Combat.Handoff.CombatHandoffService"/>: para el combo es
+        /// la máscara directa; para el reroll (invertido, Balatro) se complementa antes
+        /// de pasarla como <c>keep[]</c> al <c>IDiceRoller.Reroll</c>.
         /// </summary>
         public bool[] GetHeldStates()
         {
@@ -83,30 +91,16 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// BUG-014: True si <see cref="Bind"/> ya corrió, hay slots activos visibles
-        /// (al menos un dado rolleado) y todos están holdeados. Permite a la UI del
-        /// reroll button deshabilitarse cuando no hay dados para re-tirar.
+        /// True si hay al menos un dado seleccionado (holdeado). Lo usan el router de
+        /// click derecho (deselect-all solo si hay algo que soltar) y el gate del botón
+        /// de reroll (seleccionado = se re-tira; sin selección no hay nada que re-tirar).
         /// </summary>
-        public bool AreAllDiceHeld()
+        public bool AnyDieHeld()
         {
-            if (_heldStates == null || _heldStates.Length == 0) return false;
-            // Si _resolvedSlots aún no se activó (sin roll todavía), no aplica.
-            bool anySlotActive = false;
-            if (_resolvedSlots != null)
-            {
-                for (int i = 0; i < _resolvedSlots.Length; i++)
-                {
-                    if (_resolvedSlots[i] != null && _resolvedSlots[i].gameObject.activeSelf)
-                    {
-                        anySlotActive = true;
-                        break;
-                    }
-                }
-            }
-            if (!anySlotActive) return false;
+            if (_heldStates == null) return false;
             for (int i = 0; i < _heldStates.Length; i++)
-                if (!_heldStates[i]) return false;
-            return true;
+                if (_heldStates[i]) return true;
+            return false;
         }
 
         // ---- Bind / Unbind ---------------------------------------------------
@@ -144,7 +138,6 @@ namespace Rollgeon.UI.HUD
                 }
                 int captured = i;
                 _resolvedSlots[i].OnToggled.AddListener(() => ToggleHold(captured));
-                _resolvedSlots[i].OnUnholdRequested.AddListener(() => UnholdAt(captured));
             }
 
             // Animación legacy (Classic). Vive como componente hermano agregado por
@@ -156,6 +149,7 @@ namespace Rollgeon.UI.HUD
             _animator.AnimationStateChanged += RaiseDiceAnimationStateChanged;
 
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            EventManager.Subscribe(EventName.OnRerollStarted, HandleRerollStarted);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.Subscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
@@ -180,6 +174,7 @@ namespace Rollgeon.UI.HUD
                 _animator.Unbind();
             }
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
+            EventManager.UnSubscribe(EventName.OnRerollStarted, HandleRerollStarted);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.UnSubscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
@@ -189,11 +184,11 @@ namespace Rollgeon.UI.HUD
                 foreach (var s in _resolvedSlots)
                 {
                     s?.OnToggled.RemoveAllListeners();
-                    s?.OnUnholdRequested.RemoveAllListeners();
                 }
             _resolvedSlots = null;
             _currentFaces = null;
             _heldStates = null;
+            _pendingRerollMask = null;
             _bound = false;
         }
 
@@ -216,11 +211,28 @@ namespace Rollgeon.UI.HUD
 
             int count = _resolvedSlots?.Length ?? 0;
             var willReveal = new bool[count];
+            // Reroll invertido: la selección se consumió al arrancar el reroll
+            // (HandleRerollStarted), así que los holds ya no dicen qué dados se
+            // quedaron — eso lo dice la máscara stasheada. Sin ella (primer roll,
+            // fase de chain), revela todo como siempre.
+            var rerollMask = _pendingRerollMask;
+            _pendingRerollMask = null;
             for (int i = 0; i < count; i++)
             {
                 if (_heldStates != null && i < _heldStates.Length && _heldStates[i]) continue;
+                int newFace = i < faces.Count ? faces[i] : 0;
+                // Dado conservado en el reroll (no seleccionado) con la cara intacta:
+                // no re-spinea ni re-revela — quedaría idéntico pero LEERÍA como
+                // re-tirado. El chequeo de cara-distinta cubre el grab-to-reroll 2D,
+                // donde lo agarrado puede diferir de lo que estaba seleccionado.
+                if (rerollMask != null
+                    && !(i < rerollMask.Length && rerollMask[i])
+                    && newFace == _currentFaces[i])
+                {
+                    continue;
+                }
                 willReveal[i] = true;
-                _currentFaces[i] = i < faces.Count ? faces[i] : 0;
+                _currentFaces[i] = newFace;
                 if (_resolvedSlots[i] != null) _resolvedSlots[i].gameObject.SetActive(true);
                 _resolvedSlots[i]?.SetHeld(false);
             }
@@ -234,6 +246,22 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < count; i++)
                 if (willReveal[i]) _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
             RefreshDiceBlock();
+        }
+
+        // Reroll invertido (Balatro): los dados seleccionados son exactamente los que
+        // vuelan, y el descarte consume la selección — se limpia al ARRANCAR el
+        // reroll (RerollBudgetService / ActionRollService lo emiten después de
+        // computar el keep y cobrar), antes del OnDiceRolled del resultado. Antes de
+        // limpiar se stashea la selección como "estos volaron": el reveal la usa para
+        // que los dados que se quedan NO re-spineen (sin la máscara, el spin de
+        // Classic ciclaría caras random en los 5 y leería como reroll de toda la
+        // mano). En el primer roll no hay holds — no-op.
+        private void HandleRerollStarted(params object[] args)
+        {
+            if (args == null || args.Length < 1) return;
+            if (args[0] is not Guid guid || guid != _playerGuid) return;
+            _pendingRerollMask = AnyDieHeld() ? GetHeldStates() : null;
+            ClearHolds();
         }
 
         /// <summary>
@@ -397,6 +425,9 @@ namespace Rollgeon.UI.HUD
             // Aborta cualquier animación en curso sin ejecutar callbacks diferidos
             // (si ClearAll llegó como completion del outro, esto ya es no-op).
             _animator?.ResetAll();
+            // Una máscara de reroll pendiente no sobrevive a un clear forzado — el
+            // próximo roll es una mano nueva y debe revelarse entera.
+            _pendingRerollMask = null;
             if (_currentFaces != null)
                 Array.Clear(_currentFaces, 0, _currentFaces.Length);
             if (_heldStates != null)
@@ -470,18 +501,7 @@ namespace Rollgeon.UI.HUD
             ApplyHold(i, !_heldStates[i]);
         }
 
-        /// <summary>
-        /// Click derecho sobre un slot: saca el dado del combo. Solo baja el hold — sobre
-        /// un dado que no está holdeado no hace nada, así que el derecho nunca agrega.
-        /// </summary>
-        private void UnholdAt(int i)
-        {
-            if (!CanChangeHold(i, nameof(UnholdAt))) return;
-            if (!_heldStates[i]) return;
-            ApplyHold(i, false);
-        }
-
-        // Gates compartidos por toggle y unhold.
+        // Gates del toggle (y de invocaciones programáticas).
         private bool CanChangeHold(int i, string caller)
         {
             if (_heldStates == null || i < 0 || i >= _heldStates.Length)

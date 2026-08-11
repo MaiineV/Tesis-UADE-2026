@@ -99,6 +99,83 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(invoked);
         }
 
+        // -------------------------------------------------------------------
+        // Reroll invertido (Balatro): post-primer-roll el botón exige ≥1 dado
+        // seleccionado — se re-tiran los seleccionados, sin selección no hay
+        // nada que re-tirar.
+        // -------------------------------------------------------------------
+
+        /// <summary>Budget de mentira con reroll disponible; Current=null ⇒ el view
+        /// no lo trata como "primer roll pendiente" (post-roll a efectos del gate).</summary>
+        private sealed class AvailableFakeBudget : Rollgeon.Dice.IRerollBudgetService
+        {
+            public Rollgeon.Dice.RerollBudget Current => null;
+#pragma warning disable CS0067
+            public event Action<Rollgeon.Dice.RerollStartedPayload> OnRerollStarted;
+            public event Action<Rollgeon.Dice.RerollBudget> OnBudgetStarted;
+#pragma warning restore CS0067
+            public void StartBudget(Rollgeon.Combat.Actions.ActionDefinitionSO action) { }
+            public void EndBudget() { }
+            public Rollgeon.Dice.RerollQueryResult QueryExtraRoll(Guid playerGuid)
+                => Rollgeon.Dice.RerollQueryResult.Free();
+            public bool TryExtraRoll(Guid playerGuid) => false;
+        }
+
+        private DiceZoneView MakeZoneWithHolds(bool[] holds)
+        {
+            var zoneGo = new GameObject("DiceZone");
+            zoneGo.transform.SetParent(_go.transform, false);
+            var zone = zoneGo.AddComponent<DiceZoneView>();
+            AssignPrivate(zone, "_heldStates", holds);
+            return zone;
+        }
+
+        [Test]
+        public void RefreshButtonInteractable_PostRollWithoutSelection_DisablesButton()
+        {
+            // Arrange — budget con reroll disponible pero ningún dado seleccionado.
+            ServiceLocator.Clear();
+            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            try
+            {
+                MakeZoneWithHolds(new[] { false, false, false });
+
+                // Act — Bind corre RefreshButtonInteractable.
+                _view.Bind(_playerGuid);
+
+                // Assert
+                Assert.IsFalse(_extraRoll.interactable,
+                    "Sin dados seleccionados no hay nada que re-tirar — botón disabled.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void RefreshButtonInteractable_PostRollWithSelection_EnablesButton()
+        {
+            // Arrange — mismo budget, pero con un dado seleccionado para re-tirar.
+            ServiceLocator.Clear();
+            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            try
+            {
+                MakeZoneWithHolds(new[] { true, false, false });
+
+                // Act
+                _view.Bind(_playerGuid);
+
+                // Assert
+                Assert.IsTrue(_extraRoll.interactable,
+                    "Con ≥1 dado seleccionado y reroll disponible, el botón se habilita.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
         private static void AssignPrivate(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName,

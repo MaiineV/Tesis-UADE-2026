@@ -455,16 +455,11 @@ namespace Rollgeon.UI.HUD
 
             EnsureHoldsLength();
 
-            // Reset de holds SOLO en el initial roll. Si la fase post-roll es
-            // AwaitingRerollDecision Y el rollIndex ya es >=2, significa que esto
-            // fue un reroll → los holds visuales se conservan (los dados que el
-            // user marco antes del reroll quedan held; el array logico tambien
-            // se conserva para que coincida con la visual).
-            bool isInitialRoll = _service.RollIndex <= 1;
-            if (isInitialRoll)
-            {
-                for (int i = 0; i < _holds.Length; i++) _holds[i] = false;
-            }
+            // Reroll invertido (Balatro): la selección marca los dados que VUELAN, y el
+            // descarte la consume — cada tirada (inicial o reroll) arranca sin holds y
+            // el user re-selecciona el subset del combo. El service ya limpió su lado
+            // (_currentHolds) al arrancar el reroll.
+            for (int i = 0; i < _holds.Length; i++) _holds[i] = false;
 
             for (int i = 0; i < _diceSlots.Count; i++)
             {
@@ -489,17 +484,18 @@ namespace Rollgeon.UI.HUD
         private void OnConfirmClick() => _service?.Confirm();
         private void OnCancelClick() => _service?.Cancel();
 
-        // Reroll respeta los holds — los dados con _holds[i]=true se conservan, los
-        // demas se re-tiran. Single shot: el button se deshabilita post-reroll en
-        // ShowRerollPrompt (rollIndex >= 2).
+        // Reroll invertido (Balatro): los dados con _holds[i]=true son los que se
+        // RE-TIRAN; el complemento lo computa el service (RequestReroll sin args
+        // invierte sus _currentHolds, que este panel mantiene via SetHolds). Single
+        // shot: el button se deshabilita post-reroll en ShowRerollPrompt (rollIndex >= 2).
         private void OnRerollAcceptClick()
         {
             if (_service == null) return;
             EnsureHoldsLength();
             int heldCount = 0;
             for (int i = 0; i < _holds.Length; i++) if (_holds[i]) heldCount++;
-            Debug.LogWarning($"[ActionRollPanelView] Reroll click — held={heldCount}/{_holds.Length}");
-            _service.RequestReroll(_holds);
+            Debug.LogWarning($"[ActionRollPanelView] Reroll click — seleccionados para re-tirar={heldCount}/{_holds.Length}");
+            _service.RequestReroll();
         }
 
         // Decline = resolver con la tirada actual (igual que Confirm en AwaitingRerollDecision).

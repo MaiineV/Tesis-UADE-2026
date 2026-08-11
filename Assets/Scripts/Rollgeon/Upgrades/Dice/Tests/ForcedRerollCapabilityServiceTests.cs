@@ -294,6 +294,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
                 return NextResult;
             }
 
+            public bool HasCancellableSelection => false;
+
+            public bool TryCancelFromRightClick() => false;
+
             public void Dispose() { }
         }
 

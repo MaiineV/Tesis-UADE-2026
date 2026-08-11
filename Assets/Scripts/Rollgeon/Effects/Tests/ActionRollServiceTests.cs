@@ -114,6 +114,9 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(2, _energy.SpendCalls); // base cost ya cobrado
 
             _roller.NextRoll = new[] { 6, 6, 6, 6, 6 }; // sum 30 post-reroll
+            // Reroll invertido: se re-tiran los dados SELECCIONADOS — para re-tirar
+            // la mano entera hay que seleccionarla entera.
+            _service.SetHolds(new[] { true, true, true, true, true });
             _service.RequestReroll();
             // Despues del reroll, el flow vuelve a AwaitingRerollDecision (el user
             // ve los nuevos dados y decide). NO resuelve directo.
@@ -158,20 +161,24 @@ namespace Rollgeon.Effects.Tests
 
             Assert.AreEqual(2, _energy.SpendCalls); // base cost
 
-            // Tres rerolls consecutivos:
+            // Tres rerolls consecutivos. Reroll invertido: cada reroll consume la
+            // selección, así que hay que re-seleccionar la mano antes de cada uno.
             _roller.NextRoll = new[] { 2, 2, 2, 2, 2 };
+            _service.SetHolds(new[] { true, true, true, true, true });
             _service.RequestReroll();
             Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
             Assert.AreEqual(2, _service.RollIndex);
             Assert.AreEqual(3, _energy.SpendCalls); // base + 1 reroll
 
             _roller.NextRoll = new[] { 3, 3, 3, 3, 3 };
+            _service.SetHolds(new[] { true, true, true, true, true });
             _service.RequestReroll();
             Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
             Assert.AreEqual(3, _service.RollIndex);
             Assert.AreEqual(4, _energy.SpendCalls); // + 1 reroll mas
 
             _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.SetHolds(new[] { true, true, true, true, true });
             _service.RequestReroll();
             Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
             Assert.AreEqual(4, _service.RollIndex);
@@ -194,6 +201,9 @@ namespace Rollgeon.Effects.Tests
             ActionRollOutcome captured = default;
             _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
 
+            // Reroll invertido: CanAffordReroll además exige ≥1 dado seleccionado.
+            _service.SetHolds(new[] { true, true, true, true, true });
+
             // Tras pagar base, queda 1 — alcanza para el primer reroll.
             Assert.IsTrue(_service.CanAffordReroll);
 
@@ -201,9 +211,9 @@ namespace Rollgeon.Effects.Tests
             _service.RequestReroll();
 
             // Energía a 0: el panel debería deshabilitar el botón.
+            _service.SetHolds(new[] { true, true, true, true, true });
             Assert.IsFalse(_service.CanAffordReroll);
 
-            _service.SetHolds(new[] { true, true, true, true, true });
             _service.Confirm();
 
             Assert.AreEqual(2, captured.RollsUsed);
@@ -223,7 +233,9 @@ namespace Rollgeon.Effects.Tests
             Assert.IsFalse(_service.CanAffordReroll);
 
             // Si user igual intenta RequestReroll (button no debio responder pero
-            // defendamos), SpendEnergy falla → resuelve.
+            // defendamos), SpendEnergy falla → resuelve. Reroll invertido: hace falta
+            // selección para pasar el guard de "nada que re-tirar" y llegar al cobro.
+            _service.SetHolds(new[] { true, true, true, true, true });
             _service.RequestReroll();
             Assert.AreEqual(ActionRollPhase.Resolved, _service.Phase);
             Assert.IsFalse(captured.PassedThreshold);
@@ -305,33 +317,35 @@ namespace Rollgeon.Effects.Tests
         }
 
         // -------------------------------------------------------------------------
-        // BUG-014: si el user holdeó todos los dados, el reroll no movería ningún
-        // dado — no debe consumir energía ni avanzar el RollIndex, y CanAffordReroll
-        // debe reportar false aunque haya energía suficiente.
+        // BUG-014 (reroll invertido): sin ningún dado seleccionado el reroll no
+        // movería ningún dado — no debe consumir energía ni avanzar el RollIndex,
+        // y CanAffordReroll debe reportar false aunque haya energía suficiente.
         // -------------------------------------------------------------------------
 
         [Test]
-        public void CanAffordReroll_WhenAllDiceHeld_ReturnsFalse()
+        public void CanAffordReroll_WhenNoDiceSelected_ReturnsFalse()
         {
-            // Arrange
+            // Arrange — post-roll, sin ninguna selección (holds vacíos).
             _energy.CurrentEnergy = 99;
             _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
             ActionRollOutcome captured = default;
             _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
             Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
 
-            // Act
-            _service.SetHolds(new[] { true, true, true, true, true });
-
-            // Assert
+            // Act + Assert — sin selección no hay nada que re-tirar.
             Assert.IsFalse(_service.CanAffordReroll,
-                "Con todos los dados holdeados, el reroll no tendría efecto — botón debe quedar deshabilitado.");
+                "Sin dados seleccionados el reroll no tendría efecto — botón debe quedar deshabilitado.");
+
+            // Con ≥1 dado seleccionado (y energía de sobra) el botón se habilita.
+            _service.SetHolds(new[] { true, false, false, false, false });
+            Assert.IsTrue(_service.CanAffordReroll,
+                "Con al menos un dado seleccionado y energía, el reroll debe habilitarse.");
         }
 
         [Test]
-        public void RequestReroll_WhenAllDiceHeld_DoesNotConsumeEnergy()
+        public void RequestReroll_WhenNoDiceSelected_DoesNotConsumeEnergy()
         {
-            // Arrange
+            // Arrange — post-roll, holds vacíos (nada seleccionado para re-tirar).
             _energy.CurrentEnergy = 99;
             _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
             ActionRollOutcome captured = default;
@@ -339,7 +353,6 @@ namespace Rollgeon.Effects.Tests
             int spendCallsAfterBase = _energy.SpendCalls;
             int energyAfterBase = _energy.CurrentEnergy;
             int rollIndexBefore = _service.RollIndex;
-            _service.SetHolds(new[] { true, true, true, true, true });
 
             // Act
             _service.RequestReroll();
@@ -352,6 +365,46 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(energyAfterBase, _energy.CurrentEnergy);
             Assert.AreEqual(rollIndexBefore, _service.RollIndex,
                 "RollIndex no debe avanzar — no hubo tirada.");
+        }
+
+        [Test]
+        public void RequestReroll_RerollsSelectedDice_AndKeepsUnselected()
+        {
+            // Arrange — selecciono los dados 0 y 2; el resto debe conservar su cara.
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, false, true, false, false });
+
+            // Act
+            _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.RequestReroll();
+
+            // Assert — el roller recibió keep = complemento de la selección.
+            CollectionAssert.AreEqual(new[] { false, true, false, true, true }, _roller.LastKeep,
+                "keep[] debe conservar los NO seleccionados y re-tirar los seleccionados.");
+        }
+
+        [Test]
+        public void RequestReroll_ClearsSelectionAfterCharge()
+        {
+            // Arrange — el descarte consume la selección (Balatro): la tirada nueva
+            // arranca sin holds y el user re-selecciona para el combo.
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, true, false, false, false });
+
+            // Act
+            _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.RequestReroll();
+
+            // Assert
+            for (int i = 0; i < _service.CurrentHolds.Count; i++)
+                Assert.IsFalse(_service.CurrentHolds[i],
+                    $"El hold {i} debe quedar limpio después del reroll.");
         }
 
         // ----- helpers para tests con combo ---------------------------------
@@ -430,6 +483,9 @@ namespace Rollgeon.Effects.Tests
         {
             public int[] NextRoll = new[] { 1, 1, 1, 1, 1 };
 
+            /// <summary>Último keep[] recibido en <see cref="Reroll"/> — null si nunca se rerolleó.</summary>
+            public bool[] LastKeep;
+
             public int[] RollAll(DiceBagSO bag)
             {
                 var copy = new int[NextRoll.Length];
@@ -439,6 +495,7 @@ namespace Rollgeon.Effects.Tests
 
             public int[] Reroll(DiceBagSO bag, int[] previousResult, bool[] keep)
             {
+                LastKeep = keep != null ? (bool[])keep.Clone() : null;
                 return RollAll(bag);
             }
         }

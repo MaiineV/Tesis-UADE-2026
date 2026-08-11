@@ -323,8 +323,13 @@ namespace Rollgeon.Dice.Throw
                 }
             }
 
-            if (mouse.rightButton.wasPressedThisFrame)
+            // Claim solo con dados agarrados — un right-click "seco" cae al router
+            // global (cancel de selección/deselect-all) en vez de perderse acá.
+            if (mouse.rightButton.wasPressedThisFrame && AnyGrabbed())
+            {
+                Rollgeon.Input.RightClickClaim.Claim();
                 CancelGrabAndReturn();
+            }
 
             if (!lmb && _lmbWasPressed && AnyGrabbed())
             {

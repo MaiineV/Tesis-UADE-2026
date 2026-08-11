@@ -433,6 +433,14 @@ namespace Rollgeon.Combat.Handoff
                         _chainPhaseSelectionResult = null;
                         BeginChainSelection(afterRoll, playerGuid, () =>
                         {
+                            // Cancel del target select (click derecho / End Turn): NO
+                            // ejecutar la fase con selección cancelada — volver a
+                            // awaiting-confirm con la tirada intacta.
+                            if (_chainPhaseSelectionResult != null && _chainPhaseSelectionResult.WasCancelled)
+                            {
+                                _isResolvingChainPhase = false;
+                                return;
+                            }
                             ExecuteChainPhase(hud, firstEnemyId, playerGuid);
                         });
                     }
@@ -564,14 +572,18 @@ namespace Rollgeon.Combat.Handoff
                 // segunda sesión de throw o cancelar el chain con el reveal pendiente.
                 if (ThrowBusy()) return;
 
-                // BUG-013 (cancelar + reembolsar): si hay un Movement esperando su tile,
-                // cualquier click de slot lo cancela y devuelve la energía. Durante la
-                // selección sólo el slot de Movement queda interactuable (los demás están
-                // lockeados por _awaitingSelection), así que este click es "deseleccionar".
+                // BUG-013 + QoL switch: si hay un Movement esperando su tile, el mismo
+                // slot lo cancela ("deseleccionar", sin costo — la energía se cobra al
+                // ejecutar) y OTRO slot lo cancela Y arranca la nueva acción en el mismo
+                // gesto. CancelSelection unwindea el sub-FSM sincrónicamente, así que al
+                // volver el estado ya está limpio para seguir de largo.
                 if (_awaitingPlayerSelection)
                 {
+                    bool sameAction = ResolveBehaviorAt(index) == _selectedBehavior;
                     CancelPlayerSelection();
-                    return;
+                    // Defensa: si el unwind no completó (sin ISelectionController vivo,
+                    // estado inconsistente), no encadenamos una acción sobre otra.
+                    if (sameAction || _awaitingPlayerSelection) return;
                 }
 
                 // BUG-015: si hay un ActionRoll activo (Heal/Forzar Puerta con panel
@@ -593,8 +605,22 @@ namespace Rollgeon.Combat.Handoff
                 // queda comprometida hasta Confirm/EndTurn.
                 if (_selectedBehavior != null)
                 {
-                    if (!_awaitingFirstRoll) return;
-                    CancelAwaitingSelection(hud);
+                    // QoL switch: targeting de ataque (chain fase 0 pre-roll) abierto —
+                    // cambiar de accion es gratis (la energia se cobra recien al elegir
+                    // target). Mismo slot = solo cancela; otro slot = cancela y sigue.
+                    if (_activeChain != null && _chainSelectionController != null
+                        && _chainSelectionController.IsSelecting
+                        && _lastFaces == null && _chainPhaseIndex == 0)
+                    {
+                        bool sameAction = ResolveBehaviorAt(index) == _selectedBehavior;
+                        TryCancelChainTargeting(hud);
+                        if (sameAction || _selectedBehavior != null) return;
+                    }
+                    else
+                    {
+                        if (!_awaitingFirstRoll) return;
+                        CancelAwaitingSelection(hud);
+                    }
                 }
 
                 var hero = ResolveHero();
@@ -897,6 +923,74 @@ namespace Rollgeon.Combat.Handoff
         }
 
         // ======================================================================
+        // QoL: cancel por click derecho
+        // ======================================================================
+
+        /// <inheritdoc />
+        public bool HasCancellableSelection
+        {
+            get
+            {
+                if (_forcedRerollPending || ThrowBusy()) return false;
+                if (_awaitingPlayerSelection) return true;
+                return IsChainTargetingCancellable();
+            }
+        }
+
+        /// <inheritdoc />
+        public bool TryCancelFromRightClick()
+        {
+            if (_forcedRerollPending || ThrowBusy()) return false;
+            if (_screenManager?.Current is not CombatHUDView hud) return false;
+
+            if (TryCancelChainTargeting(hud)) return true;
+
+            if (_awaitingPlayerSelection)
+            {
+                CancelPlayerSelection();
+                return true;
+            }
+            return false;
+        }
+
+        // Solo hay cancel LIMPIO de targeting de chain en dos ventanas: la fase 0
+        // pre-roll (nada cobrado ni tirado — el chain entero se descarta gratis) y el
+        // AfterRoll de DoConfirm (la tirada queda intacta y se vuelve a awaiting-confirm).
+        // El BeforeRoll de fases intermedias NO: su callback (StartNextChainPhase) no
+        // distingue cancel y rolaría igual — ahí el click derecho no hace nada.
+        private bool IsChainTargetingCancellable()
+        {
+            if (_activeChain == null || _chainSelectionController == null
+                || !_chainSelectionController.IsSelecting)
+            {
+                return false;
+            }
+            return (_lastFaces == null && _chainPhaseIndex == 0) || _isResolvingChainPhase;
+        }
+
+        private bool TryCancelChainTargeting(CombatHUDView hud)
+        {
+            if (!IsChainTargetingCancellable()) return false;
+
+            bool preRollPhase0 = _lastFaces == null && _chainPhaseIndex == 0;
+
+            // CancelSelection es sincrónico: OnChainSelectionDone corre acá adentro,
+            // setea _chainPhaseSelectionResult (WasCancelled) e invoca el callback
+            // pendiente, cuyo guard de cancelación evita cobrar/ejecutar.
+            _chainSelectionController.CancelSelection();
+
+            if (preRollPhase0)
+            {
+                // Nada cobrado ni rolleado: cerrar el chain como pass total libera el
+                // slot sin marcar la acción como usada (phasesCompleted == 0).
+                FinishChain(hud, _player.PlayerGuid, true);
+            }
+            // AfterRoll: el guard del callback ya bajó _isResolvingChainPhase — la
+            // tirada sigue en la mesa y el jugador puede re-confirmar o pasar.
+            return true;
+        }
+
+        // ======================================================================
         // BUG-030 (Torpe): relanzamiento completo forzado
         // ======================================================================
 
@@ -954,14 +1048,21 @@ namespace Rollgeon.Combat.Handoff
             if (ThrowBusy()) return false;
             if (_lastFaces == null) return false; // nada rolleado todavía — no hay qué re-tirar
 
-            // BUG-014: si todos los dados están holdeados, el reroll no movería
-            // ningún dado — bail antes de consumir budget/energía. El botón
-            // debería estar deshabilitado por la UI, esto es el guard defensivo.
+            // Reroll invertido (Balatro): los dados SELECCIONADOS son los que se
+            // re-tiran — el keep del roller es el complemento de los holds del HUD.
+            // El keepOverride del grab-to-reroll ya es un keep físico (los no
+            // agarrados) y NO se invierte.
             // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
-            var keep = KeepForcingBlockedDice(keepOverride ?? hud.GetCurrentKeep(), _lastFaces?.Length ?? 0);
+            var keep = KeepForcingBlockedDice(
+                keepOverride ?? KeepFromSelection(hud.GetCurrentKeep(), _lastFaces?.Length ?? 0),
+                _lastFaces?.Length ?? 0);
+
+            // BUG-014 (invertido): sin ningún dado seleccionado el reroll no movería
+            // nada — bail antes de consumir budget/energía. El botón debería estar
+            // deshabilitado por la UI, esto es el guard defensivo.
             if (AllDiceHeld(keep))
             {
-                Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — todos los dados están holdeados.");
+                Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — no hay dados seleccionados para re-tirar.");
                 return false;
             }
 
@@ -1492,6 +1593,16 @@ namespace Rollgeon.Combat.Handoff
             return fallback;
         }
 
+        // Behavior de combate del slot index, para comparar contra _selectedBehavior en
+        // los paths de switch (mismo slot = toggle-off, otro slot = cambiar de accion).
+        private HeroActionBehavior ResolveBehaviorAt(int index)
+        {
+            var hero = ResolveHero();
+            if (hero == null) return null;
+            var behaviors = hero.GetBehaviorsForPhase(GamePhase.Combat);
+            return index >= 0 && index < behaviors.Count ? behaviors[index] : null;
+        }
+
         private ClassHeroSO ResolveHero()
         {
             var hero = _player?.CurrentHero;
@@ -1628,6 +1739,21 @@ namespace Rollgeon.Combat.Handoff
             if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db) && db != null)
                 for (int i = 0; i < result.Length; i++)
                     if (db.IsBlocked(i)) result[i] = true;
+            return result;
+        }
+
+        /// <summary>
+        /// Reroll invertido (Balatro): la máscara de la UI es "seleccionado para
+        /// re-tirar"; el roller espera "keep". <c>result[i] = !selected[i]</c> —
+        /// índices fuera de rango de <paramref name="selected"/> quedan en keep=true
+        /// (un dado sin estado de selección no debe volar).
+        /// </summary>
+        internal static bool[] KeepFromSelection(bool[] selected, int diceLen)
+        {
+            int len = diceLen > 0 ? diceLen : (selected?.Length ?? 0);
+            var result = new bool[len];
+            for (int i = 0; i < len; i++)
+                result[i] = !(selected != null && i < selected.Length && selected[i]);
             return result;
         }
 

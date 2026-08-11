@@ -792,5 +792,99 @@ namespace Rollgeon.Combat.Handoff.Tests
                 "Tras el reroll forzado, Confirm debe resolver la mano normalmente.");
             EventManager.UnSubscribe(EventName.OnRollResolved, onResolved);
         }
+
+        // -------------------------------------------------------------------
+        // QoL: reroll invertido (KeepFromSelection) — la máscara de la UI marca
+        // los dados SELECCIONADOS para re-tirar; el roller recibe el complemento.
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void KeepFromSelection_RerollsSelectedAndKeepsUnselected()
+        {
+            // Arrange + Act
+            var keep = CombatHandoffService.KeepFromSelection(
+                new[] { true, false, true, false, false }, 5);
+
+            // Assert — keep = complemento exacto de la selección.
+            CollectionAssert.AreEqual(new[] { false, true, false, true, true }, keep);
+        }
+
+        [Test]
+        public void KeepFromSelection_NullSelection_KeepsAllDice()
+        {
+            // Arrange + Act — sin selección, nada vuela (el guard AllDiceHeld bailea).
+            var keep = CombatHandoffService.KeepFromSelection(null, 3);
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { true, true, true }, keep);
+        }
+
+        [Test]
+        public void KeepFromSelection_ShortMask_KeepsDiceWithoutSelectionState()
+        {
+            // Arrange + Act — un dado sin estado de selección no debe volar.
+            var keep = CombatHandoffService.KeepFromSelection(new[] { true }, 3);
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { false, true, true }, keep);
+        }
+
+        // -------------------------------------------------------------------
+        // QoL: cancel por click derecho
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void TryCancelFromRightClick_WithoutSelectionInProgress_ReturnsFalse()
+        {
+            // Arrange — HUD de combate activo pero sin ninguna selección abierta.
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
+
+            // Act / Assert — el router cae al deselect-all de dados.
+            Assert.IsFalse(_service.HasCancellableSelection);
+            Assert.IsFalse(_service.TryCancelFromRightClick());
+        }
+
+        [Test]
+        public void TryCancelFromRightClick_WithoutCombatHud_ReturnsFalse()
+        {
+            // Arrange — selección pendiente pero la pantalla actual no es el HUD de
+            // combate (pausa, transición): el cancel global no debe operar a ciegas.
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            _spyScreen.Current = null;
+
+            // Act / Assert
+            Assert.IsFalse(_service.TryCancelFromRightClick());
+        }
+
+        [Test]
+        public void TryCancelFromRightClick_AwaitingPlayerSelection_CancelsAndFreesState()
+        {
+            // Arrange — Movement esperando su tile. Sin ISelectionController registrado,
+            // CancelPlayerSelection usa la limpieza defensiva (libera estado y emite
+            // OnBehaviorExecuted) — alcanza para verificar el contrato del cancel.
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            SetPrivateField(_service, "_selectedBehavior",
+                new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
+            Assert.IsTrue(_service.HasCancellableSelection, "pre-condition");
+
+            int behaviorExecutedCount = 0;
+            EventManager.EventReceiver onExecuted = args => behaviorExecutedCount++;
+            EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
+
+            // Act
+            var cancelled = _service.TryCancelFromRightClick();
+
+            // Assert — canceló, liberó el estado y avisó a la UI para destrabarse.
+            Assert.IsTrue(cancelled);
+            Assert.IsFalse(_service.HasCancellableSelection);
+            Assert.AreEqual(1, behaviorExecutedCount,
+                "El cancel debe emitir OnBehaviorExecuted para liberar los slots de la UI.");
+            EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
+        }
     }
 }

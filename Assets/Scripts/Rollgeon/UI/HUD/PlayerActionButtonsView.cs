@@ -640,15 +640,24 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Used;
             }
 
-            // Chain, roll, o seleccion de target pendiente de OTRO slot: los demas estan
-            // lockeados para no dejar al jugador iniciar una accion en paralelo. El
-            // _awaitingSelection cubre el caso de Movement (BUG-013), que no rola dados.
+            // Chain o roll en curso: los demas slots quedan lockeados para no dejar al
+            // jugador iniciar una accion en paralelo — la accion ya esta comprometida.
             if (_inChain)
                 return ActionButtonState.Locked;
             if (_rolled)
                 return ActionButtonState.Locked;
-            if (_awaitingSelection)
+
+            // Seleccion pendiente (BUG-013/BUG-015): el panel de ActionRoll (Heal /
+            // Forzar Puerta) es modal — los demas slots quedan Locked hasta resolverse.
+            // La seleccion de tile de Movement NO: los demas slots siguen la cascada
+            // normal (Available) y usarlos cancela el Movement y arranca la nueva
+            // accion en un solo gesto (QoL switch — el handoff hace cancel-and-continue).
+            if (_awaitingSelection
+                && ServiceLocator.TryGetService<IActionRollService>(out var modalRoll)
+                && modalRoll != null && modalRoll.IsActive)
+            {
                 return ActionButtonState.Locked;
+            }
 
             // Force Door es contextual: solo habilita pegado (Manhattan ≤ 1, ortogonal)
             // a una puerta no-tapiada y FUERA de la sala de Boss (sin escape). PCAdjacentToDoor
