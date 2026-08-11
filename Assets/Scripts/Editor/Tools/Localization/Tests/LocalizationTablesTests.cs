@@ -44,6 +44,10 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
             // usa sin traducir en el resto del HUD.
             Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,
+            // "Buenardo" es nombre propio del tier de cofre (GDD del Cofre §21) —
+            // en EN queda sin traducir, decisión de diseño. ("Épicardo" difiere por
+            // la tilde, así que no necesita entry.)
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare,
         };
 
         private static readonly string[] Collections = { "Content", "UI" };
