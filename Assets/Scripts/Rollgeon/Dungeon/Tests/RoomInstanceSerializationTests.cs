@@ -89,6 +89,31 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
+        public void RoundTrip_PreservesChestStateRollFields()
+        {
+            var src = new SerializableObjectStates();
+            src.Set("chest_0", new ChestState
+            {
+                Spawned = true,
+                TierIndex = 3,
+                IsMimic = true,
+                Broken = false,
+                MimicActivated = true,
+                Consumed = true
+            });
+
+            var hydrated = RoundTrip(src);
+
+            Assert.IsTrue(hydrated.TryGet<ChestState>("chest_0", out var chest));
+            Assert.IsTrue(chest.Spawned);
+            Assert.AreEqual(3, chest.TierIndex);
+            Assert.IsTrue(chest.IsMimic);
+            Assert.IsFalse(chest.Broken);
+            Assert.IsTrue(chest.MimicActivated);
+            Assert.IsTrue(chest.Consumed);
+        }
+
+        [Test]
         public void Set_OverwritesExistingKeyWithoutDuplicating()
         {
             var states = new SerializableObjectStates();
