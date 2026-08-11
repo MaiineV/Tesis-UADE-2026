@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Rollgeon.Timing
 {
     /// <summary>
-    /// Velocidad de RESOLUCIÓN del juego (x1/x2/x4/x8) persistida en PlayerPrefs.
+    /// Velocidad de RESOLUCIÓN del juego (x1/x2/x4) persistida en PlayerPrefs.
     /// NUNCA toca <c>Time.timeScale</c> — eso aceleraba animators, partículas y
     /// shaders y volvía ilegible el combate. En cambio, los consumidores dividen
     /// sus duraciones de pacing por <see cref="Multiplier"/>: la secuencia del
@@ -15,7 +15,8 @@ namespace Rollgeon.Timing
     {
         private const string Key = "Rollgeon.GameSpeed";
 
-        public static readonly int[] Speeds = { 1, 2, 4, 8 };
+        // x8 se probó y se descartó (2026-08-11): demasiado para leer la resolución.
+        public static readonly int[] Speeds = { 1, 2, 4 };
 
         private static int? _cached;
 
@@ -37,7 +38,7 @@ namespace Rollgeon.Timing
         /// <summary>Avanza al siguiente speed del ciclo y lo aplica. Devuelve el nuevo.</summary>
         public static int CycleNext() => Multiplier = NextSpeed(Multiplier);
 
-        /// <summary>1→2→4→8→1; un valor fuera del ciclo resetea a 1.</summary>
+        /// <summary>1→2→4→1; un valor fuera del ciclo resetea a 1.</summary>
         public static int NextSpeed(int current)
         {
             for (int i = 0; i < Speeds.Length; i++)

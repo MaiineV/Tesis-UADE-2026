@@ -235,9 +235,8 @@ namespace Rollgeon.UI.Screens
         // ================================================================
 
         /// <summary>
-        /// Cicla x1→x2→x4→x8 vía <see cref="GameSpeedPrefs"/> (persiste y aplica
-        /// el timeScale al toque — la pausa es soft, así que el cambio se siente
-        /// sin salir del menú).
+        /// Cicla x1→x2→x4 vía <see cref="GameSpeedPrefs"/> (persiste al toque — la
+        /// pausa es soft, así que el cambio se siente sin salir del menú).
         /// </summary>
         private void OnGameSpeedClicked()
         {

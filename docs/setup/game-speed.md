@@ -1,4 +1,4 @@
-# Game Speed (x1 / x2 / x4 / x8) — modelo "solo resolución"
+# Game Speed (x1 / x2 / x4) — modelo "solo resolución"
 
 > Estado: implementado (2026-08-10, revisado el mismo día). Opción "Velocidad: xN"
 > en el panel de opciones — menú principal y pausa in-game.
@@ -42,24 +42,24 @@
 ## Expectativa de resultado (documentada, no es bug)
 
 El tiempo de un golpe lo domina la animación de ataque (~0.95s) + impacto (~0.55s),
-que NO escalan. A x8: la **resolución del tablero** (breakdown, dados, turnos)
+que NO escalan. A x4: la **resolución del tablero** (breakdown, dados, turnos)
 comprime completo, pero el combate cuerpo a cuerpo se siente ~x2 efectivo. Si algún
 día se quiere más, la palanca es `Animator.speed` + `FeedbackEntry.Duration` juntos
 (decisión de diseño aparte — hoy explícitamente fuera de alcance).
 
 ## UI / instalación
 
-Sin cambios respecto de la v1: botón `GameSpeedButton` cicla x1→x2→x4→x8 (patrón
+Sin cambios respecto de la v1: botón `GameSpeedButton` cicla x1→x2→x4 (patrón
 Tutorial/Analytics), instancias construidas por `Rollgeon → Juicy Menu → 4` y `→ 5`,
 key `menu.game_speed` ("Velocidad: x{0}" / "Speed: x{0}") en tablas UI. Panel 560×720.
 
 ## Checklist de smoke
 
 - [ ] A cualquier velocidad: `Time.timeScale == 1` siempre (salvo durante un hitstop).
-- [ ] 4 clicks ciclan x1→x2→x4→x8→x1; persiste tras reiniciar.
-- [ ] A x8: breakdown comprimido (steps rapidísimos, clash a ritmo pleno ÷8).
-- [ ] A x8: animación de ataque del enemigo a velocidad NORMAL; su pausa previa casi nula.
-- [ ] A x8: dados spinean a velocidad normal pero el stagger/hold casi desaparecen.
+- [ ] 3 clicks ciclan x1→x2→x4→x1; persiste tras reiniciar.
+- [ ] A x4: breakdown comprimido (steps rapidísimos, clash a ritmo pleno ÷4).
+- [ ] A x4: animación de ataque del enemigo a velocidad NORMAL; su pausa previa casi nula.
+- [ ] A x4: dados spinean a velocidad normal pero el stagger/hold casi desaparecen.
 - [ ] Cambiar velocidad desde la pausa a mitad de combate aplica al turno enemigo en curso.
-- [ ] Crit con hitstop a x8: freeze cortito, timeScale vuelve a 1.
+- [ ] Crit con hitstop a x4: freeze cortito, timeScale vuelve a 1.
 - [ ] Shaders/partículas del menú y combate: sin cambio de velocidad perceptible.

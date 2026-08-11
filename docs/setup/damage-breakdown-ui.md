@@ -101,7 +101,7 @@ EnableShakeAndHitstop` para debug.
   aceleraba. `_dieIndex` sigue existiendo solo para pitch y juice.
 - El factor multiplica ANTES de `D()` ⇒ compone con el skip (skip + ramp se apilan).
 
-### Game speed (x1/x2/x4/x8) — interacción
+### Game speed (x1/x2/x4) — interacción
 El selector (`docs/setup/game-speed.md`) NO toca `Time.timeScale`: `D()` del director
 divide todas las duraciones de la secuencia por `GameSpeedPrefs.Multiplier` (compone
 con skip y step-ramp). Flash / ghost trail / tick de roll-up corren en tiempo real y
@@ -147,6 +147,6 @@ dividen también para acompañar la secuencia comprimida.
 - [ ] Breakdown largo (~10 steps) a x1: los últimos steps visiblemente más rápidos que
       los primeros; el clash mantiene su ritmo completo (wind-up + roll-up enteros).
 - [ ] Skip durante un breakdown rampeado: compone (todo aún más rápido), total correcto.
-- [ ] Game speed x8: secuencia comprimida, flash y trail acompañan (no quedan "largos"),
+- [ ] Game speed x4: secuencia comprimida, flash y trail acompañan (no quedan "largos"),
       `Time.timeScale` sigue en 1 y tras el hitstop del clash vuelve a 1.
 - [ ] Cambiar velocidad desde la pausa en medio de un combate: aplica al toque.

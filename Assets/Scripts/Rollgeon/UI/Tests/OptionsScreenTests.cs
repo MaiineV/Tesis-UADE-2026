@@ -199,11 +199,8 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(4, GameSpeedPrefs.Multiplier);
 
             _speedButton.onClick.Invoke();
-            Assert.AreEqual(8, GameSpeedPrefs.Multiplier);
-
-            _speedButton.onClick.Invoke();
             Assert.AreEqual(1, GameSpeedPrefs.Multiplier,
-                "Tras x8 el ciclo vuelve a x1.");
+                "Tras x4 el ciclo vuelve a x1.");
             Assert.AreEqual(Expected(1), _speedLabel.text);
         }
 
