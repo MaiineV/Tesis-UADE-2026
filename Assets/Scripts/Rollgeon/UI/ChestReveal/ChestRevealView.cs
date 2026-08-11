@@ -170,6 +170,16 @@ namespace Rollgeon.UI.ChestReveal
         private IEnumerator Watchdog()
         {
             yield return new WaitForSecondsRealtime(Mathf.Max(1f, _settings.MaxSequenceSeconds));
+
+            // WaitDismiss esperando el click NO es una secuencia colgada: es un modal
+            // con input disponible — cerrárselo al jugador que mira su reward sería
+            // un bug. El watchdog caza tweens muertos en Open/Spin/Reveal (y en el
+            // auto-dismiss, cuyo Delay sí puede morir).
+            while (_player.IsRunning
+                   && _player.Beat == ChestRevealPlayer.RevealBeat.WaitDismiss
+                   && _settings.AutoDismissSeconds <= 0f)
+                yield return new WaitForSecondsRealtime(1f);
+
             if (!_player.IsRunning) yield break;
 
             Debug.LogWarning("[ChestRevealView] Watchdog: secuencia colgada — se fuerza el cierre.");
