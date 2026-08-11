@@ -25,6 +25,9 @@ namespace Rollgeon.UI.ChestReveal
 
         public RectTransform Rect => (RectTransform)transform;
 
+        /// <summary>Marco de rareza — el juice lo pulsa durante WaitDismiss.</summary>
+        public Graphic FrameGraphic => _rarityFrame;
+
         public void Bind(ChestReelCellData data)
         {
             if (_rarityFrame != null)

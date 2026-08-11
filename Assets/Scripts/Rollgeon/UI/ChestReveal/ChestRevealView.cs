@@ -47,6 +47,7 @@ namespace Rollgeon.UI.ChestReveal
         [SerializeField, Required] private RectTransform _panelRect;
         [SerializeField, Required] private CanvasGroup _panelCanvasGroup;
         [SerializeField, Required] private Button _dimBackground;
+        [SerializeField] private Image _dimImage; // opcional — fade in/out del dim
         [SerializeField, Required] private RectTransform _viewport;
         [SerializeField, Required] private RectTransform _stripRoot;
         [SerializeField, Required] private ChestReelCellView _cellPrefab;
@@ -67,8 +68,11 @@ namespace Rollgeon.UI.ChestReveal
         private float _targetOffset;
         private float _lastSpinT;
         private int _lastTickIndex = -1;
+        private bool _climaxFired;
         private Tween _spinTween;
+        private Tween _countUpTween;
         private Action _spinOnDone;
+        private Action _openOnDone;
         private Coroutine _watchdog;
         private int _gatesHeld;
 
@@ -141,6 +145,11 @@ namespace Rollgeon.UI.ChestReveal
 
         private void OnSequenceEnd()
         {
+            // El cleanup del juice va PRIMERO: con cola de cofres, un pulse de color
+            // vivo pisaría el re-Bind del próximo reel.
+            _juice?.OnSequenceEnd();
+            if (_countUpTween.isAlive) _countUpTween.Stop();
+
             if (_watchdog != null)
             {
                 StopCoroutine(_watchdog);
@@ -179,6 +188,7 @@ namespace Rollgeon.UI.ChestReveal
 
         private void Teardown()
         {
+            _juice?.OnSequenceEnd();
             _player.Abort();
             if (_watchdog != null)
             {
@@ -186,6 +196,7 @@ namespace Rollgeon.UI.ChestReveal
                 _watchdog = null;
             }
             _spinTween.Stop();
+            _countUpTween.Stop();
             _queue.Clear();
             // Liberar TODOS los gates pendientes — un teardown a mitad de reveal no
             // puede dejar el TurnManager esperando.
@@ -196,19 +207,35 @@ namespace Rollgeon.UI.ChestReveal
         private void CloseRoot()
         {
             if (_root == null) return;
+            _juice?.OnClose();
             if (ReducedMotion || _panelCanvasGroup == null)
             {
                 _root.SetActive(false);
                 return;
             }
             _panelCanvasGroup.blocksRaycasts = false;
-            Tween.Alpha(_panelCanvasGroup, 0f, D(_settings.CloseSeconds), useUnscaledTime: true)
+            float close = D(_settings.CloseSeconds);
+            Tween.Scale(_panelRect, Vector3.one * _settings.ClosePanelScaleTo, close,
+                Ease.InQuad, useUnscaledTime: true);
+            if (_dimImage != null)
+                Tween.Alpha(_dimImage, 0f, close, Ease.OutQuad, useUnscaledTime: true);
+            Tween.Alpha(_panelCanvasGroup, 0f, close, useUnscaledTime: true)
                 .OnComplete(this, self =>
                 {
                     self._root.SetActive(false);
                     self._panelCanvasGroup.alpha = 1f;
                     self._panelCanvasGroup.blocksRaycasts = true;
+                    self._panelRect.localScale = Vector3.one;
+                    self.SetDimAlpha(self._settings.DimRestAlpha);
                 });
+        }
+
+        private void SetDimAlpha(float alpha)
+        {
+            if (_dimImage == null) return;
+            var c = _dimImage.color;
+            c.a = alpha;
+            _dimImage.color = c;
         }
 
         // -----------------------------------------------------------------
@@ -248,6 +275,7 @@ namespace Rollgeon.UI.ChestReveal
             _targetOffset = ChestReelMath.TargetOffset(_winnerIndex, w, s, jitter, _settings.MaxLandingJitter01);
             _lastTickIndex = -1;
             _lastSpinT = 0f;
+            _climaxFired = false;
             SetOffset(0f);
         }
 
@@ -273,7 +301,7 @@ namespace Rollgeon.UI.ChestReveal
             if (index != _lastTickIndex)
             {
                 _lastTickIndex = index;
-                _juice?.OnReelTick(index);
+                _juice?.OnReelTick(index, _lastSpinT);
             }
         }
 
@@ -311,6 +339,9 @@ namespace Rollgeon.UI.ChestReveal
         {
             if (!_player.IsRunning) return;
 
+            if (_player.Beat == ChestRevealPlayer.RevealBeat.WaitDismiss)
+                _juice?.OnDismissRequested();
+
             bool wasSpinNoSkip = _player.Beat == ChestRevealPlayer.RevealBeat.Spin
                                  && _player.Skip == ChestRevealPlayer.SkipStage.None;
             _player.RequestSkip();
@@ -331,10 +362,16 @@ namespace Rollgeon.UI.ChestReveal
 
         public void PlayOpen(Action onDone)
         {
+            _juice?.OnOpen();
             if (ReducedMotion || _panelRect == null || _panelCanvasGroup == null)
             {
-                if (_panelRect != null) _panelRect.localScale = Vector3.one;
+                if (_panelRect != null)
+                {
+                    _panelRect.localScale = Vector3.one;
+                    _panelRect.localRotation = Quaternion.identity;
+                }
                 if (_panelCanvasGroup != null) _panelCanvasGroup.alpha = 1f;
+                SetDimAlpha(_settings.DimRestAlpha);
                 onDone();
                 return;
             }
@@ -342,14 +379,30 @@ namespace Rollgeon.UI.ChestReveal
             Tween.StopAll(onTarget: _panelRect);
             Tween.StopAll(onTarget: _panelCanvasGroup);
             _panelRect.localScale = Vector3.one * _settings.OpenScaleFrom;
+            _panelRect.localRotation = Quaternion.Euler(0f, 0f, _settings.OpenTiltDegrees);
             _panelCanvasGroup.alpha = 0f;
-            Tween.Scale(_panelRect, Vector3.one, D(_settings.OpenSeconds), Ease.OutBack, useUnscaledTime: true);
-            Tween.Alpha(_panelCanvasGroup, 1f, D(_settings.OpenSeconds), Ease.OutQuad, useUnscaledTime: true)
-                .OnComplete(onDone.Invoke);
+            float open = D(_settings.OpenSeconds);
+            if (_dimImage != null)
+            {
+                SetDimAlpha(0f);
+                Tween.Alpha(_dimImage, _settings.DimRestAlpha, D(_settings.DimFadeSeconds),
+                    Ease.OutQuad, useUnscaledTime: true);
+            }
+            Tween.Scale(_panelRect, Vector3.one, open, Ease.OutBack, useUnscaledTime: true);
+            Tween.LocalRotation(_panelRect, Quaternion.identity, open, Ease.OutBack, useUnscaledTime: true);
+            Tween.Alpha(_panelCanvasGroup, 1f, open, Ease.OutQuad, useUnscaledTime: true)
+                .OnComplete(this, self =>
+                {
+                    self._juice?.OnPanelLanded();
+                    self._openOnDone?.Invoke();
+                    self._openOnDone = null;
+                });
+            _openOnDone = onDone;
         }
 
         public void PlaySpin(Action onDone)
         {
+            _juice?.OnSpinStart();
             if (ReducedMotion)
             {
                 SetOffset(_targetOffset);
@@ -370,6 +423,11 @@ namespace Rollgeon.UI.ChestReveal
                 {
                     self._lastSpinT = t;
                     self.SetOffset(self.EvaluateSpin(t) * self._targetOffset);
+                    if (!self._climaxFired && t >= self._settings.ClimaxT)
+                    {
+                        self._climaxFired = true;
+                        self._juice?.OnSpinClimax(self._current.Tier);
+                    }
                 }, Ease.Linear, useUnscaledTime: true)
                 .OnComplete(this, self =>
                 {
@@ -398,16 +456,46 @@ namespace Rollgeon.UI.ChestReveal
                 return;
             }
 
+            var cardRect = (RectTransform)_rewardCardGroup.transform;
             Tween.StopAll(onTarget: _rewardCardGroup);
+            Tween.StopAll(onTarget: cardRect);
             _rewardCardGroup.alpha = 0f;
-            Tween.Alpha(_rewardCardGroup, 1f, D(_settings.RevealFadeSeconds), Ease.OutQuad, useUnscaledTime: true)
+            cardRect.localScale = Vector3.one * _settings.CardPopScaleFrom;
+            float pop = D(Mathf.Max(_settings.RevealFadeSeconds, _settings.CardPopSeconds));
+            _juice?.OnCardShown();
+            Tween.Scale(cardRect, Vector3.one, pop, Ease.OutBack, useUnscaledTime: true);
+            StartGoldCountUp();
+            Tween.Alpha(_rewardCardGroup, 1f, pop, Ease.OutQuad, useUnscaledTime: true)
                 .OnComplete(onDone.Invoke);
+        }
+
+        // Count-up del oro (solo reward oro): el texto arranca en +0 y termina exacto
+        // en el monto. Chrome puro — puede seguir corriendo solapado en WaitDismiss;
+        // ApplyRewardCard (ForceFinalState) pisa el texto final si se corta antes.
+        private void StartGoldCountUp()
+        {
+            if (_current.Item != null || _rewardNameLabel == null) return;
+            if (_settings.GoldCountUpSeconds <= 0f) return;
+
+            if (_countUpTween.isAlive) _countUpTween.Stop();
+            _countUpTween = Tween.Custom(this, 0f, 1f, D(_settings.GoldCountUpSeconds), (self, t) =>
+            {
+                string format = LocalizedContent.Ui(ChestRevealTextKeys.GoldAmount, "+{0}");
+                self._rewardNameLabel.text = string.Format(format,
+                    ChestRevealFeelMath.CountUpShown(t, self._current.GoldAmount));
+                self._juice?.OnCountUpTick(t);
+            }, Ease.OutQuad, useUnscaledTime: true);
         }
 
         public void WaitDismiss(Action onDone)
         {
             if (_hintLabel != null)
                 _hintLabel.text = LocalizedContent.Ui(ChestRevealTextKeys.ContinueHint, "Click to continue");
+
+            // Los idles arrancan acá y no en PlayReveal: el skip Jump saltea ese beat
+            // pero siempre aterriza en WaitDismiss.
+            var winnerCell = _winnerIndex < _cells.Count ? _cells[_winnerIndex] : null;
+            _juice?.OnWaitDismiss(winnerCell, _current.Tier);
 
             // 0 = espera el click (el player cierra vía RequestSkip); >0 = auto-cierre.
             if (_settings.AutoDismissSeconds > 0f)
@@ -416,13 +504,42 @@ namespace Rollgeon.UI.ChestReveal
 
         public void ForceFinalState()
         {
+            // Primero el juice: restaura su shake del panel mientras su tween sigue
+            // vivo — un StopAll de la view antes lo dejaría desplazado sin restore.
+            _juice?.OnForceFinalState();
+
             _spinTween.Stop();
             _spinOnDone = null;
+            _openOnDone = null;
+            if (_countUpTween.isAlive) _countUpTween.Stop();
             SetOffset(_targetOffset);
-            if (_panelRect != null) _panelRect.localScale = Vector3.one;
-            if (_panelCanvasGroup != null) _panelCanvasGroup.alpha = 1f;
+            if (_panelRect != null)
+            {
+                Tween.StopAll(onTarget: _panelRect);
+                _panelRect.localScale = Vector3.one;
+                _panelRect.localRotation = Quaternion.identity;
+            }
+            if (_panelCanvasGroup != null)
+            {
+                // Matar el fade del open acá también corta su OnComplete — sin
+                // OnPanelLanded tardío (title punch fantasma) tras un doble click.
+                Tween.StopAll(onTarget: _panelCanvasGroup);
+                _panelCanvasGroup.alpha = 1f;
+            }
+            if (_dimImage != null) Tween.StopAll(onTarget: _dimImage);
+            SetDimAlpha(_settings.DimRestAlpha);
+            if (_winnerIndex < _cells.Count)
+            {
+                var winnerRect = _cells[_winnerIndex].Rect;
+                Tween.StopAll(onTarget: winnerRect);
+                winnerRect.localScale = Vector3.one;
+            }
             ApplyRewardCard();
-            if (_rewardCardGroup != null) _rewardCardGroup.alpha = 1f;
+            if (_rewardCardGroup != null)
+            {
+                _rewardCardGroup.alpha = 1f;
+                _rewardCardGroup.transform.localScale = Vector3.one;
+            }
         }
     }
 }
