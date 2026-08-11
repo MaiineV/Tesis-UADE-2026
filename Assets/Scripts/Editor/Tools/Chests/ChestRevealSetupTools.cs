@@ -1,4 +1,7 @@
+using MoreMountains.Feedbacks;
 using Rollgeon.UI.ChestReveal;
+using Rollgeon.UI.HUD;
+using Rollgeon.UI.HUD.Breakdown;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -21,6 +24,17 @@ namespace Rollgeon.EditorTools.Chests
         private const string CellPrefabPath = "Assets/Prefabs/UI/ChestReelCell.prefab";
         private const string CanvasPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_ChestReveal.prefab";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
+        private const string BurstParticlePrefabPath = "Assets/Prefabs/UI/DiceThrowParticle.prefab";
+
+        // Clips PLACEHOLDER (reusados de dados/breakdown) — reemplazar cuando haya
+        // SFX propios del cofre. Nunca MMF_Sound (TECHNICAL.md §17).
+        private const string TickClipPath = "Assets/Sounds/Dice/sfx_dice_reveal_tick.wav";
+        private const string WhooshClipPath = "Assets/Sounds/Breakdown/sfx_breakdown_whoosh.wav";
+        private const string LandThunkClipPath = "Assets/Sounds/Breakdown/sfx_breakdown_thunk.wav";
+        private const string ChimeClipPath = "Assets/Sounds/Dice/sfx_combo_chime.wav";
+        private const string CountTickClipPath = "Assets/Sounds/Breakdown/sfx_breakdown_tick.wav";
+        private const string CardSlideClipPath = "Assets/Sounds/Breakdown/sfx_breakdown_card_slide.wav";
+        private const string ClickClipPath = "Assets/Sounds/Dice/sfx_ui_click.wav";
 
         // Paleta (Rollgeon_Paleta_de_Color.md) — mismos grises del resto de la UI.
         private static readonly Color TextColor = new Color32(0xE7, 0xE3, 0xE2, 0xFF);
@@ -173,6 +187,57 @@ namespace Rollgeon.EditorTools.Chests
                     new Vector2(0f, -175f), new Vector2(860f, 30f));
                 hint.color = new Color32(0xB8, 0xC0, 0xC8, 0xFF);
 
+                // Capa de partículas del landing (pool de Images — ParticleSystem no
+                // dibuja sobre un canvas Overlay) + flash propio del canvas (el del
+                // HUD queda debajo del sorting order 60).
+                var burstLayer = new GameObject("BurstLayer", typeof(RectTransform));
+                Stretch(burstLayer, viewRoot.transform);
+                var burst = burstLayer.AddComponent<DiceThrowImpactBurst>();
+                var burstParticle = AssetDatabase.LoadAssetAtPath<GameObject>(BurstParticlePrefabPath);
+                var burstSo = new SerializedObject(burst);
+                burstSo.FindProperty("_particlePrefab").objectReferenceValue =
+                    burstParticle != null ? burstParticle.GetComponent<Image>() : null;
+                burstSo.FindProperty("_container").objectReferenceValue = (RectTransform)burstLayer.transform;
+                burstSo.ApplyModifiedPropertiesWithoutUndo();
+                if (burstParticle == null)
+                    Debug.LogWarning(LogPrefix + BurstParticlePrefabPath + " no existe — burst sin partículas.");
+
+                var flashImage = CreateImage(viewRoot.transform, "Flash", new Color(1f, 1f, 1f, 0f),
+                    Vector2.zero, Vector2.zero);
+                Stretch(flashImage.gameObject, viewRoot.transform);
+                flashImage.raycastTarget = false;
+                var flash = flashImage.gameObject.AddComponent<ScreenFlashView>();
+                var flashSo = new SerializedObject(flash);
+                flashSo.FindProperty("_image").objectReferenceValue = flashImage;
+                flashSo.ApplyModifiedPropertiesWithoutUndo();
+
+                // Springs MMF (canales posición/rotación — PrimeTween hace scale/alpha).
+                // Bajo el canvas SIEMPRE activo, no bajo Root: PlayFeedbacks en un GO
+                // inactivo es no-op. Frecuencias ≤8 Hz / damping ≤0.4 — PUL-015.
+                var openPlayer = CreateSpringPlayer(root.transform, "Juice_Open", player =>
+                {
+                    var spring = (MMF_RotationSpring)player.AddFeedback(typeof(MMF_RotationSpring));
+                    spring.Label = "Title Wobble";
+                    spring.AnimateRotationTarget = title.transform;
+                    spring.RotationSpace = Space.Self;
+                    spring.Mode = MMF_RotationSpring.Modes.Bump;
+                    spring.BumpRotationMin = new Vector3(0f, 0f, 300f);
+                    spring.BumpRotationMax = new Vector3(0f, 0f, 500f);
+                    spring.DampingZ = 0.35f;
+                    spring.FrequencyZ = 7f;
+                });
+                var revealPlayer = CreateSpringPlayer(root.transform, "Juice_Reveal", player =>
+                {
+                    var spring = (MMF_PositionSpring)player.AddFeedback(typeof(MMF_PositionSpring));
+                    spring.Label = "Reward Card Bump";
+                    spring.AnimatePositionTarget = card.transform;
+                    spring.Mode = MMF_PositionSpring.Modes.Bump;
+                    spring.BumpPositionMin = new Vector3(0f, 14f, 0f);
+                    spring.BumpPositionMax = new Vector3(0f, 22f, 0f);
+                    spring.DampingY = 0.4f;
+                    spring.FrequencyY = 7f;
+                });
+
                 // View + juice.
                 var view = root.AddComponent<ChestRevealView>();
                 var juice = root.AddComponent<ChestRevealJuice>();
@@ -189,11 +254,29 @@ namespace Rollgeon.EditorTools.Chests
                 so.FindProperty("_rewardNameLabel").objectReferenceValue = rewardName;
                 so.FindProperty("_rewardCardGroup").objectReferenceValue = cardGroup;
                 so.FindProperty("_hintLabel").objectReferenceValue = hint;
+                so.FindProperty("_dimImage").objectReferenceValue = dim;
                 so.FindProperty("_juice").objectReferenceValue = juice;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var juiceSo = new SerializedObject(juice);
+                juiceSo.FindProperty("_settings").objectReferenceValue = settings;
+                juiceSo.FindProperty("_flash").objectReferenceValue = flash;
+                juiceSo.FindProperty("_burst").objectReferenceValue = burst;
                 juiceSo.FindProperty("_shakeTarget").objectReferenceValue = (RectTransform)panel.transform;
+                juiceSo.FindProperty("_pointer").objectReferenceValue = pointerRect;
+                juiceSo.FindProperty("_titleTransform").objectReferenceValue = title.transform;
+                juiceSo.FindProperty("_zoomTarget").objectReferenceValue = viewportRect;
+                juiceSo.FindProperty("_cardPulseTarget").objectReferenceValue = cardRect;
+                juiceSo.FindProperty("_hintLabel").objectReferenceValue = hint;
+                juiceSo.FindProperty("_openPlayer").objectReferenceValue = openPlayer;
+                juiceSo.FindProperty("_revealPlayer").objectReferenceValue = revealPlayer;
+                juiceSo.FindProperty("_tickClip").objectReferenceValue = LoadClip(TickClipPath);
+                juiceSo.FindProperty("_whooshClip").objectReferenceValue = LoadClip(WhooshClipPath);
+                juiceSo.FindProperty("_landThunkClip").objectReferenceValue = LoadClip(LandThunkClipPath);
+                juiceSo.FindProperty("_chimeClip").objectReferenceValue = LoadClip(ChimeClipPath);
+                juiceSo.FindProperty("_countTickClip").objectReferenceValue = LoadClip(CountTickClipPath);
+                juiceSo.FindProperty("_cardSlideClip").objectReferenceValue = LoadClip(CardSlideClipPath);
+                juiceSo.FindProperty("_clickClip").objectReferenceValue = LoadClip(ClickClipPath);
                 juiceSo.ApplyModifiedPropertiesWithoutUndo();
 
                 viewRoot.SetActive(false);
@@ -210,6 +293,24 @@ namespace Rollgeon.EditorTools.Chests
 
         private static ChestRevealUiSettingsSO LoadSettings() =>
             AssetDatabase.LoadAssetAtPath<ChestRevealUiSettingsSO>(SettingsPath);
+
+        private static AudioClip LoadClip(string path)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null)
+                Debug.LogWarning(LogPrefix + path + " no existe — ese SFX queda sin wirear.");
+            return clip;
+        }
+
+        private static MMF_Player CreateSpringPlayer(
+            Transform parent, string name, System.Action<MMF_Player> author)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var player = go.AddComponent<MMF_Player>();
+            author(player);
+            return player;
+        }
 
         private static RectTransform Stretch(GameObject go, Transform parent)
         {

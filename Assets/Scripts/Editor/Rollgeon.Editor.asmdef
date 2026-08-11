@@ -4,6 +4,7 @@
     "references": [
         "Rollgeon",
         "Rollgeon.Steam",
+        "MoreMountains.Tools",
         "Unity.Addressables.Editor",
         "Unity.Localization",
         "Unity.Localization.Editor",
