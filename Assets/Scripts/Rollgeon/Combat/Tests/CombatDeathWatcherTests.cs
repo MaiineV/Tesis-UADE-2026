@@ -144,6 +144,44 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
+        public void ChestLethal_IsIgnoredByDeathWatcher()
+        {
+            // Arrange — Feature#0046: el HP-0 de un cofre lo resuelve ChestService,
+            // no el watcher. Sala Uncleared SIN enemigos: si el watcher procesara al
+            // cofre, dispararía Victory espuria.
+            var chestId = Guid.NewGuid();
+            SetupRoom(); // sin enemigos
+            ServiceLocator.AddService<Rollgeon.Chests.IChestRegistry>(new StubChestRegistry(chestId));
+
+            bool destroyed = false;
+            EventManager.Subscribe(EventName.OnEntityDestroyed, _ => destroyed = true);
+
+            // Act
+            RaiseLethal(_player.PlayerGuid, chestId);
+
+            // Assert — ni OnEntityDestroyed, ni Victory, ni despawn del watcher.
+            Assert.IsFalse(destroyed);
+            Assert.IsNull(_signaller.LastOutcome);
+            Assert.IsFalse(_visuals.DespawnedGuids.Contains(chestId));
+        }
+
+        [Test]
+        public void LastEnemyKill_WithLiveChest_StillTriggersVictory()
+        {
+            // Arrange — un cofre vivo no bloquea el clear de la sala.
+            var enemyId = Guid.NewGuid();
+            var chestId = Guid.NewGuid();
+            SetupRoom(enemyId); // el cofre NUNCA entra a SpawnedEnemies
+            ServiceLocator.AddService<Rollgeon.Chests.IChestRegistry>(new StubChestRegistry(chestId));
+
+            // Act
+            RaiseLethal(_player.PlayerGuid, enemyId);
+
+            // Assert
+            Assert.AreEqual(CombatOutcome.Victory, _signaller.LastOutcome);
+        }
+
+        [Test]
         public void NonLethal_NoEventsTriggered()
         {
             bool destroyed = false;
@@ -394,6 +432,18 @@ namespace Rollgeon.Combat.Tests
                 var copy = new List<Action>(_pending);
                 _pending.Clear();
                 foreach (var cb in copy) cb();
+            }
+        }
+
+        private sealed class StubChestRegistry : Rollgeon.Chests.IChestRegistry
+        {
+            private readonly Guid _chest;
+            public StubChestRegistry(Guid chest) => _chest = chest;
+            public bool IsChest(Guid guid) => guid == _chest;
+            public bool TryGetActiveChest(out Guid chestGuid)
+            {
+                chestGuid = _chest;
+                return true;
             }
         }
 

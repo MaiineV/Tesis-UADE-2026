@@ -94,6 +94,19 @@ namespace Rollgeon.Combat
         private void OnDamageResolved(DamageResolvedPayload payload)
         {
             if (!payload.WasLethal) return;
+
+            // Cofres (Feature#0046): su HP-0 NO es una muerte de enemigo — resolución
+            // (abrir/romper), despawn y eventos los maneja ChestService. Pasar por acá
+            // dispararía OnEntityDestroyed (gold drop), el feedback "death.enemy" y el
+            // check de Victory con el cofre como protagonista.
+            if (payload.TargetGuid != _player.PlayerGuid
+                && ServiceLocator.TryGetService<Rollgeon.Chests.IChestRegistry>(out var chests)
+                && chests != null
+                && chests.IsChest(payload.TargetGuid))
+            {
+                return;
+            }
+
             if (!_processed.Add(payload.TargetGuid)) return;
 
             if (payload.TargetGuid == _player.PlayerGuid)

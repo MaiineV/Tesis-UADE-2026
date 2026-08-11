@@ -134,6 +134,18 @@ namespace Rollgeon.Combat.Pipelines
                     int newHp = currentHp - finalDamage;
                     if (newHp < 0) newHp = 0;
 
+                    // Piso de HP por (target, source) — Mimic (Feature#0046): daño
+                    // no-jugador nunca lo baja de 1. Clampeado a la vida actual para
+                    // no curar a un target que ya estaba por debajo del piso.
+                    if (ServiceLocator.TryGetService<IMinHpClampProvider>(out var clampProvider)
+                        && clampProvider != null
+                        && clampProvider.TryGetMinHp(ctx.TargetId, ctx.SourceId, out int minHp)
+                        && newHp < minHp)
+                    {
+                        newHp = currentHp < minHp ? currentHp : minHp;
+                        ctx.FinalDamage = currentHp - newHp;
+                    }
+
                     // Override de letalidad (tutorial): el golpe letal deja al target
                     // con un resto de vida y WasLethal queda false — el DeathWatcher
                     // nunca lo ve. Clampeado a la vida actual para no curar a un target
