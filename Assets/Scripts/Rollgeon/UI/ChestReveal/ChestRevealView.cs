@@ -322,7 +322,7 @@ namespace Rollgeon.UI.ChestReveal
                 string tierName = LocalizedContent.Ui(
                     ChestRevealTextKeys.RarityKey(_current.Tier), _current.Tier.ToString());
                 string title = LocalizedContent.Ui(ChestRevealTextKeys.Title, "Chest opened!");
-                _titleLabel.text = $"{title} — {tierName}";
+                _titleLabel.text = $"{title} {tierName}";
             }
             if (_hintLabel != null)
                 _hintLabel.text = LocalizedContent.Ui(ChestRevealTextKeys.SkipHint, "Click to skip");

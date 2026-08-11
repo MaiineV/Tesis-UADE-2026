@@ -593,12 +593,13 @@ namespace Rollgeon.EditorTools.Localization
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.GoldAmount, "+{0} de oro", "+{0} gold");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.SkipHint, "Click para acelerar", "Click to skip");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.ContinueHint, "Click para continuar", "Click to continue");
-            // Nombres de tier del GDD (Básico/Épico/Buenardo/Épicardo) — en EN los dos
-            // últimos quedan como nombres propios, decisión de diseño.
-            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityCommon, "Básico", "Basic");
-            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Épico", "Epic");
-            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Buenardo", "Buenardo");
-            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Épicardo", "Epicardo");
+            // Tiers con los nombres estándar de rareza del juego (pedido del usuario:
+            // fuera los nombres custom del GDD). Términos de juego sin traducir —
+            // mismo tratamiento que "Reroll"/"Combo".
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityCommon, "Common", "Common");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Uncommon", "Uncommon");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Rare", "Rare");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Legendary", "Legendary");
         }
 
         // ==================================================================

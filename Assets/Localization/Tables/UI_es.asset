@@ -587,19 +587,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10000862968311811
-    m_Localized: "B\xE1sico"
+    m_Localized: Common
     m_Metadata:
       m_Items: []
   - m_Id: 10000862968311812
-    m_Localized: "\xC9pico"
+    m_Localized: Uncommon
     m_Metadata:
       m_Items: []
   - m_Id: 10000862968311813
-    m_Localized: Buenardo
+    m_Localized: Rare
     m_Metadata:
       m_Items: []
   - m_Id: 10000862968311814
-    m_Localized: "\xC9picardo"
+    m_Localized: Legendary
     m_Metadata:
       m_Items: []
   references:

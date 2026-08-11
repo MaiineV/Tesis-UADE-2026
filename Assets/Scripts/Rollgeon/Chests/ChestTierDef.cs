@@ -6,9 +6,9 @@ using UnityEngine;
 namespace Rollgeon.Chests
 {
     /// <summary>
-    /// Config por tier de cofre. El tier ES un <see cref="ItemRarity"/> (decisión de
-    /// diseño: Common/Uncommon/Rare/Legendary ↔ Básico/Épico/Buenardo/Épicardo del GDD).
-    /// Valores placeholder sujetos a Balance (TBD-15/16 del GDD del Cofre).
+    /// Config por tier de cofre. El tier ES un <see cref="ItemRarity"/> y se muestra
+    /// con los nombres estándar de rareza del juego (los nombres custom del GDD se
+    /// descartaron). Valores placeholder sujetos a Balance (TBD-15/16 del GDD).
     /// </summary>
     [Serializable]
     public class ChestTierDef
