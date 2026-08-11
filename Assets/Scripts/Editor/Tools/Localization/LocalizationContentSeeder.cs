@@ -4,6 +4,7 @@ using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD.Contract;
 using Rollgeon.UI.HUD.DiceBag;
+using Rollgeon.UI.HUD.Inventory;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Help;
 
@@ -38,6 +39,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedContractDrawer();
             SeedPlayerIcons();
             SeedDiceBag();
+            SeedInventory();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -580,6 +582,116 @@ namespace Rollgeon.EditorTools.Localization
         }
 
         // ==================================================================
+        // Drawer de inventario + items
+        // ==================================================================
+
+        /// <remarks>
+        /// Los nombres/descripciones de los items van a la tabla Content con las keys de
+        /// entidad (<c>&lt;ItemId&gt;.name</c> / <c>.desc</c>) — son del item, no del
+        /// drawer que los muestra. El ES es el texto autorado en los assets, verbatim
+        /// (incluido el typo real del id <c>bendicion.destinoo.generala</c>).
+        /// </remarks>
+        private static void SeedInventory()
+        {
+            Ui(InventoryTextKeys.Title, "Inventario", "Inventory");
+            Ui(InventoryTextKeys.ItemsCaption, "Objetos", "Items");
+
+            Item("amuleto.reflejo", "Amuleto de Reflejo", "Reflection Amulet",
+                "Cuando recibís daño le sacas 10 de vida al enemigo que te golpeo",
+                "When you take damage, deal 10 damage back to the enemy that hit you.");
+
+            Item("banquete.full", "Banquete Real", "Royal Feast",
+                "Los Full House hacen +30 daño.",
+                "Full Houses deal +30 damage.");
+
+            Item("bendicion.destinoo.generala", "Bendicion del Destino", "Blessing of Fate",
+                "Cada Generala cura 15HP",
+                "Each Generala heals 15 HP.");
+
+            Item("bolsa.comerciante.doblepar", "Bolsa del comerciante", "Merchant's Pouch",
+                "Cada Doble Par da +5 oro",
+                "Each Double Pair grants +5 gold.");
+
+            Item("botas.escaladores.escalera", "Botas del Escalador", "Climber's Boots",
+                "La Escalera hace +25 daño.",
+                "The Ladder deals +25 damage.");
+
+            Item("botas.ligeras", "Botas Ligeras", "Light Boots",
+                "+1 movimiento base.",
+                "+1 base movement.");
+
+            Item("cadena.comercial.doblepar", "Cadena comercial", "Trade Chain",
+                "Doble par hace +20 de daño",
+                "Double Pair deals +20 damage.");
+
+            Item("copa.generala", "Copa del Campeón", "Champion's Cup",
+                "La Generala hace +50 daño",
+                "The Generala deals +50 damage.");
+
+            Item("coraza.reforzada", "Coraza Reforzada", "Reinforced Plate",
+                "+2 vida máxima",
+                "+2 max health.");
+
+            Item("corona.noble.full", "Corona Noble", "Noble Crown",
+                "Cada Full House recupera 5 HP",
+                "Each Full House restores 5 HP.");
+
+            Item("egoista", "El egoista", "The Selfish One",
+                "Entre más oro tengas más daño haces",
+                "The more gold you have, the more damage you deal.");
+
+            Item("escudo.imperial.poker", "Escudo Imperial", "Imperial Shield",
+                "Cada Poker genera +2 escudo",
+                "Each Poker grants +2 shield.");
+
+            Item("espada.fuerzabruta", "Espada de Fuego", "Fire Sword",
+                "El combo Fuerza Bruta tiene +35 de daño",
+                "The Brute Force combo deals +35 damage.");
+
+            Item("guantes.apostador.par", "Guantes del apostador", "Gambler's Gloves",
+                "Los pares hacen +20 de daño",
+                "Pairs deal +20 damage.");
+
+            Item("guantes.maestro.poker", "Guantes del maestro", "Master's Gloves",
+                "El Póker hace +25 daño",
+                "The Poker deals +25 damage.");
+
+            Item("instinto.supervivencia", "Instinto de Supervivencia", "Survival Instinct",
+                "Al bajar de 30% HP obtenés +1 escudo.",
+                "When you drop below 30% HP you gain +1 shield.");
+
+            Item("moneda.suerte.par", "Moneda de la suerte", "Lucky Coin",
+                "Cada Par da +2 oro.",
+                "Each Pair grants +2 gold.");
+
+            Item("ritual.sangre.trio", "Ritual de Sangre", "Blood Ritual",
+                "Cada Trio recupera 1HP",
+                "Each Trio restores 1 HP.");
+
+            Item("rodilleras.acero", "Rodilleras de Acero", "Steel Kneepads",
+                "Tenes +3 de escudo al inicio de cada combate",
+                "You start each combat with +3 shield.");
+
+            Item("talisman.vital", "Talismán Vital", "Vital Talisman",
+                "Recuperás 1 HP al iniciar combate.",
+                "Restore 1 HP when combat starts.");
+
+            Item("tesoro.generala", "Tesoro Legendario", "Legendary Treasure",
+                "Cada Generala da +30 oro.",
+                "Each Generala grants +30 gold.");
+
+            Item("totem.clan.trio", "Totem del Clan", "Clan Totem",
+                "Los Tríos hacen +30 de daño",
+                "Trios deal +30 damage.");
+
+            // La poción ya tiene su .name en la tabla (cargado a mano); acá solo se suma
+            // la descripción que le faltaba para el tooltip del inventario.
+            Content("potion.healing.desc",
+                "Recupera vida al usarla.",
+                "Restores health when used.");
+        }
+
+        // ==================================================================
         // Helpers
         // ==================================================================
 
@@ -594,6 +706,14 @@ namespace Rollgeon.EditorTools.Localization
         {
             Content($"ench.{id}.name", nameEs, nameEn);
             Content($"ench.{id}.desc", descEs, descEn);
+        }
+
+        /// <summary>Atajo para el par <c>&lt;ItemId&gt;.name</c> / <c>.desc</c> (sin prefijo:
+        /// el ItemId ya identifica la entidad, igual que los combos y unlocks).</summary>
+        private static void Item(string id, string nameEs, string nameEn, string descEs, string descEn)
+        {
+            Content($"{id}.name", nameEs, nameEn);
+            Content($"{id}.desc", descEs, descEn);
         }
     }
 }

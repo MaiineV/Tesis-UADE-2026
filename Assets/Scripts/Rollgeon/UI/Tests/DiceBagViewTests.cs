@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Rollgeon.UI.HUD.DiceBag;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -124,6 +125,26 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(1, clicks);
         }
 
+        [Test]
+        public void should_show_the_holo_material_only_on_an_enchanted_die()
+        {
+            // Arrange — mismo contrato que DiceSlotView: material puesto ⇔ dado encantado.
+            var card = MakeCard(out _, out _, out _, out _);
+            var holo = new Material(Shader.Find("UI/Default"));
+            _spawned.Add(holo);
+            SetPrivate(card, "_enchantMaterial", holo);
+            var icon = (Image)GetPrivate(card, "_diceIcon");
+            var enchantment = ScriptableObject.CreateInstance<EnchantmentSO>();
+            _spawned.Add(enchantment);
+
+            // Act + Assert
+            card.SetEnchantVisual(enchantment);
+            Assert.AreSame(holo, icon.material);
+
+            card.SetEnchantVisual(null);
+            Assert.AreNotSame(holo, icon.material, "sin encantamiento vuelve al material default");
+        }
+
         // ------------------------------------------------------------------
         // Cupo
         // ------------------------------------------------------------------
@@ -218,6 +239,14 @@ namespace Rollgeon.UI.Tests
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(info, $"método {method} no encontrado en {target.GetType().Name}");
             info.Invoke(target, null);
+        }
+
+        private static object GetPrivate(object target, string field)
+        {
+            var info = target.GetType().GetField(field,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(info, $"campo {field} no encontrado en {target.GetType().Name}");
+            return info.GetValue(target);
         }
     }
 }

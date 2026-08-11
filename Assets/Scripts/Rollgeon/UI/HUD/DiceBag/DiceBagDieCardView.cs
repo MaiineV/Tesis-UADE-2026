@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -32,7 +33,13 @@ namespace Rollgeon.UI.HUD.DiceBag
         [SerializeField, Tooltip("Casilla del dado seleccionado (UI-sheet_5).")]
         private Sprite _selectedFrame;
 
+        [Title("Encantamiento")]
+        [SerializeField, Tooltip("Material del dado encantado (EnchantHoloUI) — el mismo que usan " +
+                                 "los slots de la zona de dados en combate.")]
+        private Material _enchantMaterial;
+
         private Action _onClick;
+        private EnchantmentSO _enchantment;
 
         private void Awake()
         {
@@ -66,6 +73,22 @@ namespace Rollgeon.UI.HUD.DiceBag
                 _slotsLabel.text = totalSlots > 0
                     ? $"{usedSlots}/{totalSlots} {slotsSuffix}".TrimEnd()
                     : string.Empty;
+        }
+
+        /// <summary>
+        /// Muestra el visual de dado encantado sobre el ícono. <c>null</c> = sin encantamiento
+        /// (vuelve al material default de uGUI). Mismo contrato que
+        /// <c>DiceSlotView.SetEnchantVisual</c>: el material es compartido y la variación por
+        /// dado sale de la posición canvas-space dentro del shader.
+        /// </summary>
+        public void SetEnchantVisual(EnchantmentSO enchantment)
+        {
+            // Idempotente: sin esto, escribir el material en cada rebuild dispara SetMaterialDirty.
+            if (_enchantment == enchantment) return;
+            _enchantment = enchantment;
+
+            if (_diceIcon == null) return;
+            _diceIcon.material = enchantment != null ? _enchantMaterial : null;
         }
 
         public void SetSelected(bool selected)

@@ -264,7 +264,7 @@ MonoBehaviour:
   ItemId: amuleto.reflejo
   DisplayName: Amuleto de Reflejo
   Description: "Cuando recib\xEDs da\xF1o le sacas 10 de vida al enemigo que te golpeo"
-  Icon: {fileID: 0}
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
   Type: 0
   PassiveHooks:
@@ -277,7 +277,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 5371277439317049677
+      - rid: 144068159907823892
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -297,7 +297,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 5371277439317049677
+    - rid: 144068159907823892
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

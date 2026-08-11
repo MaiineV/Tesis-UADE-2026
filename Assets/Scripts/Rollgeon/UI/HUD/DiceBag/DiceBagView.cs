@@ -109,6 +109,10 @@ namespace Rollgeon.UI.HUD.DiceBag
                     type.MaxEnchantmentSlots(),
                     LocalizedContent.Ui(DiceBagTextKeys.SlotsSuffix, "cupos"),
                     () => SelectDie(index));
+                // Mismo holo que los dados encantados de la zona de combate: se identifica
+                // de un vistazo cuáles tienen al menos un cupo ocupado.
+                _dieCards[i].SetEnchantVisual(
+                    DiceEnchantVisualResolver.ResolvePrimary(bag.GetEnchantments(i)));
             }
 
             // Se mantiene la selección si el dado sigue existiendo; si no, el primero. Sin

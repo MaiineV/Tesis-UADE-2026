@@ -619,6 +619,187 @@ MonoBehaviour:
     m_Localized: "El P\xEDcaro quedar\xE1 seleccionable en una futura versi\xF3n."
     m_Metadata:
       m_Items: []
+  - m_Id: 9716852756152320
+    m_Localized: Amuleto de Reflejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735232
+    m_Localized: "Cuando recib\xEDs da\xF1o le sacas 10 de vida al enemigo que te
+      golpeo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735233
+    m_Localized: Banquete Real
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735234
+    m_Localized: "Los Full House hacen +30 da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735235
+    m_Localized: Bendicion del Destino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735236
+    m_Localized: Cada Generala cura 15HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735237
+    m_Localized: Bolsa del comerciante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735238
+    m_Localized: Cada Doble Par da +5 oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735239
+    m_Localized: Botas del Escalador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735240
+    m_Localized: "La Escalera hace +25 da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735241
+    m_Localized: Botas Ligeras
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735242
+    m_Localized: +1 movimiento base.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735243
+    m_Localized: Cadena comercial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735244
+    m_Localized: "Doble par hace +20 de da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735245
+    m_Localized: "Copa del Campe\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735246
+    m_Localized: "La Generala hace +50 da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735247
+    m_Localized: Coraza Reforzada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735248
+    m_Localized: "+2 vida m\xE1xima"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735249
+    m_Localized: Corona Noble
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735250
+    m_Localized: Cada Full House recupera 5 HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735251
+    m_Localized: El egoista
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735252
+    m_Localized: "Entre m\xE1s oro tengas m\xE1s da\xF1o haces"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735253
+    m_Localized: Escudo Imperial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735254
+    m_Localized: Cada Poker genera +2 escudo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735255
+    m_Localized: Espada de Fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735256
+    m_Localized: "El combo Fuerza Bruta tiene +35 de da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735257
+    m_Localized: Guantes del apostador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735258
+    m_Localized: "Los pares hacen +20 de da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735259
+    m_Localized: Guantes del maestro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735260
+    m_Localized: "El P\xF3ker hace +25 da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735261
+    m_Localized: Instinto de Supervivencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735262
+    m_Localized: "Al bajar de 30% HP obten\xE9s +1 escudo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735263
+    m_Localized: Moneda de la suerte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735264
+    m_Localized: Cada Par da +2 oro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735265
+    m_Localized: Ritual de Sangre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735266
+    m_Localized: Cada Trio recupera 1HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735267
+    m_Localized: Rodilleras de Acero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735268
+    m_Localized: Tenes +3 de escudo al inicio de cada combate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735269
+    m_Localized: "Talism\xE1n Vital"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735270
+    m_Localized: "Recuper\xE1s 1 HP al iniciar combate."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735271
+    m_Localized: Tesoro Legendario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735272
+    m_Localized: Cada Generala da +30 oro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735273
+    m_Localized: Totem del Clan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735274
+    m_Localized: "Los Tr\xEDos hacen +30 de da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735275
+    m_Localized: Recupera vida al usarla.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

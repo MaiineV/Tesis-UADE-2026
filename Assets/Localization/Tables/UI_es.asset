@@ -558,6 +558,18 @@ MonoBehaviour:
     m_Localized: 'Velocidad: x{0}'
     m_Metadata:
       m_Items: []
+  - m_Id: 9946840189206528
+    m_Localized: "Combo repetido: 0 da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760960
+    m_Localized: Inventario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760961
+    m_Localized: Objetos
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
