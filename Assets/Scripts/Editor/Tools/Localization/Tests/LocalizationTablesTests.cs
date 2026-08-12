@@ -44,6 +44,12 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
             // usa sin traducir en el resto del HUD.
             Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,
+            // Los tiers del cofre usan los nombres estándar de rareza del juego,
+            // sin traducir (mismo criterio que "Reroll"/"Combo").
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityCommon,
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon,
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare,
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary,
         };
 
         private static readonly string[] Collections = { "Content", "UI" };

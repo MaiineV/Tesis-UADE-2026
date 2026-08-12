@@ -560,6 +560,38 @@ MonoBehaviour:
     m_Localized: Objetos
     m_Metadata:
       m_Items: []
+  - m_Id: 10000862892814336
+    m_Localized: "\xA1Cofre abierto!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311808
+    m_Localized: +{0} de oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311809
+    m_Localized: Click para acelerar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311810
+    m_Localized: Click para continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311811
+    m_Localized: Common
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311812
+    m_Localized: Uncommon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311813
+    m_Localized: Rare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311814
+    m_Localized: Legendary
+    m_Metadata:
+      m_Items: []
   - m_Id: 10309000887107584
     m_Localized: "Arriba a la derecha est\xE1 el orden de turnos: qui\xE9n act\xFAa
       ahora y qui\xE9n sigue."

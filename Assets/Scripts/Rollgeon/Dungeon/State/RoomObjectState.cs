@@ -71,12 +71,31 @@ namespace Rollgeon.Dungeon.State
         public string Guid;
     }
 
-    /// <summary>Cofre — stub, sin consumidor hoy. Cierra la jerarquía (§13.6.1).</summary>
+    /// <summary>
+    /// Estado del cofre de sala de combate (Feature#0046). Los rolls (spawn/tier/
+    /// mimic) se derivan de un seed determinista y se persisten acá para que
+    /// re-entry y resume hidraten en vez de re-rollear. Campos nuevos con
+    /// defaults tolerantes a states viejos (§13.6.1).
+    /// </summary>
     [Serializable]
     public class ChestState : RoomObjectState
     {
         public bool Opened;
         public List<string> LootRolled = new List<string>();
+
+        /// <summary><c>true</c> si el roll de spawn de esta sala salió positivo.</summary>
+        public bool Spawned;
+
+        /// <summary>Tier rolleado, casteado de <c>ItemRarity</c>. Default 0 = Common.</summary>
+        public int TierIndex;
+
+        public bool IsMimic;
+
+        /// <summary>Roto por enemigo/evento — sin recompensa.</summary>
+        public bool Broken;
+
+        /// <summary>El Mimic fue activado por un golpe del jugador.</summary>
+        public bool MimicActivated;
     }
 
     /// <summary>Poción — stub, sin consumidor hoy.</summary>

@@ -40,6 +40,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedPlayerIcons();
             SeedDiceBag();
             SeedInventory();
+            SeedChest();
             SeedMenuChrome();
             SeedContentBaseline();
 
@@ -608,6 +609,26 @@ namespace Rollgeon.EditorTools.Localization
             Ui(ContractTextKeys.HeaderExample, "Ejemplo", "Example");
             Ui(ContractTextKeys.HeaderName, "Combo", "Combo");
             Ui(ContractTextKeys.HeaderDamage, "Daño base", "Base DMG");
+        }
+
+        // ==================================================================
+        // Reveal del cofre (Feature#0046)
+        // ==================================================================
+
+        private static void SeedChest()
+        {
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.Title, "¡Cofre abierto!", "Chest opened!");
+            // El {0} es el monto de oro — tiene que sobrevivir la traducción.
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.GoldAmount, "+{0} de oro", "+{0} gold");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.SkipHint, "Click para acelerar", "Click to skip");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.ContinueHint, "Click para continuar", "Click to continue");
+            // Tiers con los nombres estándar de rareza del juego (pedido del usuario:
+            // fuera los nombres custom del GDD). Términos de juego sin traducir —
+            // mismo tratamiento que "Reroll"/"Combo".
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityCommon, "Common", "Common");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Uncommon", "Uncommon");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Rare", "Rare");
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Legendary", "Legendary");
         }
 
         // ==================================================================

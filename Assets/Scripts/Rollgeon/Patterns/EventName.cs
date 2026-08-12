@@ -287,5 +287,23 @@ namespace Patterns
         /// en que aparece no actúa (no hace daño gratis), así el jugador tiene un turno para
         /// reaccionar antes de que el golpe caiga.</summary>
         OnReinforcementSpawned,
+
+        // --- Chests (Feature#0046) ----------------------------------------------
+        /// <summary>args: [Guid chestGuid, int tier (ItemRarity), bool isMimic]. Un cofre
+        /// spawneó en la sala de combate al iniciar el combate.</summary>
+        OnChestSpawned,
+        /// <summary>args: [Guid chestGuid, int tier (ItemRarity)]. El jugador dio el golpe
+        /// final: el cofre se abrió y la recompensa ya fue otorgada. El payload completo
+        /// para UI viaja por <c>TypedEvent&lt;ChestOpenedPayload&gt;</c>.</summary>
+        OnChestOpened,
+        /// <summary>args: [Guid chestGuid, Guid sourceGuid]. Un enemigo o evento dio el golpe
+        /// final: el cofre se rompió sin recompensa.</summary>
+        OnChestBroken,
+        /// <summary>args: [Guid chestGuid, Guid mimicEnemyGuid]. Un golpe del jugador activó
+        /// al Mimic: el cofre fue reemplazado por un enemigo activo.</summary>
+        OnChestMimicActivated,
+        /// <summary>args: [Guid chestGuid]. El combate terminó con el cofre sin resolver —
+        /// desapareció sin recompensa.</summary>
+        OnChestExpired,
     }
 }

@@ -62,6 +62,12 @@ namespace Rollgeon.Entities
                 return EntityFilterMask.None;
             }
 
+            // Cofres (Feature#0046): son Props, no facción. Así los selectores de IA
+            // (Relation = Player|Enemies) nunca los eligen y los ataques del player
+            // los alcanzan solo si su SelectionSettings incluye el bit Props.
+            if (IsChest(target)) return EntityFilterMask.Props;
+            if (IsChest(owner)) return EntityFilterMask.None;
+
             bool ownerIsPlayer = owner == player;
             bool targetIsPlayer = target == player;
 
@@ -92,6 +98,7 @@ namespace Rollgeon.Entities
                 var candidate = kvp.Key;
                 if (candidate == Guid.Empty) continue;
                 if (candidate == ownerGuid) continue; // el owner nunca es su propio aliado/enemigo.
+                if (IsChest(candidate)) continue;     // Props: fuera de ambas facciones.
 
                 bool candidateIsPlayer = candidate == player;
                 bool sameFaction = candidateIsPlayer == ownerIsPlayer;
@@ -100,6 +107,14 @@ namespace Rollgeon.Entities
             }
 
             return result;
+        }
+
+        private static bool IsChest(Guid guid)
+        {
+            if (guid == Guid.Empty) return false;
+            return ServiceLocator.TryGetService<Rollgeon.Chests.IChestRegistry>(out var chests)
+                   && chests != null
+                   && chests.IsChest(guid);
         }
 
         private static bool TryGetPlayerGuid(out Guid player)

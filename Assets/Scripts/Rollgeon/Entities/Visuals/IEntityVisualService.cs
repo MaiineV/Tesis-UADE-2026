@@ -17,6 +17,13 @@ namespace Rollgeon.Entities.Visuals
     {
         EntityPawn SpawnHero(Guid guid, ClassHeroSO hero, GridCoord coord);
         EntityPawn SpawnEnemy(Guid guid, EnemyDataSO data, GridCoord coord);
+
+        /// <summary>
+        /// Spawnea un prop de sala con entidad (cofre): mismo pipeline que un enemigo
+        /// (pawn + PawnRegistryBinding + posición) pero desde un prefab directo, sin
+        /// <see cref="EnemyDataSO"/>.
+        /// </summary>
+        EntityPawn SpawnProp(Guid guid, UnityEngine.GameObject prefab, GridCoord coord);
         void Despawn(Guid guid);
         void DespawnAll();
         bool TryGetPawn(Guid guid, out EntityPawn pawn);

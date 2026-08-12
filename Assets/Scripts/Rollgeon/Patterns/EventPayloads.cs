@@ -178,4 +178,34 @@ namespace Patterns
         /// permite checks "mi dado participó" del canal de encantamientos.</summary>
         public IReadOnlyList<int> KeptDiceOriginalIndices;
     }
+
+    /// <summary>
+    /// Payload tipado para "cofre abierto por el jugador". Se emite DESPUÉS de que la
+    /// recompensa fue otorgada (inventario/oro ya actualizados) — el reveal gacha es
+    /// presentación pura. Canalizado únicamente vía
+    /// <c>TypedEvent&lt;ChestOpenedPayload&gt;</c>; el entry legacy
+    /// <see cref="EventName.OnChestOpened"/> existe solo para telemetría/tests.
+    /// </summary>
+    public struct ChestOpenedPayload
+    {
+        /// <summary>InstanceId del cofre abierto.</summary>
+        public Guid ChestGuid;
+
+        /// <summary>Tier del cofre (Common/Uncommon/Rare/Legendary).</summary>
+        public Rollgeon.Items.ItemRarity Tier;
+
+        /// <summary>Ítem otorgado. <c>null</c> cuando la recompensa fue oro.</summary>
+        public Rollgeon.Items.ItemSO Item;
+
+        /// <summary>Oro otorgado. 0 cuando la recompensa fue un ítem.</summary>
+        public int GoldAmount;
+
+        /// <summary><c>true</c> si el roll fue un ítem pero el inventario no pudo
+        /// recibirlo (slots activos llenos) y se otorgó oro de fallback en su lugar.</summary>
+        public bool WasInventoryFullFallback;
+
+        /// <summary>Ítems del pool del tier, relleno para el reel gacha. Puede ser
+        /// vacío — la UI debe degradar (repetir ganador + fillers de oro).</summary>
+        public IReadOnlyList<Rollgeon.Items.ItemSO> PoolPreview;
+    }
 }

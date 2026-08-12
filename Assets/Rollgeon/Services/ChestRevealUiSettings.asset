@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2548ae8d98839264d921addf72835374, type: 3}
+  m_Name: ChestRevealUiSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.ChestReveal.ChestRevealUiSettingsSO
+  OpenScaleFrom: 0.92
+  OpenSeconds: 0.25
+  CloseSeconds: 0.12
+  TotalCells: 40
+  MinSpinCells: 28
+  CellWidth: 96
+  CellSpacing: 8
+  SpinSeconds: 3.6
+  DecelerationCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  MaxLandingJitter01: 0.35
+  GoldFillerPerMille: 150
+  GoldFillerMin: 5
+  GoldFillerMax: 25
+  RevealFadeSeconds: 0.2
+  AutoDismissSeconds: 0
+  SkipSpeedMultiplier: 3
+  MaxSequenceSeconds: 12
