@@ -1089,8 +1089,8 @@ MonoBehaviour:
     WindowStart: 0.3
     WindowEnd: 1
   _statusRow: {fileID: 4988331959284597082}
-  _statusRowCollapsedPos: {x: 168, y: -50}
-  _statusRowExpandedPos: {x: 378, y: -50}
+  _statusRowCollapsedPos: {x: 188, y: -50}
+  _statusRowExpandedPos: {x: 398, y: -50}
   _openSeconds: 0.45
   _ease: 9
   _closeGraceSeconds: 0.18
@@ -2118,7 +2118,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 378, y: -50}
+  m_AnchoredPosition: {x: 398, y: -50}
   m_SizeDelta: {x: 72, y: 76}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &5558585948722853116
