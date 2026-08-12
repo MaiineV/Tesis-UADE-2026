@@ -558,6 +558,14 @@ MonoBehaviour:
     m_Localized: 'Velocidad: x{0}'
     m_Metadata:
       m_Items: []
+  - m_Id: 10317843441414144
+    m_Localized: 'Reroll: vuelan los elegidos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10317843504328704
+    m_Localized: 'Reroll: se quedan los elegidos'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
