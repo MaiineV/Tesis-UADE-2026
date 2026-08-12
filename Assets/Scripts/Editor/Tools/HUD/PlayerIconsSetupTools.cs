@@ -8,6 +8,7 @@ using Rollgeon.Heroes;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.UI.HUD;
+using Rollgeon.UI.HUD.CharacterFrame;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using TMPro;
@@ -38,6 +39,8 @@ namespace Rollgeon.EditorTools.HUD
         private const string ContractSheetPath = "Assets/Art/UI/Contrato/Contrato.png";
         private const string BackpackSheetPath = "Assets/Art/UI/BackPack/Backpack.png";
         private const string DiceBagSheetPath = "Assets/Art/UI/DiceBag/Dicebag.png";
+        private const string CharacterFrameSheetPath = "Assets/Art/UI/CharacterFrame/CharacterFrame.png";
+        private const string WarriorFrameSheetPath = "Assets/Art/UI/CharacterFrame/WarriorFrameSprite.png";
         private const string WarriorPassiveSheetPath = "Assets/Art/UI/Pasives/Warriorpasive.png";
         private const string WarriorPassivePath = "Assets/Rollgeon/Classes/CP_Warrior.asset";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
@@ -45,21 +48,42 @@ namespace Rollgeon.EditorTools.HUD
         private const string ActiveFrameSlice = "UI-sheet_5";
         private const string InactiveFrameSlice = "UI-sheet_7";
 
-        // Layout del mockup ("ui agregados.png"). Todo en px de la resolución de
-        // referencia (1920x1080) y con pivot arriba-izquierda, así que las Y van negativas.
-        // Son valores de arranque para playtest — tocar acá y reejecutar.
+        // Layout del mockup ("nuevo marco personaje.png"): el marco circular con los
+        // íconos "adentro". Todo en px de la resolución de referencia (1920x1080), pivot
+        // arriba-izquierda (Y negativas). Valores de arranque para playtest — tocar acá y
+        // reejecutar. El installer autora el estado ABIERTO (posiciones Shown); el
+        // controller snapea a cerrado en Awake.
         private static readonly Vector2 ClusterPos = new Vector2(28f, -24f);
         private static readonly Vector2 NavIconSize = new Vector2(104f, 104f);
         private static readonly Vector2 StatusIconSize = new Vector2(72f, 76f);
-        private static readonly Vector2 ContractPos = new Vector2(0f, 0f);
-        private static readonly Vector2 StatusRowPos = new Vector2(130f, -15f);
-        private static readonly Vector2 BackpackPos = new Vector2(120f, -115f);
-        private static readonly Vector2 DiceBagPos = new Vector2(230f, -115f);
         private const float StatusRowSpacing = 8f;
 
-        // Mochila y bolsa van más chicas que el contrato; valores de playtest.
-        private const float ContractScale = 1f;
-        private const float SmallNavIconScale = 0.8f;
+        // Marco: slices de 64x64 → x2 entero (pixel art). Retrato 64x81 con preserveAspect.
+        private static readonly Vector2 FrameSize = new Vector2(128f, 128f);
+        private static readonly Vector2 PortraitSize = new Vector2(96f, 96f);
+
+        // Todos los íconos a la misma escala (pedido del mock: tamaños uniformes).
+        private const float NavIconScale = 0.8f;
+
+        // Hidden = "adentro" del marco (alpha 0); Shown = posición final. Bolsa y mochila
+        // salen hacia la derecha; el contrato sube desde abajo. Las ventanas [start, end]
+        // reparten el stagger dentro del progreso maestro — el contrato es el último y
+        // termina exacto con la vuelta de la ruleta.
+        private static readonly Vector2 DiceBagHiddenPos = new Vector2(76f, -22f);
+        private static readonly Vector2 DiceBagShownPos = new Vector2(160f, -22f);
+        private static readonly Vector2 BackpackHiddenPos = new Vector2(76f, -22f);
+        private static readonly Vector2 BackpackShownPos = new Vector2(256f, -22f);
+        private static readonly Vector2 ContractHiddenPos = new Vector2(22f, -198f);
+        private static readonly Vector2 ContractShownPos = new Vector2(22f, -158f);
+        private static readonly Vector2 DiceBagWindow = new Vector2(0f, 0.7f);
+        private static readonly Vector2 BackpackWindow = new Vector2(0.15f, 0.85f);
+        private static readonly Vector2 ContractWindow = new Vector2(0.3f, 1f);
+
+        // El StatusRow (pasiva) vive FUERA del cluster — hijo directo del Canvas — para
+        // que su hover no abra la ruleta; estas posiciones son canvas-space (el offset del
+        // cluster ya está sumado). El controller la corre entre collapsed y expanded.
+        private static readonly Vector2 StatusRowCollapsedPos = new Vector2(188f, -50f);
+        private static readonly Vector2 StatusRowExpandedPos = new Vector2(398f, -50f);
 
         // El umbral de Furia del Guerrero quedó en 3 cuando PR #66 reescaló la vida x10:
         // se pensó como "30% de vida" sobre un pool de 10 y ahora dispara al 3% de 100.
@@ -189,7 +213,13 @@ namespace Rollgeon.EditorTools.HUD
             var contract = LoadSpriteOrError(ContractSheetPath, "Contrato_0");
             var backpack = LoadSpriteOrError(BackpackSheetPath, "Backpack_0");
             var diceBag = LoadSpriteOrError(DiceBagSheetPath, "Dicebag_0");
-            if (contract == null || backpack == null || diceBag == null) return;
+            var frameNormal = LoadSpriteOrError(CharacterFrameSheetPath, "CharacterFrame");
+            var frameHover = LoadSpriteOrError(CharacterFrameSheetPath, "CharacterFrame_Hover");
+            var framePressed = LoadSpriteOrError(CharacterFrameSheetPath, "CharacterFrame_Pressed");
+            var portrait = LoadSpriteOrError(WarriorFrameSheetPath, "WarriorFrameSprite_0");
+            if (contract == null || backpack == null || diceBag == null
+                || frameNormal == null || frameHover == null || framePressed == null || portrait == null)
+                return;
 
             var root = PrefabUtility.LoadPrefabContents(PlayerStatusPrefabPath);
             try
@@ -208,18 +238,59 @@ namespace Rollgeon.EditorTools.HUD
                 cluster.anchoredPosition = ClusterPos;
                 cluster.sizeDelta = Vector2.zero;
 
-                EnsureNavIcon(cluster, "ContractIcon", ContractPos, contract, ContractScale,
+                // -- Marco circular: hit-area invisible + anillo que rota + retrato fijo --
+                var frame = EnsureChildRect(cluster, "CharacterFrame", Vector2.zero, FrameSize);
+                frame.anchorMin = frame.anchorMax = new Vector2(0f, 1f);
+                frame.pivot = new Vector2(0f, 1f);
+                var frameImage = Ensure<Image>(frame.gameObject);
+                // Sin sprite y transparente: es solo el raycast target del hover/click del
+                // marco (el visual es del anillo, que rota aparte).
+                frameImage.sprite = null;
+                frameImage.color = new Color(0f, 0f, 0f, 0f);
+                frameImage.raycastTarget = true;
+                // Mismo juice de hover que los íconos de drawers. La escala de reposo es 1
+                // y se captura en Awake — el controller no toca localScale, no compiten.
+                frame.localScale = Vector3.one;
+                Ensure<IconHoverScale>(frame.gameObject);
+
+                var ring = EnsureChildRect(frame, "FrameRing", Vector2.zero, Vector2.zero);
+                ring.anchorMin = Vector2.zero;
+                ring.anchorMax = Vector2.one;
+                ring.offsetMin = Vector2.zero;
+                ring.offsetMax = Vector2.zero;
+                // Pivot al centro: es lo que rota como ruleta.
+                ring.pivot = new Vector2(0.5f, 0.5f);
+                var ringImage = Ensure<Image>(ring.gameObject);
+                ringImage.sprite = frameNormal;
+                ringImage.preserveAspect = true;
+                ringImage.raycastTarget = false;
+
+                var portraitRect = EnsureChildRect(frame, "Portrait", Vector2.zero, PortraitSize);
+                portraitRect.anchorMin = portraitRect.anchorMax = new Vector2(0.5f, 0.5f);
+                portraitRect.pivot = new Vector2(0.5f, 0.5f);
+                portraitRect.anchoredPosition = Vector2.zero;
+                var portraitImage = Ensure<Image>(portraitRect.gameObject);
+                portraitImage.sprite = portrait;
+                portraitImage.preserveAspect = true;
+                portraitImage.raycastTarget = false;
+
+                // -- Íconos de navegación: autorados ABIERTOS (posición Shown, alpha 1) --
+                var contractRect = EnsureNavIcon(cluster, "ContractIcon", ContractShownPos, contract,
                     PlayerIconTextKeys.Contract, "Contrato");
-                EnsureNavIcon(cluster, "BackpackIcon", BackpackPos, backpack, SmallNavIconScale,
+                var backpackRect = EnsureNavIcon(cluster, "BackpackIcon", BackpackShownPos, backpack,
                     PlayerIconTextKeys.Backpack, "Inventario");
-                EnsureNavIcon(cluster, "DiceBagIcon", DiceBagPos, diceBag, SmallNavIconScale,
+                var diceBagRect = EnsureNavIcon(cluster, "DiceBagIcon", DiceBagShownPos, diceBag,
                     PlayerIconTextKeys.DiceBag, "Bolsa de dados");
 
-                // Fila de estados: el layout group ordena los íconos que la vista instancia.
-                var row = EnsureChildRect(cluster, "StatusRow", StatusRowPos, StatusIconSize);
+                // -- Fila de estados (pasiva): FUERA del cluster para que su hover no abra
+                // la ruleta. Si viene de un layout viejo, se migra sin recrear (conserva
+                // los hijos instanciados y el wiring de la view). --
+                var strandedRow = cluster.Find("StatusRow");
+                if (strandedRow != null) strandedRow.SetParent(canvasRect, worldPositionStays: false);
+
+                var row = EnsureChildRect(canvasRect, "StatusRow", StatusRowExpandedPos, StatusIconSize);
                 row.anchorMin = row.anchorMax = new Vector2(0f, 1f);
                 row.pivot = new Vector2(0f, 1f);
-                row.anchoredPosition = StatusRowPos;
                 var layout = Ensure<HorizontalLayoutGroup>(row.gameObject);
                 layout.spacing = StatusRowSpacing;
                 layout.childAlignment = TextAnchor.UpperLeft;
@@ -237,21 +308,47 @@ namespace Rollgeon.EditorTools.HUD
                 so.FindProperty("_container").objectReferenceValue = row;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
+                // -- Controller de la ruleta en el root del cluster + relay de pin --
+                var controller = Ensure<CharacterFrameController>(cluster.gameObject);
+                var controllerSo = new SerializedObject(controller);
+                controllerSo.FindProperty("_ring").objectReferenceValue = ring;
+                controllerSo.FindProperty("_ringImage").objectReferenceValue = ringImage;
+                controllerSo.FindProperty("_normalSprite").objectReferenceValue = frameNormal;
+                controllerSo.FindProperty("_hoverSprite").objectReferenceValue = frameHover;
+                controllerSo.FindProperty("_pressedSprite").objectReferenceValue = framePressed;
+                var icons = controllerSo.FindProperty("_icons");
+                icons.arraySize = 3;
+                WriteRevealElement(icons.GetArrayElementAtIndex(0), diceBagRect, DiceBagHiddenPos,
+                    DiceBagShownPos, DiceBagWindow);
+                WriteRevealElement(icons.GetArrayElementAtIndex(1), backpackRect, BackpackHiddenPos,
+                    BackpackShownPos, BackpackWindow);
+                WriteRevealElement(icons.GetArrayElementAtIndex(2), contractRect, ContractHiddenPos,
+                    ContractShownPos, ContractWindow);
+                controllerSo.FindProperty("_statusRow").objectReferenceValue = row;
+                controllerSo.FindProperty("_statusRowCollapsedPos").vector2Value = StatusRowCollapsedPos;
+                controllerSo.FindProperty("_statusRowExpandedPos").vector2Value = StatusRowExpandedPos;
+                controllerSo.ApplyModifiedPropertiesWithoutUndo();
+
+                var relay = Ensure<CharacterFramePinRelay>(frame.gameObject);
+                var relaySo = new SerializedObject(relay);
+                relaySo.FindProperty("_controller").objectReferenceValue = controller;
+                relaySo.ApplyModifiedPropertiesWithoutUndo();
+
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerStatusPrefabPath);
-                Debug.Log("[PlayerIcons] Cluster arriba-izquierda armado en Canvas_PlayerStatus.");
+                Debug.Log("[PlayerIcons] Marco de personaje + ruleta armados en Canvas_PlayerStatus.");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
-        private static void EnsureNavIcon(RectTransform cluster, string name, Vector2 pos, Sprite sprite,
-            float scale, string tooltipKey, string tooltipFallback)
+        private static RectTransform EnsureNavIcon(RectTransform cluster, string name, Vector2 pos,
+            Sprite sprite, string tooltipKey, string tooltipFallback)
         {
             var rect = EnsureChildRect(cluster, name, pos, NavIconSize);
             rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = pos;
             rect.sizeDelta = NavIconSize;
-            rect.localScale = new Vector3(scale, scale, 1f);
+            rect.localScale = new Vector3(NavIconScale, NavIconScale, 1f);
 
             var image = Ensure<Image>(rect.gameObject);
             image.sprite = sprite;
@@ -260,8 +357,15 @@ namespace Rollgeon.EditorTools.HUD
             // input al mundo en su esquina, que es lo esperable en un ícono clickeable.
             image.raycastTarget = true;
 
+            // El controller de la ruleta anima alpha e interactividad por acá; autorado
+            // abierto (alpha 1, interactivo) para que el prefab sea inspeccionable.
+            var group = Ensure<CanvasGroup>(rect.gameObject);
+            group.alpha = 1f;
+            group.blocksRaycasts = true;
+            group.interactable = true;
+
             // El componente captura la escala de reposo en Awake, así que agregarlo DESPUÉS
-            // de fijar localScale importa: la mochila y la bolsa van a 0.8.
+            // de fijar localScale importa: los íconos van a 0.8.
             Ensure<IconHoverScale>(rect.gameObject);
 
             Ensure<UITooltipTrigger>(rect.gameObject);
@@ -272,6 +376,18 @@ namespace Rollgeon.EditorTools.HUD
             tooltipSo.FindProperty("_key").stringValue = tooltipKey;
             tooltipSo.FindProperty("_fallback").stringValue = tooltipFallback;
             tooltipSo.ApplyModifiedPropertiesWithoutUndo();
+            return rect;
+        }
+
+        private static void WriteRevealElement(SerializedProperty element, RectTransform rect,
+            Vector2 hiddenPos, Vector2 shownPos, Vector2 window)
+        {
+            element.FindPropertyRelative("Rect").objectReferenceValue = rect;
+            element.FindPropertyRelative("Group").objectReferenceValue = rect.GetComponent<CanvasGroup>();
+            element.FindPropertyRelative("HiddenPos").vector2Value = hiddenPos;
+            element.FindPropertyRelative("ShownPos").vector2Value = shownPos;
+            element.FindPropertyRelative("WindowStart").floatValue = window.x;
+            element.FindPropertyRelative("WindowEnd").floatValue = window.y;
         }
 
         // ================================================================
