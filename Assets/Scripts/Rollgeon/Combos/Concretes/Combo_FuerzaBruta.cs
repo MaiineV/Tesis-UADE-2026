@@ -10,8 +10,9 @@ namespace Rollgeon.Combos.Concretes
     /// mitad superior de su propio rango (misma regla que <c>RelativeHalfFilter</c>:
     /// <c>valor &gt; MaxFace/2</c>; d6:{4,5,6}, d8:{5..8}, d12:{7..12}). No depende de
     /// coincidencia (Par/Trío/Póker) ni de orden (Escalera) — depende pura y exclusivamente
-    /// de magnitud, spec de Santi (2026-07-13). Daño resultante:
-    /// <c>BaseDamage + Σ(los 5 valores)</c>. <c>CountUsed = 5</c> cuando matchea.
+    /// de magnitud, spec de Santi (2026-07-13). <c>BaseDamage</c> del resultado = piso plano;
+    /// los 5 valores entran al daño UNA sola vez vía Σcaras de la fórmula v3 (Fix#0047 — antes
+    /// iban también dentro del base y se contaban doble). <c>CountUsed = 5</c> cuando matchea.
     /// <para>
     /// Es el único combo cuya regla depende del <see cref="DiceType"/> de cada dado, no solo
     /// del valor — usa los overloads tipados de <see cref="BaseComboSO"/>. <b>Fallback</b>:
@@ -36,12 +37,12 @@ namespace Rollgeon.Combos.Concretes
     {
         [Title("Fuerza Bruta — base configurable")]
         [SerializeField, Range(0, 500)]
-        [Tooltip("Piso plano que se suma encima de la suma de los dados en mitad superior. " +
-                 "GD default: 5 (rol consuelo, debajo de Par). El daño final es " +
-                 "BaseDamageConfigurable + Σ(valores en mitad superior).")]
+        [Tooltip("Piso plano del combo (término comboBase de la fórmula v3). GD default: 5. " +
+                 "Los valores de los dados NO van acá: la fórmula ya los suma una vez vía " +
+                 "Σcaras (los 5 dados son contribuyentes).")]
         protected int _baseDamageConfigurable = 5;
 
-        /// <summary>Piso plano configurable (se suma encima de la suma dinamica).</summary>
+        /// <summary>Piso plano configurable (término comboBase de la fórmula v3).</summary>
         public int BaseDamageConfigurable => _baseDamageConfigurable;
 
         /// <inheritdoc />
@@ -68,11 +69,11 @@ namespace Rollgeon.Combos.Concretes
             => Detect(diceValues, null, flatBaseOverride);
 
         /// <summary>
-        /// Formula del combo: <c>BaseDamage = piso + Σ(los 5 valores)</c>, <c>CountUsed = 5</c>.
-        /// Match solo si <b>todos</b> los dados estan en mitad superior — no hay subconjunto
-        /// parcial. <c>ContributingIndices</c> (Spec de Daño v2) = todos los índices. El
-        /// override de la tabla por clase reemplaza solo el piso plano; la suma dinámica va
-        /// encima.
+        /// Formula del combo (Fix#0047): <c>BaseDamage = piso plano</c> (override de tabla o
+        /// campo del SO), <c>CountUsed = 5</c>. Match solo si <b>todos</b> los dados estan en
+        /// mitad superior — no hay subconjunto parcial. <c>ContributingIndices</c> = todos los
+        /// índices: la fórmula v3 suma las 5 caras UNA vez vía Σcaras. La suma va en
+        /// <c>DynamicBonus</c> solo para la formula B legacy (Force Door / Heal).
         /// </summary>
         public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues,
             IReadOnlyList<DiceType> diceTypes, int? flatBaseOverride)
@@ -87,7 +88,8 @@ namespace Rollgeon.Combos.Concretes
                 sum += diceValues[i];
             }
             return ComboDetectionResult.Match(
-                ComboId, (flatBaseOverride ?? _baseDamageConfigurable) + sum, hitIndices.Count, hitIndices);
+                ComboId, flatBaseOverride ?? _baseDamageConfigurable, hitIndices.Count, hitIndices,
+                dynamicBonus: sum);
         }
 
         /// <summary>Regla canonica de mitad superior (<c>RelativeHalfFilter</c>): valor &gt; MaxFace/2.</summary>

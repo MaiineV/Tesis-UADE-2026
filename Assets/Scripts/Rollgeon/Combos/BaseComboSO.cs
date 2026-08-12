@@ -55,7 +55,8 @@ namespace Rollgeon.Combos
         [Title("Damage")]
         [SerializeField, Range(0, 500)]
         [Tooltip("Dano base plano del combo (editable por balance sin recompilar). " +
-                 "Para combos variables (SumaX) se suma encima de la suma de los dados que matchean.")]
+                 "Nunca incluye valores de dados: la formula v3 suma las caras contribuyentes " +
+                 "por separado (Fix#0047). OJO: tambien es el Priority default del combo.")]
         protected int _baseDamage;
 
         [Title("Cuenta del combo (§5.1.1)")]
@@ -155,12 +156,13 @@ namespace Rollgeon.Combos
 
         /// <summary>
         /// Default: orquesta <see cref="Matches"/> + <see cref="GetCountUsed"/> +
-        /// <see cref="BaseDamage"/>. Combos con logica variable (SumaX) overridean para
-        /// calcular <c>BaseDamage</c> dinamico.
+        /// <see cref="BaseDamage"/>. Combos con logica variable (SumaX, Higher Number,
+        /// Fuerza Bruta) overridean para poblar <c>ContributingIndices</c> y
+        /// <c>DynamicBonus</c> — el <c>BaseDamage</c> del resultado es SIEMPRE plano
+        /// (Fix#0047: las caras entran al daño una sola vez, vía Σcaras).
         /// </summary>
         /// <param name="flatBaseOverride">Base plano de la tabla por clase (Spec Daño v2 —
-        /// <c>ContractSheet.BaseDamageTable</c>). <c>null</c> = usar el base propio del SO.
-        /// Reemplaza solo la parte plana; los combos dinamicos suman su parte variable encima.</param>
+        /// <c>ContractSheet.BaseDamageTable</c>). <c>null</c> = usar el base propio del SO.</param>
         public virtual ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
         {
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();

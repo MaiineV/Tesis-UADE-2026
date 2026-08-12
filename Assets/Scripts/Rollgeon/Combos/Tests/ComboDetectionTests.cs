@@ -465,8 +465,10 @@ namespace Rollgeon.Combos.Tests
         {
             var result = _sut.Detect(new[] { 4, 4, 1, 6, 4 });
             Assert.IsTrue(result.IsMatch);
-            // 25 + (4 * 3) = 37
-            Assert.AreEqual(37, result.BaseDamage);
+            // Fix#0047: base plano solo — los 4s entran al daño vía Σcaras, no acá.
+            Assert.AreEqual(25, result.BaseDamage);
+            Assert.AreEqual(4 * 3, result.DynamicBonus);
+            Assert.AreEqual(37, result.EffectiveTotal, "Formula B conserva 25 + 4×3.");
             Assert.AreEqual(3, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 4 }, result.ContributingIndices);
         }
@@ -476,8 +478,10 @@ namespace Rollgeon.Combos.Tests
         {
             var result = _sut.Detect(new[] { 4, 2, 3, 5, 6 });
             Assert.IsTrue(result.IsMatch);
-            // 25 + (4 * 1) = 29
-            Assert.AreEqual(29, result.BaseDamage);
+            // Fix#0047: base plano solo; el 4 va en DynamicBonus (formula B).
+            Assert.AreEqual(25, result.BaseDamage);
+            Assert.AreEqual(4, result.DynamicBonus);
+            Assert.AreEqual(29, result.EffectiveTotal);
             Assert.AreEqual(1, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
         }
@@ -516,8 +520,10 @@ namespace Rollgeon.Combos.Tests
             ComboTestUtils.SetField(_sut, "_x", 6);
             var result = _sut.Detect(new[] { 6, 6, 6, 1, 2 });
             Assert.IsTrue(result.IsMatch);
-            // 25 + (6 * 3) = 43
-            Assert.AreEqual(43, result.BaseDamage);
+            // Fix#0047: base plano solo; 6×3 va en DynamicBonus (formula B).
+            Assert.AreEqual(25, result.BaseDamage);
+            Assert.AreEqual(6 * 3, result.DynamicBonus);
+            Assert.AreEqual(43, result.EffectiveTotal);
             Assert.AreEqual(3, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.ContributingIndices);
         }
@@ -555,7 +561,10 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 4, 2, 5, 3, 1 });
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(5 + 5, result.BaseDamage);
+            // Fix#0047: base plano solo; la cara ganadora va en DynamicBonus (formula B).
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(5, result.DynamicBonus);
+            Assert.AreEqual(5 + 5, result.EffectiveTotal);
             Assert.AreEqual(1, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 2 }, result.ContributingIndices);
         }
@@ -567,7 +576,9 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 2 });
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(5 + 2, result.BaseDamage);
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(2, result.DynamicBonus);
+            Assert.AreEqual(5 + 2, result.EffectiveTotal);
             CollectionAssert.AreEqual(new[] { 0 }, result.ContributingIndices);
         }
 
@@ -586,7 +597,9 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 4, 2 }, flatBaseOverride: 12);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(12 + 4, result.BaseDamage);
+            Assert.AreEqual(12, result.BaseDamage);
+            Assert.AreEqual(4, result.DynamicBonus);
+            Assert.AreEqual(12 + 4, result.EffectiveTotal);
         }
 
         [Test]
@@ -655,8 +668,10 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 5, 6, 3, 7, 11 }, types, null);
 
             Assert.IsTrue(result.IsMatch);
-            // 5 (piso) + 5 + 6 + 3 + 7 + 11 = 37
-            Assert.AreEqual(37, result.BaseDamage);
+            // Fix#0047: base plano solo — las 5 caras entran al daño vía Σcaras, no acá.
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(5 + 6 + 3 + 7 + 11, result.DynamicBonus);
+            Assert.AreEqual(37, result.EffectiveTotal, "Formula B conserva piso + Σ(5 valores).");
             Assert.AreEqual(5, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
             Assert.AreEqual(ComboId.BruteForce, result.ComboId);
@@ -717,8 +732,9 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 2, 11, 4, 4, 4 }, types, null);
 
             Assert.IsTrue(result.IsMatch);
-            // 5 (piso) + 2 + 11 + 4 + 4 + 4 = 30
-            Assert.AreEqual(30, result.BaseDamage);
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(2 + 11 + 4 + 4 + 4, result.DynamicBonus);
+            Assert.AreEqual(30, result.EffectiveTotal);
             Assert.AreEqual(5, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
@@ -770,8 +786,9 @@ namespace Rollgeon.Combos.Tests
             var result = _sut.Detect(new[] { 4, 4, 5, 6, 4 });
 
             Assert.IsTrue(result.IsMatch);
-            // 5 (piso) + 4+4+5+6+4 = 28
-            Assert.AreEqual(28, result.BaseDamage);
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(4 + 4 + 5 + 6 + 4, result.DynamicBonus);
+            Assert.AreEqual(28, result.EffectiveTotal);
             Assert.AreEqual(5, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }

@@ -105,7 +105,7 @@ namespace Rollgeon.Effects.Concretes
         private int ResolveAmount(EffectContext context) => _amountSource switch
         {
             DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                => Mathf.RoundToInt(combo.EffectiveTotal * _comboMultiplier),
             DamageSource.ComboValue => 0,
             DamageSource.FromReader when _reader != null
                 => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),

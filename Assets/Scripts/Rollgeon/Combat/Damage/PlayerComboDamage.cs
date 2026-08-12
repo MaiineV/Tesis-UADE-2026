@@ -38,8 +38,10 @@ namespace Rollgeon.Combat.Damage
     /// jugador (DamageSource.ComboValue); los enemigos usan Constant/FromReader y no pasan por acá.
     /// <see cref="PlayerComboShield"/> delega acá con <see cref="PlayerComboFormulaKind.Shield"/>
     /// (misma fórmula, con <c>shieldBase</c> de la ShieldBaseTable como base de combo).
-    /// Ojo balance: los combos de base dinámica (Higher Number, SumaX) llevan la cara dentro de
-    /// <c>BaseDamage</c> Y en Σcaras — la pesan doble. Aceptado hasta el próximo pase de balance.
+    /// Fix#0047: <c>comboBaseDamage</c> es SIEMPRE el base plano — los combos de base dinámica
+    /// (Higher Number, SumaX, Fuerza Bruta) ya no traen sus caras dentro del base, así que
+    /// Σcaras las cuenta una sola vez. La parte dinámica vive en
+    /// <c>ComboDetectionResult.DynamicBonus</c> y solo la usa la formula B legacy.
     /// </remarks>
     public static class PlayerComboDamage
     {
