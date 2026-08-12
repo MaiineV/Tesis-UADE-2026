@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Rollgeon — Fórmulas de Daño y Escudo (v3)</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+
+  :root{
+    --ink:#15181d;
+    --ink-soft:#4a5058;
+    --ink-faint:#7b828c;
+    --rule:#d7dbe0;
+    --rule-soft:#eaedf0;
+    --bg-code:#f5f6f8;
+    --dmg:#c0392b;
+    --shield:#1f7a8c;
+    --warn:#b06c00;
+    --accent:#5b3fb5;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html{ font-size:10.2pt; }
+
+  body{
+    margin:0;
+    color:var(--ink);
+    background:#fff;
+    font-family:"Segoe UI","Inter",system-ui,-apple-system,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  code, pre, .mono{
+    font-family:"JetBrains Mono","Cascadia Mono","Consolas",ui-monospace,monospace;
+  }
+
+  /* ── Portada ───────────────────────────────────────────── */
+  .cover{
+    height:245mm;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    page-break-after:always;
+  }
+  .cover .kicker{
+    font-size:9pt; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:10mm;
+  }
+  .cover h1{
+    font-size:30pt; line-height:1.1; margin:0 0 4mm; font-weight:700;
+    letter-spacing:-.02em;
+  }
+  .cover .sub{
+    font-size:13pt; color:var(--ink-soft); margin:0 0 14mm; font-weight:400;
+  }
+  .cover .rule{ height:3px; background:var(--ink); width:28mm; margin-bottom:12mm; }
+  .meta{ border-top:1px solid var(--rule); padding-top:5mm; }
+  .meta table{ border:none; font-size:9.5pt; }
+  .meta td{ border:none; padding:1.4mm 0; vertical-align:top; }
+  .meta td:first-child{
+    color:var(--ink-faint); width:38mm; text-transform:uppercase;
+    letter-spacing:.08em; font-size:8pt; padding-top:2mm;
+  }
+
+  /* ── Índice ────────────────────────────────────────────── */
+  .toc{ page-break-after:always; }
+  .toc ol{ list-style:none; padding:0; margin:0; counter-reset:sec; }
+  .toc > ol > li{
+    counter-increment:sec; padding:2mm 0; border-bottom:1px solid var(--rule-soft);
+    display:flex; gap:5mm; font-size:10.5pt;
+  }
+  .toc > ol > li::before{
+    content:counter(sec) "."; color:var(--ink-faint); min-width:8mm;
+    font-variant-numeric:tabular-nums;
+  }
+  .toc .tag{ margin-left:auto; font-size:8.5pt; color:var(--ink-faint); }
+
+  /* ── Tipografía de secciones ───────────────────────────── */
+  h2{
+    font-size:16pt; margin:0 0 3mm; padding-bottom:2.5mm;
+    border-bottom:2px solid var(--ink); font-weight:700; letter-spacing:-.01em;
+    page-break-after:avoid;
+  }
+  h2 .num{ color:var(--ink-faint); font-weight:400; margin-right:3mm; }
+  h3{
+    font-size:11.5pt; margin:7mm 0 2.5mm; font-weight:700;
+    page-break-after:avoid;
+  }
+  h4{
+    font-size:10pt; margin:5mm 0 1.5mm; font-weight:700; color:var(--ink-soft);
+    page-break-after:avoid;
+  }
+  section{ page-break-before:always; }
+  section.cont{ page-break-before:auto; }
+  p{ margin:0 0 3mm; }
+  ul,ol{ margin:0 0 3mm; padding-left:5.5mm; }
+  li{ margin-bottom:1.2mm; }
+  strong{ font-weight:700; }
+  a{ color:inherit; }
+
+  code:not(pre code){
+    background:var(--bg-code); padding:.5mm 1.2mm; border-radius:2px;
+    font-size:.88em; border:1px solid var(--rule-soft);
+  }
+
+  .path{ color:var(--ink-faint); font-size:8.5pt; }
+
+  /* ── Bloques de fórmula ────────────────────────────────── */
+  .formula{
+    border:1px solid var(--rule); border-left:4px solid var(--ink);
+    background:#fbfbfc; padding:4mm 5mm; margin:4mm 0;
+    page-break-inside:avoid;
+  }
+  .formula.dmg{ border-left-color:var(--dmg); }
+  .formula.shield{ border-left-color:var(--shield); }
+  .formula .title{
+    font-size:8pt; text-transform:uppercase; letter-spacing:.14em;
+    color:var(--ink-faint); margin-bottom:2.5mm;
+  }
+  .formula pre{
+    margin:0; font-size:9.5pt; line-height:1.65; white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .formula .hl{ font-weight:700; }
+  .formula .c-dmg{ color:var(--dmg); }
+  .formula .c-shield{ color:var(--shield); }
+  .formula .c-mul{ color:var(--accent); }
+  .formula .cmt{ color:var(--ink-faint); }
+
+  pre.code{
+    background:var(--bg-code); border:1px solid var(--rule-soft);
+    padding:3.5mm 4mm; margin:3mm 0; font-size:8.6pt; line-height:1.55;
+    overflow-x:auto; white-space:pre; border-radius:3px;
+    page-break-inside:avoid;
+  }
+  pre.code .cmt{ color:var(--ink-faint); }
+  pre.code .kw{ color:var(--accent); }
+
+  /* ── Tablas ────────────────────────────────────────────── */
+  table{
+    width:100%; border-collapse:collapse; margin:3mm 0 4mm; font-size:9pt;
+    page-break-inside:avoid;
+  }
+  th{
+    text-align:left; font-size:8pt; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-faint); border-bottom:1.5px solid var(--ink);
+    padding:1.8mm 2mm; font-weight:600;
+  }
+  td{ padding:1.8mm 2mm; border-bottom:1px solid var(--rule-soft); vertical-align:top; }
+  td.n, th.n{ text-align:right; font-variant-numeric:tabular-nums; }
+  tr.total td{ border-top:1.5px solid var(--ink); border-bottom:none; font-weight:700; }
+  table.tight td, table.tight th{ padding:1.2mm 2mm; }
+
+  /* ── Callouts ──────────────────────────────────────────── */
+  .note{
+    border-left:3px solid var(--rule); background:#fafbfc;
+    padding:3mm 4mm; margin:3.5mm 0; font-size:9.2pt;
+    page-break-inside:avoid;
+  }
+  .note .lbl{
+    font-size:8pt; text-transform:uppercase; letter-spacing:.12em;
+    font-weight:700; display:block; margin-bottom:1.2mm; color:var(--ink-faint);
+  }
+  .note.warn{ border-left-color:var(--warn); background:#fffaf2; }
+  .note.warn .lbl{ color:var(--warn); }
+  .note.bug{ border-left-color:var(--dmg); background:#fdf5f4; }
+  .note.bug .lbl{ color:var(--dmg); }
+  .note p:last-child{ margin-bottom:0; }
+
+  .pill{
+    display:inline-block; font-size:7.5pt; font-weight:700; padding:.6mm 2mm;
+    border-radius:9px; letter-spacing:.06em; text-transform:uppercase;
+    vertical-align:1px;
+  }
+  .pill.dmg{ background:#fbe9e7; color:var(--dmg); }
+  .pill.shield{ background:#e3f2f4; color:var(--shield); }
+  .pill.both{ background:#eee9fa; color:var(--accent); }
+
+  /* ── Ejemplos trabajados ───────────────────────────────── */
+  .example{
+    border:1px solid var(--rule); border-radius:3px; padding:4mm 5mm; margin:4mm 0;
+    page-break-inside:avoid;
+  }
+  .example h4{ margin-top:0; color:var(--ink); font-size:10.5pt; }
+  .example table{ margin-bottom:0; }
+
+  .lead{ font-size:10.8pt; color:var(--ink-soft); margin-bottom:5mm; }
+
+  .kv{ font-size:9pt; }
+  .kv td:first-child{ color:var(--ink-soft); width:45mm; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ PORTADA ══════════════════════ -->
+<div class="cover">
+  <div class="kicker">Rollgeon · Especificación técnica de combate</div>
+  <div class="rule"></div>
+  <h1>Fórmulas de Daño y Escudo</h1>
+  <p class="sub">Spec v3 &mdash; modelo N&times;M. Derivada del código, no del diseño en papel.</p>
+  <div class="meta">
+    <table>
+      <tr><td>Versión</td><td><strong>v3</strong> &mdash; decisión de diseño del 2026-08-09. Supersede v2 (donde <code>dmg_base_PJ</code>, <code>bonos_PJ</code> y <code>bono_combo</code> quedaban fuera del producto).</td></tr>
+      <tr><td>Rama</td><td><code>Feature#0046_Chest</code></td></tr>
+      <tr><td>Commit base</td><td><code>fc0f08cb</code> &mdash; <span class="path">test(localization): allow Buenardo as identical-by-design tier name</span></td></tr>
+      <tr><td>Fecha</td><td>2026-08-11</td></tr>
+      <tr><td>Fuente de verdad</td><td><span class="path">Assets/Scripts/Rollgeon/Combat/Damage/PlayerComboDamage.cs</span></td></tr>
+      <tr><td>Alcance</td><td>Ataque y escudo <strong>de combo del jugador</strong>, y el pipeline de aplicación que atraviesa <strong>todo</strong> el daño del juego (jugador y enemigos).</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════ ÍNDICE ══════════════════════ -->
+<div class="toc">
+  <h2>Índice</h2>
+  <ol>
+    <li>La fórmula canónica <span class="tag">N &times; M</span></li>
+    <li>Anatomía de N &mdash; los términos aditivos</li>
+    <li>Anatomía de M &mdash; los términos multiplicativos</li>
+    <li>El redondeo <span class="tag">RoundNxM</span></li>
+    <li>Daño: de dónde sale <code>comboBase</code></li>
+    <li>Escudo: de dónde sale <code>shieldBase</code> y el gate</li>
+    <li>Divergencias daño vs. escudo</li>
+    <li>El caso sin combo (fallback del dado más alto)</li>
+    <li>El pipeline de aplicación del daño</li>
+    <li>El escudo como recurso: aplicación, absorción y reset</li>
+    <li>Daño de enemigos y otras fuentes</li>
+    <li>Preview del HUD vs. golpe real</li>
+    <li>Ejemplos numéricos trabajados <span class="tag">7 casos</span></li>
+    <li>Datos vigentes del Warrior</li>
+    <li>Gotchas, deudas y hallazgos de la revisión</li>
+    <li>Apéndice A &mdash; mapa de archivos</li>
+    <li>Apéndice B &mdash; el log de diagnóstico en runtime</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════ §1 ══════════════════════ -->
+<section class="cont">
+<h2><span class="num">1</span>La fórmula canónica</h2>
+
+<p class="lead">Daño de combo y escudo de combo del jugador se resuelven con <strong>una sola función</strong>. No hay dos fórmulas: hay una fórmula y dos bases distintas.</p>
+
+<p><code>PlayerComboShield.Resolve</code> delega en <code>PlayerComboDamage.Resolve</code> pasándole <code>PlayerComboFormulaKind.Shield</code>. Ese enum <strong>solo cambia el rótulo del log</strong>; la aritmética es idéntica byte por byte.</p>
+
+<div class="formula">
+  <div class="title">Fórmula v3 &mdash; <span class="mono">PlayerComboDamage.cs:114-116</span></div>
+<pre><span class="hl">N</span> = comboBase + Attack.Value + (Attack.ModifiedValue − Attack.Value)
+    + Σ(caras contribuyentes) + Σ(BonusComboDamage de los 3 canales)
+
+<span class="hl c-mul">M</span> = (Π ComboDamageMultiplier de los 3 canales) × abilityMultiplier
+
+<span class="hl">RESULTADO</span> = max(0, round(<span class="hl">N</span> × <span class="hl c-mul">M</span>, AwayFromZero))</pre>
+</div>
+
+<p>Con un cortocircuito por encima de todo:</p>
+
+<div class="formula">
+  <div class="title">Gate de bloqueo</div>
+<pre>si <span class="hl">CUALQUIERA</span> de los 3 canales levantó <span class="hl">BlockComboDamage</span>
+   → RESULTADO = 0   <span class="cmt">(el producto ni se calcula)</span></pre>
+</div>
+
+<h3>1.1 Qué cambió respecto de v2</h3>
+
+<p>En la v2, <code>dmg_base_PJ</code>, <code>bonos_PJ</code> y <code>bono_combo</code> quedaban <em>fuera</em> del producto: se sumaban después de multiplicar. En v3 <strong>todo lo aditivo vive en N y todo N se escala por M</strong>. Un multiplicador de &times;1.5 ahora también escala tu ATQ base.</p>
+
+<p>El otro cambio: <strong>desapareció el multiplicador por tipo de dado</strong> (el viejo <code>EV/3.5</code>). Un d20 pesa más que un d6 porque sus caras son más altas y entran a Σcaras, no porque tenga un coeficiente propio.</p>
+
+<div class="note">
+  <span class="lbl">Pureza</span>
+  <p><code>Resolve</code> es una lectura pura: llamarla N veces devuelve el mismo resultado sin side-effects. Por eso el preview del HUD puede usar exactamente la misma función que el golpe real, en vez de re-derivar la fórmula en la UI (que era la causa del desfase reportado en su momento).</p>
+</div>
+
+<h3>1.2 La firma real</h3>
+
+<pre class="code">int Resolve(
+    Guid                          sourceId,             <span class="cmt">// dueño del stat Attack</span>
+    int                           comboBaseDamage,      <span class="cmt">// base de combo (daño) o base de escudo</span>
+    IReadOnlyList&lt;ContributingDie&gt; contributingDice,    <span class="cmt">// slot + cara + tipo</span>
+    float                         abilityMultiplier,    <span class="cmt">// perilla por habilidad</span>
+    PlayerComboFormulaKind        kind,                 <span class="cmt">// Damage | Shield (solo rótulo)</span>
+    out DamageBreakdown           breakdown)            <span class="cmt">// desglose para UI/logging</span></pre>
+
+<p>El <code>out DamageBreakdown</code> expone cada término por separado con la invariante <code>Final == RoundNxM(N, M)</code> (o <code>0</code> si <code>Blocked</code>). La UI de breakdown y el logger consumen esa struct &mdash; <strong>nunca recalculan</strong>.</p>
+</section>
+
+<!-- ══════════════════════ §2 ══════════════════════ -->
+<section>
+<h2><span class="num">2</span>Anatomía de N &mdash; los términos aditivos</h2>
+
+<table>
+  <thead>
+    <tr><th>Término</th><th>Campo en <code>DamageBreakdown</code></th><th>Origen exacto</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>comboBase</strong></td>
+      <td><code>ComboBase</code></td>
+      <td><span class="pill dmg">Daño</span> <code>ComboDetectionResult.BaseDamage</code><br><span class="pill shield">Escudo</span> <code>ContractSheet.GetShieldBase(comboId)</code><br>Ver §5 y §6.</td>
+    </tr>
+    <tr>
+      <td><strong>dmg_base_PJ</strong></td>
+      <td><code>AttackBase</code></td>
+      <td><code>AttributesManager.GetAttribute&lt;Attack&gt;(sourceId).Value</code> &mdash; el valor crudo, sin modificadores. Se siembra desde <code>ClassHeroSO.BaseAttack</code> en <code>RunController</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>bonos_PJ</strong></td>
+      <td><code>AttackBonus</code></td>
+      <td><code>Attack.ModifiedValue − Attack.Value</code>. <code>ModifiedValue</code> aplica los modificadores <code>Intrinsic</code> en orden de inserción; los direccionales (<code>Outgoing</code>/<code>Incoming</code>) <strong>no</strong> entran acá.</td>
+    </tr>
+    <tr>
+      <td><strong>Σ caras</strong></td>
+      <td><code>FacesSum</code></td>
+      <td>Suma de <code>ContributingDie.Face</code> de los dados que formaron el combo. Ver §2.1.</td>
+    </tr>
+    <tr>
+      <td><strong>bono_combo</strong></td>
+      <td><code>AdditiveBonus</code></td>
+      <td>Suma de <code>BonusComboDamage</code> de los tres canales de scratch. Ver §3.1.</td>
+    </tr>
+    <tr class="total"><td colspan="2">N</td><td><code>N</code></td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <span class="lbl">Degradado silencioso</span>
+  <p>Si el <code>ServiceLocator</code> no tiene <code>AttributesManager</code> registrado, o la entidad no tiene atributo <code>Attack</code>, <strong>ambos términos valen 0</strong> sin warning. La fórmula sigue corriendo con el resto.</p>
+</div>
+
+<h3>2.1 Cómo se resuelven las caras contribuyentes</h3>
+
+<p>Un <code>ContributingDie</code> viaja como tripla indivisible &mdash; <strong>slot del bag + cara tirada + tipo</strong> &mdash; para que las tres piezas no puedan desalinearse entre el payload de preview y el contexto de impacto.</p>
+
+<pre class="code">readonly struct ContributingDie {
+    int      BagSlot;   <span class="cmt">// para que la UI apunte al dado físico en pantalla; −1 si no aplica</span>
+    int      Face;      <span class="cmt">// término de Σcaras</span>
+    DiceType Type;      <span class="cmt">// arte/color — NO entra a la fórmula</span>
+}</pre>
+
+<p>El mapeo lo hace <code>ContributingDiceResolver.ResolveFromContext</code>, en tres saltos:</p>
+
+<ol>
+  <li><code>ComboDetectionResult.ContributingIndices</code> viene en el espacio de índices del <strong>subset holdeado</strong>, no del bag.</li>
+  <li><code>EffectContext.KeptDiceOriginalIndices</code> traduce subset → slot del bag. Si es <code>null</code>, se asume identidad (los índices ya son slots).</li>
+  <li>Las caras salen de <code>KeptDice ?? DiceResult</code>; el tipo, de <code>IDiceEnchantmentService.Bag.Dice[bagSlot]</code>.</li>
+</ol>
+
+<p>Si el enchantment service no está registrado o no hay bag, el resolver devuelve <code>null</code> y <strong>Σcaras queda en 0</strong>. Esto importa para el fallback sin combo (§8), que tiene un camino alternativo justamente por eso.</p>
+
+<div class="note warn">
+  <span class="lbl">Solo las caras del combo</span>
+  <p>Un dado holdeado que <em>no</em> formó parte del combo ganador no aporta nada. Un Par sobre <code>[6,6,5,4,1]</code> suma 12, no 22: el 5, el 4 y el 1 quedan afuera aunque estén en la mesa.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §3 ══════════════════════ -->
+<section>
+<h2><span class="num">3</span>Anatomía de M &mdash; los términos multiplicativos</h2>
+
+<table>
+  <thead><tr><th>Término</th><th>Campo</th><th>Origen</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>scratch_multiplier</strong></td>
+      <td><code>ScratchMultiplier</code></td>
+      <td>Producto de <code>ComboDamageMultiplier</code> de los 3 canales. Arranca en <code>1f</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>ability_multiplier</strong></td>
+      <td><code>AbilityMultiplier</code></td>
+      <td>El campo <code>_comboMultiplier</code> del <code>EffDealDamage</code> / <code>EffAddShield</code> de esa habilidad. Perilla de balance por acción (ej. un "golpe rápido" a 0.75). Mínimo autorable: <code>0.01</code>.</td>
+    </tr>
+    <tr class="total"><td colspan="2">M</td><td><code>M</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.1 Los tres canales de scratch</h3>
+
+<p>Un <em>scratch</em> es un acumulador efímero donde las pasivas, encantamientos e ítems escriben sus contribuciones durante la ventana de dispatch. La fórmula lee los tres, <strong>en este orden</strong>:</p>
+
+<table>
+  <thead><tr><th class="n">#</th><th>Canal</th><th>Servicio / propiedad</th><th>Cuándo se puebla</th></tr></thead>
+  <tbody>
+    <tr><td class="n">1</td><td>Pasivas de combo</td><td><code>IComboPassiveService.LastComboScratch</code></td><td><em>at-match</em> &mdash; al detectarse el combo</td></tr>
+    <tr><td class="n">2</td><td>Encantamientos de dados</td><td><code>IDiceEnchantmentService.LastComboScratch</code></td><td><em>at-match</em></td></tr>
+    <tr><td class="n">3</td><td>Ítems / combo jugado</td><td><code>IComboPlayService.LastPlayScratch</code></td><td><em>at-played</em> &mdash; al confirmar la jugada</td></tr>
+  </tbody>
+</table>
+
+<p>Los tres exponen la misma struct (<code>EnchantmentScratch</code>) y los tres campos relevantes se componen así:</p>
+
+<table class="tight">
+  <thead><tr><th>Campo</th><th>Composición entre canales</th><th>Efecto</th></tr></thead>
+  <tbody>
+    <tr><td><code>BonusComboDamage</code></td><td><strong>suma</strong> (<code>+=</code>)</td><td>entra a N</td></tr>
+    <tr><td><code>ComboDamageMultiplier</code></td><td><strong>multiplica</strong> (<code>*=</code>)</td><td>entra a M</td></tr>
+    <tr><td><code>BlockComboDamage</code></td><td><strong>OR lógico</strong> (<code>|=</code>)</td><td>anula el resultado</td></tr>
+  </tbody>
+</table>
+
+<p>Como la composición es conmutativa en los tres casos, <strong>el orden de dispatch dentro de un canal no altera el resultado</strong>. <code>EffMultiplyComboDamage</code> hace <code>Scratch.ComboDamageMultiplier *= _multiplier</code>; dos efectos de &times;1.5 dan &times;2.25, no &times;3.</p>
+
+<h3>3.2 Por qué el canal at-played es distinto</h3>
+
+<p>Los canales 1 y 2 leen <code>LastComboScratch</code>. El canal 3 lee <code>LastPlayScratch</code>, que <strong>persiste más allá de la ventana de jugada</strong>. La razón es de timing, no de diseño:</p>
+
+<p>El daño real está diferido al <strong>frame de impacto</strong> de la animación (el <code>EffDealDamage</code> vive dentro de un <code>EffPlaySequence</code> que arranca en el evento <code>hit</code>). Para cuando se ejecuta, la ventana de combo jugado ya está cerrada. Si el bono viviera en el scratch efímero, se habría perdido.</p>
+
+<p>Se limpia al inicio del turno, de modo que el preview no arrastre bonos jugados de un turno anterior.</p>
+
+<div class="note">
+  <span class="lbl">Escudo también</span>
+  <p>Los tres canales aplican <strong>igual al escudo</strong>. Un <code>BonusComboDamage</code> suma escudo en la fase de defensa, y <code>BlockComboDamage</code> también bloquea escudo &mdash; no solo daño.</p>
+</div>
+
+<h3>3.3 Journal de atribución</h3>
+
+<p>Cada canal expone un <code>Journal</code> de <code>ScratchContribution</code> (qué fuente aportó cuánto). <code>Resolve</code> los concatena en <code>DamageBreakdown.Sources</code> en el orden de agregación &mdash; pasivas → encantos → at-played. Es un journal agregado por fuente, <strong>no un timeline global</strong>. Vale <code>null</code> si nadie aportó (así no aloca en el caso común).</p>
+</section>
+
+<!-- ══════════════════════ §4 ══════════════════════ -->
+<section>
+<h2><span class="num">4</span>El redondeo <code>RoundNxM</code></h2>
+
+<p>El producto <code>N × M</code> es un <code>float</code>; el daño es un <code>int</code>. El puente es una función pública y explícita:</p>
+
+<pre class="code"><span class="kw">public static int</span> RoundNxM(<span class="kw">int</span> n, <span class="kw">float</span> m)
+    =&gt; Math.Max(0, (<span class="kw">int</span>)Math.Round(n * (<span class="kw">double</span>)m, MidpointRounding.AwayFromZero));</pre>
+
+<p>Tres decisiones metidas en una línea:</p>
+
+<ol>
+  <li><strong><code>MidpointRounding.AwayFromZero</code></strong> &mdash; las mitades siempre suben: <code>6.5 → 7</code>, <code>42.5 → 43</code>. <code>Mathf.RoundToInt</code> haría <em>banker's rounding</em> (mitad al par más cercano): <code>6.5 → 6</code>, <code>42.5 → 42</code>. Es la diferencia que la función existe para evitar.</li>
+  <li><strong>Promoción a <code>double</code></strong> antes de multiplicar &mdash; evita que el error de representación de un <code>float</code> como <code>0.1f</code> empuje un valor justo por debajo del midpoint.</li>
+  <li><strong><code>Math.Max(0, …)</code></strong> &mdash; el resultado nunca es negativo, aunque un multiplicador negativo mal autorado lo llevara ahí.</li>
+</ol>
+
+<p>Es <code>public</code> a propósito: el preview del HUD la llama directamente para reproducir <strong>exactamente</strong> el número del golpe real cuando tiene que re-redondear con un bono de ítem encima (§12).</p>
+
+<div class="note bug">
+  <span class="lbl">Inconsistencia detectada</span>
+  <p>Esta garantía <strong>se rompe en el pipeline</strong>. La etapa de weakness usa <code>Mathf.RoundToInt(damage * weakMult)</code> &mdash; banker's rounding &mdash; en vez de <code>RoundNxM</code>. Ver §15.1 para el caso concreto donde difieren.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §5 ══════════════════════ -->
+<section>
+<h2><span class="num">5</span>Daño: de dónde sale <code>comboBase</code></h2>
+
+<p>Para el daño, <code>comboBase</code> es el <code>BaseDamage</code> del <code>ComboDetectionResult</code>. Su cálculo tiene tres capas.</p>
+
+<h3>5.1 Capa 1 &mdash; el base plano del SO</h3>
+
+<p>Cada combo es un <code>BaseComboSO</code> con un campo <code>_baseDamage</code> (rango 0..500, editable sin recompilar). Valores vigentes:</p>
+
+<table>
+  <thead><tr><th>Combo</th><th><code>ComboId</code></th><th class="n">BaseDamage</th><th class="n">Priority</th><th>Regla</th></tr></thead>
+  <tbody>
+    <tr><td>Higher Number</td><td><code>combo.higher_number</code></td><td class="n">5</td><td class="n">5</td><td>fallback: cualquier selección no vacía</td></tr>
+    <tr><td>Par</td><td><code>combo.pair</code></td><td class="n">8</td><td class="n">8</td><td>2 dados iguales</td></tr>
+    <tr><td>Doble Par</td><td><code>combo.double_pair</code></td><td class="n">15</td><td class="n">15</td><td>2 pares</td></tr>
+    <tr><td>Trío</td><td><code>combo.trio</code></td><td class="n">22</td><td class="n">22</td><td>3 iguales</td></tr>
+    <tr><td>Fuerza Bruta</td><td><code>combo.brute_force</code></td><td class="n">30 <span style="color:var(--warn)">*</span></td><td class="n">30</td><td>los 5 dados en mitad superior de su rango</td></tr>
+    <tr><td>Full House</td><td><code>combo.full_house</code></td><td class="n">35</td><td class="n">35</td><td>trío + par</td></tr>
+    <tr><td>Escalera</td><td><code>combo.ladder</code></td><td class="n">40</td><td class="n">40</td><td>5 consecutivos</td></tr>
+    <tr><td>Póker</td><td><code>combo.poker</code></td><td class="n">55</td><td class="n">55</td><td>4 iguales</td></tr>
+    <tr><td>Generala</td><td><code>combo.generala</code></td><td class="n">90</td><td class="n"><code>int.MaxValue</code></td><td>5 iguales</td></tr>
+  </tbody>
+</table>
+
+<p><span style="color:var(--warn)">*</span> <strong>Fuerza Bruta no usa este número para el daño.</strong> Ver §5.3 y §15.3.</p>
+
+<p><code>Priority</code> por defecto es <code>_baseDamage</code>: cuando varios combos matchean la misma tirada, gana el de mayor prioridad. Generala overridea a <code>int.MaxValue</code> como <em>hard rule</em>, para que ningún ajuste de balance de Póker pueda destronarla.</p>
+
+<h3>5.2 Capa 2 &mdash; el override por clase</h3>
+
+<p><code>ContractSheet.BaseDamageTable</code> permite que una clase redefina el base plano de un combo sin tocar el SO global:</p>
+
+<pre class="code"><span class="kw">int</span>? GetBaseDamageOverride(<span class="kw">string</span> comboId)   <span class="cmt">// scan lineal, null si no hay entrada</span>
+<span class="kw">int</span>  GetBaseDamage(BaseComboSO combo)
+     =&gt; GetBaseDamageOverride(combo.ComboId) ?? combo.BaseDamage;</pre>
+
+<div class="note">
+  <span class="lbl">El override no mueve la prioridad</span>
+  <p><code>Priority</code> sigue leyendo el <code>BaseDamage</code> global del SO. Una clase puede pegar el doble con Par sin que Par le gane a Trío en la selección. La tabla cambia <strong>cuánto pega</strong>, no <strong>qué combo se elige</strong>.</p>
+</div>
+
+<h3>5.3 Capa 3 &mdash; los combos de base dinámica</h3>
+
+<p>Tres combos overridean <code>Detect</code> para devolver un <code>BaseDamage</code> calculado. En los tres, el <code>flatBaseOverride</code> de la tabla por clase reemplaza <strong>solo el piso plano</strong>; la parte variable suma encima.</p>
+
+<table>
+  <thead><tr><th>Combo</th><th>Fórmula de <code>BaseDamage</code></th><th><code>ContributingIndices</code></th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Higher Number</strong></td>
+      <td><code>(override ?? 5) + valor del dado más alto</code></td>
+      <td>solo el índice del dado más alto (primera ocurrencia ante empate)</td>
+    </tr>
+    <tr>
+      <td><strong>Suma X</strong></td>
+      <td><code>(override ?? 25) + X × hits</code><br><span class="path">hits = cantidad de dados que muestran X</span></td>
+      <td>los índices de los dados que muestran X</td>
+    </tr>
+    <tr>
+      <td><strong>Fuerza Bruta</strong></td>
+      <td><code>(override ?? 5) + Σ(los 5 valores)</code></td>
+      <td>los 5 índices</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note warn">
+  <span class="lbl">Doble conteo aceptado</span>
+  <p>En estos tres combos la cara del dado entra <strong>dos veces</strong> a N: una dentro de <code>comboBase</code> y otra por Σcaras. Está documentado como deuda de balance conocida en <code>PlayerComboDamage.cs:41-42</code> y aceptado hasta el próximo pase. Ver el ejemplo trabajado #3 (§13) para el impacto numérico.</p>
+</div>
+
+<h4>Notas por combo</h4>
+<ul>
+  <li><strong>Fuerza Bruta</strong> es el único combo cuya regla depende del <code>DiceType</code>, no solo del valor: "mitad superior" es <code>valor &gt; MaxFace/2</code> (d6 → {4,5,6}, d8 → {5..8}, d12 → {7..12}). Si el call site no provee los tipos, asume d6. Además exige los <strong>5 dados del bag</strong>, no un subset holdeado.</li>
+  <li><strong>Suma X</strong> no tiene ningún <code>.asset</code> autorado en el proyecto: la clase existe y está testeada, pero no hay instancia en <code>ComboCatalog</code>.</li>
+  <li><strong>Higher Number</strong> usa <code>valor absoluto</code>, no valor relativo al rango del dado. Un d4 en 4 pierde contra un d20 en 5.</li>
+</ul>
+</section>
+
+<!-- ══════════════════════ §6 ══════════════════════ -->
+<section>
+<h2><span class="num">6</span>Escudo: de dónde sale <code>shieldBase</code> y el gate</h2>
+
+<p>El escudo <strong>nunca</strong> lee <code>combo.BaseDamage</code>. Esa fue la causa raíz de BUG-021 (escudo trivial): la tabla de ataque se colaba en la fórmula defensiva. Hoy la base sale de una tabla propia, fija e independiente.</p>
+
+<pre class="code"><span class="kw">int</span> GetShieldBase(<span class="kw">string</span> comboId)   <span class="cmt">// ContractSheet.ShieldBaseTable, scan lineal</span>
+    <span class="cmt">// sin entrada ⇒ 0. NO hay fallback a un default global.</span></pre>
+
+<h3>6.1 El gate de base 0</h3>
+
+<p>Es la única divergencia aritmética real entre daño y escudo:</p>
+
+<div class="formula shield">
+  <div class="title">PlayerComboShield.cs:33-38</div>
+<pre>si shieldBase &lt;= 0
+   → retorna 0 <span class="cmt">y la fórmula ni se ejecuta</span>
+   → breakdown = struct vacía con Kind = Shield</pre>
+</div>
+
+<p><strong>Por qué existe.</strong> La <code>ShieldBaseTable</code> es <em>opt-in por clase</em>: la ausencia de entrada significa "esta clase no genera escudo con ese combo". Sin el gate, la fórmula correría con <code>comboBase = 0</code> y todo combo daría escudo &asymp; <code>Attack.ModifiedValue + Σcaras</code> &mdash; que es exactamente lo que no se quiere.</p>
+
+<p>La división de responsabilidades es limpia: <strong>el gate decide <em>si</em> hay escudo; la fórmula decide <em>cuánto</em>.</strong></p>
+
+<h3>6.2 El segundo gate, en el efecto</h3>
+
+<p><code>EffAddShield.ResolveComboShield</code> agrega dos condiciones previas, antes incluso de llegar a <code>PlayerComboShield</code>:</p>
+
+<pre class="code"><span class="kw">var</span> sheet = IPlayerService?.CurrentHero?.Sheet;
+<span class="kw">if</span> (sheet == <span class="kw">null</span> || string.IsNullOrEmpty(combo.ComboId)) <span class="kw">return</span> 0;</pre>
+
+<p>Un <code>ComboId</code> vacío es el resultado sintético de un <em>action roll</em> (Heal, Forzar Puerta): significa "sin datos por combo" y no genera escudo.</p>
+
+<h3>6.3 Sin cap</h3>
+
+<p>La v3 eliminó el cap de escudo. El freno anti-inmunidad son dos cosas del sistema, no un número en la fórmula:</p>
+
+<ul>
+  <li>El <strong>reset por turno</strong> (§10.3): el escudo vuelve a 0 al empezar tu propio turno.</li>
+  <li>La <strong>escala &times;10 del daño enemigo</strong> (vida de PJ = 100).</li>
+</ul>
+</section>
+
+<!-- ══════════════════════ §7 ══════════════════════ -->
+<section>
+<h2><span class="num">7</span>Divergencias daño vs. escudo</h2>
+
+<p>Tabla completa de lo que difiere. Todo lo que no está acá es idéntico.</p>
+
+<table>
+  <thead><tr><th style="width:32mm">Aspecto</th><th><span class="pill dmg">Daño</span></th><th><span class="pill shield">Escudo</span></th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Aritmética</strong></td>
+      <td colspan="2" style="text-align:center; color:var(--ink-faint)">idéntica &mdash; misma función, mismo redondeo, mismos canales</td>
+    </tr>
+    <tr>
+      <td><strong>Base del combo</strong></td>
+      <td><code>ComboDetectionResult.BaseDamage</code><br>(SO global + override por clase + parte dinámica)</td>
+      <td><code>ContractSheet.GetShieldBase(comboId)</code><br>tabla fija, independiente, opt-in</td>
+    </tr>
+    <tr>
+      <td><strong>Base ausente</strong></td>
+      <td>no aplica &mdash; siempre hay base (puede ser 0 y la fórmula corre igual)</td>
+      <td><strong>gate: retorna 0</strong> sin ejecutar la fórmula</td>
+    </tr>
+    <tr>
+      <td><strong>ComboId vacío</strong></td>
+      <td>cae al fallback del dado más alto (§8)</td>
+      <td>retorna 0</td>
+    </tr>
+    <tr>
+      <td><strong>Post-fórmula</strong></td>
+      <td>entra al <code>DamagePipeline</code> como <code>BaseDamage</code> (weakness, escudo del target, HP)</td>
+      <td><strong>no pasa por el pipeline</strong>: se suma directo al stat <code>Shield</code></td>
+    </tr>
+    <tr>
+      <td><strong>Efecto</strong></td>
+      <td><code>EffDealDamage</code></td>
+      <td><code>EffAddShield</code></td>
+    </tr>
+    <tr>
+      <td><strong>Target</strong></td>
+      <td>ocupantes de las celdas seleccionadas; fallback a <code>TargetGuid</code>. Puede ser multi-target.</td>
+      <td>ocupante de la primera celda seleccionada; fallback al <strong>propio</strong> <code>SourceGuid</code>. Single target.</td>
+    </tr>
+    <tr>
+      <td><strong>Floating number</strong></td>
+      <td><code>BehaviorValueKey.FloatingDamage</code></td>
+      <td><code>BehaviorValueKey.FloatingShield</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <span class="lbl">Consecuencia práctica</span>
+  <p>Como el escudo no atraviesa el pipeline, <strong>ninguna debilidad, ninguna mitigación y ningún clamp de HP mínimo lo tocan</strong>. Un enemigo con debilidad a Trío no hace que tu Trío defensivo genere &times;1.5 escudo.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §8 ══════════════════════ -->
+<section>
+<h2><span class="num">8</span>El caso sin combo (fallback del dado más alto)</h2>
+
+<p>Cuando la tirada no matchea ningún combo, el ataque <strong>no es 0</strong>. El GD §5 define un daño mínimo &mdash; "el número más alto" &mdash; y la v3 lo hace entrar a la misma fórmula.</p>
+
+<h3>8.1 Qué dado se elige</h3>
+
+<p><code>EffDealDamage.ResolveNoComboFallback</code> prioriza <code>KeptDice</code> sobre <code>DiceResult</code>. Es una decisión de diseño explícita: <strong>cuentan los dados que el jugador eligió usar</strong>, no la tirada completa. Si holdeaste solo un 3 y quedó un 6 sin holdear en la mesa, el mínimo es 3.</p>
+
+<h3>8.2 Los dos caminos, mismo N</h3>
+
+<p>La cara del dado más alto entra a N <strong>una sola vez</strong>. Por cuál término entra depende de si hay detalle de bag disponible:</p>
+
+<table>
+  <thead><tr><th>Situación</th><th><code>comboBase</code></th><th>Σcaras</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Hay detalle de bag<br><span class="path">(enchantment service registrado)</span></td>
+      <td><code>0</code></td>
+      <td>la cara más alta</td>
+      <td>conserva la atribución del dado para la UI</td>
+    </tr>
+    <tr>
+      <td>No hay detalle de bag</td>
+      <td>la cara más alta</td>
+      <td><code>0</code> (dice es null)</td>
+      <td>mismo N, sin atribución visual</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="code"><span class="cmt">// EffDealDamage.cs:154-156</span>
+<span class="kw">return</span> PlayerComboDamage.Resolve(
+    ResolveSourceId(context),
+    contributingDice != <span class="kw">null</span> ? 0 : max,   <span class="cmt">// ← el switch de camino</span>
+    contributingDice,
+    _comboMultiplier);</pre>
+
+<p>Si no hay dados en absoluto (un behavior con <code>ComboValue</code> pero sin tirada), o si el máximo es &le; 0, el fallback devuelve <code>0</code> y <code>ApplyEffect</code> corta temprano sin invocar el pipeline.</p>
+
+<div class="note">
+  <span class="lbl">Nota histórica &mdash; BUG-040</span>
+  <p>Este fallback es distinto del combo <em>Higher Number</em>, que sí es un combo real del catálogo con base 5 y prioridad 5. El fallback aplica cuando <strong>ningún</strong> combo matcheó, incluido Higher Number (que, siendo el combo comodín, matchea con cualquier selección no vacía &mdash; así que en la práctica el fallback solo corre si el catálogo de la clase no lo incluye).</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §9 ══════════════════════ -->
+<section>
+<h2><span class="num">9</span>El pipeline de aplicación del daño</h2>
+
+<p>El número que devuelve la fórmula es el <strong>input</strong> del <code>DamagePipeline</code>, no el daño final. El pipeline es el punto único por donde pasa <strong>todo</strong> el daño del juego &mdash; jugador, enemigos, trampas, mimic.</p>
+
+<div class="formula dmg">
+  <div class="title">DamagePipeline.Resolve &mdash; etapas</div>
+<pre><span class="hl">0.</span> Guard        si BaseDamage &lt;= 0 → Final = 0, weakness = 1, corte
+
+<span class="hl">1.</span> Outgoing     <span class="cmt">NO IMPLEMENTADO — placeholder de TECHNICAL §12.2</span>
+                emite OnDamageOutgoing(src, tgt, damage)
+
+<span class="hl">2.</span> Weakness     si IsWeaknessHit y mult &gt; 1
+                   damage = Mathf.RoundToInt(damage × mult)
+
+<span class="hl">3.</span> Incoming     <span class="cmt">NO IMPLEMENTADO — placeholder</span>
+                emite OnDamageIncoming(src, tgt, damage)
+
+<span class="hl">4.</span> Escudo       absorbed = min(Shield(target), damage)
+                damage  −= absorbed
+                Shield(target) = shieldBefore − absorbed
+                emite OnShieldChanged
+
+<span class="hl">5.</span> HP           newHp = max(0, hp − damage)
+                → clamp de HP mínimo   (IMinHpClampProvider)
+                → override de letalidad (ILethalDamageOverride)
+                escribe Health, setea WasLethal
+
+<span class="hl">6.</span> Evento       TypedEvent&lt;DamageResolvedPayload&gt;.Raise(…)</pre>
+</div>
+
+<h3>9.1 Etapa 2 &mdash; weakness</h3>
+
+<p>La debilidad se activa cuando se cumplen <strong>todas</strong> estas condiciones:</p>
+
+<ol>
+  <li><code>DamageContext.IsWeaknessHit</code> es <code>true</code> &mdash; lo setea <code>EffDealDamage</code> como <code>context.ComboResult?.IsMatch ?? false</code>. <strong>Sin combo no hay debilidad posible.</strong></li>
+  <li>Hay un <code>IWeaknessChecker</code> registrado.</li>
+  <li>El target tiene entrada en el <code>IWeaknessRegistry</code>, con <code>comboId</code> no vacío.</li>
+  <li>Ese <code>comboId</code> es <strong>exactamente igual</strong> al del golpe.</li>
+</ol>
+
+<p>El multiplicador es <code>data.mult</code> si es &gt; 0, o <code>RulesetSO.Weakness.DefaultMultiplier</code> si el registry trae 0. Si el resultado es &le; 1.0 se normaliza a 1.0 y no se aplica nada.</p>
+
+<p><code>GetMultiplier</code> dispara <code>OnWeaknessHit</code> como side-effect (informativo, no transaccional). <code>PeekMultiplier</code> hace el mismo lookup <strong>sin</strong> disparar el evento &mdash; es lo que usa el preview.</p>
+
+<div class="note">
+  <span class="lbl">"None" = sin debilidad</span>
+  <p>Un enemigo con <code>WeaknessComboId</code> vacío resuelve a &times;1.0 en el lookup, no falla ni tira warning.</p>
+</div>
+
+<h3>9.2 Etapa 4 &mdash; absorción de escudo</h3>
+
+<pre class="code"><span class="kw">static int</span> ComputeShieldAbsorbed(<span class="kw">int</span> shieldValue, <span class="kw">int</span> damage)
+{
+    <span class="kw">if</span> (shieldValue &lt;= 0 || damage &lt;= 0) <span class="kw">return</span> 0;
+    <span class="kw">return</span> Mathf.Min(shieldValue, damage);
+}</pre>
+
+<p>Absorción lineal 1:1, sin porcentajes ni reducción. Esta función es el <strong>único</strong> source of truth: la comparten <code>Resolve</code> (que además escribe y emite) y <code>Preview</code> (que solo computa), para que preview y golpe real no puedan driftear.</p>
+
+<p>Dos flags derivados viajan en el payload para la UI:</p>
+<ul>
+  <li><code>BlockedByShield</code> = el daño residual quedó en 0 <em>y</em> hubo absorción &gt; 0.</li>
+  <li><code>ShieldBroken</code> = el escudo estaba arriba y quedó exactamente en 0 tras absorber.</li>
+</ul>
+
+<h3>9.3 Etapa 5 &mdash; los dos clamps de HP</h3>
+
+<p>Ambos se aplican en cadena, ambos <strong>reescriben <code>ctx.FinalDamage</code></strong> para que el número flotante refleje el daño realmente infligido, no el calculado.</p>
+
+<table>
+  <thead><tr><th>Clamp</th><th>Interfaz</th><th>Regla</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>HP mínimo</strong><br><span class="path">Mimic — Feature#0046</span></td>
+      <td><code>IMinHpClampProvider</code></td>
+      <td>Piso por par <em>(target, source)</em>: el daño no-jugador nunca baja al target de <code>minHp</code>. Clampeado a la vida actual, para no <em>curar</em> a un target que ya estaba por debajo del piso.</td>
+    </tr>
+    <tr>
+      <td><strong>Override de letalidad</strong><br><span class="path">tutorial</span></td>
+      <td><code>ILethalDamageOverride</code></td>
+      <td>Si el golpe sería letal, el target queda con <code>LethalOverrideRemainingHp = 10</code> y <code>WasLethal</code> queda en <code>false</code> &mdash; el DeathWatcher nunca lo ve. Los 10 HP son el 10% del pool base de 100, el mismo ratio que tenía 1 HP sobre el pool viejo de 10.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Si el target no tiene atributo <code>Health</code>, el pipeline loguea un warning y <strong>descarta el daño</strong> (<code>FinalDamage = 0</code>).</p>
+
+<h3>9.4 <code>Preview</code> &mdash; el gemelo sin side-effects</h3>
+
+<p><code>DamagePipeline.Preview</code> corre <strong>solo las etapas 2 y 4</strong> &mdash; weakness (con <code>PeekMultiplier</code>) y absorción de escudo (computada, no escrita). No toca <code>Health</code>, no toca <code>Shield</code>, no emite eventos. Es lo que permite que el HUD muestre el daño post-mitigación real antes de confirmar.</p>
+
+<h3>9.5 Regla huérfana &mdash; "combo repetido = 0"</h3>
+
+<p><code>IsRepeatOfPreviousCombo</code> sigue en el archivo pero <strong>nadie la llama</strong>. Vivía detrás de un pasivo global anti-repetición que se eliminó por dos razones: la presión ahora la ejerce el propio boss desde su árbol de IA (<code>AINode_RotateBlock</code>), y anular daño sin aviso en pantalla se sentía como un bug. Se conservó el cálculo &mdash; no el wiring &mdash; por si se reintroduce con UI que lo comunique.</p>
+</section>
+
+<!-- ══════════════════════ §10 ══════════════════════ -->
+<section>
+<h2><span class="num">10</span>El escudo como recurso</h2>
+
+<h3>10.1 Aplicación</h3>
+
+<p><code>EffAddShield.ApplyEffect</code> es deliberadamente simple &mdash; sin pipeline, sin mitigación, sin cap:</p>
+
+<pre class="code"><span class="kw">int</span> current   = attributes.GetAttribute&lt;Shield&gt;(targetGuid)?.Value ?? 0;
+<span class="kw">int</span> newShield = current + amount;      <span class="cmt">// acumula sobre lo que ya había</span>
+attributes.SetAttributeValue&lt;Shield, <span class="kw">int</span>&gt;(targetGuid, newShield);
+EventManager.Trigger(EventName.OnShieldChanged, targetGuid, newShield);</pre>
+
+<p>El stat <code>Shield</code> es un <code>BaseAttribute&lt;int&gt;</code> pelado: sin lógica propia, sin máximo, sin regeneración.</p>
+
+<h3>10.2 Consumo</h3>
+
+<p>Solo se consume en la etapa 4 del pipeline, cuando el dueño recibe daño. Absorción 1:1 hasta agotarse (§9.2).</p>
+
+<h3>10.3 Reset por turno</h3>
+
+<p><code>ShieldResetHandler</code> escucha <code>OnTurnStarted</code> y pone el escudo del <strong>dueño del turno que arranca</strong> en 0:</p>
+
+<pre class="code"><span class="kw">void</span> OnTurnStarted(<span class="kw">params object</span>[] args)
+{
+    <span class="kw">var</span> shieldAttr = _attributes.GetAttribute&lt;Shield&gt;(entityGuid);
+    <span class="kw">if</span> (shieldAttr == <span class="kw">null</span> || shieldAttr.Value &lt;= 0) <span class="kw">return</span>;
+    _attributes.SetAttributeValue&lt;Shield, <span class="kw">int</span>&gt;(entityGuid, 0);
+    EventManager.Trigger(EventName.OnShieldChanged, entityGuid, 0);
+}</pre>
+
+<p>Este es el freno de balance que reemplazó al cap. El escudo que generás en tu fase de defensa <strong>dura hasta que te vuelva a tocar el turno</strong>: cubre exactamente la ronda de enemigos intermedia.</p>
+
+<div class="note warn">
+  <span class="lbl">Consecuencia de diseño</span>
+  <p>Acumular escudo a través de turnos es imposible por construcción. Cualquier ítem o pasiva que quiera "escudo persistente" necesita otro mecanismo &mdash; este handler no distingue de dónde vino el escudo.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §11 ══════════════════════ -->
+<section>
+<h2><span class="num">11</span>Daño de enemigos y otras fuentes</h2>
+
+<p>La fórmula N&times;M es exclusiva del ataque de combo del jugador (<code>DamageSource.ComboValue</code>). Todo lo demás produce su número por otra vía y entra al pipeline directo.</p>
+
+<table>
+  <thead><tr><th><code>DamageSource</code></th><th>Cómo resuelve el número</th><th>Quién lo usa</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Constant</code></td>
+      <td><code>_baseAmount</code> tal cual (0..999, autorado en el asset)</td>
+      <td>enemigos simples, trampas, daño fijo</td>
+    </tr>
+    <tr>
+      <td><code>FromReader</code></td>
+      <td><code>Mathf.RoundToInt(_reader.Read(context) × _readerMultiplier)</code><br>El reader es polimórfico: lee stats de entidad en runtime.</td>
+      <td>enemigos que escalan con sus propios stats</td>
+    </tr>
+    <tr>
+      <td><code>ComboValue</code></td>
+      <td>Fórmula v3 completa (§1)</td>
+      <td>ataque de combo del jugador</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Con <code>FromReader</code> y <code>_reader == null</code> el efecto devuelve 0 (no tira excepción). Con <code>ComboValue</code> y sin combo, cae al fallback de §8.</p>
+
+<p>Los enemigos <strong>sí</strong> atraviesan el pipeline completo: su daño puede ser absorbido por el escudo del jugador y está sujeto a los clamps de HP. Lo que no tienen es debilidad &mdash; <code>IsWeaknessHit</code> requiere un <code>ComboResult.IsMatch</code>, que solo produce el jugador.</p>
+
+<div class="note">
+  <span class="lbl">La escala &times;10</span>
+  <p>El "daño enemigo &times;10" del rebalanceo a vida 100 es un cambio <strong>de datos, no de código</strong>: los <code>_baseAmount</code> de los assets de enemigos se multiplicaron. No hay ningún factor global de escala en el pipeline.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §12 ══════════════════════ -->
+<section>
+<h2><span class="num">12</span>Preview del HUD vs. golpe real</h2>
+
+<p>La regla de anti-drift es que <strong>el preview llama a las mismas funciones que el golpe</strong>. <code>DamageFormulaView</code> nunca re-deriva la fórmula.</p>
+
+<table>
+  <thead><tr><th>Etapa</th><th>Golpe real</th><th>Preview</th></tr></thead>
+  <tbody>
+    <tr><td>Fórmula</td><td><code>PlayerComboDamage.Resolve</code></td><td><strong>la misma función</strong></td></tr>
+    <tr><td>Weakness</td><td><code>GetMultiplier</code> (dispara evento)</td><td><code>PeekMultiplier</code> (silencioso)</td></tr>
+    <tr><td>Escudo</td><td><code>ComputeShieldAbsorbed</code> + write</td><td><strong>la misma función</strong>, sin write</td></tr>
+    <tr><td>Redondeo con ítems</td><td>el ítem escribe al play scratch</td><td><code>RoundNxM(bd.N + itemBonus, bd.M)</code></td></tr>
+  </tbody>
+</table>
+
+<h3>12.1 El bono de ítems, en dorado</h3>
+
+<p>Los bonos <em>at-played</em> del inventario no están en el scratch durante el preview (se limpia al inicio del turno), así que se previsualizan aparte con <code>IInventoryService.GetComboDamageBonusPreview(comboId)</code> y se muestran en dorado (<code>#FFC93C</code>) separados del número base.</p>
+
+<p>La suma es correcta según v3 &mdash; el bono entra a <strong>N</strong> y escala por <strong>M</strong>, no se suma post-fórmula como en v2:</p>
+
+<pre class="code"><span class="kw">int</span> preWithItems = itemBonus != 0 &amp;&amp; !bd.Blocked
+    ? PlayerComboDamage.RoundNxM(bd.N + itemBonus, bd.M)
+    : preMitigation;
+
+<span class="cmt">// La mitigación se aplica por separado a base y total, así el "+ N" dorado</span>
+<span class="cmt">// refleja la contribución de los objetos YA mitigada.</span>
+<span class="kw">int</span> shownBase  = Mitigate(preMitigation);
+<span class="kw">int</span> shownTotal = Mitigate(preWithItems);
+<span class="kw">int</span> itemPortion = shownTotal − shownBase;</pre>
+
+<h3>12.2 Dependencia de orden</h3>
+
+<p><code>Resolve</code> lee <code>LastComboScratch</code> de los servicios de pasivas y encantamientos, que se pueblan al procesar el <strong>mismo</strong> <code>ComboMatchedPayload</code>. El preview correcto depende de que esos servicios estén suscriptos <em>antes</em> que la view. Es una dependencia de orden de suscripción, no de código, y está anotada en el archivo.</p>
+
+<h3>12.3 Fase de defensa</h3>
+
+<p>Cuando el chain entra en fase de defensa (<code>OnChainPhaseStarted</code> con índice &gt; 0), la view cambia a modo escudo: llama a <code>PlayerComboShield.Resolve</code> con la base de <code>ResolvePlayerShieldBase(comboId)</code>. Sin <code>Mitigate</code> &mdash; el escudo no pasa por el pipeline.</p>
+
+<div class="note warn">
+  <span class="lbl">Limitación conocida</span>
+  <p><code>GetComboDamageBonusPreview</code> solo suma <code>EffAddComboBonus</code>. Un ítem at-played <strong>multiplicativo</strong> no se previsualiza: el número mostrado será menor que el golpe real. Anotado como follow-up en <code>DamageFormulaView.cs:350-351</code>.</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §13 ══════════════════════ -->
+<section>
+<h2><span class="num">13</span>Ejemplos numéricos trabajados</h2>
+
+<p>Todos con el <strong>Warrior vigente</strong>: <code>BaseAttack = 5</code>, <code>BaseMaxHp = 100</code>, <code>BaseDamageTable</code> vacía (sin overrides por clase), habilidad con <code>_comboMultiplier = 1.0</code>.</p>
+
+<div class="example">
+  <h4>#1 &mdash; Trío de 5, sin nada <span class="pill dmg">Daño</span></h4>
+  <p>Dados holdeados <code>[5, 5, 5, 2, 1]</code>. Trío matchea con los índices 0, 1, 2.</p>
+  <table class="tight">
+    <tr><td>comboBase (Trío, sin override)</td><td class="n">22</td></tr>
+    <tr><td>+ dmg_base_PJ (<code>Attack.Value</code>)</td><td class="n">5</td></tr>
+    <tr><td>+ bonos_PJ</td><td class="n">0</td></tr>
+    <tr><td>+ Σ caras (5+5+5)</td><td class="n">15</td></tr>
+    <tr><td>+ bono_combo</td><td class="n">0</td></tr>
+    <tr class="total"><td>N</td><td class="n">42</td></tr>
+    <tr><td>M = 1.0 (scratch) × 1.0 (ability)</td><td class="n">1.0</td></tr>
+    <tr class="total"><td>Fórmula → <code>round(42 × 1.0)</code></td><td class="n">42</td></tr>
+    <tr><td>Pipeline: weakness ×1.0, sin escudo</td><td class="n">42</td></tr>
+    <tr class="total"><td>Daño al HP</td><td class="n">42</td></tr>
+  </table>
+</div>
+
+<div class="example">
+  <h4>#2 &mdash; El mismo Trío, con debilidad y escudo enemigo <span class="pill dmg">Daño</span></h4>
+  <p>Enemigo con <code>WeaknessComboId = combo.trio</code>, <code>mult = 1.5</code>, y 10 de escudo activo.</p>
+  <table class="tight">
+    <tr><td>Fórmula (idéntica al #1)</td><td class="n">42</td></tr>
+    <tr><td>× weakness 1.5 → <code>Mathf.RoundToInt(63.0)</code></td><td class="n">63</td></tr>
+    <tr><td>− escudo absorbido <code>min(10, 63)</code></td><td class="n">−10</td></tr>
+    <tr class="total"><td>Daño al HP</td><td class="n">53</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--ink-soft)">El escudo del enemigo queda en 0 → <code>ShieldBroken = true</code> en el payload. <code>BlockedByShield</code> es <code>false</code> porque quedó daño residual.</p>
+</div>
+
+<div class="example">
+  <h4>#3 &mdash; Higher Number: el doble conteo <span class="pill dmg">Daño</span></h4>
+  <p>Dados <code>[6, 3, 2, 2, 1]</code>. Ningún combo real matchea; gana Higher Number con el 6.</p>
+  <table class="tight">
+    <tr><td>comboBase = <code>_baseDamage (5) + cara más alta (6)</code></td><td class="n">11</td></tr>
+    <tr><td>+ dmg_base_PJ</td><td class="n">5</td></tr>
+    <tr><td>+ Σ caras &mdash; <em>el mismo 6, otra vez</em></td><td class="n">6</td></tr>
+    <tr class="total"><td>N</td><td class="n">22</td></tr>
+    <tr class="total"><td>Daño (M = 1.0)</td><td class="n">22</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--warn)"><strong>Sin el doble conteo serían 16.</strong> La cara del dado pesa el doble en todos los combos de base dinámica (§5.3). Deuda de balance aceptada.</p>
+</div>
+
+<div class="example">
+  <h4>#4 &mdash; Escudo con Doble Par <span class="pill shield">Escudo</span></h4>
+  <p>Fase de defensa del chain. Dados <code>[3, 3, 5, 5, 1]</code>, contribuyentes 0-3.</p>
+  <table class="tight">
+    <tr><td>Gate: <code>GetShieldBase("combo.double_pair")</code> = 2 &gt; 0 ✓</td><td class="n">—</td></tr>
+    <tr><td>comboBase (tabla de <strong>escudo</strong>, no de daño)</td><td class="n">2</td></tr>
+    <tr><td>+ dmg_base_PJ (sí, el ATQ suma escudo)</td><td class="n">5</td></tr>
+    <tr><td>+ Σ caras (3+3+5+5)</td><td class="n">16</td></tr>
+    <tr class="total"><td>N</td><td class="n">23</td></tr>
+    <tr class="total"><td>Escudo generado (M = 1.0)</td><td class="n">23</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--ink-soft)">Se suma al stat <code>Shield</code> del jugador. Absorberá los próximos 23 de daño y se reseteará a 0 cuando arranque el siguiente turno del jugador.</p>
+</div>
+
+<div class="example">
+  <h4>#5 &mdash; Higher Number en fase de escudo: el gate corta <span class="pill shield">Escudo</span></h4>
+  <p>Misma tirada del #3, pero en fase de defensa.</p>
+  <table class="tight">
+    <tr><td><code>GetShieldBase("combo.higher_number")</code></td><td class="n">0</td></tr>
+    <tr class="total"><td>Escudo generado &mdash; <strong>la fórmula ni corre</strong></td><td class="n">0</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--ink-soft)">Sin el gate, esta tirada habría dado <code>0 + 5 + 6 = 11</code> de escudo con un combo que el diseño no quiere que defienda. El Warrior tiene la entrada explícitamente autorada en 0 para documentar la intención.</p>
+</div>
+
+<div class="example">
+  <h4>#6 &mdash; Con scratch: pasiva multiplicativa + encanto aditivo <span class="pill both">Ambos</span></h4>
+  <p>Par de 6 (<code>[6, 6, 4, 2, 1]</code>) con una pasiva de <code>ComboDamageMultiplier = 1.5</code> y un encantamiento de <code>BonusComboDamage = +4</code>.</p>
+  <table class="tight">
+    <tr><td>comboBase (Par)</td><td class="n">8</td></tr>
+    <tr><td>+ dmg_base_PJ</td><td class="n">5</td></tr>
+    <tr><td>+ Σ caras (6+6)</td><td class="n">12</td></tr>
+    <tr><td>+ bono_combo (encanto)</td><td class="n">4</td></tr>
+    <tr class="total"><td>N</td><td class="n">29</td></tr>
+    <tr><td>M = 1.5 (pasiva) × 1.0 (ability)</td><td class="n">1.5</td></tr>
+    <tr class="total"><td><code>round(29 × 1.5) = round(43.5)</code> AwayFromZero</td><td class="n">44</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--ink-soft)">En v2 el multiplicador solo habría escalado el término de combo: <code>8×1.5 + 5 + 12 + 4 = 33</code>. La v3 escala todo N &mdash; 11 puntos de diferencia sobre el mismo build.</p>
+</div>
+
+<div class="example">
+  <h4>#7 &mdash; Habilidad con perilla &lt; 1 y bloqueo <span class="pill dmg">Daño</span></h4>
+  <p>El Trío del #1 con una habilidad de "golpe rápido" (<code>_comboMultiplier = 0.75</code>).</p>
+  <table class="tight">
+    <tr><td>N (idéntico al #1)</td><td class="n">42</td></tr>
+    <tr><td>M = 1.0 × 0.75</td><td class="n">0.75</td></tr>
+    <tr class="total"><td><code>round(42 × 0.75) = round(31.5)</code> AwayFromZero</td><td class="n">32</td></tr>
+  </table>
+  <p style="margin-top:2mm; font-size:8.8pt; color:var(--ink-soft)">Si además alguna fuente hubiera levantado <code>BlockComboDamage</code>, el resultado sería <strong>0</strong> y el producto ni se calcularía &mdash; <code>Blocked = true</code> en el breakdown y el log mostraría "⛔ BLOQUEADO por scratch".</p>
+</div>
+</section>
+
+<!-- ══════════════════════ §14 ══════════════════════ -->
+<section>
+<h2><span class="num">14</span>Datos vigentes del Warrior</h2>
+
+<p class="path">Assets/Rollgeon/Classes/CH_Warrior.asset</p>
+
+<h3>14.1 Stats base</h3>
+<table class="kv" style="width:auto; min-width:70mm">
+  <tr><td>BaseMaxHp</td><td class="n"><strong>100</strong></td></tr>
+  <tr><td>BaseAttack</td><td class="n"><strong>5</strong></td></tr>
+  <tr><td>BaseSpeed</td><td class="n"><strong>5</strong></td></tr>
+</table>
+
+<h3>14.2 <code>BaseDamageTable</code> (override de daño por clase)</h3>
+<p><strong>Vacía.</strong> Los 9 combos usan el <code>_baseDamage</code> global de su SO (tabla de §5.1).</p>
+
+<h3>14.3 <code>ShieldBaseTable</code></h3>
+<p>Ocho entradas autoradas. <code>combo.brute_force</code> <strong>no tiene entrada</strong> → no genera escudo.</p>
+
+<table>
+  <thead><tr><th>Combo</th><th><code>ComboId</code></th><th class="n">ShieldBase</th><th>Genera escudo</th></tr></thead>
+  <tbody>
+    <tr><td>Higher Number</td><td><code>combo.higher_number</code></td><td class="n">0</td><td>no &mdash; entrada explícita en 0</td></tr>
+    <tr><td>Par</td><td><code>combo.pair</code></td><td class="n">1</td><td>sí</td></tr>
+    <tr><td>Doble Par</td><td><code>combo.double_pair</code></td><td class="n">2</td><td>sí</td></tr>
+    <tr><td>Trío</td><td><code>combo.trio</code></td><td class="n">3</td><td>sí</td></tr>
+    <tr><td>Full House</td><td><code>combo.full_house</code></td><td class="n">4</td><td>sí</td></tr>
+    <tr><td>Escalera</td><td><code>combo.ladder</code></td><td class="n">5</td><td>sí</td></tr>
+    <tr><td>Póker</td><td><code>combo.poker</code></td><td class="n">6</td><td>sí</td></tr>
+    <tr><td>Generala</td><td><code>combo.generala</code></td><td class="n">8</td><td>sí</td></tr>
+    <tr><td>Fuerza Bruta</td><td><code>combo.brute_force</code></td><td class="n">—</td><td><strong>no &mdash; sin entrada</strong></td></tr>
+  </tbody>
+</table>
+
+<div class="note warn">
+  <span class="lbl">Peso relativo</span>
+  <p>La <code>ShieldBaseTable</code> va de 1 a 8, mientras que los bases de daño van de 5 a 90. Contra un N típico de 20-45, el <code>shieldBase</code> aporta menos del 10%: <strong>el escudo del Warrior está dominado por ATQ + Σcaras</strong>, no por el combo elegido. Cambiar Par de 1 a 2 mueve el escudo un punto. Es el balance pendiente que ya estaba anotado como TBD.</p>
+</div>
+
+<h3>14.4 Wiring del ataque base</h3>
+<p>El behavior "Base Attack" es un <code>EffChain</code> de dos fases:</p>
+<table class="tight">
+  <thead><tr><th>Fase</th><th>Efecto relevante</th><th>Config</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Attack</strong></td>
+      <td><code>EffDealDamage</code> dentro de un <code>EffPlaySequence</code>, disparado por el evento <code>hit</code> de la animación</td>
+      <td><code>_damageSource = ComboValue</code><br><code>_comboMultiplier = 1.0</code><br><code>_attackKind = BasicAttack</code></td>
+    </tr>
+    <tr>
+      <td><strong>Shield</strong></td>
+      <td><code>EffAddShield</code> + <code>EffPlayFeedback("shield.basic")</code></td>
+      <td><code>_shieldSource = ComboValue</code><br><code>_comboMultiplier = 1.0</code><br><code>OverrideBoardType = true</code></td>
+    </tr>
+  </tbody>
+</table>
+<p>Que el <code>EffDealDamage</code> viva dentro del <code>EffPlaySequence</code> en el evento <code>hit</code> es exactamente la razón por la que el canal at-played necesita <code>LastPlayScratch</code> persistente (§3.2).</p>
+</section>
+
+<!-- ══════════════════════ §15 ══════════════════════ -->
+<section>
+<h2><span class="num">15</span>Gotchas, deudas y hallazgos</h2>
+
+<h3>15.1 Redondeo inconsistente entre fórmula y pipeline <span class="pill dmg">Bug menor</span></h3>
+
+<p>La fórmula usa <code>MidpointRounding.AwayFromZero</code> explícitamente, con una función dedicada y un comentario que dice que <code>Mathf.RoundToInt</code> haría lo incorrecto. La etapa de weakness del pipeline usa <code>Mathf.RoundToInt</code>.</p>
+
+<div class="formula">
+  <div class="title">Caso concreto donde difieren</div>
+<pre>daño de la fórmula = 43,  weakness = 1.5
+  43 × 1.5 = 64.5
+  Mathf.RoundToInt(64.5f)  → <span class="hl">64</span>   <span class="cmt">(banker's: al par más cercano)</span>
+  RoundNxM(43, 1.5f)       → <span class="hl">65</span>   <span class="cmt">(AwayFromZero, el criterio canónico)</span></pre>
+</div>
+
+<p>Aparece en <code>DamagePipeline.cs:88</code> (Resolve) y <code>:221</code> (Preview). Como <strong>ambos</strong> usan el mismo redondeo, preview y golpe real coinciden: no hay drift visible para el jugador. Es 1 punto de daño en casos de midpoint, y contradice la intención documentada de <code>RoundNxM</code>.</p>
+
+<h3>15.2 Doble conteo en combos de base dinámica <span class="pill dmg">Deuda aceptada</span></h3>
+
+<p>Higher Number, Suma X y Fuerza Bruta meten la cara del dado en <code>comboBase</code> <em>y</em> en Σcaras (§5.3, ejemplo #3). Documentado y aceptado hasta el próximo pase de balance. El efecto es más pronunciado en Fuerza Bruta, donde se duplican <strong>los cinco</strong> dados.</p>
+
+<h3>15.3 Fuerza Bruta: dos campos de base <span class="pill dmg">Trampa de autoría</span></h3>
+
+<table class="tight">
+  <thead><tr><th>Campo</th><th class="n">Valor</th><th>Para qué se usa</th></tr></thead>
+  <tbody>
+    <tr><td><code>_baseDamage</code> (heredado)</td><td class="n">30</td><td><strong>solo <code>Priority</code></strong> &mdash; el orden de selección de combos</td>
+    </tr>
+    <tr><td><code>_baseDamageConfigurable</code></td><td class="n">5</td><td><strong>el daño real</strong> &mdash; lo que usa el <code>Detect</code> override</td></tr>
+  </tbody>
+</table>
+
+<p>Fuerza Bruta compite en prioridad como si pegara 30 (por encima de Trío, por debajo de Full House) pero su piso plano es 5. Es deliberado &mdash; el rol de diseño es "combo consuelo" &mdash; pero un designer que edite <code>_baseDamage</code> esperando cambiar el daño va a mover la prioridad sin tocar el daño. Lo mismo aplica al <code>flatBaseOverride</code> de la tabla por clase: reemplaza <code>_baseDamageConfigurable</code>, no <code>_baseDamage</code>.</p>
+
+<h3>15.4 Tooltips desactualizados a v2 <span class="pill both">Documentación</span></h3>
+
+<p>Tres textos siguen describiendo la fórmula v2, incluyendo uno visible al jugador:</p>
+
+<table class="tight">
+  <thead><tr><th>Ubicación</th><th>Texto actual</th><th>Por qué está mal</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>EffAddShield.cs:38-40</code><br><span class="path">[Tooltip] de inspector</span></td>
+      <td>"escala solo el término base del combo… ATQ y bonos planos no se multiplican"</td>
+      <td>En v3 <strong>todo N</strong> se multiplica por M.</td>
+    </tr>
+    <tr>
+      <td><code>EffAddShield.BuildTooltip</code><br><span class="path">visible al jugador</span></td>
+      <td>"Escudo: ATQ (x) + base del combo × multi de dados"</td>
+      <td>El multiplicador por tipo de dado <strong>no existe</strong> desde v3.</td>
+    </tr>
+    <tr>
+      <td><code>EffDealDamage.BuildTooltip</code><br><span class="path">visible al jugador</span></td>
+      <td>"Daño: ATQ + puntaje del combo"</td>
+      <td>Omite Σcaras, los tres canales de scratch y la perilla de habilidad.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>15.5 Etapas del pipeline sin implementar <span class="pill dmg">Incompleto</span></h3>
+
+<p>Las etapas 1 (outgoing) y 3 (incoming) de TECHNICAL §12.2 son comentarios. Hoy <strong>no existe ninguna forma de escalar daño entrante o saliente por stat</strong> &mdash; los stats <code>OutgoingDamageMultiplier</code> e <code>IncomingDamageMultiplier</code> no están definidos. Cualquier diseño que asuma "reducción de daño recibido del 20%" no tiene dónde engancharse; el único mitigador que existe es el escudo.</p>
+
+<h3>15.6 Ítems multiplicativos sin preview <span class="pill both">Limitación</span></h3>
+
+<p><code>GetComboDamageBonusPreview</code> solo agrega <code>EffAddComboBonus</code>. Un ítem at-played con <code>ComboDamageMultiplier</code> se aplicará en el golpe real pero no aparecerá en el número previsualizado (§12.1).</p>
+
+<h3>15.7 Código huérfano vivo</h3>
+<ul>
+  <li><code>DamagePipeline.IsRepeatOfPreviousCombo</code> &mdash; conservado a propósito, sin call sites (§9.5).</li>
+  <li><code>Combo_SumaX</code> &mdash; clase completa y testeada, sin ningún <code>.asset</code> autorado.</li>
+  <li><code>BaseComboSO.ComputeCount</code> / <code>ValueMultipliers</code> / <code>GeneralMultiplier</code> &mdash; la fórmula §5.1.1 del TECHNICAL. Todos los assets tienen <code>ValueMultipliers</code> en ceros y <code>GeneralMultiplier = 1</code>; <strong>la v3 no la consume</strong>.</li>
+</ul>
+</section>
+
+<!-- ══════════════════════ APÉNDICE A ══════════════════════ -->
+<section>
+<h2><span class="num">A</span>Apéndice &mdash; mapa de archivos</h2>
+
+<table>
+  <thead><tr><th>Archivo</th><th>Rol</th></tr></thead>
+  <tbody>
+    <tr><td><code>Combat/Damage/PlayerComboDamage.cs</code></td><td><strong>La fórmula.</strong> Fuente de verdad única de N&times;M y de <code>RoundNxM</code>.</td></tr>
+    <tr><td><code>Combat/Damage/PlayerComboShield.cs</code></td><td>Gate de base 0 + delegación a la fórmula con <code>Kind = Shield</code>.</td></tr>
+    <tr><td><code>Combat/Damage/DamageBreakdown.cs</code></td><td>Struct de salida con cada término. Invariante <code>Final == RoundNxM(N, M)</code>.</td></tr>
+    <tr><td><code>Combat/Damage/ContributingDie.cs</code></td><td>Tripla slot + cara + tipo.</td></tr>
+    <tr><td><code>Combat/Damage/ContributingDiceResolver.cs</code></td><td>Mapeo índices del subset → slots del bag → caras y tipos.</td></tr>
+    <tr><td><code>Combat/Damage/DamageDebugLogger.cs</code></td><td>Log de composición y aplicación. <code>[Conditional]</code>: overhead cero en release.</td></tr>
+    <tr><td><code>Combat/Pipelines/DamagePipeline.cs</code></td><td>Aplicación: weakness, escudo, HP, clamps, evento. <code>Resolve</code> + <code>Preview</code>.</td></tr>
+    <tr><td><code>Combat/Weakness/WeaknessChecker.cs</code></td><td>Lookup del multiplicador de debilidad. <code>GetMultiplier</code> vs <code>PeekMultiplier</code>.</td></tr>
+    <tr><td><code>Combat/ShieldResetHandler.cs</code></td><td>Reset del escudo en <code>OnTurnStarted</code>.</td></tr>
+    <tr><td><code>Effects/Concretes/EffDealDamage.cs</code></td><td>Punto de entrada del daño. Resuelve fuente, targets, fallback sin combo.</td></tr>
+    <tr><td><code>Effects/Concretes/EffAddShield.cs</code></td><td>Punto de entrada del escudo. Segundo gate (sheet + comboId).</td></tr>
+    <tr><td><code>Effects/Concretes/EffMultiplyComboDamage.cs</code></td><td>Escribe <code>ComboDamageMultiplier</code> al scratch (<code>*=</code>).</td></tr>
+    <tr><td><code>Heroes/ContractSheet.cs</code></td><td><code>BaseDamageTable</code>, <code>ShieldBaseTable</code> y sus accessors.</td></tr>
+    <tr><td><code>Combos/BaseComboSO.cs</code></td><td>Base de combos: <code>_baseDamage</code>, <code>Priority</code>, <code>Detect</code>.</td></tr>
+    <tr><td><code>Combos/Concretes/Combo_*.cs</code></td><td>Reglas por combo; tres overridean <code>Detect</code> con base dinámica.</td></tr>
+    <tr><td><code>Upgrades/Dice/EnchantmentScratch.cs</code></td><td>Struct del scratch compartida por los tres canales.</td></tr>
+    <tr><td><code>UI/HUD/DamageFormulaView.cs</code></td><td>Preview. Llama a las mismas funciones que el golpe.</td></tr>
+    <tr><td><code>UI/HUD/Breakdown/DamageBreakdownView.cs</code></td><td>Render animado del N&times;M.</td></tr>
+  </tbody>
+</table>
+
+<h3>Cobertura de tests</h3>
+<p class="path">Assets/Scripts/Rollgeon/Combat/Tests/</p>
+<ul>
+  <li><code>PlayerComboDamageTests</code> &mdash; términos de N, composición de M, bloqueo, redondeo.</li>
+  <li><code>PlayerComboShieldTests</code> &mdash; gate de base 0, paridad con la fórmula de daño.</li>
+  <li><code>DamageBreakdownTests</code> &mdash; invariante <code>Final == RoundNxM(N, M)</code>.</li>
+  <li><code>DamagePipelineTests</code>, <code>DamagePipelineLethalOverrideTests</code>, <code>DamagePipelineMinHpClampTests</code>.</li>
+  <li><code>ContractSheetBaseDamageTests</code>, <code>ContractSheetShieldBaseTests</code> &mdash; lookup de tablas.</li>
+  <li><code>ContributingDiceResolverTests</code> &mdash; mapeo de índices.</li>
+</ul>
+</section>
+
+<!-- ══════════════════════ APÉNDICE B ══════════════════════ -->
+<section>
+<h2><span class="num">B</span>Apéndice &mdash; el log de diagnóstico</h2>
+
+<p><code>DamageDebugLogger</code> emite dos bloques por golpe, en la consola de Unity, con la <strong>misma struct</strong> que produjo la fórmula &mdash; nunca una copia paralela. Está marcado con <code>[Conditional("UNITY_EDITOR")]</code> y <code>[Conditional("DEVELOPMENT_BUILD")]</code>: las llamadas se eliminan del IL en release. El toggle <code>DamageDebugLogger.Enabled</code> permite apagarlo en runtime sin recompilar.</p>
+
+<h3>Bloque 1 &mdash; composición</h3>
+<pre class="code">████  DMG · COMPOSICIÓN — daño base del PLAYER  ████   src=a3f91c
+  combo_base: 22
+  + dmg_base_PJ  (ATQ.Value): 5
+  + bonos_PJ     (ATQ.Modified − Value): 0
+  + Σ caras contribuyentes: 15
+  + bono_combo   (passives + enchants + items): 0
+  N = 42
+  M = 1 (scratch) × 1 (ability) = 1
+  ═ TOTAL = N × M = 42 × 1 = 42   → entra al DamagePipeline como BaseDamage</pre>
+
+<p>En modo escudo la banda cambia a <code>SHIELD · COMPOSICIÓN</code> en cyan y la última línea dice "→ se suma al atributo Shield (EffAddShield)". Si hubo bloqueo, todo el bloque se reemplaza por <code>⛔ BLOQUEADO por scratch (BlockComboDamage)</code>.</p>
+
+<h3>Bloque 2 &mdash; aplicación</h3>
+<pre class="code">████  DMG · APLICACIÓN — DamagePipeline  ████   BasicAttack  src=a3f91c → tgt=7b2e04
+  BaseDamage (entrante): 42
+  × weakness = 1.5  (¡debilidad!)
+  escudo: 7b2e04 tenía 10, absorbe 10
+  HP: 100 → 47
+  ═ FinalDamage = 53</pre>
+
+<p>Este bloque cubre <strong>todo</strong> el daño del juego, no solo el del jugador &mdash; el <code>AttackKind</code> del encabezado permite distinguir la fuente. Si el golpe fue letal, la última línea agrega <code>☠ LETAL</code>.</p>
+
+<div class="note">
+  <span class="lbl">Sobre el formato</span>
+  <p>La consola IMGUI de Unity no soporta color de fondo real (no hay etiqueta <code>&lt;mark&gt;</code>). Las bandas se emulan con bloques <code>█</code> coloreados sobre <code>&lt;color&gt;</code> y <code>&lt;b&gt;</code> &mdash; lo más cercano a un highlight que la consola permite.</p>
+</div>
+
+<div style="margin-top:14mm; padding-top:4mm; border-top:1px solid var(--rule); font-size:8.5pt; color:var(--ink-faint)">
+  Documento generado desde el código en <code>Feature#0046_Chest</code> @ <code>fc0f08cb</code> · 2026-08-11.<br>
+  Si la fórmula cambia, la fuente de verdad sigue siendo <code>PlayerComboDamage.cs</code> &mdash; este documento la describe, no la define.
+</div>
+</section>
+
+</body>
+</html>
