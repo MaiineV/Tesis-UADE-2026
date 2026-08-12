@@ -27,17 +27,12 @@ namespace Rollgeon.Combos.Concretes
         [Tooltip("Valor objetivo (pip del dado). Warrior usa X=4. Rango limitado a 1..6 per hard rule #9.")]
         protected int _x = 4;
 
-        [Title("Suma X — base configurable")]
-        [SerializeField, Range(0, 500)]
-        [Tooltip("Piso plano del combo (término comboBase de la fórmula v3). GD default: 25. " +
-                 "Los dados que muestran X NO van acá: la fórmula ya los suma una vez vía Σcaras.")]
-        protected int _baseDamageConfigurable = 25;
+        // Fix#0047 parte 2: el piso plano vive en el _baseDamage heredado (GD canonico: 25).
+        // El _baseDamageConfigurable separado era la misma trampa de autoría que en
+        // Fuerza Bruta — ver ese archivo.
 
         /// <summary>Valor objetivo del combo (1..6).</summary>
         public int X => _x;
-
-        /// <summary>Piso plano configurable (término comboBase de la fórmula v3).</summary>
-        public int BaseDamageConfigurable => _baseDamageConfigurable;
 
         /// <inheritdoc />
         public override bool Matches(int[] finalDice)
@@ -80,7 +75,7 @@ namespace Rollgeon.Combos.Concretes
             if (hitIndices.Count == 0) return ComboDetectionResult.NoMatch();
             int hits = hitIndices.Count;
             return ComboDetectionResult.Match(
-                ComboId, flatBaseOverride ?? _baseDamageConfigurable, hits, hitIndices,
+                ComboId, flatBaseOverride ?? BaseDamage, hits, hitIndices,
                 dynamicBonus: _x * hits);
         }
     }

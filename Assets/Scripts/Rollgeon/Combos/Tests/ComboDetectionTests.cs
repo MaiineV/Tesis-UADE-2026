@@ -447,11 +447,12 @@ namespace Rollgeon.Combos.Tests
         [SetUp]
         public void Setup()
         {
-            // X=4 (Warrior), BaseDamageConfigurable=25 (GD default).
+            // X=4 (Warrior), base plano 25 (GD default). Fix#0047 parte 2: el piso vive
+            // en el _baseDamage heredado.
             _sut = ScriptableObject.CreateInstance<Combo_SumaX>();
             ComboTestUtils.SetField(_sut, "_comboId", ComboId.HigherNumber);
             ComboTestUtils.SetField(_sut, "_x", 4);
-            ComboTestUtils.SetField(_sut, "_baseDamageConfigurable", 25);
+            ComboTestUtils.SetField(_sut, "_baseDamage", 25);
         }
 
         [TearDown]
@@ -647,7 +648,6 @@ namespace Rollgeon.Combos.Tests
         public void Setup()
         {
             _sut = ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5);
-            ComboTestUtils.SetField(_sut, "_baseDamageConfigurable", 5);
         }
 
         [TearDown]

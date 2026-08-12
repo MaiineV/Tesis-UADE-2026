@@ -19,7 +19,8 @@ namespace Rollgeon.Combos
     /// <list type="bullet">
     /// <item><description><see cref="Matches"/> — abstract, lo implementa cada concreto.</description></item>
     /// <item><description><see cref="ComputeCount"/> — virtual, formula default del §5.1.1.</description></item>
-    /// <item><description><see cref="Priority"/> — virtual con default <c>BaseDamage</c>. Generala override a <c>int.MaxValue</c>.</description></item>
+    /// <item><description><see cref="Priority"/> — campo serializado propio (<c>_priority</c>),
+    /// independiente del dano desde Fix#0047 parte 2. Generala override a <c>int.MaxValue</c>.</description></item>
     /// <item><description><see cref="Detect"/> — virtual, default orquesta <c>Matches</c> + <see cref="GetCountUsed"/>.</description></item>
     /// </list>
     /// </para>
@@ -56,8 +57,17 @@ namespace Rollgeon.Combos
         [SerializeField, Range(0, 500)]
         [Tooltip("Dano base plano del combo (editable por balance sin recompilar). " +
                  "Nunca incluye valores de dados: la formula v3 suma las caras contribuyentes " +
-                 "por separado (Fix#0047). OJO: tambien es el Priority default del combo.")]
+                 "por separado (Fix#0047). Subir este valor NO cambia que combo se elige — " +
+                 "eso lo decide Priority.")]
         protected int _baseDamage;
+
+        [Title("Priority")]
+        [SerializeField, MinValue(0)]
+        [Tooltip("Orden de seleccion cuando varios combos matchean la misma tirada: gana el " +
+                 "de mayor Priority. Independiente del dano (Fix#0047 parte 2 — antes se usaba " +
+                 "BaseDamage y tunear dano reordenaba combos sin querer). Generala ignora este " +
+                 "campo: su Priority es int.MaxValue por hard rule #8.")]
+        protected int _priority;
 
         [Title("Cuenta del combo (§5.1.1)")]
         [SerializeField]
@@ -142,10 +152,12 @@ namespace Rollgeon.Combos
         }
 
         /// <summary>
-        /// Prioridad del combo al resolver conflictos (combo mas alto gana). Default: <see cref="BaseDamage"/>.
-        /// Overrideado por Generala a <c>int.MaxValue</c> (plan §4 + §10.7).
+        /// Prioridad del combo al resolver conflictos (combo mas alto gana). Campo serializado
+        /// propio, independiente del dano (Fix#0047 parte 2 — antes defaulteaba a
+        /// <see cref="BaseDamage"/> y tunear dano reordenaba la seleccion). Overrideado por
+        /// Generala a <c>int.MaxValue</c> (hard rule #8, plan §4 + §10.7).
         /// </summary>
-        public virtual int Priority => _baseDamage;
+        public virtual int Priority => _priority;
 
         /// <summary>
         /// API tipada requerida por Content#0097a. Delega en la sobrecarga con override de base.

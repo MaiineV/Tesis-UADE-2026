@@ -20,9 +20,12 @@ namespace Rollgeon.Combos.Concretes
     /// el dado baseline del juego.
     /// </para>
     /// <para>
-    /// Rol de balance: combo "consuelo" — base plana baja (GD: 5) lo deja debajo de Par en
-    /// prioridad, así solo gana cuando ningún combo de grupo matchea. El asset puede clonarse
-    /// con otra base para clases que lo quieran más arriba en la jerarquía.
+    /// Rol de balance: combo simple de nivel medio — base plana baja (GD: 5) pero
+    /// <c>_priority</c> autorada en 30 (entre Trío 22 y Full House 35), así que le gana a los
+    /// combos de grupo chicos cuando la tirada completa está en mitad alta. OJO: el docstring
+    /// original decía "consuelo, debajo de Par" — el orden vigente lo definió el asset, no
+    /// este texto; queda pendiente de revisión de diseño (Fix#0047 parte 2 hizo la prioridad
+    /// editable justamente para eso).
     /// </para>
     /// <para>
     /// <b>Requiere los 5 dados de la bolsa, no un subset "kept".</b> A diferencia de Par/Trío/
@@ -35,15 +38,9 @@ namespace Rollgeon.Combos.Concretes
     [CreateAssetMenu(menuName = "Rollgeon/Combos/Fuerza Bruta", fileName = "Combo_FuerzaBruta")]
     public class Combo_FuerzaBruta : BaseComboSO
     {
-        [Title("Fuerza Bruta — base configurable")]
-        [SerializeField, Range(0, 500)]
-        [Tooltip("Piso plano del combo (término comboBase de la fórmula v3). GD default: 5. " +
-                 "Los valores de los dados NO van acá: la fórmula ya los suma una vez vía " +
-                 "Σcaras (los 5 dados son contribuyentes).")]
-        protected int _baseDamageConfigurable = 5;
-
-        /// <summary>Piso plano configurable (término comboBase de la fórmula v3).</summary>
-        public int BaseDamageConfigurable => _baseDamageConfigurable;
+        // Fix#0047 parte 2: el piso plano vive en el _baseDamage heredado (el campo obvio
+        // hace lo obvio). El _baseDamageConfigurable separado era una trampa de autoría:
+        // _baseDamage solo alimentaba Priority y editarlo "no hacía nada" con el daño.
 
         /// <inheritdoc />
         public override bool Matches(int[] finalDice)
@@ -88,7 +85,7 @@ namespace Rollgeon.Combos.Concretes
                 sum += diceValues[i];
             }
             return ComboDetectionResult.Match(
-                ComboId, flatBaseOverride ?? _baseDamageConfigurable, hitIndices.Count, hitIndices,
+                ComboId, flatBaseOverride ?? BaseDamage, hitIndices.Count, hitIndices,
                 dynamicBonus: sum);
         }
 

@@ -20,11 +20,9 @@ namespace Rollgeon.Combos.Tests
         public void SetUp()
         {
             _par = ComboTestUtils.CreateCombo<Combo_Par>("combo.par", 18);
-            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>("combo.suma_x", 10);
+            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>("combo.suma_x", 25);
             ComboTestUtils.SetField(_sumaX, "_x", 4);
-            ComboTestUtils.SetField(_sumaX, "_baseDamageConfigurable", 25);
             _fuerzaBruta = ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5);
-            ComboTestUtils.SetField(_fuerzaBruta, "_baseDamageConfigurable", 5);
         }
 
         [TearDown]
