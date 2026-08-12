@@ -15,10 +15,16 @@ namespace Rollgeon.UI.Tests
         private RerollCountView _view;
         private Button _extraRoll;
         private Guid _playerGuid;
+        private bool _savedKeepSelected;
 
         [SetUp]
         public void Setup()
         {
+            // El gate del botón depende del modo persistido en PlayerPrefs: pin al
+            // default (invertido) y restore en Teardown.
+            _savedKeepSelected = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected;
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = false;
+
             _playerGuid = Guid.NewGuid();
 
             _go = new GameObject("RerollCount");
@@ -34,6 +40,7 @@ namespace Rollgeon.UI.Tests
         [TearDown]
         public void Teardown()
         {
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
             EventManager.ResetEventDictionary();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
@@ -169,6 +176,60 @@ namespace Rollgeon.UI.Tests
                 // Assert
                 Assert.IsTrue(_extraRoll.interactable,
                     "Con ≥1 dado seleccionado y reroll disponible, el botón se habilita.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Modo clásico (RerollSelectionPrefs.KeepSelected): vuelan los NO
+        // seleccionados — sin holds se re-tira toda la mano (botón habilitado);
+        // con todo lockeado no queda nada que re-tirar (deshabilitado).
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void RefreshButtonInteractable_ClassicModePostRollWithoutSelection_EnablesButton()
+        {
+            // Arrange — budget disponible, nada lockeado: vuela toda la mano.
+            ServiceLocator.Clear();
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            try
+            {
+                MakeZoneWithHolds(new[] { false, false, false });
+
+                // Act — Bind corre RefreshButtonInteractable.
+                _view.Bind(_playerGuid);
+
+                // Assert
+                Assert.IsTrue(_extraRoll.interactable,
+                    "En clásico sin selección se re-tira toda la mano — botón habilitado.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void RefreshButtonInteractable_ClassicModeAllDiceHeld_DisablesButton()
+        {
+            // Arrange — todo lockeado: el reroll no movería ningún dado.
+            ServiceLocator.Clear();
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            try
+            {
+                MakeZoneWithHolds(new[] { true, true, true });
+
+                // Act
+                _view.Bind(_playerGuid);
+
+                // Assert
+                Assert.IsFalse(_extraRoll.interactable,
+                    "Con todos los dados lockeados no hay nada que re-tirar — botón disabled.");
             }
             finally
             {

@@ -217,23 +217,13 @@ namespace Rollgeon.ActionRolls
 
         public void RequestReroll()
         {
-            // Reroll invertido (Balatro): los holds internos (SetHolds desde
-            // DiceZoneView / panel) marcan los dados SELECCIONADOS para re-tirar — el
-            // keep del roller es su complemento. Sin selección ⇒ keep all-true ⇒ el
-            // guard de RequestReroll(keep) bailea sin cobrar. Semántica coherente con
-            // el botón Reroll del combate.
-            RequestReroll(InvertHolds(_currentHolds, _currentRoll?.Length ?? 0));
-        }
-
-        // keep[i] = !holds[i]. Índices sin estado de selección quedan en keep=true —
-        // un dado que el jugador no marcó no debe volar.
-        private static bool[] InvertHolds(bool[] holds, int len)
-        {
-            int n = len > 0 ? len : (holds?.Length ?? 0);
-            var keep = new bool[n];
-            for (int i = 0; i < n; i++)
-                keep[i] = !(holds != null && i < holds.Length && holds[i]);
-            return keep;
+            // Los holds internos (SetHolds desde DiceZoneView / panel) marcan los
+            // dados SELECCIONADOS; RerollSelectionPrefs decide qué significa eso para
+            // el roller: invertido (default, Balatro) ⇒ los seleccionados vuelan;
+            // clásico ⇒ los seleccionados se quedan. Si el mapeo deja keep all-true,
+            // el guard de RequestReroll(keep) bailea sin cobrar. Semántica coherente
+            // con el botón Reroll del combate.
+            RequestReroll(RerollSelectionPrefs.SelectionToKeep(_currentHolds, _currentRoll?.Length ?? 0));
         }
 
         public void RequestReroll(IReadOnlyList<bool> keep)
@@ -247,13 +237,14 @@ namespace Rollgeon.ActionRolls
             // Boss 1 (§2): los dados bloqueados nunca se re-rollean — forzamos keep=true en ellos.
             keep = ForceKeepBlocked(keep, _currentRoll?.Length ?? 0);
 
-            // BUG-014 (invertido): keep all-true = ningún dado va a volar (nada
-            // seleccionado) — cobrar energía sería un drain sin efecto. Bail sin
-            // mutar phase ni cobrar; el panel debería haber deshabilitado el
-            // botón antes vía CanAffordReroll, esto es solo el guard defensivo.
+            // BUG-014: keep all-true = ningún dado va a volar (invertido: nada
+            // seleccionado; clásico: todo lockeado o bloqueado) — cobrar energía
+            // sería un drain sin efecto. Bail sin mutar phase ni cobrar; el panel
+            // debería haber deshabilitado el botón antes vía CanAffordReroll, esto
+            // es solo el guard defensivo.
             if (keep != null && AllTrue(keep))
             {
-                Debug.LogWarning("[ActionRollService] RequestReroll bloqueado — no hay dados seleccionados para re-tirar.");
+                Debug.LogWarning("[ActionRollService] RequestReroll bloqueado — ningún dado quedaría para re-tirar.");
                 return;
             }
 
@@ -268,11 +259,14 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
-            // El descarte consume la selección (Balatro): la tirada nueva arranca sin
-            // holds y el jugador re-selecciona para el combo. El keep ya quedó
-            // materializado arriba, así que limpiarlos acá no afecta qué dados vuelan.
-            // (DiceZoneView limpia su lado al escuchar OnRerollStarted.)
-            _currentHolds = new bool[_currentRoll != null ? _currentRoll.Length : 0];
+            // Invertido: el descarte consume la selección (Balatro) — la tirada nueva
+            // arranca sin holds y el jugador re-selecciona para el combo. Clásico: los
+            // holds persisten — los dados lockeados siguen lockeados y siguen siendo
+            // el pick de combo (RecomputeComboAndTotal post-reroll los re-lee). El
+            // keep ya quedó materializado arriba, así que esto no afecta qué dados
+            // vuelan. (DiceZoneView espeja el mismo branch al escuchar OnRerollStarted.)
+            if (!RerollSelectionPrefs.KeepSelected)
+                _currentHolds = new bool[_currentRoll != null ? _currentRoll.Length : 0];
 
             EventManager.Trigger(EventName.OnRerollStarted, _playerGuid, _rollIndex);
 
@@ -354,6 +348,21 @@ namespace Rollgeon.ActionRolls
             for (int i = 0; i < _currentHolds.Length; i++)
             {
                 if (!_currentHolds[i]) continue;
+                if (db != null && db.IsBlocked(i)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        // Clásico: algún dado NO lockeado (y no bloqueado por boss) va a volar.
+        // Holds null cuenta como nada seleccionado — reroll de toda la mano, válido.
+        private bool AnyUnselectedRerollable()
+        {
+            if (_currentRoll == null) return false;
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db);
+            for (int i = 0; i < _currentRoll.Length; i++)
+            {
+                if (_currentHolds != null && i < _currentHolds.Length && _currentHolds[i]) continue;
                 if (db != null && db.IsBlocked(i)) continue;
                 return true;
             }
@@ -556,10 +565,14 @@ namespace Rollgeon.ActionRolls
             get
             {
                 if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
-                // Reroll invertido: sin ningún dado seleccionado (y re-tirable — los
-                // bloqueados por boss no vuelan) no hay nada que re-tirar, el botón
-                // queda deshabilitado aunque sobre energía.
-                if (!AnySelectedRerollable()) return false;
+                // Sin ningún dado que vaya a volar (los bloqueados por boss nunca
+                // vuelan) no hay nada que re-tirar, el botón queda deshabilitado
+                // aunque sobre energía. Qué dado vuela depende del modo: invertido
+                // ⇒ los seleccionados; clásico ⇒ los no seleccionados.
+                bool anyRerollable = RerollSelectionPrefs.KeepSelected
+                    ? AnyUnselectedRerollable()
+                    : AnySelectedRerollable();
+                if (!anyRerollable) return false;
                 int cost = Mathf.Max(0, _spec.RerollEnergyCost);
                 if (cost <= 0) return true;
                 return _energy.GetCurrent(_playerGuid) >= cost;

@@ -21,11 +21,19 @@ namespace Rollgeon.UI.Tests
         private DiceZoneView _zone;
         private DiceSlotView[] _slots;
         private Guid _playerGuid;
+        private bool _savedKeepSelected;
 
         [SetUp]
         public void SetUp()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
+
+            // El branch de HandleRerollStarted depende del modo persistido en
+            // PlayerPrefs: pin al default (invertido) y restore en TearDown.
+            _savedKeepSelected = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected;
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = false;
+
             _playerGuid = Guid.NewGuid();
 
             _go = new GameObject("DiceZone", typeof(RectTransform));
@@ -48,9 +56,11 @@ namespace Rollgeon.UI.Tests
         [TearDown]
         public void TearDown()
         {
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
             _zone.Unbind();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
             EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
         }
 
         private void Roll(params int[] faces)
@@ -116,6 +126,61 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(4, _slots[0].CurrentFace);
             Assert.AreEqual(4, _slots[1].CurrentFace);
             Assert.AreEqual(4, _slots[2].CurrentFace);
+        }
+
+        // -------------------------------------------------------------------
+        // Modo clásico (RerollSelectionPrefs.KeepSelected): la selección marca los
+        // dados que SE QUEDAN — los holds persisten entre rerolls y la máscara
+        // stasheada es el complemento.
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void classic_should_persist_holds_and_reveal_unselected_when_reroll_runs()
+        {
+            // Arrange — dado 0 lockeado: debe sobrevivir al reroll con su cara.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            Roll(1, 2, 3);
+            SelectDie(0);
+
+            // Act — vuelan los NO seleccionados (1 y 2).
+            EventManager.Trigger(EventName.OnRerollStarted, _playerGuid, 2);
+            Roll(1, 5, 6);
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { true, false, false }, _zone.GetHeldStates(),
+                "En clásico los holds persisten tras el reroll.");
+            Assert.AreEqual(1, _slots[0].CurrentFace, "El lockeado conserva su cara.");
+            Assert.AreEqual(5, _slots[1].CurrentFace);
+            Assert.AreEqual(6, _slots[2].CurrentFace);
+        }
+
+        [Test]
+        public void classic_grab_mode_should_still_consume_selection_when_reroll_runs()
+        {
+            // Arrange — en grab-mode 2D lo que vuela es lo AGARRADO, no la selección:
+            // se mantiene el comportamiento invertido (stash + clear) aunque el modo
+            // clásico esté activo.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            var settings = ScriptableObject.CreateInstance<Rollgeon.Dice.Throw.DiceThrowSettingsSO>();
+            settings.DefaultMode = Rollgeon.Dice.Throw.DiceThrowMode.TwoD;
+            var throwSvc = new Rollgeon.Dice.Throw.DiceThrowService(settings);
+            ServiceLocator.AddService<Rollgeon.Dice.Throw.IDiceThrowService>(throwSvc);
+            try
+            {
+                Roll(1, 2, 3);
+                SelectDie(0);
+
+                // Act
+                EventManager.Trigger(EventName.OnRerollStarted, _playerGuid, 2);
+
+                // Assert — la selección se consumió como en invertido.
+                CollectionAssert.AreEqual(new[] { false, false, false }, _zone.GetHeldStates(),
+                    "En grab-mode el reroll consume la selección aunque rija el modo clásico.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

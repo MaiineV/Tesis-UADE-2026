@@ -27,6 +27,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         private SpyScreenManager _spyScreen;
         private SpyCombatStarter _spyCombat;
         private CombatHandoffService _service;
+        private bool _savedKeepSelected;
         private readonly List<UnityEngine.Object> _createdObjects = new();
 
         // -------------------------------------------------------------------
@@ -197,6 +198,12 @@ namespace Rollgeon.Combat.Handoff.Tests
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
 
+            // KeepFromSelection depende del modo persistido en PlayerPrefs: pin al
+            // default (invertido) para que la suite no dependa de la pref del dev,
+            // y restore en TearDown para no pisarla.
+            _savedKeepSelected = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected;
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = false;
+
             _stubDungeon = new StubDungeonService();
             _stubPlayer = new StubPlayerService();
             _spyResolver = new SpyEnemySpawnResolver();
@@ -212,6 +219,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         [TearDown]
         public void TearDown()
         {
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
             _service?.Dispose();
 
             foreach (var obj in _createdObjects)
@@ -827,6 +835,109 @@ namespace Rollgeon.Combat.Handoff.Tests
 
             // Assert
             CollectionAssert.AreEqual(new[] { false, true, true }, keep);
+        }
+
+        // -------------------------------------------------------------------
+        // Modo clásico (RerollSelectionPrefs.KeepSelected): la selección marca
+        // los dados que SE QUEDAN; vuelan los no seleccionados.
+        // -------------------------------------------------------------------
+
+        [Test]
+        public void KeepFromSelection_ClassicMode_KeepsSelectedAndRerollsUnselected()
+        {
+            // Arrange
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+
+            // Act
+            var keep = CombatHandoffService.KeepFromSelection(
+                new[] { true, false, true, false, false }, 5);
+
+            // Assert — keep = la selección tal cual.
+            CollectionAssert.AreEqual(new[] { true, false, true, false, false }, keep);
+        }
+
+        [Test]
+        public void KeepFromSelection_ClassicMode_NullSelection_RerollsAllDice()
+        {
+            // Arrange — sin selección nada está lockeado: vuela toda la mano.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+
+            // Act
+            var keep = CombatHandoffService.KeepFromSelection(null, 3);
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { false, false, false }, keep);
+        }
+
+        [Test]
+        public void KeepFromSelection_ClassicMode_ShortMask_RerollsDiceWithoutSelectionState()
+        {
+            // Arrange — un dado sin estado de selección no está lockeado: vuela.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+
+            // Act
+            var keep = CombatHandoffService.KeepFromSelection(new[] { true }, 3);
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { true, false, false }, keep);
+        }
+
+        [Test]
+        public void EnergyReroll_ClassicMode_NothingSelected_RerollsWholeHandAndConsumesBudget()
+        {
+            // Arrange — wiring real del HUD para obtener el delegate del reroll.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            var room = CreateRoom(RoomType.Combat);
+            SetCurrentRoom(room);
+            _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            var hud = hudGo.AddComponent<CombatHUDView>();
+            _spyScreen.Current = hud;
+            TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
+
+            var roller = ArmActiveHand();
+            var budget = new CountingBudgetService();
+            ServiceLocator.AddService<IRerollBudgetService>(budget);
+
+            // Act — sin dice zone cableada GetCurrentKeep() es null = nada lockeado.
+            hud.OnEnergyRerollRequested?.Invoke();
+
+            // Assert — vuela toda la mano y el reroll SÍ consume budget.
+            Assert.AreEqual(1, roller.RerollCallCount);
+            foreach (var kept in roller.LastKeep)
+                Assert.IsFalse(kept, "En clásico sin selección debe volar toda la mano.");
+            Assert.AreEqual(1, budget.TryExtraRollCallCount);
+        }
+
+        [Test]
+        public void EnergyReroll_ClassicMode_AllDiceSelected_BailsWithoutConsumingBudget()
+        {
+            // Arrange — todos lockeados ⇒ keep all-true ⇒ nada que re-tirar.
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+            var room = CreateRoom(RoomType.Combat);
+            SetCurrentRoom(room);
+            _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            var hud = hudGo.AddComponent<CombatHUDView>();
+            _spyScreen.Current = hud;
+            TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
+
+            var roller = ArmActiveHand();
+            var budget = new CountingBudgetService();
+            ServiceLocator.AddService<IRerollBudgetService>(budget);
+
+            var zone = hudGo.AddComponent<Rollgeon.UI.HUD.DiceZoneView>();
+            SetPrivateField(zone, "_heldStates", new[] { true, true, true });
+            SetPrivateField(hud, "_diceZone", zone);
+
+            // Act
+            hud.OnEnergyRerollRequested?.Invoke();
+
+            // Assert — guard defensivo: ni roller ni budget se tocan.
+            Assert.AreEqual(0, roller.RerollCallCount);
+            Assert.AreEqual(0, budget.TryExtraRollCallCount);
         }
 
         // -------------------------------------------------------------------

@@ -19,10 +19,16 @@ namespace Rollgeon.Effects.Tests
         private ActionRollService _service;
         private DiceBagSO _bag;
         private Guid _player;
+        private bool _savedKeepSelected;
 
         [SetUp]
         public void SetUp()
         {
+            // El mapeo selección→keep depende del modo persistido en PlayerPrefs:
+            // pin al default (invertido) y restore en TearDown.
+            _savedKeepSelected = RerollSelectionPrefs.KeepSelected;
+            RerollSelectionPrefs.KeepSelected = false;
+
             _roller = new FakeRollerForActionRoll();
             _energy = new FakeEnergyForActionRoll();
             _service = new ActionRollService(_roller, _energy);
@@ -38,6 +44,7 @@ namespace Rollgeon.Effects.Tests
         [TearDown]
         public void TearDown()
         {
+            RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
             _service.Dispose();
             if (_bag != null) UnityEngine.Object.DestroyImmediate(_bag);
             EventManager.ResetEventDictionary();
@@ -405,6 +412,119 @@ namespace Rollgeon.Effects.Tests
             for (int i = 0; i < _service.CurrentHolds.Count; i++)
                 Assert.IsFalse(_service.CurrentHolds[i],
                     $"El hold {i} debe quedar limpio después del reroll.");
+        }
+
+        // -------------------------------------------------------------------------
+        // Modo clásico (RerollSelectionPrefs.KeepSelected): los dados seleccionados
+        // se QUEDAN; vuelan los no seleccionados. Los holds persisten entre rerolls.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void RequestReroll_ClassicMode_KeepsSelectedDice_AndRerollsUnselected()
+        {
+            // Arrange — selecciono los dados 0 y 2: son los que deben conservarse.
+            RerollSelectionPrefs.KeepSelected = true;
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, false, true, false, false });
+
+            // Act
+            _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.RequestReroll();
+
+            // Assert — el roller recibió keep = la selección tal cual.
+            CollectionAssert.AreEqual(new[] { true, false, true, false, false }, _roller.LastKeep,
+                "keep[] debe conservar los seleccionados y re-tirar el resto.");
+        }
+
+        [Test]
+        public void RequestReroll_ClassicMode_NothingSelected_RerollsAllAndChargesEnergy()
+        {
+            // Arrange — sin holds: en clásico nada está lockeado, vuela toda la mano.
+            RerollSelectionPrefs.KeepSelected = true;
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            int spendCallsAfterBase = _energy.SpendCalls;
+            int rollIndexBefore = _service.RollIndex;
+
+            // Act
+            _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.RequestReroll();
+
+            // Assert — la tirada corrió y el reroll se cobró.
+            CollectionAssert.AreEqual(
+                new[] { false, false, false, false, false }, _roller.LastKeep);
+            Assert.AreEqual(spendCallsAfterBase + 1, _energy.SpendCalls,
+                "El reroll de toda la mano debe cobrarse normalmente.");
+            Assert.AreEqual(rollIndexBefore + 1, _service.RollIndex);
+        }
+
+        [Test]
+        public void RequestReroll_ClassicMode_AllDiceSelected_DoesNotConsumeEnergy()
+        {
+            // Arrange — todo lockeado: el reroll no movería ningún dado.
+            RerollSelectionPrefs.KeepSelected = true;
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, true, true, true, true });
+            int spendCallsAfterBase = _energy.SpendCalls;
+            int rollIndexBefore = _service.RollIndex;
+
+            // Act
+            _service.RequestReroll();
+
+            // Assert — guard defensivo: ni fase, ni cobro, ni tirada.
+            Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
+            Assert.AreEqual(spendCallsAfterBase, _energy.SpendCalls);
+            Assert.AreEqual(rollIndexBefore, _service.RollIndex);
+        }
+
+        [Test]
+        public void RequestReroll_ClassicMode_HoldsPersistAfterReroll()
+        {
+            // Arrange — en clásico los dados lockeados siguen lockeados tras el
+            // reroll: siguen siendo el pick de combo.
+            RerollSelectionPrefs.KeepSelected = true;
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, true, false, false, false });
+
+            // Act
+            _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
+            _service.RequestReroll();
+
+            // Assert
+            CollectionAssert.AreEqual(
+                new[] { true, true, false, false, false }, _service.CurrentHolds,
+                "Los holds deben persistir tras el reroll en modo clásico.");
+        }
+
+        [Test]
+        public void CanAffordReroll_ClassicMode_FollowsUnselectedDice()
+        {
+            // Arrange — post-roll con energía de sobra.
+            RerollSelectionPrefs.KeepSelected = true;
+            _energy.CurrentEnergy = 99;
+            _roller.NextRoll = new[] { 1, 2, 3, 4, 5 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+
+            // Act + Assert — sin holds todo vuela: habilitado.
+            Assert.IsTrue(_service.CanAffordReroll,
+                "En clásico sin selección se re-tira toda la mano — botón habilitado.");
+
+            // Con todo lockeado no queda nada que re-tirar: deshabilitado.
+            _service.SetHolds(new[] { true, true, true, true, true });
+            Assert.IsFalse(_service.CanAffordReroll,
+                "Con todos los dados lockeados el reroll no tendría efecto.");
         }
 
         // ----- helpers para tests con combo ---------------------------------

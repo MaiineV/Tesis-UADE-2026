@@ -1048,21 +1048,22 @@ namespace Rollgeon.Combat.Handoff
             if (ThrowBusy()) return false;
             if (_lastFaces == null) return false; // nada rolleado todavía — no hay qué re-tirar
 
-            // Reroll invertido (Balatro): los dados SELECCIONADOS son los que se
-            // re-tiran — el keep del roller es el complemento de los holds del HUD.
-            // El keepOverride del grab-to-reroll ya es un keep físico (los no
-            // agarrados) y NO se invierte.
+            // La selección del HUD se mapea a keep según RerollSelectionPrefs:
+            // invertido (default, Balatro) ⇒ los SELECCIONADOS vuelan; clásico ⇒ se
+            // quedan. El keepOverride del grab-to-reroll ya es un keep físico (los no
+            // agarrados) y NO pasa por el mapeo.
             // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
             var keep = KeepForcingBlockedDice(
                 keepOverride ?? KeepFromSelection(hud.GetCurrentKeep(), _lastFaces?.Length ?? 0),
                 _lastFaces?.Length ?? 0);
 
-            // BUG-014 (invertido): sin ningún dado seleccionado el reroll no movería
-            // nada — bail antes de consumir budget/energía. El botón debería estar
-            // deshabilitado por la UI, esto es el guard defensivo.
+            // BUG-014: keep all-true ⇒ el reroll no movería nada (invertido: nada
+            // seleccionado; clásico: todo lockeado o bloqueado) — bail antes de
+            // consumir budget/energía. El botón debería estar deshabilitado por la
+            // UI, esto es el guard defensivo.
             if (AllDiceHeld(keep))
             {
-                Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — no hay dados seleccionados para re-tirar.");
+                Debug.LogWarning("[CombatHandoffService] Reroll bloqueado — ningún dado quedaría para re-tirar.");
                 return false;
             }
 
@@ -1743,19 +1744,14 @@ namespace Rollgeon.Combat.Handoff
         }
 
         /// <summary>
-        /// Reroll invertido (Balatro): la máscara de la UI es "seleccionado para
-        /// re-tirar"; el roller espera "keep". <c>result[i] = !selected[i]</c> —
-        /// índices fuera de rango de <paramref name="selected"/> quedan en keep=true
-        /// (un dado sin estado de selección no debe volar).
+        /// Mapea la selección del HUD al "keep" que espera el roller según el modo
+        /// vigente (<see cref="Rollgeon.Dice.RerollSelectionPrefs"/>): invertido
+        /// (default, Balatro) ⇒ keep = complemento de la selección; clásico ⇒ keep =
+        /// la selección. Ver la doc del helper para el tratamiento de índices fuera
+        /// de rango.
         /// </summary>
         internal static bool[] KeepFromSelection(bool[] selected, int diceLen)
-        {
-            int len = diceLen > 0 ? diceLen : (selected?.Length ?? 0);
-            var result = new bool[len];
-            for (int i = 0; i < len; i++)
-                result[i] = !(selected != null && i < selected.Length && selected[i]);
-            return result;
-        }
+            => Rollgeon.Dice.RerollSelectionPrefs.SelectionToKeep(selected, diceLen);
 
         private static bool[] CopyKeep(bool[] keep, int diceLen)
         {

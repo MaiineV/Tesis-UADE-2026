@@ -425,12 +425,16 @@ namespace Rollgeon.UI.HUD
             }
 
             var query = _budget.QueryExtraRoll(_playerGuid);
-            // Reroll invertido (Balatro): se re-tiran los dados SELECCIONADOS. Después
-            // del primer roll, sin ningún dado seleccionado no hay nada que re-tirar —
-            // deshabilitar para no quemar free rolls / energía en una tirada idéntica.
+            // Después del primer roll, si ningún dado va a volar no hay nada que
+            // re-tirar — deshabilitar para no quemar free rolls / energía en una
+            // tirada idéntica. Qué dado vuela depende del modo (RerollSelectionPrefs):
+            // invertido (Balatro) ⇒ vuelan los seleccionados: sin selección, nada;
+            // clásico ⇒ vuelan los NO seleccionados: con todo lockeado, nada.
             // El primer roll queda exento (todavía no hay dados que seleccionar).
-            if (query.IsAvailable && !IsFirstRollPending()
-                && ResolveDiceZone()?.AnyDieHeld() != true)
+            bool nothingToReroll = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
+                ? ResolveDiceZone()?.AllDiceHeld() == true
+                : ResolveDiceZone()?.AnyDieHeld() != true;
+            if (query.IsAvailable && !IsFirstRollPending() && nothingToReroll)
             {
                 _extraRollButton.interactable = false;
                 return;

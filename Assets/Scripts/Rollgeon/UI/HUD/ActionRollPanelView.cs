@@ -455,11 +455,13 @@ namespace Rollgeon.UI.HUD
 
             EnsureHoldsLength();
 
-            // Reroll invertido (Balatro): la selección marca los dados que VUELAN, y el
-            // descarte la consume — cada tirada (inicial o reroll) arranca sin holds y
-            // el user re-selecciona el subset del combo. El service ya limpió su lado
-            // (_currentHolds) al arrancar el reroll.
-            for (int i = 0; i < _holds.Length; i++) _holds[i] = false;
+            // El service es la fuente de verdad de los holds post-tirada: en modo
+            // invertido (Balatro) ya los limpió al arrancar el reroll (el descarte
+            // consume la selección); en clásico persisten (los lockeados siguen
+            // siendo el pick de combo). Sincronizar en vez de limpiar a ciegas.
+            var svcHolds = _service.CurrentHolds;
+            for (int i = 0; i < _holds.Length; i++)
+                _holds[i] = svcHolds != null && i < svcHolds.Count && svcHolds[i];
 
             for (int i = 0; i < _diceSlots.Count; i++)
             {
@@ -484,10 +486,11 @@ namespace Rollgeon.UI.HUD
         private void OnConfirmClick() => _service?.Confirm();
         private void OnCancelClick() => _service?.Cancel();
 
-        // Reroll invertido (Balatro): los dados con _holds[i]=true son los que se
-        // RE-TIRAN; el complemento lo computa el service (RequestReroll sin args
-        // invierte sus _currentHolds, que este panel mantiene via SetHolds). Single
-        // shot: el button se deshabilita post-reroll en ShowRerollPrompt (rollIndex >= 2).
+        // Los dados con _holds[i]=true son la SELECCIÓN; qué significa para el roller
+        // lo decide el service según RerollSelectionPrefs (invertido: se re-tiran;
+        // clásico: se quedan). RequestReroll sin args mapea sus _currentHolds, que
+        // este panel mantiene via SetHolds. Single shot: el button se deshabilita
+        // post-reroll en ShowRerollPrompt (rollIndex >= 2).
         private void OnRerollAcceptClick()
         {
             if (_service == null) return;

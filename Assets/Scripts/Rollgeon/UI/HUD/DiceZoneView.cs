@@ -103,6 +103,19 @@ namespace Rollgeon.UI.HUD
             return false;
         }
 
+        /// <summary>
+        /// True si TODOS los dados están seleccionados. Gate del botón de reroll en
+        /// modo clásico (seleccionado = se queda): con todo lockeado no queda nada
+        /// que re-tirar. Sin holds (pre-Bind) devuelve false.
+        /// </summary>
+        public bool AllDiceHeld()
+        {
+            if (_heldStates == null || _heldStates.Length == 0) return false;
+            for (int i = 0; i < _heldStates.Length; i++)
+                if (!_heldStates[i]) return false;
+            return true;
+        }
+
         // ---- Bind / Unbind ---------------------------------------------------
 
         private bool _bound;
@@ -211,10 +224,11 @@ namespace Rollgeon.UI.HUD
 
             int count = _resolvedSlots?.Length ?? 0;
             var willReveal = new bool[count];
-            // Reroll invertido: la selección se consumió al arrancar el reroll
-            // (HandleRerollStarted), así que los holds ya no dicen qué dados se
-            // quedaron — eso lo dice la máscara stasheada. Sin ella (primer roll,
-            // fase de chain), revela todo como siempre.
+            // Qué dados volaron lo dice la máscara stasheada en HandleRerollStarted
+            // (invertido: la selección, que ya se consumió; clásico: su complemento —
+            // los holds persisten y el skip de holdeados de abajo mantiene estáticos
+            // los lockeados). Sin máscara (primer roll, fase de chain), revela todo
+            // como siempre.
             var rerollMask = _pendingRerollMask;
             _pendingRerollMask = null;
             for (int i = 0; i < count; i++)
@@ -248,21 +262,47 @@ namespace Rollgeon.UI.HUD
             RefreshDiceBlock();
         }
 
-        // Reroll invertido (Balatro): los dados seleccionados son exactamente los que
-        // vuelan, y el descarte consume la selección — se limpia al ARRANCAR el
-        // reroll (RerollBudgetService / ActionRollService lo emiten después de
-        // computar el keep y cobrar), antes del OnDiceRolled del resultado. Antes de
-        // limpiar se stashea la selección como "estos volaron": el reveal la usa para
-        // que los dados que se quedan NO re-spineen (sin la máscara, el spin de
-        // Classic ciclaría caras random en los 5 y leería como reroll de toda la
-        // mano). En el primer roll no hay holds — no-op.
+        // Al ARRANCAR el reroll (RerollBudgetService / ActionRollService lo emiten
+        // después de computar el keep y cobrar, antes del OnDiceRolled del resultado)
+        // se stashea la máscara "estos volaron": el reveal la usa para que los dados
+        // que se quedan NO re-spineen (sin la máscara, el spin de Classic ciclaría
+        // caras random en los 5 y leería como reroll de toda la mano).
+        //
+        // Invertido (default, Balatro): los seleccionados son los que vuelan y el
+        // descarte consume la selección — stash de los holds + ClearHolds. Clásico:
+        // vuelan los NO seleccionados y los holds PERSISTEN (los lockeados siguen
+        // siendo el pick de combo, espejo de ActionRollService). En grab-mode 2D se
+        // mantiene el comportamiento invertido: lo que vuela es lo agarrado
+        // (keepOverride físico), no la selección — persistir holds ahí congelaría la
+        // cara de un dado agarrado-pero-holdeado en el reveal.
+        // En el primer roll no hay holds — no-op.
         private void HandleRerollStarted(params object[] args)
         {
             if (args == null || args.Length < 1) return;
             if (args[0] is not Guid guid || guid != _playerGuid) return;
+            if (RerollSelectionPrefs.KeepSelected && !IsGrabRerollMode())
+            {
+                _pendingRerollMask = ComplementOfHeldStates();
+                return;
+            }
             _pendingRerollMask = AnyDieHeld() ? GetHeldStates() : null;
             ClearHolds();
         }
+
+        // Clásico: "estos volaron" = los no seleccionados. Sin holds (mano entera
+        // re-tirada) devuelve null — sin máscara el reveal procesa todo, correcto.
+        private bool[] ComplementOfHeldStates()
+        {
+            if (_heldStates == null || !AnyDieHeld()) return null;
+            var mask = new bool[_heldStates.Length];
+            for (int i = 0; i < _heldStates.Length; i++)
+                mask[i] = !_heldStates[i];
+            return mask;
+        }
+
+        private static bool IsGrabRerollMode()
+            => ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
+               && t != null && t.Mode == Rollgeon.Dice.Throw.DiceThrowMode.TwoD;
 
         /// <summary>
         /// Pinta la silueta de cada slot según el tipo de dado que tiene en el bag. El índice de
