@@ -78,6 +78,23 @@ namespace Rollgeon.Chests
                  "(ED_MeleeCardEnemy): misma IA y behaviors, stats escaladas por tier.")]
         public EnemyDataSO MimicEnemy;
 
+        [Tooltip("Hint del Mimic dormido (GDD §18, 'leve movimiento'): segundos mínimos " +
+                 "entre twitches del cofre. Valor de prueba.")]
+        [MinValue(0f)]
+        public float MimicHintMinSeconds = 6f;
+
+        [Tooltip("Segundos máximos entre twitches del hint.")]
+        [MinValue(0f)]
+        public float MimicHintMaxSeconds = 12f;
+
+        [Tooltip("Duración de cada twitch, en segundos.")]
+        [MinValue(0f)]
+        public float MimicHintDuration = 0.4f;
+
+        [Tooltip("Amplitud del twitch, en grados de roll del modelo.")]
+        [MinValue(0f)]
+        public float MimicHintAngleDegrees = 4f;
+
         /// <summary>Def del tier pedido, o la primera como fallback defensivo.</summary>
         public ChestTierDef GetTierDef(ItemRarity tier)
         {

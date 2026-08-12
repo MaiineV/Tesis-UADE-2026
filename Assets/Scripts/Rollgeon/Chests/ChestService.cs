@@ -221,6 +221,17 @@ namespace Rollgeon.Chests
                     TintChest(pawn.gameObject, tierDef.BodyColor, _config.FittingsColor);
                     if (pawn.HealthBar != null)
                         pawn.HealthBar.Initialize(guid, tierDef.MaxHP, tierDef.MaxHP);
+
+                    // GDD §18: solo los mimics dormidos twitchean — el hint es la
+                    // única forma de olfatearlos antes del primer golpe.
+                    if (isMimic)
+                    {
+                        pawn.gameObject.AddComponent<ChestMimicHint>().Init(
+                            _config.MimicHintMinSeconds,
+                            _config.MimicHintMaxSeconds,
+                            _config.MimicHintDuration,
+                            _config.MimicHintAngleDegrees);
+                    }
                 }
             }
 

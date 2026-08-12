@@ -57,3 +57,7 @@ MonoBehaviour:
     FallbackGold: 28
   TierWeightsByFloor: []
   MimicEnemy: {fileID: 11400000, guid: 5d50e219baab21349b59577751d2df09, type: 2}
+  MimicHintMinSeconds: 6
+  MimicHintMaxSeconds: 12
+  MimicHintDuration: 0.4
+  MimicHintAngleDegrees: 4

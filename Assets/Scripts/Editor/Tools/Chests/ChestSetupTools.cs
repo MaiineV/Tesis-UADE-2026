@@ -34,12 +34,18 @@ namespace Rollgeon.EditorTools.Chests
         private const string ServiceBootstrapPath = "Assets/Rollgeon/ServiceBootstrap.asset";
         private const string MeleeEnemyPath = "Assets/Rollgeon/Enemies/ED_MeleeCardEnemy.asset";
 
+        private const string ChestArtPrefabPath = "Assets/Prefabs/Enemies/Chest_Prefab.prefab";
+        private const string MimicArtPrefabPath = "Assets/Prefabs/Enemies/ChestMimic_Prefab.prefab";
+        private const string MimicAttackClipPath =
+            "Assets/Art/3D/Animations/Enemies/ChestMimic/Anim_ChestMimic_Attack.anim";
+
         [MenuItem("Rollgeon/Chests/Setup All")]
         public static void SetupAll()
         {
             CreateChestPrefab();
             CreateAssets();
             EnablePlayerTargetingOfChests();
+            SetupArtPrefabs();
             Debug.Log(LogPrefix + "Setup completo.");
         }
 
@@ -107,6 +113,111 @@ namespace Rollgeon.EditorTools.Chests
             clone.name = sourceBar.gameObject.name;
             clone.transform.localPosition = sourceBar.transform.localPosition;
             return clone.GetComponent<WorldSpaceHealthBar>();
+        }
+
+        // ================================================================
+        // 4 - Prefabs de arte (Chest_Prefab + ChestMimic_Prefab)
+        // ================================================================
+
+        /// <summary>
+        /// Los prefabs del artista vienen "pelados" (modelo + Animator). Este paso
+        /// los deja aptos para gameplay: <see cref="EntityPawn"/> con HP bar clonada
+        /// del Melee, <see cref="Rollgeon.Feedback.PawnRegistryBinding"/> (sin él
+        /// FeedbackManager no resuelve el pawn ⇒ ni anim de Attack ni VFX/impulse),
+        /// <see cref="Rollgeon.Feedback.AnimationFeedbackEvent"/> junto al Animator
+        /// del Mimic, y el Animation Event <c>hit</c> en el clip de ataque (sin él
+        /// el step del feedback termina por timeout en vez del frame de impacto).
+        /// </summary>
+        [MenuItem("Rollgeon/Chests/4 - Setup Art Prefabs")]
+        public static void SetupArtPrefabs()
+        {
+            SetupArtPrefab(ChestArtPrefabPath);
+            SetupArtPrefab(MimicArtPrefabPath);
+            EnsureMimicAttackHitEvent();
+            AssetDatabase.SaveAssets();
+            Debug.Log(LogPrefix + "Prefabs de arte listos para gameplay.");
+        }
+
+        private static void SetupArtPrefab(string prefabPath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+            {
+                Debug.LogError(LogPrefix + prefabPath + " no encontrado — ¿falta mergear el arte?");
+                return;
+            }
+
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var pawn = root.GetComponent<EntityPawn>();
+                if (pawn == null) pawn = root.AddComponent<EntityPawn>();
+
+                if (root.GetComponent<Rollgeon.Feedback.PawnRegistryBinding>() == null)
+                    root.AddComponent<Rollgeon.Feedback.PawnRegistryBinding>();
+
+                var healthBar = root.GetComponentInChildren<WorldSpaceHealthBar>(true);
+                if (healthBar == null)
+                    healthBar = TryCloneMeleeHealthBar(root.transform);
+
+                if (healthBar != null)
+                {
+                    var so = new SerializedObject(pawn);
+                    so.FindProperty("_healthBar").objectReferenceValue = healthBar;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+                else
+                {
+                    Debug.LogWarning(LogPrefix + prefabPath + ": sin HP bar del Melee para clonar — queda sin barra.");
+                }
+
+                // El receptor de Animation Events tiene que convivir con el Animator
+                // (los eventos del clip se despachan sobre ese GameObject).
+                var animator = root.GetComponentInChildren<Animator>(true);
+                if (animator != null
+                    && animator.GetComponent<Rollgeon.Feedback.AnimationFeedbackEvent>() == null)
+                {
+                    animator.gameObject.AddComponent<Rollgeon.Feedback.AnimationFeedbackEvent>();
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                Debug.Log(LogPrefix + prefabPath + " cableado (pawn + binding + HP bar + anim events).");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        // Espejo del evento del Goblin (Anim_Goblin_Attack: PushFeedbackEvent("hit")
+        // a mitad de clip): el step 'anim.enemy.melee.attack' de los melee termina
+        // con EndOnEventKey "hit", que marca el frame de impacto.
+        private static void EnsureMimicAttackHitEvent()
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(MimicAttackClipPath);
+            if (clip == null)
+            {
+                Debug.LogError(LogPrefix + MimicAttackClipPath + " no encontrado.");
+                return;
+            }
+
+            foreach (var existing in AnimationUtility.GetAnimationEvents(clip))
+            {
+                if (existing.functionName == "PushFeedbackEvent" && existing.stringParameter == "hit")
+                    return;
+            }
+
+            var events = new List<AnimationEvent>(AnimationUtility.GetAnimationEvents(clip))
+            {
+                new AnimationEvent
+                {
+                    time = clip.length * 0.5f,
+                    functionName = "PushFeedbackEvent",
+                    stringParameter = "hit",
+                },
+            };
+            AnimationUtility.SetAnimationEvents(clip, events.ToArray());
+            EditorUtility.SetDirty(clip);
+            Debug.Log(LogPrefix + $"Animation Event 'hit' agregado a {clip.name} en t={clip.length * 0.5f:0.00}s.");
         }
 
         // ================================================================
