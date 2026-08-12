@@ -568,8 +568,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1211498485350400
-    m_Localized: When your health is 3 or less, your base damage increases by 5 points.
-      Healing above that threshold returns it to normal.
+    m_Localized: When your health is 30 or less, your base damage increases by 5
+      points. Healing above that threshold returns it to normal.
     m_Metadata:
       m_Items: []
   - m_Id: 7800250105098240
