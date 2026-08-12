@@ -297,6 +297,8 @@ namespace Rollgeon.EditorTools.Menu
             LocalizationSetupTools.UpsertEntry("UI", "menu.reset_confirm", "¿Seguro?", "Are you sure?");
             LocalizationSetupTools.UpsertEntry("UI", "menu.back", "Volver", "Back");
             LocalizationSetupTools.UpsertEntry("UI", "menu.game_speed", "Velocidad: x{0}", "Speed: x{0}");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.reroll_discard", "Reroll: vuelan los elegidos", "Reroll: rerolls selected dice");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.reroll_keep", "Reroll: se quedan los elegidos", "Reroll: keeps selected dice");
             AssetDatabase.SaveAssets();
         }
 
@@ -336,7 +338,8 @@ namespace Rollgeon.EditorTools.Menu
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.pivot = new Vector2(0.5f, 0.5f);
             panel.anchoredPosition = Vector2.zero;
-            panel.sizeDelta = new Vector2(560f, 720f);
+            // 800 de alto desde que entró la fila del modo de reroll (antes 720).
+            panel.sizeDelta = new Vector2(560f, 800f);
             var panelImage = panel.GetComponent<Image>();
             panelImage.color = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.95f);
             var panelOutline = panel.GetComponent<Outline>();
@@ -344,7 +347,7 @@ namespace Rollgeon.EditorTools.Menu
             panelOutline.effectDistance = new Vector2(3f, -3f);
 
             // -- Título (Text Animator para el <wave> del texto code-set) --
-            var title = EnsureTmpLabel(panel, "TitleLabel", "Opciones", 54f, new Vector2(0f, 290f),
+            var title = EnsureTmpLabel(panel, "TitleLabel", "Opciones", 54f, new Vector2(0f, 330f),
                 new Vector2(500f, 70f), outlineMat, new Color32(0xE7, 0xE3, 0xE2, 0xFF));
             if (title.GetComponent<TextAnimator_TMP>() == null)
                 title.gameObject.AddComponent<TextAnimator_TMP>();
@@ -358,7 +361,7 @@ namespace Rollgeon.EditorTools.Menu
             }
             divider.anchorMin = divider.anchorMax = new Vector2(0.5f, 0.5f);
             divider.pivot = new Vector2(0.5f, 0.5f);
-            divider.anchoredPosition = new Vector2(0f, 250f);
+            divider.anchoredPosition = new Vector2(0f, 290f);
             divider.sizeDelta = new Vector2(300f, 3f);
             var dividerImage = divider.GetComponent<Image>();
             dividerImage.color = AccentColor;
@@ -369,18 +372,20 @@ namespace Rollgeon.EditorTools.Menu
             var tutorialToggle = EnsureSecondaryButton(canvas, panel, "TutorialToggleButton", "Tutorial: ON", outlineMat);
             var analyticsToggle = EnsureSecondaryButton(canvas, panel, "AnalyticsToggleButton", "Telemetría: ON", outlineMat);
             var gameSpeed = EnsureSecondaryButton(canvas, panel, "GameSpeedButton", "Velocidad: x1", outlineMat);
+            var rerollMode = EnsureSecondaryButton(canvas, panel, "RerollModeButton", "Reroll: vuelan los elegidos", outlineMat);
             var spanish = EnsureSecondaryButton(canvas, panel, "SpanishButton", "Español", outlineMat);
             var english = EnsureSecondaryButton(canvas, panel, "EnglishButton", "English", outlineMat);
             var deleteSave = EnsureSecondaryButton(canvas, panel, "DeleteProgressButton", "Borrar partida", outlineMat);
 
-            Place(tutorialToggle, panel, new Vector2(0f, 190f), new Vector2(300f, 70f));
-            Place(analyticsToggle, panel, new Vector2(0f, 110f), new Vector2(300f, 70f));
-            Place(gameSpeed, panel, new Vector2(0f, 30f), new Vector2(300f, 70f));
-            Place(spanish, panel, new Vector2(-90f, -100f), new Vector2(150f, 60f));
-            Place(english, panel, new Vector2(90f, -100f), new Vector2(150f, 60f));
-            Place(deleteSave, panel, new Vector2(0f, -200f), new Vector2(300f, 70f));
+            Place(tutorialToggle, panel, new Vector2(0f, 230f), new Vector2(300f, 70f));
+            Place(analyticsToggle, panel, new Vector2(0f, 150f), new Vector2(300f, 70f));
+            Place(gameSpeed, panel, new Vector2(0f, 70f), new Vector2(300f, 70f));
+            Place(rerollMode, panel, new Vector2(0f, -10f), new Vector2(300f, 70f));
+            Place(spanish, panel, new Vector2(-90f, -140f), new Vector2(150f, 60f));
+            Place(english, panel, new Vector2(90f, -140f), new Vector2(150f, 60f));
+            Place(deleteSave, panel, new Vector2(0f, -240f), new Vector2(300f, 70f));
 
-            var languageLabel = EnsureTmpLabel(panel, "LanguageLabel", "Idioma", 30f, new Vector2(0f, -40f),
+            var languageLabel = EnsureTmpLabel(panel, "LanguageLabel", "Idioma", 30f, new Vector2(0f, -80f),
                 new Vector2(300f, 40f), outlineMat, new Color32(0x5F, 0x73, 0x7A, 0xFF));
 
             // -- Botón Volver (clon del delete para heredar estructura/label) --
@@ -395,10 +400,10 @@ namespace Rollgeon.EditorTools.Menu
                 var backText = go.GetComponentInChildren<TMP_Text>(true);
                 if (backText != null) backText.text = "Volver";
             }
-            Place(back, panel, new Vector2(0f, -280f), new Vector2(300f, 70f));
+            Place(back, panel, new Vector2(0f, -320f), new Vector2(300f, 70f));
 
             // -- Juice: mismos efectos que el stack del menú, stagger en cada apertura --
-            var buttons = new[] { tutorialToggle, analyticsToggle, gameSpeed, spanish, english, deleteSave, back }
+            var buttons = new[] { tutorialToggle, analyticsToggle, gameSpeed, rerollMode, spanish, english, deleteSave, back }
                 .Select(rect => rect.GetComponent<Button>()).ToArray();
             var juicyButtons = buttons.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
             EnsureGroup(optionsGo, juicyButtons, settings);
@@ -424,6 +429,8 @@ namespace Rollgeon.EditorTools.Menu
             so.FindProperty("_analyticsToggleLabel").objectReferenceValue = analyticsToggle.GetComponentInChildren<TMP_Text>(true);
             so.FindProperty("_gameSpeedButton").objectReferenceValue = gameSpeed.GetComponent<Button>();
             so.FindProperty("_gameSpeedLabel").objectReferenceValue = gameSpeed.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_rerollModeButton").objectReferenceValue = rerollMode.GetComponent<Button>();
+            so.FindProperty("_rerollModeLabel").objectReferenceValue = rerollMode.GetComponentInChildren<TMP_Text>(true);
             so.FindProperty("_languageLabel").objectReferenceValue = languageLabel;
             so.FindProperty("_resetSaveButton").objectReferenceValue = deleteSave.GetComponent<Button>();
             so.FindProperty("_resetSaveLabel").objectReferenceValue = deleteSave.GetComponentInChildren<TMP_Text>(true);

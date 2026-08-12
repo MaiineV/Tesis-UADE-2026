@@ -2048,6 +2048,7 @@ GameObject:
   - component: {fileID: 2024317181}
   - component: {fileID: 2024317180}
   - component: {fileID: 2024317182}
+  - component: {fileID: 2024317183}
   m_Layer: 0
   m_Name: ScreenHost
   m_TagString: Untagged
@@ -2111,6 +2112,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.PauseHotkey
   _toggleKey: 60
+--- !u!114 &2024317183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2024317179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ca1818618cb8743b3a9c8b23d747fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Input.RightClickCancelController
 --- !u!114 &193249934685763654 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2435846010659403855, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}

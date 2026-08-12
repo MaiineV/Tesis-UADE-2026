@@ -467,6 +467,12 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.ClearHolds();
         }
 
+        /// <summary>
+        /// True si hay al menos un dado seleccionado. Lo usa el router de click derecho
+        /// para decidir el deselect-all (Balatro-style). No-op (false) sin wiring.
+        /// </summary>
+        public bool AnyDieHeld() => _diceZone != null && _diceZone.AnyDieHeld();
+
         // ======================================================================
         // Internals
         // ======================================================================

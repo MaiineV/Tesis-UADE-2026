@@ -157,9 +157,9 @@ namespace Rollgeon.UI.HUD
                 _actionRoll.OnPhaseChanged += _onActionRollPhase;
             }
 
-            // BUG-014: ComboMatchedPayload se dispara cada vez que el user togglea
-            // un hold (DiceZoneView.RunComboDetection) — refrescamos el botón para
-            // que se deshabilite cuando todos los dados quedan holdeados.
+            // ComboMatchedPayload se dispara cada vez que el user togglea un hold
+            // (DiceZoneView.RunComboDetection) — refrescamos el botón para que se
+            // habilite con ≥1 dado seleccionado y se apague al quedar sin selección.
             _onComboMatched = _ => RefreshButtonInteractable();
             TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
 
@@ -257,8 +257,9 @@ namespace Rollgeon.UI.HUD
             if (ResolveDiceZone()?.IsDiceAnimating == true) return;
 
             // Si hay un ActionRoll activo (Heal / Forzar Puerta), Reroll = pagar 1 energía
-            // y rerollear via service. El service usa _currentHolds (seteado por
-            // DiceZoneView.ToggleHold → SetHolds) como keep mask.
+            // y rerollear via service. El service re-tira los dados SELECCIONADOS
+            // (_currentHolds, seteado por DiceZoneView.ToggleHold → SetHolds) y
+            // conserva el resto (reroll invertido).
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
                 && rs != null && rs.IsActive)
             {
@@ -424,10 +425,16 @@ namespace Rollgeon.UI.HUD
             }
 
             var query = _budget.QueryExtraRoll(_playerGuid);
-            // BUG-014: aunque el budget tenga rolls disponibles, si el user holdeó
-            // todos los dados el reroll no movería ningún dado — deshabilitar para
-            // no quemar free rolls / energía en una tirada idéntica.
-            if (query.IsAvailable && ResolveDiceZone()?.AreAllDiceHeld() == true)
+            // Después del primer roll, si ningún dado va a volar no hay nada que
+            // re-tirar — deshabilitar para no quemar free rolls / energía en una
+            // tirada idéntica. Qué dado vuela depende del modo (RerollSelectionPrefs):
+            // invertido (Balatro) ⇒ vuelan los seleccionados: sin selección, nada;
+            // clásico ⇒ vuelan los NO seleccionados: con todo lockeado, nada.
+            // El primer roll queda exento (todavía no hay dados que seleccionar).
+            bool nothingToReroll = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
+                ? ResolveDiceZone()?.AllDiceHeld() == true
+                : ResolveDiceZone()?.AnyDieHeld() != true;
+            if (query.IsAvailable && !IsFirstRollPending() && nothingToReroll)
             {
                 _extraRollButton.interactable = false;
                 return;

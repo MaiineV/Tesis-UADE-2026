@@ -52,6 +52,10 @@ namespace Rollgeon.UI.Screens
         [SerializeField, Optional] private Button _gameSpeedButton;
         [SerializeField, Optional] private TMP_Text _gameSpeedLabel;
 
+        [Title("Reroll")]
+        [SerializeField, Optional] private Button _rerollModeButton;
+        [SerializeField, Optional] private TMP_Text _rerollModeLabel;
+
         [Title("Idioma")]
         [Tooltip("Label de la fila de idioma. Los botones ES/EN los maneja LanguageSelector.")]
         [SerializeField, Optional] private TMP_Text _languageLabel;
@@ -81,6 +85,7 @@ namespace Rollgeon.UI.Screens
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.AddListener(OnTutorialToggleClicked);
             if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.AddListener(OnAnalyticsToggleClicked);
             if (_gameSpeedButton != null) _gameSpeedButton.onClick.AddListener(OnGameSpeedClicked);
+            if (_rerollModeButton != null) _rerollModeButton.onClick.AddListener(OnRerollModeClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
 
@@ -98,6 +103,7 @@ namespace Rollgeon.UI.Screens
             if (_tutorialToggleButton != null) _tutorialToggleButton.onClick.RemoveListener(OnTutorialToggleClicked);
             if (_analyticsToggleButton != null) _analyticsToggleButton.onClick.RemoveListener(OnAnalyticsToggleClicked);
             if (_gameSpeedButton != null) _gameSpeedButton.onClick.RemoveListener(OnGameSpeedClicked);
+            if (_rerollModeButton != null) _rerollModeButton.onClick.RemoveListener(OnRerollModeClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
 
@@ -156,6 +162,7 @@ namespace Rollgeon.UI.Screens
             RefreshTutorialToggleLabel();
             RefreshAnalyticsToggleLabel();
             RefreshGameSpeedLabel();
+            RefreshRerollModeLabel();
             RefreshResetSaveLabel();
         }
 
@@ -251,6 +258,32 @@ namespace Rollgeon.UI.Screens
             _gameSpeedLabel.text = string.Format(
                 LocalizedContent.Ui("menu.game_speed", "Velocidad: x{0}"),
                 GameSpeedPrefs.Multiplier);
+        }
+
+        // ================================================================
+        // Modo de reroll
+        // ================================================================
+
+        /// <summary>
+        /// Alterna la semántica de selección del reroll vía
+        /// <see cref="Rollgeon.Dice.RerollSelectionPrefs"/> (persiste al toque):
+        /// default = los seleccionados vuelan (Balatro); alternativo = los
+        /// seleccionados se quedan (clásico).
+        /// </summary>
+        private void OnRerollModeClicked()
+        {
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected =
+                !Rollgeon.Dice.RerollSelectionPrefs.KeepSelected;
+            RefreshRerollModeLabel();
+        }
+
+        private void RefreshRerollModeLabel()
+        {
+            if (_rerollModeLabel == null) return;
+
+            _rerollModeLabel.text = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
+                ? LocalizedContent.Ui("menu.reroll_keep", "Reroll: se quedan los elegidos")
+                : LocalizedContent.Ui("menu.reroll_discard", "Reroll: vuelan los elegidos");
         }
 
         // ================================================================

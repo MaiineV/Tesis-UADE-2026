@@ -158,6 +158,15 @@ namespace Rollgeon.UI.HUD.DragDrop
             _validCoords.Clear();
             _hasHover = false;
 
+            // QoL switch: con los chips draggables DURANTE una selección activa, un drag
+            // abortado (o uno que abrió una selección nueva sin completarla) termina acá
+            // con el ClearAll de arriba habiendo borrado sus highlights — se repintan.
+            if (ServiceLocator.TryGetService<ISelectionController>(out var liveSel)
+                && liveSel != null && liveSel.IsSelecting)
+            {
+                liveSel.RefreshHighlights();
+            }
+
             // committed no dispara nada extra hoy; se deja el hook para feedback futuro
             // (SFX de drop aceptado / rechazado, tween de vuelta del ghost, etc.).
             _ = committed;
