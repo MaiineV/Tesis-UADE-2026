@@ -19,7 +19,8 @@ namespace Rollgeon.Combos
     /// <list type="bullet">
     /// <item><description><see cref="Matches"/> — abstract, lo implementa cada concreto.</description></item>
     /// <item><description><see cref="ComputeCount"/> — virtual, formula default del §5.1.1.</description></item>
-    /// <item><description><see cref="Priority"/> — virtual con default <c>BaseDamage</c>. Generala override a <c>int.MaxValue</c>.</description></item>
+    /// <item><description><see cref="Priority"/> — campo serializado propio (<c>_priority</c>),
+    /// independiente del dano desde Fix#0047 parte 2. Generala override a <c>int.MaxValue</c>.</description></item>
     /// <item><description><see cref="Detect"/> — virtual, default orquesta <c>Matches</c> + <see cref="GetCountUsed"/>.</description></item>
     /// </list>
     /// </para>
@@ -55,8 +56,18 @@ namespace Rollgeon.Combos
         [Title("Damage")]
         [SerializeField, Range(0, 500)]
         [Tooltip("Dano base plano del combo (editable por balance sin recompilar). " +
-                 "Para combos variables (SumaX) se suma encima de la suma de los dados que matchean.")]
+                 "Nunca incluye valores de dados: la formula v3 suma las caras contribuyentes " +
+                 "por separado (Fix#0047). Subir este valor NO cambia que combo se elige — " +
+                 "eso lo decide Priority.")]
         protected int _baseDamage;
+
+        [Title("Priority")]
+        [SerializeField, MinValue(0)]
+        [Tooltip("Orden de seleccion cuando varios combos matchean la misma tirada: gana el " +
+                 "de mayor Priority. Independiente del dano (Fix#0047 parte 2 — antes se usaba " +
+                 "BaseDamage y tunear dano reordenaba combos sin querer). Generala ignora este " +
+                 "campo: su Priority es int.MaxValue por hard rule #8.")]
+        protected int _priority;
 
         [Title("Cuenta del combo (§5.1.1)")]
         [SerializeField]
@@ -141,10 +152,12 @@ namespace Rollgeon.Combos
         }
 
         /// <summary>
-        /// Prioridad del combo al resolver conflictos (combo mas alto gana). Default: <see cref="BaseDamage"/>.
-        /// Overrideado por Generala a <c>int.MaxValue</c> (plan §4 + §10.7).
+        /// Prioridad del combo al resolver conflictos (combo mas alto gana). Campo serializado
+        /// propio, independiente del dano (Fix#0047 parte 2 — antes defaulteaba a
+        /// <see cref="BaseDamage"/> y tunear dano reordenaba la seleccion). Overrideado por
+        /// Generala a <c>int.MaxValue</c> (hard rule #8, plan §4 + §10.7).
         /// </summary>
-        public virtual int Priority => _baseDamage;
+        public virtual int Priority => _priority;
 
         /// <summary>
         /// API tipada requerida por Content#0097a. Delega en la sobrecarga con override de base.
@@ -155,12 +168,13 @@ namespace Rollgeon.Combos
 
         /// <summary>
         /// Default: orquesta <see cref="Matches"/> + <see cref="GetCountUsed"/> +
-        /// <see cref="BaseDamage"/>. Combos con logica variable (SumaX) overridean para
-        /// calcular <c>BaseDamage</c> dinamico.
+        /// <see cref="BaseDamage"/>. Combos con logica variable (SumaX, Higher Number,
+        /// Fuerza Bruta) overridean para poblar <c>ContributingIndices</c> y
+        /// <c>DynamicBonus</c> — el <c>BaseDamage</c> del resultado es SIEMPRE plano
+        /// (Fix#0047: las caras entran al daño una sola vez, vía Σcaras).
         /// </summary>
         /// <param name="flatBaseOverride">Base plano de la tabla por clase (Spec Daño v2 —
-        /// <c>ContractSheet.BaseDamageTable</c>). <c>null</c> = usar el base propio del SO.
-        /// Reemplaza solo la parte plana; los combos dinamicos suman su parte variable encima.</param>
+        /// <c>ContractSheet.BaseDamageTable</c>). <c>null</c> = usar el base propio del SO.</param>
         public virtual ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
         {
             if (diceValues == null || diceValues.Count == 0) return ComboDetectionResult.NoMatch();

@@ -12,14 +12,20 @@ namespace Rollgeon.Combos.Tests
     public static class ComboTestUtils
     {
         /// <summary>
-        /// Crea la instancia del combo concreto <typeparamref name="T"/> con <c>_comboId</c>
-        /// y <c>_baseDamage</c> seteados por reflection. Usa <see cref="ScriptableObject.CreateInstance{T}"/>.
+        /// Crea la instancia del combo concreto <typeparamref name="T"/> con <c>_comboId</c>,
+        /// <c>_baseDamage</c> y <c>_priority</c> seteados por reflection. Usa
+        /// <see cref="ScriptableObject.CreateInstance{T}"/>. Desde Fix#0047 parte 2 la
+        /// prioridad es un campo propio: por default se setea igual a
+        /// <paramref name="baseDamage"/> (el acople viejo, que los tests de MatchBest asumen);
+        /// pasar <paramref name="priority"/> para desacoplarlos explícitamente.
         /// </summary>
-        public static T CreateCombo<T>(string comboId, int baseDamage) where T : BaseComboSO
+        public static T CreateCombo<T>(string comboId, int baseDamage, int? priority = null)
+            where T : BaseComboSO
         {
             var instance = ScriptableObject.CreateInstance<T>();
             SetField(instance, "_comboId", comboId);
             SetField(instance, "_baseDamage", baseDamage);
+            SetField(instance, "_priority", priority ?? baseDamage);
             return instance;
         }
 

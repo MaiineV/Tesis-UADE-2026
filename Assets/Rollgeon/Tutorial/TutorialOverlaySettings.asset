@@ -30,11 +30,14 @@ MonoBehaviour:
   PopupBackgroundSprite: {fileID: 1207451802, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   PopupBackgroundPpuMultiplier: 0.5
   PopupBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
-  PopupFont: {fileID: 0}
+  PopupFont: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   PopupFontSize: 30
   PopupTextColor: {r: 0.06666667, g: 0.07450981, b: 0.101960786, a: 1}
   PopupMaxWidth: 520
   PopupPadding: {x: 46, y: 36}
+  PopupFooterAlpha: 0.9
   PopupScreenMargin: 40
+  PopupAnchorGapPx: 90
+  LegacyQuadrantPlacement: 0
   QuadrantHysteresis: 0.08
-  ContinueFooterText: "Hac\xE9 click para continuar"
+  ContinueFooterText: Haz clic para continuar

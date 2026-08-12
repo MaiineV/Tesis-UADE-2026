@@ -72,6 +72,103 @@ namespace Rollgeon.Tutorial.Tests
             Assert.Less(center.y, Screen1080.y * 0.5f);
         }
 
+        // ── Colocación adyacente (ResolveSideWithHysteresis / PopupCenterForSide) ──
+
+        [Test]
+        public void ResolveSide_AnchorOnLeftEdge_PlacesPopupToTheRightWithoutOverlap()
+        {
+            // Arrange — anchor pegado al borde izquierdo, popup de 500×220.
+            var anchorPos = new Vector2(150f, 540f);
+            var anchorHalf = new Vector2(80f, 80f);
+            var popupSize = new Vector2(500f, 220f);
+
+            // Act
+            int side = TutorialOverlayLayout.ResolveSideWithHysteresis(
+                anchorPos, anchorHalf, popupSize, Screen1080, gap: 90f, margin: 40f, previousSide: -1);
+            var center = TutorialOverlayLayout.PopupCenterForSide(
+                side, anchorPos, anchorHalf, popupSize, Screen1080, gap: 90f, margin: 40f);
+
+            // Assert — lado derecha (0), borde izquierdo del popup fuera del anchor+gap.
+            Assert.AreEqual(0, side, "El único lado con espacio de sobra es la derecha.");
+            Assert.AreEqual(150f + 80f + 90f + 250f, center.x, 0.01f,
+                "anchor.x + half + gap + mitad del popup.");
+            Assert.AreEqual(540f, center.y, 0.01f, "Centrado sobre el anchor en el eje perpendicular.");
+        }
+
+        [Test]
+        public void ResolveSide_AnchorTopRightCorner_ChoosesASideWhereThePopupFits()
+        {
+            // Arrange — la cola de turnos: esquina superior derecha.
+            var anchorPos = new Vector2(1670f, 1010f);
+            var anchorHalf = new Vector2(200f, 50f);
+            var popupSize = new Vector2(500f, 220f);
+
+            // Act
+            int side = TutorialOverlayLayout.ResolveSideWithHysteresis(
+                anchorPos, anchorHalf, popupSize, Screen1080, gap: 90f, margin: 40f, previousSide: -1);
+            var center = TutorialOverlayLayout.PopupCenterForSide(
+                side, anchorPos, anchorHalf, popupSize, Screen1080, gap: 90f, margin: 40f);
+
+            // Assert — arriba (20 px) y derecha (50 px) no entran; entre izquierda
+            // (1470 px libres) y abajo (960) gana la izquierda por espacio.
+            Assert.AreEqual(1, side, "El lado con más espacio libre que entra es la izquierda.");
+            Assert.AreEqual(1670f - 200f - 90f - 250f, center.x, 0.01f,
+                "anchor.x - half - gap - mitad del popup.");
+            Assert.AreEqual(1080f - 40f - 110f, center.y, 0.01f,
+                "El clamp perpendicular baja el popup para que entre bajo el margen superior.");
+        }
+
+        [Test]
+        public void ResolveSide_PreviousSideStillValid_KeepsItDespiteBetterCandidates()
+        {
+            // Arrange — anchor centrado: entran los 4 lados; el previo era arriba (2).
+            var anchorPos = new Vector2(960f, 400f);
+            var anchorHalf = new Vector2(100f, 100f);
+            var popupSize = new Vector2(400f, 200f);
+
+            // Act
+            int side = TutorialOverlayLayout.ResolveSideWithHysteresis(
+                anchorPos, anchorHalf, popupSize, Screen1080, gap: 60f, margin: 40f, previousSide: 2);
+
+            // Assert
+            Assert.AreEqual(2, side, "El lado previo válido se conserva (histéresis anti flip-flop).");
+        }
+
+        [Test]
+        public void ResolveSide_PopupFitsNowhere_ReturnsMinusOne()
+        {
+            // Arrange — recorte gigante (MoveTiles, radio 320) en pantalla chica.
+            var screen = new Vector2(800f, 600f);
+            var anchorPos = new Vector2(400f, 300f);
+            var anchorHalf = new Vector2(320f, 320f);
+            var popupSize = new Vector2(400f, 250f);
+
+            // Act
+            int side = TutorialOverlayLayout.ResolveSideWithHysteresis(
+                anchorPos, anchorHalf, popupSize, screen, gap: 90f, margin: 40f, previousSide: -1);
+
+            // Assert
+            Assert.AreEqual(-1, side, "Sin lado válido el caller cae al layout de cuadrante.");
+        }
+
+        [Test]
+        public void PopupCenterForSide_AnchorNearBottomEdge_ClampsPerpendicularAxisInsideMargin()
+        {
+            // Arrange — anchor abajo a la izquierda, popup a su derecha: sin clamp la
+            // mitad inferior del popup (110 px) se saldría de pantalla.
+            var anchorPos = new Vector2(300f, 60f);
+            var anchorHalf = new Vector2(60f, 60f);
+            var popupSize = new Vector2(500f, 220f);
+
+            // Act
+            var center = TutorialOverlayLayout.PopupCenterForSide(
+                0, anchorPos, anchorHalf, popupSize, Screen1080, gap: 90f, margin: 40f);
+
+            // Assert
+            Assert.AreEqual(40f + 110f, center.y, 0.01f, "margin + mitad del alto del popup.");
+            Assert.AreEqual(300f + 60f + 90f + 250f, center.x, 0.01f, "El eje del lado no se toca.");
+        }
+
         // ── Arrow ─────────────────────────────────────────────────────────
 
         [Test]

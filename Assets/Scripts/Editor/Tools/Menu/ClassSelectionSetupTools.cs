@@ -123,10 +123,12 @@ namespace Rollgeon.EditorTools.Menu
                 "Próximamente", "Coming soon");
             LocalizationSetupTools.UpsertEntry("Content", "passive.warrior.low_hp_rage.name",
                 "Furia del Guerrero", "Warrior's Fury");
+            // "30 o menos": las tablas vivas ya decían 30 (el "3" de acá era una versión
+            // vieja que una re-corrida habría regresado).
             LocalizationSetupTools.UpsertEntry("Content", "passive.warrior.low_hp_rage.desc",
-                "Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos. " +
+                "Cuando tu vida está en 30 o menos, tu daño base aumenta en 5 puntos. " +
                 "Al curarte por encima de ese umbral, vuelve a la normalidad.",
-                "When your health is 3 or less, your base damage increases by 5 points. " +
+                "When your health is 30 or less, your base damage increases by 5 points. " +
                 "Healing above that threshold returns it to normal.");
             AssetDatabase.SaveAssets();
             Debug.Log("[ClassSelectionSetup] Keys de localización upserteadas.");

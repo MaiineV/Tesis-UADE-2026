@@ -127,8 +127,14 @@ namespace Patterns
         /// <summary>Nombre legible del combo para UI.</summary>
         public string DisplayName;
 
-        /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
+        /// <summary>Daño base PLANO del combo (término comboBase de la fórmula v3), antes de
+        /// mitigaciones / multiplicadores. Las caras contribuyentes NO viven acá (Fix#0047).</summary>
         public int BaseDamage;
+
+        /// <summary>Parte dinámica de los combos de base variable (SumaX, Higher Number,
+        /// Fuerza Bruta) — 0 para combos planos. Solo para consumers de formula B legacy;
+        /// la fórmula v3 suma las caras vía <see cref="ContributingDice"/>.</summary>
+        public int DynamicBonus;
 
         /// <summary>
         /// Dados que contribuyen al combo (slot + cara + tipo), para que el preview del HUD

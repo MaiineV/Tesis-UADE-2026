@@ -41,6 +41,8 @@ namespace Rollgeon.EditorTools.Localization
             SeedDiceBag();
             SeedInventory();
             SeedChest();
+            SeedMenuChrome();
+            SeedContentBaseline();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -53,151 +55,178 @@ namespace Rollgeon.EditorTools.Localization
 
         /// <remarks>
         /// Los <c>{0}</c> los reemplaza <c>TutorialOverlay.ApplyText</c> con la tecla
-        /// viva — tienen que sobrevivir la traducción.
+        /// viva — tienen que sobrevivir la traducción. Presupuesto: ≤22 palabras por
+        /// cuadro (lo valida <c>TutorialTextBudgetTests</c>); la indicación de
+        /// continuar NO va en el cuerpo — la agrega el footer del overlay.
         /// </remarks>
         private static void SeedTutorial()
         {
             Ui(TutorialTextKeys.Movement,
-                "Hacé click en una casilla para moverte. Caminá hasta la puerta señalada para salir de la sala.",
+                "Haz clic en una casilla para moverte. Camina hasta la puerta señalada para salir de la sala.",
                 "Click a tile to move. Walk to the highlighted door to leave the room.");
 
             Ui(TutorialTextKeys.EnemiesIntro,
-                "¡Combate! Este es tu enemigo. En el tutorial vos siempre actuás primero. (Click para continuar.)",
-                "Combat! This is your enemy. In the tutorial you always act first. (Click to continue.)");
+                "¡Combate! Este es tu enemigo. En el tutorial tú siempre actúas primero.",
+                "Combat! This is your enemy. In the tutorial you always act first.");
+
+            Ui(TutorialTextKeys.TurnOrderIntro,
+                "Arriba a la derecha está el orden de turnos: quién actúa ahora y quién sigue.",
+                "Top right is the turn order: who acts now and who goes next.");
+
+            Ui(TutorialTextKeys.ContractIcon,
+                "Este es tu CONTRATO: los combos de generala y su daño. Consúltalo cuando quieras.",
+                "This is your CONTRACT: the generala combos and their damage. Check it any time.");
 
             Ui(TutorialTextKeys.MoveTeach,
-                "Tu héroe pelea cuerpo a cuerpo: primero hay que acercarse. Seleccioná MOVER ({0}).",
-                "Your hero fights in melee: you need to close the distance first. Select MOVE ({0}).");
+                "Tu héroe pelea cuerpo a cuerpo: primero acércate. Selecciona MOVER ({0}).",
+                "Your hero fights in melee: get close first. Select MOVE ({0}).");
 
             Ui(TutorialTextKeys.MoveTiles,
-                "Las casillas iluminadas son a donde llegás este turno. Hacé click en una casilla al lado del enemigo.",
-                "The highlighted tiles are where you can reach this turn. Click a tile next to the enemy.");
+                "Las casillas iluminadas son tu alcance este turno. Haz clic en una casilla junto al enemigo.",
+                "The highlighted tiles are your reach this turn. Click a tile next to the enemy.");
 
             Ui(TutorialTextKeys.MoveTooFar,
-                "Quedaste lejos del enemigo — y solo podés moverte una vez por turno. " +
-                "Apretá FINALIZAR TURNO ({0}) y dejá que se acerque él.",
-                "You ended up far from the enemy — and you can only move once per turn. " +
-                "Press END TURN ({0}) and let them come to you.");
+                "Quedaste lejos y solo puedes moverte una vez por turno. " +
+                "Pulsa FINALIZAR TURNO ({0}) y deja que se acerque.",
+                "You're far away and can only move once per turn. " +
+                "Press END TURN ({0}) and let them approach.");
 
             Ui(TutorialTextKeys.StatsHp,
-                "Esta es tu VIDA: si llega a cero, la run se termina. Cuidala. (Click para continuar.)",
-                "This is your HEALTH: if it hits zero, the run is over. Look after it. (Click to continue.)");
+                "Esta es tu VIDA: si llega a cero, la run se termina. Cuídala.",
+                "This is your HEALTH: if it hits zero, the run is over. Look after it.");
 
             Ui(TutorialTextKeys.StatsEnergy,
-                "Esta es tu ENERGÍA: moverte, atacar y re-tirar dados la consumen. Administrala en cada turno. (Click para continuar.)",
-                "This is your ENERGY: moving, attacking and rerolling dice all spend it. Manage it every turn. (Click to continue.)");
+                "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno.",
+                "This is your ENERGY: moving, attacking and rerolling all spend it. Manage it every turn.");
 
             Ui(TutorialTextKeys.AttackTeach,
-                "Se desbloqueó ATACAR ({0}). Seleccionalo para elegir a quién golpear.",
+                "Se desbloqueó ATACAR ({0}). Selecciónalo para elegir a quién golpear.",
                 "ATTACK ({0}) is unlocked. Select it to choose who to hit.");
 
             Ui(TutorialTextKeys.TargetTeach,
-                "Primero se elige el objetivo: hacé click en el enemigo iluminado en rojo.",
-                "First you pick the target: click the enemy highlighted in red.");
+                "Primero elige el objetivo: haz clic en el enemigo iluminado en rojo.",
+                "First pick the target: click the enemy highlighted in red.");
 
             Ui(TutorialTextKeys.ThrowTeach,
-                "¡Objetivo marcado! Estos son tus dados: agarralos manteniendo click izquierdo " +
-                "y arrojalos con un movimiento rápido del mouse.",
-                "Target locked! These are your dice: grab them by holding left click " +
-                "and throw them with a quick flick of the mouse.");
+                "¡Objetivo marcado! Estos son tus dados: sujétalos con clic izquierdo " +
+                "y lánzalos con un movimiento rápido del mouse.",
+                "Target locked! These are your dice: hold left click to grab them " +
+                "and throw with a quick flick.");
 
             Ui(TutorialTextKeys.DiceTeach,
-                "Armá combos de generala (par, trío, escalera...). Hacé click en un dado para bloquearlo " +
-                "y conservarlo. ¿Querés re-tirar? Agarrá los dados que quieras cambiar y arrojalos de nuevo " +
-                "— tenés hasta 3 tiradas. Cuando te guste el combo, apretá CONFIRMAR.",
-                "Build generala combos (pair, trio, straight...). Click a die to lock it " +
-                "and keep it. Want to reroll? Grab the dice you want to change and throw them again " +
-                "— you get up to 3 rolls. When you like the combo, press CONFIRM.");
+                "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
+                "— máximo 3 tiradas. Luego CONFIRMA.",
+                "Build combos (pair, trio, straight). Click a die to lock it; reroll the rest " +
+                "— 3 rolls max. Then CONFIRM.");
 
             Ui(TutorialTextKeys.DefenseTeach,
-                "¡Golpe dado! Te sobraron tiradas del ataque, así que viene la fase de DEFENSA: " +
-                "agarrá y arrojá los dados para armar un ESCUDO que absorbe el próximo golpe. " +
-                "Bloqueá, re-tirá y CONFIRMÁ tu combo de defensa.",
-                "Hit landed! You had rolls left over from the attack, so the DEFENSE phase begins: " +
-                "grab and throw the dice to build a SHIELD that absorbs the next hit. " +
-                "Lock, reroll and CONFIRM your defense combo.");
+                "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
+                "tu ESCUDO absorbe el próximo golpe.",
+                "You have rolls left: DEFENSE phase. Throw the dice and build a combo — " +
+                "your SHIELD absorbs the next hit.");
 
             Ui(TutorialTextKeys.EndTurnTeach,
-                "¡Golpe completado! Cuando no quieras hacer nada más, apretá " +
-                "FINALIZAR TURNO ({0}) para cederle el turno al enemigo.",
-                "Attack complete! When there's nothing else you want to do, press " +
-                "END TURN ({0}) to hand the turn over to the enemy.");
+                "¡Golpe completado! Cuando no quieras hacer nada más, pulsa " +
+                "FINALIZAR TURNO ({0}) para ceder el turno.",
+                "Attack complete! When you're done, press " +
+                "END TURN ({0}) to hand over the turn.");
 
             Ui(TutorialTextKeys.Combat1Free,
-                "¡Así se pelea! Repetí el proceso — moverte, atacar, armar combos — hasta vencer al enemigo. (Click para seguir.)",
-                "That's how you fight! Repeat the process — move, attack, build combos — until the enemy is down. (Click to continue.)");
+                "¡Así se pelea! Repite el proceso — moverte, atacar, armar combos — hasta vencer al enemigo.",
+                "That's how you fight! Repeat the process — move, attack, build combos — until the enemy is down.");
 
             Ui(TutorialTextKeys.HealUnlocked,
-                "¡Te golpearon! Se desbloqueó CURAR ({0}): usala en tu turno cuando te falte vida.",
+                "¡Te golpearon! Se desbloqueó CURAR ({0}): úsala en tu turno cuando te falte vida.",
                 "You got hit! HEAL ({0}) is unlocked: use it on your turn when you're low on health.");
 
             Ui(TutorialTextKeys.HealDice,
-                "Curar también usa los dados: agarralos con click sostenido, arrojalos y superá el umbral " +
-                "para recuperar vida. Bloqueá los dados altos, re-tirá los demás si hace falta y confirmá.",
-                "Healing uses the dice too: grab them with a held click, throw them and beat the threshold " +
-                "to recover health. Lock the high dice, reroll the rest if you need to, and confirm.");
+                "Curar también usa los dados: lánzalos y supera el umbral para recuperar vida. Bloquea los altos y confirma.",
+                "Healing uses the dice too: throw them and beat the threshold to recover health. Lock the high ones and confirm.");
 
             Ui(TutorialTextKeys.GoToC,
-                "¡Bien hecho! Seguí por la puerta señalada. La otra puerta está bloqueada — la vas a abrir más adelante.",
+                "¡Bien hecho! Sigue por la puerta señalada. La otra está bloqueada — la abrirás más adelante.",
                 "Well done! Head through the highlighted door. The other one is locked — you'll open it later.");
 
             Ui(TutorialTextKeys.EscapeTeach,
-                "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): usala para escapar por donde viniste. " +
-                "Solo funciona si estás al lado de una puerta — y ahora lo estás.",
-                "There are too many of them! FORCE DOOR ({0}) is unlocked: use it to escape the way you came. " +
-                "It only works if you're next to a door — and right now you are.");
+                "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): úsala para escapar por donde viniste. Ya estás junto a la puerta.",
+                "Too many! FORCE DOOR ({0}) is unlocked: escape the way you came. You're already next to the door.");
 
             Ui(TutorialTextKeys.EscapeDice,
-                "Forzar la puerta se resuelve con los dados: agarralos, arrojalos y superá el umbral para escapar del combate.",
-                "Forcing the door is resolved with the dice: grab them, throw them and beat the threshold to escape the fight.");
+                "Forzar la puerta se resuelve con los dados: lánzalos y supera el umbral para escapar del combate.",
+                "Forcing the door is resolved with dice: throw them and beat the threshold to escape the fight.");
+
+            Ui(TutorialTextKeys.EscapeAftermath,
+                "Escapar no los elimina: los enemigos se quedan en la sala, recuperan algo de vida y te esperan si vuelves.",
+                "Escaping doesn't remove them: the enemies stay in the room, heal a little, and wait if you come back.");
+
+            Ui(TutorialTextKeys.CameraControls,
+                "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Recentrar: G. Pruébalo ahora.",
+                "Rotate the camera with the right button. Drag the map with the wheel pressed. Zoom: wheel. Recenter: G. Try it now.");
+
+            Ui(TutorialTextKeys.MapRooms,
+                "Aleja el zoom para ver las salas adyacentes: sus íconos te dicen cuáles son especiales (tienda, encantamiento...).",
+                "Zoom out to see the adjacent rooms: their icons tell you which ones are special (shop, enchantment...).");
 
             Ui(TutorialTextKeys.Combat2Door,
-                "La sala se desbloqueó: entrá y terminá lo que empezaste.",
+                "La sala se desbloqueó: entra y termina lo que empezaste.",
                 "The room is unlocked: go in and finish what you started.");
 
             Ui(TutorialTextKeys.Combat2,
-                "¡Ahora sí! Con la mejora de PAR estás listo: acabá con los dos enemigos. (Click para seguir.)",
-                "Now you're ready! With the PAIR upgrade you can take on both enemies. (Click to continue.)");
+                "¡Ahora sí! Con la mejora de PAR estás listo: acaba con los dos enemigos.",
+                "Now you're ready! With the PAIR upgrade, take down both enemies.");
 
             Ui(TutorialTextKeys.ShopDoor,
-                "¡Escapaste! Se abrió la puerta de la tienda. Entrá: te espera algo que te va a dar la ventaja.",
-                "You escaped! The shop door is open. Head in: something that will give you the edge is waiting.");
+                "¡Escapaste! Se abrió la puerta de la tienda. Entra: te espera algo que te dará ventaja.",
+                "You escaped! The shop door is open. Head in: something useful is waiting.");
 
             Ui(TutorialTextKeys.ShopPedestal,
-                "Esta es la tienda. Acercate al pedestal y presioná F para comprar la mejora: tu combo PAR va a hacer +50 de daño.",
-                "This is the shop. Walk up to the pedestal and press F to buy the upgrade: your PAIR combo will deal +50 damage.");
+                "Esta es la tienda. Acércate al pedestal y presiona F para comprar la mejora: tu combo PAR hará +50 de daño.",
+                "This is the shop. Walk to the pedestal and press F to buy the upgrade: your PAIR combo will deal +50 damage.");
 
             Ui(TutorialTextKeys.ShopPurchased,
-                "¡Mejora comprada! Ahora sí estás preparado: volvé por donde viniste y acabá con esos enemigos.",
+                "¡Mejora comprada! Ahora estás preparado: vuelve por donde viniste y acaba con esos enemigos.",
                 "Upgrade bought! Now you're ready: head back the way you came and finish those enemies.");
 
+            Ui(TutorialTextKeys.BackpackIcon,
+                "Se desbloqueó tu INVENTARIO: tu compra vive aquí, junto a todo lo que consigas en la run.",
+                "Your INVENTORY is unlocked: your purchase lives here, with everything else you find in the run.");
+
             Ui(TutorialTextKeys.GoToE,
-                "¡Excelente! Pasá a la última sala: la de encantamientos.",
+                "¡Excelente! Pasa a la última sala: la de encantamientos.",
                 "Excellent! Move on to the last room: the enchantment room.");
 
             Ui(TutorialTextKeys.EnchantRoom,
-                "Esta es la mesa de encantamientos: mejora uno de tus dados a cambio de oro, por el resto de la run. Acercate al altar y presioná F para abrirla.",
-                "This is the enchantment table: it upgrades one of your dice for gold, for the rest of the run. Walk up to the altar and press F to open it.");
+                "Esta es la mesa de encantamientos: mejora un dado a cambio de oro. Acércate al altar y presiona F.",
+                "This is the enchantment table: it upgrades a die for gold. Walk to the altar and press F.");
 
             Ui(TutorialTextKeys.EnchantTable,
-                "Elegí uno de tus dados, elegí el encantamiento y confirmá: el dado queda mejorado por el resto de la run. " +
-                "Cuanto más fuerte es el dado, más huecos de encantamiento tiene. " +
-                "Cada encantamiento cuesta oro — el que juntaste alcanza para exactamente UNO. (Click para seguir.)",
-                "Pick one of your dice, pick the enchantment and confirm: the die stays upgraded for the rest of the run. " +
-                "The stronger the die, the more enchantment slots it has. " +
-                "Each enchantment costs gold — what you saved is enough for exactly ONE. (Click to continue.)");
+                "Elige un dado y un cupo, y confirma: el encantamiento sale al azar — y puede ser malo.",
+                "Pick a die and a slot, then confirm: the enchantment is random — and it can be bad.");
+
+            Ui(TutorialTextKeys.EnchantReroll,
+                "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo: cada reemplazo cuesta más oro.",
+                "Don't like the result? You can replace it by paying again: each replacement costs more gold.");
 
             Ui(TutorialTextKeys.EnchantDone,
-                "¡Dado encantado! Ya sabés todo lo que necesitás — cerrá la mesa.",
+                "¡Dado encantado! Ya sabes todo lo que necesitas — cierra la mesa.",
                 "Die enchanted! You know everything you need — close the table.");
 
+            Ui(TutorialTextKeys.DiceBagIcon,
+                "Tu dado encantado vive en la BOLSA DE DADOS: revisa ahí tus dados y encantamientos.",
+                "Your enchanted die lives in the DICE BAG: check your dice and enchantments there.");
+
             Ui(TutorialTextKeys.Exit,
-                "Cruzá la puerta señalada para empezar tu aventura de verdad.",
+                "Cruza la puerta señalada para empezar tu aventura de verdad.",
                 "Step through the highlighted door to begin your real adventure.");
 
             Ui(TutorialTextKeys.ContinueFooter,
-                "Hacé click para continuar",
+                "Haz clic para continuar",
                 "Click to continue");
+
+            // El item que vende la tienda del tutorial (Item_Tutorial_Par50,
+            // autorado por TutorialAssetInstaller) — resuelve por su ItemId.
+            Content("item.tutorial.par50.name", "Bonus de Par", "Pair Bonus");
+            Content("item.tutorial.par50.desc", "+50 de daño al armar un Par.", "+50 damage when matching a Pair.");
         }
 
         // ==================================================================
@@ -230,7 +259,7 @@ namespace Rollgeon.EditorTools.Localization
                 "The minimum result is always half the maximum, rounded up. A sharpened d6 never rolls below 3.");
 
             Ench("ancla", "Ancla", "Anchor",
-                "Si este dado se holdea entre tiradas, su resultado aumenta +1 por tirada holdeada (máx +3).",
+                "Si este dado se bloquea entre tiradas, su resultado aumenta +1 por tirada bloqueada (máx +3).",
                 "If this die is held between rolls, its result increases by +1 per held roll (max +3).");
 
             Ench("avaro", "Avaro", "Miser",
@@ -242,7 +271,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Blocks the top and bottom quarter. d8:{3,4,5,6} d12:{4,5,6,7,8,9}");
 
             Ench("cargado", "Cargado", "Loaded",
-                "Una vez por combate podés relanzar este dado y quedarte con el mayor resultado.",
+                "Una vez por combate puedes volver a tirar este dado y quedarte con el mayor resultado.",
                 "Once per combat you can reroll this die and keep the higher result.");
 
             Ench("codicioso", "Codicioso", "Covetous",
@@ -290,7 +319,7 @@ namespace Rollgeon.EditorTools.Localization
                 "The result becomes max+1 minus the result. A d6 that rolls 1 counts as 6.");
 
             Ench("lento", "Lento", "Sluggish",
-                "Este dado no se puede holdear entre tiradas.",
+                "Este dado no se puede bloquear entre tiradas.",
                 "This die cannot be held between rolls.");
 
             Ench("mercader", "Mercader", "Merchant",
@@ -298,7 +327,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Grants 5 gold when you complete a straight.");
 
             Ench("mimetico", "Mimético", "Mimic",
-                "Copia el resultado del último dado re-tirado en esta tirada para propósitos de combo.",
+                "Copia el resultado del último dado vuelto a tirar en esta tirada para propósitos de combo.",
                 "Copies the result of the last rerolled die in this roll for combo purposes.");
 
             Ench("mitad_inferior", "Mitad Inferior", "Lower Half",
@@ -350,7 +379,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Each time it joins a combo it consumes 2 gold. With no gold it can't take part.");
 
             Ench("torpe", "Torpe", "Clumsy",
-                "Fuerza un re-tiro completo en el turno 2 del combate.",
+                "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
                 "Forces a full reroll on turn 2 of the combat.");
 
             Ench("volatil", "Volátil", "Volatile",
@@ -381,7 +410,7 @@ namespace Rollgeon.EditorTools.Localization
                 "El D8 queda disponible en la pantalla de armado de build.",
                 "The D8 becomes available on the build screen.");
             Content("unlock.dice.d8.hint",
-                "Dominá el dado estándar: ganá una run confiando solo en el clásico de seis caras.",
+                "Domina el dado estándar: gana una run confiando solo en el clásico de seis caras.",
                 "Master the standard die: win a run relying only on the classic six-sider.");
 
             Content("unlock.dice.d10.name", "Dado D10", "D10 Die");
@@ -389,7 +418,7 @@ namespace Rollgeon.EditorTools.Localization
                 "El D10 queda disponible en la pantalla de armado de build.",
                 "The D10 becomes available on the build screen.");
             Content("unlock.dice.d10.hint",
-                "Hay una receta exacta de dados que abre esta puerta. Experimentá con la mezcla.",
+                "Hay una receta exacta de dados que abre esta puerta. Experimenta con la mezcla.",
                 "There's an exact dice recipe that opens this door. Experiment with the mix.");
 
             Content("unlock.class.berserker.name", "Berserker", "Berserker");
@@ -397,7 +426,7 @@ namespace Rollgeon.EditorTools.Localization
                 "El Berserker queda seleccionable en la pantalla de selección de personaje.",
                 "The Berserker becomes selectable on the character selection screen.");
             Content("unlock.class.berserker.hint",
-                "Demostrá fuerza de ocho caras: llevá el dado nuevo a una victoria.",
+                "Demuestra fuerza de ocho caras: lleva el dado nuevo a una victoria.",
                 "Prove your eight-sided strength: carry the new die to a victory.");
 
             Content("unlock.class.gambler.name", "Gambler", "Gambler");
@@ -485,7 +514,7 @@ namespace Rollgeon.EditorTools.Localization
             // El salto va en la traducción y no en la vista para que cada idioma
             // pueda cortar donde le quede bien.
             Ui(UiTextKeys.ChainRollPaidHint,
-                "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.",
+                "¡No te quedan tiradas gratis!\nCada tirada adicional cuesta 1 de Energía.",
                 "You have no free rolls left!\nEach additional roll costs 1 Energy.");
         }
 
@@ -500,13 +529,13 @@ namespace Rollgeon.EditorTools.Localization
         private static void SeedBuildHelp()
         {
             Ui(BuildHelpTextKeys.Pool,
-                "Estos son los dados de tu clase. Hacé click en uno para sumarlo a la bolsa; " +
-                "el número de cada fila dice cuántos podés llevar de ese tipo.",
+                "Estos son los dados de tu clase. Haz clic en uno para sumarlo a la bolsa; " +
+                "el número de cada fila dice cuántos puedes llevar de ese tipo.",
                 "These are your class dice. Click one to add it to your bag; the number on each " +
                 "row shows how many of that type you can carry.");
 
             Ui(BuildHelpTextKeys.Strip,
-                "Tu bolsa se arma acá, siempre ordenada de menor a mayor. Hacé click en un dado " +
+                "Tu bolsa se arma aquí, siempre ordenada de menor a mayor. Haz clic en un dado " +
                 "de la tira para devolverlo al pool.",
                 "Your bag is built here, always sorted from lowest to highest. Click a die in the " +
                 "strip to send it back to the pool.");
@@ -609,8 +638,9 @@ namespace Rollgeon.EditorTools.Localization
         /// <remarks>
         /// Los nombres/descripciones de los items van a la tabla Content con las keys de
         /// entidad (<c>&lt;ItemId&gt;.name</c> / <c>.desc</c>) — son del item, no del
-        /// drawer que los muestra. El ES es el texto autorado en los assets, verbatim
-        /// (incluido el typo real del id <c>bendicion.destinoo.generala</c>).
+        /// drawer que los muestra. El ES está normalizado a la guía de tono (tuteo
+        /// neutro, tildes, punto final); el typo del id <c>bendicion.destinoo.generala</c>
+        /// se conserva porque identifica a la entidad.
         /// </remarks>
         private static void SeedInventory()
         {
@@ -618,19 +648,19 @@ namespace Rollgeon.EditorTools.Localization
             Ui(InventoryTextKeys.ItemsCaption, "Objetos", "Items");
 
             Item("amuleto.reflejo", "Amuleto de Reflejo", "Reflection Amulet",
-                "Cuando recibís daño le sacas 10 de vida al enemigo que te golpeo",
+                "Cuando recibes daño, le sacas 10 de vida al enemigo que te golpeó.",
                 "When you take damage, deal 10 damage back to the enemy that hit you.");
 
             Item("banquete.full", "Banquete Real", "Royal Feast",
                 "Los Full House hacen +30 daño.",
                 "Full Houses deal +30 damage.");
 
-            Item("bendicion.destinoo.generala", "Bendicion del Destino", "Blessing of Fate",
-                "Cada Generala cura 15HP",
+            Item("bendicion.destinoo.generala", "Bendición del Destino", "Blessing of Fate",
+                "Cada Generala cura 15 HP.",
                 "Each Generala heals 15 HP.");
 
             Item("bolsa.comerciante.doblepar", "Bolsa del comerciante", "Merchant's Pouch",
-                "Cada Doble Par da +5 oro",
+                "Cada Doble Par da +5 oro.",
                 "Each Double Pair grants +5 gold.");
 
             Item("botas.escaladores.escalera", "Botas del Escalador", "Climber's Boots",
@@ -642,43 +672,43 @@ namespace Rollgeon.EditorTools.Localization
                 "+1 base movement.");
 
             Item("cadena.comercial.doblepar", "Cadena comercial", "Trade Chain",
-                "Doble par hace +20 de daño",
+                "El Doble Par hace +20 de daño.",
                 "Double Pair deals +20 damage.");
 
             Item("copa.generala", "Copa del Campeón", "Champion's Cup",
-                "La Generala hace +50 daño",
+                "La Generala hace +50 daño.",
                 "The Generala deals +50 damage.");
 
             Item("coraza.reforzada", "Coraza Reforzada", "Reinforced Plate",
-                "+2 vida máxima",
+                "+2 vida máxima.",
                 "+2 max health.");
 
             Item("corona.noble.full", "Corona Noble", "Noble Crown",
-                "Cada Full House recupera 5 HP",
+                "Cada Full House recupera 5 HP.",
                 "Each Full House restores 5 HP.");
 
-            Item("egoista", "El egoista", "The Selfish One",
-                "Entre más oro tengas más daño haces",
+            Item("egoista", "El egoísta", "The Selfish One",
+                "Cuanto más oro tienes, más daño haces.",
                 "The more gold you have, the more damage you deal.");
 
             Item("escudo.imperial.poker", "Escudo Imperial", "Imperial Shield",
-                "Cada Poker genera +2 escudo",
+                "Cada Póker genera +2 escudo.",
                 "Each Poker grants +2 shield.");
 
             Item("espada.fuerzabruta", "Espada de Fuego", "Fire Sword",
-                "El combo Fuerza Bruta tiene +35 de daño",
+                "El combo Fuerza Bruta hace +35 de daño.",
                 "The Brute Force combo deals +35 damage.");
 
             Item("guantes.apostador.par", "Guantes del apostador", "Gambler's Gloves",
-                "Los pares hacen +20 de daño",
+                "Los Pares hacen +20 de daño.",
                 "Pairs deal +20 damage.");
 
             Item("guantes.maestro.poker", "Guantes del maestro", "Master's Gloves",
-                "El Póker hace +25 daño",
+                "El Póker hace +25 daño.",
                 "The Poker deals +25 damage.");
 
             Item("instinto.supervivencia", "Instinto de Supervivencia", "Survival Instinct",
-                "Al bajar de 30% HP obtenés +1 escudo.",
+                "Al bajar de 30% HP obtienes +1 escudo.",
                 "When you drop below 30% HP you gain +1 shield.");
 
             Item("moneda.suerte.par", "Moneda de la suerte", "Lucky Coin",
@@ -686,30 +716,197 @@ namespace Rollgeon.EditorTools.Localization
                 "Each Pair grants +2 gold.");
 
             Item("ritual.sangre.trio", "Ritual de Sangre", "Blood Ritual",
-                "Cada Trio recupera 1HP",
+                "Cada Trío recupera 1 HP.",
                 "Each Trio restores 1 HP.");
 
             Item("rodilleras.acero", "Rodilleras de Acero", "Steel Kneepads",
-                "Tenes +3 de escudo al inicio de cada combate",
+                "Tienes +3 de escudo al inicio de cada combate.",
                 "You start each combat with +3 shield.");
 
             Item("talisman.vital", "Talismán Vital", "Vital Talisman",
-                "Recuperás 1 HP al iniciar combate.",
+                "Recuperas 1 HP al iniciar combate.",
                 "Restore 1 HP when combat starts.");
 
             Item("tesoro.generala", "Tesoro Legendario", "Legendary Treasure",
                 "Cada Generala da +30 oro.",
                 "Each Generala grants +30 gold.");
 
-            Item("totem.clan.trio", "Totem del Clan", "Clan Totem",
-                "Los Tríos hacen +30 de daño",
+            Item("totem.clan.trio", "Tótem del Clan", "Clan Totem",
+                "Los Tríos hacen +30 de daño.",
                 "Trios deal +30 damage.");
 
-            // La poción ya tiene su .name en la tabla (cargado a mano); acá solo se suma
+            // El .name de la poción lo siembra SeedContentBaseline; acá solo se suma
             // la descripción que le faltaba para el tooltip del inventario.
             Content("potion.healing.desc",
                 "Recupera vida al usarla.",
                 "Restores health when used.");
+        }
+
+        // ==================================================================
+        // Chrome de menús y HUD (tabla UI) — promoción de keys solo-asset
+        // ==================================================================
+
+        /// <remarks>
+        /// Estas keys vivían SOLO en los .asset de tabla (cargadas a mano en el commit
+        /// i18n original, ninguna herramienta las escribía) — una regeneración de tablas
+        /// desde el seeder las perdía, igual que BUG-026. Valores idénticos a los de las
+        /// tablas, así que re-sembrar es idempotente.
+        /// </remarks>
+        private static void SeedMenuChrome()
+        {
+            // Menú principal.
+            Ui("menu.play", "Jugar", "Play");
+            Ui("menu.continue", "Continuar", "Continue");
+            Ui("menu.unlocks", "Desbloqueos", "Unlocks");
+            Ui("menu.delete", "Borrar partida", "Delete Save");
+            Ui("menu.tutorial", "Tutorial", "Tutorial");
+            Ui("menu.quit", "Salir", "Quit");
+            Ui("menu.tutorial_on", "Tutorial: SÍ", "Tutorial: ON");
+            Ui("menu.tutorial_off", "Tutorial: NO", "Tutorial: OFF");
+
+            // Pantallas de desbloqueos / pausa / fin de run.
+            Ui("screen.return_to_menu", "Volver al menú", "Return to Menu");
+            Ui("unlocks.title", "DESBLOQUEOS", "UNLOCKS");
+            Ui("toast.unlocked", "¡Desbloqueado!", "Unlocked!");
+            Ui("pause.resume", "Reanudar", "Resume");
+            Ui("pause.quit_run", "Abandonar run", "Quit Run");
+            Ui("victory.title", "¡Victoria!", "Victory!");
+            Ui("defeat.title", "Derrota", "Defeat");
+            Ui("floor.continue", "Continuar", "Continue");
+            Ui("floor.label", "Piso", "Floor");
+
+            // HUD de gameplay: nav, acciones y tiro de acción.
+            Ui("actionroll.roll", "Tirar", "Roll");
+            Ui("nav.proceed", "Avanzar", "Proceed");
+            Ui("nav.pause", "Pausa", "Pause");
+            Ui("nav.rooms", "Salas", "Rooms");
+            Ui("action.attack", "Atacar", "Attack");
+            Ui("action.move", "Mover", "Move");
+            Ui("action.special_attack", "Ataque especial", "Special Attack");
+            Ui("action.force_door", "Forzar puerta", "Force Door");
+            Ui("action.heal", "Curar", "Heal");
+            Ui("action.end_turn", "Terminar turno", "End Turn");
+            Ui("action.pass", "Pasar", "Pass");
+            Ui("action.pass_door", "Cruzar puerta", "Pass Door");
+
+            // Tipos de sala (nav del HUD).
+            Ui("room.type.start", "Inicio", "Start");
+            Ui("room.type.combat", "Combate", "Combat");
+            Ui("room.type.boss", "Jefe", "Boss");
+            Ui("room.type.shop", "Tienda", "Shop");
+            Ui("room.type.potion", "Poción", "Potion");
+            Ui("room.type.enchantment", "Encantamiento", "Enchantment");
+
+            // Altar de encantamiento (layout viejo) + unidad de oro. Las keys del
+            // rediseño (altar.title, altar.your_dice, …) las upsertea
+            // EnchantmentAltarSetupTools — no duplicar acá.
+            Ui("gold.unit", "oro", "gold");
+            Ui("altar.cost", "Costo", "Cost");
+            Ui("altar.current_faces", "Caras actuales", "Current faces");
+            Ui("altar.dice_header", "Tus dados:", "Your dice:");
+            Ui("altar.empty", "Vacío", "Empty");
+            Ui("altar.enchanted", "Encantado", "Enchanted");
+            Ui("altar.gold", "Oro", "Gold");
+            Ui("altar.slot_header", "Cupos del dado seleccionado:", "Selected die slots:");
+        }
+
+        // ==================================================================
+        // Baseline de Content — promoción de keys solo-asset
+        // ==================================================================
+
+        /// <remarks>
+        /// Mismo caso que <see cref="SeedMenuChrome"/> pero para la tabla Content:
+        /// héroe, combos del contrato, enemigos y lore de bosses que solo existían en
+        /// los .asset. El lore de los bosses conserva su registro narrativo en tercera
+        /// persona a propósito. <c>passive.warrior.low_hp_rage.*</c> NO va acá — lo
+        /// upsertea <c>ClassSelectionSetupTools</c>.
+        /// </remarks>
+        private static void SeedContentBaseline()
+        {
+            // Héroe y su pasiva base.
+            Content("Warrior.name", "Guerrero", "Warrior");
+            Content("warrior_tutorial.name", "Guerrero (Tutorial)", "Warrior (Tutorial)");
+            Content("passive.warrior.heal_on_turn.name",
+                "Regeneración del Guerrero", "Warrior's Regeneration");
+            Content("passive.warrior.heal_on_turn.desc",
+                "Al inicio de cada turno, el guerrero se cura 2 HP.",
+                "At the start of each turn, the warrior heals 2 HP.");
+
+            // Combos del contrato. "Generala" y "Full House" son ES == EN a propósito
+            // (IdenticalByDesign en LocalizationTablesTests).
+            Content("combo.double_pair.name", "Doble Par", "Double Pair");
+            Content("combo.double_pair.desc", "2 pares de valores distintos", "2 pairs of different values");
+            Content("combo.ladder.name", "Escalera", "Straight");
+            Content("combo.ladder.desc", "Dados en escalera", "Dice in a run");
+            Content("combo.brute_force.name", "Fuerza Bruta", "Brute Force");
+            Content("combo.brute_force.desc",
+                "Suma los valores de todos los dados que cayeron en la mitad superior de su propio rango (d6: 4-6, d8: 5-8, d12: 7-12).",
+                "Sums the values of all dice that landed in the upper half of their own range (d6: 4-6, d8: 5-8, d12: 7-12).");
+            Content("combo.full_house.name", "Full House", "Full House");
+            Content("combo.full_house.desc", "2 dados de un valor y 3 de otro", "2 dice of one value and 3 of another");
+            Content("combo.generala.name", "Generala", "Generala");
+            Content("combo.generala.desc", "5 dados del mismo valor", "5 dice of the same value");
+            Content("combo.higher_number.name", "Número Mayor", "Higher Number");
+            Content("combo.higher_number.desc", "Dado más alto", "Highest die");
+            Content("combo.pair.name", "Par", "Pair");
+            Content("combo.pair.desc", "2 dados del mismo valor", "2 dice of the same value");
+            Content("combo.poker.name", "Póker", "Poker");
+            Content("combo.poker.desc", "4 dados del mismo valor", "4 dice of the same value");
+            Content("combo.trio.name", "Trío", "Trio");
+            Content("combo.trio.desc", "3 dados del mismo valor", "3 dice of the same value");
+
+            Content("potion.healing.name", "Poción", "Potion");
+
+            // Enemigos.
+            Content("Boss01.name", "Jefe de Prueba", "Boss Test");
+            Content("healerEnemy.name", "Sanador", "Healer");
+            Content("CardEnemy01.name", "Enemigo Carta", "Card Enemy");
+            Content("RangedEnemy01.name", "Enemigo a Distancia", "Ranged Enemy");
+            Content("RangedEnemy01.desc",
+                "Goblin con ataque a distancia, dispara con una ballesta.",
+                "A goblin with a ranged attack; fires a crossbow.");
+            Content("enemy_tutorial_melee_b.name", "Recluta (Tutorial)", "Recruit (Tutorial)");
+            Content("enemy_tutorial_melee_c.name", "Matón (Tutorial)", "Thug (Tutorial)");
+
+            // Lore de bosses — 3ª persona narrativa, no pasarlo a tuteo.
+            Content("boss.general_director.name", "Director General", "General Director");
+            Content("boss.general_director.desc",
+                "El más viejo de todos. Ha estado solo en el piso superior tanto tiempo " +
+                "que ya no recuerda con certeza cuáles eran las reglas originales del " +
+                "casino. En algún momento dejó de buscarlas en el manual y empezó a " +
+                "inventarlas. Las hace cumplir con total convicción y plena autoridad " +
+                "burocrática. Que beneficien o perjudiquen al jugador es apenas un " +
+                "detalle administrativo que no influye en su juicio.",
+                "The oldest of them all. He has been alone on the top floor for so long " +
+                "that he no longer remembers for sure what the original casino rules " +
+                "were. At some point, he stopped looking for them in the manual and " +
+                "started making them up. He enforces them with complete conviction and " +
+                "full bureaucratic authority. Whether they benefit or harm the player is " +
+                "just an administrative detail that doesn't factor into his judgment.");
+            Content("boss.security_boss.name", "Jefe de Seguridad", "Security Boss");
+            Content("boss.security_boss.desc",
+                "Ha pasado siglos revisando los protocolos de seguridad del casino. " +
+                "Cada acción queda registrada en su libro de incidentes. Detectó a miles " +
+                "de tramposos en su vida y sigue aplicando los mismos procedimientos " +
+                "aunque no quede nadie vivo a quien proteger. Si el jugador repite una " +
+                "jugada, él ya la tiene anotada.",
+                "He has spent centuries reviewing casino security protocols. Every " +
+                "action is recorded in his incident book. He detected thousands of " +
+                "cheaters in his lifetime and continues applying the same procedures " +
+                "even if there is no one left alive to protect. If the player repeats a " +
+                "move, he already has it recorded.");
+            Content("boss.sunken_grand.name", "El Gran Hundido", "The Sunken Grand");
+            Content("boss.sunken_grand.desc",
+                "Lleva siglos calculando probabilidades en el casino. No necesita " +
+                "adivinar qué combo va a sacar el jugador: le basta con quitar una parte " +
+                "de la ecuación. Habla durante el combate haciendo observaciones " +
+                "estadísticas presumidas sobre la tirada del jugador. No es cruel, es un " +
+                "actuario que nunca aprendió a callarse.",
+                "He has been calculating odds in the casino for centuries. He doesn't " +
+                "need to guess what combo the player is going to roll: it is enough for " +
+                "him to take a part of the equation out of it. He speaks during combat " +
+                "making cool statistical observations about the player's roll. He's not " +
+                "cruel, he's an actuary who never learned to shut up.");
         }
 
         // ==================================================================

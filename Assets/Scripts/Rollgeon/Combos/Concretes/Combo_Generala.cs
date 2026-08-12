@@ -8,7 +8,9 @@ namespace Rollgeon.Combos.Concretes
     /// <para>
     /// <b>Priority override</b> (hard rule #8, plan §4/§10.7): <c>Priority => int.MaxValue</c>.
     /// Esto garantiza que si Generala matchea, siempre gana incluso si un designer sube
-    /// por error el <c>BaseDamage</c> de Poker a un valor mayor que 100.
+    /// por error el <c>_priority</c> de otro combo por encima del suyo. El campo
+    /// <c>_priority</c> serializado del asset se IGNORA en esta clase (queda autorado en 90
+    /// solo como documentación del orden relativo).
     /// </para>
     /// <para>
     /// Detecta si <c>dice.Distinct().Count() == 1</c> y hay al menos 5 dados. Input con menos de 5

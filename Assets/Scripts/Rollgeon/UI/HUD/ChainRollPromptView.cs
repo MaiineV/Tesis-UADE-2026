@@ -52,7 +52,7 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, TextArea(2, 3)]
         [Tooltip("Texto del subtítulo. Fallback si la tabla UI no tiene la key.")]
-        private string _hintText = "¡No te quedan rolls gratis!\nCada roll adicional cuesta 1 de Energía.";
+        private string _hintText = "¡No te quedan tiradas gratis!\nCada tirada adicional cuesta 1 de Energía.";
 
         [SerializeField, Optional, Tooltip("Botón del prompt (BUG-034). Sin ref, el prompt no es clickeable.")]
         private Button _button;

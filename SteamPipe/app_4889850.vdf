@@ -9,7 +9,7 @@
 "appbuild"
 {
 	"appid"			"4889850"
-	"desc"			"Rollgeon 0.1.0 — primera build de Windows (Feature#0036 + fix loading tween)"
+	"desc"			"Rollgeon 0.2.0 — Development, develop @ ba01c62e (mecha boss anims + fix chain roll prompt)"
 
 	// Ambos caen bajo Build/, que está gitignoreado.
 	"buildoutput"	"..\Build\SteamPipeOutput"

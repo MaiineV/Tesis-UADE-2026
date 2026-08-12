@@ -582,10 +582,11 @@ namespace Rollgeon.UI.HUD
                 ? sheet.MatchBest(keptDice, keptTypes)
                 : MatchBestFromCatalog(keptDice, keptTypes);
 
-            // Capa 1: Detect con el override plano de la tabla por clase (Spec Daño v2) —
-            // usa el BaseDamage del RESULTADO para que los combos dinámicos (Higher Number,
-            // SumaX) incluyan su parte variable en el preview, igual que el golpe real
-            // (DetectWithContractMods). Capa 2 (Boss 3 §4): modificadores del Contrato.
+            // Capa 1: Detect con el override plano de la tabla por clase (Spec Daño v2).
+            // Desde Fix#0047 el BaseDamage del resultado es SOLO el piso plano — la parte
+            // variable de los combos dinámicos entra al preview vía ContributingDice (Σcaras),
+            // igual que el golpe real (DetectWithContractMods). Capa 2 (Boss 3 §4):
+            // modificadores del Contrato.
             var detection = best != null
                 ? best.Detect(keptDice, keptTypes, sheet?.GetBaseDamageOverride(best.ComboId))
                 : ComboDetectionResult.NoMatch();
@@ -614,6 +615,7 @@ namespace Rollgeon.UI.HUD
                 ComboId = best?.ComboId ?? string.Empty,
                 DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
                 BaseDamage = baseDmg,
+                DynamicBonus = detection.IsMatch ? detection.DynamicBonus : 0,
                 ContributingDice = contributingDice,
             });
 

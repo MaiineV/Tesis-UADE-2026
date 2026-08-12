@@ -21,8 +21,8 @@ namespace Rollgeon.EditorTools.Analytics
             LocalizationSetupTools.UpsertEntry("UI", "menu.analytics_consent_title",
                 "Datos de juego anónimos", "Anonymous gameplay data");
             LocalizationSetupTools.UpsertEntry("UI", "menu.analytics_consent_body",
-                "¿Nos ayudás a balancear el juego? Enviamos datos anónimos de tus partidas " +
-                "(combates, oro, combos). Sin datos personales. Podés cambiarlo cuando " +
+                "¿Nos ayudas a balancear el juego? Enviamos datos anónimos de tus partidas " +
+                "(combates, oro, combos). Sin datos personales. Puedes cambiarlo cuando " +
                 "quieras desde el menú.",
                 "Help us balance the game? We send anonymous gameplay data (combats, gold, " +
                 "combos). No personal data. You can change this anytime from the menu.");

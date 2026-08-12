@@ -39,6 +39,7 @@ MonoBehaviour:
   _description: 2 dados de un valor y 3 de otro
   _icon: {fileID: 1238936565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   _baseDamage: 35
+  _priority: 35
   _valueMultipliers:
   - 0
   - 0

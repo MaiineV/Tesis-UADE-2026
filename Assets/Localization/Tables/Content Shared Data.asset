@@ -763,6 +763,14 @@ MonoBehaviour:
     m_Key: potion.healing.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 10319612576890880
+    m_Key: item.tutorial.par50.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612602056704
+    m_Key: item.tutorial.par50.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -325,8 +325,8 @@ namespace Rollgeon.UI.Screens
             yield return new BuildHelpFlow.Step(
                 _poolOfferingsContainer as RectTransform,
                 BuildHelpTextKeys.Pool,
-                "Estos son los dados de tu clase. Hacé click en uno para sumarlo a la bolsa; " +
-                "el número de cada fila dice cuántos podés llevar de ese tipo.");
+                "Estos son los dados de tu clase. Haz clic en uno para sumarlo a la bolsa; " +
+                "el número de cada fila dice cuántos puedes llevar de ese tipo.");
 
             // Solo la tira. Sumar el contador al recorte (que está en la esquina opuesta)
             // hacía que el spotlight abarcara el bounding box de ambos: un círculo enorme
@@ -334,7 +334,7 @@ namespace Rollgeon.UI.Screens
             yield return new BuildHelpFlow.Step(
                 _diceStrip != null ? _diceStrip.transform as RectTransform : null,
                 BuildHelpTextKeys.Strip,
-                "Tu bolsa se arma acá, siempre ordenada de menor a mayor. Hacé click en un " +
+                "Tu bolsa se arma aquí, siempre ordenada de menor a mayor. Haz clic en un " +
                 "dado de la tira para devolverlo al pool.");
 
             yield return new BuildHelpFlow.Step(

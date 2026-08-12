@@ -305,157 +305,148 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251619241984
-    m_Localized: "Hac\xE9 click en una casilla para moverte. Camin\xE1 hasta la puerta
-      se\xF1alada para salir de la sala."
+    m_Localized: "Haz clic en una casilla para moverte. Camina hasta la puerta se\xF1alada
+      para salir de la sala."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905280
-    m_Localized: "\xA1Combate! Este es tu enemigo. En el tutorial vos siempre actu\xE1s
-      primero. (Click para continuar.)"
+    m_Localized: "\xA1Combate! Este es tu enemigo. En el tutorial t\xFA siempre act\xFAas
+      primero."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905281
-    m_Localized: "Tu h\xE9roe pelea cuerpo a cuerpo: primero hay que acercarse. Seleccion\xE1
+    m_Localized: "Tu h\xE9roe pelea cuerpo a cuerpo: primero ac\xE9rcate. Selecciona
       MOVER ({0})."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905282
-    m_Localized: "Las casillas iluminadas son a donde lleg\xE1s este turno. Hac\xE9
-      click en una casilla al lado del enemigo."
+    m_Localized: Las casillas iluminadas son tu alcance este turno. Haz clic en una
+      casilla junto al enemigo.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905283
-    m_Localized: "Quedaste lejos del enemigo \u2014 y solo pod\xE9s moverte una vez
-      por turno. Apret\xE1 FINALIZAR TURNO ({0}) y dej\xE1 que se acerque \xE9l."
+    m_Localized: Quedaste lejos y solo puedes moverte una vez por turno. Pulsa FINALIZAR
+      TURNO ({0}) y deja que se acerque.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905284
-    m_Localized: 'Esta es tu VIDA: si llega a cero, la run se termina. Cuidala. (Click
-      para continuar.)'
+    m_Localized: "Esta es tu VIDA: si llega a cero, la run se termina. Cu\xEDdala."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905285
-    m_Localized: "Esta es tu ENERG\xCDA: moverte, atacar y re-tirar dados la consumen.
-      Administrala en cada turno. (Click para continuar.)"
+    m_Localized: "Esta es tu ENERG\xCDA: moverte, atacar y volver a tirar la consumen.
+      Admin\xEDstrala en cada turno."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905286
-    m_Localized: "Se desbloque\xF3 ATACAR ({0}). Seleccionalo para elegir a qui\xE9n
+    m_Localized: "Se desbloque\xF3 ATACAR ({0}). Selecci\xF3nalo para elegir a qui\xE9n
       golpear."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905287
-    m_Localized: "Primero se elige el objetivo: hac\xE9 click en el enemigo iluminado
-      en rojo."
+    m_Localized: 'Primero elige el objetivo: haz clic en el enemigo iluminado en
+      rojo.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905288
-    m_Localized: "\xA1Objetivo marcado! Estos son tus dados: agarralos manteniendo
-      click izquierdo y arrojalos con un movimiento r\xE1pido del mouse."
+    m_Localized: "\xA1Objetivo marcado! Estos son tus dados: suj\xE9talos con clic
+      izquierdo y l\xE1nzalos con un movimiento r\xE1pido del mouse."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905289
-    m_Localized: "Arm\xE1 combos de generala (par, tr\xEDo, escalera...). Hac\xE9
-      click en un dado para bloquearlo y conservarlo. \xBFQuer\xE9s re-tirar? Agarr\xE1
-      los dados que quieras cambiar y arrojalos de nuevo \u2014 ten\xE9s hasta 3
-      tiradas. Cuando te guste el combo, apret\xE1 CONFIRMAR."
+    m_Localized: "Arma combos (par, tr\xEDo, escalera). Clic en un dado lo bloquea;
+      vuelve a tirar el resto \u2014 m\xE1ximo 3 tiradas. Luego CONFIRMA."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "\xA1Golpe dado! Te sobraron tiradas del ataque, as\xED que viene
-      la fase de DEFENSA: agarr\xE1 y arroj\xE1 los dados para armar un ESCUDO que
-      absorbe el pr\xF3ximo golpe. Bloque\xE1, re-tir\xE1 y CONFIRM\xC1 tu combo
-      de defensa."
+    m_Localized: "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un
+      combo \u2014 tu ESCUDO absorbe el pr\xF3ximo golpe."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
-    m_Localized: "\xA1Golpe completado! Cuando no quieras hacer nada m\xE1s, apret\xE1
-      FINALIZAR TURNO ({0}) para cederle el turno al enemigo."
+    m_Localized: "\xA1Golpe completado! Cuando no quieras hacer nada m\xE1s, pulsa
+      FINALIZAR TURNO ({0}) para ceder el turno."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905292
-    m_Localized: "\xA1As\xED se pelea! Repet\xED el proceso \u2014 moverte, atacar,
-      armar combos \u2014 hasta vencer al enemigo. (Click para seguir.)"
+    m_Localized: "\xA1As\xED se pelea! Repite el proceso \u2014 moverte, atacar,
+      armar combos \u2014 hasta vencer al enemigo."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905293
-    m_Localized: "\xA1Te golpearon! Se desbloque\xF3 CURAR ({0}): usala en tu turno
-      cuando te falte vida."
+    m_Localized: "\xA1Te golpearon! Se desbloque\xF3 CURAR ({0}): \xFAsala en tu
+      turno cuando te falte vida."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905294
-    m_Localized: "Curar tambi\xE9n usa los dados: agarralos con click sostenido,
-      arrojalos y super\xE1 el umbral para recuperar vida. Bloque\xE1 los dados altos,
-      re-tir\xE1 los dem\xE1s si hace falta y confirm\xE1."
+    m_Localized: "Curar tambi\xE9n usa los dados: l\xE1nzalos y supera el umbral
+      para recuperar vida. Bloquea los altos y confirma."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905295
-    m_Localized: "\xA1Bien hecho! Segu\xED por la puerta se\xF1alada. La otra puerta
-      est\xE1 bloqueada \u2014 la vas a abrir m\xE1s adelante."
+    m_Localized: "\xA1Bien hecho! Sigue por la puerta se\xF1alada. La otra est\xE1
+      bloqueada \u2014 la abrir\xE1s m\xE1s adelante."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905296
-    m_Localized: "\xA1Son demasiados! Se desbloque\xF3 FORZAR PUERTA ({0}): usala
-      para escapar por donde viniste. Solo funciona si est\xE1s al lado de una puerta
-      \u2014 y ahora lo est\xE1s."
+    m_Localized: "\xA1Son demasiados! Se desbloque\xF3 FORZAR PUERTA ({0}): \xFAsala
+      para escapar por donde viniste. Ya est\xE1s junto a la puerta."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905297
-    m_Localized: "Forzar la puerta se resuelve con los dados: agarralos, arrojalos
-      y super\xE1 el umbral para escapar del combate."
+    m_Localized: "Forzar la puerta se resuelve con los dados: l\xE1nzalos y supera
+      el umbral para escapar del combate."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905298
-    m_Localized: "La sala se desbloque\xF3: entr\xE1 y termin\xE1 lo que empezaste."
+    m_Localized: "La sala se desbloque\xF3: entra y termina lo que empezaste."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905299
-    m_Localized: "\xA1Ahora s\xED! Con la mejora de PAR est\xE1s listo: acab\xE1
-      con los dos enemigos. (Click para seguir.)"
+    m_Localized: "\xA1Ahora s\xED! Con la mejora de PAR est\xE1s listo: acaba con
+      los dos enemigos."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905300
-    m_Localized: "\xA1Escapaste! Se abri\xF3 la puerta de la tienda. Entr\xE1: te
-      espera algo que te va a dar la ventaja."
+    m_Localized: "\xA1Escapaste! Se abri\xF3 la puerta de la tienda. Entra: te espera
+      algo que te dar\xE1 ventaja."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905301
-    m_Localized: "Esta es la tienda. Acercate al pedestal y presion\xE1 F para comprar
-      la mejora: tu combo PAR va a hacer +50 de da\xF1o."
+    m_Localized: "Esta es la tienda. Ac\xE9rcate al pedestal y presiona F para comprar
+      la mejora: tu combo PAR har\xE1 +50 de da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905302
-    m_Localized: "\xA1Mejora comprada! Ahora s\xED est\xE1s preparado: volv\xE9 por
-      donde viniste y acab\xE1 con esos enemigos."
+    m_Localized: "\xA1Mejora comprada! Ahora est\xE1s preparado: vuelve por donde
+      viniste y acaba con esos enemigos."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905303
-    m_Localized: "\xA1Excelente! Pas\xE1 a la \xFAltima sala: la de encantamientos."
+    m_Localized: "\xA1Excelente! Pasa a la \xFAltima sala: la de encantamientos."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905304
-    m_Localized: "Esta es la mesa de encantamientos: mejora uno de tus dados a cambio
-      de oro, por el resto de la run. Acercate al altar y presion\xE1 F para abrirla."
+    m_Localized: "Esta es la mesa de encantamientos: mejora un dado a cambio de oro.
+      Ac\xE9rcate al altar y presiona F."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905305
-    m_Localized: "Eleg\xED uno de tus dados, eleg\xED el encantamiento y confirm\xE1:
-      el dado queda mejorado por el resto de la run. Cuanto m\xE1s fuerte es el dado,
-      m\xE1s huecos de encantamiento tiene. Cada encantamiento cuesta oro \u2014
-      el que juntaste alcanza para exactamente UNO. (Click para seguir.)"
+    m_Localized: "Elige un dado y un cupo, y confirma: el encantamiento sale al azar
+      \u2014 y puede ser malo."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905306
-    m_Localized: "\xA1Dado encantado! Ya sab\xE9s todo lo que necesit\xE1s \u2014
-      cerr\xE1 la mesa."
+    m_Localized: "\xA1Dado encantado! Ya sabes todo lo que necesitas \u2014 cierra
+      la mesa."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905307
-    m_Localized: "Cruz\xE1 la puerta se\xF1alada para empezar tu aventura de verdad."
+    m_Localized: "Cruza la puerta se\xF1alada para empezar tu aventura de verdad."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905308
-    m_Localized: "Hac\xE9 click para continuar"
+    m_Localized: Haz clic para continuar
     m_Metadata:
       m_Items: []
   - m_Id: 7867763907198976
@@ -471,19 +462,18 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8187299979096064
-    m_Localized: "\xA1No te quedan rolls gratis!\nCada roll adicional cuesta 1 de
-      Energ\xEDa."
+    m_Localized: "\xA1No te quedan tiradas gratis!\nCada tirada adicional cuesta
+      1 de Energ\xEDa."
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
-    m_Localized: "Estos son los dados de tu clase. Hac\xE9 click en uno para sumarlo
-      a la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos pod\xE9s llevar de ese
-      tipo."
+    m_Localized: "Estos son los dados de tu clase. Haz clic en uno para sumarlo a
+      la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos puedes llevar de ese tipo."
     m_Metadata:
       m_Items: []
   - m_Id: 8535671486382080
-    m_Localized: "Tu bolsa se arma ac\xE1, siempre ordenada de menor a mayor. Hac\xE9
-      click en un dado de la tira para devolverlo al pool."
+    m_Localized: "Tu bolsa se arma aqu\xED, siempre ordenada de menor a mayor. Haz
+      clic en un dado de la tira para devolverlo al pool."
     m_Metadata:
       m_Items: []
   - m_Id: 8535671486382081
@@ -600,6 +590,46 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 10000862968311814
     m_Localized: Legendary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000887107584
+    m_Localized: "Arriba a la derecha est\xE1 el orden de turnos: qui\xE9n act\xFAa
+      ahora y qui\xE9n sigue."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050624
+    m_Localized: "Este es tu CONTRATO: los combos de generala y su da\xF1o. Cons\xFAltalo
+      cuando quieras."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050625
+    m_Localized: "Gira la c\xE1mara con el bot\xF3n derecho. Arrastra el mapa con
+      la rueda presionada. Zoom: rueda. Recentrar: G. Pru\xE9balo ahora."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244928
+    m_Localized: "Se desbloque\xF3 tu INVENTARIO: tu compra vive aqu\xED, junto a
+      todo lo que consigas en la run."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244929
+    m_Localized: "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo:
+      cada reemplazo cuesta m\xE1s oro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244930
+    m_Localized: "Tu dado encantado vive en la BOLSA DE DADOS: revisa ah\xED tus
+      dados y encantamientos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614179115008
+    m_Localized: 'Escapar no los elimina: los enemigos se quedan en la sala, recuperan
+      algo de vida y te esperan si vuelves.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614204280832
+    m_Localized: "Aleja el zoom para ver las salas adyacentes: sus \xEDconos te dicen
+      cu\xE1les son especiales (tienda, encantamiento...)."
     m_Metadata:
       m_Items: []
   references:

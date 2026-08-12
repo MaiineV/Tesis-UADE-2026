@@ -1,14 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
+using Rollgeon.Combos;
 using Rollgeon.Dungeon;
+using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities;
 using Rollgeon.Heroes;
+using Rollgeon.Items;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Shop;
 using Rollgeon.Tutorial;
 using Rollgeon.Tutorial.UI;
-using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Dice;
 using UnityEditor;
 using UnityEngine;
@@ -34,7 +37,10 @@ namespace Rollgeon.Editor.Tools
         private const string CombatRoomCPath = "Assets/Rollgeon/Rooms/Room_Combat02.asset";
         private const string ShopRoomPath = "Assets/Rollgeon/Rooms/Room_Shop.asset";
         private const string EnchantRoomPath = "Assets/Rollgeon/Rooms/Room_Enchantment_01.asset";
-        private const string Pair50Path = "Assets/Rollgeon/Upgrades/Combos/Passives/ComboPassive_Pair50.asset";
+        // Fuente del item de la tienda: item real de +daño al Par (item-first desde
+        // que la tienda dejó de entregar ComboPassiveSO — vender la pasiva cobraba
+        // el oro y no aplicaba NADA ni aparecía en el inventario).
+        private const string PairItemPath = "Assets/Rollgeon/Items/Item_GuantesApostadorPar.asset";
         private const string ShopConfigPath = "Assets/Rollgeon/Rooms/Shop/ShopConfig.asset";
         private const string EnchantConfigPath = "Assets/Rollgeon/Upgrades/Dice/EnchantmentConfig.asset";
         private const string ServiceBootstrapPath = "Assets/Rollgeon/ServiceBootstrap.asset";
@@ -55,13 +61,13 @@ namespace Rollgeon.Editor.Tools
             var combatRoomC = Load<RoomSO>(CombatRoomCPath);
             var shopRoom = Load<RoomSO>(ShopRoomPath);
             var enchantRoom = Load<RoomSO>(EnchantRoomPath);
-            var pair50 = Load<ComboPassiveSO>(Pair50Path);
+            var pairItem = Load<ItemSO>(PairItemPath);
             var shopConfig = Load<ShopConfigSO>(ShopConfigPath);
             var enchantConfig = Load<EnchantmentConfigSO>(EnchantConfigPath);
             var serviceBootstrap = Load<ServiceBootstrapSO>(ServiceBootstrapPath);
             if (warrior == null || melee == null || startRoom == null || combatRoomB == null
                 || combatRoomC == null || shopRoom == null || enchantRoom == null
-                || pair50 == null || shopConfig == null || enchantConfig == null
+                || pairItem == null || shopConfig == null || enchantConfig == null
                 || serviceBootstrap == null)
             {
                 Debug.LogError(LogPrefix + "Faltan assets fuente (ver errores previos) — instalación abortada.");
@@ -155,11 +161,43 @@ namespace Rollgeon.Editor.Tools
             });
             EditorUtility.SetDirty(plan);
 
-            // --- Shop override (1 slot, precio exacto, solo el Pair50) --------
+            // --- Item de la tienda (ItemSO real: aparece en el inventario) ----
+            // Clon del item de +daño al Par con el hook re-autorado a +50 fijo.
+            // El clone hereda Icon y WorldPrefab; identidad y hook se pisan enteros.
+            var tutorialPairItem = CloneAsset(pairItem, "Item_Tutorial_Par50", i =>
+            {
+                i.ItemId = "item.tutorial.par50";
+                i.DisplayName = "Bonus de Par";
+                i.Description = "+50 de daño al armar un Par.";
+                i.Type = ItemType.Passive;
+                i.PassiveHooks = new List<PassiveItemHook>
+                {
+                    new PassiveItemHook
+                    {
+                        Kind = PassiveHookKind.ComboPlayed,
+                        ComboFilter = new ComboFilter
+                        {
+                            Mode = ComboFilterMode.ComboIds,
+                            ComboIds = new List<string> { ComboId.Par },
+                        },
+                        Effect = new EffectData
+                        {
+                            Label = "Tutorial Par +50",
+                            Effects = new List<IEffect>
+                            {
+                                new EffAddComboBonus { Amount = new ReadConstantInt { Value = 50 } },
+                            },
+                        },
+                    },
+                };
+            });
+            EditorUtility.SetDirty(tutorialPairItem);
+
+            // --- Shop override (1 slot, precio exacto, solo el item de Par) ---
             var tutorialShopPool = CreateOrReplace<ShopPoolSO>("SP_Tutorial");
             tutorialShopPool.Items = new List<WeightedShopItem>
             {
-                new WeightedShopItem { Item = pair50, Weight = 1f, BasePrice = ShopItemPrice, MinFloorDepth = 0 },
+                new WeightedShopItem { Item = tutorialPairItem, Weight = 1f, BasePrice = ShopItemPrice, MinFloorDepth = 0 },
             };
             EditorUtility.SetDirty(tutorialShopPool);
 
@@ -178,6 +216,25 @@ namespace Rollgeon.Editor.Tools
             var overlaySettings = CreateOrReplace<TutorialOverlaySettingsSO>("TutorialOverlaySettings");
             overlaySettings.DimMaterial = dimMaterial;
             overlaySettings.ArrowSprite = arrowSprite;
+
+            // Fuente del proyecto para el popup (el asset existente la tenía en null
+            // → caía al font default de TMP, fuera del estilo del juego).
+            if (overlaySettings.PopupFont == null)
+            {
+                overlaySettings.PopupFont = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(
+                    "Assets/Fonts/m6x11plus SDF.asset");
+                if (overlaySettings.PopupFont == null)
+                    Debug.LogWarning(LogPrefix + "No se encontró 'Assets/Fonts/m6x11plus SDF.asset' — " +
+                                     "el popup sigue con el font default de TMP.");
+            }
+
+            // Campos agregados después de serializado el asset: deserializan 0 y el
+            // overlay los guardea, pero saneados acá quedan visibles/editables.
+            if (overlaySettings.PopupFooterAlpha <= 0f) overlaySettings.PopupFooterAlpha = 0.9f;
+            if (overlaySettings.PopupAnchorGapPx <= 0f) overlaySettings.PopupAnchorGapPx = 90f;
+            if (string.IsNullOrEmpty(overlaySettings.ContinueFooterText)
+                || overlaySettings.ContinueFooterText == "Hacé click para continuar")
+                overlaySettings.ContinueFooterText = "Haz clic para continuar";
             EditorUtility.SetDirty(overlaySettings);
 
             var overlayBootstrap = CreateOrReplace<TutorialOverlayBootstrap>("TutorialOverlayBootstrap");
