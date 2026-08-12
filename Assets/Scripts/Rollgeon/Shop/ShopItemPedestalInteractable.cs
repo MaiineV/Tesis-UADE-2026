@@ -19,10 +19,11 @@ namespace Rollgeon.Shop
     /// </summary>
     /// <remarks>
     /// <para>
-    /// MVP: ejecuta la compra inline — checkea gold vía <see cref="IEconomyService"/>,
-    /// descuenta, notifica al <see cref="IShopManagerService"/>. Cuando §7.7 y §8
-    /// aterricen, se migra a <c>InteractableComponent</c> + behavior con
-    /// <c>EffDeductGold</c> / <c>EffAddItemToInventory</c> / <c>EffConsumeProp</c>.
+    /// MVP: la compra en sí (cobrar → entregar → marcar purchased) vive en
+    /// <see cref="ShopPurchase"/>; este componente solo resuelve los servicios, decide
+    /// la severidad del log y maneja prompt/hover. Cuando §7.7 y §8 aterricen, se migra
+    /// a <c>InteractableComponent</c> + behavior con <c>EffDeductGold</c> /
+    /// <c>EffAddItemToInventory</c> / <c>EffConsumeProp</c>.
     /// </para>
     /// <para>
     /// <b>Hover feedback.</b> En vez de llamar al <c>ItemInspectView</c>
@@ -102,73 +103,27 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null)
+            ServiceLocator.TryGetService<IEconomyService>(out var economy);
+            ServiceLocator.TryGetService<IInventoryService>(out var inventory);
+
+            var result = ShopPurchase.Buy(economy, inventory, _service, _roomInstanceId, _slot);
+            if (!result.Success)
             {
-                Debug.LogError(LogPrefix + "IEconomyService no registrado — no se puede procesar la compra.");
+                // Gold insuficiente es flujo normal (el jugador puede spamear F sin plata);
+                // el resto son bugs de wiring y merecen ruido.
+                if (result.Failure == ShopPurchaseFailure.NotEnoughGold)
+                    Debug.Log(LogPrefix + result.Message + " — compra rechazada.");
+                else
+                    Debug.LogError(LogPrefix + result.Message);
                 return;
             }
 
-            if (!economy.Spend(_slot.Price))
-            {
-                Debug.Log(LogPrefix + $"Gold insuficiente ({economy.CurrentGold} < {_slot.Price}) — compra rechazada.");
-                return;
-            }
-
-            DeliverEntry(_slot.Item);
-
-            _service.NotifyItemPurchased(_roomInstanceId, _slot.SpawnPointId, _slot.Price);
+            if (!string.IsNullOrEmpty(result.Message)) Debug.LogWarning(LogPrefix + result.Message);
 
             // BUG fix: Update() early-returns por _slot.Purchased ANTES de llegar al
             // chequeo de rango que dispara UpdatePromptVisibility(false) — sin este Hide
             // explícito el prompt quedaba pegado en pantalla tras comprar.
             InteractionPromptView.Hide(GetInstanceID());
-        }
-
-        /// <summary>
-        /// Dispatch polimórfico de la entrega. El reward canónico es
-        /// <see cref="ItemSO"/> (activo o passive) → va directo al inventario, que
-        /// aplica sus <c>PassiveItemHook</c> al obtenerlo. Cuando se agreguen otros
-        /// tipos de <see cref="IShopRewardEntry"/>, sumar el case acá.
-        /// </summary>
-        private static void DeliverEntry(IShopRewardEntry entry)
-        {
-            switch (entry)
-            {
-                case ItemSO item:
-                    TryDeliverItemToInventory(item);
-                    break;
-                case null:
-                    Debug.LogWarning(LogPrefix + "Entry null — no se entrega nada.");
-                    break;
-                default:
-                    Debug.LogWarning(LogPrefix + $"Tipo de reward no soportado: {entry.GetType().Name}.");
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Agrega el <see cref="ItemSO"/> comprado al inventario. Si el inventario no
-        /// está registrado, sólo loggea — el oro ya se cobró y el pedestal queda como
-        /// purchased.
-        /// </summary>
-        private static void TryDeliverItemToInventory(ItemSO item)
-        {
-            if (item == null)
-            {
-                Debug.LogWarning(LogPrefix + "Entry ItemSO null — no se puede entregar al inventario.");
-                return;
-            }
-
-            if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
-            {
-                Debug.LogWarning(LogPrefix + "IInventoryService no registrado — el ítem comprado no se entrega.");
-                return;
-            }
-
-            if (!inventory.AddItem(item))
-            {
-                Debug.LogWarning(LogPrefix + $"AddItem('{item.ItemId}') rechazado (inventario lleno?).");
-            }
         }
 
         /// <summary>

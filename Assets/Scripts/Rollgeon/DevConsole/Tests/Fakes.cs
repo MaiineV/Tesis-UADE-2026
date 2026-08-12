@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using Rollgeon.DevConsole.Commands;
 using Rollgeon.DevConsole.Core;
 using Rollgeon.Dice;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Economy;
 using Rollgeon.Effects;
 using Rollgeon.Heroes;
 using Rollgeon.Items;
 using Rollgeon.Player;
+using Rollgeon.Shop;
+using Rollgeon.Upgrades.Dice;
+using UnityEngine;
 
 namespace Rollgeon.DevConsole.Tests
 {
@@ -68,11 +73,19 @@ namespace Rollgeon.DevConsole.Tests
     {
         public readonly List<ItemSO> Added = new List<ItemSO>();
 
+        /// <summary>Simula el rechazo de <c>AddItem</c> por slots activos llenos.</summary>
+        public bool RejectAdd { get; set; }
+
         public IReadOnlyList<InventorySlot> PassiveItems => Array.Empty<InventorySlot>();
         public IReadOnlyList<InventorySlot> ActiveItems => Array.Empty<InventorySlot>();
-        public int MaxActiveSlots => 3;
+        public int MaxActiveSlots { get; set; } = 3;
 
-        public bool AddItem(ItemSO item) { Added.Add(item); return true; }
+        public bool AddItem(ItemSO item)
+        {
+            if (RejectAdd) return false;
+            Added.Add(item);
+            return true;
+        }
         public bool RemoveItem(string itemId) => false;
         public bool HasItem(string itemId) => false;
         public ItemSO GetItem(string itemId) => null;
@@ -83,6 +96,148 @@ namespace Rollgeon.DevConsole.Tests
 #pragma warning disable 67
         public event Action<ItemSO, bool> OnItemChanged;
 #pragma warning restore 67
+    }
+
+    /// <summary>Dungeon con un set fijo de rooms — para los comandos que buscan una sala
+    /// por <see cref="RoomType"/> sin generar un piso.</summary>
+    public sealed class FakeDungeonService : IDungeonService
+    {
+        public readonly Dictionary<Guid, RoomInstance> Rooms = new Dictionary<Guid, RoomInstance>();
+
+        public RoomInstance CurrentRoomInstance { get; set; }
+        public RoomSO CurrentRoom => CurrentRoomInstance?.Template;
+        public DoorDirection? LastEntryDirection => null;
+
+        /// <summary>Crea una room del tipo pedido y la registra. Devuelve su instanceId.</summary>
+        public Guid AddRoom(RoomType type, out RoomInstance instance)
+        {
+            var template = ScriptableObject.CreateInstance<RoomSO>();
+            template.Type = type;
+            instance = new RoomInstance { InstanceId = Guid.NewGuid(), Template = template };
+            Rooms[instance.InstanceId] = instance;
+            return instance.InstanceId;
+        }
+
+        public void GenerateFloor(FloorLayoutSO layout, int seed) { }
+        public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() => Rooms;
+        public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() => new Dictionary<Guid, FloorShell>();
+
+        public bool CanEnterRoomByDoor(DoorDirection direction, out Guid neighborInstanceId)
+        {
+            neighborInstanceId = Guid.Empty;
+            return false;
+        }
+
+        public bool EnterRoomByDoor(DoorDirection direction) => false;
+
+        public bool EnterRoomByInstanceId(Guid instanceId)
+        {
+            if (!Rooms.TryGetValue(instanceId, out var room)) return false;
+            CurrentRoomInstance = room;
+            return true;
+        }
+
+        public bool SetRoomState(Guid instanceId, RoomState state) => false;
+        public void ResyncDoorVisuals(Guid instanceId) { }
+        public Bounds GetFloorBounds() => default;
+        public IReadOnlyList<GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
+            Array.Empty<GameCamera.WallOccluder>();
+    }
+
+    /// <summary>Shop manager con slots inyectados y registro de las compras cerradas.</summary>
+    public sealed class FakeShopManagerService : IShopManagerService
+    {
+        public readonly Dictionary<Guid, List<ShopSlot>> SlotsByRoom = new Dictionary<Guid, List<ShopSlot>>();
+        public readonly HashSet<Guid> InitializedRooms = new HashSet<Guid>();
+        public readonly List<(Guid room, string spawnPoint, int price)> Purchases =
+            new List<(Guid, string, int)>();
+
+        public IReadOnlyList<ShopSlot> GetSlots(Guid roomInstanceId) =>
+            SlotsByRoom.TryGetValue(roomInstanceId, out var slots) ? slots : Array.Empty<ShopSlot>();
+
+        public bool IsInitialized(Guid roomInstanceId) => InitializedRooms.Contains(roomInstanceId);
+
+        public ShopSlot FindActiveSlot(Guid roomInstanceId, string spawnPointId)
+        {
+            foreach (var slot in GetSlots(roomInstanceId))
+                if (!slot.Purchased && slot.SpawnPointId == spawnPointId) return slot;
+            return null;
+        }
+
+        public void NotifyItemPurchased(Guid roomInstanceId, string spawnPointId, int pricePaid)
+        {
+            Purchases.Add((roomInstanceId, spawnPointId, pricePaid));
+            var slot = FindActiveSlot(roomInstanceId, spawnPointId);
+            if (slot != null) slot.Purchased = true;
+        }
+
+        public bool CanRestock(Guid roomInstanceId) => false;
+        public void Restock(Guid roomInstanceId) { }
+        public void Initialize(RoomInstance room, int floorDepth) { }
+        public void SetTutorialOverride(ShopConfigSO config, ShopPoolSO pool) { }
+        public void ClearTutorialOverride() { }
+    }
+
+    /// <summary>
+    /// Servicio de encantamientos con un <see cref="RuntimeDiceBag"/> real (los cupos
+    /// salen de <c>DiceType.MaxEnchantmentSlots()</c>) y una regla de aceptación
+    /// inyectable para simular qué rechaza <c>ValidateApply</c>.
+    /// </summary>
+    public sealed class FakeDiceEnchantmentService : IDiceEnchantmentService
+    {
+        public readonly List<(int bag, int slot, EnchantmentSO ench)> Applied =
+            new List<(int, int, EnchantmentSO)>();
+
+        /// <summary>Qué acepta <see cref="ValidateApply"/>. Default: todo.</summary>
+        public Func<EnchantmentSO, bool> Accepts = _ => true;
+
+        public FakeDiceEnchantmentService(params DiceType[] dice)
+        {
+            Bag = new RuntimeDiceBag(dice != null && dice.Length > 0 ? dice : new[] { DiceType.D6 });
+        }
+
+        public RuntimeDiceBag Bag { get; }
+        public bool IsReady { get; set; } = true;
+        public EnchantmentScratch LastComboScratch => null;
+
+        public IReadOnlyCollection<int> ComputeAllowedFaces(int bagIndex) => Array.Empty<int>();
+
+        public EnchantmentApplyResult ValidateApply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+            => Accepts(ench) ? EnchantmentApplyResult.Ok(null) : EnchantmentApplyResult.Fail("rechazado por el fake");
+
+        public EnchantmentApplyResult Apply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+        {
+            var validation = ValidateApply(bagIndex, enchSlotIndex, ench);
+            if (!validation.Success) return validation;
+
+            Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, ench);
+            Applied.Add((bagIndex, enchSlotIndex, ench));
+            return EnchantmentApplyResult.Ok(null);
+        }
+
+        public bool Remove(int bagIndex, int enchSlotIndex) => Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, null);
+
+        public EnchantmentScratch ResolveComboBonus(Guid sourceGuid, string comboId,
+            IReadOnlyList<int> diceResult, int comboBaseDamage) => null;
+
+        public void InitializeFromBag(DiceBagSO bag) { }
+    }
+
+    /// <summary>Altar de encantamiento con un resultado predefinido.</summary>
+    public sealed class FakeEnchantmentRoomService : IEnchantmentRoomService
+    {
+        public EnchantmentRollResult NextResult = EnchantmentRollResult.Fail("sin configurar");
+        public readonly List<(int bag, int slot)> Calls = new List<(int, int)>();
+
+        public bool IsInitialized(Guid roomInstanceId) => true;
+        public void NotifyAltarActivated(Guid roomInstanceId, string spawnPointId) { }
+        public int ResolveCost(int bagIndex, int enchSlotIndex) => 0;
+
+        public EnchantmentRollResult PerformEnchantment(Guid roomInstanceId, int bagIndex, int enchSlotIndex)
+        {
+            Calls.Add((bagIndex, enchSlotIndex));
+            return NextResult;
+        }
     }
 
     /// <summary>Comando stub para tests de parser/registry/autocomplete.</summary>

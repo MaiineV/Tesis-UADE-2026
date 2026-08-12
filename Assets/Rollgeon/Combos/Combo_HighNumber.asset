@@ -39,6 +39,7 @@ MonoBehaviour:
   _description: Dado mas alto
   _icon: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   _baseDamage: 5
+  _priority: 5
   _valueMultipliers:
   - 0
   - 0

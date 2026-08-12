@@ -50,7 +50,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 23
+      Data: 24
     - Name: 
       Entry: 10
       Data: 0
@@ -120,6 +120,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 22
+    - Name: 
+      Entry: 10
+      Data: 0
     - Name: 
       Entry: 13
       Data: 

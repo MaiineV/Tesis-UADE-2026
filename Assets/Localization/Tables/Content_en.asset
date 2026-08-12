@@ -568,8 +568,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1211498485350400
-    m_Localized: When your health is 3 or less, your base damage increases by 5 points.
-      Healing above that threshold returns it to normal.
+    m_Localized: When your health is 30 or less, your base damage increases by 5
+      points. Healing above that threshold returns it to normal.
     m_Metadata:
       m_Items: []
   - m_Id: 7800250105098240
@@ -612,6 +612,187 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7868539555643394
     m_Localized: The Rogue will become selectable in a future version.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852756152320
+    m_Localized: Reflection Amulet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735232
+    m_Localized: When you take damage, deal 10 damage back to the enemy that hit
+      you.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735233
+    m_Localized: Royal Feast
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735234
+    m_Localized: Full Houses deal +30 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735235
+    m_Localized: Blessing of Fate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735236
+    m_Localized: Each Generala heals 15 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735237
+    m_Localized: Merchant's Pouch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735238
+    m_Localized: Each Double Pair grants +5 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735239
+    m_Localized: Climber's Boots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735240
+    m_Localized: The Ladder deals +25 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735241
+    m_Localized: Light Boots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735242
+    m_Localized: +1 base movement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735243
+    m_Localized: Trade Chain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735244
+    m_Localized: Double Pair deals +20 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735245
+    m_Localized: Champion's Cup
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735246
+    m_Localized: The Generala deals +50 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735247
+    m_Localized: Reinforced Plate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735248
+    m_Localized: +2 max health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735249
+    m_Localized: Noble Crown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735250
+    m_Localized: Each Full House restores 5 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735251
+    m_Localized: The Selfish One
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735252
+    m_Localized: The more gold you have, the more damage you deal.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735253
+    m_Localized: Imperial Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735254
+    m_Localized: Each Poker grants +2 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735255
+    m_Localized: Fire Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735256
+    m_Localized: The Brute Force combo deals +35 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735257
+    m_Localized: Gambler's Gloves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735258
+    m_Localized: Pairs deal +20 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735259
+    m_Localized: Master's Gloves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735260
+    m_Localized: The Poker deals +25 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735261
+    m_Localized: Survival Instinct
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735262
+    m_Localized: When you drop below 30% HP you gain +1 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735263
+    m_Localized: Lucky Coin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735264
+    m_Localized: Each Pair grants +2 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735265
+    m_Localized: Blood Ritual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735266
+    m_Localized: Each Trio restores 1 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735267
+    m_Localized: Steel Kneepads
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735268
+    m_Localized: You start each combat with +3 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735269
+    m_Localized: Vital Talisman
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735270
+    m_Localized: Restore 1 HP when combat starts.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735271
+    m_Localized: Legendary Treasure
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735272
+    m_Localized: Each Generala grants +30 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735273
+    m_Localized: Clan Totem
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735274
+    m_Localized: Trios deal +30 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735275
+    m_Localized: Restores health when used.
     m_Metadata:
       m_Items: []
   references:

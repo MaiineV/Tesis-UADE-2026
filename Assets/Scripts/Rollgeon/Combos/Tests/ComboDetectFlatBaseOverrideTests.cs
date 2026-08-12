@@ -20,11 +20,9 @@ namespace Rollgeon.Combos.Tests
         public void SetUp()
         {
             _par = ComboTestUtils.CreateCombo<Combo_Par>("combo.par", 18);
-            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>("combo.suma_x", 10);
+            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>("combo.suma_x", 25);
             ComboTestUtils.SetField(_sumaX, "_x", 4);
-            ComboTestUtils.SetField(_sumaX, "_baseDamageConfigurable", 25);
             _fuerzaBruta = ComboTestUtils.CreateCombo<Combo_FuerzaBruta>(ComboId.BruteForce, 5);
-            ComboTestUtils.SetField(_fuerzaBruta, "_baseDamageConfigurable", 5);
         }
 
         [TearDown]
@@ -67,13 +65,15 @@ namespace Rollgeon.Combos.Tests
         }
 
         [Test]
-        public void SumaX_Detect_NullOverride_UsesConfigurableFloorPlusDynamicPart()
+        public void SumaX_Detect_NullOverride_FlatBaseAndDynamicBonusSeparated()
         {
-            // X=4, floor=25, dos hits → 25 + 4×2 = 33.
+            // Fix#0047: X=4, floor=25, dos hits → BaseDamage plano 25, DynamicBonus 4×2.
             var result = _sumaX.Detect(new[] { 4, 4, 1, 2, 3 }, null);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(33, result.BaseDamage);
+            Assert.AreEqual(25, result.BaseDamage);
+            Assert.AreEqual(8, result.DynamicBonus);
+            Assert.AreEqual(33, result.EffectiveTotal, "Formula B conserva 25 + 4×2.");
             Assert.AreEqual(2, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1 }, result.ContributingIndices);
         }
@@ -81,19 +81,21 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void SumaX_Detect_WithOverride_ReplacesFlatPartOnly()
         {
-            // El override reemplaza solo el piso plano; X×hits suma encima: 40 + 4×2 = 48.
+            // El override reemplaza solo el piso plano; X×hits queda en DynamicBonus.
             var result = _sumaX.Detect(new[] { 4, 4, 1, 2, 3 }, 40);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(48, result.BaseDamage);
+            Assert.AreEqual(40, result.BaseDamage);
+            Assert.AreEqual(8, result.DynamicBonus);
+            Assert.AreEqual(48, result.EffectiveTotal);
             Assert.AreEqual(2, result.CountUsed);
         }
 
         [Test]
-        public void FuerzaBruta_Detect_NullOverride_UsesConfigurableFloorPlusDynamicPart()
+        public void FuerzaBruta_Detect_NullOverride_FlatBaseAndDynamicBonusSeparated()
         {
             // Requiere los 5 dados de la bolsa (DiceBagSO.RequiredSize) — todos en mitad
-            // superior. Piso 5 + (5+6+7+5+6) = 34.
+            // superior. Fix#0047: BaseDamage plano 5; Σ(5+6+7+5+6)=29 en DynamicBonus.
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
@@ -102,7 +104,9 @@ namespace Rollgeon.Combos.Tests
             var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, null);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(34, result.BaseDamage);
+            Assert.AreEqual(5, result.BaseDamage);
+            Assert.AreEqual(29, result.DynamicBonus);
+            Assert.AreEqual(34, result.EffectiveTotal, "Formula B conserva piso + Σcaras.");
             Assert.AreEqual(5, result.CountUsed);
             CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, result.ContributingIndices);
         }
@@ -110,7 +114,7 @@ namespace Rollgeon.Combos.Tests
         [Test]
         public void FuerzaBruta_Detect_WithOverride_ReplacesFlatPartOnly()
         {
-            // El override reemplaza solo el piso; la suma dinámica va encima: 40 + (5+6+7+5+6) = 69.
+            // El override reemplaza solo el piso; la suma dinámica queda en DynamicBonus.
             var types = new[]
             {
                 Rollgeon.Dice.DiceType.D6, Rollgeon.Dice.DiceType.D8, Rollgeon.Dice.DiceType.D12,
@@ -119,7 +123,9 @@ namespace Rollgeon.Combos.Tests
             var result = _fuerzaBruta.Detect(new[] { 5, 6, 7, 5, 6 }, types, 40);
 
             Assert.IsTrue(result.IsMatch);
-            Assert.AreEqual(69, result.BaseDamage);
+            Assert.AreEqual(40, result.BaseDamage);
+            Assert.AreEqual(29, result.DynamicBonus);
+            Assert.AreEqual(69, result.EffectiveTotal);
             Assert.AreEqual(5, result.CountUsed);
         }
 

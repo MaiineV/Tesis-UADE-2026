@@ -7,15 +7,16 @@ namespace Rollgeon.ActionRolls
 {
     /// <summary>
     /// Helpers compartidos para extraer el total efectivo de una tirada (formula B):
-    /// si el combo matcheo, el total es <c>combo.BaseDamage</c>; sino, es la suma cruda
-    /// de los pips. Reusado por <see cref="ActionRollService"/> (cuando arma el outcome)
-    /// y por los effects que aceptan tirada (<c>EffForceDoor</c>, <c>EffHeal</c>) para
-    /// no duplicar la regla.
+    /// si el combo matcheo, el total es <c>combo.EffectiveTotal</c> (piso plano + parte
+    /// dinámica — el mismo número que <c>BaseDamage</c> transportaba antes del Fix#0047);
+    /// sino, es la suma cruda de los pips. Reusado por <see cref="ActionRollService"/>
+    /// (cuando arma el outcome) y por los effects que aceptan tirada (<c>EffForceDoor</c>,
+    /// <c>EffHeal</c>) para no duplicar la regla.
     /// </summary>
     public static class ActionRollTotals
     {
         /// <summary>
-        /// <para>Si <paramref name="combo"/> es un match → devuelve <c>combo.Value.BaseDamage</c>.</para>
+        /// <para>Si <paramref name="combo"/> es un match → devuelve <c>combo.Value.EffectiveTotal</c>.</para>
         /// <para>Sino → fallback a <see cref="ComboCatalogSO"/> global (todos los combos
         /// del juego, no solo los del sheet del heroe). Si tampoco hay match, suma cruda.</para>
         /// </summary>
@@ -28,14 +29,14 @@ namespace Rollgeon.ActionRolls
         /// </remarks>
         public static int ResolveEffectiveTotal(IReadOnlyList<int> dice, ComboDetectionResult? combo)
         {
-            if (combo is { IsMatch: true } c) return c.BaseDamage;
+            if (combo is { IsMatch: true } c) return c.EffectiveTotal;
 
             if (dice != null && dice.Count > 0
                 && ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog)
                 && catalog != null)
             {
                 var fallback = ComboResolver.DetectBest(catalog, dice, ResolveSlotAlignedTypes(dice.Count), out _);
-                if (fallback.IsMatch) return fallback.BaseDamage;
+                if (fallback.IsMatch) return fallback.EffectiveTotal;
             }
 
             return SumOf(dice);

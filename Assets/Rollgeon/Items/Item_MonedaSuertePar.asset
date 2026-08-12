@@ -264,7 +264,7 @@ MonoBehaviour:
   ItemId: moneda.suerte.par
   DisplayName: Moneda de la suerte
   Description: Cada Par da +2 oro.
-  Icon: {fileID: 0}
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
   Type: 0
   PassiveHooks:
@@ -278,7 +278,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 9092771418612957890
+      - rid: 144068159907823904
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -298,7 +298,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 9092771418612957890
+    - rid: 144068159907823904
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -323,9 +323,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 9092771418612957891
+          rid: 144068159907823905
         _failChainIfInsufficient: 1
-    - rid: 9092771418612957891
+    - rid: 144068159907823905
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

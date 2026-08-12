@@ -21,6 +21,8 @@ namespace Rollgeon.DevConsole.Commands
             // Items
             r.Register(new GiveItemCommand());
             r.Register(new ClearItemsCommand());
+            r.Register(new PotionCommand());
+            r.Register(new ShopCommand());
 
             // Dados
             r.Register(new DiceCommand());

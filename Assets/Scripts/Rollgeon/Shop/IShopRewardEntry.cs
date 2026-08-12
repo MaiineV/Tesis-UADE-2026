@@ -10,7 +10,7 @@ namespace Rollgeon.Shop
     /// también la implementan pero son legacy (ya no se cablean en pools nuevos).
     /// El <c>ShopPoolSO</c> y el <c>ShopManagerService</c> operan sobre esta
     /// abstracción; el dispatch de "qué hacer al comprar" se hace por tipo concreto
-    /// en <see cref="ShopItemPedestalInteractable"/>.
+    /// en <see cref="ShopPurchase"/>.
     /// </summary>
     /// <remarks>
     /// <para>

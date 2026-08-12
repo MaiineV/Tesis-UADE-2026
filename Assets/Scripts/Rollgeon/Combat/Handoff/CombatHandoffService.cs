@@ -1701,9 +1701,13 @@ namespace Rollgeon.Combat.Handoff
                 // ni los bonos de combo — "armás el combo bloqueado → 0".
                 if (mods.IsForbidden(combo.ComboId))
                     return ComboDetectionResult.NoMatch();
+                // Los mods escalan el base PLANO (Fix#0047): la parte dinámica de los combos
+                // de base variable viaja aparte en DynamicBonus y las caras entran al daño
+                // una sola vez vía Σcaras.
                 int eff = mods.GetEffectiveBaseDamage(combo.ComboId, detected.BaseDamage);
                 return ComboDetectionResult.Match(
-                    detected.ComboId, eff, detected.CountUsed, detected.ContributingIndices);
+                    detected.ComboId, eff, detected.CountUsed, detected.ContributingIndices,
+                    detected.DynamicBonus);
             }
             return detected;
         }

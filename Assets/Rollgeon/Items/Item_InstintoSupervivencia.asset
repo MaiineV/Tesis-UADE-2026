@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 40
+      Data: 41
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -261,12 +261,12 @@ MonoBehaviour:
   ItemId: instinto.supervivencia
   DisplayName: Instinto de Supervivencia
   Description: "Al bajar de 30% HP obten\xE9s +1 escudo."
-  Icon: {fileID: 0}
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
   Type: 0
   PassiveHooks:
   - Kind: 0
-    TriggerEvent: 40
+    TriggerEvent: 41
     ComboFilter:
       Mode: 1
       ComboIds: []
@@ -274,7 +274,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 6878114991212856046
+      - rid: 144068181182382353
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -294,7 +294,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 6878114991212856046
+    - rid: 144068181182382353
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

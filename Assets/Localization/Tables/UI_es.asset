@@ -558,12 +558,16 @@ MonoBehaviour:
     m_Localized: 'Velocidad: x{0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 10317843441414144
-    m_Localized: 'Reroll: vuelan los elegidos'
+  - m_Id: 9946840189206528
+    m_Localized: "Combo repetido: 0 da\xF1o"
     m_Metadata:
       m_Items: []
-  - m_Id: 10317843504328704
-    m_Localized: 'Reroll: se quedan los elegidos'
+  - m_Id: 9946840222760960
+    m_Localized: Inventario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760961
+    m_Localized: Objetos
     m_Metadata:
       m_Items: []
   references:

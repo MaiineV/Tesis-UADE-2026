@@ -515,12 +515,16 @@ MonoBehaviour:
     m_Key: menu.game_speed
     m_Metadata:
       m_Items: []
-  - m_Id: 10317843441414144
-    m_Key: menu.reroll_discard
+  - m_Id: 9946840189206528
+    m_Key: combat.combo_repeated_zero
     m_Metadata:
       m_Items: []
-  - m_Id: 10317843504328704
-    m_Key: menu.reroll_keep
+  - m_Id: 9946840222760960
+    m_Key: inventory.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760961
+    m_Key: inventory.items_caption
     m_Metadata:
       m_Items: []
   m_Metadata:

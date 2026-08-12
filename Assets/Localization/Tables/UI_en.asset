@@ -565,14 +565,6 @@ MonoBehaviour:
     m_Localized: Items
     m_Metadata:
       m_Items: []
-  - m_Id: 10317843441414144
-    m_Localized: 'Reroll: rerolls selected dice'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10317843504328704
-    m_Localized: 'Reroll: keeps selected dice'
-    m_Metadata:
-      m_Items: []
   references:
     version: 2
     RefIds: []

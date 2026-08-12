@@ -392,6 +392,7 @@ MonoBehaviour:
   _button: {fileID: 7387197301863391744}
   _idleFrame: {fileID: 1004988646, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   _selectedFrame: {fileID: 114455497, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  _enchantMaterial: {fileID: 2100000, guid: b27f14d3b08f66a478388b0247a5dea5, type: 2}
 --- !u!114 &2669478502425445376
 MonoBehaviour:
   m_ObjectHideFlags: 0
