@@ -26,9 +26,9 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0f), Tooltip("Pausa entre pasos consecutivos.")]
         public float StepGapSeconds = 0.08f;
 
-        [Title("Cascade (globales)")]
-        [MinValue(0f), Tooltip("Caída de las entradas al retirarse la de abajo.")]
-        public float CascadeFallSeconds = 0.15f;
+        [Title("Spinner (globales)")]
+        [MinValue(0f), Tooltip("Rotación del tambor al siguiente modificador (tras el vuelo del número).")]
+        public float SpinnerSpinSeconds = 0.22f;
 
         [Title("Choque final")]
         [MinValue(0.05f), Tooltip("Viaje de N y M hacia el punto de choque (acelerando).")]
