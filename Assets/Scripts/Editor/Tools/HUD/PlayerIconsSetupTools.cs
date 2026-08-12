@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Patterns;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -495,6 +496,61 @@ namespace Rollgeon.EditorTools.HUD
                 Debug.Log($"[PlayerIcons] {badges.Length} PassiveBadgeView desactivado(s) en Canvas_CombatHUD.");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        // ================================================================
+        // 5 - Reparar TriggerEvents corridos por el shift del enum
+        // ================================================================
+
+        /// <summary>
+        /// El merge del boss (PR #65) insertó <c>OnAntiRepeatModeChanged</c> en el MEDIO de
+        /// <c>EventName</c>: los hooks Odin-serializados que guardaban el int 40
+        /// (<c>OnAttributeChanged</c> pre-shift) quedaron apuntando a ese miembro obsoleto,
+        /// que nadie dispara — la pasiva del Warrior e Instinto de Supervivencia dejaron de
+        /// activarse en silencio. Esto re-mapea todo hook con el valor obsoleto de vuelta a
+        /// <c>OnAttributeChanged</c>. Idempotente; si el miembro se reusa a futuro para una
+        /// mecánica real, retirar este paso.
+        /// </summary>
+        [MenuItem("Rollgeon/Player Icons/5 - Repair Shifted Trigger Events")]
+        public static void RepairShiftedTriggerEvents()
+        {
+            int patched = 0;
+
+            foreach (var guid in AssetDatabase.FindAssets("t:ClassPassiveSO", new[] { "Assets/Rollgeon" }))
+            {
+                var passive = AssetDatabase.LoadAssetAtPath<ClassPassiveSO>(AssetDatabase.GUIDToAssetPath(guid));
+                if (passive?.Hooks == null) continue;
+
+                bool dirty = false;
+                foreach (var hook in passive.Hooks)
+                {
+                    if (hook == null || hook.TriggerEvent != EventName.OnAntiRepeatModeChanged) continue;
+                    hook.TriggerEvent = EventName.OnAttributeChanged;
+                    dirty = true;
+                    patched++;
+                }
+                if (dirty) EditorUtility.SetDirty(passive);
+            }
+
+            foreach (var guid in AssetDatabase.FindAssets("t:ItemSO", new[] { "Assets/Rollgeon" }))
+            {
+                var item = AssetDatabase.LoadAssetAtPath<Rollgeon.Items.ItemSO>(AssetDatabase.GUIDToAssetPath(guid));
+                if (item?.PassiveHooks == null) continue;
+
+                bool dirty = false;
+                foreach (var hook in item.PassiveHooks)
+                {
+                    if (hook == null || hook.TriggerEvent != EventName.OnAntiRepeatModeChanged) continue;
+                    hook.TriggerEvent = EventName.OnAttributeChanged;
+                    dirty = true;
+                    patched++;
+                }
+                if (dirty) EditorUtility.SetDirty(item);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[PlayerIcons] {patched} hook(s) re-mapeados de OnAntiRepeatModeChanged " +
+                      "(obsoleto, shift del enum) a OnAttributeChanged.");
         }
 
         // ================================================================
