@@ -8,6 +8,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Feedback;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD.Breakdown
@@ -27,7 +28,8 @@ namespace Rollgeon.UI.HUD.Breakdown
         [SerializeField] private DamageBreakdownView _breakdownView;
         [SerializeField] private PlayerBaseDamageView _playerBase;
         [SerializeField] private DiceZoneView _diceZone;
-        [SerializeField] private GlobalModifierCascadeView _cascade;
+        [FormerlySerializedAs("_cascade")]
+        [SerializeField] private GlobalModifierSpinnerView _spinner;
         [SerializeField] private FlyingValuePool _pool;
 
         [Tooltip("Punto de choque de N y M (centro-arriba del board).")]
@@ -111,7 +113,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             _stepIndex = 0;
             _juice?.OnSequenceStart(_script.FinalN, _script.FinalM, _script.FinalTotal);
             CacheCounterHomes();
-            PopulateCascade(_script);
+            PopulateSpinner(_script);
             if (_skipButton != null) _skipButton.gameObject.SetActive(true);
 
             int? mitigated = ComputeMitigatedTotal(payload, _script.FinalTotal);
@@ -128,10 +130,10 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _timeout = null;
             }
             if (_skipButton != null) _skipButton.gameObject.SetActive(false);
-            if (_cascade != null)
+            if (_spinner != null)
             {
-                _cascade.ClearEntries();
-                _cascade.SetVisible(false);
+                _spinner.ClearEntries();
+                _spinner.SetVisible(false);
             }
             RestoreCounters();
             if (_clashRoll.isAlive) _clashRoll.Stop();
@@ -268,24 +270,24 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             float ramp = ConsumeStepRamp();
             var target = TargetCounter(step);
-            if (_cascade == null || _cascade.Count == 0 || target == null)
+            if (_spinner == null || _spinner.Count == 0 || target == null)
             {
                 ApplyStep(step);
                 onDone();
                 return;
             }
 
-            _cascade.SetVisible(true);
-            var bottom = _cascade.Bottom;
-            if (bottom != null)
+            _spinner.SetVisible(true);
+            var current = _spinner.Current;
+            if (current != null)
             {
-                Tween.PunchScale(bottom.transform, Vector3.one * 0.1f, D(0.1f * ramp), frequency: 1);
-                _juice?.OnCascadeTelegraph(bottom);
+                Tween.PunchScale(current.transform, Vector3.one * 0.1f, D(0.1f * ramp), frequency: 1);
+                _juice?.OnCascadeTelegraph(current);
             }
-            _juice?.OnFlightDeparted(bottom != null ? bottom.Rect : null,
+            _juice?.OnFlightDeparted(current != null ? current.Rect : null,
                 step.Target == BreakdownTarget.MultM, dieIndex: -1);
 
-            Fly(bottom != null ? bottom.Rect : _cascade.Bottom?.Rect, target.Anchor,
+            Fly(current != null ? current.Rect : null, target.Anchor,
                 FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
                 D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
                 -(_settings != null ? _settings.ProcFlightArc : 110f),
@@ -293,9 +295,8 @@ namespace Rollgeon.UI.HUD.Breakdown
                 {
                     ApplyStep(step);
                     _juice?.OnCascadeFall();
-                    // OutBounce: la caída asienta con rebote suave (si molesta, OutQuad acá).
-                    _cascade.RemoveBottom(D((_settings != null ? _settings.CascadeFallSeconds : 0.15f) * ramp),
-                        onDone, Ease.OutBounce);
+                    _spinner.AdvanceToNext(D((_settings != null ? _settings.SpinnerSpinSeconds : 0.22f) * ramp),
+                        onDone);
                 }, FlightTint(step));
         }
 
@@ -395,10 +396,10 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             _breakdownView?.CounterN?.SetValue(finalN, isMultiplier: false);
             _breakdownView?.CounterM?.SetValue(finalM, isMultiplier: true);
-            if (_cascade != null)
+            if (_spinner != null)
             {
-                _cascade.ClearEntries();
-                _cascade.SetVisible(false);
+                _spinner.ClearEntries();
+                _spinner.SetVisible(false);
             }
         }
 
@@ -574,9 +575,9 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _breakdownView.CounterM.Anchor.anchoredPosition = _counterMHome;
         }
 
-        private void PopulateCascade(BreakdownScript script)
+        private void PopulateSpinner(BreakdownScript script)
         {
-            if (_cascade == null) return;
+            if (_spinner == null) return;
             var entries = new List<(Sprite icon, string label)>();
             for (int i = 0; i < script.Steps.Count; i++)
             {
@@ -584,8 +585,8 @@ namespace Rollgeon.UI.HUD.Breakdown
                 if (step.Kind != BreakdownStepKind.GlobalMod) continue;
                 entries.Add((BreakdownIconResolver.Resolve(step.SourceAsset), CascadeLabel(step)));
             }
-            _cascade.SetEntries(entries, animated: true);
-            _cascade.SetVisible(entries.Count > 0);
+            _spinner.SetEntries(entries, animated: true);
+            _spinner.SetVisible(entries.Count > 0);
         }
 
         // "Nombre del objeto +X", con el monto en el color de su contador destino — se lee
