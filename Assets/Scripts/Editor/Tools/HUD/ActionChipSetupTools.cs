@@ -20,30 +20,31 @@ namespace Rollgeon.EditorTools.HUD
     public static class ActionChipSetupTools
     {
         private const string LogPrefix = "[ActionChipSetup] ";
-        private const string SheetPath = "Assets/Art/UI/Chips/ChipWarrior.png";
+        private const string SheetPath = "Assets/Art/UI/Chips/ChipAccions.png";
 
         private const string CombatHudPath = "Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab";
         private const string ExplorationHudPath = "Assets/Prefabs/UI/Canvas/Canvas_ExplorationHUD.prefab";
 
-        [MenuItem("Rollgeon/Action Chips/Apply Warrior Chip Sprites")]
+        [MenuItem("Rollgeon/Action Chips/Apply Action Chip Sprites")]
         public static void Apply()
         {
-            var baseSprite = LoadSprite("ChipWarrior_0");
-            var highlightSprite = LoadSprite("ChipWarrior_1");
-            if (baseSprite == null || highlightSprite == null)
+            var baseSprite = LoadSprite("ChipAccions_0");
+            var highlightSprite = LoadSprite("ChipAccions_1");
+            var usedSprite = LoadSprite("ChipAccions_2");
+            if (baseSprite == null || highlightSprite == null || usedSprite == null)
             {
-                Debug.LogError(LogPrefix + $"Faltan slices ChipWarrior_0/ChipWarrior_1 en {SheetPath} — abortando.");
+                Debug.LogError(LogPrefix + $"Faltan slices ChipAccions_0/1/2 en {SheetPath} — abortando.");
                 return;
             }
 
-            WireCombatChips(baseSprite, highlightSprite);
-            WireExplorationChips(baseSprite, highlightSprite);
+            WireCombatChips(baseSprite, highlightSprite, usedSprite);
+            WireExplorationChips(baseSprite, highlightSprite, usedSprite);
             AssetDatabase.SaveAssets();
         }
 
         /// <summary>Combate: los chips ya tienen <see cref="ActionButton"/> — solo se
         /// cablean sprites y se normaliza la transition.</summary>
-        private static void WireCombatChips(Sprite baseSprite, Sprite highlightSprite)
+        private static void WireCombatChips(Sprite baseSprite, Sprite highlightSprite, Sprite usedSprite)
         {
             var root = PrefabUtility.LoadPrefabContents(CombatHudPath);
             try
@@ -53,6 +54,7 @@ namespace Rollgeon.EditorTools.HUD
                 {
                     var so = new SerializedObject(chip);
                     so.FindProperty("_highlightSprite").objectReferenceValue = highlightSprite;
+                    so.FindProperty("_usedSprite").objectReferenceValue = usedSprite;
                     var button = so.FindProperty("_button").objectReferenceValue as Button;
                     so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -73,7 +75,7 @@ namespace Rollgeon.EditorTools.HUD
         /// <summary>Exploración: los chips son Buttons planos de
         /// <see cref="ExplorationActionButtonsView"/> — se les agrega (o actualiza)
         /// un <see cref="ChipButtonVisual"/> con el mismo contrato de estados.</summary>
-        private static void WireExplorationChips(Sprite baseSprite, Sprite highlightSprite)
+        private static void WireExplorationChips(Sprite baseSprite, Sprite highlightSprite, Sprite usedSprite)
         {
             var root = PrefabUtility.LoadPrefabContents(ExplorationHudPath);
             try
@@ -98,6 +100,7 @@ namespace Rollgeon.EditorTools.HUD
 
                     var so = new SerializedObject(visual);
                     so.FindProperty("_highlightSprite").objectReferenceValue = highlightSprite;
+                    so.FindProperty("_usedSprite").objectReferenceValue = usedSprite;
                     so.ApplyModifiedPropertiesWithoutUndo();
 
                     WireButton(button, baseSprite);

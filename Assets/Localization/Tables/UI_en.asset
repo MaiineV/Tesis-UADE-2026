@@ -627,6 +627,38 @@ MonoBehaviour:
       ones are special (shop, enchantment...).'
     m_Metadata:
       m_Items: []
+  - m_Id: 10374649726468096
+    m_Localized: This action can't be performed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216832
+    m_Localized: No target in range.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216833
+    m_Localized: Not enough energy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216834
+    m_Localized: Already used this turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216835
+    m_Localized: Your health is already full.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216836
+    m_Localized: You're not next to a door.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216837
+    m_Localized: It's not your turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10378091215814656
+    m_Localized: You have no potion available.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

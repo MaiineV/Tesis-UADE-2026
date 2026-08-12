@@ -23,10 +23,23 @@ namespace Rollgeon.UI
         // el botón lateral no lo lleva porque ahí el roll también puede ser gratis.
         public const string ChainRollPaidHint = "roll.chain_paid_hint";
 
+        // Toast al tocar un chip de acción no usable: título + motivo concreto
+        // (ActionRejectToast, resuelto por PlayerActionButtonsView).
+        public const string RejectTitle = "action.reject.title";
+        public const string RejectNoRange = "action.reject.no_range";
+        public const string RejectNoEnergy = "action.reject.no_energy";
+        public const string RejectUsed = "action.reject.used";
+        public const string RejectFullHealth = "action.reject.full_health";
+        public const string RejectNoDoor = "action.reject.no_door";
+        public const string RejectNotYourTurn = "action.reject.not_turn";
+        public const string RejectNoPotion = "action.reject.no_potion";
+
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
             RerollPaid, ChainRollPaid, ChainRollPaidHint,
+            RejectTitle, RejectNoRange, RejectNoEnergy, RejectUsed,
+            RejectFullHealth, RejectNoDoor, RejectNotYourTurn, RejectNoPotion,
         };
     }
 }

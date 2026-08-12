@@ -264,26 +264,74 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_actionButton_disabledStates_shareTheNormalizedDimmedHighlight()
+        public void test_actionButton_locked_showsBaseSpriteAtFullAlpha()
         {
-            // Arrange — Used, Locked y Unaffordable tienen que verse iguales en el
-            // cuerpo del chip (la razón la dice el outline/costo, no el look).
+            // Arrange — nada de atenuar (feedback playtest): Locked queda con el
+            // sprite base; la distinción es interactiva (tap → shake + motivo).
+            var (baseSprite, _, image) = SetupSprites();
+
+            // Act
+            _button.SetState(ActionButtonState.Locked);
+
+            // Assert
+            Assert.AreSame(baseSprite, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_actionButton_unaffordable_keepsFullAlphaSoTheOutlineReads()
+        {
+            // Arrange — el Outline de uGUI multiplica su alpha por el del gráfico:
+            // con el cuerpo atenuado el recuadro rojo salía fantasma (regresión de
+            // playtest). Unaffordable va a alpha pleno.
             var (_, highlight, image) = SetupSprites();
-            float expectedAlpha = (float)GetPrivate(_button, "_disabledAlpha");
 
-            foreach (var state in new[]
-                     { ActionButtonState.Used, ActionButtonState.Locked, ActionButtonState.Unaffordable })
-            {
-                // Act
-                _button.SetState(state);
+            // Act
+            _button.SetState(ActionButtonState.Unaffordable);
 
-                // Assert
-                Assert.AreSame(highlight, image.sprite, $"{state} debe usar el highlight");
-                Assert.AreEqual(expectedAlpha, image.color.a, 0.001f, $"{state} debe atenuar el alpha");
+            // Assert
+            Assert.AreSame(highlight, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f, "el cuerpo no se atenúa — el outline debe leerse");
+            Assert.IsTrue(_outline.enabled);
+        }
 
-                // Reset para que el próximo SetState no se coma el early-return.
-                _button.SetState(ActionButtonState.Available);
-            }
+        [Test]
+        public void test_actionButton_used_showsDedicatedSpriteAtFullAlpha()
+        {
+            // Arrange — la ficha usada NO se atenúa: sprite propio + hundimiento.
+            var (_, _, image) = SetupSprites();
+            var tex = new Texture2D(4, 4);
+            var usedSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            _spawned.Add(tex);
+            _spawned.Add(usedSprite);
+            AssignPrivate(_button, "_usedSprite", usedSprite);
+
+            // Act
+            _button.SetState(ActionButtonState.Used);
+
+            // Assert
+            Assert.AreSame(usedSprite, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f, "Used no atenúa el alpha");
+        }
+
+        [Test]
+        public void test_actionButton_pointerDownWhileLocked_raisesBlockedPressed()
+        {
+            // Arrange — el tap sobre cualquier chip no usable avisa al view para que
+            // muestre el motivo; la pila de energía (OnRejected) NO se sacude si el
+            // problema no es la plata.
+            int blocked = 0, rejections = 0;
+            _button.OnBlockedPressed += _ => blocked++;
+            _button.OnRejected += () => rejections++;
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(true);
+
+            // Act
+            _button.OnPointerDown(null);
+
+            // Assert
+            Assert.AreEqual(1, blocked, "el view tiene que enterarse para mostrar el motivo");
+            Assert.AreEqual(0, rejections, "sin problema de energía la pila no se sacude");
         }
 
         [Test]

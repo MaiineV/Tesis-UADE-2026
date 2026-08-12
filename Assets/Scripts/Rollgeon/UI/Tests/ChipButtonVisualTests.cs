@@ -68,9 +68,9 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_chipVisual_disabledButton_showsDimmedHighlight()
+        public void test_chipVisual_disabledButton_withoutUsedSprite_showsDimmedHighlight()
         {
-            // Arrange
+            // Arrange — fallback sin sprite de usada (installer sin correr).
             float expectedAlpha = (float)GetPrivate(_visual, "_disabledAlpha");
 
             // Act — el view solo togglea interactable; el visual lo ve en LateUpdate.
@@ -80,6 +80,56 @@ namespace Rollgeon.UI.Tests
             // Assert
             Assert.AreSame(_highlight, _image.sprite);
             Assert.AreEqual(expectedAlpha, _image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_chipVisual_disabledButton_withUsedSprite_showsItAtFullAlpha()
+        {
+            // Arrange — con el sprite de usada wireado el cue es el hundimiento,
+            // no la atenuación (mismo contrato que la ficha usada de combate).
+            var tex = new Texture2D(4, 4);
+            var used = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            _spawned.Add(tex);
+            _spawned.Add(used);
+            AssignPrivate(_visual, "_usedSprite", used);
+
+            // Act
+            _uiButton.interactable = false;
+            InvokePrivate(_visual, "LateUpdate");
+
+            // Assert
+            Assert.AreSame(used, _image.sprite);
+            Assert.AreEqual(1f, _image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_chipVisual_pointerDownWhileDisabled_raisesBlockedPressed()
+        {
+            // Arrange
+            int blocked = 0;
+            _visual.OnBlockedPressed += _ => blocked++;
+            _uiButton.interactable = false;
+            InvokePrivate(_visual, "LateUpdate");
+
+            // Act
+            _visual.OnPointerDown(null);
+
+            // Assert
+            Assert.AreEqual(1, blocked, "el view tiene que enterarse para mostrar el motivo");
+        }
+
+        [Test]
+        public void test_chipVisual_pointerDownWhileEnabled_staysSilent()
+        {
+            // Arrange
+            int blocked = 0;
+            _visual.OnBlockedPressed += _ => blocked++;
+
+            // Act
+            _visual.OnPointerDown(null);
+
+            // Assert
+            Assert.AreEqual(0, blocked);
         }
 
         [Test]

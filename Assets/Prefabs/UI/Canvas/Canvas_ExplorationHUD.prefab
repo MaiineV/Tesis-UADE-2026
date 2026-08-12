@@ -1138,7 +1138,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1204,8 +1204,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
-  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
+  _sinkSpeed: 900
 --- !u!1 &3477973551267671920
 GameObject:
   m_ObjectHideFlags: 0
@@ -1411,7 +1413,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1477,8 +1479,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
-  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
+  _sinkSpeed: 900
 --- !u!1 &4369657259479761301
 GameObject:
   m_ObjectHideFlags: 0
@@ -1822,7 +1826,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1936,8 +1940,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
-  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
+  _sinkSpeed: 900
 --- !u!1 &5057359391340898608
 GameObject:
   m_ObjectHideFlags: 0

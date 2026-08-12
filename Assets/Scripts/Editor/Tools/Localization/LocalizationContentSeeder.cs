@@ -240,6 +240,33 @@ namespace Rollgeon.EditorTools.Localization
             Ui("combat.combo_repeated_zero",
                 "Combo repetido: 0 daño",
                 "Repeated combo: 0 damage");
+
+            // Toast al tocar un chip de acción no usable (ActionRejectToast):
+            // título + motivo concreto resuelto por PlayerActionButtonsView.
+            Ui(UiTextKeys.RejectTitle,
+                "Esta acción no puede ser realizada",
+                "This action can't be performed");
+            Ui(UiTextKeys.RejectNoRange,
+                "Sin rango al objetivo.",
+                "No target in range.");
+            Ui(UiTextKeys.RejectNoEnergy,
+                "No tienes energía suficiente.",
+                "Not enough energy.");
+            Ui(UiTextKeys.RejectUsed,
+                "Ya la usaste este turno.",
+                "Already used this turn.");
+            Ui(UiTextKeys.RejectFullHealth,
+                "Tienes la vida completa.",
+                "Your health is already full.");
+            Ui(UiTextKeys.RejectNoDoor,
+                "No estás junto a una puerta.",
+                "You're not next to a door.");
+            Ui(UiTextKeys.RejectNotYourTurn,
+                "No es tu turno.",
+                "It's not your turn.");
+            Ui(UiTextKeys.RejectNoPotion,
+                "No tienes poción disponible.",
+                "You have no potion available.");
         }
 
         // ==================================================================

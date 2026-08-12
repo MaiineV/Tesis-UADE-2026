@@ -8,9 +8,11 @@ using Rollgeon.Input;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 
 namespace Rollgeon.UI.HUD
 {
@@ -51,6 +53,11 @@ namespace Rollgeon.UI.HUD
                 if (_buttons[i] == null) continue;
                 int index = i;
                 _buttons[i].onClick.AddListener(() => HandleClick(index));
+
+                // Tap sobre un chip deshabilitado → cartel con el motivo (mismo
+                // contrato que los chips de combate).
+                var visual = _buttons[i].GetComponent<ChipButtonVisual>();
+                if (visual != null) visual.OnBlockedPressed += _ => ShowRejectToast(index);
             }
         }
 
@@ -58,7 +65,10 @@ namespace Rollgeon.UI.HUD
         {
             foreach (var btn in _buttons)
             {
-                if (btn != null) btn.onClick.RemoveAllListeners();
+                if (btn == null) continue;
+                btn.onClick.RemoveAllListeners();
+                var visual = btn.GetComponent<ChipButtonVisual>();
+                if (visual != null) visual.OnBlockedPressed = null;
             }
             if (_bound) Unbind();
         }
@@ -226,6 +236,64 @@ namespace Rollgeon.UI.HUD
         private void SetVisible(bool visible)
         {
             gameObject.SetActive(visible);
+        }
+
+        // ======================================================================
+        // Toast de rechazo — "Esta acción no puede ser realizada" + motivo
+        // ======================================================================
+
+        private void ShowRejectToast(int buttonIndex)
+        {
+            if (buttonIndex < 0 || buttonIndex >= _buttons.Count) return;
+            var button = _buttons[buttonIndex];
+            if (button == null) return;
+
+            string reason = ResolveRejectReason(buttonIndex);
+            if (string.IsNullOrEmpty(reason)) return;
+
+            string title = LocalizedContent.Ui(UiTextKeys.RejectTitle,
+                "Esta acción no puede ser realizada");
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            ActionRejectToast.Show(button.transform as RectTransform,
+                title + "\n" + reason, label != null ? label.font : null);
+        }
+
+        /// <summary>
+        /// Motivo del rechazo en exploración, resuelto al momento del tap. Espejo
+        /// del gating de <see cref="IsBehaviorAvailable"/>: vida llena → poción →
+        /// energía → condiciones. Null = gate del tutorial (el overlay ya guía).
+        /// </summary>
+        private string ResolveRejectReason(int buttonIndex)
+        {
+            var behavior = ResolveBehaviorForButton(buttonIndex);
+            if (behavior == null) return null;
+
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var gate)
+                && gate != null && gate.IsSlotLocked(behavior.Slot))
+                return null;
+
+            if (behavior.Slot == HeroBehaviorSlot.Healing
+                && !HealAvailability.CanHealMore(_playerGuid))
+                return LocalizedContent.Ui(UiTextKeys.RejectFullHealth, "Tienes la vida completa.");
+
+            // Energía antes del chequeo genérico: HasUsableEffectGroup la incluye
+            // y taparía el motivo concreto.
+            int cost = Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
+            if (cost > 0
+                && ServiceLocator.TryGetService<IEnergyService>(out var energy)
+                && energy != null && energy.GetCurrent(_playerGuid) < cost)
+                return LocalizedContent.Ui(UiTextKeys.RejectNoEnergy, "No tienes energía suficiente.");
+
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _))
+            {
+                // El único gate restante del heal en exploración es la poción
+                // (PCHasInventoryItem(potion.healing)).
+                if (behavior.Slot == HeroBehaviorSlot.Healing)
+                    return LocalizedContent.Ui(UiTextKeys.RejectNoPotion, "No tienes poción disponible.");
+                return LocalizedContent.Ui(UiTextKeys.RejectNoRange, "Sin rango al objetivo.");
+            }
+
+            return null;
         }
 
         // ======================================================================

@@ -57,14 +57,20 @@ namespace Rollgeon.UI.HUD
         private Color _baseColor = Color.white;
 
         [Title("Visual — sprites por estado")]
-        [InfoBox("Sprite del chip al hacer hover y mientras está Selected. Los estados " +
-                 "deshabilitados (Used/Locked/Unaffordable) lo muestran con el alpha de " +
-                 "abajo — un solo look para 'no disponible'. Null = sin swap de sprite.")]
+        [InfoBox("Sprite del chip al hacer hover, mientras está Selected y en " +
+                 "Unaffordable (con el recuadro rojo). Locked queda con el sprite base. " +
+                 "Todos los estados van a alpha pleno. Null = sin swap de sprite.")]
         [SerializeField]
         private Sprite _highlightSprite;
 
-        [SerializeField, Range(0f, 1f), Tooltip("Alpha del chip en estados deshabilitados.")]
-        private float _disabledAlpha = 0.5f;
+        [InfoBox("Sprite del chip cuando la acción ya se ejecutó este turno (Used). Sin " +
+                 "alpha: la ficha se hunde hasta quedar con la mitad bajo el borde de la " +
+                 "pantalla — eso ES el feedback de usada. Null = cae al highlight.")]
+        [SerializeField]
+        private Sprite _usedSprite;
+
+        [SerializeField, MinValue(0f), Tooltip("Velocidad del hundimiento/regreso de la ficha usada (px de pantalla por segundo).")]
+        private float _usedSinkSpeed = 900f;
 
         [Title("Visual — Selected (pressed)")]
         [SerializeField, Range(1f, 1.3f)]
@@ -121,6 +127,16 @@ namespace Rollgeon.UI.HUD
         private Sprite _normalSprite;
         private bool _hovered;
 
+        // Hundimiento de la ficha usada, por enforcement continuo en LateUpdate (un
+        // tween one-shot lo pisaba el CombatHudZoneFlow y solo Movement bajaba). El
+        // regreso NO es por delta acumulado: el flow escribe posiciones absolutas y
+        // desincronizaba el acumulado (los chips quedaban en medio de la pantalla) —
+        // se vuelve a la posición de origen capturada en Awake. Ambas ramas solo
+        // actúan con el chip en su parent original: si el flow lo tiene, se espera.
+        private Transform _homeParent;
+        private Vector2 _homeAnchoredPos;
+        private bool _needsSinkRestore;
+
         private Color _costLabelBaseColor = Color.white;
         private Tween _rejectShake;
 
@@ -139,6 +155,10 @@ namespace Rollgeon.UI.HUD
         public Button Button => _button;
         public ActionButtonState State => _state;
 
+        /// <summary>Fuente del cost label — la reusa el toast de rechazo para no
+        /// cargar assets de fuente por código. Null si el chip no tiene label.</summary>
+        public TMP_FontAsset CostLabelFont => _costLabel != null ? _costLabel.font : null;
+
         /// <summary>Disparado cuando el boton es clickeado, independientemente del
         /// estado interactable (Unity gatekeepea Locked/Used a nivel Button).
         /// Delegate plano (no event) por simetria con
@@ -152,6 +172,11 @@ namespace Rollgeon.UI.HUD
         /// tambien la pila de energia. Delegate plano por simetria con
         /// <see cref="OnClicked"/> — el view lo limpia en OnDestroy.</summary>
         public Action OnRejected;
+
+        /// <summary>Disparado en el pointer down sobre CUALQUIER chip no usable (Locked,
+        /// Used o Unaffordable). El view resuelve el motivo con estado fresco y muestra
+        /// el aviso "Esta acción no puede ser realizada". Delegate plano como los otros.</summary>
+        public Action<ActionButton> OnBlockedPressed;
 
         // ======================================================================
         // Lifecycle
@@ -171,6 +196,9 @@ namespace Rollgeon.UI.HUD
             _image = _button.targetGraphic as Image;
             if (_image != null) _normalSprite = _image.sprite;
             _baseScale = transform.localScale;
+
+            _homeParent = transform.parent;
+            if (transform is RectTransform homeRect) _homeAnchoredPos = homeRect.anchoredPosition;
 
             _outline = _button.GetComponent<Outline>();
             if (_outline == null)
@@ -200,6 +228,7 @@ namespace Rollgeon.UI.HUD
         {
             if (_rejectShake.isAlive) _rejectShake.Stop();
             OnRejected = null;
+            OnBlockedPressed = null;
             if (_button != null)
                 _button.onClick.RemoveListener(HandleClick);
         }
@@ -251,11 +280,13 @@ namespace Rollgeon.UI.HUD
             switch (_state)
             {
                 // Funcionalmente identico a Locked (no arranca drag, no responde al
-                // hotkey); lo unico que cambia es que dice POR QUE: el cuerpo del chip
-                // es el mismo look deshabilitado, el rojo del outline/costo es la razon.
+                // hotkey); lo unico que cambia es que dice POR QUE. El cuerpo va a
+                // alpha PLENO a propósito: el Outline de uGUI multiplica su alpha por
+                // el del gráfico — con el cuerpo atenuado el recuadro rojo salía
+                // fantasma (feedback playtest: "no aparece el outline").
                 case ActionButtonState.Unaffordable:
                     _button.interactable = false;
-                    ApplyChipVisual(disabled: true, highlighted: true);
+                    ApplyChipVisual(highlighted: true);
                     transform.localScale = _baseScale;
                     if (_outline != null)
                     {
@@ -264,27 +295,41 @@ namespace Rollgeon.UI.HUD
                     }
                     break;
 
-                // Used y Locked comparten un unico look "no disponible": sprite de
-                // highlight con alpha reducido (feedback playtest: cada razon con su
-                // estilo propio se leia como estados distintos del mismo problema).
+                // Sprite base a alpha pleno (feedback playtest: nada de atenuar) —
+                // la distinción con Available es interactiva: el tap shakea y dice
+                // el motivo, y el hover no enciende el highlight.
                 case ActionButtonState.Locked:
+                    _button.interactable = false;
+                    ApplyChipVisual(highlighted: false);
+                    transform.localScale = _baseScale;
+                    if (_outline != null) _outline.enabled = false;
+                    break;
+
+                // Used tiene su propio look: sprite dedicado a alpha pleno, y la ficha
+                // se hunde hasta el borde inferior de la pantalla — media ficha visible
+                // dice "ya la usaste" sin atenuar nada.
                 case ActionButtonState.Used:
                     _button.interactable = false;
-                    ApplyChipVisual(disabled: true, highlighted: true);
+                    if (_image != null)
+                    {
+                        var usedSprite = _usedSprite != null ? _usedSprite : _highlightSprite;
+                        if (usedSprite != null) _image.sprite = usedSprite;
+                        _image.color = _baseColor;
+                    }
                     transform.localScale = _baseScale;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Available:
                     _button.interactable = true;
-                    ApplyChipVisual(disabled: false, highlighted: _hovered);
+                    ApplyChipVisual(highlighted: _hovered);
                     transform.localScale = _baseScale;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Selected:
                     _button.interactable = true;
-                    ApplyChipVisual(disabled: false, highlighted: true);
+                    ApplyChipVisual(highlighted: true);
                     transform.localScale = _baseScale * _selectedScale;
                     if (_outline != null)
                     {
@@ -297,18 +342,62 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Sprite + color del cuerpo del chip. Highlighted usa el sprite de hover
-        /// (si esta wireado); disabled atenua el alpha sobre el color base.
+        /// (si esta wireado). Siempre alpha pleno — atenuar apagaba también el
+        /// Outline (multiplica su alpha por el del gráfico) y el rojo no se veía.
         /// </summary>
-        private void ApplyChipVisual(bool disabled, bool highlighted)
+        private void ApplyChipVisual(bool highlighted)
         {
             if (_image == null) return;
 
             if (_highlightSprite != null)
                 _image.sprite = highlighted ? _highlightSprite : _normalSprite;
 
-            var color = _baseColor;
-            if (disabled) color.a *= _disabledAlpha;
-            _image.color = color;
+            _image.color = _baseColor;
+        }
+
+        // ======================================================================
+        // Hundimiento de la ficha usada
+        // ======================================================================
+
+        private static readonly Vector3[] CornersScratch = new Vector3[4];
+
+        /// <summary>
+        /// Enforcement por frame del hundimiento: mientras la ficha está Used la
+        /// empuja hacia abajo hasta dejar su centro en el borde inferior de la
+        /// pantalla (media ficha visible = "ya la usaste"); al salir de Used vuelve
+        /// a su anchoredPosition de origen. Corre en LateUpdate y re-mide cada
+        /// frame, así converge aunque el CombatHudZoneFlow mueva el chip entre
+        /// medio — y con el chip reparentado por el flow, simplemente espera.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (transform.parent != _homeParent) return; // el flow lo tiene en vuelo
+
+            bool instant = !Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion
+                           || _usedSinkSpeed <= 0f;
+            float step = instant ? float.MaxValue : _usedSinkSpeed * Time.unscaledDeltaTime;
+
+            if (_state == ActionButtonState.Used)
+            {
+                _needsSinkRestore = true;
+                float centerY = CurrentScreenCenterY();
+                if (centerY <= 0f) return; // ya está en/bajo el borde
+                transform.position += Vector3.down * Mathf.Min(step, centerY);
+            }
+            else if (_needsSinkRestore && transform is RectTransform rect)
+            {
+                rect.anchoredPosition = Vector2.MoveTowards(rect.anchoredPosition, _homeAnchoredPos, step);
+                if (rect.anchoredPosition == _homeAnchoredPos) _needsSinkRestore = false;
+            }
+        }
+
+        /// <summary>Centro vertical del rect en pantalla (ScreenSpaceOverlay: world == píxeles).</summary>
+        private float CurrentScreenCenterY()
+        {
+            var rect = transform as RectTransform;
+            if (rect == null) return 0f;
+            rect.GetWorldCorners(CornersScratch);
+            return (CornersScratch[0].y + CornersScratch[1].y) * 0.5f;
         }
 
         // Unaffordable sigue pintando rojo aunque nadie haya llamado SetAffordable —
@@ -374,8 +463,15 @@ namespace Rollgeon.UI.HUD
         /// </remarks>
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (_affordable && _state != ActionButtonState.Unaffordable) return;
-            PlayRejectFeedback();
+            bool energyProblem = !_affordable || _state == ActionButtonState.Unaffordable;
+            bool blocked = energyProblem
+                           || _state is ActionButtonState.Locked or ActionButtonState.Used;
+            if (!blocked) return;
+
+            // El shake responde siempre; la pila de energía (OnRejected) solo cuando
+            // el problema ES la energía — sacudirla por un lock de rango confunde.
+            PlayRejectFeedback(notifyEnergy: energyProblem);
+            OnBlockedPressed?.Invoke(this);
         }
 
         // ======================================================================
@@ -407,11 +503,13 @@ namespace Rollgeon.UI.HUD
         /// parenteado), asi que escalarlo pulsaria el marco entero descentrado. El chip
         /// se mueve como una pieza y se lee mejor.
         /// </remarks>
-        public void PlayRejectFeedback()
+        public void PlayRejectFeedback() => PlayRejectFeedback(notifyEnergy: true);
+
+        public void PlayRejectFeedback(bool notifyEnergy)
         {
             if (_rejectShake.isAlive) return;
 
-            OnRejected?.Invoke();
+            if (notifyEnergy) OnRejected?.Invoke();
 
             if (!Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
 

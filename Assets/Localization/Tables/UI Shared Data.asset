@@ -591,6 +591,38 @@ MonoBehaviour:
     m_Key: tutorial.map_rooms
     m_Metadata:
       m_Items: []
+  - m_Id: 10374649726468096
+    m_Key: action.reject.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216832
+    m_Key: action.reject.no_range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216833
+    m_Key: action.reject.no_energy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216834
+    m_Key: action.reject.used
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216835
+    m_Key: action.reject.full_health
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216836
+    m_Key: action.reject.no_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216837
+    m_Key: action.reject.not_turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10378091215814656
+    m_Key: action.reject.no_potion
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

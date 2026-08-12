@@ -632,6 +632,38 @@ MonoBehaviour:
       cu\xE1les son especiales (tienda, encantamiento...)."
     m_Metadata:
       m_Items: []
+  - m_Id: 10374649726468096
+    m_Localized: "Esta acci\xF3n no puede ser realizada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216832
+    m_Localized: Sin rango al objetivo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216833
+    m_Localized: "No tienes energ\xEDa suficiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216834
+    m_Localized: Ya la usaste este turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216835
+    m_Localized: Tienes la vida completa.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216836
+    m_Localized: "No est\xE1s junto a una puerta."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216837
+    m_Localized: No es tu turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10378091215814656
+    m_Localized: "No tienes poci\xF3n disponible."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

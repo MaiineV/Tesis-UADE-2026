@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 
 namespace Rollgeon.UI.HUD
 {
@@ -123,6 +124,7 @@ namespace Rollgeon.UI.HUD
                 int captured = i;
                 _buttons[i].OnClicked += () => HandleBehaviorClick(captured);
                 _buttons[i].OnRejected += () => HandleBehaviorRejected(captured);
+                _buttons[i].OnBlockedPressed += _ => ShowRejectToast(captured);
             }
 
             if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClick);
@@ -138,6 +140,7 @@ namespace Rollgeon.UI.HUD
                 if (_buttons[i] == null) continue;
                 _buttons[i].OnClicked = null;
                 _buttons[i].OnRejected = null;
+                _buttons[i].OnBlockedPressed = null;
             }
 
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClick);
@@ -768,5 +771,72 @@ namespace Rollgeon.UI.HUD
         // compartida con el texto de tooltips (HeroActionTooltip).
         private int ResolveDisplayCost(HeroActionBehavior behavior)
             => Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
+
+        // ======================================================================
+        // Toast de rechazo — "Esta acción no puede ser realizada" + motivo
+        // ======================================================================
+
+        private void ShowRejectToast(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= _buttons.Length) return;
+            var button = _buttons[slotIndex];
+            if (button == null) return;
+
+            string reason = ResolveRejectReason(button);
+            if (string.IsNullOrEmpty(reason)) return;
+
+            string title = LocalizedContent.Ui(UiTextKeys.RejectTitle,
+                "Esta acción no puede ser realizada");
+            ActionRejectToast.Show(button.transform as RectTransform,
+                title + "\n" + reason, button.CostLabelFont);
+        }
+
+        /// <summary>
+        /// Motivo del rechazo, resuelto con estado fresco al momento del tap —
+        /// espejo de la cascada de <see cref="ComputeStateForSlot"/>: las condiciones
+        /// (rango, puerta, vida) mandan sobre la energía, igual que Locked manda
+        /// sobre Unaffordable. Null = lock transitorio (chain/roll en curso, gate
+        /// del tutorial) que no merece cartel.
+        /// </summary>
+        private string ResolveRejectReason(ActionButton button)
+        {
+            if (!_isPlayerTurn)
+                return LocalizedContent.Ui(UiTextKeys.RejectNotYourTurn, "No es tu turno.");
+
+            // Slots que el tutorial todavía no desbloqueó: el overlay del tutorial ya
+            // está guiando — un cartel encima solo compite con la lección.
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var gate)
+                && gate != null && gate.IsSlotLocked(button.Slot))
+                return null;
+
+            var behavior = ResolveBehaviorForSlot(System.Array.IndexOf(_buttons, button));
+            if (behavior == null) return null;
+
+            if (WasUsedThisTurn(behavior.ActionName))
+                return LocalizedContent.Ui(UiTextKeys.RejectUsed, "Ya la usaste este turno.");
+
+            // Acción en curso: lock transitorio, sin cartel.
+            if (_inChain || _rolled) return null;
+            if (_awaitingSelection
+                && ServiceLocator.TryGetService<IActionRollService>(out var modalRoll)
+                && modalRoll != null && modalRoll.IsActive)
+                return null;
+
+            if (button.Slot == HeroBehaviorSlot.ForceDoor
+                && !EffForceDoor.CanAttemptForceDoor(_playerGuid))
+                return LocalizedContent.Ui(UiTextKeys.RejectNoDoor, "No estás junto a una puerta.");
+
+            if (button.Slot == HeroBehaviorSlot.Healing
+                && !HealAvailability.CanHealMore(_playerGuid))
+                return LocalizedContent.Ui(UiTextKeys.RejectFullHealth, "Tienes la vida completa.");
+
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _, includeEnergyGate: false))
+                return LocalizedContent.Ui(UiTextKeys.RejectNoRange, "Sin rango al objetivo.");
+
+            if (!HasEnoughEnergy(behavior))
+                return LocalizedContent.Ui(UiTextKeys.RejectNoEnergy, "No tienes energía suficiente.");
+
+            return null;
+        }
     }
 }
