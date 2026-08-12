@@ -91,6 +91,13 @@ namespace Rollgeon.Tutorial
         private bool _defenseTaught;
         private bool _defenseFromFreeLoop;
 
+        // El presupuesto de re-rolls se enseña en el primer re-roll del jugador.
+        private bool _rerollTaught;
+
+        // true si el tutorial abrió el contrato en la primera tirada — solo en ese
+        // caso lo cierra al terminar la acción (si lo abrió el jugador, es suyo).
+        private bool _openedContractDrawer;
+
         // Paso subyacente del loop libre (Combat1 o Combat2) al que vuelven las
         // lecciones interceptadas (defensa/curar) cuando cierran.
         private TutorialStep _freeLoopStep = TutorialStep.Combat1;
@@ -479,6 +486,7 @@ namespace Rollgeon.Tutorial
                 // (idempotente; sin esto Movement quedaría lockeado = softlock nuevo).
                 EndExclusiveStep();
                 ClearTurnDeferrals();
+                CloseContractDrawerIfWeOpenedIt();
 
                 _step = TutorialStep.GoToC;
                 ShowStep(TutorialStep.GoToC, new TutorialStepDisplayRequest
@@ -550,7 +558,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.CameraControls,
-                    "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Recentrar: G. Pruébalo ahora."),
+                    "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             }, ShowMapTeach);
         }
@@ -944,18 +952,33 @@ namespace Rollgeon.Tutorial
         }
 
         // Los dados asentaron y se reveló la primera tirada → enseñar combos,
-        // holds y el re-tiro por agarre.
+        // holds y el re-tiro. En la primera tirada se abre el CONTRATO a la fuerza
+        // (feedback playtest: el jugador tiene que VER los combos y su daño mientras
+        // decide qué bloquear, no solo saber que el ícono existe). La primera
+        // re-tirada enseña el presupuesto de rolls y su costo.
         private void OnDiceRolled(params object[] args)
         {
-            if (_step != TutorialStep.ThrowTeach) return;
+            if (_step != TutorialStep.ThrowTeach
+                && !(_step == TutorialStep.DiceTeach && !_rerollTaught)) return;
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
 
-            _step = TutorialStep.DiceTeach;
-            ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
-                LocalizedContent.Ui(TutorialTextKeys.DiceTeach,
-                    "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
-                    "— máximo 3 tiradas. Luego CONFIRMA.")));
+            if (_step == TutorialStep.ThrowTeach)
+            {
+                _step = TutorialStep.DiceTeach;
+                OpenContractDrawerForRoll();
+                ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
+                    LocalizedContent.Ui(TutorialTextKeys.DiceTeach,
+                        "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
+                        "— máximo 3 tiradas. Luego CONFIRMA.")));
+                return;
+            }
+
+            // Segunda tirada de la misma acción = su primer re-roll.
+            _rerollTaught = true;
+            ShowStep(TutorialStep.DiceTeach, RollButtonRequest(
+                LocalizedContent.Ui(TutorialTextKeys.RerollTeach,
+                    "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía.")));
         }
 
         // El chain siguió a su fase 2 (defensa post-ataque) — solo sucede si al
@@ -1042,6 +1065,7 @@ namespace Rollgeon.Tutorial
 
         private void ShowEndTurnTeach()
         {
+            CloseContractDrawerIfWeOpenedIt();
             _step = TutorialStep.EndTurnTeach;
             // No bloquea input: el jugador tiene que poder apretar el botón real.
             // La lección se cierra con OnTurnFinished.
@@ -1401,6 +1425,51 @@ namespace Rollgeon.Tutorial
                 request.UiTarget = rect;
             }
             return request;
+        }
+
+        /// <summary>
+        /// Paso no bloqueante anclado al botón Roll/Reroll del HUD. Degrada a
+        /// popup centrado si el HUD no está disponible.
+        /// </summary>
+        private TutorialStepDisplayRequest RollButtonRequest(string text)
+        {
+            var request = new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = text,
+            };
+            var hud = FindCombatHud();
+            if (hud != null && hud.TryGetRollButtonRect(out var rect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = rect;
+            }
+            return request;
+        }
+
+        // El contrato vive en Canvas_PlayerStatus como SlidingDrawer; abrirlo cierra
+        // los otros drawers solo (registro Live de SlidingDrawer).
+        private void OpenContractDrawerForRoll()
+        {
+            var drawer = FindContractDrawer();
+            if (drawer == null || drawer.IsOpen) return;
+            drawer.Open();
+            _openedContractDrawer = true;
+        }
+
+        private void CloseContractDrawerIfWeOpenedIt()
+        {
+            if (!_openedContractDrawer) return;
+            _openedContractDrawer = false;
+            var drawer = FindContractDrawer();
+            if (drawer != null && drawer.IsOpen) drawer.Close();
+        }
+
+        private static SlidingDrawer FindContractDrawer()
+        {
+            var view = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Contract.ContractDrawerView>(
+                FindObjectsInactive.Include);
+            return view != null ? view.GetComponent<SlidingDrawer>() : null;
         }
 
         /// <summary>

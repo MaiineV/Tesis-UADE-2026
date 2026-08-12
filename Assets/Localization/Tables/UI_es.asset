@@ -604,7 +604,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 10309000929050625
     m_Localized: "Gira la c\xE1mara con el bot\xF3n derecho. Arrastra el mapa con
-      la rueda presionada. Zoom: rueda. Recentrar: G. Pru\xE9balo ahora."
+      la rueda presionada. Zoom: rueda. Pru\xE9balo ahora."
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244928
@@ -662,6 +662,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 10378091215814656
     m_Localized: "No tienes poci\xF3n disponible."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10403289960906752
+    m_Localized: "Tienes hasta 3 tiradas gratis por acci\xF3n; las siguientes cuestan
+      1 de energ\xEDa."
     m_Metadata:
       m_Items: []
   references:

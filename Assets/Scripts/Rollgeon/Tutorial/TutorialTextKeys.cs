@@ -29,6 +29,7 @@ namespace Rollgeon.Tutorial
         public const string TargetTeach = "tutorial.target_teach";
         public const string ThrowTeach = "tutorial.throw_teach";
         public const string DiceTeach = "tutorial.dice_teach";
+        public const string RerollTeach = "tutorial.reroll_teach";
         public const string DefenseTeach = "tutorial.defense_teach";
         public const string EndTurnTeach = "tutorial.end_turn_teach";
         public const string Combat1Free = "tutorial.combat1_free";
@@ -69,7 +70,7 @@ namespace Rollgeon.Tutorial
             Movement,
             EnemiesIntro, TurnOrderIntro, ContractIcon, MoveTeach, MoveTiles, MoveTooFar,
             StatsHp, StatsEnergy,
-            AttackTeach, TargetTeach, ThrowTeach, DiceTeach, DefenseTeach,
+            AttackTeach, TargetTeach, ThrowTeach, DiceTeach, RerollTeach, DefenseTeach,
             EndTurnTeach, Combat1Free, HealUnlocked, HealDice,
             GoToC, EscapeTeach, EscapeDice, Combat2Door, Combat2,
             EscapeAftermath, CameraControls, MapRooms,

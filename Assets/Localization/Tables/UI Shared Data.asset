@@ -623,6 +623,10 @@ MonoBehaviour:
     m_Key: action.reject.no_potion
     m_Metadata:
       m_Items: []
+  - m_Id: 10403289960906752
+    m_Key: tutorial.reroll_teach
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

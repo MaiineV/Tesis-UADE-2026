@@ -3006,6 +3006,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+    - target: {fileID: 6313941340399891649, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 280
+      objectReference: {fileID: 0}
     - target: {fileID: 7076222357715826726, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _diceZone
       value: 

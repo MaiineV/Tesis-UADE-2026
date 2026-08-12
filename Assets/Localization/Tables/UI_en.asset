@@ -599,7 +599,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 10309000929050625
     m_Localized: 'Rotate the camera with the right button. Drag the map with the
-      wheel pressed. Zoom: wheel. Recenter: G. Try it now.'
+      wheel pressed. Zoom: wheel. Try it now.'
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244928
@@ -657,6 +657,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 10378091215814656
     m_Localized: You have no potion available.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10403289960906752
+    m_Localized: You get up to 3 free rolls per action; the next ones cost 1 energy
+      each.
     m_Metadata:
       m_Items: []
   references:

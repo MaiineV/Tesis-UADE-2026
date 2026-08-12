@@ -119,6 +119,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Build combos (pair, trio, straight). Click a die to lock it; reroll the rest " +
                 "— 3 rolls max. Then CONFIRM.");
 
+            Ui(TutorialTextKeys.RerollTeach,
+                "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía.",
+                "You get up to 3 free rolls per action; the next ones cost 1 energy each.");
+
             Ui(TutorialTextKeys.DefenseTeach,
                 "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
                 "tu ESCUDO absorbe el próximo golpe.",
@@ -160,8 +164,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Escaping doesn't remove them: the enemies stay in the room, heal a little, and wait if you come back.");
 
             Ui(TutorialTextKeys.CameraControls,
-                "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Recentrar: G. Pruébalo ahora.",
-                "Rotate the camera with the right button. Drag the map with the wheel pressed. Zoom: wheel. Recenter: G. Try it now.");
+                "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora.",
+                "Rotate the camera with the right button. Drag the map with the wheel pressed. Zoom: wheel. Try it now.");
 
             Ui(TutorialTextKeys.MapRooms,
                 "Aleja el zoom para ver las salas adyacentes: sus íconos te dicen cuáles son especiales (tienda, encantamiento...).",

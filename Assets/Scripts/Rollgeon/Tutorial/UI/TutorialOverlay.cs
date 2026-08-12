@@ -53,6 +53,18 @@ namespace Rollgeon.Tutorial.UI
         private float _arrowBobPhase;
         private Tween _showTween;
 
+        // Anti-baile con la cámara en movimiento (zoom/rotación): si el anchor no
+        // resuelve por un frame se usa el último conocido durante una gracia corta
+        // (el fallback instantáneo al centro hacía aparecer/desaparecer el popup),
+        // y el centro del popup se suaviza en vez de teletransportarse.
+        private const float AnchorLossGraceSeconds = 0.35f;
+        private const float PopupSmoothing = 14f;
+        private Vector2 _lastAnchorPos;
+        private bool _hadAnchor;
+        private float _anchorLostAt = -1f;
+        private Vector2 _smoothedPopupCenter;
+        private bool _popupCenterInitialized;
+
         public bool IsVisible { get; private set; }
 
         /// <summary>Crea el GameObject persistente la primera vez que se llama.</summary>
@@ -186,6 +198,9 @@ namespace Rollgeon.Tutorial.UI
             _onContinue = onContinue;
             _anchorQuadrant = -1;
             _popupSide = -1;
+            _hadAnchor = false;
+            _anchorLostAt = -1f;
+            _popupCenterInitialized = false;
 
             if (request.InputPolicy == TutorialInputPolicy.BlockUntilContinue && onContinue == null)
             {
@@ -246,8 +261,27 @@ namespace Rollgeon.Tutorial.UI
         private void UpdateLayout()
         {
             var screenSize = new Vector2(Screen.width, Screen.height);
+            Vector2 anchorPos = default;
             bool hasAnchor = _request.AnchorKind != TutorialAnchorKind.None
-                             && TutorialAnchorResolver.TryResolve(_request, out var anchorPos);
+                             && TutorialAnchorResolver.TryResolve(_request, out anchorPos);
+
+            // Gracia ante pérdida transitoria del anchor (zoom/rotación de cámara):
+            // sin esto el popup saltaba al centro y volvía frame a frame.
+            if (hasAnchor)
+            {
+                _hadAnchor = true;
+                _lastAnchorPos = anchorPos;
+                _anchorLostAt = -1f;
+            }
+            else if (_hadAnchor && _request.AnchorKind != TutorialAnchorKind.None)
+            {
+                if (_anchorLostAt < 0f) _anchorLostAt = Time.unscaledTime;
+                if (Time.unscaledTime - _anchorLostAt <= AnchorLossGraceSeconds)
+                {
+                    anchorPos = _lastAnchorPos;
+                    hasAnchor = true;
+                }
+            }
 
             if (!hasAnchor)
             {
@@ -255,11 +289,9 @@ namespace Rollgeon.Tutorial.UI
                 _dimMaterial.SetFloat(CutoutRadiusId, 0f);
                 _arrow.enabled = false;
                 MeasurePopup(screenSize);
-                PlacePopup(screenSize * 0.5f);
+                PlacePopup(SmoothPopupCenter(screenSize * 0.5f));
                 return;
             }
-
-            TutorialAnchorResolver.TryResolve(_request, out anchorPos);
 
             // El recorte que dibuja el shader es circular, pero la flecha se ubica contra
             // la caja cuando el anchor es de UI — ver ResolveArrowPositionForBox.
@@ -320,7 +352,7 @@ namespace Rollgeon.Tutorial.UI
                     : TutorialOverlayLayout.ResolvePopupCenter(
                         anchorPos, screenSize, _settings.PopupScreenMargin);
             }
-            PlacePopup(popupCenter);
+            PlacePopup(SmoothPopupCenter(popupCenter));
 
             if (_request.ShowArrow && _arrow.sprite != null)
             {
@@ -385,6 +417,21 @@ namespace Rollgeon.Tutorial.UI
                 textWidth + padding.x * 2f,
                 textHeight + footerHeight + padding.y * 2f);
             return _popupRoot.sizeDelta;
+        }
+
+        /// <summary>Suaviza el centro del popup con damping exponencial: sigue al
+        /// target pero sin teletransportarse cuando la cámara mueve el anchor.</summary>
+        private Vector2 SmoothPopupCenter(Vector2 target)
+        {
+            if (!_popupCenterInitialized || !Application.isPlaying)
+            {
+                _popupCenterInitialized = true;
+                _smoothedPopupCenter = target;
+                return target;
+            }
+            float t = 1f - Mathf.Exp(-PopupSmoothing * Time.unscaledDeltaTime);
+            _smoothedPopupCenter = Vector2.Lerp(_smoothedPopupCenter, target, t);
+            return _smoothedPopupCenter;
         }
 
         private void PlacePopup(Vector2 screenCenter)
