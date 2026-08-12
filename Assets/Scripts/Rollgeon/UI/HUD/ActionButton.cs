@@ -24,7 +24,8 @@ namespace Rollgeon.UI.HUD
     /// sobre TODOS los componentes del GameObject que implementan la interfaz.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Action Button")]
-    public class ActionButton : MonoBehaviour, IPointerDownHandler
+    public class ActionButton : MonoBehaviour, IPointerDownHandler,
+        IPointerEnterHandler, IPointerExitHandler
     {
         // ======================================================================
         // Serialized fields
@@ -55,6 +56,16 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private Color _baseColor = Color.white;
 
+        [Title("Visual — sprites por estado")]
+        [InfoBox("Sprite del chip al hacer hover y mientras está Selected. Los estados " +
+                 "deshabilitados (Used/Locked/Unaffordable) lo muestran con el alpha de " +
+                 "abajo — un solo look para 'no disponible'. Null = sin swap de sprite.")]
+        [SerializeField]
+        private Sprite _highlightSprite;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Alpha del chip en estados deshabilitados.")]
+        private float _disabledAlpha = 0.5f;
+
         [Title("Visual — Selected (pressed)")]
         [SerializeField, Range(1f, 1.3f)]
         private float _selectedScale = 1.08f;
@@ -70,10 +81,6 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, Tooltip("Distancia del Outline component (px).")]
         private Vector2 _outlineDistance = new Vector2(3f, -3f);
-
-        [Title("Visual — Used")]
-        [SerializeField, Range(0f, 1f), Tooltip("Multiplicador aplicado al color base cuando Used.")]
-        private float _usedColorMultiplier = 0.45f;
 
         [Title("Visual — Unaffordable (no alcanza la energia)")]
         [SerializeField, Tooltip("Rojo del costo y del outline cuando no alcanza la energia. " +
@@ -108,6 +115,11 @@ namespace Rollgeon.UI.HUD
         private Image _image;
         private Outline _outline;
         private Vector3 _baseScale;
+
+        // Sprite de reposo del chip, capturado del prefab en Awake — el swap de
+        // hover/selected/disabled vuelve siempre a este.
+        private Sprite _normalSprite;
+        private bool _hovered;
 
         private Color _costLabelBaseColor = Color.white;
         private Tween _rejectShake;
@@ -157,6 +169,7 @@ namespace Rollgeon.UI.HUD
             }
 
             _image = _button.targetGraphic as Image;
+            if (_image != null) _normalSprite = _image.sprite;
             _baseScale = transform.localScale;
 
             _outline = _button.GetComponent<Outline>();
@@ -168,8 +181,6 @@ namespace Rollgeon.UI.HUD
             _outline.effectDistance = _outlineDistance;
             _outline.enabled = false;
 
-            ApplyBaseColor();
-
             _button.onClick.AddListener(HandleClick);
             ApplyVisual();
         }
@@ -179,6 +190,10 @@ namespace Rollgeon.UI.HUD
             // Un shake en vuelo cuando el HUD se apaga dejaria el chip corrido y a
             // PrimeTween tweeneando un target destruido en el teardown de escena.
             if (_rejectShake.isAlive) _rejectShake.Complete();
+
+            // uGUI no dispara PointerExit sobre un GO desactivado — mismo reset que
+            // CharacterFrameController.
+            _hovered = false;
         }
 
         private void OnDestroy()
@@ -236,10 +251,11 @@ namespace Rollgeon.UI.HUD
             switch (_state)
             {
                 // Funcionalmente identico a Locked (no arranca drag, no responde al
-                // hotkey); lo unico que cambia es que dice POR QUE.
+                // hotkey); lo unico que cambia es que dice POR QUE: el cuerpo del chip
+                // es el mismo look deshabilitado, el rojo del outline/costo es la razon.
                 case ActionButtonState.Unaffordable:
                     _button.interactable = false;
-                    ApplyBaseColor();
+                    ApplyChipVisual(disabled: true, highlighted: true);
                     transform.localScale = _baseScale;
                     if (_outline != null)
                     {
@@ -248,23 +264,27 @@ namespace Rollgeon.UI.HUD
                     }
                     break;
 
+                // Used y Locked comparten un unico look "no disponible": sprite de
+                // highlight con alpha reducido (feedback playtest: cada razon con su
+                // estilo propio se leia como estados distintos del mismo problema).
                 case ActionButtonState.Locked:
+                case ActionButtonState.Used:
                     _button.interactable = false;
-                    ApplyBaseColor();
+                    ApplyChipVisual(disabled: true, highlighted: true);
                     transform.localScale = _baseScale;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Available:
                     _button.interactable = true;
-                    ApplyBaseColor();
+                    ApplyChipVisual(disabled: false, highlighted: _hovered);
                     transform.localScale = _baseScale;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Selected:
                     _button.interactable = true;
-                    ApplyBaseColor();
+                    ApplyChipVisual(disabled: false, highlighted: true);
                     transform.localScale = _baseScale * _selectedScale;
                     if (_outline != null)
                     {
@@ -272,19 +292,23 @@ namespace Rollgeon.UI.HUD
                         _outline.enabled = true;
                     }
                     break;
-
-                case ActionButtonState.Used:
-                    _button.interactable = false;
-                    if (_image != null) _image.color = _baseColor * _usedColorMultiplier;
-                    transform.localScale = _baseScale;
-                    if (_outline != null) _outline.enabled = false;
-                    break;
             }
         }
 
-        private void ApplyBaseColor()
+        /// <summary>
+        /// Sprite + color del cuerpo del chip. Highlighted usa el sprite de hover
+        /// (si esta wireado); disabled atenua el alpha sobre el color base.
+        /// </summary>
+        private void ApplyChipVisual(bool disabled, bool highlighted)
         {
-            if (_image != null) _image.color = _baseColor;
+            if (_image == null) return;
+
+            if (_highlightSprite != null)
+                _image.sprite = highlighted ? _highlightSprite : _normalSprite;
+
+            var color = _baseColor;
+            if (disabled) color.a *= _disabledAlpha;
+            _image.color = color;
         }
 
         // Unaffordable sigue pintando rojo aunque nadie haya llamado SetAffordable —
@@ -352,6 +376,24 @@ namespace Rollgeon.UI.HUD
         {
             if (_affordable && _state != ActionButtonState.Unaffordable) return;
             PlayRejectFeedback();
+        }
+
+        // ======================================================================
+        // Hover — swap al sprite de highlight mientras el chip esta Available
+        // ======================================================================
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            _hovered = true;
+            // Solo Available cambia con el hover: Selected/disabled ya muestran el
+            // highlight y no hay que re-aplicar nada.
+            if (_state == ActionButtonState.Available) ApplyVisual();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            _hovered = false;
+            if (_state == ActionButtonState.Available) ApplyVisual();
         }
 
         /// <summary>

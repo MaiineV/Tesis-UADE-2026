@@ -2150,6 +2150,7 @@ GameObject:
   - component: {fileID: 2024317181}
   - component: {fileID: 2024317180}
   - component: {fileID: 2024317182}
+  - component: {fileID: 2024317183}
   m_Layer: 0
   m_Name: ScreenHost
   m_TagString: Untagged
@@ -2214,6 +2215,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.PauseHotkey
   _toggleKey: 60
+--- !u!114 &2024317183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2024317179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ca1818618cb8743b3a9c8b23d747fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Input.RightClickCancelController
 --- !u!114 &193249934685763654 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2435846010659403855, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
@@ -2669,6 +2682,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 2640743995242289846, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+    - target: {fileID: 2750238117262487494, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
     - target: {fileID: 3196878298086821650, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2749,6 +2770,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3977488736953149506, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18039216
+      objectReference: {fileID: 0}
+    - target: {fileID: 3977488736953149506, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.g
+      value: 0.14117648
+      objectReference: {fileID: 0}
+    - target: {fileID: 3977488736953149506, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
     - target: {fileID: 4452524325088016211, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _diceZone
       value: 
@@ -2785,6 +2818,38 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas_CombatHUD
       objectReference: {fileID: 0}
+    - target: {fileID: 5605382729506675062, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18039216
+      objectReference: {fileID: 0}
+    - target: {fileID: 5605382729506675062, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.g
+      value: 0.14117648
+      objectReference: {fileID: 0}
+    - target: {fileID: 5605382729506675062, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 5615915305508157319, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+    - target: {fileID: 6073093279457627529, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18039216
+      objectReference: {fileID: 0}
+    - target: {fileID: 6073093279457627529, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.g
+      value: 0.14117648
+      objectReference: {fileID: 0}
+    - target: {fileID: 6073093279457627529, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Color.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 6135806147130046294, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
     - target: {fileID: 7076222357715826726, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _diceZone
       value: 
@@ -2793,6 +2858,18 @@ PrefabInstance:
       propertyPath: _confirmButton
       value: 
       objectReference: {fileID: 193249934685763654}
+    - target: {fileID: 8690785137551674980, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8690785137551674980, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8801676288560299068, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3443,10 +3520,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 308081310544581217, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+    - target: {fileID: 1924690695106576653, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18039216
+      objectReference: {fileID: 0}
+    - target: {fileID: 1924690695106576653, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.g
+      value: 0.14117648
+      objectReference: {fileID: 0}
+    - target: {fileID: 1924690695106576653, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
     - target: {fileID: 5416459890041017060, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_Name
       value: Canvas_ExplorationHUD
       objectReference: {fileID: 0}
+    - target: {fileID: 6485118751513142873, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+    - target: {fileID: 6870214720335536596, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
     - target: {fileID: 7925402146584446497, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -3526,6 +3627,18 @@ PrefabInstance:
     - target: {fileID: 7925402146584446497, guid: 9c92df5337057d041b0672a557567cab, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9018897431445949712, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9018897431445949712, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9018897431445949712, guid: 9c92df5337057d041b0672a557567cab, type: 3}
+      propertyPath: m_Color.r
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

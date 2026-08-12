@@ -374,8 +374,13 @@ namespace Rollgeon.Dice.Throw
             }
 
             // Click derecho = cancelar el agarre (los dados vuelven a su lugar previo).
-            if (mouse.rightButton.wasPressedThisFrame)
+            // Solo claimea el frame si había dados agarrados — un right-click "seco"
+            // durante la sesión cae al router global (cancel de selección/deselect-all).
+            if (mouse.rightButton.wasPressedThisFrame && AnySessionGrabbed())
+            {
+                Rollgeon.Input.RightClickClaim.Claim();
                 CancelSessionGrab();
+            }
 
             // Soltar con velocidad = flick (arrojar). Soltar suave = cancel.
             if (!lmb && _lmbWasPressed && AnySessionGrabbed())
@@ -623,7 +628,10 @@ namespace Rollgeon.Dice.Throw
             if (lmb && _armDragIntent) TryArmSlotsUnderCursor();
 
             if (mouse.rightButton.wasPressedThisFrame && _armed.Count > 0)
+            {
+                Rollgeon.Input.RightClickClaim.Claim();
                 CancelArmingReturn();
+            }
 
             if (!lmb && _lmbWasPressed && _armed.Count > 0)
             {
@@ -633,8 +641,10 @@ namespace Rollgeon.Dice.Throw
             _lmbWasPressed = lmb;
         }
 
-        // Agarra dados ASENTADOS desde los slots del HUD: activos (con cara), no
-        // holdeados (holdear = "este lo conservo") y no bloqueados por el boss.
+        // Agarra dados ASENTADOS desde los slots del HUD: activos (con cara) y no
+        // bloqueados por el boss. Los holdeados también son agarrables: con el reroll
+        // invertido "seleccionado" ya no significa "lo conservo" — el agarre físico es
+        // la alternativa directa al select+reroll y decide por sí solo qué vuela.
         private void TryArmSlotsUnderCursor()
         {
             ResolveZone();
@@ -643,7 +653,6 @@ namespace Rollgeon.Dice.Throw
             var slots = _diceZone.GetDiceSlots();
             if (slots == null || slots.Count == 0) return;
 
-            var held = _diceZone.GetHeldStates();
             ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var blocks);
 
             float r2 = _cfg.GrabRadius * _cfg.GrabRadius;
@@ -654,7 +663,6 @@ namespace Rollgeon.Dice.Throw
                 var slotView = slots[i].GetComponent<DiceSlotView>();
                 if (slotView == null || !slotView.gameObject.activeSelf) continue;
                 if (slotView.CurrentFace <= 0) continue;
-                if (held != null && i < held.Length && held[i]) continue;
                 if (blocks != null && blocks.IsBlocked(i)) continue;
 
                 var slotPos = AnchorToLayerLocal(slots[i]);

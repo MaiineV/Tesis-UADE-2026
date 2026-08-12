@@ -1,135 +1,134 @@
-using System;
-using System.Text;
-using Rollgeon.Heroes;
-using Rollgeon.Phase;
+using System.Collections.Generic;
 using Rollgeon.UI.HUD;
-using Rollgeon.UI.Tooltips;
-using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.EditorTools.HUD
 {
     /// <summary>
-    /// Installer de los chips de acción del HUD de combate. Cablea el <c>_costLabel</c>
-    /// de cada <see cref="ActionButton"/> a su hijo <c>Cost</c> — venían en
-    /// <c>{fileID: 0}</c> con el número hardcodeado en el TMP, así que el código nunca
-    /// podía tocarlo (ni para escribir el costo real, ni para pintarlo de rojo cuando
-    /// no alcanza la energía). Idempotente: reejecutar no duplica ni pisa de más.
+    /// Cablea el look de los chips de acción (combate y exploración) al sheet
+    /// <c>ChipWarrior</c>: base = <c>ChipWarrior_0</c>, hover/selected/deshabilitado =
+    /// <c>ChipWarrior_1</c> (el alpha del deshabilitado lo maneja <see cref="ActionButton"/>).
+    /// Idempotente — re-correr tras cambiar el arte del sheet.
     /// </summary>
+    /// <remarks>
+    /// Además fuerza <c>Transition.None</c> en el Button de cada chip: los estados
+    /// visuales los posee <see cref="ActionButton"/> por completo, y un ColorTint de
+    /// uGUI apilaba su gris de disabled sobre el alpha propio del chip.
+    /// </remarks>
     public static class ActionChipSetupTools
     {
-        private const string CombatHudPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab";
-        private const string CostChildName = "Cost";
+        private const string LogPrefix = "[ActionChipSetup] ";
+        private const string SheetPath = "Assets/Art/UI/Chips/ChipWarrior.png";
 
-        [MenuItem("Rollgeon/Action Chips/Wire Cost Labels")]
-        public static void WireCostLabels()
+        private const string CombatHudPath = "Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab";
+        private const string ExplorationHudPath = "Assets/Prefabs/UI/Canvas/Canvas_ExplorationHUD.prefab";
+
+        [MenuItem("Rollgeon/Action Chips/Apply Warrior Chip Sprites")]
+        public static void Apply()
         {
-            var root = PrefabUtility.LoadPrefabContents(CombatHudPrefabPath);
-            if (root == null)
+            var baseSprite = LoadSprite("ChipWarrior_0");
+            var highlightSprite = LoadSprite("ChipWarrior_1");
+            if (baseSprite == null || highlightSprite == null)
             {
-                Debug.LogError($"[ActionChipSetupTools] No se pudo abrir {CombatHudPrefabPath}.");
+                Debug.LogError(LogPrefix + $"Faltan slices ChipWarrior_0/ChipWarrior_1 en {SheetPath} — abortando.");
                 return;
             }
 
-            int wired = 0, alreadyWired = 0, missing = 0;
-            var report = new StringBuilder();
+            WireCombatChips(baseSprite, highlightSprite);
+            WireExplorationChips(baseSprite, highlightSprite);
+            AssetDatabase.SaveAssets();
+        }
 
+        /// <summary>Combate: los chips ya tienen <see cref="ActionButton"/> — solo se
+        /// cablean sprites y se normaliza la transition.</summary>
+        private static void WireCombatChips(Sprite baseSprite, Sprite highlightSprite)
+        {
+            var root = PrefabUtility.LoadPrefabContents(CombatHudPath);
             try
             {
-                var buttons = root.GetComponentsInChildren<ActionButton>(includeInactive: true);
-                if (buttons.Length == 0)
+                int wired = 0;
+                foreach (var chip in root.GetComponentsInChildren<ActionButton>(true))
                 {
-                    Debug.LogWarning("[ActionChipSetupTools] No se encontró ningún ActionButton en el prefab.");
-                    return;
+                    var so = new SerializedObject(chip);
+                    so.FindProperty("_highlightSprite").objectReferenceValue = highlightSprite;
+                    var button = so.FindProperty("_button").objectReferenceValue as Button;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+
+                    if (button == null) button = chip.GetComponent<Button>();
+                    WireButton(button, baseSprite);
+                    wired++;
                 }
 
-                foreach (var button in buttons)
-                {
-                    var so = new SerializedObject(button);
-                    var prop = so.FindProperty("_costLabel");
-                    if (prop == null)
-                    {
-                        Debug.LogWarning($"[ActionChipSetupTools] {button.name}: el campo _costLabel ya no existe.");
-                        continue;
-                    }
-
-                    var costTransform = button.transform.Find(CostChildName);
-                    var label = costTransform != null
-                        ? costTransform.GetComponent<TextMeshProUGUI>()
-                        : null;
-
-                    if (label == null)
-                    {
-                        missing++;
-                        Debug.LogWarning(
-                            $"[ActionChipSetupTools] {button.name}: no hay hijo '{CostChildName}' con TextMeshProUGUI.",
-                            button);
-                        continue;
-                    }
-
-                    if (prop.objectReferenceValue == label) alreadyWired++;
-                    else
-                    {
-                        prop.objectReferenceValue = label;
-                        so.ApplyModifiedPropertiesWithoutUndo();
-                        wired++;
-                    }
-
-                    report.AppendLine(DescribeCost(button, label));
-                }
-
-                PrefabUtility.SaveAsPrefabAsset(root, CombatHudPrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(root, CombatHudPath);
+                Debug.Log(LogPrefix + $"{CombatHudPath}: {wired} chips cableados (ActionButton).");
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[ActionChipSetupTools] Cost labels: {wired} cableados, {alreadyWired} ya estaban, " +
-                      $"{missing} sin hijo '{CostChildName}'.\n{report}");
         }
 
-        /// <summary>
-        /// Compara el texto hardcodeado del prefab contra el costo resuelto. No lo pisa:
-        /// solo reporta, para detectar que el arte y el dato se separaron al agregar
-        /// clases nuevas.
-        /// </summary>
-        /// <remarks>
-        /// La comparación es orientativa, no autoritativa: las acciones con costo
-        /// contextual (Curarse y Forzar Puerta cuestan distinto dentro y fuera de
-        /// combate) resuelven fuera de play mode como si estuvieran en exploración.
-        /// Un aviso en esas dos filas es esperable y no significa nada.
-        /// </remarks>
-        private static string DescribeCost(ActionButton button, TMP_Text label)
+        /// <summary>Exploración: los chips son Buttons planos de
+        /// <see cref="ExplorationActionButtonsView"/> — se les agrega (o actualiza)
+        /// un <see cref="ChipButtonVisual"/> con el mismo contrato de estados.</summary>
+        private static void WireExplorationChips(Sprite baseSprite, Sprite highlightSprite)
         {
-            string authored = label.text;
-            if (!TryResolveRuntimeCost(button.Slot, out int runtimeCost))
-                return $"  · {button.name}: prefab='{authored}' (sin hero de referencia para comparar)";
+            var root = PrefabUtility.LoadPrefabContents(ExplorationHudPath);
+            try
+            {
+                var view = root.GetComponentInChildren<ExplorationActionButtonsView>(true);
+                if (view == null)
+                {
+                    Debug.LogWarning(LogPrefix + $"{ExplorationHudPath}: sin ExplorationActionButtonsView — nada que cablear.");
+                    return;
+                }
 
-            string suffix = authored.Trim() == runtimeCost.ToString()
-                ? "coincide"
-                : $"difiere → fuera de play mode resuelve '{runtimeCost}' " +
-                  "(esperable si el costo depende de estar en combate)";
-            return $"  · {button.name}: prefab='{authored}' — {suffix}";
+                var viewSo = new SerializedObject(view);
+                var buttonsProp = viewSo.FindProperty("_buttons");
+                int wired = 0;
+                for (int i = 0; i < buttonsProp.arraySize; i++)
+                {
+                    var button = buttonsProp.GetArrayElementAtIndex(i).objectReferenceValue as Button;
+                    if (button == null) continue;
+
+                    var visual = button.GetComponent<ChipButtonVisual>();
+                    if (visual == null) visual = button.gameObject.AddComponent<ChipButtonVisual>();
+
+                    var so = new SerializedObject(visual);
+                    so.FindProperty("_highlightSprite").objectReferenceValue = highlightSprite;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+
+                    WireButton(button, baseSprite);
+                    wired++;
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, ExplorationHudPath);
+                Debug.Log(LogPrefix + $"{ExplorationHudPath}: {wired} chips cableados (ChipButtonVisual).");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
-        // Usa el primer ClassHeroSO que encuentre como referencia. No es autoritativo
-        // (cada clase tiene sus costos), pero alcanza para detectar que el número
-        // dibujado dejó de tener relación con el dato.
-        private static bool TryResolveRuntimeCost(HeroBehaviorSlot slot, out int cost)
+        private static void WireButton(Button button, Sprite baseSprite)
         {
-            cost = 0;
-            var guids = AssetDatabase.FindAssets("t:ClassHeroSO");
-            if (guids.Length == 0) return false;
+            if (button == null) return;
+            if (button.targetGraphic is Image image) image.sprite = baseSprite;
+            // Los estados visuales los posee el componente de chip — el tint/swap
+            // de uGUI apilaba su gris de disabled sobre el alpha propio.
+            button.transition = Selectable.Transition.None;
+        }
 
-            var hero = AssetDatabase.LoadAssetAtPath<ClassHeroSO>(AssetDatabase.GUIDToAssetPath(guids[0]));
-            var behavior = hero != null ? hero.ResolveBaseBehavior(slot, GamePhase.Combat) : null;
-            if (behavior == null) return false;
-
-            cost = HeroActionTooltip.ResolveDisplayCost(behavior, Guid.Empty);
-            return true;
+        private static Sprite LoadSprite(string spriteName)
+        {
+            foreach (var asset in AssetDatabase.LoadAllAssetRepresentationsAtPath(SheetPath))
+            {
+                if (asset is Sprite sprite && sprite.name == spriteName) return sprite;
+            }
+            return null;
         }
     }
 }

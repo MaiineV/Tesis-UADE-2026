@@ -136,12 +136,13 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void RequestReroll_ManualMode_ReentersRolling_AndKeepsHeldDice()
+        public void RequestReroll_ManualMode_ReentersRolling_AndRerollsSelectedDice()
         {
             _service.StartFlow(SpecHealNoConfirm(), _player, _bag, _ => { });
             PumpThrow();
 
-            // Arrange: holdear el dado 0; el resto se re-tira con caras nuevas.
+            // Arrange — reroll invertido (Balatro): seleccionar el dado 0 significa
+            // RE-TIRARLO; los no seleccionados conservan su cara.
             _service.SetHolds(new[] { true, false, false, false, false });
             _roller.NextRoll = new[] { 6, 6, 6, 6, 6 };
 
@@ -150,13 +151,14 @@ namespace Rollgeon.Effects.Tests
 
             // Assert: de vuelta en Rolling esperando el throw (solo modos manuales).
             Assert.AreEqual(ActionRollPhase.Rolling, _service.Phase);
-            Assert.IsFalse(_throwService.ThrownMask[0], "el held no participa del throw");
+            Assert.IsTrue(_throwService.ThrownMask[0], "el seleccionado es el que vuela");
+            Assert.IsFalse(_throwService.ThrownMask[1], "los no seleccionados no participan del throw");
 
             PumpThrow();
 
             Assert.AreEqual(ActionRollPhase.AwaitingRerollDecision, _service.Phase);
-            CollectionAssert.AreEqual(new[] { 4, 6, 6, 6, 6 }, _service.CurrentRoll,
-                "held conserva su cara, el resto tomó la nueva tirada");
+            CollectionAssert.AreEqual(new[] { 6, 4, 4, 4, 4 }, _service.CurrentRoll,
+                "el seleccionado tomó la cara nueva, el resto conserva la suya");
             Assert.AreEqual(2, _diceRolledEvents);
         }
 

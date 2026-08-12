@@ -32,6 +32,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new EnchantCommand());
             r.Register(new DiceModeCommand());
             r.Register(new DiceMotionCommand());
+            r.Register(new RerollModeCommand());
             r.Register(new DiceJuiceLogCommand());
 
             // Mundo

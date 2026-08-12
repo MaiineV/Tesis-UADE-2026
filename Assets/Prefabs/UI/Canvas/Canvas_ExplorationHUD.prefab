@@ -56,6 +56,7 @@ MonoBehaviour:
   _healthChips: {fileID: 0}
   _energyChips: {fileID: 0}
   _activeItems: {fileID: 0}
+  _statusIcons: {fileID: 0}
   _minimap: {fileID: 7258762250288503781}
   _roomNavigation: {fileID: 8317576877589694478}
   _explorationActions: {fileID: 5956111182742942656}
@@ -1081,6 +1082,7 @@ GameObject:
   - component: {fileID: 1482419558715734932}
   - component: {fileID: 6485118751513142873}
   - component: {fileID: 1647595480402554120}
+  - component: {fileID: 2506674144735201226}
   m_Layer: 0
   m_Name: PassDoorButton
   m_TagString: Untagged
@@ -1136,7 +1138,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1560523001, guid: cc329bd81daf80b459cfb7af1ad4c1f3, type: 3}
+  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1165,7 +1167,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1190,6 +1192,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2506674144735201226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3167072187410458955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
+  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _disabledAlpha: 0.5
 --- !u!1 &3477973551267671920
 GameObject:
   m_ObjectHideFlags: 0
@@ -1339,6 +1355,7 @@ GameObject:
   - component: {fileID: 3571122998556703728}
   - component: {fileID: 308081310544581217}
   - component: {fileID: 2080118979371288032}
+  - component: {fileID: 4634422104840412172}
   m_Layer: 0
   m_Name: MovementButton
   m_TagString: Untagged
@@ -1394,7 +1411,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1193746798, guid: 579dd83f6ca2f334490453f72fa68a6f, type: 3}
+  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1423,7 +1440,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1448,6 +1465,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4634422104840412172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4250147185764614124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
+  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _disabledAlpha: 0.5
 --- !u!1 &4369657259479761301
 GameObject:
   m_ObjectHideFlags: 0
@@ -1733,6 +1764,7 @@ GameObject:
   - component: {fileID: 526519385640214379}
   - component: {fileID: 5797630779369407494}
   - component: {fileID: 8396596873396254690}
+  - component: {fileID: 5349566133749732409}
   m_Layer: 0
   m_Name: HealButton
   m_TagString: Untagged
@@ -1790,7 +1822,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -624135, guid: 953f20353810ebb4d9a2883c02123d63, type: 3}
+  m_Sprite: {fileID: -959899395, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1819,7 +1851,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1892,6 +1924,20 @@ MonoBehaviour:
   _phase: 1
   _slotFromActionButton: 0
   _slot: 3
+--- !u!114 &5349566133749732409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4738008818703210033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
+  _highlightSprite: {fileID: -186300928, guid: dd686fb60a42a7042a60b75abaa8a510, type: 3}
+  _disabledAlpha: 0.5
 --- !u!1 &5057359391340898608
 GameObject:
   m_ObjectHideFlags: 0
