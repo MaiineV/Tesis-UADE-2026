@@ -202,6 +202,41 @@ namespace Rollgeon.DevConsole.Commands
         }
     }
 
+    public sealed class RerollModeCommand : DevCommandBase
+    {
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("discard|keep", ArgKind.Choice, optional: true),
+        };
+
+        public override string Name => "rerollmode";
+        public override string Description =>
+            "Semántica de selección del reroll: discard = los seleccionados vuelan " +
+            "(default, Balatro), keep = los seleccionados se quedan (clásico). " +
+            "Sin args muestra el estado.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
+
+        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
+        {
+            if (args.Count == 0)
+                return CommandResult.Ok(Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
+                    ? "Modo de reroll: KEEP (los seleccionados se quedan)."
+                    : "Modo de reroll: DISCARD (los seleccionados vuelan).");
+
+            switch (args[0].ToLowerInvariant())
+            {
+                case "discard":
+                    Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = false;
+                    return CommandResult.Ok("Modo de reroll: DISCARD (los seleccionados vuelan).");
+                case "keep":
+                    Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
+                    return CommandResult.Ok("Modo de reroll: KEEP (los seleccionados se quedan).");
+                default:
+                    return CommandResult.Fail("Usá 'rerollmode discard|keep'.");
+            }
+        }
+    }
+
     public sealed class DiceJuiceLogCommand : DevCommandBase
     {
         private static readonly ArgSpec[] _args =

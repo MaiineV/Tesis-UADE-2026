@@ -29,9 +29,12 @@ namespace Rollgeon.UI.Tests
         private TMP_Text _analyticsLabel;
         private Button _speedButton;
         private TMP_Text _speedLabel;
+        private Button _rerollModeButton;
+        private TMP_Text _rerollModeLabel;
         private InMemoryStore _store;
         private SaveSettingsSO _settings;
         private int _savedSpeed;
+        private bool _savedKeepSelected;
 
         // Copia local — los test asmdefs no se referencian entre sí.
         private sealed class InMemoryStore : ISaveFileStore
@@ -71,16 +74,20 @@ namespace Rollgeon.UI.Tests
             _resetButton = AttachButton("DeleteProgressButton", out _resetLabel);
             _analyticsButton = AttachButton("AnalyticsToggleButton", out _analyticsLabel);
             _speedButton = AttachButton("GameSpeedButton", out _speedLabel);
+            _rerollModeButton = AttachButton("RerollModeButton", out _rerollModeLabel);
             AssignPrivate(_screen, "_resetSaveButton", _resetButton);
             AssignPrivate(_screen, "_resetSaveLabel", _resetLabel);
             AssignPrivate(_screen, "_analyticsToggleButton", _analyticsButton);
             AssignPrivate(_screen, "_analyticsToggleLabel", _analyticsLabel);
             AssignPrivate(_screen, "_gameSpeedButton", _speedButton);
             AssignPrivate(_screen, "_gameSpeedLabel", _speedLabel);
+            AssignPrivate(_screen, "_rerollModeButton", _rerollModeButton);
+            AssignPrivate(_screen, "_rerollModeLabel", _rerollModeLabel);
 
-            // El setter de GameSpeedPrefs escribe PlayerPrefs reales incluso en
-            // EditMode — backup acá, restore en TearDown.
+            // Los setters de GameSpeedPrefs / RerollSelectionPrefs escriben
+            // PlayerPrefs reales incluso en EditMode — backup acá, restore en TearDown.
             _savedSpeed = GameSpeedPrefs.Multiplier;
+            _savedKeepSelected = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected;
         }
 
         [TearDown]
@@ -93,6 +100,7 @@ namespace Rollgeon.UI.Tests
             SaveSystem.ResetForTests();
 
             GameSpeedPrefs.Multiplier = _savedSpeed;
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
         }
 
         [Test]
@@ -202,6 +210,32 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(1, GameSpeedPrefs.Multiplier,
                 "Tras x4 el ciclo vuelve a x1.");
             Assert.AreEqual(Expected(1), _speedLabel.text);
+        }
+
+        [Test]
+        public void RerollMode_Clicks_FlipPrefAndLabel()
+        {
+            // Arrange — modo default (invertido: los seleccionados vuelan).
+            Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = false;
+            Push();
+            Assert.AreEqual(
+                LocalizedContent.Ui("menu.reroll_discard", "Reroll: vuelan los elegidos"),
+                _rerollModeLabel.text,
+                "OnPushed debe reflejar el modo persistido.");
+
+            // Act + Assert — un click pasa a clásico.
+            _rerollModeButton.onClick.Invoke();
+            Assert.IsTrue(Rollgeon.Dice.RerollSelectionPrefs.KeepSelected);
+            Assert.AreEqual(
+                LocalizedContent.Ui("menu.reroll_keep", "Reroll: se quedan los elegidos"),
+                _rerollModeLabel.text);
+
+            // Segundo click vuelve al default.
+            _rerollModeButton.onClick.Invoke();
+            Assert.IsFalse(Rollgeon.Dice.RerollSelectionPrefs.KeepSelected);
+            Assert.AreEqual(
+                LocalizedContent.Ui("menu.reroll_discard", "Reroll: vuelan los elegidos"),
+                _rerollModeLabel.text);
         }
 
         // ---------------- helpers ----------------
