@@ -33,7 +33,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Heroes.PassiveHook, Rollgeon
     - Name: TriggerEvent
       Entry: 3
-      Data: 40
+      Data: 41
     - Name: Effect
       Entry: 7
       Data: 2|Rollgeon.Effects.EffectData, Rollgeon
@@ -216,28 +216,27 @@ MonoBehaviour:
       Data: 
   PassiveId: passive.warrior.low_hp_rage
   DisplayName: Furia del Guerrero
-  Description: Cuando tu vida esta en 3 o menos, tu dano base aumenta en 5 puntos.
-    Al curarte por encima de ese umbral, vuelve a la normalidad.
+  Description: Cuando tu vida esta en 30 o menos, tu dano base aumenta en 5 puntos..
   Hooks:
-  - TriggerEvent: 40
+  - TriggerEvent: 41
     Effect:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 144068139418386709
+      - rid: 144068181182382354
       TargetSelector:
         rid: -2
   ActiveIcon: {fileID: 1317923600, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
   InactiveIcon: {fileID: -1536292150, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
   AlwaysActive: 0
   ActiveConditions:
-  - rid: 144068139418386710
+  - rid: 144068181182382355
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068139418386709
+    - rid: 144068181182382354
       type: {class: EffLowHpAttackBuff, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -262,7 +261,7 @@ MonoBehaviour:
           AutoAccept: 1
         _hpThreshold: 30
         _attackBonus: 5
-    - rid: 144068139418386710
+    - rid: 144068181182382355
       type: {class: PCHasModifier, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
