@@ -39,6 +39,7 @@ MonoBehaviour:
   _description: 2 dados del mismo valor
   _icon: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
   _baseDamage: 8
+  _priority: 8
   _valueMultipliers:
   - 0
   - 0

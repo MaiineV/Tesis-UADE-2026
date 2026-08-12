@@ -41,6 +41,10 @@ namespace Rollgeon.ActionRolls
         // sin re-detectar.
         private BaseComboSO _currentCombo;
         private int _currentEffectiveTotal;
+        // Fix#0047: base plano (post contract-mods) y parte dinámica del combo actual,
+        // computados en RecomputeComboAndTotal — el payload y el effective total salen de acá.
+        private int _currentComboFlatBase;
+        private int _currentComboDynamicBonus;
 
         // Mascara de holds — el user la actualiza via SetHolds() cuando clickea
         // dados en el panel. El combo y el effective total se calculan sobre el
@@ -410,6 +414,8 @@ namespace Rollgeon.ActionRolls
             if (_currentRoll == null || _currentRoll.Length == 0)
             {
                 _currentCombo = null;
+                _currentComboFlatBase = 0;
+                _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
                 return;
             }
@@ -446,6 +452,8 @@ namespace Rollgeon.ActionRolls
             if (heldDice.Count == 0)
             {
                 _currentCombo = null;
+                _currentComboFlatBase = 0;
+                _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
                 EmitComboMatched();
                 return;
@@ -462,7 +470,7 @@ namespace Rollgeon.ActionRolls
             if (fromSheet != null)
             {
                 _currentCombo = fromSheet;
-                _currentEffectiveTotal = EffectiveBase(fromSheet);
+                ComputeComboTotals(fromSheet, heldDice, heldTypes);
                 EmitComboMatched();
                 return;
             }
@@ -475,7 +483,7 @@ namespace Rollgeon.ActionRolls
                 if (result.IsMatch)
                 {
                     _currentCombo = best;
-                    _currentEffectiveTotal = EffectiveBase(best);
+                    ComputeComboTotals(best, heldDice, heldTypes);
                     EmitComboMatched();
                     return;
                 }
@@ -484,8 +492,41 @@ namespace Rollgeon.ActionRolls
             // 3) Sin combo del contrato — effective = suma cruda (fail path para Force Door,
             //    base-only para Heal). El user va a ver "(no combo)" en el panel.
             _currentCombo = null;
+            _currentComboFlatBase = 0;
+            _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = heldSum;
             EmitComboMatched();
+        }
+
+        // Formula B con el layering de combate (espejo de DetectWithContractMods +
+        // ActionRollTotals): Capa 1 tabla por clase (Detect con el override plano), Capa 2
+        // contract mods sobre el base PLANO; la parte dinámica (DynamicBonus) va encima sin
+        // escalar y las caras NO se duplican (Fix#0047). Antes acá se usaba el BaseDamage
+        // del SO a secas — que en Fuerza Bruta era el campo-trampa de prioridad (30).
+        private void ComputeComboTotals(BaseComboSO combo,
+            IReadOnlyList<int> heldDice, IReadOnlyList<DiceType> heldTypes)
+        {
+            Rollgeon.Heroes.ContractSheet sheet = null;
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player))
+                sheet = player?.CurrentHero?.Sheet;
+
+            var detected = combo.Detect(heldDice, heldTypes,
+                sheet?.GetBaseDamageOverride(combo.ComboId));
+
+            // Defensivo: el caller ya matcheó via MatchBest/DetectBest, así que IsMatch
+            // debería ser true — si no, caemos al base plano del sheet/SO sin dinámica.
+            int flatBase = detected.IsMatch
+                ? detected.BaseDamage
+                : (sheet != null ? sheet.GetBaseDamage(combo) : combo.BaseDamage);
+            int dynamicBonus = detected.IsMatch ? detected.DynamicBonus : 0;
+
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
+                && mods != null)
+                flatBase = mods.GetEffectiveBaseDamage(combo.ComboId, flatBase);
+
+            _currentComboFlatBase = flatBase;
+            _currentComboDynamicBonus = dynamicBonus;
+            _currentEffectiveTotal = flatBase + dynamicBonus;
         }
 
         // Publica el combo actual en el bus tipado para que el DamageFormulaView (y
@@ -498,24 +539,9 @@ namespace Rollgeon.ActionRolls
                 SourceGuid = _playerGuid,
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
                 DisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
-                BaseDamage = EffectiveBase(_currentCombo),
+                BaseDamage = _currentComboFlatBase,
+                DynamicBonus = _currentComboDynamicBonus,
             });
-        }
-
-        // Capa 1 — tabla por clase (Spec Daño v2): base plano del ContractSheet del player.
-        // Capa 2 — Boss 3 (§4): modificadores del Contrato encima. Sin sheet/servicio ⇒ base original.
-        // Mismo layering que CombatHandoffService.DetectWithContractMods para que el preview
-        // del HUD muestre el número que el golpe real va a usar.
-        private static int EffectiveBase(BaseComboSO combo)
-        {
-            if (combo == null) return 0;
-            int b = combo.BaseDamage;
-            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
-                && player?.CurrentHero?.Sheet != null)
-                b = player.CurrentHero.Sheet.GetBaseDamage(combo);
-            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
-                b = mods.GetEffectiveBaseDamage(combo.ComboId, b);
-            return b;
         }
 
         public bool CanAffordReroll
@@ -601,6 +627,8 @@ namespace Rollgeon.ActionRolls
             _playerGuid = Guid.Empty;
             _spec = default;
             _currentCombo = null;
+            _currentComboFlatBase = 0;
+            _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = 0;
             _currentHolds = null;
             // Phase queda en Resolved/Cancelled hasta el proximo StartFlow para que la UI

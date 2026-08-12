@@ -42,7 +42,8 @@ namespace Rollgeon.Effects.Concretes
         [Title("Force Door")]
         [Tooltip("Threshold mínimo del 'effective total' de la tirada para forzar la puerta " +
                  "(solo aplica en combate). El effective total usa formula B: si la tirada " +
-                 "matchea un combo, vale combo.BaseDamage; sino, vale la suma cruda de los pips.")]
+                 "matchea un combo, vale combo.EffectiveTotal (piso + parte dinámica); sino, " +
+                 "vale la suma cruda de los pips.")]
         [Min(1)]
         public int RequiredValue = 25;
 
@@ -130,7 +131,7 @@ namespace Rollgeon.Effects.Concretes
                 int rawSum = ActionRollTotals.SumOf(context.DiceResult);
                 bool sheetCombo = context.ComboResult is { IsMatch: true };
                 Debug.LogWarning($"[EffForceDoor] dice=[{string.Join(",", context.DiceResult)}] " +
-                                 $"rawSum={rawSum} sheetCombo={(sheetCombo ? context.ComboResult.Value.BaseDamage.ToString() : "(none)")} " +
+                                 $"rawSum={rawSum} sheetCombo={(sheetCombo ? context.ComboResult.Value.EffectiveTotal.ToString() : "(none)")} " +
                                  $"override={(context.ActionRollEffectiveTotal?.ToString() ?? "(none)")} " +
                                  $"effective={effectiveTotal} threshold={RequiredValue} " +
                                  $"→ {(effectiveTotal >= RequiredValue ? "PASA" : "FALLA")}");

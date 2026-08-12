@@ -5,8 +5,9 @@ namespace Rollgeon.Combos.Concretes
 {
     /// <summary>
     /// Dado más alto — combo fallback: matchea con CUALQUIER selección no vacía y usa el
-    /// dado de mayor <b>valor absoluto</b>. Daño: <c>flatBase + valorMasAlto</c>,
-    /// <c>CountUsed = 1</c>, <c>ContributingIndices = [índice del dado más alto]</c>
+    /// dado de mayor <b>valor absoluto</b>. <c>BaseDamage</c> del resultado = base plano; la
+    /// cara del dado ganador entra al daño UNA sola vez vía Σcaras de la fórmula v3
+    /// (Fix#0047). <c>CountUsed = 1</c>, <c>ContributingIndices = [índice del dado más alto]</c>
     /// (primera ocurrencia ante empate).
     /// <para>
     /// Con <c>Priority = BaseDamage</c> bajo (default de la base), pierde contra cualquier
@@ -29,8 +30,9 @@ namespace Rollgeon.Combos.Concretes
         protected override int GetCountUsed(int[] finalDice) => 1;
 
         /// <summary>
-        /// Override: daño dinámico <c>(flatBaseOverride ?? BaseDamage) + valor del dado más
-        /// alto</c>. El único índice contribuyente es el del dado de mayor valor — es el que
+        /// Override (Fix#0047): <c>BaseDamage = flatBaseOverride ?? BaseDamage</c> plano; la
+        /// cara del ganador va en <c>DynamicBonus</c> (formula B legacy) y al daño v3 entra
+        /// vía Σcaras. El único índice contribuyente es el del dado de mayor valor — es el que
         /// entra a <c>multi_dmg_combo</c> y el que valida RequireCarrierParticipates.
         /// </summary>
         public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
@@ -45,9 +47,10 @@ namespace Rollgeon.Combos.Concretes
 
             return ComboDetectionResult.Match(
                 ComboId,
-                (flatBaseOverride ?? BaseDamage) + diceValues[bestIndex],
+                flatBaseOverride ?? BaseDamage,
                 countUsed: 1,
-                contributingIndices: new[] { bestIndex });
+                contributingIndices: new[] { bestIndex },
+                dynamicBonus: diceValues[bestIndex]);
         }
     }
 }
