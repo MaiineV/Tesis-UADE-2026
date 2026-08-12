@@ -20,6 +20,7 @@ using Rollgeon.Shop;
 using Rollgeon.Tutorial.UI;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD;
+using Rollgeon.UI.HUD.CharacterFrame;
 using Rollgeon.UI.Screens;
 using Rollgeon.Upgrades.Dice;
 using Rollgeon.Upgrades.Dice.UI;
@@ -66,6 +67,23 @@ namespace Rollgeon.Tutorial
         // del combate 1 — la lección de curar se difiere al cierre de esa secuencia.
         private bool _pendingHealTeach;
 
+        // Popups diferidos al PRÓXIMO turno del jugador: mostrarlos en el instante
+        // en que cede el turno los ponía encima de la animación de ataque enemiga
+        // (feedback playtest). _playerTurnActive traquea entre OnTurnStarted del
+        // jugador y el de cualquier enemigo.
+        private bool _playerTurnActive;
+        private bool _pendingCombat1Intro;
+
+        // HandleAttackChainDone es alcanzable por OnChainCompleted Y por el
+        // safety-net OnBehaviorExecuted — el guard evita el doble popup si ambos
+        // llegan para la misma acción. Se rearma al arrancar la acción siguiente.
+        private bool _attackChainDoneHandled;
+
+        // Marco del jugador (arriba-izquierda): en el tutorial arranca sin íconos
+        // y se revelan uno a uno (contrato → inventario → bolsa de dados).
+        private CharacterFrameController _characterFrame;
+        private readonly HashSet<CharacterFrameIcon> _unlockedIcons = new();
+
         // Defensa y curar se enseñan la PRIMERA vez que suceden, sea durante la
         // secuencia guiada o después, en el loop libre de cualquiera de los dos
         // combates (feedback playtest: podían no dispararse nunca si la primera
@@ -106,6 +124,7 @@ namespace Rollgeon.Tutorial
         private EventManager.EventReceiver _onDiceRolled;
         private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onChainCompleted;
+        private EventManager.EventReceiver _onTurnStarted;
         private EventManager.EventReceiver _onTurnFinished;
         private EventManager.EventReceiver _onBehaviorExecuted;
         private EventManager.EventReceiver _onEnchantmentAltarActivated;
@@ -149,6 +168,7 @@ namespace Rollgeon.Tutorial
             if (_onDiceRolled != null) EventManager.UnSubscribe(EventName.OnDiceRolled, _onDiceRolled);
             if (_onChainPhaseStarted != null) EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             if (_onChainCompleted != null) EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
+            if (_onTurnStarted != null) EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStarted);
             if (_onTurnFinished != null) EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinished);
             if (_onBehaviorExecuted != null) EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
             if (_onEnchantmentAltarActivated != null) EventManager.UnSubscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
@@ -165,6 +185,16 @@ namespace Rollgeon.Tutorial
                 _enchantAltarView.OnPanelClosed -= OnEnchantTableClosed;
                 _enchantAltarView = null;
             }
+
+            // Los íconos lockeados del marco son estado del tutorial — restaurarlos
+            // ante cualquier teardown (el fin normal recarga escena, pero un abort no).
+            var frame = ResolveCharacterFrame();
+            if (frame != null)
+            {
+                frame.SetAllIconsLocked(false);
+                frame.SetPinned(false);
+            }
+            _characterFrame = null;
 
             // Restaurar el initiative provider default (la entry Global fue pisada
             // por TutorialInitiativeProvider en Begin).
@@ -238,6 +268,11 @@ namespace Rollgeon.Tutorial
             }
 
             Subscribe();
+
+            // El marco del jugador arranca sin íconos: se revelan uno a uno durante
+            // el recorrido (contrato → inventario → bolsa). Dispose restaura todo.
+            ApplyFrameIconLocks();
+
             ShowMovementStep();
             Debug.Log(LogPrefix + $"Tutorial iniciado (runId={_runId}).");
         }
@@ -257,6 +292,7 @@ namespace Rollgeon.Tutorial
             _onDiceRolled = OnDiceRolled;
             _onChainPhaseStarted = OnChainPhaseStarted;
             _onChainCompleted = OnChainCompleted;
+            _onTurnStarted = OnTurnStarted;
             _onTurnFinished = OnTurnFinished;
             _onBehaviorExecuted = OnBehaviorExecuted;
             _onEnchantmentAltarActivated = OnEnchantmentAltarActivated;
@@ -274,6 +310,7 @@ namespace Rollgeon.Tutorial
             EventManager.Subscribe(EventName.OnDiceRolled, _onDiceRolled);
             EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
+            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStarted);
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinished);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
             EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
@@ -338,6 +375,10 @@ namespace Rollgeon.Tutorial
         {
             if (args == null || args.Length < 1 || args[0] is not Guid roomId) return;
 
+            // El canvas del marco puede re-instanciarse entre salas — re-aplicar
+            // el estado de reveal vigente (barato e idempotente).
+            ApplyFrameIconLocks();
+
             if (_step == TutorialStep.Movement && roomId == _roomB)
             {
                 // El combate lo anuncia OnCombatTriggered — acá solo apagamos el paso.
@@ -350,7 +391,7 @@ namespace Rollgeon.Tutorial
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolvePedestalPosition(),
                     Text = LocalizedContent.Ui(TutorialTextKeys.ShopPedestal,
-                        "Esta es la tienda. Acercate al pedestal y presioná F para comprar la mejora: tu combo PAR va a hacer +50 de daño."),
+                        "Esta es la tienda. Acércate al pedestal y presiona F para comprar la mejora: tu combo PAR hará +50 de daño."),
                 });
             }
             else if (_step == TutorialStep.Combat2Prep && roomId == _roomB)
@@ -362,7 +403,7 @@ namespace Rollgeon.Tutorial
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveDoorPosition(_roomB, _roomC),
                     Text = LocalizedContent.Ui(TutorialTextKeys.Combat2Door,
-                        "La sala se desbloqueó: entrá y terminá lo que empezaste."),
+                        "La sala se desbloqueó: entra y termina lo que empezaste."),
                 });
             }
             else if (_step == TutorialStep.GoToE && roomId == _roomE)
@@ -373,7 +414,7 @@ namespace Rollgeon.Tutorial
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveAltarPosition(),
                     Text = LocalizedContent.Ui(TutorialTextKeys.EnchantRoom,
-                        "Esta es la mesa de encantamientos: mejora uno de tus dados a cambio de oro, por el resto de la run. Acercate al altar y presioná F para abrirla."),
+                        "Esta es la mesa de encantamientos: mejora un dado a cambio de oro. Acércate al altar y presiona F."),
                 });
             }
         }
@@ -402,8 +443,7 @@ namespace Rollgeon.Tutorial
                 // retargetea a los dados (OnHeroBehaviorClicked).
                 ShowStep(TutorialStep.EscapeTeach, ButtonStepRequest(HeroBehaviorSlot.ForceDoor,
                     LocalizedContent.Ui(TutorialTextKeys.EscapeTeach,
-                        "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): usala para escapar por donde viniste. " +
-                        "Solo funciona si estás al lado de una puerta — y ahora lo estás."),
+                        "¡Son demasiados! Se desbloqueó FORZAR PUERTA ({0}): úsala para escapar por donde viniste. Ya estás junto a la puerta."),
                     GameplayHotkey.ForceDoor));
             }
             else if (_step == TutorialStep.Combat2Prep && roomId == _roomC)
@@ -414,7 +454,7 @@ namespace Rollgeon.Tutorial
                 {
                     AnchorKind = TutorialAnchorKind.None,
                     Text = LocalizedContent.Ui(TutorialTextKeys.Combat2,
-                        "¡Ahora sí! Con la mejora de PAR estás listo: acabá con los dos enemigos. (Click para seguir.)"),
+                        "¡Ahora sí! Con la mejora de PAR estás listo: acaba con los dos enemigos."),
                     InputPolicy = TutorialInputPolicy.BlockUntilContinue,
                 }, () => Overlay()?.Hide());
             }
@@ -438,6 +478,7 @@ namespace Rollgeon.Tutorial
                 // ataque — cerrar la ventana exclusiva antes de pasar a exploración
                 // (idempotente; sin esto Movement quedaría lockeado = softlock nuevo).
                 EndExclusiveStep();
+                ClearTurnDeferrals();
 
                 _step = TutorialStep.GoToC;
                 ShowStep(TutorialStep.GoToC, new TutorialStepDisplayRequest
@@ -445,13 +486,14 @@ namespace Rollgeon.Tutorial
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveDoorPosition(_roomB, _roomC),
                     Text = LocalizedContent.Ui(TutorialTextKeys.GoToC,
-                        "¡Bien hecho! Seguí por la puerta señalada. La otra puerta está bloqueada — la vas a abrir más adelante."),
+                        "¡Bien hecho! Sigue por la puerta señalada. La otra está bloqueada — la abrirás más adelante."),
                 });
             }
             else if (_step == TutorialStep.EscapeTeach && roomId == _roomC && outcome == CombatOutcome.Aborted)
             {
                 // El restore de las acciones ya corrió arriba (EndExclusiveStep).
                 // Escapó: C queda gateada y se abre la tienda. El jugador está en B.
+                ClearTurnDeferrals();
                 if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon))
                 {
                     dungeon.SetRoomState(_roomC, RoomState.Locked);
@@ -459,14 +501,10 @@ namespace Rollgeon.Tutorial
                     dungeon.ResyncDoorVisuals(_roomB);
                 }
 
-                _step = TutorialStep.Shop;
-                ShowStep(TutorialStep.Shop, new TutorialStepDisplayRequest
-                {
-                    AnchorKind = TutorialAnchorKind.WorldPosition,
-                    WorldPosition = ResolveDoorPosition(_roomB, _roomD),
-                    Text = LocalizedContent.Ui(TutorialTextKeys.ShopDoor,
-                        "¡Escapaste! Se abrió la puerta de la tienda. Entrá: te espera algo que te va a dar la ventaja."),
-                });
+                // Recién salió de su segundo combate y está de vuelta en exploración:
+                // explicar las consecuencias del escape y después la cámara/mapa,
+                // antes de mandarlo a la tienda.
+                ShowEscapeAftermath();
             }
             else if ((_step == TutorialStep.Combat2
                       // La victoria puede llegar con una lección interceptada visible
@@ -478,15 +516,78 @@ namespace Rollgeon.Tutorial
                       || _step == TutorialStep.EscapeTeach)
                      && roomId == _roomC && outcome == CombatOutcome.Victory)
             {
+                ClearTurnDeferrals();
                 _step = TutorialStep.GoToE;
                 ShowStep(TutorialStep.GoToE, new TutorialStepDisplayRequest
                 {
                     AnchorKind = TutorialAnchorKind.WorldPosition,
                     WorldPosition = ResolveDoorPosition(_roomC, _roomE),
                     Text = LocalizedContent.Ui(TutorialTextKeys.GoToE,
-                        "¡Excelente! Pasá a la última sala: la de encantamientos."),
+                        "¡Excelente! Pasa a la última sala: la de encantamientos."),
                 });
             }
+        }
+
+        // Escapar no limpia la sala: los enemigos quedan con su vida guardada (y en
+        // el juego real se curan un porcentaje). El jugador va a volver a C, así que
+        // conviene decirlo ahora.
+        private void ShowEscapeAftermath()
+        {
+            _step = TutorialStep.EscapeAftermath;
+            ShowStep(TutorialStep.EscapeAftermath, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = LocalizedContent.Ui(TutorialTextKeys.EscapeAftermath,
+                    "Escapar no los elimina: los enemigos se quedan en la sala, recuperan algo de vida y te esperan si vuelves."),
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            }, ShowCameraTeach);
+        }
+
+        private void ShowCameraTeach()
+        {
+            _step = TutorialStep.CameraTeach;
+            ShowStep(TutorialStep.CameraTeach, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = LocalizedContent.Ui(TutorialTextKeys.CameraControls,
+                    "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Recentrar: G. Pruébalo ahora."),
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            }, ShowMapTeach);
+        }
+
+        // La cámara sigue viva detrás del dim — el jugador puede alejar el zoom
+        // con este paso visible y ver las salas vecinas mientras lee.
+        private void ShowMapTeach()
+        {
+            _step = TutorialStep.MapTeach;
+            ShowStep(TutorialStep.MapTeach, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = LocalizedContent.Ui(TutorialTextKeys.MapRooms,
+                    "Aleja el zoom para ver las salas adyacentes: sus íconos te dicen cuáles son especiales (tienda, encantamiento...)."),
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            }, ShowShopDoorStep);
+        }
+
+        /// <summary>Paso de la puerta de la tienda — cierra la cadena post-escape.</summary>
+        private void ShowShopDoorStep()
+        {
+            _step = TutorialStep.Shop;
+            ShowStep(TutorialStep.Shop, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.WorldPosition,
+                WorldPosition = ResolveDoorPosition(_roomB, _roomD),
+                Text = LocalizedContent.Ui(TutorialTextKeys.ShopDoor,
+                    "¡Escapaste! Se abrió la puerta de la tienda. Entra: te espera algo que te dará ventaja."),
+            });
+        }
+
+        /// <summary>El combate cerró — los popups diferidos al próximo turno ya no
+        /// tienen turno al que diferirse.</summary>
+        private void ClearTurnDeferrals()
+        {
+            _pendingCombat1Intro = false;
+            _playerTurnActive = false;
         }
 
         /// <summary>
@@ -524,8 +625,39 @@ namespace Rollgeon.Tutorial
             // pega entre nuestros pasos porque el juego no se pausa detrás del dim).
             if (_healTaught || payload.FinalDamage <= 0 || payload.TargetGuid != playerGuid) return;
 
-            if (_step == TutorialStep.Combat1 || _step == TutorialStep.Combat2) ShowHealTeach();
+            if (_step == TutorialStep.Combat1 || _step == TutorialStep.Combat2)
+            {
+                // El golpe casi siempre llega durante el turno ENEMIGO — mostrar la
+                // lección ahí la ponía encima de su animación de ataque (feedback
+                // playtest): se difiere al próximo OnTurnStarted del jugador.
+                if (_playerTurnActive) ShowHealTeach();
+                else _pendingHealTeach = true;
+            }
             else if (IsCombat1TeachStep(_step)) _pendingHealTeach = true;
+        }
+
+        // Traquea de quién es el turno y flushea los popups diferidos cuando
+        // vuelve a ser el del jugador (la animación enemiga ya terminó).
+        private void OnTurnStarted(params object[] args)
+        {
+            if (args == null || args.Length < 1 || args[0] is not Guid entity) return;
+            if (!TryGetPlayerGuid(out var playerGuid)) return;
+
+            _playerTurnActive = entity == playerGuid;
+            if (!_playerTurnActive) return;
+
+            if (_pendingHealTeach && _step is TutorialStep.Combat1 or TutorialStep.Combat2)
+            {
+                // La lección de curar pisa a la intro del loop libre: es la más útil
+                // de las dos y el jugador ya vio cómo se pelea.
+                _pendingCombat1Intro = false;
+                ShowHealTeach();
+            }
+            else if (_pendingCombat1Intro)
+            {
+                _pendingCombat1Intro = false;
+                ShowCombat1FreeIntro();
+            }
         }
 
         // ==================================================================
@@ -534,7 +666,8 @@ namespace Rollgeon.Tutorial
 
         /// <summary>Pasos guiados del combate 1, previos al loop libre.</summary>
         private static bool IsCombat1TeachStep(TutorialStep step) =>
-            step is TutorialStep.EnemiesIntro or TutorialStep.MoveTeach or TutorialStep.MoveTiles
+            step is TutorialStep.EnemiesIntro or TutorialStep.TurnOrderIntro or TutorialStep.ContractTeach
+                or TutorialStep.MoveTeach or TutorialStep.MoveTiles
                 or TutorialStep.StatsHp or TutorialStep.StatsEnergy or TutorialStep.AttackTeach
                 or TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach
                 or TutorialStep.DefenseTeach or TutorialStep.EndTurnTeach;
@@ -553,7 +686,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.EnemiesIntro,
-                    "¡Combate! Este es tu enemigo. En el tutorial vos siempre actuás primero. (Click para continuar.)"),
+                    "¡Combate! Este es tu enemigo. En el tutorial tú siempre actúas primero."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var enemy = FirstEnemyOf(_roomB);
@@ -562,7 +695,47 @@ namespace Rollgeon.Tutorial
                 request.AnchorKind = TutorialAnchorKind.WorldEntity;
                 request.EntityGuid = enemy;
             }
-            ShowStep(TutorialStep.EnemiesIntro, request, ShowMoveTeach);
+            ShowStep(TutorialStep.EnemiesIntro, request, ShowTurnOrderIntro);
+        }
+
+        // La cola de turnos (esquina sup. der.) ya está poblada: OnTurnQueueBuilt
+        // corre en el setup del combate, frames antes del click de continue.
+        private void ShowTurnOrderIntro()
+        {
+            _step = TutorialStep.TurnOrderIntro;
+            var request = new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = LocalizedContent.Ui(TutorialTextKeys.TurnOrderIntro,
+                    "Arriba a la derecha está el orden de turnos: quién actúa ahora y quién sigue."),
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            };
+            var hud = FindCombatHud();
+            if (hud != null && hud.TryGetTurnQueueRect(out var rect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = rect;
+            }
+            ShowStep(TutorialStep.TurnOrderIntro, request, ShowContractTeach);
+        }
+
+        // Primer reveal del marco del jugador: el contrato, para que pueda ver los
+        // combos antes de su primer ataque. Se pinnea la ruleta mientras se señala
+        // (el anchor resolver cuenta rects con alpha 0 — sin pin la flecha
+        // apuntaría a un ícono invisible).
+        private void ShowContractTeach()
+        {
+            _step = TutorialStep.ContractTeach;
+            UnlockFrameIcon(CharacterFrameIcon.Contract);
+            ResolveCharacterFrame()?.SetPinned(true);
+            ShowStep(TutorialStep.ContractTeach, IconStepRequest(CharacterFrameIcon.Contract,
+                LocalizedContent.Ui(TutorialTextKeys.ContractIcon,
+                    "Este es tu CONTRATO: los combos de generala y su daño. Consúltalo cuando quieras.")),
+                () =>
+                {
+                    ResolveCharacterFrame()?.SetPinned(false);
+                    ShowMoveTeach();
+                });
         }
 
         private void ShowMoveTeach()
@@ -570,13 +743,16 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.MoveTeach;
             ShowStep(TutorialStep.MoveTeach, ButtonStepRequest(HeroBehaviorSlot.Movement,
                 LocalizedContent.Ui(TutorialTextKeys.MoveTeach,
-                    "Tu héroe pelea cuerpo a cuerpo: primero hay que acercarse. Seleccioná MOVER ({0})."),
+                    "Tu héroe pelea cuerpo a cuerpo: primero acércate. Selecciona MOVER ({0})."),
                 GameplayHotkey.Move));
         }
 
         // Movement comprometió su selección de tile → señalar las casillas alcanzables.
         private void OnActionSelectionStarted(params object[] args)
         {
+            // Arrancó una acción nueva — rearmar el guard del cierre de ataque.
+            _attackChainDoneHandled = false;
+
             if (_step != TutorialStep.MoveTeach) return;
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
@@ -587,7 +763,7 @@ namespace Rollgeon.Tutorial
                 AnchorKind = TutorialAnchorKind.WorldEntity,
                 EntityGuid = playerGuid,
                 Text = LocalizedContent.Ui(TutorialTextKeys.MoveTiles,
-                    "Las casillas iluminadas son a donde llegás este turno. Hacé click en una casilla al lado del enemigo."),
+                    "Las casillas iluminadas son tu alcance este turno. Haz clic en una casilla junto al enemigo."),
                 CutoutRadiusPx = 320f,
                 ShowArrow = false,
             };
@@ -618,8 +794,8 @@ namespace Rollgeon.Tutorial
                 _step = TutorialStep.MoveTeach;
                 ShowStep(TutorialStep.MoveTeach, EndTurnAnchoredRequest(
                     LocalizedContent.Ui(TutorialTextKeys.MoveTooFar,
-                        "Quedaste lejos del enemigo — y solo podés moverte una vez por turno. " +
-                        "Apretá FINALIZAR TURNO ({0}) y dejá que se acerque él.")));
+                        "Quedaste lejos y solo puedes moverte una vez por turno. " +
+                        "Pulsa FINALIZAR TURNO ({0}) y deja que se acerque.")));
             }
         }
 
@@ -646,7 +822,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.StatsHp,
-                    "Esta es tu VIDA: si llega a cero, la run se termina. Cuidala. (Click para continuar.)"),
+                    "Esta es tu VIDA: si llega a cero, la run se termina. Cuídala."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var hud = FindCombatHud();
@@ -665,7 +841,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.StatsEnergy,
-                    "Esta es tu ENERGÍA: moverte, atacar y re-tirar dados la consumen. Administrala en cada turno. (Click para continuar.)"),
+                    "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var hud = FindCombatHud();
@@ -690,7 +866,7 @@ namespace Rollgeon.Tutorial
 
             ShowStep(TutorialStep.AttackTeach, ButtonStepRequest(HeroBehaviorSlot.BaseAttack,
                 LocalizedContent.Ui(TutorialTextKeys.AttackTeach,
-                    "Se desbloqueó ATACAR ({0}). Seleccionalo para elegir a quién golpear."),
+                    "Se desbloqueó ATACAR ({0}). Selecciónalo para elegir a quién golpear."),
                 GameplayHotkey.Attack));
         }
 
@@ -707,14 +883,13 @@ namespace Rollgeon.Tutorial
             {
                 ShowStep(TutorialStep.HealUnlocked, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.HealDice,
-                        "Curar también usa los dados: agarralos con click sostenido, arrojalos y superá el umbral " +
-                        "para recuperar vida. Bloqueá los dados altos, re-tirá los demás si hace falta y confirmá.")));
+                        "Curar también usa los dados: lánzalos y supera el umbral para recuperar vida. Bloquea los altos y confirma.")));
             }
             else if (_step == TutorialStep.EscapeTeach && slot == HeroBehaviorSlot.ForceDoor)
             {
                 ShowStep(TutorialStep.EscapeTeach, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.EscapeDice,
-                        "Forzar la puerta se resuelve con los dados: agarralos, arrojalos y superá el umbral para escapar del combate.")));
+                        "Forzar la puerta se resuelve con los dados: lánzalos y supera el umbral para escapar del combate.")));
             }
             else if (_step == TutorialStep.Combat1)
             {
@@ -737,7 +912,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.TargetTeach,
-                    "Primero se elige el objetivo: hacé click en el enemigo iluminado en rojo."),
+                    "Primero elige el objetivo: haz clic en el enemigo iluminado en rojo."),
             };
             var enemy = FirstEnemyOf(_roomB);
             if (enemy != Guid.Empty)
@@ -752,6 +927,9 @@ namespace Rollgeon.Tutorial
         // (modo manual: esperan el agarre del jugador) → enseñar a arrojarlos.
         private void OnChainStarted(params object[] args)
         {
+            // Arrancó una acción nueva — rearmar el guard del cierre de ataque.
+            _attackChainDoneHandled = false;
+
             // AttackTeach cubre el caso de una selección no interactiva (AutoResolve/
             // Self): sin click de target, el chain arranca directo desde el botón.
             if (_step != TutorialStep.TargetTeach && _step != TutorialStep.AttackTeach) return;
@@ -761,8 +939,8 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.ThrowTeach;
             ShowStep(TutorialStep.ThrowTeach, DiceZoneRequest(
                 LocalizedContent.Ui(TutorialTextKeys.ThrowTeach,
-                    "¡Objetivo marcado! Estos son tus dados: agarralos manteniendo click izquierdo " +
-                    "y arrojalos con un movimiento rápido del mouse.")));
+                    "¡Objetivo marcado! Estos son tus dados: sujétalos con clic izquierdo " +
+                    "y lánzalos con un movimiento rápido del mouse.")));
         }
 
         // Los dados asentaron y se reveló la primera tirada → enseñar combos,
@@ -776,9 +954,8 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.DiceTeach;
             ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
                 LocalizedContent.Ui(TutorialTextKeys.DiceTeach,
-                    "Armá combos de generala (par, trío, escalera...). Hacé click en un dado para bloquearlo " +
-                    "y conservarlo. ¿Querés re-tirar? Agarrá los dados que quieras cambiar y arrojalos de nuevo " +
-                    "— tenés hasta 3 tiradas. Cuando te guste el combo, apretá CONFIRMAR.")));
+                    "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
+                    "— máximo 3 tiradas. Luego CONFIRMA.")));
         }
 
         // El chain siguió a su fase 2 (defensa post-ataque) — solo sucede si al
@@ -802,9 +979,8 @@ namespace Rollgeon.Tutorial
             _step = TutorialStep.DefenseTeach;
             ShowStep(TutorialStep.DefenseTeach, DiceZoneRequest(
                 LocalizedContent.Ui(TutorialTextKeys.DefenseTeach,
-                    "¡Golpe dado! Te sobraron tiradas del ataque, así que viene la fase de DEFENSA: " +
-                    "agarrá y arrojá los dados para armar un ESCUDO que absorbe el próximo golpe. " +
-                    "Bloqueá, re-tirá y CONFIRMÁ tu combo de defensa.")));
+                    "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
+                    "tu ESCUDO absorbe el próximo golpe.")));
         }
 
         // La acción completa terminó (con o sin fase de defensa) → enseñar el fin
@@ -833,6 +1009,11 @@ namespace Rollgeon.Tutorial
         /// </summary>
         private void HandleAttackChainDone()
         {
+            // OnChainCompleted y el safety-net OnBehaviorExecuted pueden llegar
+            // ambos para la misma acción — procesar solo el primero.
+            if (_attackChainDoneHandled) return;
+            _attackChainDoneHandled = true;
+
             if (_step == TutorialStep.DefenseTeach && _defenseFromFreeLoop)
             {
                 if (_pendingHealTeach)
@@ -866,8 +1047,8 @@ namespace Rollgeon.Tutorial
             // La lección se cierra con OnTurnFinished.
             ShowStep(TutorialStep.EndTurnTeach, EndTurnAnchoredRequest(
                 LocalizedContent.Ui(TutorialTextKeys.EndTurnTeach,
-                    "¡Golpe completado! Cuando no quieras hacer nada más, apretá " +
-                    "FINALIZAR TURNO ({0}) para cederle el turno al enemigo.")));
+                    "¡Golpe completado! Cuando no quieras hacer nada más, pulsa " +
+                    "FINALIZAR TURNO ({0}) para ceder el turno.")));
         }
 
         /// <summary>
@@ -924,18 +1105,22 @@ namespace Rollgeon.Tutorial
             // y debe correr FUERA de la ventana para que el restore no lo pise).
             EndExclusiveStep();
 
-            if (_pendingHealTeach)
-            {
-                ShowHealTeach();
-                return;
-            }
+            // Esto corre en el fin de turno del jugador y el enemigo ataca a
+            // continuación — mostrar acá ponía el popup encima de su animación
+            // (feedback playtest). Ambas lecciones se difieren a OnTurnStarted.
+            _step = TutorialStep.Combat1;
+            Overlay()?.Hide();
+            if (!_pendingHealTeach) _pendingCombat1Intro = true;
+        }
 
+        private void ShowCombat1FreeIntro()
+        {
             _step = TutorialStep.Combat1;
             ShowStep(TutorialStep.Combat1, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.Combat1Free,
-                    "¡Así se pelea! Repetí el proceso — moverte, atacar, armar combos — hasta vencer al enemigo. (Click para seguir.)"),
+                    "¡Así se pelea! Repite el proceso — moverte, atacar, armar combos — hasta vencer al enemigo."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             }, () => Overlay()?.Hide());
         }
@@ -948,7 +1133,7 @@ namespace Rollgeon.Tutorial
             _gate?.Unlock(HeroBehaviorSlot.Healing);
             ShowStep(TutorialStep.HealUnlocked, ButtonStepRequest(HeroBehaviorSlot.Healing,
                 LocalizedContent.Ui(TutorialTextKeys.HealUnlocked,
-                    "¡Te golpearon! Se desbloqueó CURAR ({0}): usala en tu turno cuando te falte vida."),
+                    "¡Te golpearon! Se desbloqueó CURAR ({0}): úsala en tu turno cuando te falte vida."),
                 GameplayHotkey.Heal));
         }
 
@@ -965,13 +1150,34 @@ namespace Rollgeon.Tutorial
                 dungeon.ResyncDoorVisuals(_roomD);
             }
 
+            // Antes de mandarlo de vuelta: se reveló el inventario — señalarlo.
+            ShowBackpackTeach();
+        }
+
+        private void ShowBackpackTeach()
+        {
+            _step = TutorialStep.BackpackTeach;
+            UnlockFrameIcon(CharacterFrameIcon.Backpack);
+            ResolveCharacterFrame()?.SetPinned(true);
+            ShowStep(TutorialStep.BackpackTeach, IconStepRequest(CharacterFrameIcon.Backpack,
+                LocalizedContent.Ui(TutorialTextKeys.BackpackIcon,
+                    "Se desbloqueó tu INVENTARIO: tu compra vive aquí, junto a todo lo que consigas en la run.")),
+                () =>
+                {
+                    ResolveCharacterFrame()?.SetPinned(false);
+                    ShowShopPurchasedStep();
+                });
+        }
+
+        private void ShowShopPurchasedStep()
+        {
             _step = TutorialStep.Combat2Prep;
             ShowStep(TutorialStep.Combat2Prep, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.WorldPosition,
                 WorldPosition = ResolveDoorPosition(_roomD, _roomB),
                 Text = LocalizedContent.Ui(TutorialTextKeys.ShopPurchased,
-                    "¡Mejora comprada! Ahora sí estás preparado: volvé por donde viniste y acabá con esos enemigos."),
+                    "¡Mejora comprada! Ahora estás preparado: vuelve por donde viniste y acaba con esos enemigos."),
             });
         }
 
@@ -986,9 +1192,21 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.EnchantTable,
-                    "Elegí uno de tus dados, elegí el encantamiento y confirmá: el dado queda mejorado por el resto de la run. " +
-                    "Cuanto más fuerte es el dado, más huecos de encantamiento tiene. " +
-                    "Cada encantamiento cuesta oro — el que juntaste alcanza para exactamente UNO. (Click para seguir.)"),
+                    "Elige un dado y un cupo, y confirma: el encantamiento sale al azar — y puede ser malo."),
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            }, ShowEnchantRerollHint);
+        }
+
+        // Segundo popup de la mesa: el resultado es una apuesta, y el reemplazo
+        // (pagando cada vez más) es la forma de arreglar uno malo. Solo se explica —
+        // la economía del tutorial alcanza para exactamente un encantamiento.
+        private void ShowEnchantRerollHint()
+        {
+            ShowStep(TutorialStep.Enchant, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = LocalizedContent.Ui(TutorialTextKeys.EnchantReroll,
+                    "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo: cada reemplazo cuesta más oro."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             }, () => Overlay()?.Hide());
         }
@@ -1021,7 +1239,7 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.EnchantDone,
-                    "¡Dado encantado! Ya sabés todo lo que necesitás — cerrá la mesa."),
+                    "¡Dado encantado! Ya sabes todo lo que necesitas — cierra la mesa."),
             };
             if (_enchantAltarView.TryGetCloseButtonRect(out var closeRect))
             {
@@ -1040,7 +1258,23 @@ namespace Rollgeon.Tutorial
             }
             if (_step != TutorialStep.CloseEnchantTable) return;
 
-            ShowExitStep();
+            // Con la mesa cerrada el marco vuelve a verse: último reveal, la bolsa.
+            ShowDiceBagTeach();
+        }
+
+        private void ShowDiceBagTeach()
+        {
+            _step = TutorialStep.DiceBagTeach;
+            UnlockFrameIcon(CharacterFrameIcon.DiceBag);
+            ResolveCharacterFrame()?.SetPinned(true);
+            ShowStep(TutorialStep.DiceBagTeach, IconStepRequest(CharacterFrameIcon.DiceBag,
+                LocalizedContent.Ui(TutorialTextKeys.DiceBagIcon,
+                    "Tu dado encantado vive en la BOLSA DE DADOS: revisa ahí tus dados y encantamientos.")),
+                () =>
+                {
+                    ResolveCharacterFrame()?.SetPinned(false);
+                    ShowExitStep();
+                });
         }
 
         private void ShowExitStep()
@@ -1051,7 +1285,7 @@ namespace Rollgeon.Tutorial
                 AnchorKind = TutorialAnchorKind.WorldPosition,
                 WorldPosition = ResolveExitDoorPosition(_roomE),
                 Text = LocalizedContent.Ui(TutorialTextKeys.Exit,
-                    "Cruzá la puerta señalada para empezar tu aventura de verdad."),
+                    "Cruza la puerta señalada para empezar tu aventura de verdad."),
             });
         }
 
@@ -1121,7 +1355,7 @@ namespace Rollgeon.Tutorial
                 AnchorKind = TutorialAnchorKind.WorldPosition,
                 WorldPosition = ResolveDoorPosition(_roomA, _roomB),
                 Text = LocalizedContent.Ui(TutorialTextKeys.Movement,
-                    "Hacé click en una casilla para moverte. Caminá hasta la puerta señalada para salir de la sala."),
+                    "Haz clic en una casilla para moverte. Camina hasta la puerta señalada para salir de la sala."),
             });
         }
 
@@ -1198,6 +1432,55 @@ namespace Rollgeon.Tutorial
 
         private static CombatHUDView FindCombatHud()
             => UnityEngine.Object.FindFirstObjectByType<CombatHUDView>(FindObjectsInactive.Include);
+
+        // ==================================================================
+        // Marco del jugador — reveal progresivo de íconos
+        // ==================================================================
+
+        /// <summary>Resuelve (y cachea) el controller del marco. El canvas puede
+        /// re-instanciarse entre salas — el fake-null de Unity dispara el re-find.</summary>
+        private CharacterFrameController ResolveCharacterFrame()
+        {
+            if (_characterFrame == null)
+                _characterFrame = UnityEngine.Object.FindFirstObjectByType<CharacterFrameController>(
+                    FindObjectsInactive.Include);
+            return _characterFrame;
+        }
+
+        private void UnlockFrameIcon(CharacterFrameIcon icon)
+        {
+            _unlockedIcons.Add(icon);
+            ResolveCharacterFrame()?.SetIconLocked(icon, false);
+        }
+
+        /// <summary>Aplica el estado de reveal vigente: lockea todo lo que el
+        /// recorrido todavía no desbloqueó. Idempotente.</summary>
+        private void ApplyFrameIconLocks()
+        {
+            var frame = ResolveCharacterFrame();
+            if (frame == null) return;
+            foreach (CharacterFrameIcon icon in Enum.GetValues(typeof(CharacterFrameIcon)))
+                frame.SetIconLocked(icon, !_unlockedIcons.Contains(icon));
+        }
+
+        /// <summary>Paso bloqueante anclado a un ícono del marco del jugador.
+        /// Degrada a popup centrado si el marco no está disponible.</summary>
+        private TutorialStepDisplayRequest IconStepRequest(CharacterFrameIcon icon, string text)
+        {
+            var request = new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = text,
+                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+            };
+            var frame = ResolveCharacterFrame();
+            if (frame != null && frame.TryGetIconRect(icon, out var rect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = rect;
+            }
+            return request;
+        }
 
         private static bool TryGetPlayerGuid(out Guid guid)
         {

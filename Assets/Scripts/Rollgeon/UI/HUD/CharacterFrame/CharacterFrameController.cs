@@ -39,6 +39,11 @@ namespace Rollgeon.UI.HUD.CharacterFrame
             public Vector2 ShownPos;
             [Range(0f, 1f)] public float WindowStart;
             [Range(0f, 1f)] public float WindowEnd = 1f;
+
+            // Semántica invertida a propósito: un bool nuevo deserializa FALSE en
+            // los prefabs ya autorados, y false tiene que significar "desbloqueado"
+            // para que las runs normales no cambien. Solo el tutorial lo enciende.
+            [NonSerialized] public bool Locked;
         }
 
         [Title("Anillo")]
@@ -129,6 +134,76 @@ namespace Rollgeon.UI.HUD.CharacterFrame
             Reevaluate();
         }
 
+        /// <summary>Pin programático (el tutorial abre la ruleta para señalar un
+        /// ícono; sin reveal la flecha apuntaría a un rect con alpha 0).</summary>
+        public void SetPinned(bool pinned)
+        {
+            if (_pinned == pinned) return;
+            _pinned = pinned;
+            CancelCloseGrace();
+            Reevaluate();
+        }
+
+        // ==================================================================
+        // Lock por ícono (reveal progresivo del tutorial)
+        // ==================================================================
+
+        /// <summary>
+        /// Lockea/deslockea un ícono: lockeado queda oculto y sin raycast aunque la
+        /// ruleta esté abierta. Estado runtime puro — fuera del tutorial nadie lo
+        /// toca y todo arranca desbloqueado.
+        /// </summary>
+        public void SetIconLocked(CharacterFrameIcon icon, bool locked)
+        {
+            var element = FindIcon(icon);
+            if (element == null || element.Locked == locked) return;
+            element.Locked = locked;
+            ApplyProgress(_progress);
+        }
+
+        public void SetAllIconsLocked(bool locked)
+        {
+            if (_icons == null) return;
+            bool changed = false;
+            for (int i = 0; i < _icons.Length; i++)
+            {
+                var element = _icons[i];
+                if (element == null || element.Locked == locked) continue;
+                element.Locked = locked;
+                changed = true;
+            }
+            if (changed) ApplyProgress(_progress);
+        }
+
+        /// <summary>RectTransform de un ícono — anchor del overlay del tutorial.</summary>
+        public bool TryGetIconRect(CharacterFrameIcon icon, out RectTransform rect)
+        {
+            rect = FindIcon(icon)?.Rect;
+            return rect != null;
+        }
+
+        private RevealElement FindIcon(CharacterFrameIcon icon)
+        {
+            string name = IconObjectName(icon);
+            if (_icons == null || name == null) return null;
+            for (int i = 0; i < _icons.Length; i++)
+            {
+                var element = _icons[i];
+                if (element?.Rect != null && element.Rect.gameObject.name == name) return element;
+            }
+            return null;
+        }
+
+        // Nombres canónicos de los GameObjects que autoran los installers
+        // (PlayerIconsSetupTools y los setups de cada drawer).
+        private static string IconObjectName(CharacterFrameIcon icon) => icon switch
+        {
+            CharacterFrameIcon.DiceBag => "DiceBagIcon",
+            CharacterFrameIcon.Backpack => "BackpackIcon",
+            CharacterFrameIcon.Contract => "ContractIcon",
+            _ => null,
+        };
+
         // ==================================================================
         // Animación maestra
         // ==================================================================
@@ -182,7 +257,8 @@ namespace Rollgeon.UI.HUD.CharacterFrame
                     var icon = _icons[i];
                     if (icon == null) continue;
 
-                    float w = CharacterFrameLogic.Window(progress, icon.WindowStart, icon.WindowEnd);
+                    // Lockeado = oculto sin importar el progreso de la ruleta.
+                    float w = icon.Locked ? 0f : CharacterFrameLogic.Window(progress, icon.WindowStart, icon.WindowEnd);
                     if (icon.Rect != null)
                         icon.Rect.anchoredPosition = Vector2.LerpUnclamped(icon.HiddenPos, icon.ShownPos, w);
                     if (icon.Group != null)

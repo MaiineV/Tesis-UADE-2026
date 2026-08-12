@@ -527,6 +527,38 @@ MonoBehaviour:
     m_Key: inventory.items_caption
     m_Metadata:
       m_Items: []
+  - m_Id: 10309000887107584
+    m_Key: tutorial.turn_order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050624
+    m_Key: tutorial.contract_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050625
+    m_Key: tutorial.camera_controls
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244928
+    m_Key: tutorial.backpack_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244929
+    m_Key: tutorial.enchant_reroll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244930
+    m_Key: tutorial.dicebag_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614179115008
+    m_Key: tutorial.escape_aftermath
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614204280832
+    m_Key: tutorial.map_rooms
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

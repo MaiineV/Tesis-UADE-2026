@@ -18,6 +18,8 @@ namespace Rollgeon.Tutorial
 
         // Sala B — secuencia guiada del combate 1.
         public const string EnemiesIntro = "tutorial.enemies_intro";
+        public const string TurnOrderIntro = "tutorial.turn_order";
+        public const string ContractIcon = "tutorial.contract_icon";
         public const string MoveTeach = "tutorial.move_teach";
         public const string MoveTiles = "tutorial.move_tiles";
         public const string MoveTooFar = "tutorial.move_too_far";
@@ -39,17 +41,23 @@ namespace Rollgeon.Tutorial
         public const string EscapeDice = "tutorial.escape_dice";
         public const string Combat2Door = "tutorial.combat2_door";
         public const string Combat2 = "tutorial.combat2";
+        public const string EscapeAftermath = "tutorial.escape_aftermath";
+        public const string CameraControls = "tutorial.camera_controls";
+        public const string MapRooms = "tutorial.map_rooms";
 
         // Sala D — tienda.
         public const string ShopDoor = "tutorial.shop_door";
         public const string ShopPedestal = "tutorial.shop_pedestal";
         public const string ShopPurchased = "tutorial.shop_purchased";
+        public const string BackpackIcon = "tutorial.backpack_icon";
 
         // Sala E — encantamientos y salida.
         public const string GoToE = "tutorial.go_to_e";
         public const string EnchantRoom = "tutorial.enchant_room";
         public const string EnchantTable = "tutorial.enchant_table";
+        public const string EnchantReroll = "tutorial.enchant_reroll";
         public const string EnchantDone = "tutorial.enchant_done";
+        public const string DiceBagIcon = "tutorial.dicebag_icon";
         public const string Exit = "tutorial.exit";
 
         // Chrome del overlay.
@@ -59,12 +67,14 @@ namespace Rollgeon.Tutorial
         public static IReadOnlyList<string> All { get; } = new[]
         {
             Movement,
-            EnemiesIntro, MoveTeach, MoveTiles, MoveTooFar, StatsHp, StatsEnergy,
+            EnemiesIntro, TurnOrderIntro, ContractIcon, MoveTeach, MoveTiles, MoveTooFar,
+            StatsHp, StatsEnergy,
             AttackTeach, TargetTeach, ThrowTeach, DiceTeach, DefenseTeach,
             EndTurnTeach, Combat1Free, HealUnlocked, HealDice,
             GoToC, EscapeTeach, EscapeDice, Combat2Door, Combat2,
-            ShopDoor, ShopPedestal, ShopPurchased,
-            GoToE, EnchantRoom, EnchantTable, EnchantDone, Exit,
+            EscapeAftermath, CameraControls, MapRooms,
+            ShopDoor, ShopPedestal, ShopPurchased, BackpackIcon,
+            GoToE, EnchantRoom, EnchantTable, EnchantReroll, EnchantDone, DiceBagIcon, Exit,
             ContinueFooter,
         };
     }

@@ -39,7 +39,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024132
-    m_Localized: 2 dice of the same value
+    m_Localized: 2 pairs of different values
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024133
@@ -793,6 +793,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9716852768735275
     m_Localized: Restores health when used.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612576890880
+    m_Localized: Pair Bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612602056704
+    m_Localized: +50 damage when matching a Pair.
     m_Metadata:
       m_Items: []
   references:

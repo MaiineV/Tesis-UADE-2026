@@ -272,7 +272,7 @@ namespace Rollgeon.UI.HUD
 
             var spec = _service.CurrentSpec;
             if (_confirmActionLabel != null) _confirmActionLabel.text = spec.ActionLabel ?? string.Empty;
-            if (_confirmThresholdLabel != null) _confirmThresholdLabel.text = $"Necesitás >= {spec.Threshold}";
+            if (_confirmThresholdLabel != null) _confirmThresholdLabel.text = $"Necesitas >= {spec.Threshold}";
             if (_confirmCostLabel != null) _confirmCostLabel.text = $"Cuesta {spec.EnergyCost} de energía";
 
             ClearDiceSlots();

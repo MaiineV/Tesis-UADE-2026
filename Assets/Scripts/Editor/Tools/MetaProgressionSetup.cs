@@ -41,7 +41,7 @@ namespace Rollgeon.Editor.Tools
                 def.Category = UnlockableCategory.Dice;
                 def.TargetId = DiceType.D8.ToString();
                 def.Description = "El D8 queda disponible en la pantalla de armado de build.";
-                def.HintText = "Dominá el dado estándar: ganá una run confiando solo en el clásico de seis caras.";
+                def.HintText = "Domina el dado estándar: gana una run confiando solo en el clásico de seis caras.";
                 def.AppliesTo = UnlockOutcomeFilter.Won;
                 def.Condition = new DiceCountOfTypeCondition
                 {
@@ -58,7 +58,7 @@ namespace Rollgeon.Editor.Tools
                 def.Category = UnlockableCategory.Dice;
                 def.TargetId = DiceType.D10.ToString();
                 def.Description = "El D10 queda disponible en la pantalla de armado de build.";
-                def.HintText = "Hay una receta exacta de dados que abre esta puerta. Experimentá con la mezcla.";
+                def.HintText = "Hay una receta exacta de dados que abre esta puerta. Experimenta con la mezcla.";
                 def.AppliesTo = UnlockOutcomeFilter.Won;
                 def.Condition = new DiceCombinationCondition
                 {
@@ -76,7 +76,7 @@ namespace Rollgeon.Editor.Tools
                 def.Category = UnlockableCategory.HeroClass;
                 def.TargetId = "Berserker";
                 def.Description = "El Berserker queda seleccionable en la pantalla de selección de personaje.";
-                def.HintText = "Demostrá fuerza de ocho caras: llevá el dado nuevo a una victoria.";
+                def.HintText = "Demuestra fuerza de ocho caras: lleva el dado nuevo a una victoria.";
                 def.AppliesTo = UnlockOutcomeFilter.Won;
                 def.Condition = new DiceCountOfTypeCondition
                 {

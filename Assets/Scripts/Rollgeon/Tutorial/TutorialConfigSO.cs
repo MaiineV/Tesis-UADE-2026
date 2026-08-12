@@ -32,7 +32,8 @@ namespace Rollgeon.Tutorial
         [Tooltip("ShopConfig del tutorial (MaxItemSlots=1).")]
         [SerializeField] private ShopConfigSO _shopConfig;
 
-        [Tooltip("Pool con exactamente 1 entry: el ComboPassive de daño de Par.")]
+        [Tooltip("Pool con exactamente 1 entry: el ItemSO de +50 de daño al Par " +
+                 "(Item_Tutorial_Par50, autorado por el installer).")]
         [SerializeField] private ShopPoolSO _shopPool;
 
         [Header("Economía")]

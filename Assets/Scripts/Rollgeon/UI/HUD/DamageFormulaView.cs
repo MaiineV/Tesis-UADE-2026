@@ -243,7 +243,7 @@ namespace Rollgeon.UI.HUD
                 HideThreshold();
                 if (string.IsNullOrEmpty(_lastComboId))
                 {
-                    RenderLabel("Defensa - armá un combo para generar escudo", 0);
+                    RenderLabel("Defensa - arma un combo para generar escudo", 0);
                     return;
                 }
 
@@ -419,7 +419,7 @@ namespace Rollgeon.UI.HUD
             if (_thresholdLabel != null)
             {
                 _thresholdLabel.gameObject.SetActive(true);
-                _thresholdLabel.text = $"Necesitás >= {spec.Threshold}";
+                _thresholdLabel.text = $"Necesitas >= {spec.Threshold}";
             }
 
             // Formula label: combo actual seleccionado del action roll service.
@@ -430,7 +430,7 @@ namespace Rollgeon.UI.HUD
             if (combo != null)
                 RenderLabel($"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})", effective);
             else
-                RenderLabel($"{actionTag} - seleccioná los dados de tu combo", 0);
+                RenderLabel($"{actionTag} - selecciona los dados de tu combo", 0);
             return true;
         }
 

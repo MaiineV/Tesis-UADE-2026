@@ -310,32 +310,30 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7800251719905280
     m_Localized: Combat! This is your enemy. In the tutorial you always act first.
-      (Click to continue.)
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905281
-    m_Localized: 'Your hero fights in melee: you need to close the distance first.
-      Select MOVE ({0}).'
+    m_Localized: 'Your hero fights in melee: get close first. Select MOVE ({0}).'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905282
-    m_Localized: The highlighted tiles are where you can reach this turn. Click a
-      tile next to the enemy.
+    m_Localized: The highlighted tiles are your reach this turn. Click a tile next
+      to the enemy.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905283
-    m_Localized: "You ended up far from the enemy \u2014 and you can only move once
-      per turn. Press END TURN ({0}) and let them come to you."
+    m_Localized: You're far away and can only move once per turn. Press END TURN
+      ({0}) and let them approach.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905284
     m_Localized: 'This is your HEALTH: if it hits zero, the run is over. Look after
-      it. (Click to continue.)'
+      it.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905285
-    m_Localized: 'This is your ENERGY: moving, attacking and rerolling dice all spend
-      it. Manage it every turn. (Click to continue.)'
+    m_Localized: 'This is your ENERGY: moving, attacking and rerolling all spend
+      it. Manage it every turn.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905286
@@ -343,34 +341,32 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905287
-    m_Localized: 'First you pick the target: click the enemy highlighted in red.'
+    m_Localized: 'First pick the target: click the enemy highlighted in red.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905288
-    m_Localized: 'Target locked! These are your dice: grab them by holding left click
-      and throw them with a quick flick of the mouse.'
+    m_Localized: 'Target locked! These are your dice: hold left click to grab them
+      and throw with a quick flick.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905289
-    m_Localized: "Build generala combos (pair, trio, straight...). Click a die to
-      lock it and keep it. Want to reroll? Grab the dice you want to change and throw
-      them again \u2014 you get up to 3 rolls. When you like the combo, press CONFIRM."
+    m_Localized: "Build combos (pair, trio, straight). Click a die to lock it; reroll
+      the rest \u2014 3 rolls max. Then CONFIRM."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: 'Hit landed! You had rolls left over from the attack, so the DEFENSE
-      phase begins: grab and throw the dice to build a SHIELD that absorbs the next
-      hit. Lock, reroll and CONFIRM your defense combo.'
+    m_Localized: "You have rolls left: DEFENSE phase. Throw the dice and build a
+      combo \u2014 your SHIELD absorbs the next hit."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
-    m_Localized: Attack complete! When there's nothing else you want to do, press
-      END TURN ({0}) to hand the turn over to the enemy.
+    m_Localized: Attack complete! When you're done, press END TURN ({0}) to hand
+      over the turn.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905292
     m_Localized: "That's how you fight! Repeat the process \u2014 move, attack, build
-      combos \u2014 until the enemy is down. (Click to continue.)"
+      combos \u2014 until the enemy is down."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905293
@@ -379,9 +375,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905294
-    m_Localized: 'Healing uses the dice too: grab them with a held click, throw them
-      and beat the threshold to recover health. Lock the high dice, reroll the rest
-      if you need to, and confirm.'
+    m_Localized: 'Healing uses the dice too: throw them and beat the threshold to
+      recover health. Lock the high ones and confirm.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905295
@@ -390,14 +385,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905296
-    m_Localized: "There are too many of them! FORCE DOOR ({0}) is unlocked: use it
-      to escape the way you came. It only works if you're next to a door \u2014 and
-      right now you are."
+    m_Localized: 'Too many! FORCE DOOR ({0}) is unlocked: escape the way you came.
+      You''re already next to the door.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905297
-    m_Localized: 'Forcing the door is resolved with the dice: grab them, throw them
-      and beat the threshold to escape the fight.'
+    m_Localized: 'Forcing the door is resolved with dice: throw them and beat the
+      threshold to escape the fight.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905298
@@ -405,18 +399,17 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905299
-    m_Localized: Now you're ready! With the PAIR upgrade you can take on both enemies.
-      (Click to continue.)
+    m_Localized: Now you're ready! With the PAIR upgrade, take down both enemies.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905300
-    m_Localized: 'You escaped! The shop door is open. Head in: something that will
-      give you the edge is waiting.'
+    m_Localized: 'You escaped! The shop door is open. Head in: something useful is
+      waiting.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905301
-    m_Localized: 'This is the shop. Walk up to the pedestal and press F to buy the
-      upgrade: your PAIR combo will deal +50 damage.'
+    m_Localized: 'This is the shop. Walk to the pedestal and press F to buy the upgrade:
+      your PAIR combo will deal +50 damage.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905302
@@ -429,15 +422,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905304
-    m_Localized: 'This is the enchantment table: it upgrades one of your dice for
-      gold, for the rest of the run. Walk up to the altar and press F to open it.'
+    m_Localized: 'This is the enchantment table: it upgrades a die for gold. Walk
+      to the altar and press F.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905305
-    m_Localized: "Pick one of your dice, pick the enchantment and confirm: the die
-      stays upgraded for the rest of the run. The stronger the die, the more enchantment
-      slots it has. Each enchantment costs gold \u2014 what you saved is enough for
-      exactly ONE. (Click to continue.)"
+    m_Localized: "Pick a die and a slot, then confirm: the enchantment is random
+      \u2014 and it can be bad."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905306
@@ -563,6 +554,45 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9946840222760961
     m_Localized: Items
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000887107584
+    m_Localized: 'Top right is the turn order: who acts now and who goes next.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050624
+    m_Localized: 'This is your CONTRACT: the generala combos and their damage. Check
+      it any time.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050625
+    m_Localized: 'Rotate the camera with the right button. Drag the map with the
+      wheel pressed. Zoom: wheel. Recenter: G. Try it now.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244928
+    m_Localized: 'Your INVENTORY is unlocked: your purchase lives here, with everything
+      else you find in the run.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244929
+    m_Localized: 'Don''t like the result? You can replace it by paying again: each
+      replacement costs more gold.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244930
+    m_Localized: 'Your enchanted die lives in the DICE BAG: check your dice and enchantments
+      there.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614179115008
+    m_Localized: 'Escaping doesn''t remove them: the enemies stay in the room, heal
+      a little, and wait if you come back.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614204280832
+    m_Localized: 'Zoom out to see the adjacent rooms: their icons tell you which
+      ones are special (shop, enchantment...).'
     m_Metadata:
       m_Items: []
   references:

@@ -179,6 +179,95 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
+        // Lock por ícono (reveal progresivo del tutorial)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void should_hide_a_locked_icon_even_with_the_roulette_open()
+        {
+            // Arrange — ruleta abierta (pin) con el ícono visible.
+            var c = MakeController(out var parts);
+            InvokePrivate(c, "Awake");
+            c.TogglePin();
+            Assert.AreEqual(1f, parts.IconGroup.alpha, 0.001f, "sanity: abierto y visible");
+
+            // Act
+            c.SetIconLocked(CharacterFrameIcon.DiceBag, true);
+
+            // Assert — oculto, sin raycast y en la posición hidden pese al progreso 1.
+            Assert.AreEqual(0f, parts.IconGroup.alpha, 0.001f);
+            Assert.IsFalse(parts.IconGroup.blocksRaycasts);
+            Assert.IsFalse(parts.IconGroup.interactable);
+            Assert.AreEqual(parts.Hidden, parts.IconRect.anchoredPosition);
+        }
+
+        [Test]
+        public void should_restore_a_locked_icon_when_unlocked()
+        {
+            // Arrange
+            var c = MakeController(out var parts);
+            InvokePrivate(c, "Awake");
+            c.SetIconLocked(CharacterFrameIcon.DiceBag, true);
+            c.TogglePin();
+
+            // Act
+            c.SetIconLocked(CharacterFrameIcon.DiceBag, false);
+
+            // Assert — vuelve al estado que dicta el progreso actual (abierto).
+            Assert.AreEqual(1f, parts.IconGroup.alpha, 0.001f);
+            Assert.IsTrue(parts.IconGroup.blocksRaycasts);
+            Assert.AreEqual(parts.Shown, parts.IconRect.anchoredPosition);
+        }
+
+        [Test]
+        public void should_resolve_icon_rect_by_gameobject_name()
+        {
+            // Arrange — el rig autora el ícono como "DiceBagIcon" (nombre canónico).
+            var c = MakeController(out var parts);
+
+            // Act + Assert
+            Assert.IsTrue(c.TryGetIconRect(CharacterFrameIcon.DiceBag, out var rect));
+            Assert.AreSame(parts.IconRect, rect);
+            Assert.IsFalse(c.TryGetIconRect(CharacterFrameIcon.Contract, out _),
+                "el rig no tiene ContractIcon — no debe resolver otro rect");
+        }
+
+        [Test]
+        public void should_open_and_close_via_programmatic_pin()
+        {
+            // Arrange
+            var c = MakeController(out var parts);
+            InvokePrivate(c, "Awake");
+
+            // Act + Assert — SetPinned(true) abre igual que TogglePin…
+            c.SetPinned(true);
+            Assert.IsTrue(c.IsPinned);
+            Assert.AreEqual(1f, parts.IconGroup.alpha, 0.001f);
+
+            // …es idempotente…
+            c.SetPinned(true);
+            Assert.IsTrue(c.IsPinned);
+
+            // …y SetPinned(false) cierra.
+            c.SetPinned(false);
+            Assert.IsFalse(c.IsPinned);
+            Assert.AreEqual(0f, parts.IconGroup.alpha, 0.001f);
+        }
+
+        [Test]
+        public void should_keep_default_unlocked_state_out_of_the_tutorial()
+        {
+            // Arrange + Act — sin tocar la API de lock, comportamiento histórico intacto.
+            var c = MakeController(out var parts);
+            InvokePrivate(c, "Awake");
+            c.TogglePin();
+
+            // Assert
+            Assert.AreEqual(1f, parts.IconGroup.alpha, 0.001f,
+                "Locked default (false) no cambia el reveal de siempre");
+        }
+
+        // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
 

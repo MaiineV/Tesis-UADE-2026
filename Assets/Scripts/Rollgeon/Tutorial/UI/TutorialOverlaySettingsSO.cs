@@ -53,13 +53,22 @@ namespace Rollgeon.Tutorial.UI
         public Color PopupTextColor = Color.white;
         public float PopupMaxWidth = 520f;
         public Vector2 PopupPadding = new Vector2(28f, 22f);
+        [Tooltip("Alpha del footer 'clic para continuar'. 0 (asset viejo sin el campo) " +
+                 "cae al default en código.")]
+        [Range(0f, 1f)] public float PopupFooterAlpha = 0.9f;
         [Tooltip("Margen mínimo del popup contra los bordes de pantalla (px).")]
         public float PopupScreenMargin = 40f;
+        [Tooltip("Separación entre el borde del anchor y el popup adyacente, en px " +
+                 "de pantalla — deja lugar a la flecha.")]
+        public float PopupAnchorGapPx = 90f;
+        [Tooltip("Rollback de emergencia: true vuelve al layout viejo (popup en el " +
+                 "cuadrante opuesto al anchor) en vez del adyacente.")]
+        public bool LegacyQuadrantPlacement;
         [Tooltip("Histéresis del flip de cuadrante como fracción de pantalla — evita " +
                  "que el popup salte de lado con anchors en movimiento.")]
         [Range(0f, 0.25f)] public float QuadrantHysteresis = 0.08f;
 
         [Header("Paso de texto puro (BlockUntilContinue)")]
-        public string ContinueFooterText = "Hacé click para continuar";
+        public string ContinueFooterText = "Haz clic para continuar";
     }
 }

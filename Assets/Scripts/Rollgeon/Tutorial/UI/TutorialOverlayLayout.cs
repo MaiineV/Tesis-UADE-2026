@@ -62,6 +62,83 @@ namespace Rollgeon.Tutorial.UI
                 Mathf.Clamp(y, margin, screenSize.y - margin));
         }
 
+        // ==================================================================
+        // Colocación adyacente (el popup pegado al anchor, no en el cuadrante
+        // opuesto — feedback playtest: el cuadrante fijo tapaba HUD y tiles)
+        // ==================================================================
+
+        /// <summary>
+        /// Lado del anchor donde colocar el popup: 0 = derecha, 1 = izquierda,
+        /// 2 = arriba, 3 = abajo; -1 = no entra completo en ningún lado (el caller
+        /// cae al layout de cuadrante). Histéresis: si el lado previo sigue siendo
+        /// válido se mantiene — evita el flip-flop con anchors en movimiento.
+        /// Todo en píxeles de pantalla.
+        /// </summary>
+        public static int ResolveSideWithHysteresis(
+            Vector2 anchorPos, Vector2 anchorHalfSize, Vector2 popupSize,
+            Vector2 screenSize, float gap, float margin, int previousSide)
+        {
+            if (previousSide >= 0 && previousSide <= 3
+                && SideFits(previousSide, anchorPos, anchorHalfSize, popupSize, screenSize, gap, margin))
+                return previousSide;
+
+            int best = -1;
+            float bestSpace = float.MinValue;
+            for (int side = 0; side <= 3; side++)
+            {
+                if (!SideFits(side, anchorPos, anchorHalfSize, popupSize, screenSize, gap, margin)) continue;
+                float space = FreeSpace(side, anchorPos, anchorHalfSize, screenSize);
+                if (space > bestSpace)
+                {
+                    bestSpace = space;
+                    best = side;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Centro del popup pegado al lado resuelto del anchor: a <paramref name="gap"/>
+        /// px del borde de la caja (lugar para la flecha), centrado sobre el anchor en
+        /// el eje perpendicular y clampeado a pantalla por <paramref name="margin"/>.
+        /// </summary>
+        public static Vector2 PopupCenterForSide(
+            int side, Vector2 anchorPos, Vector2 anchorHalfSize, Vector2 popupSize,
+            Vector2 screenSize, float gap, float margin)
+        {
+            var center = side switch
+            {
+                0 => new Vector2(anchorPos.x + anchorHalfSize.x + gap + popupSize.x * 0.5f, anchorPos.y),
+                1 => new Vector2(anchorPos.x - anchorHalfSize.x - gap - popupSize.x * 0.5f, anchorPos.y),
+                2 => new Vector2(anchorPos.x, anchorPos.y + anchorHalfSize.y + gap + popupSize.y * 0.5f),
+                _ => new Vector2(anchorPos.x, anchorPos.y - anchorHalfSize.y - gap - popupSize.y * 0.5f),
+            };
+
+            // El clamp solo muerde en el eje perpendicular: en el eje del lado el
+            // fit ya lo garantizó SideFits.
+            return new Vector2(
+                Mathf.Clamp(center.x, margin + popupSize.x * 0.5f, screenSize.x - margin - popupSize.x * 0.5f),
+                Mathf.Clamp(center.y, margin + popupSize.y * 0.5f, screenSize.y - margin - popupSize.y * 0.5f));
+        }
+
+        /// <summary>Espacio libre entre el borde del anchor y el borde de pantalla.</summary>
+        private static float FreeSpace(int side, Vector2 anchorPos, Vector2 anchorHalfSize, Vector2 screenSize)
+            => side switch
+            {
+                0 => screenSize.x - (anchorPos.x + anchorHalfSize.x),
+                1 => anchorPos.x - anchorHalfSize.x,
+                2 => screenSize.y - (anchorPos.y + anchorHalfSize.y),
+                _ => anchorPos.y - anchorHalfSize.y,
+            };
+
+        private static bool SideFits(
+            int side, Vector2 anchorPos, Vector2 anchorHalfSize, Vector2 popupSize,
+            Vector2 screenSize, float gap, float margin)
+        {
+            float needed = gap + margin + (side <= 1 ? popupSize.x : popupSize.y);
+            return FreeSpace(side, anchorPos, anchorHalfSize, screenSize) >= needed;
+        }
+
         /// <summary>
         /// Posición de la flecha: sobre la línea popup→recorte, a
         /// <paramref name="gap"/> px del borde del círculo, del lado del popup.

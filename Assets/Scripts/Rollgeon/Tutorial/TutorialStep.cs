@@ -3,6 +3,8 @@ namespace Rollgeon.Tutorial
     /// <summary>
     /// Pasos del tutorial, en orden de recorrido. La transición la dirigen los
     /// eventos del bus (ver tabla en <see cref="TutorialFlowController"/>).
+    /// Nadie serializa ni compara ordinalmente estos valores: insertar en el
+    /// medio es seguro — mantener esa propiedad si se agregan consumidores.
     /// </summary>
     public enum TutorialStep
     {
@@ -11,6 +13,12 @@ namespace Rollgeon.Tutorial
 
         /// <summary>Sala B: spotlight a los enemigos — click para continuar.</summary>
         EnemiesIntro,
+
+        /// <summary>Sala B: señalar la cola de orden de turnos (esquina sup. der.).</summary>
+        TurnOrderIntro,
+
+        /// <summary>Sala B: se reveló el ícono del contrato — ver los combos.</summary>
+        ContractTeach,
 
         /// <summary>Sala B: señalar el botón MOVER (el héroe es melee).</summary>
         MoveTeach,
@@ -54,8 +62,20 @@ namespace Rollgeon.Tutorial
         /// <summary>Sala C: combate 2v2 — se desbloqueó ForceDoor, enseñar el escape.</summary>
         EscapeTeach,
 
+        /// <summary>Escapó de C: qué pasa con los enemigos al escapar y al volver.</summary>
+        EscapeAftermath,
+
+        /// <summary>Escapó de C: explicar los controles de cámara (rotar/pan/zoom).</summary>
+        CameraTeach,
+
+        /// <summary>Escapó de C: zoom out muestra salas adyacentes y sus tipos.</summary>
+        MapTeach,
+
         /// <summary>Escapó de C: la tienda se desbloqueó — comprar la mejora de Par.</summary>
         Shop,
+
+        /// <summary>Compró: se reveló el ícono del inventario.</summary>
+        BackpackTeach,
 
         /// <summary>Compró: C se desbloqueó de nuevo — volver a pelear.</summary>
         Combat2Prep,
@@ -71,6 +91,9 @@ namespace Rollgeon.Tutorial
 
         /// <summary>Dado encantado: señalar el botón de cerrar la mesa.</summary>
         CloseEnchantTable,
+
+        /// <summary>Mesa cerrada: se reveló el ícono de la bolsa de dados.</summary>
+        DiceBagTeach,
 
         /// <summary>Mesa cerrada: cruzar la puerta de salida.</summary>
         Exit,

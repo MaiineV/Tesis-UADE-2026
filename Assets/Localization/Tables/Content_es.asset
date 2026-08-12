@@ -39,7 +39,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024132
-    m_Localized: 2 dados del mismo valor
+    m_Localized: 2 pares de valores distintos
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024133
@@ -256,8 +256,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: "Si este dado se holdea entre tiradas, su resultado aumenta +1 por
-      tirada holdeada (m\xE1x +3)."
+    m_Localized: "Si este dado se bloquea entre tiradas, su resultado aumenta +1
+      por tirada bloqueada (m\xE1x +3)."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
@@ -281,8 +281,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623697
-    m_Localized: "Una vez por combate pod\xE9s relanzar este dado y quedarte con
-      el mayor resultado."
+    m_Localized: Una vez por combate puedes volver a tirar este dado y quedarte con
+      el mayor resultado.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623698
@@ -382,7 +382,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: Este dado no se puede holdear entre tiradas.
+    m_Localized: Este dado no se puede bloquear entre tiradas.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
@@ -398,7 +398,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623725
-    m_Localized: "Copia el resultado del \xFAltimo dado re-tirado en esta tirada
+    m_Localized: "Copia el resultado del \xFAltimo dado vuelto a tirar en esta tirada
       para prop\xF3sitos de combo."
     m_Metadata:
       m_Items: []
@@ -507,7 +507,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817999
-    m_Localized: Fuerza un re-tiro completo en el turno 2 del combate.
+    m_Localized: Obliga a volver a tirar todos los dados en el turno 2 del combate.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818000
@@ -577,18 +577,17 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800250105098240
-    m_Localized: "Domin\xE1 el dado est\xE1ndar: gan\xE1 una run confiando solo en
-      el cl\xE1sico de seis caras."
+    m_Localized: "Domina el dado est\xE1ndar: gana una run confiando solo en el cl\xE1sico
+      de seis caras."
     m_Metadata:
       m_Items: []
   - m_Id: 7800250142846976
-    m_Localized: "Hay una receta exacta de dados que abre esta puerta. Experiment\xE1
-      con la mezcla."
+    m_Localized: Hay una receta exacta de dados que abre esta puerta. Experimenta
+      con la mezcla.
     m_Metadata:
       m_Items: []
   - m_Id: 7800250142846977
-    m_Localized: "Demostr\xE1 fuerza de ocho caras: llev\xE1 el dado nuevo a una
-      victoria."
+    m_Localized: 'Demuestra fuerza de ocho caras: lleva el dado nuevo a una victoria.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800250142846978
@@ -624,8 +623,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735232
-    m_Localized: "Cuando recib\xEDs da\xF1o le sacas 10 de vida al enemigo que te
-      golpeo"
+    m_Localized: "Cuando recibes da\xF1o, le sacas 10 de vida al enemigo que te golpe\xF3."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735233
@@ -637,11 +635,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735235
-    m_Localized: Bendicion del Destino
+    m_Localized: "Bendici\xF3n del Destino"
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735236
-    m_Localized: Cada Generala cura 15HP
+    m_Localized: Cada Generala cura 15 HP.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735237
@@ -649,7 +647,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735238
-    m_Localized: Cada Doble Par da +5 oro
+    m_Localized: Cada Doble Par da +5 oro.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735239
@@ -673,7 +671,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735244
-    m_Localized: "Doble par hace +20 de da\xF1o"
+    m_Localized: "El Doble Par hace +20 de da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735245
@@ -681,7 +679,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735246
-    m_Localized: "La Generala hace +50 da\xF1o"
+    m_Localized: "La Generala hace +50 da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735247
@@ -689,7 +687,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735248
-    m_Localized: "+2 vida m\xE1xima"
+    m_Localized: "+2 vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735249
@@ -697,15 +695,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735250
-    m_Localized: Cada Full House recupera 5 HP
+    m_Localized: Cada Full House recupera 5 HP.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735251
-    m_Localized: El egoista
+    m_Localized: "El ego\xEDsta"
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735252
-    m_Localized: "Entre m\xE1s oro tengas m\xE1s da\xF1o haces"
+    m_Localized: "Cuanto m\xE1s oro tienes, m\xE1s da\xF1o haces."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735253
@@ -713,7 +711,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735254
-    m_Localized: Cada Poker genera +2 escudo
+    m_Localized: "Cada P\xF3ker genera +2 escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735255
@@ -721,7 +719,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735256
-    m_Localized: "El combo Fuerza Bruta tiene +35 de da\xF1o"
+    m_Localized: "El combo Fuerza Bruta hace +35 de da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735257
@@ -729,7 +727,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735258
-    m_Localized: "Los pares hacen +20 de da\xF1o"
+    m_Localized: "Los Pares hacen +20 de da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735259
@@ -737,7 +735,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735260
-    m_Localized: "El P\xF3ker hace +25 da\xF1o"
+    m_Localized: "El P\xF3ker hace +25 da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735261
@@ -745,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735262
-    m_Localized: "Al bajar de 30% HP obten\xE9s +1 escudo."
+    m_Localized: Al bajar de 30% HP obtienes +1 escudo.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735263
@@ -761,7 +759,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735266
-    m_Localized: Cada Trio recupera 1HP
+    m_Localized: "Cada Tr\xEDo recupera 1 HP."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735267
@@ -769,7 +767,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735268
-    m_Localized: Tenes +3 de escudo al inicio de cada combate
+    m_Localized: Tienes +3 de escudo al inicio de cada combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735269
@@ -777,7 +775,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735270
-    m_Localized: "Recuper\xE1s 1 HP al iniciar combate."
+    m_Localized: Recuperas 1 HP al iniciar combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735271
@@ -789,15 +787,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735273
-    m_Localized: Totem del Clan
+    m_Localized: "T\xF3tem del Clan"
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735274
-    m_Localized: "Los Tr\xEDos hacen +30 de da\xF1o"
+    m_Localized: "Los Tr\xEDos hacen +30 de da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735275
     m_Localized: Recupera vida al usarla.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612576890880
+    m_Localized: Bonus de Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612602056704
+    m_Localized: "+50 de da\xF1o al armar un Par."
     m_Metadata:
       m_Items: []
   references:

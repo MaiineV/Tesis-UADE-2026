@@ -185,6 +185,13 @@ namespace Rollgeon.UI.Screens
             return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
         }
 
+        /// <summary>RectTransform de la cola de orden de turnos — anchor del overlay del tutorial.</summary>
+        public bool TryGetTurnQueueRect(out RectTransform rect)
+        {
+            rect = null;
+            return _turnQueue != null && _turnQueue.TryGetQueueRect(out rect);
+        }
+
         // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
