@@ -15,7 +15,7 @@
 |---|---|---|
 | `DamageBreakdown` (0, 225, 700×74) | `DamageBreakdownView` + CanvasGroup (alpha 0) | Hijos `CounterN` (−90), `MultSign` "×", `CounterM` (+90). Lo muestra/oculta `DamageFormulaView` (campo `_breakdownView`, ya cableado). |
 | `PlayerBaseDamage` (−420, 75) | `PlayerBaseDamageView` | `SwordIcon` (Image 64×64 **sin sprite — asignar arte de espada**) + `ValueLabel` (ATQ ModifiedValue). |
-| `GlobalModifierCascade` (anchor der., −40, 260, 240×420) | `GlobalModifierCascadeView` + CanvasGroup (alpha 0) | `EntriesRoot` + `EntryTemplate` inactivo (Icon 48×48 + Label). **`_fallbackIcon` sin asignar** — sugerido `Assets/Art/UI/Inventory/ItemSlot.png` mientras los `ItemSO.Icon` estén vacíos. **Verificar solape con Confirm/Reroll en el editor.** |
+| `GlobalModifierCascade` (anchor der., −40, 260, 256×144) | `GlobalModifierSpinnerView` + CanvasGroup (alpha 0) | Spinner de tambor (2026-08-12): `Interior` (FrameAnim_1) + `SlotsRoot` (RectMask2D) con `SlotA`/`SlotB` (ModifierEntryView, Icon 44×44 + Label) + `Frame` (FrameAnim_0) encima. Se reconstruye con `Rollgeon/Breakdown/Setup Spinner (All)`. **`_fallbackIcon` sin asignar** — `ItemSlot.png` está en spriteMode Multiple sin slices (pendiente de arte). |
 | `FlyingValueLayer` (full-stretch, último sibling) | `FlyingValuePool` | `FlyingValueTemplate` inactivo (pool), `ClashAnchor` (0, −180 desde arriba) + `ClashLabel` (TMP 64, inactivo), `SkipButton` (full-screen, Image alpha 0, inactivo). |
 | `BreakdownDirector` | `BreakdownSequenceDirector` | Referencias completas: settings, vistas, dice zone, pool, clash, skip. **`_mitigationSprite` sin asignar** — sugerido un sprite de escudo. |
 
@@ -28,11 +28,13 @@
 
 ## Pendiente de autoría (usuario)
 1. **Sprite de espada** en `PlayerBaseDamage/SwordIcon` (hoy Image blanca).
-2. **`_fallbackIcon`** del cascade y **`_mitigationSprite`** del director.
+2. **`_fallbackIcon`** del spinner (slicear `ItemSlot.png` o autorar un sprite) y
+   **`_mitigationSprite`** del director.
 3. **Iconos de `ItemSO`**: los 22 items tienen `Icon` vacío — mientras tanto los popups
    muestran el fallback + el "+X".
-4. Pasada de layout en editor: solape del cascade con `ConfirmButton`/`RerollCountView`,
-   tamaños de fuente, posición del `ClashAnchor`.
+4. Pasada de layout en editor: tamaños de fuente, posición del `ClashAnchor`. (El solape
+   del viejo cascade con `ConfirmButton`/`RerollCountView` quedó resuelto por el recuadro
+   fijo 256×144 del spinner.)
 
 ## Cómo funciona (resumen para debugging)
 1. Preview: `DiceZoneView.RunComboDetection` → `ComboMatchedPayload` → `DamageFormulaView`
@@ -40,8 +42,8 @@
    "+N" por dado (cara + encantos aditivos del journal at-match).
 2. Confirm: `BeginPlay` llena el journal at-played → `DamageBreakdownAnnouncer` emite
    `DamageBreakdownComputedPayload` → el director levanta `BreakdownUiGate` y reproduce:
-   base PJ → dados (orden de slot) → procs por dado → cascade global (de abajo hacia
-   arriba) → choque N/M → total crudo → mitigación visible (si el target mitiga) →
+   base PJ → dados (orden de slot) → procs por dado → spinner de globales (una entrada
+   por vez: pop → vuelo → tambor rota) → choque N/M → total crudo → mitigación visible (si el target mitiga) →
    libera el gate. Recién ahí `FeedbackManager` despacha la secuencia real del golpe
    (anim → "hit" → daño → floating numbers).
 3. Anti soft-lock: timeout del director (8 s) + failsafe del FeedbackManager (10 s) +
@@ -58,7 +60,7 @@
 ### Identidad de color
 - **N azul `#4FA8FF`**, **M con "heat"**: gris `#8A8F98` en 1.0 → naranja `#FF6B47` → rojo
   fuego `#FF3B2F` en 2+. Todo lo que vuela (y su trail) hereda el color de su destino.
-- Backplates pill `#14141E @ .88` detrás del N×M y del cascade; outline negro en los
+- Backplates pill `#14141E @ .88` detrás del N×M (el spinner usa su frame propio); outline negro en los
   "+N" y en el total del choque; "+N" separa cara (hueso) de bono de encantos (dorado).
 - **Convención de dorados**: dorado `#FFD75A` = weakness / bonus especial. El oro-moneda
   (`FloatingNumberPalette.Gold #FFC533`) es otro concepto — no mezclar.
@@ -66,7 +68,7 @@
 ### GOs nuevos en `Canvas_ActionRoll.prefab` (wireados vía MCP)
 | GO | Qué es |
 |---|---|
-| `DamageBreakdown/Backplate`, `GlobalModifierCascade/Backplate` | pills oscuros |
+| `DamageBreakdown/Backplate` | pill oscuro (el del cascade fue reemplazado por el frame del spinner) |
 | `ScreenFlashOverlay` (último sibling) | `ScreenFlashView` — flash del clash, unscaled |
 | `FlyingValueLayer/ImpactBurst` | `DiceThrowImpactBurst` (bursts de contadores/choque) |
 | `FlyingValueLayer/DepartSparkles` | chispas de despegue (copia de HoldSparkles) |
@@ -141,7 +143,10 @@ dividen también para acompañar la secuencia comprimida.
       des-duckeada, dados sin dim.
 - [ ] ReducedMotion ON: sin wobble/stagger/shake/hitstop/flash, secuencia funcional.
 - [ ] Toggles del SO en false: no-ops limpios.
-- [ ] Cascade: entra deslizando, se resuelve de abajo con card-slide y caída con rebote.
+- [ ] Spinner: spin-in de la primera entrada al poblar; por cada global pop → vuelo al
+      contador → el tambor rota con freno al siguiente (texto rota con el slot, clipping
+      limpio bajo el frame); la última entrada rota a vacío; con ReducedMotion, swap
+      instantáneo sin tambor.
 
 ### Smoke del step ramp + game speed (nuevo)
 - [ ] Breakdown largo (~10 steps) a x1: los últimos steps visiblemente más rápidos que
