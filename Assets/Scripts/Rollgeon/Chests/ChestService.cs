@@ -46,6 +46,10 @@ namespace Rollgeon.Chests
         private const string LogPrefix = "[ChestService] ";
         private const string StateKey = "chest_0";
 
+        // Trigger declarado por AnimCon_ChestMimic: transición Idle (cofre cerrado
+        // misterioso) → Awaken → Idle Awaken. No-op para visuales sin el param.
+        private const string MimicAwakenTrigger = "Awaken";
+
         private readonly ChestConfigSO _config;
         private readonly ChestLootPoolSO _lootPool;
 
@@ -274,8 +278,9 @@ namespace Rollgeon.Chests
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        // Tinta por nombre de renderer: 'Body' recibe el color del tier, 'Fittings' el
-        // color de herrajes; cualquier otro renderer queda como está. Vía
+        // Tinta por slot de material ('Wood' → color del tier, 'Frame' → herrajes;
+        // en Chest_Prefab cada renderer mezcla ambos slots) con fallback al matching
+        // viejo por nombre de renderer ('Body'/'Fittings', PF_ChestPlaceholder). Vía
         // MaterialPropertyBlock para no instanciar materiales.
         private static void TintChest(GameObject go, Color bodyColor, Color fittingsColor)
         {
@@ -285,10 +290,31 @@ namespace Rollgeon.Chests
             foreach (var r in renderers)
             {
                 if (r == null) continue;
+
+                var mats = r.sharedMaterials;
+                bool slotTinted = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    Color? slotTint = null;
+                    var matName = mats[i] != null ? mats[i].name : null;
+                    if (NameContains(matName, "Wood") || NameContains(matName, "Body"))
+                        slotTint = bodyColor;
+                    else if (NameContains(matName, "Frame") || NameContains(matName, "Fittings"))
+                        slotTint = fittingsColor;
+                    if (slotTint == null) continue;
+
+                    r.GetPropertyBlock(mpb, i);
+                    mpb.SetColor(BaseColorId, slotTint.Value);
+                    mpb.SetColor(ColorId, slotTint.Value);
+                    r.SetPropertyBlock(mpb, i);
+                    slotTinted = true;
+                }
+                if (slotTinted) continue;
+
                 Color? tint = null;
-                if (r.gameObject.name.IndexOf("Body", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (NameContains(r.gameObject.name, "Body"))
                     tint = bodyColor;
-                else if (r.gameObject.name.IndexOf("Fittings", StringComparison.OrdinalIgnoreCase) >= 0)
+                else if (NameContains(r.gameObject.name, "Fittings"))
                     tint = fittingsColor;
                 if (tint == null) continue;
 
@@ -298,6 +324,9 @@ namespace Rollgeon.Chests
                 r.SetPropertyBlock(mpb);
             }
         }
+
+        private static bool NameContains(string name, string token)
+            => name != null && name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
 
         // -----------------------------------------------------------------
         // Resolución
@@ -420,8 +449,14 @@ namespace Rollgeon.Chests
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
                 visuals.SpawnEnemy(mimicId, mimicData, coord);
-                if (visuals.TryGetPawn(mimicId, out var pawn) && pawn != null && pawn.HealthBar != null)
-                    pawn.HealthBar.Initialize(mimicId, maxHp, maxHp);
+                if (visuals.TryGetPawn(mimicId, out var pawn) && pawn != null)
+                {
+                    if (pawn.HealthBar != null)
+                        pawn.HealthBar.Initialize(mimicId, maxHp, maxHp);
+                    // AnimCon_ChestMimic arranca en Idle (cofre cerrado); sin este
+                    // trigger el modelo nunca despierta.
+                    pawn.TrySetTrigger(MimicAwakenTrigger);
+                }
             }
 
             // A diferencia de los refuerzos, el Mimic SÍ cuenta para el clear: entra a

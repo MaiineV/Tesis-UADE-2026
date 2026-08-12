@@ -24,7 +24,7 @@ MonoBehaviour:
   SpawnFrequency: 0.33
   MimicSpawnChance: 0.15
   MimicClampHP: 1
-  ChestPrefab: {fileID: 3375138621661978805, guid: 7236e34aaad8ae24c84119514a7a3b76, type: 3}
+  ChestPrefab: {fileID: 4598999015062820065, guid: d9bdcbaf2b7578942a9d9412a9ec8b72, type: 3}
   FittingsColor: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 1}
   Tiers:
   - Tier: 0
@@ -56,4 +56,4 @@ MonoBehaviour:
     MimicGoldMax: 40
     FallbackGold: 28
   TierWeightsByFloor: []
-  MimicEnemy: {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
+  MimicEnemy: {fileID: 11400000, guid: 5d50e219baab21349b59577751d2df09, type: 2}
