@@ -166,7 +166,7 @@ namespace Rollgeon.Combat.AI.Decisions
         /// los últimos 4 bytes del guid del boss, así dos bosses nunca comparten canal y el canal
         /// nunca coincide con el telegraph principal del propio boss.
         /// </summary>
-        internal static Guid ChannelGuid(Guid self, string channel)
+        public static Guid ChannelGuid(Guid self, string channel)
         {
             var bytes = self.ToByteArray();
             int hash = StableHash(channel);

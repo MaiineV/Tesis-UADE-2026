@@ -62,7 +62,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Combos que se cantan una ronda antes de armarse (+1 ronda de aviso). " +
                  "Vacío = toda mano arma en el mismo turno en que se tira.")]
-        public List<string> SlowCombos = new List<string> { Combos.ComboId.Generala };
+        public List<string> SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala };
 
         public override string NodeName => $"Roll Hand ({MaxDice}d{DieFaces})";
 
