@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f560368867ee1a43b6a993946ae4160, type: 3}
+  m_Name: BP_Floor2
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Bosses.BossPoolSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: a3b6df31f0c2c8d4fbc01cbde46eb3a5, type: 2}
+    - {fileID: 11400000, guid: 71174d9940ce68d4981b353d28505d6b, type: 2}
+    - {fileID: 11400000, guid: ebf73f9c5131eb94cbcb06d6f9b90529, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Entries
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Bosses.WeightedBoss,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 0
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Enabled
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 2|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 1
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Enabled
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 3|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 2
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  Entries:
+  - Boss: {fileID: 11400000, guid: a3b6df31f0c2c8d4fbc01cbde46eb3a5, type: 2}
+    Weight: 1
+    Enabled: 1
+  - Boss: {fileID: 11400000, guid: 71174d9940ce68d4981b353d28505d6b, type: 2}
+    Weight: 1
+    Enabled: 1
+  - Boss: {fileID: 11400000, guid: ebf73f9c5131eb94cbcb06d6f9b90529, type: 2}
+    Weight: 1
+    Enabled: 0

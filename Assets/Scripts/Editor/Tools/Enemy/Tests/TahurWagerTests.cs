@@ -99,9 +99,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _mods?.Dispose();
             _threat?.Dispose();
 
-            foreach (var combo in _combos) if (combo != null) Object.DestroyImmediate(combo);
+            foreach (var combo in _combos) if (combo != null) UnityEngine.Object.DestroyImmediate(combo);
             _combos.Clear();
-            if (_hero != null) Object.DestroyImmediate(_hero);
+            if (_hero != null) UnityEngine.Object.DestroyImmediate(_hero);
 
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();

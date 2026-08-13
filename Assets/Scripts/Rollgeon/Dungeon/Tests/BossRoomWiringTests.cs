@@ -30,10 +30,14 @@ namespace Rollgeon.Dungeon.Tests
 
         private static readonly string[] AllFloors = { Floor1, Floor2, Floor3 };
 
-        [TestCase(Floor1, "boss.sunken_grand")]
-        [TestCase(Floor2, "boss.security_boss")]
-        [TestCase(Floor3, "boss.general_director")]
-        public void FloorBossRoom_ResolvesToExpectedBoss(string layoutPath, string expectedEntityId)
+        // legacyBossId: el boss del wiring previo (manda si el layout no tiene pool). Con pool,
+        // los pisos 2 y 3 lo SUPLANTAN por diseño (12/08): el viejo queda en el pool desactivado
+        // (re-activable desde el Inspector), y los activos son los jefes nuevos.
+        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.sunken_grand", "boss.croupier", "boss.one_armed" })]
+        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier", "boss.scorekeeper" })]
+        [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala", "boss.tahur" })]
+        public void FloorBossRoom_ResolvesToExpectedBoss(
+            string layoutPath, string legacyBossId, string[] expectedActiveWithPool)
         {
             // Arrange
             var layout = LoadLayout(layoutPath);
@@ -42,9 +46,26 @@ namespace Rollgeon.Dungeon.Tests
             var bossEntityIds = SpawnableBossIdsFor(layout, out var source);
 
             // Assert
-            CollectionAssert.Contains(bossEntityIds, expectedEntityId,
-                $"{layout.name} ({source}): la sala de boss debería poder spawnear " +
-                $"'{expectedEntityId}' pero resuelve a [{string.Join(", ", bossEntityIds)}].");
+            if (layout.BossPool == null)
+            {
+                CollectionAssert.Contains(bossEntityIds, legacyBossId,
+                    $"{layout.name} ({source}): la sala de boss debería poder spawnear " +
+                    $"'{legacyBossId}' pero resuelve a [{string.Join(", ", bossEntityIds)}].");
+                return;
+            }
+
+            CollectionAssert.AreEquivalent(expectedActiveWithPool, bossEntityIds,
+                $"{layout.name} ({source}): los bosses ACTIVOS del piso no son los del diseño. " +
+                $"Resuelve a [{string.Join(", ", bossEntityIds)}].");
+
+            // El boss viejo suplantado no desaparece: queda en el pool, desactivado.
+            var allPoolIds = layout.BossPool.Entries
+                .Where(e => e?.Boss != null)
+                .Select(e => e.Boss.EntityId)
+                .ToList();
+            CollectionAssert.Contains(allPoolIds, legacyBossId,
+                $"{layout.name}: '{legacyBossId}' debería seguir en el pool (desactivado), " +
+                "para poder re-activarlo desde el Inspector.");
         }
 
         [Test]
