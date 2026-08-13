@@ -298,5 +298,177 @@ namespace Rollgeon.Combat.Tests
             Assert.Greater(tiles.Count, 0);
             Assert.LessOrEqual(tiles.Count, 4 * 2 * 2);
         }
+
+        // =====================================================================
+        // RoomSector — el paño del Croupier (11×7 = 6 bloques de 4×3 + pasillo)
+        // =====================================================================
+
+        /// <summary>Sala canónica del jefe: 11 de ancho, 7 de alto, fila 3 = pasillo.</summary>
+        private void LoadCroupierRoom() => _grid.LoadRoom(NavGraph.Rect(11, 7));
+
+        [Test]
+        public void ComputeRoomSector_EachSector_Is4x3()
+        {
+            // Arrange
+            LoadCroupierRoom();
+
+            // Act + Assert
+            for (int sector = 1; sector <= ThreatAreaShape.RoomSectorCount; sector++)
+            {
+                var tiles = ThreatAreaShape.ComputeRoomSector(_grid, sector);
+                Assert.AreEqual(12, tiles.Count, $"El sector {sector} debería medir 4×3.");
+            }
+        }
+
+        [Test]
+        public void ComputeRoomSector_UpperRow_Is123LeftToRight()
+        {
+            // Arrange
+            LoadCroupierRoom();
+
+            // Act
+            var s1 = ThreatAreaShape.ComputeRoomSector(_grid, 1);
+            var s2 = ThreatAreaShape.ComputeRoomSector(_grid, 2);
+            var s3 = ThreatAreaShape.ComputeRoomSector(_grid, 3);
+
+            // Assert — bandas 0-3 / 4-7 / 7-10, filas 4-6 (arriba del pasillo).
+            Assert.IsTrue(s1.Contains(new GridCoord(0, 4)));
+            Assert.IsTrue(s1.Contains(new GridCoord(3, 6)));
+            Assert.IsFalse(s1.Contains(new GridCoord(4, 4)), "El bloque 1 termina en la columna 3.");
+
+            Assert.IsTrue(s2.Contains(new GridCoord(4, 4)));
+            Assert.IsTrue(s2.Contains(new GridCoord(7, 6)));
+
+            Assert.IsTrue(s3.Contains(new GridCoord(10, 4)));
+            Assert.IsTrue(s3.Contains(new GridCoord(7, 6)));
+            Assert.IsFalse(s3.Contains(new GridCoord(6, 4)), "El bloque 3 arranca en la costura (7).");
+        }
+
+        [Test]
+        public void ComputeRoomSector_LowerRow_Is456AndNeverOverlapsTheUpperRow()
+        {
+            // Arrange
+            LoadCroupierRoom();
+
+            // Act
+            var s1 = ThreatAreaShape.ComputeRoomSector(_grid, 1);
+            var s4 = ThreatAreaShape.ComputeRoomSector(_grid, 4);
+            var s5 = ThreatAreaShape.ComputeRoomSector(_grid, 5);
+            var s6 = ThreatAreaShape.ComputeRoomSector(_grid, 6);
+
+            // Assert — misma columna que 1-2-3, filas 0-2 (abajo del pasillo).
+            Assert.IsTrue(s4.Contains(new GridCoord(0, 0)));
+            Assert.IsTrue(s4.Contains(new GridCoord(3, 2)));
+            Assert.IsTrue(s5.Contains(new GridCoord(4, 0)));
+            Assert.IsTrue(s6.Contains(new GridCoord(10, 2)));
+
+            foreach (var tile in s4)
+                Assert.IsFalse(s1.Contains(tile), "Los bloques de arriba y de abajo no comparten casillas.");
+        }
+
+        [Test]
+        public void ComputeRoomSector_CorridorRow_BelongsToNoSector()
+        {
+            // Arrange — la invariante que sostiene el diseño: el pasillo no cae nunca, y el jefe está
+            // parado ahí toda la pelea.
+            LoadCroupierRoom();
+            var corridor = ThreatAreaShape.ComputeCorridorRow(_grid);
+
+            // Assert
+            Assert.AreEqual(11, corridor.Count, "El pasillo son las 11 casillas de la fila del medio.");
+            for (int sector = 1; sector <= ThreatAreaShape.RoomSectorCount; sector++)
+            {
+                var tiles = ThreatAreaShape.ComputeRoomSector(_grid, sector);
+                foreach (var tile in corridor)
+                {
+                    Assert.IsFalse(tiles.Contains(tile),
+                        $"El sector {sector} pisa el pasillo en {tile} — ninguna casilla de la fila del " +
+                        "medio puede pertenecer a un sector.");
+                }
+            }
+        }
+
+        [Test]
+        public void ComputeRoomSector_SeamColumn_IsSharedByMiddleAndRightBlocks()
+        {
+            // Arrange — la única franja donde dos números cantados pegan los dos (24 en fase 2).
+            LoadCroupierRoom();
+
+            // Act
+            var s2 = ThreatAreaShape.ComputeRoomSector(_grid, 2);
+            var s3 = ThreatAreaShape.ComputeRoomSector(_grid, 3);
+            var s5 = ThreatAreaShape.ComputeRoomSector(_grid, 5);
+            var s6 = ThreatAreaShape.ComputeRoomSector(_grid, 6);
+
+            // Assert — arriba y abajo la costura es la misma columna (7), y son 3 casillas por lado.
+            int seamUpper = 0;
+            foreach (var tile in s2)
+                if (s3.Contains(tile)) { seamUpper++; Assert.AreEqual(7, tile.X); }
+            Assert.AreEqual(3, seamUpper, "Los bloques 2 y 3 comparten la columna 7 completa (3 filas).");
+
+            int seamLower = 0;
+            foreach (var tile in s5)
+                if (s6.Contains(tile)) { seamLower++; Assert.AreEqual(7, tile.X); }
+            Assert.AreEqual(3, seamLower, "Los bloques 5 y 6 comparten la columna 7 completa (3 filas).");
+
+            // Y la costura es SÓLO entre el medio y la derecha: 1 y 2 no se pisan.
+            var s1 = ThreatAreaShape.ComputeRoomSector(_grid, 1);
+            foreach (var tile in s1)
+                Assert.IsFalse(s2.Contains(tile), "El bloque izquierdo no comparte costura con el del medio.");
+        }
+
+        [Test]
+        public void ComputeRoomSector_SixSectorsPlusCorridor_CoverTheWholeRoom()
+        {
+            // Arrange
+            LoadCroupierRoom();
+            var covered = new System.Collections.Generic.HashSet<GridCoord>(
+                ThreatAreaShape.ComputeCorridorRow(_grid));
+
+            // Act
+            for (int sector = 1; sector <= ThreatAreaShape.RoomSectorCount; sector++)
+                covered.UnionWith(ThreatAreaShape.ComputeRoomSector(_grid, sector));
+
+            // Assert — 11×7: ninguna casilla del paño queda fuera de la numeración.
+            Assert.AreEqual(77, covered.Count);
+        }
+
+        [Test]
+        public void ComputeRoomSector_OutOfRangeIndex_ReturnsEmpty()
+        {
+            // Arrange
+            LoadCroupierRoom();
+
+            // Act + Assert — no hay sector 0 ni 7; la rueda es de 6.
+            Assert.IsEmpty(ThreatAreaShape.ComputeRoomSector(_grid, 0));
+            Assert.IsEmpty(ThreatAreaShape.ComputeRoomSector(_grid, 7));
+            Assert.IsEmpty(ThreatAreaShape.ComputeRoomSector(_grid, -1));
+        }
+
+        [Test]
+        public void ComputeRoomSector_EmptyGraph_ReturnsEmpty()
+        {
+            // Arrange — sin bounds reales no hay paño que partir (igual que Row/Column/HalfRoom).
+            // Act + Assert
+            Assert.IsEmpty(ThreatAreaShape.ComputeRoomSector(_grid, 1));
+            Assert.IsEmpty(ThreatAreaShape.ComputeCorridorRow(_grid));
+        }
+
+        [Test]
+        public void Compute_RoomSectorShape_TakesTheSectorIndexFromSize()
+        {
+            // Arrange — la shape entra al Compute genérico con el índice en `size`, así que un
+            // TelegraphMark autorado a mano puede apuntar a un sector fijo.
+            LoadCroupierRoom();
+
+            // Act
+            var viaCompute = ThreatAreaShape.Compute(
+                _grid, new GridCoord(0, 0), ThreatShape.RoomSector, size: 5, HalfRoomAxis.Vertical);
+            var direct = ThreatAreaShape.ComputeRoomSector(_grid, 5);
+
+            // Assert
+            Assert.AreEqual(direct.Count, viaCompute.Count);
+            foreach (var tile in direct) Assert.IsTrue(viaCompute.Contains(tile));
+        }
     }
 }
