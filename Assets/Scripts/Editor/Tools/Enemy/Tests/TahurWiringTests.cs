@@ -261,8 +261,201 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // -----------------------------------------------------------------
+        // Visual y retrato
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void Visual_PointsAtItsOwnWrapper_NotThePlaceholderNorTheFloorOneBoss()
+        {
+            Assert.AreEqual("Assets/Prefabs/Enemies/Bosses/PF_Boss_Tahur.prefab",
+                TahurAssetBuilder.VisualPrefabPath,
+                "El Tahúr tiene wrapper propio: mientras apuntaba al GeneralDirector era un " +
+                "placeholder compartido con la Generala y el Dado de la Casa.");
+
+            Assert.AreNotEqual("Assets/Prefabs/Enemies/SunkedGrand.prefab",
+                TahurAssetBuilder.VisualPrefabPath,
+                "Reusar el wrapper del jefe del piso 1 los haría gemelos: mismo arte Y misma paleta.");
+
+            Assert.AreEqual("Assets/Prefabs/Enemies/SunkedGrand_Animated.prefab",
+                TahurAssetBuilder.ArtPrefabPath,
+                "El arte es el humanoide con abanico de 12 cartas — el tramposo de la ficha.");
+        }
+
+        [Test]
+        public void Portrait_IsTheCardFanSymbol()
+        {
+            Assert.AreEqual("Assets/Art/2D/Symbols/Sprites/Casino_0054.png",
+                TahurAssetBuilder.PortraitTexturePath);
+        }
+
+        [Test]
+        public void EnemyData_TakesTheVisualPrefabAndThePortrait_WhenTheyResolve()
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var pawn = new GameObject("PF_Boss_Tahur_Probe");
+            var portrait = MakeSprite();
+            try
+            {
+                TahurAssetBuilder.PopulateEnemyData(data, pawn, portrait);
+
+                Assert.AreSame(pawn, data.VisualPrefab);
+                Assert.AreSame(portrait, data.Portrait);
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+                Object.DestroyImmediate(pawn);
+                DestroySprite(portrait);
+            }
+        }
+
+        [Test]
+        public void EnemyData_KeepsWhatItHad_WhenTheArtOrTheTextureDoNotResolve()
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var pawn = new GameObject("PF_Boss_Tahur_Probe");
+            var portrait = MakeSprite();
+            try
+            {
+                data.VisualPrefab = pawn;
+                data.Portrait = portrait;
+
+                TahurAssetBuilder.PopulateEnemyData(data);
+
+                // Un arte que falta degrada: dejar el asset sin pawn ni retrato es peor que
+                // conservar el anterior, porque el jefe deja de spawnear.
+                Assert.AreSame(pawn, data.VisualPrefab);
+                Assert.AreSame(portrait, data.Portrait);
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+                Object.DestroyImmediate(pawn);
+                DestroySprite(portrait);
+            }
+        }
+
+        [Test]
+        public void WrapperSpec_BuildsIntoItsOwnPathAndMaterialsFolder()
+        {
+            var spec = TahurAssetBuilder.BuildWrapperSpec();
+
+            Assert.AreEqual(TahurAssetBuilder.ArtPrefabPath, spec.ArtPrefabPath);
+            Assert.AreEqual(TahurAssetBuilder.VisualPrefabPath, spec.OutputPrefabPath);
+            Assert.AreEqual("Tahur", spec.BossName);
+            StringAssert.StartsWith("Assets/Rollgeon/Enemies/Materials/", spec.MaterialsFolder,
+                "Los clones van a la carpeta de materiales de jefes, no al lado del arte compartido.");
+            Assert.IsTrue(spec.Retints != null && spec.Retints.Count > 0,
+                "Sin retinte el wrapper es una copia del jefe del piso 1.");
+        }
+
+        [Test]
+        public void WrapperSpec_FloatsTheHealthBarAboveTheHead()
+        {
+            // El arte mide ~1,81 de alto (collider a mano de SunkedGrand.prefab).
+            Assert.Greater(TahurAssetBuilder.BuildWrapperSpec().HealthBarOffset.y, 1.81f,
+                "La barra quedaría metida dentro del cuerpo.");
+            Assert.Less(TahurAssetBuilder.BuildWrapperSpec().HealthBarOffset.y, 3f,
+                "El default de 3 de la utility está dimensionado para el GeneralDirector, más alto: " +
+                "acá dejaría la barra flotando despegada de la cabeza.");
+        }
+
+        // -----------------------------------------------------------------
+        // Paleta
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void Retint_RepaintsEverySurfaceOfTheSharedArt()
+        {
+            var retints = TahurAssetBuilder.BuildRetints();
+
+            // Los siete materiales que usa SunkedGrand_Animated. Uno que quede afuera se comparte
+            // con el jefe del piso 1 y esa superficie sale idéntica en los dos.
+            foreach (var material in new[]
+                     {
+                         "Mat_LightBrown", "Mat_Brown", "Mat_Green",
+                         "Mat_Bone", "Mat_Black", "Mat_White", "Mat_LightGreen",
+                     })
+            {
+                Assert.IsTrue(retints.ContainsKey(material),
+                    $"'{material}' quedaría con el color de fábrica del Sunken Grand.");
+            }
+        }
+
+        [Test]
+        public void Retint_UsesDirectColours_NotPaletteSlots()
+        {
+            foreach (var pair in TahurAssetBuilder.BuildRetints())
+            {
+                // Los slots de PA_MainPalette están desalineados respecto de los nombres de los
+                // Mat_* (Mat_LightGreen → slot 3, que renderea gris): con FromColors el color que
+                // se escribe es el que se ve.
+                Assert.IsFalse(pair.Value.PaletteSlot.HasValue,
+                    $"'{pair.Key}' pide un slot de paleta en vez de colores explícitos.");
+                Assert.IsTrue(pair.Value.LightColor.HasValue
+                              && pair.Value.MidColor.HasValue
+                              && pair.Value.ShadowColor.HasValue,
+                    $"'{pair.Key}' no define los tres tonos: el shader dejaría el resto de fábrica.");
+            }
+        }
+
+        [Test]
+        public void Retint_KeepsTheCoatOnFeltGreen_AndTheTrimOnGold()
+        {
+            var retints = TahurAssetBuilder.BuildRetints();
+
+            var coat = retints["Mat_LightBrown"].MidColor.Value;
+            Assert.Greater(coat.g, coat.r, "La levita es fieltro de mesa: verde dominante.");
+            Assert.Greater(coat.g, coat.b, "La levita es fieltro de mesa: verde dominante.");
+
+            foreach (var trim in new[] { "Mat_Green", "Mat_Bone" })
+            {
+                var gold = retints[trim].MidColor.Value;
+                Assert.Greater(gold.r, gold.b, $"'{trim}' es el dorado de la banca.");
+                Assert.Greater(gold.g, gold.b, $"'{trim}' es el dorado de la banca.");
+            }
+        }
+
+        [Test]
+        public void Retint_KeepsTheBodyAwayFromItsOwnTelegraphColours()
+        {
+            // La Mesa se pinta en cian y el Castigo en naranja. Las superficies grandes del jefe no
+            // pueden compartir esos tonos o los telegraphs desaparecen sobre su propio cuerpo.
+            // El dorado (cinta de la galera y canto de las cartas) SÍ pasa cerca del naranja, y por
+            // eso vive sólo en detalles finos — de ahí que no entre en esta lista.
+            var telegraphOrange = new Color(1f, 0.5f, 0f);
+
+            foreach (var surface in new[] { "Mat_LightBrown", "Mat_Brown", "Mat_White", "Mat_LightGreen" })
+            {
+                var mid = TahurAssetBuilder.BuildRetints()[surface].MidColor.Value;
+
+                Assert.IsFalse(mid.b >= mid.r && mid.b >= mid.g,
+                    $"'{surface}' quedó dominado por el azul/cian de la Mesa.");
+                Assert.Greater(Distance(mid, telegraphOrange), 0.35f,
+                    $"'{surface}' quedó demasiado cerca del naranja del Castigo.");
+            }
+        }
+
+        // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
+
+        private static float Distance(Color a, Color b)
+            => new Vector3(a.r - b.r, a.g - b.g, a.b - b.b).magnitude;
+
+        private static Sprite MakeSprite()
+        {
+            var texture = new Texture2D(4, 4);
+            return Sprite.Create(texture, new Rect(0f, 0f, 4f, 4f), new Vector2(0.5f, 0.5f));
+        }
+
+        private static void DestroySprite(Sprite sprite)
+        {
+            if (sprite == null) return;
+            var texture = sprite.texture;
+            Object.DestroyImmediate(sprite);
+            if (texture != null) Object.DestroyImmediate(texture);
+        }
 
         private static void AssertShape(
             TahurPunishmentShape shape, ThreatShape expected, int size, int? count, string because = null)
