@@ -287,5 +287,16 @@ namespace Patterns
         /// en que aparece no actúa (no hace daño gratis), así el jugador tiene un turno para
         /// reaccionar antes de que el golpe caiga.</summary>
         OnReinforcementSpawned,
+
+        // --- Combat: stun -------------------------------------------------------
+        /// <summary>args: [Guid entityGuid, int turns]. Se aplicó stun a la entidad. <c>turns</c> es
+        /// el total RESTANTE tras el <c>max(actual, nuevo)</c> — <c>IStunService.ApplyStun</c> no
+        /// acumula. Sale en cada llamada a ApplyStun, incluso si el max() no movió el contador
+        /// (el feedback es del disparo, no del delta).</summary>
+        OnStunApplied,
+        /// <summary>args: [Guid entityGuid]. El stun de la entidad llegó a 0: se consumió el último
+        /// turno o se curó con <c>IStunService.Clear(entity)</c>. El teardown
+        /// (<c>ClearAll</c> en OnCombatEnd/OnRunEnd) NO lo dispara.</summary>
+        OnStunExpired,
     }
 }
