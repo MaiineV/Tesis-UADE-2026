@@ -61,7 +61,8 @@ namespace Rollgeon.Entities
 
         [Title("Base Stats")]
         [MinValue(1)]
-        [Range(1, 200)]
+        // 500: los jefes calibrados por simulación superan el viejo tope de 200 (El Tahúr: 290).
+        [Range(1, 500)]
         [Tooltip("HP maximo. Usado como cap para heals y como valor inicial de Health runtime.")]
         public int BaseHP = 20;
 

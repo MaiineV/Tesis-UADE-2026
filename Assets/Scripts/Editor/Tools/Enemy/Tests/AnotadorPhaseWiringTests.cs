@@ -57,16 +57,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Root_HasTheSevenChildrenOfTheDesignSheet_InOrder()
+        public void Root_HasTheEightChildrenOfTheDesignSheet_InOrder()
         {
-            Assert.AreEqual(7, _root.Children.Count, "La ficha define un Sequence raíz de 7 hijos.");
+            Assert.AreEqual(8, _root.Children.Count,
+                "La ficha define 7 pasos; el octavo es el Execute del canal del lápiz.");
 
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El telegráfico del turno pasado se resuelve SIEMPRE primero.");
-            Assert.IsNotNull(Child<AINode_ShiftComboToNeighbor>(_root.Children[1]),
+            var pencilExecute = _root.Children[1] as AINode_AuxTelegraph;
+            Assert.IsNotNull(pencilExecute,
+                "El cobro del lápiz (canal secundario) va arriba, al lado del Execute principal.");
+            Assert.AreEqual(AINode_AuxTelegraph.TelegraphStep.Execute, pencilExecute.Step);
+            Assert.AreEqual(AnotadorAssetBuilder.PencilChannelId, pencilExecute.ChannelId,
+                "Mark y Execute tienen que compartir canal, o el aviso nunca se cobra.");
+            Assert.IsNotNull(Child<AINode_ShiftComboToNeighbor>(_root.Children[2]),
                 "La 'tacha' (corrimiento de la hoja) es efecto de inicio de turno.");
-            Assert.IsNotNull(Child<AINode_KeepDistance>(_root.Children[2]), "Falta el repliegue.");
-            Assert.IsNotNull(Child<AINode_IceTrail>(_root.Children[3]), "Falta la estela helada.");
+            Assert.IsNotNull(Child<AINode_KeepDistance>(_root.Children[3]), "Falta el repliegue.");
+            Assert.IsNotNull(Child<AINode_IceTrail>(_root.Children[4]), "Falta la estela helada.");
         }
 
         [Test]
@@ -109,6 +116,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var child in _root.Children)
             {
                 if (child is AINode_ExecuteTelegraph) continue; // contrato del nodo: siempre Succeeded.
+                // El Execute del canal del lápiz también es siempre-Succeeded (y debe quedar fuera
+                // de todo gate para que el aviso pendiente se cobre aunque no se marque de nuevo).
+                if (child is AINode_AuxTelegraph aux
+                    && aux.Step == AINode_AuxTelegraph.TelegraphStep.Execute) continue;
 
                 var selector = child as AINode_Selector;
                 Assert.IsNotNull(selector,
@@ -172,10 +183,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void Pencil_IsSquareAroundSelf_OnOddRoundsOnly_AndUngatedByRange()
         {
             var gate = Gates().FirstOrDefault(g =>
-                Descendants(g.Then).OfType<AINode_TelegraphMark>()
-                    .Any(m => m.Shape == ThreatShape.SquareAroundSelf));
+                Descendants(g.Then).OfType<AINode_AuxTelegraph>()
+                    .Any(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark
+                              && m.Shape == ThreatShape.SquareAroundSelf));
 
-            Assert.IsNotNull(gate, "Falta el lápiz (SquareAroundSelf).");
+            Assert.IsNotNull(gate, "Falta el lápiz (SquareAroundSelf, canal secundario).");
 
             // Ronda impar = NOT(múltiplo de 2). PcRoundNumber no tiene negación propia.
             var not = gate.Conditions.OfType<PCComposite>().FirstOrDefault(c => c.Mode == CompositeMode.Not);
@@ -190,10 +202,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsEmpty(gate.Conditions.OfType<PcTargetInRange>().ToList(),
                 "El lápiz no lleva gate de rango — el anillo de 3×3 ya es el peaje de acercarse.");
 
-            var pencil = Descendants(gate.Then).OfType<AINode_TelegraphMark>()
+            var pencil = Descendants(gate.Then).OfType<AINode_AuxTelegraph>()
                 .First(m => m.Shape == ThreatShape.SquareAroundSelf);
             Assert.AreEqual(AnotadorAssetBuilder.PencilDamage, pencil.Damage, "El lápiz pega 12.");
             Assert.AreEqual(AnotadorAssetBuilder.MarkSize, pencil.Size, "Size 1 ⇒ anillo 3×3.");
+            Assert.AreEqual(AnotadorAssetBuilder.PencilChannelId, pencil.ChannelId,
+                "El lápiz marca por su canal: bajo el SelfGuid pisaría la marca de la fila y el " +
+                "camino derecho pagaría 12 en vez de 42.");
         }
 
         [Test]
@@ -204,6 +219,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.LessOrEqual(mark.Damage, Floor2DamageCeiling,
                     $"La marca {mark.Shape} pega {mark.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
             }
+            foreach (var mark in Descendants(_root).OfType<AINode_AuxTelegraph>()
+                         .Where(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark))
+            {
+                Assert.LessOrEqual(mark.Damage, Floor2DamageCeiling,
+                    $"La marca aux {mark.Shape} pega {mark.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
+            }
         }
 
         // ======================================================================
@@ -213,7 +234,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Retreat_KeepsDistanceFour_WithThreeSteps()
         {
-            var retreat = Child<AINode_KeepDistance>(_root.Children[2]);
+            var retreat = Child<AINode_KeepDistance>(_root.Children[3]);
 
             Assert.IsNotNull(retreat);
             Assert.AreEqual(AnotadorAssetBuilder.IdealDistance, ReadConstant(retreat.IdealDistance),
@@ -225,7 +246,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void IceTrail_FreezesUpToThreeTiles_AndStunsForOneTurn()
         {
-            var trail = Child<AINode_IceTrail>(_root.Children[3]);
+            var trail = Child<AINode_IceTrail>(_root.Children[4]);
 
             Assert.IsNotNull(trail);
             Assert.AreEqual(3, trail.MaxTiles, "La estela es de 1 a 3 casillas.");
@@ -262,7 +283,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Shift_RunsOneComboPerTurn_TwoAndPermanentInPhase2()
         {
-            var shift = Child<AINode_ShiftComboToNeighbor>(_root.Children[1]);
+            var shift = Child<AINode_ShiftComboToNeighbor>(_root.Children[2]);
 
             Assert.IsNotNull(shift);
             Assert.AreEqual(1, shift.ShiftsPerTurnPhase1, "Fase 1: 1 corrimiento por turno.");
@@ -347,7 +368,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var indices = new List<int>();
             for (int i = 0; i < _root.Children.Count; i++)
             {
-                if (Descendants(_root.Children[i]).OfType<AINode_TelegraphMark>().Any()) indices.Add(i);
+                bool marks = Descendants(_root.Children[i]).OfType<AINode_TelegraphMark>().Any()
+                             || Descendants(_root.Children[i]).OfType<AINode_AuxTelegraph>()
+                                 .Any(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark);
+                if (marks) indices.Add(i);
             }
             return indices;
         }

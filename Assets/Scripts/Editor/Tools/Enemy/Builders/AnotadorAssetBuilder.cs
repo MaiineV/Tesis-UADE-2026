@@ -33,15 +33,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// piso 2 = 35 por golpe: el 32 de la columna es el máximo que sale de acá.
     /// </para>
     /// <para>
-    /// <b>LIMITACIÓN CONOCIDA — la fila y el lápiz comparten source.</b>
-    /// <see cref="IThreatenedAreaService"/> guarda <b>un</b> área pendiente por source guid, y los
-    /// dos <see cref="AINode_TelegraphMark"/> del árbol marcan con <c>context.SelfGuid</c>. En las
-    /// rondas impares (fila + lápiz el mismo turno) la segunda marca sobrescribe a la primera, así
-    /// que detona el lápiz (12) y no la fila (30) — la ficha pide 42 en ese turno (30 + 12). El árbol
-    /// se deja EXACTAMENTE como lo pide la ficha, con el orden que pide (lápiz después del
-    /// repliegue), y la colisión se reporta: arreglarla es tocar fundaciones (un sub-source por marca
-    /// en TelegraphMark/ExecuteTelegraph, o N áreas pendientes por source), y eso no es de este
-    /// worktree.
+    /// <b>El lápiz corre por canal secundario.</b> <see cref="IThreatenedAreaService"/> guarda
+    /// <b>un</b> área pendiente por source guid: si fila y lápiz marcaran los dos con
+    /// <c>context.SelfGuid</c>, en rondas impares la segunda marca pisaría a la primera y el camino
+    /// derecho pagaría 12 en vez de 42 (30 + 12). El lápiz marca y cobra vía
+    /// <see cref="AINode_AuxTelegraph"/> (canal <see cref="PencilChannelId"/>) — la misma solución
+    /// del cubilete de La Generala — así ambas marcas conviven y sus daños stackean si el jugador
+    /// queda dentro de las dos.
     /// </para>
     /// </remarks>
     public static class AnotadorAssetBuilder
@@ -84,6 +82,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int PencilDamage = 12;
         public const int MarkSize = 1;
 
+        /// <summary>Canal del lápiz — su marca no puede pisar (ni ser pisada por) la de la fila.</summary>
+        public const string PencilChannelId = "anotador.lapiz";
+
         /// <summary>Distancia que el repliegue intenta mantener. Solo se mueve si lo tienen a 3 o menos.</summary>
         public const int IdealDistance = 4;
 
@@ -117,8 +118,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Árbol del turno. Sequence raíz de 7 hijos, en el orden de la ficha:
-        /// <c>detona → tacha → se acomoda → estela → fila/columna → lápiz → fase 2</c>.
+        /// Árbol del turno. Sequence raíz de 8 hijos, en el orden de la ficha:
+        /// <c>detona → cobra el lápiz → tacha → se acomoda → estela → fila/columna → lápiz → fase 2</c>.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -148,6 +149,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 {
                     // 1. Detona la marca del turno pasado.
                     new AINode_ExecuteTelegraph(),
+
+                    // 1b. Cobra el lápiz pendiente. Fuera de todo gate: el aviso marcado en la
+                    // ronda impar N se paga en la N+1 aunque esa ronda no marque lápiz nuevo.
+                    new AINode_AuxTelegraph
+                    {
+                        Step = AINode_AuxTelegraph.TelegraphStep.Execute,
+                        ChannelId = PencilChannelId,
+                    },
 
                     // 2. Tacha: corre el combo más jugado al vecino de la hoja. Envuelto igual que
                     // el resto: devuelve Failed si IContractModifierService no está registrado, y
@@ -188,11 +197,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         },
                     },
 
-                    // 6. El lápiz, solo en rondas impares.
+                    // 6. El lápiz, solo en rondas impares — por su canal, para no pisar la fila.
                     Fallback(new AINode_If
                     {
                         Conditions = new List<BasePreCondition> { OddRound() },
-                        Then = BuildMark(ThreatShape.SquareAroundSelf, PencilDamage),
+                        Then = new AINode_AuxTelegraph
+                        {
+                            Step = AINode_AuxTelegraph.TelegraphStep.Mark,
+                            ChannelId = PencilChannelId,
+                            Shape = ThreatShape.SquareAroundSelf,
+                            Size = MarkSize,
+                            Damage = PencilDamage,
+                            Kind = AttackKind.BasicAttack,
+                        },
                     }),
 
                     // 7. Fase 2 ("muestra la manga"): feedback + diálogo, una sola vez.
