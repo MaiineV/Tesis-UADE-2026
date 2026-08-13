@@ -274,6 +274,34 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _jackpotProbe.Fired);
         }
 
+        /// <summary>
+        /// El accidente que fija el orden del árbol: si <c>TickJackpot</c> corriera DESPUÉS de la
+        /// fila, el turno en que el rodillo vuelve rearmaría la cuenta en 2 y el mismo tick la
+        /// bajaría a 1 — el jugador perdería una de las dos rondas de aviso que compró rompiéndolo.
+        /// </summary>
+        [Test]
+        public void RespawnTurn_KeepsBothWarningRounds_TheSameTurnTickDoesNotEatTheRearm()
+        {
+            BossTurn();
+            BreakReel(FirstReelGuid());
+
+            BossTurn(); // Turno de espera.
+            BossTurn(); // Vuelve el rodillo.
+
+            Assert.AreEqual(3, ReelCoords().Count);
+            Assert.AreEqual(CountdownStart, _service.Countdown,
+                "El tick del turno del respawn no puede comerse el rearme: la cuenta arranca en 2, " +
+                "no en 1.");
+
+            BossTurn();
+            Assert.AreEqual(CountdownStart - 1, _service.Countdown, "Recién acá baja a 1.");
+            Assert.AreEqual(0, _jackpotProbe.Fired);
+
+            BossTurn();
+            Assert.AreEqual(1, _jackpotProbe.Fired,
+                "Dos rondas de aviso completas después del respawn, y ahí sí el jackpot.");
+        }
+
         [Test]
         public void InPhaseTwo_BrokenReelReturnsOnTheFirstBossTurn()
         {
