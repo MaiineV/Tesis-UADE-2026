@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.AI.Decisions;
 
 namespace Rollgeon.Editor.Tools.Enemy.AITree
@@ -112,6 +113,64 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "forma regular y estable, como cualquier otro participante.\n\n" +
                 "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
                 "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
+
+            [typeof(AINode_SpinWheel)] =
+                "Spin Wheel (Croupier): canta 1 número del 1 al 6 (2 en fase 2) y lo deja " +
+                "flotando sobre el jefe. Ese número es dos cosas a la vez — el sector del " +
+                "paño que va a caer el turno que viene y el dado de la bolsa que se " +
+                "confisca — así que este nodo sólo lo elige: marcar y confiscar son los dos " +
+                "nodos siguientes, que leen de la rueda.\n\n" +
+                "Abre el windup: desde acá y hasta que el sector detona, pegarle al jefe " +
+                "corre la rueda +1 y, si el número es impar, cobra RetaliationDamage al " +
+                "atacante. Con la rueda trucada (fase 2) no dispara ninguno de los dos.\n\n" +
+                "AvoidRepeatingLastNumber saca el número del turno anterior del pool (no " +
+                "re-sortea), así el paño se mueve todos los turnos sin sesgar el azar.",
+
+            [typeof(AINode_MarkSungSectors)] =
+                "Mark Sung Sectors (Croupier): marca como amenazado el sector de cada número " +
+                "cantado, para que detone en el próximo turno del jefe. No hace daño este " +
+                "turno.\n\n" +
+                "Es el TelegraphMark de este jefe: existe aparte porque el área sale de un " +
+                "número decidido en runtime (no de un Size autorado) y porque en fase 2 hay " +
+                "DOS áreas simultáneas, marcadas bajo fuentes distintas para que se resuelvan " +
+                "por separado — el jugador parado en la columna de costura, donde los dos " +
+                "sectores se pisan, cobra los dos golpes (2 × SectorDamagePhase2).\n\n" +
+                "El daño se congela al marcar: un sector marcado en fase 1 detona por " +
+                "SectorDamage aunque el jefe cruce el umbral en el medio.",
+
+            [typeof(AINode_DetonateSungSectors)] =
+                "Detonate Sung Sectors (Croupier): detona los sectores cantados el turno " +
+                "pasado y cierra el windup (pegarle ya no mueve la rueda hasta que vuelva a " +
+                "cantar).\n\n" +
+                "Va PRIMERO en el Sequence raíz, como ExecuteTelegraph, y siempre devuelve " +
+                "Succeeded: 'no había nada marcado' (turno 1) o 'el jugador se fue del " +
+                "sector' son resoluciones válidas, no fallos que deban cortarle el turno al " +
+                "jefe.",
+
+            [typeof(AINode_IgniteDetonatedSectors)] =
+                "Ignite Detonated Sectors (Croupier): prende fuego el/los sector(es) que " +
+                "detonaron en ESTE turno — 6 de daño a quien termine su turno adentro. Mata " +
+                "la lectura de que el bloque recién explotado es el lugar más seguro del " +
+                "paño.\n\n" +
+                "Duración por fase = dos definiciones (Fire / FirePhase2), porque " +
+                "HazardService toma DurationRounds del SO. OJO: pedí una ronda MÁS que lo que " +
+                "dice la ficha — el fuego nace en el turno del jefe y el jugador juega " +
+                "primero en cada ronda, así que DurationRounds=1 expira antes de poder " +
+                "tickear. 'Un turno' = 2, 'dos turnos' = 3.\n\n" +
+                "BlastConsumesFlame: si el jugador se comió la detonación, el fuego de ese " +
+                "sector se saltea su primer tick (SkipNextTick) y el peor caso de la costura " +
+                "sigue siendo 24 en vez de 30. Se arma sólo cuando el jugador estaba adentro: " +
+                "el flag se consume recién con un tick que hubiera pegado, así que armarlo a " +
+                "ciegas se tragaría el primer tick legítimo.",
+
+            [typeof(AINode_SetWheelMode)] =
+                "Set Wheel Mode (Croupier): el setup de 'Pleno y color'. Cambia cuántos " +
+                "números canta por turno y truca la rueda (pegarle deja de correrla y de " +
+                "cobrar Represalia: la fase abarata pegarle, lo que te saca es la palanca).\n\n" +
+                "Va envuelto en If(PcOwnerHpBelow 0.5) → Once, al lado del ApplyStatModifier " +
+                "que dispara el feedback de fase. El PhaseIndex que setea acá es el que leen " +
+                "los nodos con valores por fase (daño de sector, definición de fuego), así " +
+                "que hay un único lugar del árbol que decide 'estamos en fase 2'.",
         };
 
         /// <summary>
