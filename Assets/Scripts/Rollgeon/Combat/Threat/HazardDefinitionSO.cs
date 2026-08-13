@@ -86,6 +86,21 @@ namespace Rollgeon.Combat.Threat
                  "same threat. Alpha is driven by the overlay's pulse at runtime.")]
         public Color OverlayTint = DefaultOverlayTint;
 
+        [Tooltip("Optional one-shot VFX spawned on the tile that fired. Leave empty for the " +
+                 "tinted-quad-only look every hazard had before this field existed — the quad is " +
+                 "the telegraph, this is the payoff.")]
+        public GameObject TriggerVfxPrefab;
+
+        [Tooltip("Seconds before the spawned TriggerVfxPrefab is destroyed. The project's VFX " +
+                 "prefabs are ParticleSystems with stopAction = None, so nobody destroys them on " +
+                 "their own and a hazard walked over ten times would leak ten of them.")]
+        [Min(0.1f)]
+        public float TriggerVfxLifetime = 2f;
+
+        [Tooltip("Height above the tile where the trigger VFX spawns. Matches the overlay quad's " +
+                 "own lift off the floor so the burst reads as coming out of the marked tile.")]
+        public float TriggerVfxYOffset = 0.1f;
+
         [Header("Identity")]
         [Tooltip("Stable unique id for this hazard source (GUID as string — see class remarks). " +
                  "Generate a fresh one per definition; never reuse another hazard's id.")]
