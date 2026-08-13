@@ -107,7 +107,7 @@ namespace Rollgeon.Editor.Tools
                 }
 
                 var color = new Color(spec.Color.r, spec.Color.g, spec.Color.b, alpha);
-                bool changed = ApplySpec(material, texture, color);
+                bool changed = ApplySpec(material, spec.MaterialName, texture, color);
 
                 if (isNew) created++;
                 else if (changed) updated++;
@@ -121,13 +121,22 @@ namespace Rollgeon.Editor.Tools
                       $"{untouched} sin cambios en {OutputFolder}.");
         }
 
-        private static bool ApplySpec(Material material, Texture texture, Color color)
+        private static bool ApplySpec(Material material, string materialName, Texture texture, Color color)
         {
             bool changed = false;
 
+            // CopyAsset copia el archivo tal cual: el m_Name del clon sigue diciendo
+            // "DecalHerradura" aunque el asset se llame distinto. Cosmético, pero confunde a
+            // cualquiera que lea material.name en un log o en un tool.
+            if (material.name != materialName)
+            {
+                material.name = materialName;
+                changed = true;
+            }
+
             if (!material.HasProperty(BaseMapProperty))
             {
-                Debug.LogWarning(LogPrefix + $"'{material.name}' no expone '{BaseMapProperty}' — " +
+                Debug.LogWarning(LogPrefix + $"'{materialName}' no expone '{BaseMapProperty}' — " +
                                  "¿cambió el shadergraph de decals?");
             }
             else if (material.GetTexture(BaseMapProperty) != texture)
@@ -138,7 +147,7 @@ namespace Rollgeon.Editor.Tools
 
             if (!material.HasProperty(ColorProperty))
             {
-                Debug.LogWarning(LogPrefix + $"'{material.name}' no expone '{ColorProperty}' — sin tintar.");
+                Debug.LogWarning(LogPrefix + $"'{materialName}' no expone '{ColorProperty}' — sin tintar.");
             }
             else if (material.GetColor(ColorProperty) != color)
             {
