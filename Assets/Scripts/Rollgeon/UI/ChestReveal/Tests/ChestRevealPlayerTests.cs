@@ -105,6 +105,61 @@ namespace Rollgeon.UI.ChestReveal.Tests
         }
 
         [Test]
+        public void RequestJumpToFinal_DuringSpin_ShouldForceFinalStateInOneClick()
+        {
+            // Arrange
+            Play();
+            _stage.OpenDone(); // en Spin
+            var staleSpinDone = _stage.SpinDone;
+
+            // Act — un solo click durante la frenada salta al final (sin etapa Fast).
+            _player.RequestJumpToFinal();
+
+            // Assert
+            Assert.AreEqual(ChestRevealPlayer.SkipStage.Jump, _player.Skip);
+            Assert.AreEqual(1, _stage.ForceFinalCount);
+            CollectionAssert.AreEqual(new[] { "open", "spin", "force", "dismiss" }, _stage.Calls);
+            Assert.AreEqual(ChestRevealPlayer.RevealBeat.WaitDismiss, _player.Beat);
+
+            // El onDone viejo del spin (tween abortado que igual completa) se ignora.
+            staleSpinDone();
+            CollectionAssert.AreEqual(new[] { "open", "spin", "force", "dismiss" }, _stage.Calls);
+            Assert.AreEqual(0, _finishedCount);
+        }
+
+        [Test]
+        public void RequestJumpToFinal_DuringWaitDismiss_ShouldFinish()
+        {
+            // Arrange
+            Play();
+            _stage.OpenDone();
+            _stage.SpinDone();
+            _stage.RevealDone(); // en WaitDismiss
+
+            // Act
+            _player.RequestJumpToFinal();
+
+            // Assert — equivale a cerrar, sin ForceFinalState extra.
+            Assert.IsTrue(_player.Done);
+            Assert.AreEqual(1, _finishedCount);
+            Assert.AreEqual(0, _stage.ForceFinalCount);
+        }
+
+        [Test]
+        public void RequestJumpToFinal_WhenIdle_ShouldNoOp()
+        {
+            // Arrange — sin Play(): el player está Idle.
+
+            // Act
+            _player.RequestJumpToFinal();
+
+            // Assert
+            Assert.IsFalse(_player.IsRunning);
+            Assert.AreEqual(0, _stage.ForceFinalCount);
+            CollectionAssert.IsEmpty(_stage.Calls);
+        }
+
+        [Test]
         public void RequestSkip_DuringWaitDismiss_ShouldFinish()
         {
             // Arrange
