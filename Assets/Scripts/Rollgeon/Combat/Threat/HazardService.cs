@@ -388,6 +388,8 @@ namespace Rollgeon.Combat.Threat
 
             foreach (var instance in new List<HazardInstance>(_instances.Values))
             {
+                // The snapshot can outlive an instance: an earlier iteration may have expired it.
+                if (!_instances.ContainsKey(instance.InstanceId)) continue;
                 if (instance.Definition == null) continue;
                 if (instance.Definition.Trigger != HazardTriggerMode.OnTurnEndInTile) continue;
                 if (!instance.Tiles.Contains(coord)) continue;
@@ -413,6 +415,8 @@ namespace Rollgeon.Combat.Threat
                 // Re-snapshot per step: a trigger can consume tiles or expire an instance mid-scan.
                 foreach (var instance in new List<HazardInstance>(_instances.Values))
                 {
+                    // An earlier step of this same path may have consumed the instance's last tile.
+                    if (!_instances.ContainsKey(instance.InstanceId)) continue;
                     if (instance.Definition == null) continue;
                     if (instance.Definition.Trigger != HazardTriggerMode.OnEnter) continue;
                     if (!instance.Tiles.Contains(coord)) continue;
