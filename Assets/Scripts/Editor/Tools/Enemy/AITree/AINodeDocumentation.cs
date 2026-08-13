@@ -44,6 +44,14 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "resultado del child elegido.\n\n" +
                 "RNG inyectado vía AIContext.Rng — los tests pueden seedearlo para determinismo.",
 
+            [typeof(AINode_Alternate)] =
+                "Alternate (round-robin): rota entre los Children en orden fijo, uno por " +
+                "turno (0, 1, 2, ..., 0, 1, 2, ...). A diferencia de Random, garantiza que " +
+                "nunca se repite el mismo hijo dos veces seguidas.\n\n" +
+                "Usalo cuando necesitás que el enemigo alterne dos comportamientos (ej. " +
+                "'ataque especial' / 'golpe normal') sin depender del azar. El índice vive " +
+                "en la instancia runtime (se resetea a 0 en cada pelea nueva).",
+
             [typeof(AINode_Move)] =
                 "Move Toward Target: mueve al enemy hasta MaxSteps casillas (AIIntReader) hacia " +
                 "el target del TargetSelector (null = player), manteniendo DesiredRange casillas " +
@@ -63,12 +71,47 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "Usalo como placeholder durante prototipado, o como pad de turno cuando un " +
                 "branch no debería actuar pero tampoco fallar.",
 
+            [typeof(AINode_TelegraphMark)] =
+                "Telegraph Mark: marca un área (sin dañar este turno) para que " +
+                "ExecuteTelegraph la detone el turno siguiente del enemigo.\n\n" +
+                "Shape=DirectionalBand: el área sale del propio enemigo (no del jugador) — " +
+                "banda perpendicular de 2·Size+1 casillas, centrada en su coordenada, " +
+                "extendida Depth casillas en la dirección cardinal dominante hacia el " +
+                "jugador.\n\n" +
+                "Shape=ScatteredSquares: Count cuadrados de Size×Size, anclados al azar " +
+                "(AIContext.Rng) en el 50% central de la sala — ni el jugador ni el " +
+                "enemigo son el centro, y nunca aparecen pegados a las paredes. Prioriza " +
+                "que los cuadrados no se toquen ni se solapen entre sí (degrada el gap si " +
+                "la sala no da lugar). Requiere una sala con bounds reales.\n\n" +
+                "Shape=SquareAroundSelf: mismo cálculo que Square (2·Size+1), pero centrado " +
+                "en la coordenada del propio enemigo en vez de la del jugador.\n\n" +
+                "Las demás shapes (Square/Row/Column/HalfRoom) se centran en el jugador " +
+                "como siempre.",
+
             [typeof(AINode_Behavior)] =
                 "Behavior: ejecuta un EnemyActionBehavior — la unidad reusable de combate " +
                 "(ataque, heal, buff, etc.).\n\n" +
                 "El TargetSelector del Behavior resuelve a quién apuntan los Effects. Cada " +
                 "Effect tiene su propia lista de PreConditions independiente — el behavior " +
                 "ejecuta solo los Effects cuyas PreConditions pasan.",
+
+            [typeof(AINode_ActivateRainHazard)] =
+                "Activate Rain Hazard: activa RainHazardService (idempotente) — una amenaza " +
+                "ambiental independiente del boss (fuente propia) que, una vez activa, marca " +
+                "y detona zonas erráticas en su propio ciclo de rondas, en paralelo a lo que " +
+                "esté haciendo el boss.\n\n" +
+                "Pensado para envolver en If(PcOwnerHpBelow) → Once(...), igual que el " +
+                "trigger de refuerzos — dispara una sola vez al cruzar el umbral de HP.",
+
+            [typeof(AINode_SpawnReinforcements)] =
+                "Spawn Reinforcements: spawnea Count copias de EnemyToSpawn en tiles del " +
+                "borde de la sala (perímetro del bounding box, walkable y libres) y los " +
+                "suma a la ronda de combate en curso.\n\n" +
+                "Los refuerzos van al FINAL de la ronda actual — quien ya estaba en cola " +
+                "(player/boss) termina su turno normal antes; de ahí en adelante rotan de " +
+                "forma regular y estable, como cualquier otro participante.\n\n" +
+                "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
+                "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
         };
 
         /// <summary>

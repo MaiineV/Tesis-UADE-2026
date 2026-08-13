@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2342407727602210712}
   - component: {fileID: -4870171332520286658}
   - component: {fileID: 1787099158243479220}
+  - component: {fileID: 1073939549558423294}
   m_Layer: 0
   m_Name: SecurityGuardBoss
   m_TagString: Untagged
@@ -105,8 +106,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 1.8, z: 1}
+  m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!114 &2342407727602210712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,6 +149,37 @@ MonoBehaviour:
   _returnSeconds: 0.18
   _strength: 1
   _localSpace: 1
+--- !u!114 &1073939549558423294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5047352166231496340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25c2f9ec2b6def84d93508072eb6fd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnMaterialFeedback
+  _hitFlashSeconds: 0.12
+  _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  _selectedCreaseColor: {r: 1, g: 0, b: 0, a: 1}
+  _selectedCreaseThreshold: 1
+  _selectedCreaseSmooth: 0.3
+  _selectedCreaseAlpha: 0.52
+  _glowPulseSeconds: 0.9
+  _glowAlphaMin: 0.3
+  _glowAlphaMax: 0.7
+  _renderers:
+  - {fileID: 4417068601581464449}
+  - {fileID: 2986062283219781409}
+  - {fileID: 5902984139074591987}
+  - {fileID: 7701126811234951584}
+  - {fileID: 3763513520123599849}
+  - {fileID: 2750898760253135513}
+  - {fileID: 151146348406276778}
+  - {fileID: 6884130478232122310}
+  - {fileID: 1043424932615443137}
 --- !u!1001 &4202977845674278626
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -205,8 +237,48 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+--- !u!23 &151146348406276778 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -5167035217489494968, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1043424932615443137 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3758543506068745251, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2750898760253135513 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7170049680234830725, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2986062283219781409 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1379057813975841219, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &3763513520123599849 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1038455258937337099, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4456667422044002569 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &5902984139074591987 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1461304994638716399, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &6884130478232122310 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7339356831882890532, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
+  m_PrefabInstance: {fileID: 4202977845674278626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &7701126811234951584 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 5804044931788250946, guid: 7a409e24d4e9c804ab8f244b9afa27d6, type: 3}
   m_PrefabInstance: {fileID: 4202977845674278626}
   m_PrefabAsset: {fileID: 0}

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combos;
+using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Economy;
 using Rollgeon.Effects;
@@ -84,6 +85,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Subscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatchedHandler);
+            TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayedHandler);
             _subscribed = true;
         }
 
@@ -96,6 +98,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.UnSubscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatchedHandler);
+            TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayedHandler);
             _subscribed = false;
         }
 
@@ -110,8 +113,17 @@ namespace Rollgeon.Upgrades.Dice
                 Debug.LogWarning(LogPrefix + "InitializeFromBag con DiceBagSO null/empty — no se inicializa.");
                 return;
             }
-            Bag = new RuntimeDiceBag(bag.Dice);
+            Bag = new RuntimeDiceBag(bag.Dice, ResolveEnchantmentById);
             ServiceLocator.AddService<RuntimeDiceBag>(Bag, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(Bag);
+        }
+
+        private static EnchantmentSO ResolveEnchantmentById(string upgradeId)
+        {
+            if (string.IsNullOrEmpty(upgradeId)) return null;
+            if (!ServiceLocator.TryGetService<EnchantmentCatalogSO>(out var catalog) || catalog == null)
+                return null;
+            return catalog.GetById(upgradeId);
         }
 
         private void EnsureInitializedFromPlayer()
@@ -198,7 +210,54 @@ namespace Rollgeon.Upgrades.Dice
             };
             var scratch = DispatchComboMatched(effectCtx, payload.ComboId);
             LastComboScratch = scratch;
-            ApplyScratchSideEffects(scratch);
+            // BUG-017: ComboMatched es preview (se re-dispara en cada toggle de hold) — los
+            // recursos del scratch se materializan solo at-played (ComboPlayService); acá no.
+        }
+
+        private void OnComboPlayedHandler(ComboPlayedPayload payload)
+        {
+            if (Bag == null) return;
+            if (string.IsNullOrEmpty(payload.ComboId)) return;
+
+            // A diferencia de OnComboMatched (que reconstruye desde _lastFinalRoll), el
+            // payload de ComboPlayed es autosuficiente: dados, kept y combo completos.
+            var effectCtx = new EffectContext
+            {
+                SourceGuid = payload.SourceGuid,
+                TargetGuid = payload.TargetGuid,
+                DiceResult = payload.DiceResult,
+                KeptDice = payload.KeptDice,
+                KeptDiceOriginalIndices = payload.KeptDiceOriginalIndices,
+                ComboResult = payload.ComboResult,
+            };
+
+            // El play scratch pertenece al ComboPlayService (dueño único del apply de
+            // recursos). Fallback local para tests sin el service — ahí aplicamos nosotros.
+            EnchantmentScratch scratch;
+            bool ownScratch = false;
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play) && play?.CurrentPlayScratch != null)
+            {
+                scratch = play.CurrentPlayScratch;
+            }
+            else
+            {
+                scratch = new EnchantmentScratch();
+                ownScratch = true;
+            }
+
+            var ctx = new EnchantmentTriggerContext
+            {
+                Effect = effectCtx,
+                Scratch = scratch,
+                ComboId = payload.ComboId,
+            };
+            ForEachEnchantment(ctx, (trigger, c) =>
+            {
+                if (trigger is IOnComboPlayedTrigger r) r.OnComboPlayed(c);
+            });
+
+            // NO se toca LastComboScratch (contrato del preview / damage pipeline at-match).
+            if (ownScratch) ApplyScratchSideEffects(scratch);
         }
 
         // ====================================================================
@@ -273,11 +332,17 @@ namespace Rollgeon.Upgrades.Dice
                     ctx.Slot = new EnchantmentSlotRef(Bag.Dice[b], b, s);
                     var triggers = ench.Triggers;
                     if (triggers == null) continue;
+                    // Snapshot-delta por (dado, encantamiento): atribuye al journal lo que
+                    // ESTE encantamiento aportó al combo. Neutro = cero entradas.
+                    var before = ctx.Scratch != null ? ScratchSnapshot.Of(ctx.Scratch) : default;
                     for (int t = 0; t < triggers.Count; t++)
                     {
                         var trigger = triggers[t];
                         if (trigger != null) dispatch(trigger, ctx);
                     }
+                    if (ctx.Scratch != null)
+                        ScratchSnapshot.RecordDelta(ctx.Scratch, in before,
+                            ScratchSourceKind.Enchantment, ench.name, ench, b);
                 }
             }
         }

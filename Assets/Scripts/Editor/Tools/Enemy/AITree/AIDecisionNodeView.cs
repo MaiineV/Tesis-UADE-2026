@@ -167,8 +167,10 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     return b.Behavior != null ? b.Behavior.BehaviorName : "(no behavior)";
                 case AINode_TelegraphMark t:
                     return $"telegraph {t.Shape} · size {t.Size} · dmg {t.Damage}";
-                case AINode_ExecuteTelegraph _:
-                    return "execute pending telegraph";
+                case AINode_ExecuteTelegraph e:
+                    return string.IsNullOrEmpty(e.WindupFeedbackId)
+                        ? "execute pending telegraph"
+                        : $"execute pending telegraph · {e.WindupFeedbackId}";
                 case AINode_RotateBlock r:
                     return $"rotate {r.Target} ×{r.Count}";
                 case AINode_PromulgateRule p:
@@ -206,8 +208,8 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 case AINode_RotateBlock _:      return _rotateBlockFields;
                 case AINode_PromulgateRule _:   return _promulgateRuleFields;
                 case AINode_ApplyStatModifier _: return _applyStatModifierFields;
-                // AINode_ExecuteTelegraph y AINode_Once no tienen params inline:
-                // ExecuteTelegraph no configura nada; Once edita su Child via el port del grafo.
+                case AINode_ExecuteTelegraph _: return _executeTelegraphFields;
+                // AINode_Once no tiene params inline: edita su Child via el port del grafo.
                 default:                    return Array.Empty<string>();
             }
         }
@@ -221,5 +223,6 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         static readonly string[] _rotateBlockFields = { "Target", "Count" };
         static readonly string[] _promulgateRuleFields = { "EnabledRules", "RulesPerPromulgation", "IntervalPhase1", "IntervalPhase2", "Phase2HpThreshold", "DoubleFactor", "HalfFactor" };
         static readonly string[] _applyStatModifierFields = { "AttackDelta", "SpeedDelta", "PhaseIndex", "EmitPhaseChangedEvent" };
+        static readonly string[] _executeTelegraphFields = { "WindupFeedbackId", "ImpactEventKey" };
     }
 }

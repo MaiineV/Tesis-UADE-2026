@@ -13,5 +13,12 @@ namespace Rollgeon.UI.Tooltips
     public interface IHasTooltipInfo
     {
         string BuildTooltip();
+
+        /// <summary>
+        /// Overload con contexto del owner para texto dinámico por personaje (ej. daño
+        /// leyendo el ATQ del hero actual). Default: delega en la versión sin contexto,
+        /// así los implementadores legacy no necesitan cambios.
+        /// </summary>
+        string BuildTooltip(in TooltipContext context) => BuildTooltip();
     }
 }

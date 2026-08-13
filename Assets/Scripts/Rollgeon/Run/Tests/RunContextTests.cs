@@ -116,11 +116,16 @@ namespace Rollgeon.Run.Tests
         [Test]
         public void CaptureState_ReturnsCurrentFloorIndex()
         {
-            var ctx = new RunContext(Guid.NewGuid(), _hero);
+            // Schema v2: snapshot {FloorIndex, RunId} — RunId alimenta el seed del resume.
+            var runId = Guid.NewGuid();
+            var ctx = new RunContext(runId, _hero);
             ctx.AdvanceFloor();
             ctx.AdvanceFloor();
 
-            Assert.AreEqual(2, (int)ctx.CaptureState());
+            var snapshot = (RunContextSnapshot)ctx.CaptureState();
+
+            Assert.AreEqual(2, snapshot.FloorIndex);
+            Assert.AreEqual(runId.ToString(), snapshot.RunId);
         }
 
         [Test]
@@ -128,18 +133,18 @@ namespace Rollgeon.Run.Tests
         {
             var ctx = new RunContext(Guid.NewGuid(), _hero);
 
-            ctx.RestoreState(5);
+            ctx.RestoreState(new RunContextSnapshot { FloorIndex = 5, RunId = Guid.NewGuid().ToString() });
 
             Assert.AreEqual(5, ctx.FloorIndex);
         }
 
         [Test]
-        public void RestoreState_NonIntPayload_IsIgnored()
+        public void RestoreState_NonSnapshotPayload_IsIgnored()
         {
             var ctx = new RunContext(Guid.NewGuid(), _hero);
             ctx.AdvanceFloor();
 
-            ctx.RestoreState("not-an-int");
+            ctx.RestoreState("not-a-snapshot");
 
             Assert.AreEqual(1, ctx.FloorIndex, "Un payload inválido no debe corromper el estado.");
         }

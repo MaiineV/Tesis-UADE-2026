@@ -1,0 +1,575 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: UI_es
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: es
+  m_SharedData: {fileID: 11400000, guid: 5089735e86d021d4f932cffd19d7f524, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2083988992000
+    m_Localized: Jugar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084072878080
+    m_Localized: Continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072384
+    m_Localized: Desbloqueos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072385
+    m_Localized: Borrar partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072386
+    m_Localized: Tutorial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084081266688
+    m_Localized: Salir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643793694720
+    m_Localized: Confirmar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643860803584
+    m_Localized: "Atr\xE1s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997888
+    m_Localized: Limpiar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997889
+    m_Localized: No hay bolsa de dados configurada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997890
+    m_Localized: DESBLOQUEOS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6240405843968
+    m_Localized: "\xA1Desbloqueado!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056374784000
+    m_Localized: Guerrero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366912
+    m_Localized: "P\xEDcaro"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366913
+    m_Localized: Mago
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518357938176
+    m_Localized: Reanudar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435648
+    m_Localized: Opciones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435649
+    m_Localized: Abandonar run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629952
+    m_Localized: "\xA1Victoria!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629953
+    m_Localized: Derrota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629954
+    m_Localized: "Volver al men\xFA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629955
+    m_Localized: Continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629956
+    m_Localized: Tirar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629957
+    m_Localized: Altar de Encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629958
+    m_Localized: 'Cupos del dado seleccionado:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629959
+    m_Localized: 'Tus dados:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629960
+    m_Localized: Cerrar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629961
+    m_Localized: Avanzar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629962
+    m_Localized: Pausa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929280
+    m_Localized: Atacar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929281
+    m_Localized: Mover
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929282
+    m_Localized: Ataque especial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929283
+    m_Localized: Forzar puerta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929284
+    m_Localized: Curar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123584
+    m_Localized: Terminar turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123585
+    m_Localized: Pasar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123586
+    m_Localized: Cruzar puerta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553817686016
+    m_Localized: "Tutorial: S\xCD"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794880
+    m_Localized: 'Tutorial: NO'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794881
+    m_Localized: Encantado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794882
+    m_Localized: "Vac\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794883
+    m_Localized: Costo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794884
+    m_Localized: oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794885
+    m_Localized: Caras actuales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794886
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134464
+    m_Localized: Salas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134465
+    m_Localized: Piso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134466
+    m_Localized: Inicio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134467
+    m_Localized: Combate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134468
+    m_Localized: Jefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134469
+    m_Localized: Tienda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134470
+    m_Localized: "Poci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134471
+    m_Localized: Encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236889440256
+    m_Localized: "Telemetr\xEDa: ON"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160512
+    m_Localized: "Telemetr\xEDa: OFF"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160513
+    m_Localized: "Datos de juego an\xF3nimos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160514
+    m_Localized: "\xBFNos ayud\xE1s a balancear el juego? Enviamos datos an\xF3nimos
+      de tus partidas (combates, oro, combos). Sin datos personales. Pod\xE9s cambiarlo
+      cuando quieras desde el men\xFA."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160515
+    m_Localized: Aceptar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160516
+    m_Localized: Rechazar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160517
+    m_Localized: "Pol\xEDtica de privacidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601589063680
+    m_Localized: Idioma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949760
+    m_Localized: "\xBFSeguro?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949761
+    m_Localized: Volver
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211500024659968
+    m_Localized: Contrato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211500091768832
+    m_Localized: "Da\xF1o m\xEDnimo = dado m\xE1s alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786932191232
+    m_Localized: 'Tus dados:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134272
+    m_Localized: 'Elige el cupo del dado seleccionado:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134273
+    m_Localized: Cupo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134274
+    m_Localized: cupos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134275
+    m_Localized: Encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134276
+    m_Localized: Confirmar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251619241984
+    m_Localized: "Hac\xE9 click en una casilla para moverte. Camin\xE1 hasta la puerta
+      se\xF1alada para salir de la sala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905280
+    m_Localized: "\xA1Combate! Este es tu enemigo. En el tutorial vos siempre actu\xE1s
+      primero. (Click para continuar.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905281
+    m_Localized: "Tu h\xE9roe pelea cuerpo a cuerpo: primero hay que acercarse. Seleccion\xE1
+      MOVER ({0})."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905282
+    m_Localized: "Las casillas iluminadas son a donde lleg\xE1s este turno. Hac\xE9
+      click en una casilla al lado del enemigo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905283
+    m_Localized: "Quedaste lejos del enemigo \u2014 y solo pod\xE9s moverte una vez
+      por turno. Apret\xE1 FINALIZAR TURNO ({0}) y dej\xE1 que se acerque \xE9l."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905284
+    m_Localized: 'Esta es tu VIDA: si llega a cero, la run se termina. Cuidala. (Click
+      para continuar.)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905285
+    m_Localized: "Esta es tu ENERG\xCDA: moverte, atacar y re-tirar dados la consumen.
+      Administrala en cada turno. (Click para continuar.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905286
+    m_Localized: "Se desbloque\xF3 ATACAR ({0}). Seleccionalo para elegir a qui\xE9n
+      golpear."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905287
+    m_Localized: "Primero se elige el objetivo: hac\xE9 click en el enemigo iluminado
+      en rojo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905288
+    m_Localized: "\xA1Objetivo marcado! Estos son tus dados: agarralos manteniendo
+      click izquierdo y arrojalos con un movimiento r\xE1pido del mouse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905289
+    m_Localized: "Arm\xE1 combos de generala (par, tr\xEDo, escalera...). Hac\xE9
+      click en un dado para bloquearlo y conservarlo. \xBFQuer\xE9s re-tirar? Agarr\xE1
+      los dados que quieras cambiar y arrojalos de nuevo \u2014 ten\xE9s hasta 3
+      tiradas. Cuando te guste el combo, apret\xE1 CONFIRMAR."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905290
+    m_Localized: "\xA1Golpe dado! Te sobraron tiradas del ataque, as\xED que viene
+      la fase de DEFENSA: agarr\xE1 y arroj\xE1 los dados para armar un ESCUDO que
+      absorbe el pr\xF3ximo golpe. Bloque\xE1, re-tir\xE1 y CONFIRM\xC1 tu combo
+      de defensa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905291
+    m_Localized: "\xA1Golpe completado! Cuando no quieras hacer nada m\xE1s, apret\xE1
+      FINALIZAR TURNO ({0}) para cederle el turno al enemigo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905292
+    m_Localized: "\xA1As\xED se pelea! Repet\xED el proceso \u2014 moverte, atacar,
+      armar combos \u2014 hasta vencer al enemigo. (Click para seguir.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905293
+    m_Localized: "\xA1Te golpearon! Se desbloque\xF3 CURAR ({0}): usala en tu turno
+      cuando te falte vida."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905294
+    m_Localized: "Curar tambi\xE9n usa los dados: agarralos con click sostenido,
+      arrojalos y super\xE1 el umbral para recuperar vida. Bloque\xE1 los dados altos,
+      re-tir\xE1 los dem\xE1s si hace falta y confirm\xE1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905295
+    m_Localized: "\xA1Bien hecho! Segu\xED por la puerta se\xF1alada. La otra puerta
+      est\xE1 bloqueada \u2014 la vas a abrir m\xE1s adelante."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905296
+    m_Localized: "\xA1Son demasiados! Se desbloque\xF3 FORZAR PUERTA ({0}): usala
+      para escapar por donde viniste. Solo funciona si est\xE1s al lado de una puerta
+      \u2014 y ahora lo est\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905297
+    m_Localized: "Forzar la puerta se resuelve con los dados: agarralos, arrojalos
+      y super\xE1 el umbral para escapar del combate."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905298
+    m_Localized: "La sala se desbloque\xF3: entr\xE1 y termin\xE1 lo que empezaste."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905299
+    m_Localized: "\xA1Ahora s\xED! Con la mejora de PAR est\xE1s listo: acab\xE1
+      con los dos enemigos. (Click para seguir.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905300
+    m_Localized: "\xA1Escapaste! Se abri\xF3 la puerta de la tienda. Entr\xE1: te
+      espera algo que te va a dar la ventaja."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905301
+    m_Localized: "Esta es la tienda. Acercate al pedestal y presion\xE1 F para comprar
+      la mejora: tu combo PAR va a hacer +50 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905302
+    m_Localized: "\xA1Mejora comprada! Ahora s\xED est\xE1s preparado: volv\xE9 por
+      donde viniste y acab\xE1 con esos enemigos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905303
+    m_Localized: "\xA1Excelente! Pas\xE1 a la \xFAltima sala: la de encantamientos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905304
+    m_Localized: "Esta es la mesa de encantamientos: mejora uno de tus dados a cambio
+      de oro, por el resto de la run. Acercate al altar y presion\xE1 F para abrirla."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905305
+    m_Localized: "Eleg\xED uno de tus dados, eleg\xED el encantamiento y confirm\xE1:
+      el dado queda mejorado por el resto de la run. Cuanto m\xE1s fuerte es el dado,
+      m\xE1s huecos de encantamiento tiene. Cada encantamiento cuesta oro \u2014
+      el que juntaste alcanza para exactamente UNO. (Click para seguir.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905306
+    m_Localized: "\xA1Dado encantado! Ya sab\xE9s todo lo que necesit\xE1s \u2014
+      cerr\xE1 la mesa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905307
+    m_Localized: "Cruz\xE1 la puerta se\xF1alada para empezar tu aventura de verdad."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905308
+    m_Localized: "Hac\xE9 click para continuar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867763907198976
+    m_Localized: "Pr\xF3ximamente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026612039680
+    m_Localized: Reroll  -1 {ENERGY}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026649788416
+    m_Localized: '{0} Roll  -1 {ENERGY}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8187299979096064
+    m_Localized: "\xA1No te quedan rolls gratis!\nCada roll adicional cuesta 1 de
+      Energ\xEDa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671167614976
+    m_Localized: "Estos son los dados de tu clase. Hac\xE9 click en uno para sumarlo
+      a la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos pod\xE9s llevar de ese
+      tipo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382080
+    m_Localized: "Tu bolsa se arma ac\xE1, siempre ordenada de menor a mayor. Hac\xE9
+      click en un dado de la tira para devolverlo al pool."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382081
+    m_Localized: "Limpiar vac\xEDa la bolsa entera y te deja empezar de cero."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382082
+    m_Localized: Cuando completes la bolsa, Confirmar se habilita y arranca la run.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833236307968
+    m_Localized: Activada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Localized: Desactivada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Localized: Dura {0} turnos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Localized: "\xDAltimo turno"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Localized: Ejemplo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Localized: "Da\xF1o base"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001792126976
+    m_Localized: Contrato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487104
+    m_Localized: Inventario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487105
+    m_Localized: Bolsa de dados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930415779840
+    m_Localized: Bolsa de Dados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Localized: Cupos de encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Localized: cupos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Localized: Cupo libre.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Localized: Sin encantamientos.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9649666772463616
+    m_Localized: 'Velocidad: x{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840189206528
+    m_Localized: "Combo repetido: 0 da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760960
+    m_Localized: Inventario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760961
+    m_Localized: Objetos
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

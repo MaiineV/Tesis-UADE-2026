@@ -103,18 +103,21 @@ namespace Rollgeon.Run
             runCtx.AdvanceFloor();
             int floorIndex = runCtx.FloorIndex;
 
-            // 4. Cubrir el swap con la pantalla de transición ANTES de regenerar.
-            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
-            {
-                screens.PushByStringId("FloorTransitionScreen", new FloorTransitionPayload
-                {
-                    FloorNumber = floorIndex + 1,
-                    FloorTitle = next.DisplayName,
-                });
-            }
+            // 4. Cubrir el swap con la pantalla de carga ANTES de regenerar. 4 pasos
+            //    reportables desde acá (push, frame wait, generar dungeon, restaurar
+            //    fase) — el último llega a 1f y dispara el reveal solo.
+            const int totalSteps = 4;
+            ServiceLocator.TryGetService<ILoadingScreenService>(out var loading);
+            // BUG-020: acá había un re-push de "ExplorationHUD" al completar el reveal. El
+            // HUD nunca sale del stack durante la run (el LoadingScreen es un canvas aparte,
+            // no una BaseScreen), así que el push duplicaba la entry en el ScreenManager —
+            // corrupción latente que crecía +1 por piso y desbalanceaba los pops de combate.
+            loading?.Show();
+            loading?.ReportProgress(1 / (float)totalSteps);
 
-            // Un frame para que la screen renderice y tape el swap del piso.
+            // Un frame para que la pantalla de carga renderice y tape el swap del piso.
             yield return null;
+            loading?.ReportProgress(2 / (float)totalSteps);
 
             // 5. Regenerar el piso. GenerateFloor dispara OnRoomEntered → RoomGridLoader +
             //    PlayerRoomTransitioner recolocan al héroe (el pawn sobrevive a ClearState).
@@ -128,17 +131,35 @@ namespace Rollgeon.Run
             {
                 Debug.LogError(LogPrefix + "IDungeonService no registrado — no se puede generar el piso siguiente.");
             }
+            loading?.ReportProgress(3 / (float)totalSteps);
 
             // 6. Restaurar exploración. La start room es Start/Cleared → no dispara combate.
             phase?.ReplacePhase(GamePhase.Exploration);
+            loading?.ReportProgress(1f);
 
             _transitioning = false;
         }
 
-        /// <summary>Seed determinista por piso para reproducibilidad (save/restore futuro).</summary>
-        private static int DeriveSeed(int baseSeed, int floorIndex)
+        /// <summary>Seed determinista por piso para reproducibilidad (save/restore).</summary>
+        public static int DeriveSeed(int baseSeed, int floorIndex)
         {
             unchecked { return baseSeed * 92821 + floorIndex; }
+        }
+
+        /// <summary>
+        /// Camina la cadena <see cref="FloorLayoutSO.NextFloor"/> desde
+        /// <paramref name="first"/> <paramref name="floorIndex"/> veces — usado por el
+        /// resume para arrancar la run en el piso guardado. Clampea al último piso
+        /// no-null si el índice excede la cadena (save de una build con más pisos).
+        /// </summary>
+        public static FloorLayoutSO ResolveLayoutForFloor(FloorLayoutSO first, int floorIndex)
+        {
+            var layout = first;
+            for (int i = 0; i < floorIndex && layout != null && layout.NextFloor != null; i++)
+            {
+                layout = layout.NextFloor;
+            }
+            return layout;
         }
     }
 }

@@ -18,6 +18,10 @@ namespace Rollgeon.Editor.Tools.RoomEditor.Tests
             foreach (var o in _created)
                 if (o != null) Object.DestroyImmediate(o);
             _created.Clear();
+            // SpawnPointOps registra creates/destroys en el Undo stack global — sin
+            // limpiarlo, un Ctrl+Z posterior resucita los GOs del test en la escena
+            // abierta (mismo bug que WallOccluderOpsTests / RoomEditorDoorBinderTests).
+            UnityEditor.Undo.ClearAll();
         }
 
         private RoomLayout MakeLayout()

@@ -62,5 +62,15 @@ namespace Rollgeon.Shop
         /// force una room concreta (tests).
         /// </summary>
         void Initialize(RoomInstance room, int floorDepth);
+
+        /// <summary>
+        /// Override de config/pool para el tutorial (tienda de 1 solo item).
+        /// Afecta rooms que se inicializan DESPUÉS del set. El service es Global —
+        /// el teardown del tutorial DEBE llamar <see cref="ClearTutorialOverride"/>.
+        /// </summary>
+        void SetTutorialOverride(ShopConfigSO config, ShopPoolSO pool);
+
+        /// <summary>Vuelve al config/pool del bootstrap. Safe si no había override.</summary>
+        void ClearTutorialOverride();
     }
 }

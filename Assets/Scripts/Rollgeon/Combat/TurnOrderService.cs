@@ -14,12 +14,13 @@ namespace Rollgeon.Combat
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Regla "jugador primero en su turno" (GDD §12.7).</b> Esta regla NO
-    /// se implementa acá: el servicio es agnóstico al rol. El jugador tiene
-    /// <c>Speed</c> como cualquier otra entidad, y su slot sale del roll de
-    /// initiative como los enemigos. "Primero en su turno" = dentro de su slot
-    /// individual (cuando es su turno, actúa el player, no hay nadie "antes"
-    /// en el mismo tick). No forzar al player al tope de la cola.
+    /// <b>Regla "el jugador siempre tiene el primer turno" (CNF-006).</b> El
+    /// servicio sigue siendo agnóstico al rol — no sabe qué es un "player" ni
+    /// un "enemy". Lo que expone es <c>priorityGuid</c>: un guid opcional que,
+    /// si está presente entre los participantes, se fuerza al frente de la
+    /// cola DESPUÉS de resolver el orden por initiative. La política de "quién
+    /// es prioritario" la decide el caller (<see cref="Rollgeon.Combat.FSM.States.CombatEnterState"/>
+    /// pasa <c>Context.PlayerId</c>) — el servicio sólo aplica el reorder.
     /// </para>
     /// <para>
     /// <b>Snapshot del orden.</b> Los eventos <c>OnTurnQueueBuilt</c> disparan
@@ -68,9 +69,17 @@ namespace Rollgeon.Combat
         /// resetea cursor/round y dispara <see cref="EventName.OnTurnQueueBuilt"/>.
         /// </summary>
         /// <param name="participants">Guids participantes. Debe contener al menos uno.</param>
+        /// <param name="priorityGuid">
+        /// Guid opcional (CNF-006) que se fuerza al índice 0 de la cola después del
+        /// sort por initiative — el resto de los participantes conserva su orden
+        /// relativo. <c>Guid.Empty</c> (default) desactiva el forcing. Si el guid
+        /// no está entre <paramref name="participants"/>, se ignora en silencio
+        /// (no tira excepción) — el servicio no valida membership de un guid ajeno
+        /// a este round.
+        /// </param>
         /// <exception cref="ArgumentNullException">Si <paramref name="participants"/> es null.</exception>
         /// <exception cref="InvalidOperationException">Si la lista queda vacía.</exception>
-        public void BuildForCombat(IEnumerable<Guid> participants)
+        public void BuildForCombat(IEnumerable<Guid> participants, Guid priorityGuid = default)
         {
             if (participants == null)
             {
@@ -100,6 +109,19 @@ namespace Rollgeon.Combat
             }
             _cursor = 0;
             _roundIndex = 0;
+
+            // CNF-006: forzar priorityGuid al frente ANTES de disparar
+            // OnTurnQueueBuilt — el HUD debe ver la cola ya reordenada.
+            if (priorityGuid != Guid.Empty)
+            {
+                int idx = _orderForRound.IndexOf(priorityGuid);
+                if (idx > 0)
+                {
+                    _orderForRound.RemoveAt(idx);
+                    _orderForRound.Insert(0, priorityGuid);
+                }
+                // idx == 0: ya está primero, no-op. idx < 0: no participa, se ignora.
+            }
 
             FireTurnQueueBuilt();
         }
@@ -169,12 +191,50 @@ namespace Rollgeon.Combat
             return true;
         }
 
+        /// <summary>
+        /// Agrega <paramref name="guid"/> al final de la ronda en curso (refuerzos que se
+        /// suman a mitad de combate). No toca <see cref="_cursor"/> — quien esté actuando
+        /// sigue actuando — y no re-rollea iniciativa: el nuevo guid queda en esa posición
+        /// de forma estable en las rondas siguientes, igual que el resto de la cola.
+        /// No-op silencioso si el guid ya es participante o es <see cref="Guid.Empty"/>.
+        /// </summary>
+        public void Append(Guid guid)
+        {
+            if (guid == Guid.Empty || _orderForRound.Contains(guid)) return;
+
+            _orderForRound.Add(guid);
+            FireTurnQueueBuilt();
+        }
+
         /// <summary>Limpia el estado al cerrar combate.</summary>
         public void Reset()
         {
             _orderForRound.Clear();
             _cursor = 0;
             _roundIndex = 0;
+        }
+
+        /// <summary>
+        /// Restaura la cola de turno exacta desde un save (Feature#0028 Fase 3) — a diferencia
+        /// de <see cref="BuildForCombat"/> NO re-rollea iniciativa ni aplica el reorder CNF-006:
+        /// asigna la lista/cursor/round guardados tal cual y dispara <c>OnTurnQueueBuilt</c> para
+        /// que el HUD dibuje la cola y el slot activo restaurados. El caller ya filtró
+        /// <paramref name="order"/> a los participantes vivos y clampeó <paramref name="cursor"/>.
+        /// </summary>
+        public void RestoreState(IReadOnlyList<Guid> order, int cursor, int roundIndex)
+        {
+            if (order == null || order.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "[TurnOrderService] RestoreState requires a non-empty order.");
+            }
+
+            _orderForRound.Clear();
+            for (int i = 0; i < order.Count; i++) _orderForRound.Add(order[i]);
+            _cursor = Math.Clamp(cursor, 0, _orderForRound.Count - 1);
+            _roundIndex = Math.Max(0, roundIndex);
+
+            FireTurnQueueBuilt();
         }
 
         // --- Internals ----------------------------------------------------

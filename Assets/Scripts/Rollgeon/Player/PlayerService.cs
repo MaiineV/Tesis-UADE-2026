@@ -17,12 +17,24 @@ namespace Rollgeon.Player
         public event Action OnPlayerCleared;
 
         public void SetPlayer(ClassHeroSO hero, Guid runId)
+            => SetPlayerInternal(hero, runId, Guid.NewGuid());
+
+        /// <summary>
+        /// Overload de resume (#0028): preserva el <see cref="PlayerGuid"/> guardado en vez de
+        /// generar uno nuevo, para que la cola de turnos / modifiers restaurados (que referencian
+        /// ese GUID) matcheen. No está en <see cref="IPlayerService"/> a propósito — solo el
+        /// resume production path lo usa. <c>Guid.Empty</c> ⇒ GUID nuevo.
+        /// </summary>
+        public void SetPlayer(ClassHeroSO hero, Guid runId, Guid restoredGuid)
+            => SetPlayerInternal(hero, runId, restoredGuid != Guid.Empty ? restoredGuid : Guid.NewGuid());
+
+        private void SetPlayerInternal(ClassHeroSO hero, Guid runId, Guid playerGuid)
         {
             if (hero == null) throw new ArgumentNullException(nameof(hero));
 
             CurrentHero = hero;
             RunId = runId;
-            PlayerGuid = Guid.NewGuid();
+            PlayerGuid = playerGuid;
 
             // Si el hero ya trae un DiceBagSO concreto en su slot opaco, lo clonamos.
             // Si no, DiceBag queda null y el handoff aplica un fallback (Fase 1).

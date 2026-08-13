@@ -21,6 +21,7 @@ namespace Rollgeon.Upgrades.Dice
         public ComboFilterMode Mode = ComboFilterMode.AnyCombo;
 
         [ShowIf(nameof(Mode), ComboFilterMode.ComboIds)]
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()", ExcludeExistingValuesInList = true)]
         [ListDrawerSettings(ShowFoldout = false, DefaultExpandedState = true)]
         public List<string> ComboIds = new List<string>();
 

@@ -167,19 +167,19 @@ namespace Rollgeon.Dungeon.Components
             }
 
             // Footprint XZ de cada blocker, idéntico a NavGraphBaker.BlockerBounds:
-            // minX = pos.x + (off.x - 0.5)*ts ; size = max(1, fp)*ts.
+            // minCorner = origin + (Coord + off)*ts en espacio de celdas (no el
+            // pivot del prop) ; size = max(1, fp)*ts.
             Gizmos.color = new Color(1f, 0.25f, 0.2f, 0.9f);
             foreach (var m in GetComponentsInChildren<TileMarker>(true))
             {
                 if (m == null || !m.IsBlocker) continue;
-                var pos = m.transform.position;
                 var fp = m.Footprint;
                 var off = m.FootprintOffset;
                 float sx = Mathf.Max(1, fp.x) * ts;
                 float sz = Mathf.Max(1, fp.z) * ts;
-                float cx = pos.x + (off.x - 0.5f) * ts + sx * 0.5f;
-                float cz = pos.z + (off.z - 0.5f) * ts + sz * 0.5f;
-                Gizmos.DrawWireCube(new Vector3(cx, pos.y + 0.5f, cz), new Vector3(sx, 1f, sz));
+                float cx = origin.x + (m.Coord.X + off.x) * ts + sx * 0.5f;
+                float cz = origin.z + (m.Coord.Y + off.z) * ts + sz * 0.5f;
+                Gizmos.DrawWireCube(new Vector3(cx, m.transform.position.y + 0.5f, cz), new Vector3(sx, 1f, sz));
             }
         }
 #endif

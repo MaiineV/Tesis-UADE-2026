@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combos;
+using Rollgeon.Dice;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD.DiceAnim;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -34,12 +38,24 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private List<RectTransform> _diceSlots = new List<RectTransform>();
 
+        [SerializeField, Tooltip("Stagger de aparición entre los '+N' de los dados contribuyentes.")]
+        private float _contributionStaggerSeconds = 0.05f;
+
         // ---- Runtime state ---------------------------------------------------
 
         private Guid _playerGuid;
         private DiceSlotView[] _resolvedSlots;
         private int[] _currentFaces;
         private bool[] _heldStates;
+        private DiceZoneAnimator _animator;
+
+        /// <summary>True mientras corre el spin del roll o el outro del confirm (modo
+        /// Classic). Las views de botones lo usan para lockear Roll/Confirm.</summary>
+        public bool IsDiceAnimating => _animator != null && (_animator.IsSpinning || _animator.IsOutroPlaying);
+
+        /// <summary>Se dispara cuando arranca/termina una animación de dados — las
+        /// views de botones re-gatean acá (espejo de <see cref="DiceZoneAnimator.AnimationStateChanged"/>).</summary>
+        public event Action DiceAnimationStateChanged;
 
         // ---- Public anchors (usados por T97c downstream si necesitan posicionar GOs) ---
 
@@ -128,27 +144,53 @@ namespace Rollgeon.UI.HUD
                 }
                 int captured = i;
                 _resolvedSlots[i].OnToggled.AddListener(() => ToggleHold(captured));
+                _resolvedSlots[i].OnUnholdRequested.AddListener(() => UnholdAt(captured));
             }
+
+            // Animación legacy (Classic). Vive como componente hermano agregado por
+            // código: sin cirugía de prefab, y si no está el servicio de throw o el
+            // modo no es Classic, todos sus TryBegin* devuelven false (path instantáneo).
+            _animator = GetComponent<DiceZoneAnimator>();
+            if (_animator == null) _animator = gameObject.AddComponent<DiceZoneAnimator>();
+            _animator.Bind(_resolvedSlots, _rollArea);
+            _animator.AnimationStateChanged += RaiseDiceAnimationStateChanged;
 
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.Subscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
+            EventManager.Subscribe(EventName.OnEnchantmentApplied, HandleEnchantmentChanged);
+            EventManager.Subscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
 
             // Estado inicial: slots apagados hasta que el jugador presione Roll.
             ClearAll();
+
+            // El altar encanta durante exploración y este mismo componente ya está bindeado
+            // ahí, así que Bind cubre el estado inicial y los eventos los cambios en vivo.
+            RefreshEnchantVisuals();
         }
 
         public void Unbind()
         {
             if (!_bound) return;
+            CancelDeferredOutro();
+            if (_animator != null)
+            {
+                _animator.AnimationStateChanged -= RaiseDiceAnimationStateChanged;
+                _animator.Unbind();
+            }
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
             EventManager.UnSubscribe(EventName.OnDiceBlockChanged, HandleDiceBlockChanged);
+            EventManager.UnSubscribe(EventName.OnEnchantmentApplied, HandleEnchantmentChanged);
+            EventManager.UnSubscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
             if (_resolvedSlots != null)
                 foreach (var s in _resolvedSlots)
+                {
                     s?.OnToggled.RemoveAllListeners();
+                    s?.OnUnholdRequested.RemoveAllListeners();
+                }
             _resolvedSlots = null;
             _currentFaces = null;
             _heldStates = null;
@@ -163,15 +205,76 @@ namespace Rollgeon.UI.HUD
             if (args[0] is not Guid guid || guid != _playerGuid) return;
             var faces = (IReadOnlyList<int>)args[1];
 
-            for (int i = 0; i < _resolvedSlots?.Length; i++)
+            // Un roll nuevo puede llegar con el outro del confirm anterior todavía en
+            // el aire (chain phases). Completar el teardown diferido ANTES de escribir
+            // el estado nuevo — su ClearAll pisaría las caras recién asignadas.
+            _animator?.CancelOutroAndComplete();
+
+            // Antes del loop de reveal: la silueta tiene que ser la correcta mientras el dado
+            // gira, no recién al frenar.
+            RefreshDiceShapes();
+
+            int count = _resolvedSlots?.Length ?? 0;
+            var willReveal = new bool[count];
+            for (int i = 0; i < count; i++)
             {
                 if (_heldStates != null && i < _heldStates.Length && _heldStates[i]) continue;
+                willReveal[i] = true;
                 _currentFaces[i] = i < faces.Count ? faces[i] : 0;
                 if (_resolvedSlots[i] != null) _resolvedSlots[i].gameObject.SetActive(true);
-                _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
                 _resolvedSlots[i]?.SetHeld(false);
             }
+
+            // Path animado (Classic): el spin cicla caras random y revela al final —
+            // ShowFace y el refresh de combo/bloqueos corren recién en el reveal, así
+            // la preview de combo no spoilea el resultado durante el giro.
+            if (_animator != null && _animator.TryBeginSpin(willReveal, _currentFaces, RefreshDiceBlock))
+                return;
+
+            for (int i = 0; i < count; i++)
+                if (willReveal[i]) _resolvedSlots[i]?.ShowFace(_currentFaces[i]);
             RefreshDiceBlock();
+        }
+
+        /// <summary>
+        /// Pinta la silueta de cada slot según el tipo de dado que tiene en el bag. El índice de
+        /// slot mapea 1:1 al del bag (<see cref="RunComboDetection"/> ya lo asume).
+        /// </summary>
+        /// <remarks>
+        /// No se llama desde <c>Bind</c>: el bag es run-scoped y ahí todavía es null. Un roll no
+        /// puede ocurrir antes de que exista, así que engancharlo al roll alcanza. Idempotente y
+        /// gratis — el setter de <c>Image.sprite</c> early-outea si no cambió.
+        /// </remarks>
+        private void RefreshDiceShapes()
+        {
+            if (_resolvedSlots == null) return;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return;
+            if (enchants == null || !enchants.IsReady) return;
+
+            var bag = enchants.Bag.Dice;
+            int count = Mathf.Min(_resolvedSlots.Length, bag.Count);
+            for (int i = 0; i < count; i++)
+                _resolvedSlots[i]?.SetDiceType(bag[i]);
+        }
+
+        // El payload trae (playerGuid, upgradeId, bagIndex, enchSlotIndex); lo ignoramos y
+        // refrescamos entero, como HandleDiceBlockChanged. Es idempotente e inmune a un error
+        // de mapeo de índice, y son 5 slots.
+        private void HandleEnchantmentChanged(params object[] args) => RefreshEnchantVisuals();
+
+        /// <summary>
+        /// Pinta el visual de encantamiento de cada slot según su dado en el bag.
+        /// </summary>
+        private void RefreshEnchantVisuals()
+        {
+            if (_resolvedSlots == null) return;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)) return;
+            if (enchants == null || !enchants.IsReady) return;
+
+            int count = Mathf.Min(_resolvedSlots.Length, enchants.Bag.Dice.Count);
+            for (int i = 0; i < count; i++)
+                _resolvedSlots[i]?.SetEnchantVisual(
+                    DiceEnchantVisualResolver.ResolvePrimary(enchants.Bag.GetEnchantments(i)));
         }
 
         // Boss 1 (§2): refleja el estado de IDiceBlockService en los slots — grayed + candado,
@@ -192,7 +295,12 @@ namespace Rollgeon.UI.HUD
             {
                 bool blocked = db != null && db.IsBlocked(i);
                 if (blocked && _heldStates != null && i < _heldStates.Length)
+                {
                     _heldStates[i] = false; // un dado bloqueado no puede quedar holdeado
+                    // El unhold forzado no pasa por SetHeld/ToggleHold — bajar el
+                    // raise explícitamente o el dado queda flotando bloqueado.
+                    _animator?.SetRaised(i, false);
+                }
                 _resolvedSlots[i]?.SetBlocked(blocked);
             }
             PropagateHoldsToActionRoll();
@@ -212,8 +320,66 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1) return;
             if (args[0] is not Guid guid || guid != _playerGuid) return;
+            // Con la secuencia de breakdown (N×M) corriendo, los dados se quedan en su
+            // slot — la animación vuela sus valores desde ahí. El outro arranca recién
+            // cuando el gate se libera.
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending)
+            {
+                if (!_outroDeferredByBreakdown)
+                {
+                    _outroDeferredByBreakdown = true;
+                    Rollgeon.Feedback.BreakdownUiGate.Changed += RunOutroWhenBreakdownEnds;
+                }
+                return;
+            }
+            BeginOutroOrClear();
+        }
+
+        // Latch del outro diferido por la secuencia de breakdown.
+        private bool _outroDeferredByBreakdown;
+
+        private void RunOutroWhenBreakdownEnds()
+        {
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+            CancelDeferredOutro();
+            BeginOutroOrClear();
+        }
+
+        private void CancelDeferredOutro()
+        {
+            if (!_outroDeferredByBreakdown) return;
+            _outroDeferredByBreakdown = false;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= RunOutroWhenBreakdownEnds;
+        }
+
+        private void BeginOutroOrClear()
+        {
+            // Path animado (Classic): los holdeados vuelan al centro de la mesa y los
+            // demás se descartan; el ClearAll corre diferido al terminar el outro.
+            if (_animator != null && _animator.TryBeginOutro(_heldStates, BuildActiveMask(), ClearAll))
+                return;
             ClearAll();
         }
+
+        /// <summary>
+        /// Slot view por bag slot (1:1 con el índice visual). Lo consume el director del
+        /// breakdown para animar el dado físico. Null fuera de rango o sin resolver.
+        /// </summary>
+        public DiceSlotView GetSlotView(int bagSlot)
+            => _resolvedSlots != null && bagSlot >= 0 && bagSlot < _resolvedSlots.Length
+                ? _resolvedSlots[bagSlot]
+                : null;
+
+        private bool[] BuildActiveMask()
+        {
+            int count = _resolvedSlots?.Length ?? 0;
+            var active = new bool[count];
+            for (int i = 0; i < count; i++)
+                active[i] = _resolvedSlots[i] != null && _resolvedSlots[i].gameObject.activeSelf;
+            return active;
+        }
+
+        private void RaiseDiceAnimationStateChanged() => DiceAnimationStateChanged?.Invoke();
 
         // ---- Clear / reset --------------------------------------------------
 
@@ -224,6 +390,13 @@ namespace Rollgeon.UI.HUD
         /// </summary>
         public void ClearAll()
         {
+            // Un clear forzado (turn start, retreat) invalida el outro que esperaba a la
+            // secuencia de breakdown — sin esto, el handler colgado dispararía un outro
+            // sobre slots ya limpios.
+            CancelDeferredOutro();
+            // Aborta cualquier animación en curso sin ejecutar callbacks diferidos
+            // (si ClearAll llegó como completion del outro, esto ya es no-op).
+            _animator?.ResetAll();
             if (_currentFaces != null)
                 Array.Clear(_currentFaces, 0, _currentFaces.Length);
             if (_heldStates != null)
@@ -242,22 +415,118 @@ namespace Rollgeon.UI.HUD
             RunComboDetection();
         }
 
+        // ---- Throw manual (CNF-008) -------------------------------------------
+
+        private bool[] _hiddenForThrow;
+
+        /// <summary>
+        /// Una sesión de throw manual acaba de abrir (chains: puede pasar con el outro
+        /// del confirm anterior todavía volando — el <c>CancelOutroAndComplete</c> de
+        /// <see cref="HandleDiceRolled"/> no alcanza porque en 2D/3D el reveal llega
+        /// recién al settle). Completa YA el teardown diferido para que el gate no
+        /// quede pendiente durante la sesión nueva.
+        /// </summary>
+        public void NotifyThrowSessionStarted()
+        {
+            _animator?.CancelOutroAndComplete();
+        }
+
+        /// <summary>
+        /// Oculta los slots cuyos dados van a volar en una sesión de throw manual —
+        /// en un reroll seguían mostrando la cara vieja debajo de los dados voladores.
+        /// <see cref="HandleDiceRolled"/> los reactiva solo en el reveal; si la sesión
+        /// se aborta, <see cref="RestoreSlotsAfterThrow"/> los devuelve como estaban.
+        /// </summary>
+        public void HideSlotsForThrow(IReadOnlyList<bool> thrownMask)
+        {
+            if (_resolvedSlots == null || thrownMask == null) return;
+            _hiddenForThrow = new bool[_resolvedSlots.Length];
+            for (int i = 0; i < _resolvedSlots.Length && i < thrownMask.Count; i++)
+            {
+                if (!thrownMask[i] || _resolvedSlots[i] == null) continue;
+                if (!_resolvedSlots[i].gameObject.activeSelf) continue;
+                _hiddenForThrow[i] = true;
+                _resolvedSlots[i].gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>Deshace <see cref="HideSlotsForThrow"/> tras un abort (sin reveal).</summary>
+        public void RestoreSlotsAfterThrow()
+        {
+            if (_resolvedSlots == null || _hiddenForThrow == null) return;
+            for (int i = 0; i < _resolvedSlots.Length && i < _hiddenForThrow.Length; i++)
+            {
+                if (_hiddenForThrow[i] && _resolvedSlots[i] != null)
+                    _resolvedSlots[i].gameObject.SetActive(true);
+            }
+            _hiddenForThrow = null;
+        }
+
         // ---- Hold toggle -----------------------------------------------------
 
         private void ToggleHold(int i)
         {
-            if (_heldStates == null || i >= _heldStates.Length)
+            if (!CanChangeHold(i, nameof(ToggleHold))) return;
+            ApplyHold(i, !_heldStates[i]);
+        }
+
+        /// <summary>
+        /// Click derecho sobre un slot: saca el dado del combo. Solo baja el hold — sobre
+        /// un dado que no está holdeado no hace nada, así que el derecho nunca agrega.
+        /// </summary>
+        private void UnholdAt(int i)
+        {
+            if (!CanChangeHold(i, nameof(UnholdAt))) return;
+            if (!_heldStates[i]) return;
+            ApplyHold(i, false);
+        }
+
+        // Gates compartidos por toggle y unhold.
+        private bool CanChangeHold(int i, string caller)
+        {
+            if (_heldStates == null || i < 0 || i >= _heldStates.Length)
             {
-                Debug.Log($"[DiceZoneView] ToggleHold({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
-                return;
+                Debug.Log($"[DiceZoneView] {caller}({i}) — aborted: _heldStates null={_heldStates == null} len={_heldStates?.Length}");
+                return false;
             }
             // Boss 1 (§2): un dado bloqueado no puede holdearse.
             if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
                 && db != null && db.IsBlocked(i))
-                return;
+                return false;
 
-            _heldStates[i] = !_heldStates[i];
-            _resolvedSlots[i]?.SetHeld(_heldStates[i]);
+            // Un dado que todavía gira no se holdea — el botón ya está deshabilitado
+            // durante el spin, esto cubre invocaciones programáticas (hotkeys, tests).
+            if (_animator != null && _animator.IsSlotSpinning(i)) return false;
+
+            return true;
+        }
+
+        private void ApplyHold(int i, bool held)
+        {
+            _heldStates[i] = held;
+            _resolvedSlots[i]?.SetHeld(held);
+            _animator?.SetRaised(i, held);
+            PropagateHoldsToActionRoll();
+            RunComboDetection();
+        }
+
+        /// <summary>
+        /// Suelta todos los holds sin apagar los slots (a diferencia de
+        /// <c>ClearAll</c>). BUG-030: el forced reroll del Torpe re-tira la mano
+        /// completa — los holds que el jugador marcó en la ventana previa quedarían
+        /// fuera de sync con el reveal nuevo.
+        /// </summary>
+        public void ClearHolds()
+        {
+            if (_heldStates == null) return;
+            for (int i = 0; i < _heldStates.Length; i++)
+            {
+                if (!_heldStates[i]) continue;
+                _heldStates[i] = false;
+                if (_resolvedSlots != null && i < _resolvedSlots.Length)
+                    _resolvedSlots[i]?.SetHeld(false);
+                _animator?.SetRaised(i, false);
+            }
             PropagateHoldsToActionRoll();
             RunComboDetection();
         }
@@ -294,29 +563,100 @@ namespace Rollgeon.UI.HUD
             }
 
             var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, comboKeep);
+            var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
+
+            // Fuerza Bruta matchea por rango del dado — los tipos entran a la detección
+            // misma, no solo al multi de daño de después.
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> keptTypes = null;
+            bool hasBag = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
+                          && enchants?.Bag != null;
+            if (hasBag)
+                keptTypes = ContributingDiceResolver.ResolveKept(
+                    keptOriginalIndices, enchants.Bag.Dice, keptDice.Length);
 
             // Preferimos el ContractSheet del hero (respeta priorities y el set
             // específico de combos que ese hero puede usar). Fallback: catálogo
             // global si el hero/contract no está disponible.
             var sheet = ResolvePlayerContractSheet();
             BaseComboSO best = sheet != null
-                ? sheet.MatchBest(keptDice)
-                : MatchBestFromCatalog(keptDice);
+                ? sheet.MatchBest(keptDice, keptTypes)
+                : MatchBestFromCatalog(keptDice, keptTypes);
 
-            // Boss 3 (§4): la preview del daño refleja la capa de modificadores del Contrato.
-            int baseDmg = best?.BaseDamage ?? 0;
+            // Capa 1: Detect con el override plano de la tabla por clase (Spec Daño v2) —
+            // usa el BaseDamage del RESULTADO para que los combos dinámicos (Higher Number,
+            // SumaX) incluyan su parte variable en el preview, igual que el golpe real
+            // (DetectWithContractMods). Capa 2 (Boss 3 §4): modificadores del Contrato.
+            var detection = best != null
+                ? best.Detect(keptDice, keptTypes, sheet?.GetBaseDamageOverride(best.ComboId))
+                : ComboDetectionResult.NoMatch();
+            int baseDmg = detection.IsMatch ? detection.BaseDamage : 0;
             if (best != null
                 && ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var cmods)
                 && cmods != null)
                 baseDmg = cmods.GetEffectiveBaseDamage(best.ComboId, baseDmg);
 
+            // Hoisteado fuera del if para poder pasarlo al payload (el HUD lo usa para
+            // recomputar el daño y el escudo reales vía la fórmula compartida).
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice = null;
+            if (best != null)
+            {
+                var comboResult = detection;
+                if (comboResult.IsMatch && hasBag)
+                {
+                    contributingDice = ContributingDiceResolver.ResolveDetailed(
+                        comboResult.ContributingIndices, keptOriginalIndices, keptDice, enchants.Bag.Dice);
+                }
+            }
+
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
                 ComboId = best?.ComboId ?? string.Empty,
-                DisplayName = best?.DisplayName ?? string.Empty,
-                BaseDamage = baseDmg
+                DisplayName = best != null ? Rollgeon.Localization.LocalizedContent.Name(best.ComboId, best.DisplayName) : string.Empty,
+                BaseDamage = baseDmg,
+                ContributingDice = contributingDice,
             });
+
+            // DESPUÉS del Raise: los services de encantos ya poblaron LastComboScratch
+            // (y su journal) procesando este mismo payload.
+            UpdateContributionLabels(contributingDice, hasBag ? enchants : null);
+        }
+
+        /// <summary>
+        /// Pinta el "+N" bajo cada dado contribuyente: cara + bonos aditivos de los
+        /// encantamientos de ESE dado (journal at-match). Los no contribuyentes lo ocultan.
+        /// </summary>
+        private void UpdateContributionLabels(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice,
+            IDiceEnchantmentService enchants)
+        {
+            if (_resolvedSlots == null) return;
+
+            var journal = enchants?.LastComboScratch?.Journal;
+            int visibleIndex = 0;
+            for (int slot = 0; slot < _resolvedSlots.Length; slot++)
+            {
+                int? amount = null;
+                int bonus = 0;
+                if (contributingDice != null)
+                {
+                    for (int i = 0; i < contributingDice.Count; i++)
+                    {
+                        if (contributingDice[i].BagSlot != slot) continue;
+                        int total = contributingDice[i].Face;
+                        if (journal != null)
+                        {
+                            for (int j = 0; j < journal.Count; j++)
+                                if (journal[j].BagSlot == slot) bonus += journal[j].BonusDelta;
+                        }
+                        amount = total + bonus;
+                        break;
+                    }
+                }
+                // Stagger de aparición: los "+N" caen en cascada, no todos juntos.
+                float delay = amount.HasValue ? visibleIndex++ * _contributionStaggerSeconds : 0f;
+                _resolvedSlots[slot]?.SetContribution(amount, bonus, delay);
+            }
         }
 
         private static ContractSheet ResolvePlayerContractSheet()
@@ -326,7 +666,8 @@ namespace Rollgeon.UI.HUD
                 : null;
         }
 
-        private static BaseComboSO MatchBestFromCatalog(int[] keptDice)
+        private static BaseComboSO MatchBestFromCatalog(int[] keptDice,
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Dice.DiceType> keptTypes)
         {
             if (!ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) || catalog == null) return null;
 
@@ -334,7 +675,7 @@ namespace Rollgeon.UI.HUD
             int bestPriority = -1;
             foreach (var combo in catalog.Entries)
             {
-                var result = combo.Detect(keptDice);
+                var result = combo.Detect(keptDice, keptTypes, null);
                 if (result.IsMatch && combo.Priority > bestPriority)
                 {
                     best = combo;

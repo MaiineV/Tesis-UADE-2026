@@ -174,13 +174,13 @@ Shader "Hidden/Custom/GodotParity/Post"
                 [unroll]
                 for (int ki = 0; ki < 4; ki++)
                 {
-                    int k = 1 + ki * 2;
-                    float baseNb = (k < 4) ? 1e-5 : 0.0;
-                    bool zDiff = abs(depthSamples[k] - depthSamples[4]) < zThresh;
-                    bool zFace = normalSamples[k].z + baseNb > normalSamples[4].z;
+                    int sIdx = 1 + ki * 2;
+                    float baseNb = (sIdx < 4) ? 1e-5 : 0.0;
+                    bool zDiff = abs(depthSamples[sIdx] - depthSamples[4]) < zThresh;
+                    bool zFace = normalSamples[sIdx].z + baseNb > normalSamples[4].z;
                     float soft = (_CreaseFeather > 0.0)
-                        ? smoothstep(_ConvexCutoff, _ConvexCutoff + _CreaseFeather, crossSamples[k])
-                        : (crossSamples[k] > _ConvexCutoff ? 1.0 : 0.0);
+                        ? smoothstep(_ConvexCutoff, _ConvexCutoff + _CreaseFeather, crossSamples[sIdx])
+                        : (crossSamples[sIdx] > _ConvexCutoff ? 1.0 : 0.0);
                     creaseWeight += (zDiff && zFace) ? soft : 0.0;
                 }
 

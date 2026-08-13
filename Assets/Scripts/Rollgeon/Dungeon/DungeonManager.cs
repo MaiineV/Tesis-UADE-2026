@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.GameCamera;
+using Rollgeon.Grid;
+using Rollgeon.Player;
 using Rollgeon.Upgrades.Character;
 using UnityEngine;
 
@@ -21,8 +25,11 @@ namespace Rollgeon.Dungeon
     /// resto existe como nodos + shells procedurales para el floor view.
     /// </para>
     /// </summary>
-    public sealed class DungeonManager : IDungeonService, IDisposable
+    public sealed class DungeonManager : IDungeonService, ISaveable, IDisposable
     {
+        /// <summary>SaveKey del estado espacial del piso (Feature#0028).</summary>
+        public const string SaveKeyConst = "run.dungeon_state";
+
         private const float DefaultTileSize = 1f;
         private const float MinShellSize = 6f;
         private const float CellSpacing = 0f;
@@ -35,6 +42,20 @@ namespace Rollgeon.Dungeon
         private DoorDirection? _lastEntryDirection;
         private Vector3 _stepSize = new(10f, 0f, 10f);
 
+        /// <summary>
+        /// Snapshot cacheado por el auto-restore de <see cref="SaveSystem.Register"/> en
+        /// un resume. No se aplica en el acto (la topología no existe todavía cuando el
+        /// Register corre en <c>RunController.OnRunStart</c>): lo consume
+        /// <see cref="ResumeFromSave"/> tras la generación. (Feature#0028)
+        /// </summary>
+        private DungeonSnapshot _pendingRestore;
+
+        // Últimos guid/tile válidos del player — se reusan si el capture corre con el player
+        // ya limpiado (EndRun llama ClearPlayer antes del capture de OnRunEnd, #0028).
+        private string _lastPlayerGuid;
+        private GridCoord _lastPlayerCoord;
+        private bool _hasLastPlayer;
+
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onEntityDestroyedHandler;
 
@@ -42,6 +63,8 @@ namespace Rollgeon.Dungeon
 
         public RoomInstance CurrentRoomInstance =>
             _currentId != Guid.Empty && _instances.TryGetValue(_currentId, out var ri) ? ri : null;
+
+        public int CurrentFloorSeed { get; private set; }
 
         public DoorDirection? LastEntryDirection => _lastEntryDirection;
 
@@ -57,13 +80,30 @@ namespace Rollgeon.Dungeon
         {
             if (layout == null) throw new ArgumentNullException(nameof(layout));
 
-            ClearState();
-            _lastEntryDirection = null;
-
             // 1+2. Plan puro: cells + asignaciones (sin side effects).
             var plan = FloorTopologyPlanner.Generate(layout, seed);
-            foreach (var w in plan.Warnings)
-                Debug.LogWarning($"[DungeonManager] {w}");
+            GenerateFromPlan(plan);
+        }
+
+        /// <summary>
+        /// Genera el piso desde un <see cref="FloorTopologyPlanner.Plan"/> ya resuelto —
+        /// mismo pipeline que <see cref="GenerateFloor"/> pero sin pasar por la topología
+        /// aleatoria. Permite pisos autorados (tutorial, pisos fijos) siempre que el plan
+        /// tenga la Start room en <see cref="Vector2Int.zero"/>.
+        /// </summary>
+        public void GenerateFromPlan(FloorTopologyPlanner.Plan plan)
+        {
+            if (plan == null) throw new ArgumentNullException(nameof(plan));
+
+            ClearState();
+            CurrentFloorSeed = plan.Seed;
+            _lastEntryDirection = null;
+
+            if (plan.Warnings != null)
+            {
+                foreach (var w in plan.Warnings)
+                    Debug.LogWarning($"[DungeonManager] {w}");
+            }
 
             var cells = plan.Cells;
             var assignments = plan.Assignments;
@@ -118,6 +158,13 @@ namespace Rollgeon.Dungeon
             //     a esa entrada se designa como salida de piso dinámica en ConfigureDoorSlots.
             EnforceBossSingleEntrance();
 
+            // 5c. Guard de puertas (PUL-011): podar conexiones cuya dirección no tiene puerta
+            //     autorada en el prefab (o el vecino no tiene la recíproca). Sin esto el minimapa
+            //     muestra la conexión pero no hay paso — sala inalcanzable. Corre ANTES del seed
+            //     de DoorStates (6) e instanciación (7) para que todo downstream vea el grafo ya
+            //     coherente. Con las 21 salas actuales (4 puertas c/u) es no-op.
+            PruneDoorlessConnections();
+
             // 6. Seed default DoorStates en cada instancia.
             foreach (var instance in _instances.Values)
             {
@@ -169,6 +216,16 @@ namespace Rollgeon.Dungeon
             var current = CurrentRoomInstance;
             if (current == null) return false;
             if (!current.Connections.TryGetValue(direction, out neighborInstanceId)) return false;
+
+            // Vecino Locked (gate externo — tutorial, boss key, evento) → bloqueado
+            // SIEMPRE, incluso con DoorState.Forced/Unlocked: un force previo no puede
+            // abrir una sala gateada después (EffForceDoor marca Forced antes de cruzar).
+            if (_instances.TryGetValue(neighborInstanceId, out var lockedNeighbor)
+                && lockedNeighbor.State == RoomState.Locked)
+            {
+                Debug.LogWarning($"[DungeonManager] CanEnterRoomByDoor({direction}) bloqueado — vecino '{neighborInstanceId:N}' state=Locked.");
+                return false;
+            }
 
             // Sala cleared → libre.
             if (current.State == RoomState.Cleared) return true;
@@ -241,6 +298,10 @@ namespace Rollgeon.Dungeon
                 _onEntityDestroyedHandler = null;
             }
 
+            // Captura el estado final al cache y suelta la registration — sin esto la
+            // próxima run registraría un 2do DungeonManager con la misma SaveKey (#0028).
+            SaveSystem.Unregister(this);
+
             ClearState();
         }
 
@@ -256,6 +317,180 @@ namespace Rollgeon.Dungeon
             return manager;
         }
 
+        /// <summary>
+        /// Factory para pisos autorados (tutorial): igual que <see cref="CreateAndRegister"/>
+        /// pero generando desde un plan fijo en vez de la topología aleatoria.
+        /// </summary>
+        public static DungeonManager CreateAndRegisterFromPlan(FloorTopologyPlanner.Plan plan)
+        {
+            var manager = new DungeonManager();
+            ServiceLocator.AddService<IDungeonService>(manager, ServiceScope.Run);
+            manager.GenerateFromPlan(plan);
+            return manager;
+        }
+
+        /// <summary>
+        /// Setea la <see cref="RoomState"/> de una sala desde afuera (gates externos —
+        /// tutorial, boss key, evento). No toca <see cref="RoomInstance.ObjectStates"/>,
+        /// así el toggle Locked↔Uncleared preserva HP de enemigos y flags de puertas.
+        /// </summary>
+        public bool SetRoomState(Guid instanceId, RoomState state)
+        {
+            if (!_instances.TryGetValue(instanceId, out var instance)) return false;
+            instance.State = state;
+            return true;
+        }
+
+        /// <summary>
+        /// Refresca los visuales de puertas de una sala instanciada — necesario cuando
+        /// un gate externo cambió el estado de una sala VECINA (la puerta que refleja
+        /// ese lock vive en el prefab de esta sala).
+        /// </summary>
+        public void ResyncDoorVisuals(Guid instanceId)
+        {
+            if (_instances.TryGetValue(instanceId, out var instance))
+                SyncDoorVisualStates(instance);
+        }
+
+        // -----------------------------------------------------------------
+        // ISaveable (#0028) — estado espacial del piso
+        // -----------------------------------------------------------------
+
+        public string SaveKey => SaveKeyConst;
+
+        /// <summary>
+        /// Snapshot del estado espacial: sala actual + dirección de entrada, tile/GUID del
+        /// player, y por cada sala <see cref="RoomState"/> + <c>Visited</c> +
+        /// <see cref="RoomInstance.ObjectStates"/>. Indexado por <see cref="RoomInstance.GridCell"/>
+        /// (estable), no por <see cref="RoomInstance.InstanceId"/> (se regenera).
+        /// </summary>
+        public object CaptureState()
+        {
+            var snap = new DungeonSnapshot { LastEntryDirection = _lastEntryDirection };
+
+            var current = CurrentRoomInstance;
+            if (current != null)
+            {
+                snap.CurrentCell = current.GridCell;
+                // Vuelca HP/tile/GUID vivos del cuarto actual a sus EnemySpawnState — el HP
+                // mid-combate solo vive en el stat runtime hasta acá (#0028 Fase 2).
+                RoomEnemyStateSync.SnapshotLiveEnemies(current);
+            }
+
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
+                && player != null && player.PlayerGuid != Guid.Empty)
+            {
+                snap.PlayerGuid = player.PlayerGuid.ToString();
+                _lastPlayerGuid = snap.PlayerGuid;
+
+                if (ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null
+                    && grid.TryGetPosition(player.PlayerGuid, out var pcoord))
+                {
+                    snap.PlayerCoord = pcoord;
+                    _lastPlayerCoord = pcoord;
+                }
+                else if (_hasLastPlayer)
+                {
+                    snap.PlayerCoord = _lastPlayerCoord;
+                }
+                _hasLastPlayer = true;
+            }
+            else if (_hasLastPlayer)
+            {
+                // Player ya limpiado (teardown de EndRun): preservar los últimos valores
+                // válidos en vez de defaultear a centro/empty (#0028).
+                snap.PlayerGuid = _lastPlayerGuid;
+                snap.PlayerCoord = _lastPlayerCoord;
+            }
+
+            foreach (var inst in _instances.Values)
+            {
+                var rs = new RoomSnapshot
+                {
+                    Cell = inst.GridCell,
+                    State = inst.State,
+                    Visited = inst.Visited,
+                };
+                foreach (var kv in inst.ObjectStates.Enumerate())
+                    rs.ObjectStates[kv.Key] = kv.Value;
+                snap.Rooms.Add(rs);
+            }
+
+            return snap;
+        }
+
+        /// <summary>
+        /// Sólo <b>stagea</b> el snapshot — la aplicación real ocurre en
+        /// <see cref="ResumeFromSave"/> una vez generada la topología.
+        /// </summary>
+        public void RestoreState(object state)
+        {
+            if (state is DungeonSnapshot snap) _pendingRestore = snap;
+        }
+
+        /// <summary>
+        /// Aplica el snapshot stageado sobre la topología ya generada: pisa
+        /// <c>State</c>/<c>Visited</c>/<c>ObjectStates</c> por <see cref="RoomInstance.GridCell"/>,
+        /// restaura la sala actual + dirección de entrada, re-dispara
+        /// <see cref="EventName.OnRoomEntered"/> (carga grilla + ubica al player en el spawn/puerta)
+        /// y finalmente pisa la tile del player con la guardada. One-shot: consume el snapshot.
+        /// No-op si no hay restore pendiente (run nueva). (Feature#0028)
+        /// </summary>
+        public void ResumeFromSave()
+        {
+            if (_pendingRestore == null) return;
+            var snap = _pendingRestore;
+            _pendingRestore = null;
+
+            // 1. Pisa el estado por celda (match por GridCell — InstanceId se regenera).
+            foreach (var rs in snap.Rooms)
+            {
+                if (rs == null) continue;
+                if (!_cellIndex.TryGetValue(rs.Cell, out var id)) continue;
+                if (!_instances.TryGetValue(id, out var inst)) continue;
+
+                inst.State = rs.State;
+                inst.Visited = rs.Visited;
+                inst.ObjectStates.Clear();
+                if (rs.ObjectStates != null)
+                {
+                    foreach (var kv in rs.ObjectStates)
+                        if (kv.Value != null) inst.ObjectStates.Set(kv.Key, kv.Value);
+                }
+            }
+
+            // 2. Sala actual + dirección de entrada.
+            if (_cellIndex.TryGetValue(snap.CurrentCell, out var currentId))
+                _currentId = currentId;
+            _lastEntryDirection = snap.LastEntryDirection;
+
+            // 3. Visibilidad + visuales de puerta de la sala actual (el estado que
+            //    ConfigureDoorSlots sincronizó con el default quedó stale tras el pisón).
+            RefreshRoomVisibility();
+            var currentInst = CurrentRoomInstance;
+            if (currentInst != null) SyncDoorVisualStates(currentInst);
+
+            // 4. Re-entrar la sala guardada: RoomGridLoader (80) carga la grilla y
+            //    PlayerRoomTransitioner (82) ubica al player en el spawn/puerta.
+            EventManager.Trigger(EventName.OnRoomEntered, _currentId,
+                CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
+
+            // 5. Override de la tile exacta del player (post grid-load). Usa el GUID VIVO
+            //    del player — la preservación del GUID guardado la maneja el restore de
+            //    combate (#0028 Fase 3) para que la cola de turnos matchee.
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
+                && player != null && player.PlayerGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null)
+            {
+                grid.Register(player.PlayerGuid, snap.PlayerCoord);
+                if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals)
+                    && visuals != null && visuals.TryGetPawn(player.PlayerGuid, out var pawn))
+                {
+                    pawn.SnapToGrid(grid, snap.PlayerCoord);
+                }
+            }
+        }
+
         // -----------------------------------------------------------------
         // Internals
         // -----------------------------------------------------------------
@@ -263,6 +498,14 @@ namespace Rollgeon.Dungeon
         private bool TransitionTo(Guid neighborId)
         {
             if (!_instances.TryGetValue(neighborId, out var neighbor)) return false;
+
+            // BUG-021 (hardening): choke point de TODO cruce de sala (click en casilla
+            // de puerta, Pass Door, Force Door, dev commands). Un path del pawn en vuelo
+            // se remapea al GridOrigin de la sala nueva y el player "sigue de largo" —
+            // se cancela acá, antes del swap, sin depender de que PlayerRoomTransitioner
+            // llegue a snapear (su early-return por prefab/layout faltante dejaba vivo
+            // el path viejo).
+            StopPlayerPawnMovement();
 
             DeactivateCurrentRoomCombat();
 
@@ -274,6 +517,18 @@ namespace Rollgeon.Dungeon
             EventManager.Trigger(EventName.OnRoomEntered, _currentId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
             return true;
+        }
+
+        private static void StopPlayerPawnMovement()
+        {
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var player)
+                || player == null || player.PlayerGuid == Guid.Empty) return;
+            if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals)
+                && visuals != null
+                && visuals.TryGetPawn(player.PlayerGuid, out var pawn) && pawn != null)
+            {
+                pawn.StopMovement();
+            }
         }
 
         private void DeactivateCurrentRoomCombat()
@@ -302,10 +557,12 @@ namespace Rollgeon.Dungeon
 
         /// <summary>
         /// Por cada <see cref="DoorSlotRef"/> del prefab: si hay vecino en esa
-        /// dirección, activa la puerta (wallPlug off) y le cablea el
-        /// <see cref="DoorController"/> con <see cref="RoomInstance.InstanceId"/>
-        /// + dirección; si no, activa el wallPlug. El estado inicial (Open vs
-        /// LockedCombat) lo resuelve <see cref="SyncDoorVisualStates"/>.
+        /// dirección, activa el DoorRoot y cablea el <see cref="DoorController"/>
+        /// con <see cref="RoomInstance.InstanceId"/> + dirección; si no, apaga el
+        /// DoorRoot entero (sin camino = sin puerta visible; el estado
+        /// <see cref="DoorVisualState.Tapiada"/> igual queda seteado para los
+        /// checks de interacción). El visual (Open = abierta, Locked = reja) lo
+        /// resuelve <see cref="SyncDoorVisualStates"/>.
         /// </summary>
         private void ConfigureDoorSlots(RoomInstance instance)
         {
@@ -358,8 +615,12 @@ namespace Rollgeon.Dungeon
 
                 authored.Add(slot.Direction);
 
-                if (slot.WallPlug != null) slot.WallPlug.SetActive(!connected);
-                slot.DoorRoot.SetActive(connected);
+                // CNF-012 v2 rev: sin vecino el DoorRoot queda ACTIVO y muestra el zócalo
+                // (wall-fill) que completa la pared — lo prende DoorController.SetState(Tapiada)
+                // desde SyncDoorVisualStates. La reja es el visual de puerta bloqueada/forzable
+                // y también la administra SetState — acá ya no se togglea el WallPlug del slot
+                // (en los prefabs actuales es un GO hijo del DoorRoot).
+                slot.DoorRoot.SetActive(true);
 
                 if (!connected) continue;
 
@@ -400,8 +661,9 @@ namespace Rollgeon.Dungeon
                 }
                 else
                 {
+                    // Sin vecino: el GO queda activo para que el zócalo (wall-fill) de
+                    // SetState(Tapiada) complete la pared, igual que las puertas con slot.
                     controller.SetState(DoorVisualState.Tapiada);
-                    controller.gameObject.SetActive(false);
                 }
 
                 Debug.LogWarning(
@@ -502,6 +764,16 @@ namespace Rollgeon.Dungeon
                     continue;
                 }
 
+                // Vecino Locked (gate externo) → LockedSkillCheck, con precedencia
+                // sobre Open/LockedCombat — espeja el check de CanEnterRoomByDoor.
+                if (instance.Connections.TryGetValue(slot.Direction, out var neighborId)
+                    && _instances.TryGetValue(neighborId, out var neighbor)
+                    && neighbor.State == RoomState.Locked)
+                {
+                    controller.SetState(DoorVisualState.LockedSkillCheck);
+                    continue;
+                }
+
                 instance.ObjectStates.TryGet<DoorState>(slot.Direction.DoorStateKey(), out var doorState);
                 bool forced = doorState != null && (doorState.Forced || doorState.Unlocked);
 
@@ -566,12 +838,16 @@ namespace Rollgeon.Dungeon
             // los pedestales de reward, y dispara OnFloorCleared recién cuando el player
             // elige una mejora (o de inmediato si no hay rewards para ofrecer). Solo lo
             // disparamos nosotros como fallback si ese canal no está activo (builds/tests
-            // sin el bootstrap), para no dejar el floor sin cerrar. floorIndex=0 placeholder
-            // hasta multi-floor.
+            // sin el bootstrap), para no dejar el floor sin cerrar.
             if (instance.Template != null && instance.Template.Type == RoomType.Boss
                 && (!ServiceLocator.TryGetService<ICharacterRewardService>(out var rewards) || rewards == null))
             {
-                EventManager.Trigger(EventName.OnFloorCleared, roomInstanceId, 0);
+                // Schema OnFloorCleared: [Guid runId, int floorIndex] (BUG-022: antes
+                // mandaba roomInstanceId y 0 — achievements/analytics parseaban mal).
+                ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var runCtx);
+                EventManager.Trigger(EventName.OnFloorCleared,
+                    runCtx != null ? runCtx.RunId : Guid.Empty,
+                    runCtx != null ? runCtx.FloorIndex : 0);
             }
         }
 
@@ -710,6 +986,73 @@ namespace Rollgeon.Dungeon
 
             return visited.Count == _instances.Count;
         }
+
+        /// <summary>
+        /// PUL-011: poda las conexiones intraversables — las que caen en una dirección sin
+        /// puerta autorada en el prefab (o cuyo vecino no tiene la recíproca). Deja el grafo
+        /// lógico coherente con las puertas físicas (el minimapa deja de mostrar un paso que
+        /// no existe) y loguea un <see cref="Debug.LogError"/> por cada poda para exponer el
+        /// prefab mal autoreado. Tras podar, avisa si alguna sala quedó inalcanzable.
+        /// </summary>
+        private void PruneDoorlessConnections()
+        {
+            var edges = DoorTopologyGuard.ComputeDoorlessEdges(_instances, PrefabHasDoorForDirection);
+            if (edges.Count == 0) return;
+
+            foreach (var e in edges)
+            {
+                if (_instances.TryGetValue(e.From, out var a)) a.Connections.Remove(e.Dir);
+                if (_instances.TryGetValue(e.To, out var b)) b.Connections.Remove(e.Dir.Opposite());
+
+                Debug.LogError(
+                    $"[DungeonManager] Conexión sin puerta podada: '{RoomIdOf(e.From)}' {e.Dir} ↔ " +
+                    $"'{RoomIdOf(e.To)}'. Un prefab no tiene DoorSlot autoreado ({e.Dir} en el origen " +
+                    $"o {e.Dir.Opposite()} en el vecino); la conexión era intraversable y se quitó del " +
+                    "grafo. Autorar las 4 puertas del prefab (Auto-Populate en el RoomLayout).");
+            }
+
+            // ¿Se aisló alguna sala al podar? Softlock si estaba en el camino crítico — error explícito.
+            if (!_cellIndex.TryGetValue(Vector2Int.zero, out var startId)) return;
+            var reachable = DoorTopologyGuard.ReachableFrom(startId, _instances);
+            foreach (var inst in _instances.Values)
+            {
+                if (reachable.Contains(inst.InstanceId)) continue;
+                Debug.LogError(
+                    $"[DungeonManager] Sala '{RoomIdOf(inst.InstanceId)}' (cell {inst.GridCell}) quedó " +
+                    "INALCANZABLE desde el start tras podar conexiones sin puerta. Revisar las puertas " +
+                    "autoradas de esa sala y sus vecinas.");
+            }
+        }
+
+        /// <summary>
+        /// ¿El prefab de <paramref name="instance"/> tiene una puerta autorada para
+        /// <paramref name="dir"/>? Mira el <c>RoomLayout.DoorSlots</c> del prefab template
+        /// (un slot de esa dirección con <c>DoorRoot</c>) y, como fallback, un
+        /// <see cref="DoorController"/> suelto. Sin prefab/layout devuelve <c>true</c> (no
+        /// podemos determinar ⇒ no podar). Mismo criterio de "autoreado" que
+        /// <see cref="ConfigureDoorSlots"/>.
+        /// </summary>
+        private bool PrefabHasDoorForDirection(RoomInstance instance, DoorDirection dir)
+        {
+            var prefab = instance?.Template != null ? instance.Template.RoomPrefab : null;
+            if (prefab == null) return true;
+
+            var layout = prefab.GetComponent<RoomLayout>();
+            if (layout == null || layout.DoorSlots == null) return true;
+
+            foreach (var slot in layout.DoorSlots)
+                if (slot != null && slot.Direction == dir && slot.DoorRoot != null)
+                    return true;
+
+            foreach (var ctrl in prefab.GetComponentsInChildren<DoorController>(includeInactive: true))
+                if (ctrl != null && ctrl.Direction == dir)
+                    return true;
+
+            return false;
+        }
+
+        private string RoomIdOf(Guid id)
+            => _instances.TryGetValue(id, out var inst) && inst.Template != null ? inst.Template.RoomId : "<null>";
 
         /// <summary>
         /// Marca como salida de piso (<see cref="DoorController.IsExit"/>) la puerta de la

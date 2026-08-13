@@ -9,7 +9,8 @@ namespace Rollgeon.UI.HUD
     public enum ActionButtonState
     {
         /// <summary>No es turno del jugador, hay un chain corriendo, o las
-        /// precondiciones (energia, range, etc.) no se cumplen.</summary>
+        /// precondiciones (range, gate del tutorial, etc.) no se cumplen. La falta
+        /// de energia NO entra aca — tiene su propio <see cref="Unaffordable"/>.</summary>
         Locked,
 
         /// <summary>Listo para ser clickeado.</summary>
@@ -21,5 +22,12 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>Ya se ejecuto en este turno y tiene BlockOnRepeat=true.</summary>
         Used,
+
+        /// <summary>Todo lo demas esta listo (es tu turno, no hay chain, esta en
+        /// rango, no la usaste) pero no alcanza la energia. Se separa de
+        /// <see cref="Locked"/> para poder decirle al jugador POR QUE no puede:
+        /// costo en rojo persistente + shake al intentar usarla. Igual que Locked
+        /// a nivel funcional — no arranca drag ni responde al hotkey.</summary>
+        Unaffordable,
     }
 }

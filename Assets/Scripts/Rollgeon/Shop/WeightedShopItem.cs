@@ -13,9 +13,9 @@ namespace Rollgeon.Shop
     public struct WeightedShopItem
     {
         [Required]
-        [InfoBox("Debe implementar IShopRewardEntry — ShopItemDef (consumibles) " +
-                 "o ComboPassiveSO (pasivas de combo). Otros tipos se ignoran al rolear.")]
-        [Tooltip("Asset del reward elegible. Polimórfico: ShopItemDef o ComboPassiveSO.")]
+        [InfoBox("Debe implementar IShopRewardEntry — normalmente un ItemSO (activo o " +
+                 "passive). Otros tipos se ignoran al rolear.")]
+        [Tooltip("Asset del reward elegible. Normalmente un ItemSO del catálogo.")]
         [ValidateInput(nameof(ValidateImplementsRewardEntry),
                        "El asset asignado no implementa IShopRewardEntry — la entry se ignora al rolear.")]
         public ScriptableObject Item;

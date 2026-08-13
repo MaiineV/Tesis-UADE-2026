@@ -54,6 +54,12 @@ namespace Rollgeon.Entities
         [Tooltip("Etiqueta editor-only (ej. 'T2'). No es identity.")]
         public string Label;
 
+        [Min(0)]
+        [Tooltip("Piso (1-based) desde el que este tier se usa. En spawn se elige el tier " +
+                 "más alto cuyo MinFloor <= piso actual. 0 = legacy sin autorar ⇒ efectivo = " +
+                 "número de tier (T2 ⇒ piso 2). Ver EnemyDataSO.EffectiveMinFloor.")]
+        public int MinFloor;
+
         public TierStat HP = TierStat.Base;
         public TierStat Attack = TierStat.Base;
         public TierStat Speed = TierStat.Base;

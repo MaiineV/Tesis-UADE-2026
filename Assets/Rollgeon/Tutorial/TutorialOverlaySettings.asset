@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0d6dea211a3e54fafaf1c465c9490b, type: 3}
+  m_Name: TutorialOverlaySettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tutorial.UI.TutorialOverlaySettingsSO
+  SortingOrder: 29000
+  ReferenceResolution: {x: 1920, y: 1080}
+  MatchWidthOrHeight: 0.5
+  DimMaterial: {fileID: 2100000, guid: a0c5d89805cb73b4584b273c0e2ea7fc, type: 2}
+  DimColor: {r: 0, g: 0, b: 0, a: 0.78}
+  DefaultCutoutRadiusPx: 130
+  CutoutFeatherPx: 26
+  UiCutoutPaddingPx: 18
+  ShowDuration: 0.25
+  HideDuration: 0.18
+  ArrowSprite: {fileID: 1497110309, guid: 397263427e0948042aa767806d875022, type: 3}
+  ArrowSize: {x: 59, y: 38}
+  ArrowGapPx: 14
+  ArrowBobAmplitudePx: 10
+  ArrowBobDuration: 0.6
+  PopupBackgroundSprite: {fileID: 1207451802, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  PopupBackgroundPpuMultiplier: 0.5
+  PopupBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
+  PopupFont: {fileID: 0}
+  PopupFontSize: 30
+  PopupTextColor: {r: 0.06666667, g: 0.07450981, b: 0.101960786, a: 1}
+  PopupMaxWidth: 520
+  PopupPadding: {x: 46, y: 36}
+  PopupScreenMargin: 40
+  QuadrantHysteresis: 0.08
+  ContinueFooterText: "Hac\xE9 click para continuar"

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Rollgeon.Dice;
 
 namespace Rollgeon.Combos
 {
@@ -8,6 +9,15 @@ namespace Rollgeon.Combos
     /// Heal) y cualquier consumer que necesite resolver "el mejor combo" sin reinventar
     /// el loop sobre <see cref="ComboCatalogSO"/>.
     /// </summary>
+    /// <remarks>
+    /// El spec de daño v2 (Santi) pide elegir el combo de mayor dmg, no el primero detectado.
+    /// No lo implementamos acá ni en <c>ContractSheet.MatchBest</c> (el path real en combate):
+    /// <c>ContractSheet.Validate</c> exige Generala al final con <c>Priority == int.MaxValue</c>,
+    /// y el bono de encantamientos se calcula reactivamente DESPUÉS de elegir ganador (con side
+    /// effects), así que no se puede evaluar "por candidato" sin re-disparar triggers. La
+    /// selección sigue por <c>Priority</c>; la fórmula v2 se aplica después, en
+    /// <see cref="Rollgeon.Combat.Damage.PlayerComboDamage"/>.
+    /// </remarks>
     public static class ComboResolver
     {
         /// <summary>
@@ -19,6 +29,14 @@ namespace Rollgeon.Combos
         /// <see cref="ComboDetectionResult.NoMatch"/> si ninguno matchea / catalog null.</returns>
         public static ComboDetectionResult DetectBest(ComboCatalogSO catalog,
             IReadOnlyList<int> dice, out BaseComboSO best)
+            => DetectBest(catalog, dice, null, out best);
+
+        /// <summary>
+        /// Overload con los tipos de dado alineados 1:1 a <paramref name="dice"/>. Null ⇒ los
+        /// combos que dependen del rango del dado (Fuerza Bruta) caen a su fallback d6.
+        /// </summary>
+        public static ComboDetectionResult DetectBest(ComboCatalogSO catalog,
+            IReadOnlyList<int> dice, IReadOnlyList<DiceType> diceTypes, out BaseComboSO best)
         {
             best = null;
             if (catalog == null || dice == null || dice.Count == 0)
@@ -32,7 +50,7 @@ namespace Rollgeon.Combos
             foreach (var combo in catalog.Entries)
             {
                 if (combo == null) continue;
-                var result = combo.Detect(diceArr);
+                var result = combo.Detect(diceArr, diceTypes, null);
                 if (result.IsMatch && combo.Priority > bestPriority)
                 {
                     bestPriority = combo.Priority;

@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using Rollgeon.Dice;
+
+namespace Rollgeon.Combat.Damage
+{
+    /// <summary>
+    /// Escudo de combo del jugador: se resuelve con la <b>misma fórmula que el daño</b>
+    /// (<see cref="PlayerComboDamage.Resolve"/>, N×M desde la v3 de 2026-08-09), afectado por
+    /// Attack (base + bonos), las caras de los dados contribuyentes, la perilla por habilidad
+    /// y todos los canales de scratch (pasivas, encantamientos, items at-played) —
+    /// <c>BlockComboDamage</c> también bloquea escudo.
+    /// <c>escudo_combo_base</c> sigue saliendo de <c>ContractSheet.GetShieldBase</c>.
+    /// </summary>
+    /// <remarks>
+    /// Única divergencia con el daño: el gate de base 0. Sin entrada en la ShieldBaseTable el
+    /// combo NO genera escudo (la tabla es opt-in por clase); si la fórmula corriera con base 0,
+    /// todo combo daría escudo ≈ Attack.ModifiedValue. El gate decide <i>si</i> hay escudo, la
+    /// fórmula decide <i>cuánto</i>. Ya no hay cap — el freno anti-inmunidad es el reset por
+    /// turno (<c>ShieldResetHandler</c>) más la escala ×10 del daño enemigo.
+    /// </remarks>
+    public static class PlayerComboShield
+    {
+        public static int Resolve(Guid sourceId, int shieldBase,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier = 1f)
+            => Resolve(sourceId, shieldBase, contributingDice, abilityMultiplier, out _);
+
+        /// <summary>Overload con desglose — espejo de <c>PlayerComboDamage.Resolve</c>.</summary>
+        public static int Resolve(Guid sourceId, int shieldBase,
+            IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier,
+            out DamageBreakdown breakdown)
+        {
+            if (shieldBase <= 0)
+            {
+                // Gate: sin base no hay escudo — el breakdown refleja el corte, no la fórmula.
+                breakdown = new DamageBreakdown { Kind = PlayerComboFormulaKind.Shield };
+                return 0;
+            }
+            return PlayerComboDamage.Resolve(sourceId, shieldBase, contributingDice,
+                abilityMultiplier, PlayerComboFormulaKind.Shield, out breakdown);
+        }
+    }
+}

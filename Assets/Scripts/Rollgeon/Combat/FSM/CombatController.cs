@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;  // IReadOnlyList<Guid>
 using Patterns;
+using Rollgeon.Balance;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.EnergyLib;
@@ -34,6 +35,13 @@ namespace Rollgeon.Combat.FSM
     /// </remarks>
     public sealed class CombatController : MonoBehaviour
     {
+        /// <summary>
+        /// Grace period (CNF-006) usado cuando no hay <see cref="RulesetSO"/>
+        /// resuelto, o cuando el asset tiene <c>TurnOrder.EnemyActionDelaySeconds</c>
+        /// en 0 (ej. un ruleset viejo, guardado antes de que este campo existiera).
+        /// </summary>
+        public const float DefaultEnemyActionDelaySeconds = 0.8f;
+
         [Required]
         [SerializeField]
         [InfoBox("Anchor al ServiceBootstrapSO global. No se usa runtime — solo valida que " +
@@ -204,13 +212,32 @@ namespace Rollgeon.Combat.FSM
                 return;
             }
 
+            // CNF-006: resolver el grace period del ruleset activo. Un asset viejo
+            // sin este campo seteado queda en 0 — en ese caso usamos el default en
+            // vez de "sin delay", para no regresar silenciosamente al comportamiento
+            // sincrono legacy en runs con rulesets desactualizados.
+            float enemyActionDelay = DefaultEnemyActionDelaySeconds;
+            if (ServiceLocator.TryGetService<RulesetSO>(out var ruleset) && ruleset != null)
+            {
+                float configured = Mathf.Max(0f, ruleset.TurnOrder.EnemyActionDelaySeconds);
+                if (configured > 0f)
+                {
+                    enemyActionDelay = configured;
+                }
+            }
+
             _context = new CombatContext(
                 _turnOrder,
                 _turnManager,
                 _energy,
                 playerId,
                 roomInstanceId,
-                enemyActionHandler);
+                enemyActionHandler,
+                enemyActionDelaySeconds: enemyActionDelay,
+                // Solo lo consume el countdown del grace period de EnemyTurnState:
+                // multiplicar acá hace que el pacing enemigo siga al game speed en
+                // vivo (incluso si se cambia desde la pausa a mitad de combate).
+                deltaTimeProvider: () => Time.deltaTime * Rollgeon.Timing.GameSpeedPrefs.Multiplier);
 
             _fsm = new CombatTurnFSM(_context);
             _fsm.OnFinished += HandleFsmFinished;

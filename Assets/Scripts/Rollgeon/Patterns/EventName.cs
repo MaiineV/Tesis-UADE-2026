@@ -38,6 +38,11 @@ namespace Patterns
         OnCombatEnd,
         /// <summary>args: [Guid runId]</summary>
         OnPlayerDefeated,
+        /// <summary>args: [Guid playerGuid, Guid targetGuid]. El jugador eligió (o limpió) el
+        /// enemigo objetivo del ataque antes de tirar. targetGuid == Guid.Empty significa
+        /// "sin target". Lo consume el HUD para previsualizar la mitigación real (weakness +
+        /// escudo del enemigo apuntado) en la fórmula de daño.</summary>
+        OnCombatTargetChanged,
 
         // --- Damage pipeline ----------------------------------------------------
         /// <summary>args: [Guid sourceGuid, Guid targetGuid, int baseDamage]</summary>
@@ -85,6 +90,10 @@ namespace Patterns
         OnChainPhaseStarted,
         /// <summary>args: [Guid sourceGuid, int phasesCompleted, int totalPhases, bool wasPass]</summary>
         OnChainCompleted,
+        /// <summary>args: [Guid sourceGuid]. Una fase del chain abrió una selección
+        /// INTERACTIVA de target (post-confirm) — el jugador tiene que clickear al
+        /// enemigo. No dispara en fases Self/AutoResolve/sin targets.</summary>
+        OnChainTargetSelectionStarted,
         /// <summary>args: [Guid sourceGuid]. Una accion sin tirada (ej. Movement) quedo
         /// comprometida y esta esperando que el jugador elija el tile target. La accion ya
         /// se cobro y se ejecuta de forma asincrona al clickear el destino; mientras tanto
@@ -131,6 +140,12 @@ namespace Patterns
         OnContractModifierChanged,
         /// <summary>args: [Guid bossGuid, int phaseIndex]. El Boss cruzó un umbral de fase (1-based). Hook para feedback visual + diálogo.</summary>
         OnBossPhaseChanged,
+        /// <summary>OBSOLETO — nadie lo dispara ni lo escucha. Era del pasivo global
+        /// anti-repetición (A/B Combo/Dice), eliminado. <b>NO borrar el miembro:</b> Odin
+        /// serializa los enums por su int y sacarlo del medio shiftearía los valores de todos
+        /// los de abajo, rompiendo en silencio los assets que los tengan guardados (ya pasó con
+        /// la pasiva del guerrero). Reutilizable si vuelve una mecánica parecida.</summary>
+        OnAntiRepeatModeChanged,
 
         // --- Modifier / attributes ---------------------------------------------
         /// <summary>args: [Guid entityId, Type attributeType]. Notifica que un atributo
@@ -243,6 +258,8 @@ namespace Patterns
         OnEnchantmentRemoved,
         /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int baseCost]. El player presionó interact sobre el altar — la UI debe abrir la pantalla de selección de dado/slot.</summary>
         OnEnchantmentAltarActivated,
+        /// <summary>args: []. La pantalla del altar se cerró — el altar puede volver a mostrar su prompt de interacción.</summary>
+        OnEnchantmentAltarClosed,
 
         // --- Camera (§17.E) ----------------------------------------------------
         /// <summary>args: [Rollgeon.Camera.CameraFacing newFacing]. Yaw discreto cambió tras un RotateBy45 (§17.E.5).</summary>
@@ -253,5 +270,22 @@ namespace Patterns
         OnCameraRecentered,
         /// <summary>args: [float amplitude, float durationSeconds]. Feedback pide un camera shake; el CameraService lo consume (§17.E.10, TODO v8).</summary>
         OnCameraShakeRequested,
+
+        // --- Tutorial ------------------------------------------------------------
+        /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El tutorial desbloqueó una acción — los HUDs recomputan estados de botones.</summary>
+        OnTutorialActionUnlocked,
+        /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El jugador clickeó (y seleccionó efectivamente) un botón de acción del HUD de combate — el tutorial encadena el paso siguiente (p.e. señalar los dados).</summary>
+        OnHeroBehaviorClicked,
+
+        // --- Combat: refuerzos --------------------------------------------------
+        // NOTA: agregar SIEMPRE al final del enum. EventName se serializa por VALOR en assets
+        // Odin (ej. PassiveHook.TriggerEvent), así que insertar en el medio correría los ints
+        // de los miembros siguientes y corrompería data ya guardada.
+        /// <summary>args: [Guid reinforcementGuid]. Un refuerzo fue spawneado mid-combate
+        /// (<c>AINode_SpawnReinforcements</c>) y se sumó al turn order en curso. Lo consume
+        /// <c>TreeDrivenEnemyAI</c> para diferir la PRIMERA activación del refuerzo: en la ronda
+        /// en que aparece no actúa (no hace daño gratis), así el jugador tiene un turno para
+        /// reaccionar antes de que el golpe caiga.</summary>
+        OnReinforcementSpawned,
     }
 }

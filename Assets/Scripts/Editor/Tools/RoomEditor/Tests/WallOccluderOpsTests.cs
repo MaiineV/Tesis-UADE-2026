@@ -19,6 +19,11 @@ namespace Rollgeon.Editor.Tools.RoomEditor.Tests
             foreach (var o in _created)
                 if (o != null) Object.DestroyImmediate(o);
             _created.Clear();
+            // EnsureOccluder usa Undo.AddComponent/RecordObject → los tiles del test
+            // quedan referenciados en el Undo stack global y un Ctrl+Z posterior los
+            // resucita huérfanos en la escena abierta (aparecían "Tile_1_5_Wall"
+            // fantasma en 00_Bootstrap). Limpiar el stack corta la resurrección.
+            UnityEditor.Undo.ClearAll();
         }
 
         private RoomLayout MakeLayout()

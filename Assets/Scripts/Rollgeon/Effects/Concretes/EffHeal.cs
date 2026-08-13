@@ -7,6 +7,7 @@ using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
 using Rollgeon.Player;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -120,6 +121,13 @@ namespace Rollgeon.Effects.Concretes
         [ShowIf(nameof(_useDiceRoll))]
         private int _diceFaces = 10;
 
+        [SerializeField, MinValue(1)]
+        [ShowIf(nameof(_useDiceRoll))]
+        [Tooltip("Multiplicador del resultado del roll (heal = suma × multiplicador). " +
+                 "Escala 100: la poción usa 10 para que 1d10 cure {10..100} preservando " +
+                 "la distribución uniforme del d10 original.")]
+        private int _diceResultMultiplier = 1;
+
         [SerializeField]
         private string _sourceTag = "eff.heal";
 
@@ -147,6 +155,7 @@ namespace Rollgeon.Effects.Concretes
                 AllowReroll = true,
                 RerollEnergyCost = 1,
                 AlwaysSucceeds = true,
+                BoardType = DiceBoardType.Default,
             };
             return true;
         }
@@ -158,24 +167,41 @@ namespace Rollgeon.Effects.Concretes
                    && phase.CurrentBase == GamePhase.Combat;
         }
 
-        // IHasTooltipInfo — el binder de la pocion consume esto. Solo emite texto
-        // cuando _useBuildDice esta on: en modo constante / generic dice no hay
-        // umbral ni tope relevantes para mostrar al jugador.
+        // IHasTooltipInfo — solo el body: el header (nombre de la acción) y el costo
+        // los agrega HeroActionTooltip.BuildFor. FromReader lee el stat configurado
+        // del owner en hover-time (heals por personaje, data-driven).
         public string BuildTooltip()
-        {
-            if (!_useBuildDice) return null;
+            => TooltipContext.TryForCurrentHero(GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
 
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("<b>Poción de Curación</b>");
-            sb.Append("HP Base: ").Append(_baseAmount);
-            sb.AppendLine();
-            sb.Append("Umbral Mínimo: ").Append(_healThreshold);
-            if (_healMaxCap > 0)
+        public string BuildTooltip(in TooltipContext context)
+        {
+            if (_useBuildDice)
             {
+                var sb = new System.Text.StringBuilder();
+                sb.Append("HP Base: ").Append(_baseAmount);
                 sb.AppendLine();
-                sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
+                sb.Append("Umbral Mínimo: ").Append(_healThreshold);
+                if (_healMaxCap > 0)
+                {
+                    sb.AppendLine();
+                    sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
+                }
+                return sb.ToString();
             }
-            return sb.ToString();
+
+            return _healSource switch
+            {
+                DamageSource.FromReader when _reader != null
+                    => "Curación: " + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier) + " HP",
+                DamageSource.FromReader => null,
+                DamageSource.ComboValue => "Curación: puntaje del combo",
+                _ => _isPercentOfMax
+                    ? $"Curación: {_baseAmount}% del HP máximo"
+                    : $"Curación: {_baseAmount} HP",
+            };
         }
 
         // Self-heal no requiere selección.
@@ -290,7 +316,7 @@ namespace Rollgeon.Effects.Concretes
             {
                 sum += UnityEngine.Random.Range(1, faces + 1);
             }
-            return sum;
+            return ComputeDiceRollHeal(sum, _diceResultMultiplier);
         }
 
         // Build dice: lee context.DiceResult (populado por IActionRollService antes de
@@ -324,6 +350,14 @@ namespace Rollgeon.Effects.Concretes
         /// </list>
         /// Spec: HP = HP_Base + ((Puntaje - Umbral_Mínimo) × Factor_de_Escala), floor abajo, cap por Tope_Máximo.
         /// </summary>
+        /// <summary>
+        /// Heal del dice roll genérico, expuesto para tests (el roll en sí es Random):
+        /// <c>suma × max(1, multiplicador)</c>. Escala 100: la poción 1d10 usa
+        /// multiplicador 10 para curar {10..100}.
+        /// </summary>
+        public static int ComputeDiceRollHeal(int sum, int multiplier)
+            => sum * Mathf.Max(1, multiplier);
+
         public static int ComputeBuildDiceHeal(int baseAmount, int healThreshold, int score,
             float scaleFactor, int maxCap)
         {

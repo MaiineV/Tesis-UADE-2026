@@ -10,5 +10,13 @@ namespace Rollgeon.Combat.Handoff
     public interface ICombatHandoffService : IDisposable
     {
         bool IsHandoffInProgress { get; }
+
+        /// <summary>
+        /// Agenda un relanzamiento COMPLETO y gratuito de la mano activa del jugador
+        /// (encantamiento "Torpe", BUG-030). No consume budget ni energía. Devuelve
+        /// <c>false</c> si no hay mano principal activa (sin behavior con tirada,
+        /// sin faces reveladas, throw en vuelo o ya hay un forced reroll pendiente).
+        /// </summary>
+        bool TryScheduleForcedFullHandReroll(Guid playerGuid, float delaySeconds = 0.35f);
     }
 }

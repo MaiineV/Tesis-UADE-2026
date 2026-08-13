@@ -78,6 +78,18 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(90, EffHeal.ComputeBuildDiceHeal(5, 15, 100, 1f, maxCap: 0));
         }
 
+        // Escala 100: la poción 1d10 con multiplicador 10 cura {10..100} preservando
+        // la distribución uniforme del d10 original.
+        [TestCase(1, 10, 10)]
+        [TestCase(7, 10, 70)]
+        [TestCase(10, 10, 100)]
+        [TestCase(4, 1, 4)]   // multiplicador neutro
+        [TestCase(4, 0, 4)]   // valores inválidos clampean a 1
+        public void ComputeDiceRollHeal_MultipliesRollSum(int sum, int multiplier, int expected)
+        {
+            Assert.AreEqual(expected, EffHeal.ComputeDiceRollHeal(sum, multiplier));
+        }
+
         [Test]
         public void ComputeBuildDiceHeal_CapDoesNotApplyBelowThreshold()
         {
@@ -102,11 +114,17 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void BuildTooltip_BuildDiceOff_ReturnsNull()
+        public void BuildTooltip_BuildDiceOff_ConstantSource_ShowsFlatHeal()
         {
-            // Sin _useBuildDice, no hay umbral/tope relevantes para mostrar.
+            // Sin _useBuildDice el tooltip describe la fuente del heal (Constant default).
+            // El header/costo los agrega HeroActionTooltip.BuildFor, acá solo el body.
             var heal = new EffHeal();
-            Assert.IsNull(heal.BuildTooltip());
+            SetPrivateField(heal, "_baseAmount", 12);
+
+            var text = heal.BuildTooltip();
+
+            Assert.IsNotNull(text);
+            StringAssert.Contains("Curación: 12 HP", text);
         }
 
         [Test]

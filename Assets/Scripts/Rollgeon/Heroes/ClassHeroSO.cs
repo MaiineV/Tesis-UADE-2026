@@ -37,9 +37,8 @@ namespace Rollgeon.Heroes
         public string Description;
 
         [Title("Contract (§5.3)")]
-        [InfoBox("Lista de 8 combos en orden de prioridad ascendente. Para Warrior: " +
-                 "[Par, DoblePar, SumaX, Trio, Escalera, FullHouse, Poker, Generala]. " +
-                 "Ver docs/setup/Content#0097b_WarriorContractAndWeakness.md.")]
+        [InfoBox("Lista de combos de la clase — cantidad y orden libres, la resolucion usa " +
+                 "Priority. Ver docs/setup/Content#0097b_WarriorContractAndWeakness.md.")]
         [OdinSerialize]
         [Required]
         public ContractSheet Sheet = new ContractSheet();
@@ -95,12 +94,38 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Speed base (initiative).")]
         public int BaseSpeed;
 
-        [Tooltip("Daño base del PJ (stat Attack). 0 = el daño sale solo de los combos (backward-compat). " +
+        [Tooltip("Daño base del PJ (stat Attack) — dmg_base_PJ del Spec de Daño v2. Es el piso " +
+                 "garantizado del turno (aplica incluso sin combo), por eso nunca debe ser 0. " +
                  "Lo aumentan rewards de personaje (+Attack) y pasivas/ítems de tienda con StatGrants.")]
+        [ValidateInput(nameof(ValidateBaseAttack),
+                       "Spec Daño v2: dmg_base_PJ nunca debería ser 0 — es el piso que evita un turno vacío.")]
         public int BaseAttack;
+
+        private bool ValidateBaseAttack(int value) => value > 0;
+
+        private void OnValidate()
+        {
+            if (BaseAttack <= 0)
+            {
+                Debug.LogWarning(
+                    $"{name}: BaseAttack={BaseAttack}. Spec Daño v2 — dmg_base_PJ nunca debería ser 0.", this);
+            }
+        }
 
         [Tooltip("[STUB] — elevated by Hero Template task. Portrait para UI de seleccion.")]
         public Sprite Portrait;
+
+        [Tooltip("Icono del heroe para la UI de orden de turnos. El retrato de seleccion es " +
+                 "grande y con fondo, y encogido al tamaño de un slot de turno se lee mal. " +
+                 "Vacio = cae al Portrait.")]
+        public Sprite TurnOrderIcon;
+
+        /// <summary>
+        /// Sprite para el slot de la cola de turnos: el icono dedicado si esta autorado,
+        /// y si no el retrato de seleccion (los enemigos y jefes siempre usan su Portrait,
+        /// que registran ellos mismos en el resolver).
+        /// </summary>
+        public Sprite ResolveTurnOrderIcon() => TurnOrderIcon != null ? TurnOrderIcon : Portrait;
 
         [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al DiceBagSO inicial " +
                  "de la clase (DiceBagSO aun no existe).")]

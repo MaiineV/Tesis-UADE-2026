@@ -79,7 +79,7 @@ namespace Rollgeon.UI.Tests
             InvokePushed(payload);
 
             var label = GetPrivate<TextMeshProUGUI>(_screen, "_floorNumberLabel");
-            Assert.AreEqual("Piso 3", label.text,
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("floor.label", "Piso")} 3", label.text,
                 "Floor number label must show 'Piso {N}' from payload.");
         }
 

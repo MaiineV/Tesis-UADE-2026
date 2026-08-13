@@ -107,6 +107,42 @@ namespace Rollgeon.Combat.EnergyLib.Tests
             Assert.AreEqual(3, _service.GetCurrent(id));
         }
 
+        // --- GetMax (BUG-022: cap = MaxEnergy.ModifiedValue) --------------
+
+        [Test]
+        public void GetMax_AfterMaxEnergyModifier_ReturnsRaisedCap()
+        {
+            // Arrange — init seedea MaxEnergy(4); un grant in-run agrega +1.
+            var id = RegisterEntityWithEmptyAttrs();
+            _service.InitializeForEntity(id);
+            var mod = new Rollgeon.Attributes.Modifiers.Modifier<int>(
+                amount: 1,
+                op: Rollgeon.Attributes.Modifiers.ModifierOperation.Add,
+                duration: 0,
+                carrierId: id,
+                sourceId: Guid.Empty,
+                dir: Rollgeon.Attributes.Modifiers.ModifierDirection.Intrinsic,
+                lifetime: Rollgeon.Attributes.Modifiers.ModifierLifetime.Run,
+                tickEvent: EventName.OnTurnFinished);
+
+            // Act
+            bool added = _attrs.AddModifier<MaxEnergy, int>(id, mod);
+
+            // Assert
+            Assert.IsTrue(added);
+            Assert.AreEqual(5, _service.GetMax(id));
+        }
+
+        [Test]
+        public void GetMax_EntityWithoutMaxEnergyAttribute_FallsBackToRuleset()
+        {
+            // Arrange — entidad registrada pero sin InitializeForEntity (sin MaxEnergy).
+            var id = RegisterEntityWithEmptyAttrs();
+
+            // Assert
+            Assert.AreEqual(4, _service.GetMax(id));
+        }
+
         // --- SpendEnergy --------------------------------------------------
 
         [Test]

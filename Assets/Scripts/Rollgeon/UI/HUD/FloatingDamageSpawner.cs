@@ -23,9 +23,9 @@ namespace Rollgeon.UI.HUD
     /// (opcional). Fallback: centro de la pantalla con un offset vertical.
     /// </para>
     /// <para>
-    /// <b>Tint</b>: el <c>SourceGuid</c> se compara con el player para pintar rojo
-    /// (incoming) o verde (outgoing). Los ticks de heal del evento legacy usan un
-    /// tint separado.
+    /// <b>Estilo</b>: <see cref="FloatingNumberFormat"/> resuelve texto/tint/escala/motion
+    /// a partir del <see cref="DamageResolvedPayload"/> (incoming vs outgoing vs weakness)
+    /// o del <see cref="FloatingNumberType"/> del evento legacy (heal/shield/gold/status).
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Floating Damage Spawner")]
@@ -48,26 +48,8 @@ namespace Rollgeon.UI.HUD
                  "Camera.main. Solo necesaria si el canvas es ScreenSpace-Camera/Worldspace.")]
         private Camera _uiCamera;
 
-        [Title("Floating Damage — Tints")]
-        [SerializeField]
-        [Tooltip("Color del numero cuando el player hace dano (outgoing).")]
-        private Color _outgoingTint = new Color(1f, 0.94f, 0.27f, 1f);
-
-        [SerializeField]
-        [Tooltip("Color del numero cuando el player recibe dano (incoming).")]
-        private Color _incomingTint = new Color(1f, 0.25f, 0.25f, 1f);
-
-        [SerializeField]
-        [Tooltip("Color del numero para heals / status ticks positivos.")]
-        private Color _healTint = new Color(0.35f, 1f, 0.45f, 1f);
-
-        [SerializeField]
-        [Tooltip("Color del numero para drops de oro (+XG).")]
-        private Color _goldTint = new Color(1f, 0.85f, 0.2f, 1f);
-
-        [SerializeField]
-        [Tooltip("Color del numero para shields / armor ticks.")]
-        private Color _shieldTint = new Color(0.6f, 0.85f, 1f, 1f);
+        // Tints ex-[SerializeField] movidos a FloatingNumberFormat/FloatingNumberPalette
+        // (código) — evita que dos prefabs/escenas terminen con paletas divergentes.
 
         [SerializeField]
         [Tooltip("Offset en pixeles (screen) del punto de spawn. Suele ser un poco encima " +
@@ -99,6 +81,31 @@ namespace Rollgeon.UI.HUD
         // (damage + oro) se distribuyen en el tiempo y no se solapan visualmente.
         private float _nextSpawnTime;
 
+        // Mientras los dados vuelan al centro (outro del confirm Classic), los números
+        // se encolan y aparecen recién al aterrizar — el daño "llega" con los dados en
+        // vez de pisarles la animación. La posición se resuelve al ENCOLAR (el target
+        // puede despawnear si el golpe fue letal).
+        private readonly List<Action> _deferredSpawns = new List<Action>();
+
+        private bool DeferIfOutroPending(string text, Color tint, Vector3 screenPos,
+            float scale, FloatingMotion motion)
+        {
+            if (!Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending
+                && !Rollgeon.Feedback.BreakdownUiGate.Pending) return false;
+            _deferredSpawns.Add(() => SpawnAt(text, tint, screenPos, scale, motion));
+            return true;
+        }
+
+        private void FlushDeferredIfIdle()
+        {
+            if (Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending
+                || Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+            if (_deferredSpawns.Count == 0) return;
+            var pending = new List<Action>(_deferredSpawns);
+            _deferredSpawns.Clear();
+            foreach (var spawn in pending) spawn();
+        }
+
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
@@ -114,6 +121,8 @@ namespace Rollgeon.UI.HUD
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
 
             EventManager.Subscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed += FlushDeferredIfIdle;
+            Rollgeon.Feedback.BreakdownUiGate.Changed += FlushDeferredIfIdle;
             _bound = true;
         }
 
@@ -128,6 +137,9 @@ namespace Rollgeon.UI.HUD
             }
 
             EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, HandleFloatingNumberRequested);
+            Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.Changed -= FlushDeferredIfIdle;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= FlushDeferredIfIdle;
+            _deferredSpawns.Clear();
             ClearActiveInstances();
             _bound = false;
         }
@@ -155,7 +167,8 @@ namespace Rollgeon.UI.HUD
         /// Spawnea una instancia manualmente. Publico para tests/tooling que no
         /// quieran pasar por el bus de eventos.
         /// </summary>
-        public FloatingDamageInstance SpawnAt(string text, Color tint, Vector3 screenPos)
+        public FloatingDamageInstance SpawnAt(string text, Color tint, Vector3 screenPos,
+            float scale = 1f, FloatingMotion motion = FloatingMotion.Rise)
         {
             if (_instancePrefab == null)
             {
@@ -187,26 +200,26 @@ namespace Rollgeon.UI.HUD
                 // CoroutineHost persistente y apunta al canvas persistente — así aparece
                 // aunque el combate ya haya terminado y el CombatHUD se haya destruido.
                 // El caller tolera null cuando hay stagger.
-                CoroutineHost.Run(DelayedSpawn(_instancePrefab, parent, text, tint, finalPos, delay));
+                CoroutineHost.Run(DelayedSpawn(_instancePrefab, parent, text, tint, finalPos, delay, scale, motion));
                 return null;
             }
 
-            return SpawnInto(_instancePrefab, parent, text, tint, finalPos);
+            return SpawnInto(_instancePrefab, parent, text, tint, finalPos, scale, motion);
         }
 
         private static IEnumerator DelayedSpawn(FloatingDamageInstance prefab, Transform parent,
-            string text, Color tint, Vector3 pos, float delay)
+            string text, Color tint, Vector3 pos, float delay, float scale, FloatingMotion motion)
         {
             yield return new WaitForSeconds(delay);
-            SpawnInto(prefab, parent, text, tint, pos);
+            SpawnInto(prefab, parent, text, tint, pos, scale, motion);
         }
 
         private static FloatingDamageInstance SpawnInto(FloatingDamageInstance prefab, Transform parent,
-            string text, Color tint, Vector3 pos)
+            string text, Color tint, Vector3 pos, float scale, FloatingMotion motion)
         {
             if (prefab == null || parent == null) return null;
             var instance = Instantiate(prefab, parent);
-            instance.Play(text, tint, pos);
+            instance.Play(text, tint, pos, scale, motion);
             return instance;
         }
 
@@ -235,30 +248,34 @@ namespace Rollgeon.UI.HUD
         {
             var screenPos = ResolveScreenPos(payload.TargetGuid);
 
-            // Shield bloqueó todo: spawneamos un "0" en color shield (en vez del rojo
-            // de incoming, que confunde porque parece que recibiste daño cuando no).
+            // Shield bloqueó todo: mensaje explícito en vez del "0" viejo (confundía,
+            // parecía daño real de 0 en vez de "no pasó nada").
             if (payload.BlockedByShield)
             {
-                SpawnAt("0", _shieldTint, screenPos);
+                var blocked = FloatingNumberFormat.ShieldBlocked();
+                SpawnOrDefer(blocked.Text, blocked.Tint, screenPos, blocked.Scale, blocked.Motion);
                 return;
             }
 
-            // Tint base por owner del damage flow.
-            Color damageTint = _outgoingTint;
-            if (payload.TargetGuid == _playerGuid) damageTint = _incomingTint;
-            else if (payload.SourceGuid == _playerGuid) damageTint = _outgoingTint;
+            bool incoming = payload.TargetGuid == _playerGuid;
 
-            // Shield rompió en este hit Y queda daño residual: primero el "Broken Shield"
-            // en color shield, después el daño residual. El auto-stagger del SpawnAt
-            // los separa en el tiempo automáticamente.
+            // Shield rompió en este hit Y queda daño residual: primero "Escudo roto" en
+            // color shield, después el daño residual. El auto-stagger del SpawnAt los
+            // separa en el tiempo automáticamente.
             if (payload.ShieldBroken && payload.FinalDamage > 0)
             {
-                SpawnAt("Broken Shield", _shieldTint, screenPos);
+                var broken = FloatingNumberFormat.ShieldBroken();
+                SpawnOrDefer(broken.Text, broken.Tint, screenPos, broken.Scale, broken.Motion);
             }
 
-            string text = payload.FinalDamage.ToString();
-            if (payload.WeaknessHit) text += "!";
-            SpawnAt(text, damageTint, screenPos);
+            var style = FloatingNumberFormat.ForDamage(payload.FinalDamage, incoming, payload.WeaknessHit);
+            SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
+        }
+
+        private void SpawnOrDefer(string text, Color tint, Vector3 screenPos, float scale, FloatingMotion motion)
+        {
+            if (DeferIfOutroPending(text, tint, screenPos, scale, motion)) return;
+            SpawnAt(text, tint, screenPos, scale, motion);
         }
 
         private void HandleFloatingNumberRequested(params object[] args)
@@ -270,31 +287,9 @@ namespace Rollgeon.UI.HUD
             var type = args[1] is FloatingNumberType ft ? ft : FloatingNumberType.Heal;
             float value = args[2] is float f ? f : (args[2] is int i ? i : 0f);
 
-            var (text, tint) = FormatByType(type, value);
+            var style = FloatingNumberFormat.ForType(type, value);
             var screenPos = ResolveScreenPos(target);
-            SpawnAt(text, tint, screenPos);
-        }
-
-        private (string text, Color tint) FormatByType(FloatingNumberType type, float value)
-        {
-            int rounded = Mathf.RoundToInt(value);
-            switch (type)
-            {
-                case FloatingNumberType.Gold:
-                    return ($"+{rounded}G", _goldTint);
-                case FloatingNumberType.Shield:
-                    // "+N" para indicar que el shield se está sumando (path apply via
-                    // EffAddShield). El path absorb tiene su propio SpawnAt directo con
-                    // el texto "0" / "Broken Shield" — no pasa por FormatByType.
-                    return ($"+{rounded}", _shieldTint);
-                case FloatingNumberType.Status:
-                case FloatingNumberType.Heal:
-                    // "+N" en heal por la misma razón visual: indica ganancia de HP.
-                    return ($"+{rounded}", _healTint);
-                case FloatingNumberType.Damage:
-                default:
-                    return (rounded.ToString(), _outgoingTint);
-            }
+            SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
         }
 
         private Vector3 ResolveScreenPos(Guid entityGuid)

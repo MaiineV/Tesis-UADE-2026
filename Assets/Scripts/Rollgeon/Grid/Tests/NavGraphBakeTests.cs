@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -191,6 +192,91 @@ namespace Rollgeon.Grid.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        // -------------------------------------------------------------
+        // Prop multi-celda con PIVOT DESFASADO del footprint. El bloqueo debe
+        // salir del espacio de celdas autorado (Coord + FootprintOffset), no
+        // del transform: si sale del pivot, las celdas bloqueadas se corren.
+        // -------------------------------------------------------------
+
+        [Test]
+        public void Bake_BlockerWithOffsetPivot_BlocksAuthoredFootprintCells_NotPivotCells()
+        {
+            var root = new GameObject("Root");
+            try
+            {
+                // Arrange: strip de 4 floors (X=0..3) en la fila Z=1, ubicados
+                // en el centro de su celda (convención del editor: celda N =
+                // [N, N+1]). Un blocker 2x1 autorado en las celdas (1,1)-(2,1),
+                // pero con el transform corrido +0.7 en X respecto del centro
+                // de su footprint (pivot desfasado del mesh, como la ruleta).
+                CreateFloorCell(root, 0, 1);
+                CreateFloorCell(root, 1, 1);
+                CreateFloorCell(root, 2, 1);
+                CreateFloorCell(root, 3, 1);
+                CreateOffsetPivotBlocker(
+                    root,
+                    coord: new GridCoord(1, 1),
+                    footprint: new Vector3Int(2, 1, 1),
+                    localPos: new Vector3(2.7f, 0.5f, 1.5f)); // footprint center X=2.0
+
+                // Act
+                var settings = new NavGraphBakeSettings { TileSize = 1f, HeightThreshold = 0.5f };
+                var graph = NavGraphBaker.Bake(root, settings);
+
+                // Assert: se bloquean EXACTAMENTE las celdas autoradas (1,1) y
+                // (2,1); sobreviven (0,1) y (3,1). Con el bloqueo desde el pivot
+                // corrido se bloqueaban (2,1) y (3,1) — celdas desfasadas.
+                var coords = new HashSet<GridCoord>();
+                foreach (var n in graph.Nodes) coords.Add(n.Coord);
+
+                Assert.AreEqual(2, graph.NodeCount,
+                    "Un blocker 2x1 debe matar exactamente 2 nodos de floor.");
+                Assert.IsTrue(coords.Contains(new GridCoord(0, 1)), "(0,1) debe sobrevivir.");
+                Assert.IsTrue(coords.Contains(new GridCoord(3, 1)), "(3,1) NO debe bloquearse (pivot drift).");
+                Assert.IsFalse(coords.Contains(new GridCoord(1, 1)), "(1,1) debe bloquearse.");
+                Assert.IsFalse(coords.Contains(new GridCoord(2, 1)), "(2,1) debe bloquearse.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        // Floor tile ubicado en el CENTRO de su celda con la convención del
+        // editor (celda N = [N, N+1], centro N+0.5), para que los renderer
+        // bounds coincidan con el rectángulo de la celda.
+        private static void CreateFloorCell(GameObject parent, int x, int z)
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(parent.transform, worldPositionStays: false);
+            cube.transform.localPosition = new Vector3(x + 0.5f, 0f, z + 0.5f);
+            cube.transform.localScale = new Vector3(1f, 0.1f, 1f);
+
+            var marker = cube.AddComponent<TileMarker>();
+            marker.Coord = new GridCoord(x, z);
+            marker.Type = TileType.Floor;
+            marker.IsBlocker = false;
+        }
+
+        // Blocker cuyo transform NO está en el centro de su footprint (pivot
+        // desfasado). El footprint autorado (Coord/Footprint/Offset) es la
+        // fuente de verdad; el transform solo aporta el rango Y del renderer.
+        private static void CreateOffsetPivotBlocker(
+            GameObject parent, GridCoord coord, Vector3Int footprint, Vector3 localPos)
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(parent.transform, worldPositionStays: false);
+            cube.transform.localPosition = localPos;
+            cube.transform.localScale = new Vector3(footprint.x, 1f, footprint.z);
+
+            var marker = cube.AddComponent<TileMarker>();
+            marker.Coord = coord;
+            marker.Type = TileType.Decoration;
+            marker.IsBlocker = true;
+            marker.Footprint = footprint;
+            marker.FootprintOffset = Vector3Int.zero;
         }
 
         private static void CreateCube(GameObject parent, Vector3 localPos)

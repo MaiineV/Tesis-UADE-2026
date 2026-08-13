@@ -4,10 +4,12 @@ using Patterns;
 using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Exploration;
 using Rollgeon.Heroes;
+using Rollgeon.Input;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -40,6 +42,7 @@ namespace Rollgeon.UI.HUD
         private EventManager.EventReceiver _onPhaseExit;
         private EventManager.EventReceiver _onEnergyChanged;
         private EventManager.EventReceiver _onInventoryChanged;
+        private IGameplayHotkeyService _hotkeys;
 
         private void Awake()
         {
@@ -78,6 +81,10 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, _onInventoryChanged);
             EventManager.Subscribe(EventName.OnItemRemoved, _onInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
+            // Tutorial: refrescar interactables cuando un slot se desbloquea.
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, _onInventoryChanged);
+
+            HookHotkeys(true);
 
             _bound = true;
 
@@ -103,6 +110,9 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
+            EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, _onInventoryChanged);
+
+            HookHotkeys(false);
 
             _bound = false;
             _activeBehaviors = null;
@@ -134,14 +144,18 @@ namespace Rollgeon.UI.HUD
         // El slot ForceDoor en Exploración resuelve al behavior "Pass door". La UX
         // ahora es seleccionar la casilla roja "frente a puerta" durante el movimiento
         // (ver ExplorationBehaviorService), así que el botón sobra y se oculta en este
-        // HUD. En combate la lógica vive en el HUD de combate — éste sólo se muestra en
-        // Exploración, así que el filtro es local.
+        // HUD. Movement también se oculta: el modo movimiento está SIEMPRE activo en
+        // Exploración (click-to-move permanente, auto-armado por
+        // ExplorationBehaviorService), así que el botón ya no hace falta. En combate la
+        // lógica vive en el HUD de combate — éste sólo se muestra en Exploración, así
+        // que el filtro es local.
         private bool IsHiddenInExploration(int buttonIndex, HeroActionBehavior behavior)
         {
             if (behavior == null) return false;
-            if (_slots != null && buttonIndex < _slots.Count)
-                return _slots[buttonIndex] == HeroBehaviorSlot.ForceDoor;
-            return behavior.Slot == HeroBehaviorSlot.ForceDoor;
+            var slot = (_slots != null && buttonIndex < _slots.Count)
+                ? _slots[buttonIndex]
+                : behavior.Slot;
+            return slot == HeroBehaviorSlot.ForceDoor || slot == HeroBehaviorSlot.Movement;
         }
 
         private void RefreshInteractable()
@@ -182,6 +196,12 @@ namespace Rollgeon.UI.HUD
 
         private bool IsBehaviorAvailable(HeroActionBehavior behavior)
         {
+            // Tutorial: slots todavía no desbloqueados quedan no-interactables.
+            // Backstop de ejecución en TurnManager.IsForbiddenByRuleset.
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null && tutorialGate.IsSlotLocked(behavior.Slot))
+                return false;
+
             // BUG-017: con la vida llena el heal no aporta nada (HealPipeline lo
             // clampea a 0) — el botón no debe ser interactable.
             if (behavior.Slot == HeroBehaviorSlot.Healing
@@ -206,6 +226,66 @@ namespace Rollgeon.UI.HUD
         private void SetVisible(bool visible)
         {
             gameObject.SetActive(visible);
+        }
+
+        // ======================================================================
+        // Hotkeys (teclado) — mirror del click, gateado por interactable
+        // ======================================================================
+
+        private void HookHotkeys(bool subscribe)
+        {
+            if (subscribe)
+            {
+                if (_hotkeys == null
+                    && !ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys))
+                    return;
+            }
+            if (_hotkeys == null) return;
+
+            if (subscribe)
+            {
+                // En Exploración el botón de Movement está oculto (click-to-move
+                // permanente), así que Q cae en un botón inactivo → no-op. Igual lo
+                // suscribimos por consistencia con el mapeo global de teclas.
+                _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                // Force Door en exploración se dispara por la casilla roja (botón oculto),
+                // así que F cae en botón inactivo → no-op. Se suscribe por consistencia.
+                _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+            }
+            else
+            {
+                _hotkeys.Unsubscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Unsubscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys = null;
+            }
+        }
+
+        private void OnHotkeyMove(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Movement);
+        private void OnHotkeyAttack(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.BaseAttack);
+        private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
+        private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
+        private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
+
+        // Invoca el onClick del botón cuyo slot (via _slots) matchea, solo si está
+        // activo e interactable → mismo camino y gating que un click real.
+        private void TriggerSlotHotkey(HeroBehaviorSlot slot)
+        {
+            for (int i = 0; i < _buttons.Count; i++)
+            {
+                var btn = _buttons[i];
+                if (btn == null) continue;
+                var s = (_slots != null && i < _slots.Count) ? _slots[i] : (HeroBehaviorSlot)i;
+                if (s != slot) continue;
+                if (btn.gameObject.activeInHierarchy && btn.interactable)
+                    btn.onClick.Invoke();
+                return;
+            }
         }
 
         private void HandleClick(int buttonIndex)

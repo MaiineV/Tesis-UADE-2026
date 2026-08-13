@@ -45,9 +45,15 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public override string NodeName => "Move Toward Target";
 
+        /// <summary>Key compartida por todos los AINode_Move del árbol: mover es UNA acción por turno.</summary>
+        internal const string ActionKey = "__move";
+
         public override AIResult Tick(AIContext context)
         {
             if (context == null) return AIResult.Failed;
+            // Ya movió este turno → no-op transparente (Succeeded, no Failed — un Failed
+            // abortaría el While padre) para que el loop siga drenando energía.
+            if (context.HasExecuted(ActionKey)) return AIResult.Succeeded;
             if (context.Grid == null || context.Movement == null) return AIResult.Failed;
 
             var targetGuid = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
@@ -87,6 +93,10 @@ namespace Rollgeon.Combat.AI.Decisions
 
             if (!context.Movement.Move(context.SelfGuid, best))
                 return AIResult.Failed;
+
+            // Solo el movimiento efectivo consume la acción — los Failed de arriba
+            // (ya en banda, sin tile mejor) dejan la acción disponible.
+            context.MarkExecuted(ActionKey);
 
             var wait = context.VisualService?.WaitForMoveComplete(context.SelfGuid);
             if (wait != null)

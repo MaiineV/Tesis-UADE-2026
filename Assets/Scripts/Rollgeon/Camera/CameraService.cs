@@ -1,4 +1,6 @@
 using System;
+using MoreMountains.Feedbacks;
+using MoreMountains.Tools;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Dungeon;
@@ -38,11 +40,19 @@ namespace Rollgeon.GameCamera
         private bool _isPanning;
         private bool _isFloorView;
         private float _pendingDragPixels;
+        private float _lastRotationStepTime = float.NegativeInfinity;
+        // Pan suavizado: el input mueve _panTarget y _panOffset lo persigue con
+        // SmoothDamp en LateUpdate (PanLerpSeconds). Recenter/anclajes setean ambos.
+        private Vector3 _panTarget;
+        private Vector3 _panVelocity;
 
         private Tween _rotationTween;
         private Tween _zoomTween;
         private Tween _recenterTween;
-        private Tween _shakeTween;
+
+        private float _shakeAmplitude;
+        private float _shakeDuration;
+        private float _shakeElapsed;
 
         private EventManager.EventReceiver _onRoomEnteredHandler;
 
@@ -63,8 +73,10 @@ namespace Rollgeon.GameCamera
         private CameraConfigSO _configOverride;
 
         /// <summary>
-        /// Inicialización pública. Útil para tests y para bootstraps que quieran
-        /// wirear la cámara manualmente sin pasar por <see cref="Awake"/>.
+        /// Inicialización pública: deja la cámara operativa y la registra como
+        /// <see cref="ICameraService"/> en <see cref="ServiceScope.Global"/>. Útil para
+        /// tests y para bootstraps que quieran wirear la cámara manualmente sin pasar por
+        /// <see cref="Awake"/>. <see cref="OnDestroy"/> la desregistra.
         /// </summary>
         public void Initialize(CameraConfigSO config)
         {
@@ -75,7 +87,7 @@ namespace Rollgeon.GameCamera
             _currentFacing = _config.StartingFacing;
             _currentZoom = Mathf.Clamp(_config.DefaultZoom, _config.ZoomMin, _config.ZoomMax);
             _targetZoom = _currentZoom;
-            _panOffset = HomeOffset;
+            SetPanImmediate(HomeOffset);
 
             ApplyInitialPose();
             ApplyZoomImmediate(_currentZoom);
@@ -90,17 +102,25 @@ namespace Rollgeon.GameCamera
             }
 
             RefreshWallOcclusion();
+
+            // Global, no Run: la cámara vive y muere con la SCENE, no con la run. En Run
+            // scope se desregistraba sola — Unity corre todos los Awake antes de cualquier
+            // Start, así que este registro quedaba hecho y acto seguido
+            // GameplayBootstrapper.Start → StartRun → ClearScope(Run) lo borraba, dejando la
+            // cámara viva pero irresoluble: sin SetFollowTarget y sin recenter al entrar a
+            // una sala. OnDestroy la desregistra al descargar la scene.
+            ServiceLocator.AddService<ICameraService>(this, ServiceScope.Global);
         }
 
         private void HandleRoomEntered(params object[] args) => RefreshWallOcclusion();
 
         /// <summary>
         /// Autowire para uso en la scene de gameplay: resuelve el
-        /// <see cref="CameraConfigSO"/> (override o desde <see cref="ServiceLocator"/>),
-        /// se inicializa y se registra como <see cref="ICameraService"/> en
-        /// <see cref="ServiceScope.Run"/> (§17.E — "registrado al despertar").
-        /// Tests y bootstraps manuales pueden llamar <see cref="Initialize"/>
-        /// primero — <c>Awake</c> detecta que ya hay config y no hace nada.
+        /// <see cref="CameraConfigSO"/> (override o desde <see cref="ServiceLocator"/>) y
+        /// delega en <see cref="Initialize"/>, que es quien registra el service
+        /// (§17.E — "registrado al despertar"). Tests y bootstraps manuales pueden llamar
+        /// <see cref="Initialize"/> primero — <c>Awake</c> detecta que ya hay config y no
+        /// hace nada.
         /// </summary>
         private void Awake()
         {
@@ -114,8 +134,11 @@ namespace Rollgeon.GameCamera
             if (config == null) return;  // inerte hasta que algo llame Initialize()
 
             Initialize(config);
-            ServiceLocator.AddService<ICameraService>(this, ServiceScope.Run);
         }
+
+        private void OnEnable() => MMCameraShakeEvent.Register(OnFeelCameraShake);
+
+        private void OnDisable() => MMCameraShakeEvent.Unregister(OnFeelCameraShake);
 
         private void OnDestroy()
         {
@@ -159,7 +182,7 @@ namespace Rollgeon.GameCamera
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target;
-            _panOffset = HomeOffset;
+            SetPanImmediate(HomeOffset);
             _isPanning = false;
 
             if (target != null)
@@ -214,6 +237,8 @@ namespace Rollgeon.GameCamera
                 _pendingStaticReanchor = false;
             }
 
+            SmoothPanOffset();
+
             if (_followTarget != null || _hasStaticFocus)
             {
                 // Follow → trackea la posición actual del player. Estático → usa el foco
@@ -229,6 +254,9 @@ namespace Rollgeon.GameCamera
             // Pixel snap siempre al final, después de todo posicionamiento.
             if (_config.EnablePixelSnap)
                 ApplyPixelSnap();
+
+            // Después del snap: el shake es ruido deliberado, no queremos que el snap lo coma.
+            ApplyShake();
         }
 
         // Punto base sobre el que se encuadra la cámara. En modo follow = posición actual
@@ -328,23 +356,55 @@ namespace Rollgeon.GameCamera
 
         /// <summary>
         /// Drag accumulator (§17.E.4). Sumar pixeles de delta; dispara
-        /// <see cref="RotateBy45"/> cada <c>DragPixelsPerStep</c>.
+        /// <see cref="RotateBy45"/> cada <c>DragPixelsPerStep</c>, con un
+        /// mínimo de <c>RotationStepCooldownSeconds</c> entre pasos.
         /// </summary>
         public void AccumulateRotationDrag(float deltaPixels)
         {
             if (_config == null || !_config.EnableRotation) return;
             _pendingDragPixels += deltaPixels;
 
-            while (_pendingDragPixels >= _config.DragPixelsPerStep)
+            float step = _config.DragPixelsPerStep;
+            float cooldown = _config.RotationStepCooldownSeconds;
+
+            if (cooldown <= 0f)
+            {
+                while (_pendingDragPixels >= step)
+                {
+                    RotateBy45(clockwise: true);
+                    _pendingDragPixels -= step;
+                }
+                while (_pendingDragPixels <= -step)
+                {
+                    RotateBy45(clockwise: false);
+                    _pendingDragPixels += step;
+                }
+                return;
+            }
+
+            // Un flick violento no debe encolar una ráfaga de pasos diferidos:
+            // lo acumulado nunca supera un paso.
+            _pendingDragPixels = Mathf.Clamp(_pendingDragPixels, -step, step);
+
+            if (Time.unscaledTime - _lastRotationStepTime < cooldown) return;
+
+            if (_pendingDragPixels >= step)
             {
                 RotateBy45(clockwise: true);
-                _pendingDragPixels -= _config.DragPixelsPerStep;
             }
-            while (_pendingDragPixels <= -_config.DragPixelsPerStep)
+            else if (_pendingDragPixels <= -step)
             {
                 RotateBy45(clockwise: false);
-                _pendingDragPixels += _config.DragPixelsPerStep;
             }
+            else
+            {
+                return;
+            }
+
+            // Consumir TODO lo pendiente: el próximo paso exige un umbral entero
+            // de movimiento fresco — sensibilidad constante durante el drag.
+            _pendingDragPixels = 0f;
+            _lastRotationStepTime = Time.unscaledTime;
         }
 
         /// <summary>Resetea el accumulator de drag (al soltar el modifier).</summary>
@@ -364,19 +424,51 @@ namespace Rollgeon.GameCamera
             // Convertir delta de pantalla a world, relativo a los ejes del rig.
             // Mouse delta "arrastrar a la derecha" debe mover la cámara a la izquierda
             // del punto focal (pan natural).
-            var yaw = (float)_currentFacing;
+            var yaw = GetYawForFacing(_currentFacing);
             var worldRight = Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
             var worldForward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
 
+            // Con cámara orto la altura visible son 2×zoom world units repartidas en
+            // Screen.height pixeles: escalar por eso hace que el pan se sienta igual
+            // en pantalla a cualquier zoom (PanSpeed 1 = el piso acompaña al cursor 1:1).
+            float worldPerPixel = (_currentZoom * 2f) / Mathf.Max(1, Screen.height);
             var delta = (-screenDelta.x * worldRight - screenDelta.y * worldForward)
-                        * (_config.PanSpeed * Time.deltaTime);
+                        * (worldPerPixel * _config.PanSpeed);
 
-            _panOffset += delta;
+            _panTarget += delta;
 
             if (_config.PanClampToFloorBounds)
             {
-                _panOffset = ClampPanToFloor(_panOffset);
+                _panTarget = ClampPanToFloor(_panTarget);
             }
+        }
+
+        /// <summary>
+        /// Setea el pan sin suavizado: offset actual, target y velocity quedan
+        /// alineados. Para anclajes/recenter donde el smoothing no debe pelear.
+        /// </summary>
+        private void SetPanImmediate(Vector3 offset)
+        {
+            _panOffset = offset;
+            _panTarget = offset;
+            _panVelocity = Vector3.zero;
+        }
+
+        // _panOffset persigue a _panTarget con SmoothDamp. Unscaled time: el pan es
+        // input de UI de cámara y no debe congelarse durante hit-stops/timescale.
+        private void SmoothPanOffset()
+        {
+            if (_panOffset == _panTarget) return;
+
+            if (_config.PanLerpSeconds <= 0f)
+            {
+                SetPanImmediate(_panTarget);
+                return;
+            }
+
+            _panOffset = Vector3.SmoothDamp(
+                _panOffset, _panTarget, ref _panVelocity,
+                _config.PanLerpSeconds, Mathf.Infinity, Time.unscaledDeltaTime);
         }
 
         private Vector3 ClampPanToFloor(Vector3 offset)
@@ -470,7 +562,7 @@ namespace Rollgeon.GameCamera
         {
             if (_followTarget == null)
             {
-                _panOffset = HomeOffset;
+                SetPanImmediate(HomeOffset);
                 _isPanning = false;
                 return;
             }
@@ -489,7 +581,7 @@ namespace Rollgeon.GameCamera
                 // Reanclar diferido: capturamos la posición del player en el próximo
                 // LateUpdate, cuando ya fue reposicionado al spawn de la sala nueva.
                 _pendingStaticReanchor = true;
-                _panOffset = homeOffset;
+                SetPanImmediate(homeOffset);
                 _isPanning = false;
                 EventManager.Trigger(EventName.OnCameraRecentered, instant);
                 return;
@@ -497,7 +589,7 @@ namespace Rollgeon.GameCamera
 
             if (instant || _config == null || _config.RecenterTweenSeconds <= 0f)
             {
-                _panOffset = homeOffset;
+                SetPanImmediate(homeOffset);
                 _isPanning = false;
             }
             else
@@ -507,7 +599,10 @@ namespace Rollgeon.GameCamera
                     startValue: 0f,
                     endValue: 1f,
                     duration: _config.RecenterTweenSeconds,
-                    onValueChange: t => _panOffset = Vector3.LerpUnclamped(startOffset, homeOffset, t),
+                    // El tween manda: target y velocity se mantienen alineados para
+                    // que el SmoothDamp del LateUpdate no pelee contra el recenter.
+                    onValueChange: t => SetPanImmediate(
+                        Vector3.LerpUnclamped(startOffset, homeOffset, t)),
                     ease: _config.RecenterEase);
                 _isPanning = false;
             }
@@ -538,7 +633,7 @@ namespace Rollgeon.GameCamera
         }
 
         // ------------------------------------------------------------------ //
-        // Shake (§17.E.10 — TODO v8 scaffold)                                //
+        // Shake (§17.E.10)                                                    //
         // ------------------------------------------------------------------ //
 
         public void Shake(float amplitude, float durationSeconds)
@@ -546,12 +641,43 @@ namespace Rollgeon.GameCamera
             if (_config == null || _rig == null) return;
             if (amplitude <= 0f || durationSeconds <= 0f) return;
 
-            if (_shakeTween.isAlive) _shakeTween.Stop();
+            // El shake más fuerte gana: un shake chico no debe pisar uno grande en curso.
+            float remaining = _shakeDuration - _shakeElapsed;
+            if (remaining > 0f && amplitude < _shakeAmplitude) return;
 
-            _shakeTween = Tween.ShakeLocalPosition(
-                _rig,
-                strength: Vector3.one * amplitude,
-                duration: durationSeconds);
+            _shakeAmplitude = amplitude;
+            _shakeDuration = durationSeconds;
+            _shakeElapsed = 0f;
+        }
+
+        /// <summary>
+        /// Offset de shake, aplicado DESPUÉS de <c>PlaceRigAt</c>. Un tween sobre el
+        /// transform no sirve: <see cref="LateUpdate"/> reescribe <c>_rig.position</c>
+        /// todos los frames y se comería el shake — por eso el offset se suma acá al final.
+        /// </summary>
+        private void ApplyShake()
+        {
+            if (_shakeDuration <= 0f || _shakeElapsed >= _shakeDuration) return;
+
+            // Unscaled: el shake va de la mano con el freeze frame (timeScale ~0) del
+            // impacto. Con deltaTime escalado, el shake se congelaría junto con el juego.
+            _shakeElapsed += Time.unscaledDeltaTime;
+
+            float decay = 1f - Mathf.Clamp01(_shakeElapsed / _shakeDuration);
+            if (decay <= 0f) { _shakeDuration = 0f; return; }
+
+            _rig.position += UnityEngine.Random.insideUnitSphere * (_shakeAmplitude * decay);
+        }
+
+        // Puente con Feel: cualquier MMF_CameraShake del proyecto entra por acá en vez de
+        // por un MMCameraShaker. La cámara la maneja este service (LateUpdate reescribe la
+        // posición), así que un shaker propio de MM sobre este mismo transform no se vería.
+        private void OnFeelCameraShake(
+            float duration, float amplitude, float frequency,
+            float amplitudeX, float amplitudeY, float amplitudeZ,
+            bool infinite = false, MMChannelData channelData = null, bool useUnscaledTime = false)
+        {
+            Shake(amplitude, duration);
         }
     }
 }

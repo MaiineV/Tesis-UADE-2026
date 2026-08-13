@@ -1,16 +1,20 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
+using Rollgeon.Combat.Weakness;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
+using Rollgeon.Run;
 
 namespace Rollgeon.Combat.Handoff
 {
@@ -29,7 +33,7 @@ namespace Rollgeon.Combat.Handoff
         private const int CombatDefaultSpawnCount = 2;
         private const int BossDefaultSpawnCount = 1;
 
-        /// <summary>Un enemigo planificado para spawn + su tier rolleado (#158).</summary>
+        /// <summary>Un enemigo planificado para spawn + su tier resuelto por piso (#158).</summary>
         private readonly struct PlannedSpawn
         {
             public readonly EnemyDataSO Enemy;
@@ -43,6 +47,18 @@ namespace Rollgeon.Combat.Handoff
         private readonly IGridManager _grid;
         private readonly IEntityVisualService _visuals;
         private readonly EnemyGoldDropService _goldDrops;
+        private readonly IEntityPortraitResolver _portraits;
+        private readonly IRunContextService _runContext;
+
+        /// <summary>
+        /// One-shot: cuando es <c>true</c>, el próximo re-spawn desde estado guardado usa
+        /// la tile y el GUID persistidos (<see cref="EnemySpawnState.LastCell"/>/<c>Guid</c>)
+        /// en vez de reposicionar random. Lo prende <c>RunController</c> tras
+        /// <c>DungeonManager.ResumeFromSave</c> y se consume en el primer <see cref="Resolve"/>.
+        /// El re-entry normal (dentro de la sesión) queda con <c>false</c> ⇒ posición random
+        /// (diseño GD). (#0028 Fase 2)
+        /// </summary>
+        public bool ResumeFromSaveNextSpawn { get; set; }
 
         public DefaultEnemySpawnResolver(
             InMemoryEntityRegistry registry,
@@ -50,7 +66,9 @@ namespace Rollgeon.Combat.Handoff
             IEnemyAIRegistry aiRegistry = null,
             IGridManager grid = null,
             IEntityVisualService visuals = null,
-            EnemyGoldDropService goldDrops = null)
+            EnemyGoldDropService goldDrops = null,
+            IEntityPortraitResolver portraits = null,
+            IRunContextService runContext = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
@@ -58,7 +76,15 @@ namespace Rollgeon.Combat.Handoff
             _grid = grid;
             _visuals = visuals;
             _goldDrops = goldDrops;
+            _portraits = portraits;
+            _runContext = runContext;
         }
+
+        /// <summary>
+        /// Piso actual (1-based) leído en cada spawn — el resolver vive toda la run y
+        /// el piso avanza. Sin servicio (tests / tutorial sin progresión) ⇒ piso 1.
+        /// </summary>
+        private int CurrentFloorNumber => _runContext != null ? _runContext.FloorIndex + 1 : 1;
 
         public List<(Guid id, EnemyDataSO data)> Resolve(RoomInstance instance, System.Random rng)
         {
@@ -75,10 +101,15 @@ namespace Rollgeon.Combat.Handoff
             var existingStates = CollectEnemyStates(instance);
             if (existingStates.Count > 0)
             {
-                // En re-entry, los enemigos vivos reaparecen en posiciones aleatorias —
-                // no en sus spawn points originales — para que la sala no se sienta
-                // estática al volver. Excluimos tiles de puerta (no caer encima) y los
-                // ya ocupados (player + otros enemigos del batch). Si no hay grid (tests
+                // Resume desde save (#0028): un solo spawn respeta la tile y el GUID
+                // guardados; el re-entry normal reposiciona random para que la sala no se
+                // sienta estática (diseño GD). Flag one-shot.
+                bool resume = ResumeFromSaveNextSpawn;
+                ResumeFromSaveNextSpawn = false;
+
+                // En re-entry normal, los enemigos vivos reaparecen en posiciones
+                // aleatorias. Excluimos tiles de puerta (no caer encima) y los ya
+                // ocupados (player + otros enemigos del batch). Si no hay grid (tests
                 // sin layout) o no hay candidatos válidos, caemos al spawn point legacy.
                 var forbidden = CollectDoorCoords(layout);
                 foreach (var state in existingStates)
@@ -87,10 +118,26 @@ namespace Rollgeon.Combat.Handoff
                     var data = LookupEnemyData(room, state.EnemyDataSOId);
                     if (data == null) continue;
 
-                    var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
-                    var id = randomCoord.HasValue
-                        ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier)
-                        : RegisterEnemyFromState(data, state, layout, rng);
+                    Guid? presetId = null;
+                    if (resume && !string.IsNullOrEmpty(state.Guid)
+                        && Guid.TryParse(state.Guid, out var savedGuid))
+                    {
+                        presetId = savedGuid;
+                    }
+
+                    Guid id;
+                    if (resume && state.HasLastCell)
+                    {
+                        // Posición exacta guardada.
+                        id = RegisterEnemyAtCoord(data, state.LastCell, rng, state, state.Tier, presetId);
+                    }
+                    else
+                    {
+                        var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
+                        id = randomCoord.HasValue
+                            ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier, presetId)
+                            : RegisterEnemyFromState(data, state, layout, rng, presetId);
+                    }
 
                     if (id != Guid.Empty)
                     {
@@ -109,7 +156,7 @@ namespace Rollgeon.Combat.Handoff
                 var enemyData = planned.Enemy;
                 if (enemyData == null) continue;
 
-                var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, layout, rng);
+                var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, instance, layout, rng);
                 if (id != Guid.Empty)
                 {
                     result.Add((id, enemyData));
@@ -137,6 +184,16 @@ namespace Rollgeon.Combat.Handoff
 
         private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
         {
+            int floor = CurrentFloorNumber;
+
+            // Salas autoradas (tutorial): el setup del SO le gana a los
+            // SpawnPointConfig del prefab compartido.
+            if (room.ForcePossibleSetups)
+            {
+                var forced = BuildPlanFromSetups(room, rng, floor);
+                if (forced != null) return forced;
+            }
+
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
             if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
             {
@@ -166,8 +223,7 @@ namespace Rollgeon.Combat.Handoff
 
                         if (enemy != null)
                         {
-                            int tier = EnemyTierRoll.Roll(config.GetTierWeightsForSet(setIndex), enemy, rng);
-                            plan.Add(new PlannedSpawn(enemy, tier));
+                            plan.Add(new PlannedSpawn(enemy, enemy.ResolveTierForFloor(floor)));
                         }
                         else if (room.EnemyPool != null)
                         {
@@ -175,7 +231,7 @@ namespace Rollgeon.Combat.Handoff
                             if (idxs.Count > 0 && idxs[0] >= 0)
                             {
                                 var e = room.EnemyPool.Entries[idxs[0]].Item;
-                                int tier = EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idxs[0]), e, rng);
+                                int tier = e != null ? e.ResolveTierForFloor(floor) : 1;
                                 plan.Add(new PlannedSpawn(e, tier));
                             }
                         }
@@ -185,20 +241,8 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // Legacy path: PossibleSetups then EnemyPool.
-            if (room.PossibleSetups != null && room.PossibleSetups.Count > 0)
-            {
-                var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];
-                if (setup != null && setup.Slots != null && setup.Slots.Count > 0)
-                {
-                    var plan = new List<PlannedSpawn>(setup.Slots.Count);
-                    foreach (var slot in setup.Slots)
-                    {
-                        int tier = EnemyTierRoll.Roll(slot.TierWeights, slot.Enemy, rng);
-                        plan.Add(new PlannedSpawn(slot.Enemy, tier));
-                    }
-                    return plan;
-                }
-            }
+            var fromSetups = BuildPlanFromSetups(room, rng, floor);
+            if (fromSetups != null) return fromSetups;
 
             int defaultCount = room.Type == RoomType.Boss
                 ? BossDefaultSpawnCount
@@ -211,15 +255,46 @@ namespace Rollgeon.Combat.Handoff
             foreach (var idx in rolledIndices)
             {
                 var e = idx >= 0 ? room.EnemyPool.Entries[idx].Item : null;
-                int tier = e != null ? EnemyTierRoll.Roll(room.EnemyPool.GetTierWeightsForEntry(idx), e, rng) : 1;
+                int tier = e != null ? e.ResolveTierForFloor(floor) : 1;
                 list.Add(new PlannedSpawn(e, tier));
             }
             return list;
         }
 
-        private Guid RegisterEnemy(EnemyDataSO enemyData, int tier, int spawnIndex, RoomLayout layout, System.Random rng)
+        /// <summary>
+        /// Plan desde <see cref="RoomSO.PossibleSetups"/> (uno al azar). <c>null</c>
+        /// si no hay setups usables — el caller sigue con su fallback.
+        /// </summary>
+        private static List<PlannedSpawn> BuildPlanFromSetups(RoomSO room, System.Random rng, int floor)
+        {
+            if (room.PossibleSetups == null || room.PossibleSetups.Count == 0) return null;
+
+            var setup = room.PossibleSetups[rng.Next(room.PossibleSetups.Count)];
+            if (setup?.Slots == null || setup.Slots.Count == 0) return null;
+
+            var plan = new List<PlannedSpawn>(setup.Slots.Count);
+            foreach (var slot in setup.Slots)
+            {
+                int tier = slot.Enemy != null ? slot.Enemy.ResolveTierForFloor(floor) : 1;
+                plan.Add(new PlannedSpawn(slot.Enemy, tier));
+            }
+            return plan;
+        }
+
+        private Guid RegisterEnemy(
+            EnemyDataSO enemyData, int tier, int spawnIndex,
+            RoomInstance instance, RoomLayout layout, System.Random rng)
         {
             var coord = ResolveSpawnCoord(layout, spawnIndex);
+
+            // Seam opcional (Tutorial Mode): redirigir la casilla del primer spawn.
+            if (ServiceLocator.TryGetService<IEnemySpawnCoordOverride>(out var coordOverride)
+                && coordOverride != null
+                && coordOverride.TryOverrideSpawnCoord(instance, spawnIndex, coord, out var overridden))
+            {
+                coord = overridden;
+            }
+
             return RegisterEnemyAtCoord(enemyData, coord, rng, state: null, tier: tier);
         }
 
@@ -229,13 +304,17 @@ namespace Rollgeon.Combat.Handoff
         /// gold drops). Si <paramref name="state"/> no es null, restaura el HP del state.
         /// </summary>
         private Guid RegisterEnemyAtCoord(
-            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state, int tier)
+            EnemyDataSO enemyData, GridCoord coord, System.Random rng, EnemySpawnState state, int tier,
+            Guid? presetId = null)
         {
-            var id = Guid.NewGuid();
+            // presetId != null en resume (#0028): preserva el GUID guardado para que la
+            // cola de turnos / modifiers restaurados referencien la misma entidad.
+            var id = presetId ?? Guid.NewGuid();
             int maxHp = enemyData.ResolveMaxHP(tier);
             var attrs = enemyData.CreateRuntimeStats(tier);
             _registry.Register(id, attrs);
             _attributes.Register(id, attrs);
+            if (_portraits != null) _portraits.Register(id, enemyData.Portrait);
 
             if (_aiRegistry != null)
             {
@@ -263,8 +342,21 @@ namespace Rollgeon.Combat.Handoff
             }
 
             ApplyComboImmunities(enemyData);
+            RegisterWeakness(id, enemyData);
 
             return id;
+        }
+
+        /// <summary>
+        /// Registra la debilidad del enemigo (combo → multiplicador) para que el
+        /// <see cref="Rollgeon.Combat.Pipelines.DamagePipeline"/> la aplique al pegarle con ese
+        /// combo. Sin <c>WeaknessComboId</c> ("None") no se registra ⇒ el checker resuelve ×1.0.
+        /// </summary>
+        private static void RegisterWeakness(Guid id, EnemyDataSO enemyData)
+        {
+            if (enemyData == null || string.IsNullOrEmpty(enemyData.WeaknessComboId)) return;
+            if (ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) && registry != null)
+                registry.SetWeakness(id, enemyData.WeaknessComboId, enemyData.WeaknessMultiplierOverride);
         }
 
         /// <summary>
@@ -290,10 +382,11 @@ namespace Rollgeon.Combat.Handoff
         }
 
         private Guid RegisterEnemyFromState(
-            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng)
+            EnemyDataSO enemyData, EnemySpawnState state, RoomLayout layout, System.Random rng,
+            Guid? presetId = null)
         {
             var coord = ResolveSpawnCoord(layout, state.SpawnPointIndex);
-            return RegisterEnemyAtCoord(enemyData, coord, rng, state, state.Tier);
+            return RegisterEnemyAtCoord(enemyData, coord, rng, state, state.Tier, presetId);
         }
 
         /// <summary>

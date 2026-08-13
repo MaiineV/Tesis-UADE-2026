@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Selection;
@@ -9,6 +10,7 @@ using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions;
+using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -57,6 +59,11 @@ namespace Rollgeon.Heroes
         [ToggleLeft]
         [Tooltip("Permite gastar energia para re-rolls extra mas alla del budget gratis.")]
         public bool AllowsEnergyReroll = true;
+
+        [ShowIf(nameof(NeedsDiceRoll))]
+        [Tooltip("Skin del tablero de dados para esta tirada: Attack en ataques, Defense en " +
+                 "defensa/shield, Default en el resto. Lo consume DiceBoardSkinView.")]
+        public DiceBoardType BoardType = DiceBoardType.Default;
 
         [Title("Show Conditions")]
         [InfoBox("PreConditions que determinan si el boton de este behavior aparece en la UI. " +
@@ -109,7 +116,29 @@ namespace Rollgeon.Heroes
             return false;
         }
 
-        public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason)
+        /// <summary>
+        /// Selección BeforeRoll efectiva de un efecto para el gate del botón y el hover
+        /// preview: la propia si la expone, o la de la fase 0 si es un <see cref="EffChain"/>
+        /// (su selection heredada está oculta — <c>ShowSelection == false</c> — y la real
+        /// vive dentro de la fase). Null = el efecto no pide selección pre-roll.
+        /// </summary>
+        public static SelectionSettings ResolveEffectiveBeforeRollSelection(IEffect eff)
+        {
+            if (eff == null) return null;
+            if (eff.RequiresSelectionAt(SelectionTiming.BeforeRoll)) return eff.GetSelection();
+            if (eff is EffChain chain) return chain.GetPhase0SelectionAt(SelectionTiming.BeforeRoll);
+            return null;
+        }
+
+        /// <param name="includeEnergyGate">
+        /// <c>false</c> deja pasar la falta de energía para que el llamador la distinga del
+        /// resto. Lo usa la HUD de combate: necesita separar "no podés todavía" (Locked) de
+        /// "no te alcanza" (Unaffordable), y con el gate adentro lo segundo era inalcanzable.
+        /// Los caminos de EJECUCIÓN lo dejan en <c>true</c> — ahí el gate sigue siendo el
+        /// backstop que impide correr una acción impagable.
+        /// </param>
+        public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason,
+                                         bool includeEnergyGate = true)
         {
             reason = null;
             if (Effects == null || Effects.Count == 0) return true;
@@ -119,7 +148,8 @@ namespace Rollgeon.Heroes
             // al data setup a duplicarlo via PCHasIntAttribute era frágil (se olvidaba) y
             // dejaba botones habilitados sin energía. Si IEnergyService no está registrado
             // (ej. EditMode tests), no gateamos — defensive default.
-            if (EnergyCost > 0
+            if (includeEnergyGate
+                && EnergyCost > 0
                 && ownerGuid != Guid.Empty
                 && ServiceLocator.TryGetService<IEnergyService>(out var energySvc)
                 && energySvc != null
@@ -150,8 +180,11 @@ namespace Rollgeon.Heroes
                 {
                     foreach (var eff in group.Effects)
                     {
-                        if (eff == null) continue;
-                        if (!eff.RequiresSelectionAt(SelectionTiming.BeforeRoll)) continue;
+                        // Selección efectiva: para un chain es la de su fase 0 (la que el
+                        // handoff usa al jugar) — gatear con la selection oculta del chain
+                        // deshabilitaba el botón con un rango que nadie autoró.
+                        var selection = ResolveEffectiveBeforeRollSelection(eff);
+                        if (selection == null) continue;
 
                         if (!hasOwnerPos)
                         {
@@ -159,7 +192,7 @@ namespace Rollgeon.Heroes
                             break;
                         }
 
-                        var targets = eff.GetSelection().ResolveValidTiles(ownerPos, ownerGuid);
+                        var targets = selection.ResolveValidTiles(ownerPos, ownerGuid);
                         if (targets == null || targets.Count == 0)
                         {
                             groupUsable = false;
@@ -184,11 +217,31 @@ namespace Rollgeon.Heroes
             var effCtx = BuildEffectContext(ctx);
             var preCtx = BuildPreConditionContext(ctx);
 
-            foreach (var group in Effects)
+            // Ventana de combo jugado: abre ANTES del primer efecto que consuma ComboResult
+            // (daño, escudo, heal) para que las pasivas inyecten bono en esta ejecución.
+            var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+            play?.BeginPlay(effCtx);
+            // Con la ventana abierta y el journal at-played ya lleno, anuncia el desglose
+            // N×M ANTES de ejecutar efectos (la UI de breakdown arma su secuencia y gatea
+            // el golpe real desde este payload). Behaviors sin daño pero con escudo (acción
+            // de defensa pura) anuncian la variante de escudo — misma secuencia.
+            var announceDmg = FindFirstDealDamageEffect();
+            if (announceDmg != null)
+                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, announceDmg);
+            else
+                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(effCtx, FindFirstAddShieldEffect());
+            try
             {
-                if (group == null) continue;
-                group.TryExecute(effCtx, preCtx);
-                if (!effCtx.lastResult) break;
+                foreach (var group in Effects)
+                {
+                    if (group == null) continue;
+                    group.TryExecute(effCtx, preCtx);
+                    if (!effCtx.lastResult) break;
+                }
+            }
+            finally
+            {
+                play?.EndPlay();
             }
         }
 
@@ -206,6 +259,8 @@ namespace Rollgeon.Heroes
             if (ctx is HeroBehaviorContext heroCtx)
             {
                 effCtx.DiceResult = heroCtx.DiceResult;
+                effCtx.KeptDice = heroCtx.KeptDice;
+                effCtx.KeptDiceOriginalIndices = heroCtx.KeptDiceOriginalIndices;
                 effCtx.ComboResult = heroCtx.MatchedComboResult;
                 effCtx.TargetGuid = heroCtx.TargetGuid;
                 effCtx.SelectionResult = heroCtx.SelectionResult;
@@ -230,26 +285,48 @@ namespace Rollgeon.Heroes
             return null;
         }
 
-        // El BaseAttack/SpecialAttack del guerrero envuelven el EffDealDamage en fases
-        // de EffChain (damage + shield), así que NO está al nivel top del behavior.
-        // Recursamos dentro del chain para que la UI (DamageFormulaView) encuentre el
-        // efecto y pueda leer Source/ComboMultiplier — sin esto el formula label quedaba
-        // vacío para cualquier ataque con chain.
+        // El BaseAttack/SpecialAttack del guerrero envuelven el EffDealDamage en fases de
+        // EffChain y, adentro de esas, en un step InlineEffect de EffPlaySequence (el daño
+        // se difiere al frame de impacto). O sea que NO está al nivel top del behavior.
+        // Bajamos por EffectTree para que la UI (DamageFormulaView, ComboIndicatorView)
+        // encuentre el efecto y pueda leer Source/ComboMultiplier — sin esto el formula
+        // label queda vacío, sin ningún error que lo delate.
         private static EffDealDamage FindDealDamageIn(IEffect eff)
         {
             if (eff is EffDealDamage dealDmg) return dealDmg;
-            if (eff is EffChain chain && chain.Phases != null)
+            foreach (var child in EffectTree.DirectChildren(eff))
             {
-                foreach (var phase in chain.Phases)
+                var found = FindDealDamageIn(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        // El EffAddShield vive dentro de la fase de defensa del EffChain — mismo motivo
+        // que FindFirstDealDamageEffect: la UI necesita leer su ComboMultiplier para que
+        // el preview de escudo use la misma perilla que la aplicación real.
+        public EffAddShield FindFirstAddShieldEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
                 {
-                    var phaseEffects = phase?.Effects?.Effects;
-                    if (phaseEffects == null) continue;
-                    foreach (var inner in phaseEffects)
-                    {
-                        var found = FindDealDamageIn(inner);
-                        if (found != null) return found;
-                    }
+                    var found = FindAddShieldIn(eff);
+                    if (found != null) return found;
                 }
+            }
+            return null;
+        }
+
+        private static EffAddShield FindAddShieldIn(IEffect eff)
+        {
+            if (eff is EffAddShield addShield) return addShield;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindAddShieldIn(child);
+                if (found != null) return found;
             }
             return null;
         }

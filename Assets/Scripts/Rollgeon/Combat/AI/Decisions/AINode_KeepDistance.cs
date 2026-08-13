@@ -13,6 +13,16 @@ namespace Rollgeon.Combat.AI.Decisions
     /// hasta <see cref="IdealDistance"/>. Si ya está a distancia ideal o más, no se mueve.
     /// TECHNICAL.md §17.§B (kiting).
     /// </summary>
+    /// <remarks>
+    /// <b>Cuidado al colgarlo de un Sequence.</b> Este nodo devuelve <c>Failed</c> en el caso
+    /// benigno "no hay nada que kitear" (ya estoy a distancia ideal, no hay tile mejor), como
+    /// manda el contrato de <see cref="AIActionNode"/>. Un <see cref="AINode_Sequence"/> aborta
+    /// al primer <c>Failed</c>, así que si este nodo va <b>antes</b> del ataque, el enemigo
+    /// deja de hacer TODO cuando el player está lejos. Le pasó al Sunken Grand: a 5+ casillas
+    /// se quedaba quieto. Si tiene que ir primero, envolvelo en
+    /// <c>Selector(KeepDistance, Wait)</c> — el idiom de "intentá esto, no importa si falla".
+    /// Los árboles del ranged y del healer lo esquivan poniéndolo último.
+    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_KeepDistance : AIActionNode
     {
@@ -27,9 +37,15 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public override string NodeName => "Keep Distance From Player";
 
+        /// <summary>Key propia (≠ AINode_Move): kitear es una acción distinta de acercarse.</summary>
+        internal const string ActionKey = "__keep_distance";
+
         public override AIResult Tick(AIContext context)
         {
             if (context == null) return AIResult.Failed;
+            // Ya kiteó este turno → no-op transparente (Succeeded, no Failed — un Failed
+            // abortaría el While padre) para que el loop siga drenando energía.
+            if (context.HasExecuted(ActionKey)) return AIResult.Succeeded;
             if (context.Grid == null || context.Movement == null) return AIResult.Failed;
             if (context.PlayerGuid == Guid.Empty) return AIResult.Failed;
 
@@ -60,6 +76,10 @@ namespace Rollgeon.Combat.AI.Decisions
 
             if (!context.Movement.Move(context.SelfGuid, best))
                 return AIResult.Failed;
+
+            // Solo el movimiento efectivo consume la acción — los Failed de arriba
+            // (ya a distancia ideal, sin tile mejor) dejan la acción disponible.
+            context.MarkExecuted(ActionKey);
 
             var wait = context.VisualService?.WaitForMoveComplete(context.SelfGuid);
             if (wait != null)

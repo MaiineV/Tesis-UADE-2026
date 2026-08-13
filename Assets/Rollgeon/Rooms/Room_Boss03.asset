@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.RoomSO
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -24,8 +24,9 @@ MonoBehaviour:
   RoomId: CombatBoss
   DisplayName: Boss
   Type: 2
-  RoomPrefab: {fileID: 3358072774779011347, guid: 35a15b0ca42bd3e4c9a9693f78f0470e, type: 3}
+  RoomPrefab: {fileID: 3358072774779011347, guid: aaa390d7480857f48a898662861e3345, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
+  ForcePossibleSetups: 0
   EnemyPool: {fileID: 11400000, guid: 89beaa55afda452ca11e96be6451e95b, type: 2}
   ShellIcon: {fileID: 995867419, guid: 0e83ef559e7126e4d89b611c7be3f0df, type: 3}

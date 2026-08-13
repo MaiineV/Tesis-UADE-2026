@@ -33,6 +33,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
         _BorderWidth ("Border Width",                       Range(0,0.49)) = 0.05
         _SolidRows   ("Solid Rows (sin alternancia, abajo)",Range(0,20))   = 1
 
+        [Toggle] _FlattenTopFaces ("Flatten Top/Bottom Faces (sin shapes, mismo color)", Float) = 0
+
         [Header(Colors)]
         _ColorA      ("Color A  (base / celdas pares)",          Color) = (0.38, 0.10, 0.10, 1)
         _ColorB      ("Color B  (celdas impares)",               Color) = (0.26, 0.06, 0.06, 1)
@@ -71,6 +73,14 @@ Shader "Rollgeon/PaletteCelLitPattern"
         // para WallOccluders. No se serializa por material — el default queda en 1.
         _AlphaCutoff ("Alpha Cutoff (1=visible, 0=hidden)", Range(0,1)) = 1
         _DitherScale ("Dither Scale (pixel chunkiness)", Range(1,32)) = 1
+
+        [Header(Hit Flash)]
+        _HitFlashAmount ("Hit Flash Amount", Range(0,1))   = 0
+        _HitFlashColor  ("Hit Flash Color",  Color)        = (1,1,1,1)
+
+        [Header(Emission)]
+        [Toggle] _EnableEmission ("Enable Emission", Float) = 0
+        [HDR] _EmissionColor     ("Emission Color",  Color) = (0,0,0,0)
     }
 
     SubShader
@@ -101,7 +111,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -121,6 +131,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _ShapeOpacity;
                 float  _BorderWidth;
                 float  _SolidRows;
+                float  _FlattenTopFaces;
                 float4 _ColorA;
                 float4 _ColorB;
                 float4 _DetailColor;
@@ -145,6 +156,10 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             struct Attributes
@@ -343,78 +358,95 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
                 float3 normalWS = normalize(IN.normalWS);
 
-                // ── Patrón procedural — multi-celda (bordes se intersectan) ─────
-                // Evalúa la celda propia + 8 vecinas en loop 3×3.
-                // Prioridad: borde de cualquier celda > relleno > fondo.
-                float2 wUV = WorldUV(IN.positionWS, normalWS);
-                float2 s   = wUV * _TileScale;
-                if (_PatternType >= 1.5 && _PatternType < 2.5)
-                    s.x += fmod(floor(s.y), 2.0) * 0.5;
-
-                float2 cBase = floor(s);
-                float2 pBase = frac(s) - 0.5;
-
-                bool   onAnyBorder = false;
-                bool   inAnyFill   = false;
-                float3 fillColor   = _BGColor.rgb;
-
-                for (int ndy = -1; ndy <= 1; ndy++)
-                for (int ndx = -1; ndx <= 1; ndx++)
-                {
-                    float2 nCell = cBase + float2(ndx, ndy);
-                    float2 p     = pBase - float2(ndx, ndy);
-                    float2 pSc   = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
-                    float  sdf   = GetSDF(pSc);
-
-                    bool isBorder = (sdf >= -_BorderWidth) && (sdf < 0.0);
-                    bool isFill   = (sdf < -_BorderWidth);
-                    bool isInside = (sdf < 0.0);
-
-                    float altIdx = 0.0;
-                    if      (_PatternType < 0.5)  altIdx = 0.0;
-                    else if (_PatternType < 2.5)  altIdx = fmod(abs(nCell.x) + abs(nCell.y), 2.0);
-                    else if (_PatternType < 3.5)  altIdx = fmod(abs(nCell.y), 2.0);
-                    else                          altIdx = fmod(abs(nCell.x), 2.0);
-                    if (nCell.y < _SolidRows) altIdx = 0.0;
-
-                    float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
-
-                    if (_DetailType < 0.5) // Flat
-                    {
-                        if (isInside && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
-                    }
-                    else if (_DetailType < 1.5) // Border Only
-                    {
-                        if (isBorder) onAnyBorder = true;
-                    }
-                    else if (_DetailType < 2.5) // Fill + Border
-                    {
-                        if      (isBorder)             onAnyBorder = true;
-                        else if (isFill && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
-                    }
-                    else // Radial
-                    {
-                        if (isBorder) onAnyBorder = true;
-                        else if (isFill && !inAnyFill)
-                        {
-                            inAnyFill = true;
-                            float t = saturate(length(pSc) / (_ShapeSize * 0.47));
-                            fillColor = lerp(_DetailColor.rgb, baseCol, t);
-                        }
-                    }
-                }
+                // Tapa superior del cubo de pared (sin techo que la tape): con
+                // proyección triplanar la normal hacia arriba cae en la rama de
+                // piso/techo de WorldUV y repite el mismo patrón ahí arriba.
+                // _FlattenTopFaces (opt-in, no rompe usos existentes) mantiene el
+                // color base pero sin shapes/bordes en esas caras.
+                bool isTopFace = (_FlattenTopFaces > 0.5)
+                    && (abs(normalWS.y) > abs(normalWS.x))
+                    && (abs(normalWS.y) > abs(normalWS.z));
 
                 float3 patternColor;
-                if      (onAnyBorder) patternColor = _DetailColor.rgb;
-                else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
-                else                  patternColor = _BGColor.rgb;
+
+                if (isTopFace)
+                {
+                    patternColor = _ColorA.rgb;
+                }
+                else
+                {
+                    // ── Patrón procedural — multi-celda (bordes se intersectan) ─────
+                    // Evalúa la celda propia + 8 vecinas en loop 3×3.
+                    // Prioridad: borde de cualquier celda > relleno > fondo.
+                    float2 wUV = WorldUV(IN.positionWS, normalWS);
+                    float2 s   = wUV * _TileScale;
+                    if (_PatternType >= 1.5 && _PatternType < 2.5)
+                        s.x += fmod(floor(s.y), 2.0) * 0.5;
+
+                    float2 cBase = floor(s);
+                    float2 pBase = frac(s) - 0.5;
+
+                    bool   onAnyBorder = false;
+                    bool   inAnyFill   = false;
+                    float3 fillColor   = _BGColor.rgb;
+
+                    for (int ndy = -1; ndy <= 1; ndy++)
+                    for (int ndx = -1; ndx <= 1; ndx++)
+                    {
+                        float2 nCell = cBase + float2(ndx, ndy);
+                        float2 p     = pBase - float2(ndx, ndy);
+                        float2 pSc   = float2(p.x / _ShapeScaleX, p.y / _ShapeScaleY);
+                        float  sdf   = GetSDF(pSc);
+
+                        bool isBorder = (sdf >= -_BorderWidth) && (sdf < 0.0);
+                        bool isFill   = (sdf < -_BorderWidth);
+                        bool isInside = (sdf < 0.0);
+
+                        float altIdx = 0.0;
+                        if      (_PatternType < 0.5)  altIdx = 0.0;
+                        else if (_PatternType < 2.5)  altIdx = fmod(abs(nCell.x) + abs(nCell.y), 2.0);
+                        else if (_PatternType < 3.5)  altIdx = fmod(abs(nCell.y), 2.0);
+                        else                          altIdx = fmod(abs(nCell.x), 2.0);
+                        if (nCell.y < _SolidRows) altIdx = 0.0;
+
+                        float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
+
+                        if (_DetailType < 0.5) // Flat
+                        {
+                            if (isInside && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                        }
+                        else if (_DetailType < 1.5) // Border Only
+                        {
+                            if (isBorder) onAnyBorder = true;
+                        }
+                        else if (_DetailType < 2.5) // Fill + Border
+                        {
+                            if      (isBorder)             onAnyBorder = true;
+                            else if (isFill && !inAnyFill) { inAnyFill = true; fillColor = baseCol; }
+                        }
+                        else // Radial
+                        {
+                            if (isBorder) onAnyBorder = true;
+                            else if (isFill && !inAnyFill)
+                            {
+                                inAnyFill = true;
+                                float t = saturate(length(pSc) / (_ShapeSize * 0.47));
+                                fillColor = lerp(_DetailColor.rgb, baseCol, t);
+                            }
+                        }
+                    }
+
+                    if      (onAnyBorder) patternColor = _DetailColor.rgb;
+                    else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
+                    else                  patternColor = _BGColor.rgb;
+                }
 
                 // ── Luz ──────────────────────────────────────────────────────────
                 Light mainLight  = GetMainLight(IN.shadowCoord);
                 float lightValue = CelLightVal(normalWS, mainLight, _LightWrap);
 
                 float3 addTint = float3(0, 0, 0);
-                #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
+                #if defined(_CLUSTER_LIGHT_LOOP) || defined(_ADDITIONAL_LIGHTS)
                 {
                     InputData inputData = (InputData)0;
                     inputData.positionWS              = IN.positionWS;
@@ -498,6 +530,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 }
 
                 color = saturate(color + addTint * _LightTintStrength);
+                color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
+                color += _EmissionColor.rgb * _EnableEmission;
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -526,7 +560,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             CBUFFER_START(UnityPerMaterial)
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
-                float _BorderWidth; float _SolidRows;
+                float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
                 float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
@@ -535,6 +569,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -604,7 +639,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             CBUFFER_START(UnityPerMaterial)
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
-                float _BorderWidth; float _SolidRows;
+                float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
                 float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
@@ -613,6 +648,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -657,7 +693,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             CBUFFER_START(UnityPerMaterial)
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
-                float _BorderWidth; float _SolidRows;
+                float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
                 float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
@@ -666,6 +702,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
+                float _HitFlashAmount; float4 _HitFlashColor; float _EnableEmission; float4 _EmissionColor;
             CBUFFER_END
 
             float BayerDither(float2 screenPos)
@@ -701,5 +738,6 @@ Shader "Rollgeon/PaletteCelLitPattern"
             }
             ENDHLSL
         }
+
     }
 }

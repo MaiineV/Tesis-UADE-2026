@@ -27,6 +27,14 @@ namespace Rollgeon.Dungeon
         /// <summary>Nodo del grafo de la sala activa, o <c>null</c> pre-<see cref="GenerateFloor"/>.</summary>
         RoomInstance CurrentRoomInstance { get; }
 
+        /// <summary>
+        /// Seed con el que se generó el piso actual. Los sistemas que rollean
+        /// contenido por sala (tienda) derivan de acá para que un piso regenerado
+        /// desde save (mismo seed) produzca el mismo contenido. Default 0 para
+        /// fakes de test que no modelan generación.
+        /// </summary>
+        int CurrentFloorSeed => 0;
+
         void GenerateFloor(FloorLayoutSO layout, int seed);
 
         /// <summary>Grafo completo del piso — key = <see cref="RoomInstance.InstanceId"/>.</summary>
@@ -67,6 +75,21 @@ namespace Rollgeon.Dungeon
         /// sin validar conectividad o locks.
         /// </summary>
         bool EnterRoomByInstanceId(Guid instanceId);
+
+        /// <summary>
+        /// Gate externo (tutorial, boss key, evento): setea la <see cref="RoomState"/>
+        /// de una sala sin tocar sus <c>ObjectStates</c> (HP de enemigos y flags de
+        /// puertas sobreviven el toggle Locked↔Uncleared).
+        /// </summary>
+        /// <returns><c>false</c> si el instanceId no existe en el piso.</returns>
+        bool SetRoomState(Guid instanceId, RoomState state);
+
+        /// <summary>
+        /// Refresca visuales de puertas de una sala instanciada — llamar sobre la sala
+        /// cuyo prefab muestra la puerta cuando un gate externo cambió el estado de
+        /// una VECINA (ej. desbloquear la tienda del tutorial refresca la sala actual).
+        /// </summary>
+        void ResyncDoorVisuals(Guid instanceId);
 
         /// <summary>
         /// Bounds combinados del piso actual — unión de los shells procedurales.

@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Audio;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Visuals;
+using Rollgeon.PreConditions;
 using Rollgeon.UI.HUD;
 using UnityEngine;
 
@@ -139,6 +142,12 @@ namespace Rollgeon.Feedback
                 case FeedbackType.FloatingNumber:
                     DispatchFloatingNumber(entry, request);
                     break;
+                case FeedbackType.Feel:
+                    DispatchFeel(entry, position);
+                    break;
+                case FeedbackType.PawnDeath:
+                    DispatchPawnDeath(entry, request, handle);
+                    break;
                 case FeedbackType.Wait:
                     // no-op — la duración la impone el timer/step
                     break;
@@ -173,6 +182,88 @@ namespace Rollgeon.Feedback
                 AudioSource.PlayClipAtPoint(entry.AudioClip, position, entry.Volume);
         }
 
+        private void DispatchFeel(FeedbackEntry entry, Vector3 position)
+        {
+            if (entry.FeelPlayerPrefab == null) return;
+
+            var player = Instantiate(entry.FeelPlayerPrefab, position, Quaternion.identity);
+
+            // El default (InitializationMode.Start) inicializa recién en el Start del player —
+            // un frame después de este Instantiate, o sea DESPUÉS del PlayFeedbacks de abajo.
+            // CaptureRestPose lo pasa a modo Script e inicializa ya.
+            MmfJuice.CaptureRestPose(player);
+            MmfJuice.Replay(player, entry.FeelIntensity);
+
+            // El player instanciado no tiene dueño: no lo colgamos del PlaybackHandle porque
+            // el cleanup de ese path está atado a la semántica de ShouldDestroyOnParticleEnd
+            // de los VFX. Se auto-destruye cuando el más largo de los dos relojes terminó.
+            float life = Mathf.Max(entry.Duration, player.TotalDuration) + WatchdogSafetySeconds;
+            Destroy(player.gameObject, life);
+        }
+
+        /// <summary>
+        /// Tween de muerte sobre el transform del pawn target. Hecho desde código
+        /// (no hay clip de death) → una sola entry sirve para cualquier pawn.
+        /// </summary>
+        private void DispatchPawnDeath(FeedbackEntry entry, FeedbackRequest request, PlaybackHandle handle)
+        {
+            var pawn = FeedbackPositionResolver.ResolvePawnTransform(request.TargetGuid);
+            if (pawn == null) return;
+
+            if (entry.DeathHideHealthBar)
+            {
+                // La barra es hija del pawn: sin esto se encoge junto con él y queda un
+                // sprite de HP girando arriba del cadáver.
+                var owner = pawn.GetComponent<EntityPawn>();
+                if (owner != null && owner.HealthBar != null)
+                    owner.HealthBar.gameObject.SetActive(false);
+            }
+
+            var listener = pawn.GetComponent<FeedbackCallbackListener>();
+            if (listener == null) listener = pawn.gameObject.AddComponent<FeedbackCallbackListener>();
+            handle.Listener = listener;
+
+            // La coroutine corre en el manager, no en el pawn: el pawn se destruye ni bien
+            // esto completa, y una coroutine no sobrevive al Destroy de su propio host.
+            StartCoroutine(PawnDeathRoutine(pawn, entry, listener));
+        }
+
+        private IEnumerator PawnDeathRoutine(Transform pawn, FeedbackEntry entry, FeedbackCallbackListener listener)
+        {
+            float duration = Mathf.Max(0.05f, entry.Duration);
+            var startScale = pawn.localScale;
+            var endScale = startScale * Mathf.Clamp01(entry.DeathEndScale);
+            var startPos = pawn.position;
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                // El pawn puede morir dos veces (despawn de sala, restart de run) — si lo
+                // destruyeron abajo nuestro, cortamos y completamos igual para no colgar
+                // al caller que espera el callback.
+                if (pawn == null) break;
+
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Ease-in cúbico: se sostiene un instante y después colapsa de golpe.
+                // Un lerp lineal se lee como "se apagó", no como "lo reventaron".
+                float collapse = t * t * t;
+                pawn.localScale = Vector3.Lerp(startScale, endScale, collapse);
+                pawn.Rotate(0f, entry.DeathSpinDegrees * (Time.deltaTime / duration), 0f, Space.Self);
+
+                // Arco: sube y vuelve — sin(π·t) vale 0 en ambas puntas.
+                var pos = startPos;
+                pos.y += Mathf.Sin(t * Mathf.PI) * entry.DeathRiseHeight;
+                pawn.position = pos;
+
+                yield return null;
+            }
+
+            if (pawn != null) pawn.localScale = endScale;
+            listener.MarkCompleted();
+        }
+
         private void DispatchAnimation(FeedbackEntry entry, FeedbackRequest request, PlaybackHandle handle)
         {
             if (string.IsNullOrEmpty(entry.AnimTrigger)) return;
@@ -191,6 +282,60 @@ namespace Rollgeon.Feedback
                 listener.ListenForAnimatorStateEnd(animator, entry.AnimTrigger, entry.Duration);
                 handle.Listener = listener;
             }
+        }
+
+        /// <summary>
+        /// Corre los efectos de un step <see cref="StepSource.InlineEffect"/>. Es lo que
+        /// permite atar una consecuencia de gameplay al frame de impacto: el step se gatea
+        /// con <c>StartMode = OnEvent</c> y el daño cae cuando la animación conecta, no
+        /// cuando el jugador hace click. TECHNICAL.md §10.8.
+        /// </summary>
+        private void DispatchInlineEffect(FeedbackSequenceStep step, SequenceRequestBox box)
+        {
+            if (RunInlineEffects(step, box.Request.Context, out var refreshed))
+            {
+                // Re-snapshot: el daño recién ejecutado appendeó FloatingDamage e impulso al
+                // bag del behavior, y los steps de impacto que arrancan con este mismo key los
+                // leen del request. Sin esto el número flotante y el empujón salen vacíos.
+                box.Request.StoredValues = refreshed;
+            }
+        }
+
+        /// <summary>
+        /// Corre los efectos de un step <see cref="StepSource.InlineEffect"/> y devuelve el
+        /// snapshot fresco del bag del behavior. Devuelve <c>false</c> si no había nada que
+        /// correr (step vacío o request sin contexto), en cuyo caso <paramref name="refreshed"/>
+        /// no debe usarse.
+        /// </summary>
+        internal static bool RunInlineEffects(
+            FeedbackSequenceStep step,
+            Rollgeon.Effects.EffectContext ctx,
+            out IReadOnlyDictionary<BehaviorValueKey, List<BaseBehaviorStoredValue>> refreshed)
+        {
+            refreshed = null;
+            if (step == null || step.InlineEffects == null) return false;
+
+            if (ctx == null)
+            {
+                Debug.LogWarning("[FeedbackManager] Step InlineEffect sin EffectContext en el " +
+                                 "request — no-op. Solo los requests armados por un BaseEffect " +
+                                 "lo transportan.");
+                return false;
+            }
+
+            // El step es un pass nuevo: si el pass original cortocircuitó después de armar
+            // el request, ese false no debe arrastrarse y comerse los efectos diferidos.
+            ctx.lastResult = true;
+
+            var preCtx = new PreConditionContext
+            {
+                OwnerGuid = ctx.SourceGuid,
+                OpponentGuid = ctx.TargetGuid,
+            };
+
+            step.InlineEffects.TryExecute(ctx, preCtx);
+            refreshed = Rollgeon.Effects.BaseEffect.SnapshotStoredValues(ctx.SourceBehavior);
+            return true;
         }
 
         private void DispatchBehaviorValue(FeedbackEntry entry, FeedbackRequest request)
@@ -235,6 +380,17 @@ namespace Rollgeon.Feedback
         {
             if (fn.Delay > 0f) yield return new WaitForSeconds(fn.Delay);
 
+            var type = KeyToFloatingNumberType(key);
+
+            // Dedup con la ruta A (DamagePipeline → TypedEvent<DamageResolvedPayload> →
+            // FloatingDamageSpawner): cuando hay un IDamagePipeline registrado, el daño ya
+            // se pintó por esa ruta y esta (ruta B, vía EffDealDamage + FeedbackDB) duplicaría
+            // el número. Sin pipeline (EditMode/escenas sin bootstrap) esta ruta queda como
+            // único fallback de display, así que no se suprime. Heal/Shield van SOLO por esta
+            // ruta (no hay pipeline de heal/shield todavía) — nunca se suprimen.
+            bool pipelinePresent = ServiceLocator.HasService<IDamagePipeline>();
+            if (ShouldSuppressFloatingNumber(type, pipelinePresent)) yield break;
+
             // Delegamos al spawner moderno (FloatingDamageSpawner) via el evento legacy.
             // Why: el path antiguo (Resources/FloatingNumber world-space + IPawnRegistry)
             // perdía el ancla cuando el target no estaba en el PawnRegistry, y aún cuando
@@ -242,7 +398,6 @@ namespace Rollgeon.Feedback
             // moderno ya tiene el fix RT→Screen y resuelve por IEntityPositionResolver +
             // IPawnRegistry como fallback. Misma estética en damage / heal / shield.
             var targetGuid = fn.TargetEntityGuid != Guid.Empty ? fn.TargetEntityGuid : request.TargetGuid;
-            var type = KeyToFloatingNumberType(key);
             EventManager.Trigger(EventName.OnFloatingNumberRequested, targetGuid, type, fn.Value, fn.Offset);
         }
 
@@ -253,6 +408,18 @@ namespace Rollgeon.Feedback
             BehaviorValueKey.FloatingShield => FloatingNumberType.Shield,
             _                               => FloatingNumberType.Damage,
         };
+
+        /// <summary>
+        /// Decide si la ruta B (BehaviorValue → evento legacy) debe saltear el spawn porque
+        /// la ruta A (TypedEvent&lt;DamageResolvedPayload&gt;) ya lo va a pintar. Extraído a
+        /// método puro (no <c>internal</c>: el assembly "Rollgeon" no tiene
+        /// InternalsVisibleTo("Rollgeon.Feedback.Tests")) para poder testearlo sin depender
+        /// del plumbing de corrutinas de <see cref="SpawnFloatingNumberDelayed"/>.
+        /// </summary>
+        public static bool ShouldSuppressFloatingNumber(FloatingNumberType type, bool pipelinePresent)
+        {
+            return type == FloatingNumberType.Damage && pipelinePresent;
+        }
 
         // ===================================================================
         // Animator floats — §10.10
@@ -287,11 +454,58 @@ namespace Rollgeon.Feedback
             var active = new ActiveFeedback { CompletionCallback = onComplete };
             _activeFeedbacks[instanceId] = active;
 
-            var steps = request.SequenceSteps ?? new List<FeedbackSequenceStep>();
+            var steps = request.SequenceSteps;
+
+            // Un request sin steps inline referencia una secuencia autorada en el DB por
+            // FeedbackId. Es el caso de las secuencias disparadas desde código (muerte de
+            // un enemigo), que no nacen de un EffPlaySequence y no tienen dónde autorar.
+            if ((steps == null || steps.Count == 0)
+                && !string.IsNullOrEmpty(request.FeedbackId)
+                && _db != null
+                && !_db.TryGetSequence(request.FeedbackId, out steps))
+            {
+                Debug.LogWarning($"[FeedbackManager] Sequence id '{request.FeedbackId}' not found in DB.");
+            }
+
+            steps ??= new List<FeedbackSequenceStep>();
             float budget = EstimateSequenceDuration(steps) + SequenceSafetySeconds;
+
+            StartCoroutine(RunSequenceAfterBreakdownGate(instanceId, steps, request, budget));
+        }
+
+        // Segundos que la secuencia espera a la animación de breakdown (N×M) de la UI
+        // antes de arrancar igual con warning — cinturón anti soft-lock.
+        private const float BreakdownGateFailsafeSeconds = 10f;
+
+        // La secuencia del golpe (anim de ataque → "hit" → daño) NO arranca hasta que la
+        // UI termine de sumar el breakdown y libere el gate. El timeout del feedback se
+        // arma DESPUÉS de la espera — si corriera en paralelo, un breakdown largo se
+        // comería el presupuesto de la secuencia y la mataría a mitad del golpe.
+        private IEnumerator RunSequenceAfterBreakdownGate(
+            int instanceId, List<FeedbackSequenceStep> steps, FeedbackRequest request, float budget)
+        {
+            if (BreakdownUiGate.Pending)
+            {
+                float deadline = Time.time + BreakdownGateFailsafeSeconds;
+                while (BreakdownUiGate.Pending && Time.time < deadline) yield return null;
+                if (BreakdownUiGate.Pending)
+                    Debug.LogWarning("[FeedbackManager] BreakdownUiGate sigue pendiente tras "
+                        + BreakdownGateFailsafeSeconds + "s — la secuencia arranca igual.");
+            }
 
             StartCoroutine(ExecuteLocalSequence(instanceId, steps, request));
             StartCoroutine(FeedbackTimeoutCoroutine(instanceId, budget));
+        }
+
+        /// <summary>
+        /// Request compartido por todos los steps de una secuencia. Existe porque un step
+        /// <see cref="StepSource.InlineEffect"/> produce stored values que los steps
+        /// posteriores tienen que ver — con un <see cref="FeedbackRequest"/> por valor cada
+        /// step tendría su propia copia y el re-snapshot se perdería.
+        /// </summary>
+        private sealed class SequenceRequestBox
+        {
+            public FeedbackRequest Request;
         }
 
         private IEnumerator ExecuteLocalSequence(
@@ -300,11 +514,12 @@ namespace Rollgeon.Feedback
             var bus = new FeedbackEventBus();
             var handles = new StepHandle[steps.Count];
             for (int i = 0; i < steps.Count; i++) handles[i] = new StepHandle();
+            var box = new SequenceRequestBox { Request = request };
 
             FeedbackSequenceRuntime.SetCurrent(bus);
 
             for (int i = 0; i < steps.Count; i++)
-                StartCoroutine(RunStep(i, steps, handles, bus, request));
+                StartCoroutine(RunStep(i, steps, handles, bus, box));
 
             while (true)
             {
@@ -330,14 +545,16 @@ namespace Rollgeon.Feedback
             List<FeedbackSequenceStep> steps,
             StepHandle[] handles,
             FeedbackEventBus bus,
-            FeedbackRequest request)
+            SequenceRequestBox box)
         {
             var step = steps[stepIndex];
 
             yield return WaitStartTrigger(step, stepIndex, handles, bus);
-            if (step.StartDelay > 0f) yield return new WaitForSeconds(step.StartDelay);
+            // Gap autoral puro (no duración de efecto) ⇒ sigue al game speed.
+            if (step.StartDelay > 0f)
+                yield return new WaitForSeconds(step.StartDelay / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
 
-            var playbackHandle = DispatchStep(step, request);
+            var playbackHandle = DispatchStep(step, box);
             yield return WaitEndTrigger(step, playbackHandle, bus);
 
             handles[stepIndex].Done = true;
@@ -376,7 +593,7 @@ namespace Rollgeon.Feedback
                     yield break;
                 case StepEndMode.OnDuration:
                     var dur = step.DurationOverride > 0f ? step.DurationOverride : GuessDuration(step);
-                    yield return new WaitForSeconds(dur);
+                    yield return new WaitForSeconds(PacingSeconds(step, dur));
                     yield break;
                 case StepEndMode.OnNaturalEnd:
                     if (playback.Listener != null)
@@ -386,7 +603,7 @@ namespace Rollgeon.Feedback
                     }
                     else
                     {
-                        yield return new WaitForSeconds(GuessDuration(step));
+                        yield return new WaitForSeconds(PacingSeconds(step, GuessDuration(step)));
                     }
                     yield break;
                 case StepEndMode.OnEvent:
@@ -395,8 +612,9 @@ namespace Rollgeon.Feedback
             }
         }
 
-        private PlaybackHandle DispatchStep(FeedbackSequenceStep step, FeedbackRequest request)
+        private PlaybackHandle DispatchStep(FeedbackSequenceStep step, SequenceRequestBox box)
         {
+            var request = box.Request;
             var handle = new PlaybackHandle();
             switch (step.Source)
             {
@@ -427,12 +645,25 @@ namespace Rollgeon.Feedback
                         DispatchBehaviorValue(inlineEntry, request);
                     }
                     break;
+                case StepSource.InlineEffect:
+                    DispatchInlineEffect(step, box);
+                    break;
             }
             return handle;
         }
 
-        private static float EstimateSequenceDuration(List<FeedbackSequenceStep> steps)
+        // Solo los steps InlineWait son pausas puras de ritmo — el resto de las
+        // duraciones son la longitud del VFX/SFX/anim y NO siguen al game speed
+        // (dividirlas cortaría efectos a la mitad).
+        private static float PacingSeconds(FeedbackSequenceStep step, float seconds)
+            => step != null && step.Source == StepSource.InlineWait
+                ? seconds / Rollgeon.Timing.GameSpeedPrefs.Multiplier
+                : seconds;
+
+        private float EstimateSequenceDuration(List<FeedbackSequenceStep> steps)
         {
+            // A speeds altos el runtime divide gaps/waits pero el budget no: queda
+            // holgado, que para un watchdog es el lado correcto del error.
             if (steps == null || steps.Count == 0) return 0f;
             float total = 0f;
             foreach (var s in steps)
@@ -443,12 +674,25 @@ namespace Rollgeon.Feedback
             return Mathf.Max(total, 2f);
         }
 
-        private static float GuessDuration(FeedbackSequenceStep step)
+        private float GuessDuration(FeedbackSequenceStep step)
         {
             if (step == null) return 0f;
             if (step.DurationOverride > 0f) return step.DurationOverride;
             if (step.Source == StepSource.InlineWait) return step.WaitDuration;
             if (step.EndMode == StepEndMode.Immediate) return 0f;
+
+            // Un step que referencia el DB ya trae su duración autorada en la entry. Sin esto
+            // caía siempre al estimate genérico de 5s, y como el TurnManager espera a la
+            // secuencia, cada golpe congelaba el turno 5 segundos.
+            if (step.Source == StepSource.FeedbackRef
+                && _db != null
+                && _db.TryGetFeedback(step.FeedbackRefId, out var entry)
+                && entry != null
+                && entry.Duration > 0f)
+            {
+                return entry.Duration;
+            }
+
             return UnknownStepDurationEstimate;
         }
 
@@ -481,7 +725,14 @@ namespace Rollgeon.Feedback
         {
             var t = FeedbackPositionResolver.ResolvePawnTransform(guid);
             if (t == null) return null;
-            return t.GetComponent<Animator>() ?? t.GetComponentInChildren<Animator>();
+
+            // Ojo: NO usar `??` acá. GetComponent devuelve un "fake null" (referencia C# viva
+            // que el operator== de Unity reporta como null), así que `??` se lo queda en vez de
+            // caer al fallback — y DispatchAnimation abortaba en silencio con los pawns que
+            // tienen el Animator en el hijo del modelo, que son todos.
+            var own = t.GetComponent<Animator>();
+            if (own != null) return own;
+            return t.GetComponentInChildren<Animator>(includeInactive: true);
         }
 
         private static void ApplyImpulse(Guid targetGuid, ImpulseBehaviorValue impulse)

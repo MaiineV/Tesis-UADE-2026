@@ -2,8 +2,10 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -28,8 +30,12 @@ namespace Rollgeon.Effects.Concretes
     /// </para>
     /// <para>
     /// <b>Eventos:</b> <c>AttributesManager.SetAttributeValue</c> dispara <c>OnAttributeChanged</c>
-    /// automáticamente. No emitimos eventos stat-específicos (a diferencia de <c>EffAddShield</c>
-    /// que dispara <c>OnShieldChanged</c>) — ese ducting se hace en effects dedicados.
+    /// automáticamente. Para <see cref="StatType.Health"/> además emitimos el payload resuelto
+    /// (<c>HealResolvedPayload</c> si sube, <c>DamageResolvedPayload</c> si baja) y guardamos el
+    /// número flotante — porque las barras de vida y el spawner de números solo escuchan esos
+    /// canales, no <c>OnAttributeChanged</c>. Para el resto de los stats no emitimos eventos
+    /// stat-específicos (a diferencia de <c>EffAddShield</c> → <c>OnShieldChanged</c>); ese
+    /// ducting se hace en effects dedicados.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -65,6 +71,13 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Multiplicador aplicado al resultado del reader.")]
         private float _readerMultiplier = 1f;
 
+        [Title("Clamp")]
+        [SerializeField, ShowIf(nameof(TargetStat), StatType.Health)]
+        [Tooltip("Si true (solo Health), el resultado se capea a la vida máxima del target. " +
+                 "Evita overheal: curar a un aliado en 9/10 con +4 lo deja en 10/10, no 13/10. " +
+                 "El max HP se resuelve via IEnemyAIRegistry (enemigos) o el hero del player.")]
+        private bool _clampHealthToMax;
+
         public override string GetEffectName() => $"Modify {TargetStat} ({Operation})";
 
         public override bool ApplyEffect(EffectContext context)
@@ -86,7 +99,7 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
-            return ApplyToStat(attrs, target, amount);
+            return ApplyToStat(attrs, target, amount, context);
         }
 
         private int ResolveAmount(EffectContext context) => _amountSource switch
@@ -100,18 +113,18 @@ namespace Rollgeon.Effects.Concretes
             _ => _baseAmount,
         };
 
-        private bool ApplyToStat(AttributesManager attrs, Guid target, int amount) => TargetStat switch
+        private bool ApplyToStat(AttributesManager attrs, Guid target, int amount, EffectContext context) => TargetStat switch
         {
-            StatType.Health       => Apply<Health>(attrs, target, amount),
-            StatType.Attack       => Apply<Attack>(attrs, target, amount),
-            StatType.Speed        => Apply<Speed>(attrs, target, amount),
-            StatType.Energy       => Apply<Energy>(attrs, target, amount),
-            StatType.Shield       => Apply<Shield>(attrs, target, amount),
-            StatType.HealStrength => Apply<HealStrength>(attrs, target, amount),
+            StatType.Health       => Apply<Health>(attrs, target, amount, context),
+            StatType.Attack       => Apply<Attack>(attrs, target, amount, context),
+            StatType.Speed        => Apply<Speed>(attrs, target, amount, context),
+            StatType.Energy       => Apply<Energy>(attrs, target, amount, context),
+            StatType.Shield       => Apply<Shield>(attrs, target, amount, context),
+            StatType.HealStrength => Apply<HealStrength>(attrs, target, amount, context),
             _                     => true,
         };
 
-        private bool Apply<TAttr>(AttributesManager attrs, Guid target, int amount)
+        private bool Apply<TAttr>(AttributesManager attrs, Guid target, int amount, EffectContext context)
             where TAttr : class, IModifiable<int>
         {
             int current = attrs.GetAttributeValue<TAttr, int>(target);
@@ -131,8 +144,92 @@ namespace Rollgeon.Effects.Concretes
                 case IntOperation.Set:      next = amount; break;
                 default:                    return true;
             }
+
+            // Clamp opcional a la vida máxima del target (solo Health). Evita overheal
+            // cuando el Healer cura aliados por encima de su tope.
+            if (_clampHealthToMax && TargetStat == StatType.Health)
+            {
+                int maxHp = ResolveMaxHp(target);
+                if (next > maxHp) next = maxHp;
+                if (next < 0) next = 0;
+            }
+
             attrs.SetAttributeValue<TAttr, int>(target, next);
+
+            // Este effect escribe Health directo (sin IHealPipeline/IDamagePipeline), pero las
+            // barras de vida (carta y ficha voladora) y el número flotante solo escuchan los
+            // payloads resueltos de heal/daño. Sin emitirlos, un heal por este effect (el del
+            // Healer) mutaba el dato pero ninguna vista se enteraba. Se emite con el delta REAL
+            // (post-clamp), así el overheal no infla el "+N".
+            if (TargetStat == StatType.Health)
+                RaiseHealthDelta(context, target, before: current, after: next);
+
             return true;
+        }
+
+        private static void RaiseHealthDelta(EffectContext context, Guid target, int before, int after)
+        {
+            int delta = after - before;
+            if (delta == 0) return;
+
+            Guid source = context?.SourceGuid ?? Guid.Empty;
+
+            if (delta > 0)
+            {
+                TypedEvent<HealResolvedPayload>.Raise(new HealResolvedPayload
+                {
+                    SourceGuid = source,
+                    TargetGuid = target,
+                    FinalHeal = delta,
+                    WasPercentBased = false,
+                });
+                context?.SourceBehavior?.SetBehaviorValue(
+                    BehaviorValueKey.FloatingHeal,
+                    new FloatingNumberBehaviorValue { Value = delta, TargetEntityGuid = target });
+            }
+            else
+            {
+                int dmg = -delta;
+                TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+                {
+                    SourceGuid = source,
+                    TargetGuid = target,
+                    FinalDamage = dmg,
+                    WasLethal = after <= 0,
+                });
+                context?.SourceBehavior?.SetBehaviorValue(
+                    BehaviorValueKey.FloatingDamage,
+                    new FloatingNumberBehaviorValue { Value = dmg, TargetEntityGuid = target });
+            }
+        }
+
+        /// <summary>
+        /// Max HP de referencia del target: enemigos via <see cref="IEnemyAIRegistry"/>
+        /// (lo registra el spawn resolver), player via <c>CurrentHero.BaseMaxHp</c>. Sin
+        /// fuente conocida ⇒ <see cref="int.MaxValue"/> (no capea). Mismo criterio que
+        /// <c>RunController.BuildMaxHpResolver</c>.
+        /// </summary>
+        private static int ResolveMaxHp(Guid target)
+        {
+            if (ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry)
+                && aiRegistry != null
+                && aiRegistry.TryGet(target, out _, out var maxHp)
+                && maxHp > 0)
+            {
+                return maxHp;
+            }
+
+            if (ServiceLocator.TryGetService<IPlayerService>(out var players)
+                && players != null
+                && players.PlayerGuid == target)
+            {
+                // BUG-022: incluye los grants in-run (MaxHealth.ModifiedValue), con
+                // fallback interno a BaseMaxHp.
+                int resolved = Rollgeon.Player.PlayerMaxHp.Resolve(target);
+                if (resolved > 0) return resolved;
+            }
+
+            return int.MaxValue;
         }
     }
 }

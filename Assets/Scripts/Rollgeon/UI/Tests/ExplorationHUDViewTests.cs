@@ -38,9 +38,13 @@ namespace Rollgeon.UI.Tests
 
         private GameObject _hudGO;
         private ExplorationHUDView _hud;
-        private HealthBarView _hp;
-        private EnergyBarView _energy;
-        private GoldCounterView _gold;
+        private HealthChipStackView _hp;
+        private ChipStackView _hpStack;
+        private TMPro.TextMeshProUGUI _hpLabel;
+        private EnergyChipStackView _energy;
+        private ChipStackView _energyStack;
+        private TMPro.TextMeshProUGUI _energyLabel;
+        private ChipStackSettingsSO _chipSettings;
         private ActiveItemsView _items;
         private MinimapView _minimap;
         private RoomNavigationView _roomNavigation;
@@ -75,13 +79,13 @@ namespace Rollgeon.UI.Tests
             _hudGO.SetActive(false);
             _hud = _hudGO.AddComponent<ExplorationHUDView>();
 
-            _hp = AttachChild<HealthBarView>("HealthBar", _hudGO);
-            AttachFillImage(_hp, "_fillImage");
+            _chipSettings = ScriptableObject.CreateInstance<ChipStackSettingsSO>();
 
-            _energy = AttachChild<EnergyBarView>("EnergyBar", _hudGO);
-            AttachFillImage(_energy, "_fillImage");
+            _hp = AttachChipStackView<HealthChipStackView>("HealthChips", _hudGO,
+                out _hpStack, out _hpLabel);
 
-            _gold = AttachChild<GoldCounterView>("Gold", _hudGO);
+            _energy = AttachChipStackView<EnergyChipStackView>("EnergyChips", _hudGO,
+                out _energyStack, out _energyLabel);
 
             _items = AttachChild<ActiveItemsView>("ActiveItems", _hudGO);
 
@@ -89,9 +93,8 @@ namespace Rollgeon.UI.Tests
 
             _roomNavigation = AttachChild<RoomNavigationView>("RoomNavigation", _hudGO);
 
-            AssignPrivate(_hud, "_healthBar", _hp);
-            AssignPrivate(_hud, "_energyBar", _energy);
-            AssignPrivate(_hud, "_goldCounter", _gold);
+            AssignPrivate(_hud, "_healthChips", _hp);
+            AssignPrivate(_hud, "_energyChips", _energy);
             AssignPrivate(_hud, "_activeItems", _items);
             AssignPrivate(_hud, "_minimap", _minimap);
             AssignPrivate(_hud, "_roomNavigation", _roomNavigation);
@@ -107,11 +110,12 @@ namespace Rollgeon.UI.Tests
             ServiceLocator.RemoveService<AttributesManager>();
             if (_attrManager != null) { _attrManager.Dispose(); _attrManager = null; }
             if (_hero != null) UnityEngine.Object.DestroyImmediate(_hero);
+            if (_chipSettings != null) UnityEngine.Object.DestroyImmediate(_chipSettings);
             if (_hudGO != null) UnityEngine.Object.DestroyImmediate(_hudGO);
         }
 
         [Test]
-        public void BindAll_SubscribesHealthBar_DamageUpdatesFill()
+        public void BindAll_SubscribesHealthChips_DamageUpdatesLabel()
         {
             _hud.BindAll(_playerGuid);
 
@@ -124,27 +128,24 @@ namespace Rollgeon.UI.Tests
                 WeaknessHit = false
             });
 
-            var fill = GetPrivate<Image>(_hp, "_fillImage");
-            Assert.IsNotNull(fill);
-            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f);
+            Assert.AreEqual("50/100", _hpLabel.text);
         }
 
         [Test]
-        public void BindAll_SubscribesEnergyBar_EventUpdatesFill()
+        public void BindAll_SubscribesEnergyChips_EventUpdatesChipsAndLabel()
         {
             _hud.BindAll(_playerGuid);
 
-            var fill = GetPrivate<Image>(_energy, "_fillImage");
             EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 3, 4);
 
-            Assert.AreEqual(0.75f, fill.fillAmount, 0.001f);
+            Assert.AreEqual(3, _energyStack.DisplayedCount);
+            Assert.AreEqual("3/4", _energyLabel.text);
         }
 
         [Test]
-        public void HealthBar_FiltersByGuid_IgnoresOtherEntities()
+        public void HealthChips_FiltersByGuid_IgnoresOtherEntities()
         {
             _hud.BindAll(_playerGuid);
-            var fill = GetPrivate<Image>(_hp, "_fillImage");
 
             var otherGuid = Guid.NewGuid();
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
@@ -155,15 +156,14 @@ namespace Rollgeon.UI.Tests
                 WeaknessHit = false
             });
 
-            Assert.AreEqual(1f, fill.fillAmount, 0.001f,
-                "HealthBar debe filtrar por playerGuid — un evento de otra entidad no debe mutar la UI.");
+            Assert.AreEqual("100/100", _hpLabel.text,
+                "La pila de vida debe filtrar por playerGuid — un evento de otra entidad no debe mutar la UI.");
         }
 
         [Test]
         public void UnbindAll_ThenDisable_StopsReceivingEvents()
         {
             _hud.BindAll(_playerGuid);
-            var fill = GetPrivate<Image>(_hp, "_fillImage");
 
             _attrManager.SetAttributeValue<Health, int>(_playerGuid, 50);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
@@ -173,13 +173,13 @@ namespace Rollgeon.UI.Tests
                 FinalDamage = 50,
                 WeaknessHit = false
             });
-            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f);
+            Assert.AreEqual("50/100", _hpLabel.text);
 
-            // HealthBarView.Unbind es no-op deliberado: su ciclo de vida lo controla
-            // OnEnable/OnDisable (sin eso, la barra de exploration quedaba stale al
-            // reactivarse post-combate). El teardown real es la desactivacion del
-            // GameObject; como este fixture nunca activa la jerarquia, OnDisable no
-            // dispara solo y lo invocamos directo.
+            // HealthChipStackView.Unbind es no-op deliberado: su ciclo de vida lo
+            // controla OnEnable/OnDisable (sin eso, la pila de exploration quedaba
+            // stale al reactivarse post-combate). El teardown real es la
+            // desactivacion del GameObject; como este fixture nunca activa la
+            // jerarquia, OnDisable no dispara solo y lo invocamos directo.
             _hud.UnbindAll();
             InvokeNonPublic(_hp, "OnDisable");
 
@@ -192,7 +192,7 @@ namespace Rollgeon.UI.Tests
                 WeaknessHit = false
             });
 
-            Assert.AreEqual(0.5f, fill.fillAmount, 0.001f,
+            Assert.AreEqual("50/100", _hpLabel.text,
                 "Despues del teardown (UnbindAll + OnDisable), nuevos eventos no deben mutar la UI.");
         }
 
@@ -211,13 +211,12 @@ namespace Rollgeon.UI.Tests
                 WeaknessHit = false
             });
 
-            // El teardown del health bar es OnDisable (Unbind es no-op); un solo
+            // El teardown de la pila es OnDisable (Unbind es no-op); un solo
             // OnDisable debe bastar — si el doble BindAll hubiera duplicado la
             // suscripcion, el handler extra quedaria vivo y el evento mutaria la UI.
             _hud.UnbindAll();
             InvokeNonPublic(_hp, "OnDisable");
-            var fill = GetPrivate<Image>(_hp, "_fillImage");
-            float afterTeardown = fill.fillAmount;
+            string afterTeardown = _hpLabel.text;
 
             _attrManager.SetAttributeValue<Health, int>(_playerGuid, 100);
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
@@ -227,7 +226,7 @@ namespace Rollgeon.UI.Tests
                 FinalDamage = 0,
                 WeaknessHit = false
             });
-            Assert.AreEqual(afterTeardown, fill.fillAmount, 0.001f,
+            Assert.AreEqual(afterTeardown, _hpLabel.text,
                 "Un solo teardown debe bastar — si BindAll hubiera duplicado subs, uno quedaria vivo.");
         }
 
@@ -259,15 +258,23 @@ namespace Rollgeon.UI.Tests
             return go.AddComponent<T>();
         }
 
-        private static void AttachFillImage(Component host, string fieldName)
+        private T AttachChipStackView<T>(string name, GameObject parent,
+            out ChipStackView stack, out TMPro.TextMeshProUGUI label) where T : Component
         {
-            var go = new GameObject(fieldName + "_image");
-            go.transform.SetParent(host.transform, false);
-            var img = go.AddComponent<Image>();
-            img.type = Image.Type.Filled;
-            img.fillMethod = Image.FillMethod.Horizontal;
-            img.fillAmount = 1f;
-            AssignPrivate(host, fieldName, img);
+            // Con RectTransform: ChipStackView castea su transform a RectTransform.
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent.transform, false);
+            stack = go.AddComponent<ChipStackView>();
+            var view = go.AddComponent<T>();
+
+            var labelGo = new GameObject("Label");
+            labelGo.transform.SetParent(go.transform, false);
+            label = labelGo.AddComponent<TMPro.TextMeshProUGUI>();
+
+            AssignPrivate(view, "_stack", stack);
+            AssignPrivate(view, "_label", label);
+            AssignPrivate(view, "_settings", _chipSettings);
+            return view;
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

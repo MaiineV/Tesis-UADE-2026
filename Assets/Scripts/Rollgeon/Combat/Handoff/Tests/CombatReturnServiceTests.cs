@@ -93,6 +93,11 @@ namespace Rollgeon.Combat.Handoff.Tests
             _spyScreen = new SpyScreenManager();
             _stubPlayer = new StubPlayerService();
 
+            // Invariante en runtime: al terminar el combate, el CombatHUD es el top del stack.
+            // El guard de CombatReturnService solo popea si eso se cumple; los tests que
+            // esperan un pop parten de ese estado. Los casos anómalos lo sobreescriben.
+            _spyScreen.Current = new StubScreen("CombatHUD");
+
             _service = new CombatReturnService(_stubExploration, _spyScreen, _stubPlayer);
         }
 
@@ -147,6 +152,37 @@ namespace Rollgeon.Combat.Handoff.Tests
             // Assert: no la popeamos ni volvemos a exploración — el player debe ver la victoria.
             Assert.AreEqual(0, _spyScreen.PopCurrentCallCount);
             Assert.AreEqual(0, _stubExploration.ResumeAfterCombatCallCount);
+        }
+
+        [Test]
+        public void OnCombatEnd_Victory_WhenTopIsNotCombatHud_DoesNotPopOrResume()
+        {
+            // Regresión "combate colgado": un OnCombatEnd duplicado/tardío (victoria diferida
+            // de la secuencia de muerte que llegó tarde, ya con la exploración al top) NO debe
+            // popear la ExplorationHUD. Antes PopCurrent era incondicional y vaciaba el stack.
+            _spyScreen.Current = new StubScreen("ExplorationHUD");
+
+            TriggerCombatEnd(Guid.NewGuid(), CombatOutcome.Victory);
+
+            Assert.AreEqual(0, _spyScreen.PopCurrentCallCount,
+                "No debe popear si el top no es el CombatHUD.");
+            Assert.AreEqual(0, _stubExploration.ResumeAfterCombatCallCount,
+                "No debe re-resumir exploración en un OnCombatEnd espurio.");
+        }
+
+        [Test]
+        public void OnCombatEnd_Defeat_WhenTopIsNotCombatHud_DoesNotPopOrFireDefeat()
+        {
+            _spyScreen.Current = new StubScreen("ExplorationHUD");
+            bool defeatFired = false;
+            EventManager.Subscribe(EventName.OnPlayerDefeated, _ => defeatFired = true);
+
+            TriggerCombatEnd(Guid.NewGuid(), CombatOutcome.Defeat);
+
+            Assert.AreEqual(0, _spyScreen.PopCurrentCallCount,
+                "No debe popear si el top no es el CombatHUD.");
+            Assert.IsFalse(defeatFired,
+                "No debe disparar OnPlayerDefeated en un OnCombatEnd espurio.");
         }
 
         [Test]

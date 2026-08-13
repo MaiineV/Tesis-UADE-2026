@@ -46,6 +46,40 @@ namespace Rollgeon.Entities.Behaviors
 
         public override string BehaviorName => ActionName;
 
+        [NonSerialized] private bool? _isEnergyBookkeeping;
+
+        /// <summary>
+        /// True si el behavior solo administra energía (Reset/Charge/Remove Energy en los
+        /// árboles): todos sus effects son <see cref="Effects.Concretes.EffModifyIntAttribute"/>
+        /// sobre <see cref="Rollgeon.Attributes.StatType.Energy"/>. Estos behaviors están
+        /// exentos de la regla "una acción por turno" — el While los re-ejecuta por iteración
+        /// para drenar el presupuesto.
+        /// </summary>
+        public bool IsEnergyBookkeeping
+        {
+            get
+            {
+                _isEnergyBookkeeping ??= ComputeIsEnergyBookkeeping();
+                return _isEnergyBookkeeping.Value;
+            }
+        }
+
+        private bool ComputeIsEnergyBookkeeping()
+        {
+            if (Effects == null) return true;
+            foreach (var ed in Effects)
+            {
+                if (ed?.Effects == null) continue;
+                foreach (var eff in ed.Effects)
+                {
+                    if (eff == null) continue;
+                    if (eff is not Rollgeon.Effects.Concretes.EffModifyIntAttribute mod) return false;
+                    if (mod.TargetStat != Rollgeon.Attributes.StatType.Energy) return false;
+                }
+            }
+            return true;
+        }
+
         // The tree decides when to fire this behavior — gate by tree PCs, not by trigger soft-check.
         public override bool CanExecute(BehaviorContext ctx) => true;
 
@@ -75,6 +109,7 @@ namespace Rollgeon.Entities.Behaviors
                 var preCtx = aiCtx.BuildPcContext(setTarget);
                 if (!ed.CanBeExecuted(preCtx)) continue;
 
+                FaceTarget(ownerGuid, setTarget);
                 var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
                 ed.Execute(effCtx);
             }
@@ -102,10 +137,33 @@ namespace Rollgeon.Entities.Behaviors
                 var preCtx = aiCtx.BuildPcContext(setTarget);
                 if (!ed.CanBeExecuted(preCtx)) continue;
 
+                FaceTarget(ownerGuid, setTarget);
                 var effCtx = BuildEffectContext(aiCtx, setTarget, ctx.SourceEntity, ctx.TriggeringEntity);
                 var co = ed.ExecuteCoroutine(effCtx);
                 while (co.MoveNext()) yield return co.Current;
             }
+        }
+
+        /// <summary>
+        /// Gira el pawn hacia lo que el grupo va a afectar, antes de que corran sus efectos
+        /// (y por lo tanto antes de la animación). Sin esto el enemigo ataca mirando hacia
+        /// donde se movió: el nodo de movimiento deja el facing en la dirección del último
+        /// step del path, que en un kiter apunta justo al lado contrario del jugador.
+        /// </summary>
+        /// <remarks>
+        /// Se hace acá y no en el pipeline de feedback para que respete el target real de
+        /// cada <see cref="EffectData"/> — un healer gira hacia el aliado que cura, no hacia
+        /// el jugador. No-op sin capa visual registrada (EditMode).
+        /// </remarks>
+        private static void FaceTarget(Guid ownerGuid, Guid targetGuid)
+        {
+            if (ownerGuid == Guid.Empty || targetGuid == Guid.Empty || ownerGuid == targetGuid) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Grid.IGridManager>(out var grid) || grid == null) return;
+            if (!ServiceLocator.TryGetService<Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(ownerGuid, out var pawn) || pawn == null) return;
+            if (!grid.TryGetPosition(ownerGuid, out var from)) return;
+            if (!grid.TryGetPosition(targetGuid, out var to)) return;
+            pawn.FaceCoord(from, to);
         }
 
         private EffectContext BuildEffectContext(AIContext aiCtx, Guid targetGuid, Entity source, Entity trigger)

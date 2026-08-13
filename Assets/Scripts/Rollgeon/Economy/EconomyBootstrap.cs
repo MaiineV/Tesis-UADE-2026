@@ -1,4 +1,5 @@
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Patterns.Bootstrap;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace Rollgeon.Economy
         {
             var service = new EconomyService(_startingGold);
             ServiceLocator.AddService<IEconomyService>(service, ServiceScope.Global);
+            SaveSystem.Register(service);
         }
     }
 }

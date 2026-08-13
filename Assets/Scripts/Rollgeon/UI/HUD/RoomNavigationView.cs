@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Dungeon;
 using Rollgeon.Exploration;
+using Rollgeon.Localization;
 using Rollgeon.UI.Screens;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -75,6 +76,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.Subscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
             EventManager.Subscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
+            Rollgeon.Localization.LocalizationRefresh.Subscribe(RefreshRoomInfo);
 
             if (_pauseButton != null) _pauseButton.onClick.AddListener(OnPauseClicked);
             if (_proceedButton != null) _proceedButton.interactable = false;
@@ -91,6 +93,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnRoomCleared, OnRoomClearedHandler);
             EventManager.UnSubscribe(EventName.OnCombatTriggered, OnCombatTriggeredHandler);
             EventManager.UnSubscribe(EventName.OnExplorationStarted, OnExplorationStartedHandler);
+            Rollgeon.Localization.LocalizationRefresh.Unsubscribe(RefreshRoomInfo);
 
             if (_pauseButton != null) _pauseButton.onClick.RemoveListener(OnPauseClicked);
 
@@ -128,13 +131,15 @@ namespace Rollgeon.UI.HUD
             }
 
             if (_roomNameLabel != null)
-                _roomNameLabel.text = room?.DisplayName ?? "???";
+                _roomNameLabel.text = room != null ? LocalizedContent.Name(room.RoomId, room.DisplayName) : "???";
 
             if (_roomProgressLabel != null)
-                _roomProgressLabel.text = $"Rooms {cleared}/{total}";
+                _roomProgressLabel.text = $"{LocalizedContent.Ui("nav.rooms", "Rooms")} {cleared}/{total}";
 
             if (_roomTypeLabel != null)
-                _roomTypeLabel.text = room?.Type.ToString() ?? "";
+                _roomTypeLabel.text = room != null
+                    ? LocalizedContent.Ui("room.type." + room.Type.ToString().ToLowerInvariant(), room.Type.ToString())
+                    : "";
 
             if (_proceedButton != null)
                 _proceedButton.interactable = false;

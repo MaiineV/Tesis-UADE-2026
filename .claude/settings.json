@@ -1,9 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "bash .claude/statusline.sh"
-  },
   "permissions": {
     "allow": [
       "Bash(git status*)",
@@ -52,6 +48,16 @@
             "type": "command",
             "command": "bash .claude/hooks/detect-gaps.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-update.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-develop-drift.sh",
+            "timeout": 15
           }
         ]
       }
@@ -167,5 +173,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash .claude/statusline.sh"
   }
 }

@@ -27,7 +27,11 @@ namespace Rollgeon.Feedback
         // ==================================================================
         public void ListenForParticleEnd()
         {
-            var ps = GetComponent<ParticleSystem>() ?? GetComponentInChildren<ParticleSystem>();
+            // Mismo fake-null que en FeedbackManager.ResolveAnimator: con `??` el fallback a
+            // los hijos nunca corría, así que un VFX con el ParticleSystem en un hijo jamás
+            // avisaba su fin y el step se colgaba hasta el watchdog.
+            var ps = GetComponent<ParticleSystem>();
+            if (ps == null) ps = GetComponentInChildren<ParticleSystem>(includeInactive: true);
             if (ps == null) return;
             var main = ps.main;
             main.stopAction = ParticleSystemStopAction.Callback;
@@ -47,6 +51,12 @@ namespace Rollgeon.Feedback
 
         /// <summary>Hook para Animation Events: el autoral agrega un evento que invoca este método.</summary>
         public void OnFeedbackAnimationComplete() => Complete();
+
+        /// <summary>
+        /// Cierre explícito para feedbacks tweeneados desde código (ej. el tween de muerte),
+        /// que no tienen ni particle stop ni Animator state del que colgarse.
+        /// </summary>
+        public void MarkCompleted() => Complete();
 
         private IEnumerator AnimatorEndRoutine(Animator animator, string trigger, float timeout)
         {

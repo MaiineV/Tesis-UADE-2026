@@ -10,9 +10,11 @@ using Rollgeon.Combos;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Phase;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -81,19 +83,21 @@ namespace Rollgeon.Effects.Concretes
                 ActionLabel = "Forzar Puerta",
                 AllowReroll = true,
                 RerollEnergyCost = 1,
+                BoardType = DiceBoardType.Default,
             };
             return true;
         }
 
-        // IHasTooltipInfo — el binder de la puerta consume esto. Fuera de combate
-        // devuelve null porque la puerta se abre sin tirada y el tooltip no aporta.
-        // En sala de Boss tampoco se puede escapar — el boss debe vencerse.
+        // IHasTooltipInfo — solo el body: el header (nombre de la acción) y el costo
+        // los agrega HeroActionTooltip.BuildFor (el costo sale del ActionRollSpec).
+        // Fuera de combate devuelve null (la puerta se abre sin tirada; el binder de
+        // puertas además corta por _onlyDuringCombat). En sala de Boss explica por qué
+        // no se puede — sin texto el fallback mostraría nombre + costo engañosos.
         public string BuildTooltip()
         {
             if (!IsInCombat()) return null;
-            if (IsBossRoom()) return null;
-            return $"<b>Forzar Puerta</b>\nPuntaje a superar: {RequiredValue}\n" +
-                   $"Costo: {EnergyCostInCombat} de energía";
+            if (IsBossRoom()) return "El Boss debe ser vencido — no se puede forzar la puerta";
+            return $"Puntaje a superar: {RequiredValue}";
         }
 
         public override bool ApplyEffect(EffectContext context)
@@ -311,7 +315,9 @@ namespace Rollgeon.Effects.Concretes
                 if (enemyGuid == Guid.Empty) continue;
 
                 var state = aliveStates[i];
-                int maxHp = LookupEnemyMaxHp(instance.Template, state.EnemyDataSOId);
+                var enemyData = LookupEnemyData(instance.Template, state.EnemyDataSOId);
+                if (enemyData == null) continue;
+                int maxHp = enemyData.ResolveMaxHP(state.Tier);
                 if (maxHp <= 0) continue;
 
                 var health = attributes.GetAttribute<Health>(enemyGuid);
@@ -328,10 +334,12 @@ namespace Rollgeon.Effects.Concretes
 
         // Replica privada de la lookup del DefaultEnemySpawnResolver — busca el
         // EnemyDataSO cuyo EntityId coincide con el grabado en el EnemySpawnState.
-        // Necesario para resolver el max HP fuera del flow de spawn.
-        private static int LookupEnemyMaxHp(RoomSO room, string entityId)
+        // Devuelve el SO (no un int) para que el caller resuelva el max HP con el
+        // tier persistido en el state (Feature#0023 — antes leía BaseHP y
+        // sub-estimaba el max HP de enemigos tiereados).
+        private static EnemyDataSO LookupEnemyData(RoomSO room, string entityId)
         {
-            if (room == null || string.IsNullOrEmpty(entityId)) return 0;
+            if (room == null || string.IsNullOrEmpty(entityId)) return null;
 
             if (room.PossibleSetups != null)
             {
@@ -341,7 +349,7 @@ namespace Rollgeon.Effects.Concretes
                     foreach (var slot in setup.Slots)
                     {
                         if (slot.Enemy != null && slot.Enemy.EntityId == entityId)
-                            return Mathf.Max(0, slot.Enemy.BaseHP);
+                            return slot.Enemy;
                     }
                 }
             }
@@ -351,11 +359,11 @@ namespace Rollgeon.Effects.Concretes
                 foreach (var entry in room.EnemyPool.Entries)
                 {
                     if (entry.Item != null && entry.Item.EntityId == entityId)
-                        return Mathf.Max(0, entry.Item.BaseHP);
+                        return entry.Item;
                 }
             }
 
-            return 0;
+            return null;
         }
     }
 }

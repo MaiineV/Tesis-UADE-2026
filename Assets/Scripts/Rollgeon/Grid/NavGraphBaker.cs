@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Rollgeon.Dungeon.Components;
 using UnityEngine;
 
 namespace Rollgeon.Grid
@@ -11,6 +12,13 @@ namespace Rollgeon.Grid
 
             float tileSize = Mathf.Max(settings.TileSize, 0.01f);
             float heightThreshold = Mathf.Max(settings.HeightThreshold, 0f);
+
+            // Origin del grid autorado. Los blockers ubican su footprint en
+            // espacio de celdas (Coord + FootprintOffset) relativo a este
+            // origin, NO al pivot del prop — que puede estar desfasado. Sin
+            // RoomLayout (tests, roots sueltos) cae al transform del root.
+            var layout = roomRoot.GetComponent<RoomLayout>();
+            Vector3 gridOrigin = layout != null ? layout.GetOrigin() : roomRoot.transform.position;
 
             var graph = new NavGraph();
             var renderers = roomRoot.GetComponentsInChildren<Renderer>(includeInactive: false);
@@ -29,7 +37,7 @@ namespace Rollgeon.Grid
             // celdas al moverse.
             var blockerBounds = new List<Bounds>();
             foreach (var m in markers)
-                if (m.IsBlocker) blockerBounds.Add(BlockerBounds(m, tileSize));
+                if (m.IsBlocker) blockerBounds.Add(BlockerBounds(m, gridOrigin, tileSize));
 
             var nodeWorldPos = new Dictionary<GridCoord, Vector3>();
 
@@ -117,21 +125,25 @@ namespace Rollgeon.Grid
             return false;
         }
 
-        // Región de bloqueo de un marker: en XZ son las celdas del Footprint
-        // (la tool deja el marker en el centro de su celda ancla, así que la
-        // región arranca en offset - media celda). En Y se conserva el rango
-        // del renderer cuando existe — es lo que decide si el blocker llega a
-        // la banda de walk clearance — con fallback al volumen de celdas.
-        private static Bounds BlockerBounds(TileMarker marker, float tileSize)
+        // Región de bloqueo de un marker. En XZ son las celdas del Footprint
+        // ubicadas por el espacio de celdas autorado: minCorner = origin +
+        // (Coord + FootprintOffset) * tileSize. Es la MISMA región que evalúa
+        // el overlap del RoomEditor (mMin = Coord+off, mMax = mMin+fp) y es
+        // inmune al pivot del prop: un 2x2 cuyo pivot está corrido del centro
+        // del mesh bloqueaba celdas desfasadas cuando la región salía de
+        // transform.position. En Y se conserva el rango del renderer cuando
+        // existe — es lo que decide si el blocker llega a la banda de walk
+        // clearance — con fallback al volumen de celdas autorado.
+        private static Bounds BlockerBounds(TileMarker marker, Vector3 origin, float tileSize)
         {
-            var pos = marker.transform.position;
+            var coord = marker.Coord;
             var fp = marker.Footprint;
             var off = marker.FootprintOffset;
 
             float sizeX = Mathf.Max(1, fp.x) * tileSize;
             float sizeZ = Mathf.Max(1, fp.z) * tileSize;
-            float minX = pos.x + (off.x - 0.5f) * tileSize;
-            float minZ = pos.z + (off.z - 0.5f) * tileSize;
+            float minX = origin.x + (coord.X + off.x) * tileSize;
+            float minZ = origin.z + (coord.Y + off.z) * tileSize;
 
             float minY, sizeY;
             if (TryComputeBounds(marker.gameObject, out var rendered))
@@ -141,8 +153,8 @@ namespace Rollgeon.Grid
             }
             else
             {
-                minY = pos.y + (off.y - 0.5f) * tileSize;
                 sizeY = Mathf.Max(1, fp.y) * tileSize;
+                minY = origin.y + (marker.Layer + off.y) * tileSize;
             }
 
             var size = new Vector3(sizeX, sizeY, sizeZ);

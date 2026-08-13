@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eb06a452616bb842a0a9b5ea1ae7df5, type: 3}
+  m_Name: DiceShapeCatalog
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.DiceShapeCatalogSO
+  Shapes:
+  - Type: 0
+    Front: {fileID: 359414099, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 1401531898, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1503717991, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1218516326, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 1
+    Front: {fileID: 1178113197, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 284238095, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 80988382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: 707918844, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: -2104052386, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 2
+    Front: {fileID: -703235995, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 750792382, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: -513660922, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: 810267790, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 716723144, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 3
+    Front: {fileID: -1305715248, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 1238936565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: -1582812979, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1509081565, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1955476980, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 4
+    Front: {fileID: -213345111, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: -817261351, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 915400990, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1001478702, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 2038314485, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 5
+    Front: {fileID: 1496919688, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 429831747, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 672915450, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1491227567, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: -1499136606, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  - Type: 6
+    Front: {fileID: 359414099, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideA: {fileID: 22509374, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    SideB: {fileID: 1401531898, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Hover: {fileID: -1503717991, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+    Selected: {fileID: 1218516326, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
+  FallbackShape: {fileID: 0}

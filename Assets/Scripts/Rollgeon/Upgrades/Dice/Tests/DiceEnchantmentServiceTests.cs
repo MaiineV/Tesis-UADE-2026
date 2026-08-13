@@ -266,5 +266,19 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             CollectionAssert.AreEquivalent(new[] { 2, 4, 6 }, faces);
         }
+
+        [Test]
+        public void ComputeAllowedFaces_WithMinHalfMaxFilter_OnD4_ReturnsUpperHalfRoundedUp()
+        {
+            // BUG-030b: Afilado ahora restringe caras en vez de compensar con bonus post-roll.
+            var svc = MakeService();
+            svc.InitializeFromBag(MakeBag(DiceType.D4));
+            svc.Apply(0, 0, MakeEnchantment("afilado",
+                filter: new MinHalfMaxFilter()));
+
+            var faces = svc.ComputeAllowedFaces(0);
+
+            CollectionAssert.AreEquivalent(new[] { 2, 3, 4 }, faces);
+        }
     }
 }

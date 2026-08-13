@@ -24,22 +24,35 @@ namespace Rollgeon.Upgrades.Dice
     /// </remarks>
     public sealed class EnchantmentScratch
     {
-        /// <summary>Bonus plano que se suma al daño del combo resuelto. Suma entre triggers.</summary>
+        /// <summary>
+        /// Bonus plano que se suma al resultado del combo resuelto. Suma entre triggers.
+        /// Desde la Spec Escudo v3 la fórmula es compartida: en fase de defensa este bono
+        /// suma ESCUDO en vez de daño.
+        /// </summary>
         public int BonusComboDamage;
 
-        /// <summary>Multiplicador aplicado al daño final del combo. Se compone multiplicativamente entre triggers.</summary>
+        /// <summary>
+        /// Multiplicador aplicado al término base del combo. Se compone multiplicativamente
+        /// entre triggers. Aplica igual al escudo de fase defensa (fórmula compartida v3).
+        /// </summary>
         public float ComboDamageMultiplier = 1f;
 
         /// <summary>
-        /// Si algún trigger setea este flag a <c>true</c>, el daño del combo se anula
+        /// Si algún trigger setea este flag a <c>true</c>, el resultado del combo se anula
         /// a 0 después de aplicar multipliers/bonuses. Used by "no gold = no damage".
+        /// Bloquea también el escudo de fase defensa (fórmula compartida v3).
         /// </summary>
         public bool BlockComboDamage;
 
         /// <summary>Oro neto que el service le suma al jugador tras el evento. Puede ser negativo (costos).</summary>
         public int BonusGold;
 
-        /// <summary>Shield extra que el service le aplica al jugador tras el evento.</summary>
+        /// <summary>
+        /// Shield extra que el service le aplica al jugador tras el evento. Grant plano de
+        /// recurso, FUERA de la fórmula de combo (no confundir con el escudo de EffAddShield
+        /// ComboValue). Ojo al autorar: un encantamiento con BonusShield y BonusComboDamage
+        /// juntos aporta por ambos canales en fase de defensa.
+        /// </summary>
         public int BonusShield;
 
         /// <summary>
@@ -52,6 +65,19 @@ namespace Rollgeon.Upgrades.Dice
             new Dictionary<ResourceTarget, ResourceAccumulator>();
 
         public IReadOnlyDictionary<ResourceTarget, ResourceAccumulator> Resources => _resources;
+
+        // Lazy: null hasta la primera entrada — un evento sin fuentes de combo no aloca nada.
+        private List<ScratchContribution> _journal;
+
+        /// <summary>
+        /// Atribución por fuente de lo que este scratch acumuló en los campos de combo
+        /// (bonus / multiplicador / block). Lo llenan los dispatchers vía snapshot-delta
+        /// (<see cref="ScratchSnapshot.RecordDelta"/>); <c>null</c> = nadie aportó.
+        /// </summary>
+        public IReadOnlyList<ScratchContribution> Journal => _journal;
+
+        public void RecordContribution(in ScratchContribution c)
+            => (_journal ??= new List<ScratchContribution>(4)).Add(c);
 
         /// <summary>Aplica una operación sobre un recurso, acumulándola para el evento.</summary>
         public void Modify(ResourceTarget target, ResourceOperation op, int amount)
@@ -69,6 +95,7 @@ namespace Rollgeon.Upgrades.Dice
             BonusGold = 0;
             BonusShield = 0;
             _resources.Clear();
+            _journal?.Clear();
         }
     }
 }

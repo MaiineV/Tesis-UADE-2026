@@ -23,6 +23,14 @@ namespace Rollgeon.Shop
         private readonly ShopConfigSO _config;
         private readonly ShopPoolSO _pool;
 
+        // Override del tutorial (tienda de 1 item). El service es Global, así que
+        // el teardown del tutorial debe llamar ClearTutorialOverride().
+        private ShopConfigSO _overrideConfig;
+        private ShopPoolSO _overridePool;
+
+        private ShopConfigSO ActiveConfig => _overrideConfig != null ? _overrideConfig : _config;
+        private ShopPoolSO ActivePool => _overridePool != null ? _overridePool : _pool;
+
         private readonly Dictionary<Guid, List<ShopSlot>> _slotsByRoom = new Dictionary<Guid, List<ShopSlot>>();
         private readonly HashSet<Guid> _initialized = new HashSet<Guid>();
 
@@ -94,7 +102,7 @@ namespace Rollgeon.Shop
             EventManager.Trigger(EventName.OnShopItemPurchased, spawnPointId, entryId, pricePaid);
         }
 
-        public bool CanRestock(Guid roomInstanceId) => _config != null && _config.AllowRestock;
+        public bool CanRestock(Guid roomInstanceId) => ActiveConfig != null && ActiveConfig.AllowRestock;
 
         public void Restock(Guid roomInstanceId)
         {
@@ -106,6 +114,18 @@ namespace Rollgeon.Shop
         public void Initialize(RoomInstance room, int floorDepth)
         {
             InitializeInternal(room, floorDepth);
+        }
+
+        public void SetTutorialOverride(ShopConfigSO config, ShopPoolSO pool)
+        {
+            _overrideConfig = config;
+            _overridePool = pool;
+        }
+
+        public void ClearTutorialOverride()
+        {
+            _overrideConfig = null;
+            _overridePool = null;
         }
 
         // -----------------------------------------------------------------
@@ -133,7 +153,7 @@ namespace Rollgeon.Shop
         {
             if (room == null) return;
             if (_initialized.Contains(room.InstanceId)) return;
-            if (_config == null || _pool == null)
+            if (ActiveConfig == null || ActivePool == null)
             {
                 Debug.LogError(LogPrefix + "ShopConfigSO o ShopPoolSO ausentes — no se inicializa la shop.");
                 return;
@@ -147,8 +167,11 @@ namespace Rollgeon.Shop
                 return;
             }
 
-            int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, _config.MaxItemSlots));
-            var rng = new System.Random(room.InstanceId.GetHashCode());
+            int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, ActiveConfig.MaxItemSlots));
+            // Seed derivado del seed del piso + celda (estables entre regeneraciones)
+            // y NO del InstanceId (Guid nuevo por GenerateFloor): un piso resumido
+            // desde save restockea la tienda idéntica.
+            var rng = new System.Random(DeriveShopSeed(room));
             var slots = new List<ShopSlot>(slotCount);
             // Tracks entries ya rolleadas en esta tienda — pasadas como exclude a Roll()
             // para que cada slot tenga un ítem distinto (mientras el pool tenga variedad).
@@ -157,7 +180,10 @@ namespace Rollgeon.Shop
             for (int i = 0; i < slotCount; i++)
             {
                 string spawnPointId = SpawnPointKey(i);
-                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop);
+                // Slot 0 = entry garantizada (la poción, si el pool la cablea);
+                // el resto rolea del pool dinámico de pasivas + extras manuales.
+                bool guaranteedSlot = i == 0;
+                var slot = BuildOrHydrateSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop, guaranteedSlot);
                 if (slot == null) continue;
 
                 if (!slot.Purchased)
@@ -173,9 +199,26 @@ namespace Rollgeon.Shop
             _initialized.Add(room.InstanceId);
         }
 
+        private int DeriveShopSeed(RoomInstance room)
+        {
+            if (!TryGetDungeonService(out var dungeon))
+                return room.InstanceId.GetHashCode();
+            return DeriveShopSeed(dungeon.CurrentFloorSeed, room.GridCell);
+        }
+
+        /// <summary>Puro para tests: mismo (floorSeed, celda) → mismo stock.</summary>
+        public static int DeriveShopSeed(int floorSeed, Vector2Int cell)
+        {
+            unchecked
+            {
+                // Mismo estilo que FloorProgressionService.DeriveSeed.
+                return floorSeed * 92821 + cell.x * 31 + cell.y;
+            }
+        }
+
         private ShopSlot BuildOrHydrateSlot(
             RoomInstance room, string spawnPointId, System.Random rng, int floorDepth,
-            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop)
+            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop, bool guaranteedSlot)
         {
             if (room.ObjectStates.TryGet<ShopItemState>(spawnPointId, out var state))
             {
@@ -196,15 +239,21 @@ namespace Rollgeon.Shop
             }
 
             // Primera visita: rolear + persistir. Pasamos los rolled previos como
-            // exclude para evitar duplicados dentro del mismo shop.
-            var rolled = _pool.Roll(rng, floorDepth, rolledInThisShop);
+            // exclude para evitar duplicados dentro del mismo shop. El slot
+            // garantizado (poción) saltea el roll; sin garantizado cableado (ej.
+            // tutorial) degrada al roll normal.
+            ShopRollResult rolled;
+            if (!guaranteedSlot || !ActivePool.TryGetGuaranteed(out rolled))
+            {
+                rolled = ActivePool.RollDynamic(rng, floorDepth, rolledInThisShop);
+            }
             if (rolled.Item == null)
             {
                 Debug.LogWarning(LogPrefix + "Pool vacío o sin entries eligibles — slot se omite.");
                 return null;
             }
 
-            int price = _config.ResolvePrice(rolled.BasePrice, rng);
+            int price = ActiveConfig.ResolvePrice(rolled.BasePrice, rng);
             var newState = new ShopItemState
             {
                 SpawnPointId = spawnPointId,
@@ -226,7 +275,7 @@ namespace Rollgeon.Shop
 
         private void SpawnPedestalVisual(ShopSlot slot, RoomInstance room, Transform spawnPoint)
         {
-            if (_config.PedestalPrefab == null)
+            if (ActiveConfig.PedestalPrefab == null)
             {
                 Debug.LogWarning(LogPrefix + "ShopConfigSO.PedestalPrefab sin asignar — no se instancia visual.");
                 return;
@@ -234,7 +283,7 @@ namespace Rollgeon.Shop
             if (spawnPoint == null) return;
 
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
-            var go = UnityEngine.Object.Instantiate(_config.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
+            var go = UnityEngine.Object.Instantiate(ActiveConfig.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
             go.name = $"[ShopPedestal] {slot.Item?.DisplayName ?? slot.Item?.EntryId ?? "?"}";
 
             var pedestal = go.GetComponent<ShopItemPedestalInteractable>();
@@ -252,10 +301,8 @@ namespace Rollgeon.Shop
         }
 
         /// <summary>
-        /// Instancia el visual 3D del reward como hijo del pedestal. Dispatch por
-        /// tipo: <see cref="ShopItemDef"/> usa el <see cref="ItemSO.WorldPrefab"/>
-        /// resolved via catálogo; <see cref="Upgrades.Combos.ComboPassiveSO"/> usa
-        /// su propio <c>WorldPrefab</c>. Posiciona via
+        /// Instancia el visual 3D del reward como hijo del pedestal. Usa el
+        /// <see cref="ItemSO.WorldPrefab"/> del item. Posiciona via
         /// <see cref="ShopConfigSO.ItemVisualLocalOffset"/> (default Y=1.5).
         /// </summary>
         private void SpawnItemVisualOnTop(Transform pedestalRoot, ShopSlot slot)
@@ -263,13 +310,44 @@ namespace Rollgeon.Shop
             if (pedestalRoot == null || slot?.Item == null) return;
 
             var prefab = ResolveWorldPrefab(slot.Item);
+            bool isFallback = false;
+            if (prefab == null)
+            {
+                // El item no trae WorldPrefab propio: usar el visual genérico tinteado
+                // para que igual haya algo sobre el pedestal (placeholder).
+                prefab = ActiveConfig?.DefaultItemVisualPrefab;
+                isFallback = true;
+            }
             if (prefab == null) return;
 
             var visual = UnityEngine.Object.Instantiate(prefab, pedestalRoot);
-            visual.transform.localPosition = _config != null ? _config.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
+            visual.transform.localPosition = ActiveConfig != null ? ActiveConfig.ItemVisualLocalOffset : new Vector3(0f, 1.5f, 0f);
             visual.transform.localRotation = Quaternion.identity;
             string displayName = slot.Item.DisplayName ?? slot.Item.EntryId ?? "?";
             visual.name = $"[ShopItemVisual] {displayName}";
+
+            if (isFallback && ActiveConfig != null)
+                ApplyVisualTint(visual, ActiveConfig.DefaultItemVisualTint);
+        }
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Tinta todos los renderers vía MaterialPropertyBlock (sin instanciar materiales).
+        // Setea _BaseColor (URP/Lit) y _Color (Built-in/legacy); las props inexistentes se ignoran.
+        private static void ApplyVisualTint(GameObject go, Color tint)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers == null || renderers.Length == 0) return;
+            var mpb = new MaterialPropertyBlock();
+            foreach (var r in renderers)
+            {
+                if (r == null) continue;
+                r.GetPropertyBlock(mpb);
+                mpb.SetColor(BaseColorId, tint);
+                mpb.SetColor(ColorId, tint);
+                r.SetPropertyBlock(mpb);
+            }
         }
 
         /// <summary>
@@ -280,12 +358,8 @@ namespace Rollgeon.Shop
         {
             switch (entry)
             {
-                case ShopItemDef itemDef:
-                    if (!ServiceLocator.TryGetService<ItemCatalogSO>(out var catalog) || catalog == null) return null;
-                    var itemSo = catalog.GetById(itemDef.ItemId);
-                    return itemSo != null ? itemSo.WorldPrefab : null;
-                case Rollgeon.Upgrades.Combos.ComboPassiveSO passive:
-                    return passive.WorldPrefab;
+                case ItemSO item:
+                    return item.WorldPrefab;
                 default:
                     return null;
             }
@@ -308,13 +382,21 @@ namespace Rollgeon.Shop
 
         private IShopRewardEntry ResolveEntryFromPool(string entryId)
         {
-            if (_pool == null || string.IsNullOrEmpty(entryId)) return null;
-            foreach (var weighted in _pool.Items)
+            if (ActivePool == null || string.IsNullOrEmpty(entryId)) return null;
+
+            var guaranteed = ActivePool.Guaranteed.GetEntry();
+            if (guaranteed != null && guaranteed.EntryId == entryId) return guaranteed;
+
+            if (ActivePool.Items != null)
             {
-                var entry = weighted.GetEntry();
-                if (entry == null) continue;
-                if (entry.EntryId == entryId) return entry;
+                foreach (var weighted in ActivePool.Items)
+                {
+                    var entry = weighted.GetEntry();
+                    if (entry == null) continue;
+                    if (entry.EntryId == entryId) return entry;
+                }
             }
+
             return null;
         }
 

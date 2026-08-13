@@ -4,7 +4,11 @@
     "references": [
         "Unity.TextMeshPro",
         "PrimeTween.Runtime",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "MoreMountains.Tools",
+        "Unity.Localization",
+        "Febucci.TextAnimatorForUnity.Runtime",
+        "Febucci.TextAnimatorForUnity.TMP.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

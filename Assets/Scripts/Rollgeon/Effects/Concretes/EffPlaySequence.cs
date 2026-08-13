@@ -29,6 +29,13 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Steps de la secuencia. Corren en paralelo salvo dependencias de Start/End.")]
         private List<FeedbackSequenceStep> _steps = new List<FeedbackSequenceStep>();
 
+        /// <summary>
+        /// Steps autorados, solo lectura. Lo consume <see cref="EffectTree"/> para poder
+        /// bajar a los efectos que viven adentro de un step <c>InlineEffect</c> — sin esto
+        /// la secuencia es una hoja opaca y la UI que busca el daño no lo encuentra.
+        /// </summary>
+        public IReadOnlyList<FeedbackSequenceStep> Steps => _steps;
+
         public override string GetEffectName() => "Play Sequence";
 
         public override FeedbackRequest GetFeedbackRequest(EffectContext context)

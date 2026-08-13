@@ -11,6 +11,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dungeon;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.Exploration;
 using Rollgeon.Items;
 using Rollgeon.Player;
@@ -116,7 +117,17 @@ namespace Rollgeon.Run
                     "[RunController] IEconomyService no registrado — los enemigos no van a dropear oro este run.");
             }
 
-            var resolver = new DefaultEnemySpawnResolver(registry, attributes, aiRegistry, grid, visuals, goldDrops);
+            // 2a-bis. Portraits — lookup guid→sprite para el turn order HUD (y futuras
+            //         UIs tipo bestiario). El resolver de spawn lo puebla por enemigo;
+            //         el player se resuelve lazy vía IPlayerService.
+            var portraits = EntityPortraitResolver.CreateAndRegister();
+
+            // RunContext (registrado por RunBootstrapper antes de OnRunStart) alimenta
+            // el tier determinístico por piso del resolver y el layout inicial (abajo).
+            ServiceLocator.TryGetService<IRunContextService>(out var runContext);
+
+            var resolver = new DefaultEnemySpawnResolver(
+                registry, attributes, aiRegistry, grid, visuals, goldDrops, portraits, runContext);
             ServiceLocator.AddService<IEnemySpawnResolver>(resolver, ServiceScope.Run);
 
             // 2b. Register the player hero in both registries. Without this, combat
@@ -127,15 +138,76 @@ namespace Rollgeon.Run
             var playerService = ServiceLocator.GetService<IPlayerService>();
             RegisterPlayer(playerService, registry, attributes);
 
-            // 3. Dungeon
-            DungeonManager.CreateAndRegister(_defaultLayout, seed);
+            // 3. Dungeon — el tutorial usa el piso fijo autorado (plan explícito);
+            //    el flujo normal, la topología random del layout default. Si el flag
+            //    viene seteado pero la config no está lanzable, degrada a run normal.
+            bool isTutorial = PendingRunRequest.IsTutorial;
+            Rollgeon.Tutorial.TutorialConfigSO tutorialConfig = null;
+            if (isTutorial
+                && (!ServiceLocator.TryGetService(out tutorialConfig)
+                    || tutorialConfig == null || !tutorialConfig.IsLaunchable))
+            {
+                Debug.LogWarning(
+                    "[RunController] PendingRunRequest.IsTutorial pero TutorialConfigSO no está " +
+                    "registrado/completo — degradando a run normal.");
+                isTutorial = false;
+            }
+
+            // En run nueva FloorIndex es 0 → layout = _defaultLayout y seed = base
+            // (idéntico a antes). En resume, el RunContext ya restauró FloorIndex
+            // (StartRun lo registra antes de disparar OnRunStart) y el fast-forward
+            // de la cadena NextFloor + el seed derivado regeneran el piso guardado
+            // idéntico.
+            int startFloorIndex = runContext != null ? runContext.FloorIndex : 0;
+            var startLayout = FloorProgressionService.ResolveLayoutForFloor(_defaultLayout, startFloorIndex);
+            int startFloorSeed = startFloorIndex == 0
+                ? seed
+                : FloorProgressionService.DeriveSeed(seed, startFloorIndex);
+
+            DungeonManager dungeon;
+            if (isTutorial)
+            {
+                dungeon = DungeonManager.CreateAndRegisterFromPlan(tutorialConfig.FloorPlan.ToPlan());
+            }
+            else
+            {
+                dungeon = DungeonManager.CreateAndRegister(startLayout, startFloorSeed);
+            }
+
+            // 3a-bis. Persistencia de dungeon (#0028): el DungeonManager es ISaveable.
+            //   En resume, Register auto-stagea el snapshot cacheado (LoadFromDisk lo
+            //   pobló en el menú) y ResumeFromSave lo aplica sobre la topología ya
+            //   generada (match por GridCell) + reubica al player. Tutorial no resume.
+            global::Patterns.Save.SaveSystem.Register(dungeon);
+            if (RunBootstrapper.IsResuming && !isTutorial)
+            {
+                dungeon.ResumeFromSave();
+                // El próximo spawn de la sala actual (cuando arranque el combate) usa las
+                // posiciones + GUIDs guardados en vez de reposicionar random (#0028 Fase 2).
+                resolver.ResumeFromSaveNextSpawn = true;
+            }
+
+            // 3a-ter. Estado de combate en curso (#0028 Fase 3): el CombatResumeService es el
+            //   ISaveable (run.combat_state) y el ICombatResumeCoordinator que CombatEnterState
+            //   consulta al arrancar el combate. En resume, Register auto-stagea el snapshot;
+            //   TryBeginResume lo aplica cuando la FSM levanta la pelea de la sala guardada.
+            var combatResume = new CombatResumeService();
+            ServiceLocator.AddService<Rollgeon.Combat.Resume.ICombatResumeCoordinator>(
+                combatResume, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(combatResume);
 
             // 3b. Floor shells visibility — toggles prefab vs shells según camera floor view.
             FloorShellVisibilityController.CreateAndRegister();
 
             // 3c. Floor progression — orquesta la transición multi-piso (#158). Recibe el
-            //     layout inicial + el seed base; deriva el seed de cada piso siguiente.
-            FloorProgressionService.CreateAndRegister(_defaultLayout, seed);
+            //     layout actual + el seed base de la run; deriva el seed de cada piso
+            //     siguiente con el FloorIndex absoluto.
+            //     En tutorial NO se registra: el fin de piso lo maneja TutorialFlowController
+            //     (teardown → fresh run) en vez de avanzar a otro piso.
+            if (!isTutorial)
+            {
+                FloorProgressionService.CreateAndRegister(startLayout, seed);
+            }
 
             // 4. Damage pipeline (parameterless ctor resolves from ServiceLocator)
             var damagePipeline = new DamagePipeline();
@@ -202,6 +274,14 @@ namespace Rollgeon.Run
             var exploration = ServiceLocator.GetService<IExplorationController>();
             exploration.BeginExploration();
 
+            // 11. Tutorial flow — se crea ÚLTIMO a propósito: sus handlers de eventos
+            //     (OnCombatEnd, OnRoomEntered) deben correr después de los del
+            //     DungeonManager (suscripto antes) para leer el estado ya actualizado.
+            if (isTutorial)
+            {
+                Rollgeon.Tutorial.TutorialFlowController.CreateAndRegister(tutorialConfig, runId);
+            }
+
             IsRunActive = true;
         }
 
@@ -237,9 +317,18 @@ namespace Rollgeon.Run
             var playerAttrs = new ModifiableAttributes();
             playerAttrs.EnsureInitialized();
             playerAttrs.SetAttribute<Health>(new Health(hero.BaseMaxHp));
+            // BUG-022: máximo separado del actual — los rewards del jefe (canal Character)
+            // suben el max vía modifiers sobre MaxHealth; Health.Value queda como HP actual.
+            playerAttrs.SetAttribute<MaxHealth>(new MaxHealth(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
             playerAttrs.SetAttribute<Shield>(new Shield(0));
-            // Attack = daño base del PJ (canal de daño unificado). Default 0 = daño solo por combos.
+            // Attack = dmg_base_PJ (Spec Daño v2): piso garantizado del turno, aplica incluso sin combo.
+            if (hero.BaseAttack <= 0)
+            {
+                Debug.LogWarning(
+                    $"[RunController] '{hero.name}' tiene BaseAttack={hero.BaseAttack}. " +
+                    "Spec Daño v2 — dmg_base_PJ nunca debería ser 0.");
+            }
             playerAttrs.SetAttribute<Attack>(new Attack(hero.BaseAttack));
 
             registry.Register(playerService.PlayerGuid, playerAttrs);
@@ -259,7 +348,17 @@ namespace Rollgeon.Run
                 energy.InitializeForEntity(playerService.PlayerGuid);
             }
 
-            GrantStartingItems(hero);
+            // Después de Energy: el auto-restore de Register (resume) debe ver todos
+            // los stats para pisar los valores base con los guardados.
+            var attrsSaveable = new PlayerAttributesSaveable(playerAttrs);
+            ServiceLocator.AddService<PlayerAttributesSaveable>(attrsSaveable, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(attrsSaveable);
+
+            // En resume el inventario viene del save — regalar de nuevo duplicaría.
+            if (!RunBootstrapper.IsResuming)
+            {
+                GrantStartingItems(hero);
+            }
         }
 
         private static void GrantStartingItems(Rollgeon.Heroes.ClassHeroSO hero)
@@ -286,20 +385,19 @@ namespace Rollgeon.Run
 
         /// <summary>
         /// Construye el resolver de max HP que el <see cref="HealPipeline"/> usa para
-        /// clampear el heal contra el HP máximo. Para el player, devuelve
-        /// <c>hero.BaseMaxHp</c>. Para otros guids, devuelve un cap permisivo (los
-        /// enemigos hoy no se curan en gameplay del FP).
+        /// clampear el heal contra el HP máximo. Para el player, resuelve vía
+        /// <see cref="Rollgeon.Player.PlayerMaxHp"/> (base + grants in-run, BUG-022).
+        /// Para otros guids, devuelve un cap permisivo (los enemigos hoy no se curan
+        /// en gameplay del FP).
         /// </summary>
         private static Func<Guid, int> BuildMaxHpResolver(IPlayerService playerService)
         {
             return guid =>
             {
-                if (playerService != null
-                    && playerService.PlayerGuid == guid
-                    && playerService.CurrentHero != null
-                    && playerService.CurrentHero.BaseMaxHp > 0)
+                if (playerService != null && playerService.PlayerGuid == guid)
                 {
-                    return playerService.CurrentHero.BaseMaxHp;
+                    int resolved = Rollgeon.Player.PlayerMaxHp.Resolve(guid);
+                    if (resolved > 0) return resolved;
                 }
                 return int.MaxValue;
             };

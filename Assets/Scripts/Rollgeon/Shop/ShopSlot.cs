@@ -6,10 +6,9 @@ namespace Rollgeon.Shop
     /// más la referencia al spawn point del prefab donde va el visual. TECHNICAL.md §17.F.1.
     /// </summary>
     /// <remarks>
-    /// Polimórfico: <see cref="Item"/> puede ser <see cref="ShopItemDef"/> (items
-    /// consumibles) o <see cref="Rollgeon.Upgrades.Combos.ComboPassiveSO"/> (pasivas
-    /// de combo). El dispatch de "qué hacer al comprar" se hace en
-    /// <c>ShopItemPedestalInteractable</c> por tipo concreto.
+    /// <see cref="Item"/> es normalmente un <c>Rollgeon.Items.ItemSO</c> (activo o
+    /// passive). El dispatch de "qué hacer al comprar" se hace en
+    /// <c>ShopPurchase</c> por tipo concreto.
     /// </remarks>
     public sealed class ShopSlot
     {

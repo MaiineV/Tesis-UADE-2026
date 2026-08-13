@@ -9,18 +9,24 @@ namespace Rollgeon.Shop
 {
     /// <summary>
     /// Pool pesado de ítems elegible en shops de un piso / tema. TECHNICAL.md §17.F.2.
-    /// El diseñador edita este asset con los <see cref="ShopItemDef"/>, sus
-    /// pesos y precios base. El <c>ShopManagerService</c> rolea N entries
-    /// del pool al inicializar una shop room.
+    /// El primer slot de la tienda lo ocupa siempre <see cref="Guaranteed"/> (la
+    /// poción); el resto rolea de las entries de <see cref="Items"/> (cada una es un
+    /// <c>ItemSO</c> del catálogo, activo o passive; precio = <c>BasePrice</c>).
     /// </summary>
     [CreateAssetMenu(
         menuName = "Rollgeon/Shop/Shop Pool",
         fileName = "ShopPool")]
     public sealed class ShopPoolSO : SerializedScriptableObject
     {
+        [Title("Slot garantizado")]
+        [InfoBox("Entry que ocupa SIEMPRE el primer slot de la tienda (la poción). " +
+                 "Item en null = sin garantizado, el slot rolea normal.")]
+        [OdinSerialize]
+        public WeightedShopItem Guaranteed;
+
         [Title("Items disponibles")]
-        [InfoBox("Pool pesado. Un entry se rolea por slot al entrar a la sala por primera vez. " +
-                 "Los pesos son relativos. Entries con Weight = 0 se saltean.")]
+        [InfoBox("Pool pesado del que rolean los slots no-garantizados. Cada entry es un " +
+                 "ItemSO (activo o passive). Los pesos son relativos. Weight = 0 se saltea.")]
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
         [OdinSerialize]
         public List<WeightedShopItem> Items = new List<WeightedShopItem>();
@@ -43,6 +49,36 @@ namespace Rollgeon.Shop
 
             // Fallback: ignorar el exclude — mejor un duplicado que un slot vacío.
             return TryRollFiltered(rng, floorDepth, exclude: null);
+        }
+
+        /// <summary>
+        /// Entry del slot garantizado, si está cableada. El precio base sale de
+        /// <see cref="Guaranteed"/>.<c>BasePrice</c> como cualquier entry manual.
+        /// </summary>
+        public bool TryGetGuaranteed(out ShopRollResult result)
+        {
+            var entry = Guaranteed.GetEntry();
+            if (entry == null)
+            {
+                result = default;
+                return false;
+            }
+            result = new ShopRollResult { Item = entry, BasePrice = Guaranteed.BasePrice };
+            return true;
+        }
+
+        /// <summary>
+        /// Roll para los slots no-garantizados: rolea de <see cref="Items"/>.
+        /// Alias semántico de <see cref="Roll"/> (mismo contrato de exclude); se
+        /// mantiene como punto de extensión si un slot dinámico necesitara reglas
+        /// distintas al garantizado.
+        /// </summary>
+        public ShopRollResult RollDynamic(
+            System.Random rng,
+            int floorDepth,
+            IReadOnlyCollection<IShopRewardEntry> exclude = null)
+        {
+            return Roll(rng, floorDepth, exclude);
         }
 
         private ShopRollResult TryRollFiltered(

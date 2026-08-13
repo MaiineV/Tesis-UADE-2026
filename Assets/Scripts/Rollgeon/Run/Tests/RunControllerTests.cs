@@ -89,6 +89,8 @@ namespace Rollgeon.Run.Tests
             _createdObjects.Add(_layout);
 
             _hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            // Spec Daño v2: dmg_base_PJ nunca 0 — el fixture cumple el invariante por default.
+            _hero.BaseAttack = 3;
             _createdObjects.Add(_hero);
 
             _playerService = new PlayerService();
@@ -204,7 +206,7 @@ namespace Rollgeon.Run.Tests
             RunBootstrapper.StartRun(_hero, null, runId);
             Assert.IsTrue(_controller.IsRunActive);
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(_controller.IsRunActive);
         }
@@ -242,7 +244,7 @@ namespace Rollgeon.Run.Tests
             var playerGuid = _playerService.PlayerGuid;
             Assert.IsTrue(_attributesManager.IsRegistered(playerGuid));
 
-            RunBootstrapper.EndRun(runId);
+            RunBootstrapper.EndRun(runId, runCompleted: false);
 
             Assert.IsFalse(_attributesManager.IsRegistered(playerGuid),
                 "AttributesManager is Global scope — the player entry must be cleaned up on run end");
@@ -265,6 +267,31 @@ namespace Rollgeon.Run.Tests
         public void Constructor_NullLayout_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new RunController(null));
+        }
+
+        [Test]
+        public void OnRunStart_SetsPlayerAttackFromHeroBaseAttack()
+        {
+            _hero.BaseAttack = 5;
+
+            CreateController();
+            StartRun();
+
+            var playerGuid = _playerService.PlayerGuid;
+            Assert.AreEqual(5, _attributesManager.GetAttributeValue<Attack, int>(playerGuid),
+                "Attack (dmg_base_PJ) must come from ClassHeroSO.BaseAttack");
+        }
+
+        [Test]
+        public void OnRunStart_HeroWithZeroBaseAttack_LogsSpecWarning()
+        {
+            _hero.BaseAttack = 0;
+
+            CreateController();
+            UnityEngine.TestTools.LogAssert.Expect(
+                LogType.Warning,
+                new System.Text.RegularExpressions.Regex(@"BaseAttack=0.*dmg_base_PJ"));
+            StartRun();
         }
     }
 }

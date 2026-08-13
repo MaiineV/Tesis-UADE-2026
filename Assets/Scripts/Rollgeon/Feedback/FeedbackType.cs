@@ -13,6 +13,16 @@ namespace Rollgeon.Feedback
         Wait,
         BehaviorValue,
         FloatingNumber,
+
+        // Nuevos valores van SIEMPRE al final: el DB serializa Type como int.
+        Feel,
+
+        /// <summary>
+        /// Tween de muerte hecho desde código sobre el transform del pawn target:
+        /// scale-down + spin sobre su propio eje. No necesita clip ni Animator, así que
+        /// una sola entry sirve para cualquier pawn.
+        /// </summary>
+        PawnDeath,
     }
 
     /// <summary>
@@ -56,6 +66,9 @@ namespace Rollgeon.Feedback
         InlineWait,
         InlineAnimation,
         InlineBehaviorValue,
+
+        // Se serializa por índice — los valores nuevos van SIEMPRE al final.
+        InlineEffect,
     }
 
     /// <summary>Cuándo arranca un step de una secuencia. TECHNICAL.md §10.8.</summary>

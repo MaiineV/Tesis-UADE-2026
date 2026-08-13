@@ -285,6 +285,7 @@ namespace Rollgeon.Combat.Actions
         // ======================================================================
 
         private int _feedbackWaitDepth;
+        private readonly List<Action> _feedbackContinuations = new List<Action>();
 
         /// <summary>
         /// <c>true</c> mientras haya al menos un feedback bloqueante en vuelo. El resolver
@@ -308,6 +309,52 @@ namespace Rollgeon.Combat.Actions
         public void OnFeedbackComplete()
         {
             if (_feedbackWaitDepth > 0) _feedbackWaitDepth--;
+            if (_feedbackWaitDepth == 0) FlushFeedbackContinuations();
+        }
+
+        /// <summary>
+        /// Corre <paramref name="continuation"/> cuando no queden feedbacks bloqueantes en
+        /// vuelo. Si no hay ninguno, corre <b>sincrónico</b> — el caller no debe asumir
+        /// que se difiere.
+        /// </summary>
+        /// <remarks>
+        /// Existe para los flujos que no son coroutines y no pueden usar
+        /// <see cref="WaitForFeedbackCompletion"/>: el chain del héroe lo ejecuta
+        /// <c>CombatHandoffService</c>, que no es MonoBehaviour. Sin esto, un efecto
+        /// diferido al frame de impacto (§10.8, <c>StepSource.InlineEffect</c>) resolvería
+        /// <i>después</i> de que el chain ya avanzó de fase.
+        /// </remarks>
+        public void RunWhenFeedbackSettles(Action continuation)
+        {
+            if (continuation == null) return;
+            if (_feedbackWaitDepth <= 0)
+            {
+                continuation();
+                return;
+            }
+            _feedbackContinuations.Add(continuation);
+        }
+
+        /// <summary>
+        /// Vacía la cola invocando cada continuación. Copia y limpia <b>antes</b> de invocar:
+        /// una continuación puede encolar otra (fase siguiente del chain) y mutar la lista
+        /// en pleno recorrido.
+        /// </summary>
+        private void FlushFeedbackContinuations()
+        {
+            if (_feedbackContinuations.Count == 0) return;
+            var pending = _feedbackContinuations.ToArray();
+            _feedbackContinuations.Clear();
+            for (int i = 0; i < pending.Length; i++)
+            {
+                try { pending[i]?.Invoke(); }
+                catch (Exception e)
+                {
+                    // Una continuación que explota no debe dejar colgadas a las demás ni
+                    // envenenar el contador de feedback.
+                    Debug.LogError($"[TurnManager] Feedback continuation falló: {e}");
+                }
+            }
         }
 
         /// <summary>
@@ -332,6 +379,10 @@ namespace Rollgeon.Combat.Actions
                                  $"force-resetting depth from {manager._feedbackWaitDepth} to 0.");
                 manager._feedbackWaitDepth = 0;
             }
+
+            // El force-reset saltea OnFeedbackComplete, así que las continuaciones encoladas
+            // quedarían huérfanas — y en el chain del héroe eso es un turno colgado.
+            manager.FlushFeedbackContinuations();
         }
 
         // ======================================================================
@@ -359,6 +410,12 @@ namespace Rollgeon.Combat.Actions
 
         /// <summary>Cantidad de acciones unicas marcadas usadas en el turno actual.</summary>
         public int UsedActionsCount => _actionsUsedThisTurn.Count;
+
+        /// <summary>
+        /// Snapshot de las acciones usadas en el turno actual (Feature#0028 Fase 3) — read-side
+        /// para capturar el estado de combate. El restore usa <see cref="MarkBehaviorUsed"/>.
+        /// </summary>
+        public IReadOnlyCollection<string> UsedActionsThisTurn => _actionsUsedThisTurn;
 
         // ======================================================================
         // Event handlers
@@ -397,12 +454,20 @@ namespace Rollgeon.Combat.Actions
         }
 
         /// <summary>
-        /// Hook point para <c>RulesetSO.ForbiddenActionIds</c> (Balance#0101). Hoy stub —
-        /// siempre devuelve <c>false</c>. Balance#0101 agrega el campo al SO; en ese
-        /// momento el return cambia a leer la coleccion. No-breaking para <see cref="CanExecute"/>.
+        /// Hook point para reglas que prohíben acciones por id. Hoy cubre el gate del
+        /// tutorial (<see cref="Rollgeon.Tutorial.ITutorialActionGateService"/> — solo
+        /// registrado durante el tutorial; ausente = nada prohibido). Backstop de
+        /// ejecución: bloquea ambos paths de <see cref="CanExecute"/> aunque la UI
+        /// deje pasar un click/hotkey.
         /// </summary>
         private bool IsForbiddenByRuleset(string actionId)
         {
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null && tutorialGate.IsActionLocked(actionId))
+            {
+                return true;
+            }
+
             // [FOLLOWUP Balance#0101]: read RulesetSO.ForbiddenActionIds (not yet defined).
             // Cuando Balance#0101 agregue el campo:
             //   return _ruleset != null && _ruleset.ForbiddenActionIds != null

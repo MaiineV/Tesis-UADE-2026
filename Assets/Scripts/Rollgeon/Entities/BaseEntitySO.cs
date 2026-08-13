@@ -36,6 +36,10 @@ namespace Rollgeon.Entities
         [Tooltip("Descripcion corta para tooltips / codex.")]
         public string Description;
 
+        [PreviewField(60)]
+        [Tooltip("Sprite identificatorio para UI (turn order HUD, bestiario, menus).")]
+        public Sprite Portrait;
+
         /// <summary>
         /// Construye el <see cref="ModifiableAttributes"/> inicial del runtime.
         /// Cada subtipo decide que stats incluir y con que valores base

@@ -41,20 +41,35 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Overlay que se muestra cuando el actor fue destruido mid-round.")]
         private GameObject _destroyedOverlay;
 
-        [Title("Turn Slot — Cosmetics")]
+        [Title("Turn Slot — Frame (borde/fondo por estado)")]
         [SerializeField]
-        [Tooltip("Color del highlight cuando el actor esta activo. Tinta el portrait.")]
-        private Color _highlightColor = new Color(1f, 0.87f, 0.27f, 1f);
+        [Tooltip("Image del borde/fondo detrás del portrait. Los cablea el installer " +
+                 "Rollgeon → Turn Queue → Setup Frames.")]
+        private Image _frame;
 
-        [SerializeField]
-        [Tooltip("Color del portrait cuando el actor NO esta activo.")]
-        private Color _idleColor = Color.white;
+        [SerializeField, Tooltip("UI-Sheet-sheet_10 — player y enemigos comunes sin el turno.")]
+        private Sprite _frameIdle;
+
+        [SerializeField, Tooltip("UI-Sheet-sheet_11 — player con el turno activo.")]
+        private Sprite _framePlayerActive;
+
+        [SerializeField, Tooltip("UI-Sheet-sheet_15 — enemigo común con el turno activo.")]
+        private Sprite _frameEnemyActive;
+
+        [SerializeField, Tooltip("UI-Sheet-sheet_16 — boss sin el turno.")]
+        private Sprite _frameBossIdle;
+
+        [SerializeField, Tooltip("UI-Sheet-sheet_12 — boss con el turno activo.")]
+        private Sprite _frameBossActive;
 
         [ShowInInspector, ReadOnly]
         private Guid _slotGuid;
 
         [ShowInInspector, ReadOnly]
         private bool _isPlayer;
+
+        [ShowInInspector, ReadOnly]
+        private bool _isBoss;
 
         [ShowInInspector, ReadOnly]
         private int _displayIndex;
@@ -68,10 +83,11 @@ namespace Rollgeon.UI.HUD
         /// <summary>
         /// Popula el slot. Reset de overlays (ambos hidden) + asignacion de label.
         /// </summary>
-        public void Bind(Guid slotGuid, bool isPlayer, int displayIndex)
+        public void Bind(Guid slotGuid, bool isPlayer, int displayIndex, bool isBoss = false)
         {
             _slotGuid = slotGuid;
             _isPlayer = isPlayer;
+            _isBoss = isBoss;
             _displayIndex = displayIndex;
 
             if (_label != null)
@@ -84,17 +100,33 @@ namespace Rollgeon.UI.HUD
             SetDestroyed(false);
         }
 
-        /// <summary>Togglea el overlay "actor activo" + color del portrait.</summary>
+        /// <summary>
+        /// Togglea el overlay "actor activo" + el frame del slot. Sin tintes de
+        /// color — el estado se comunica con los sprites de borde/fondo del sheet.
+        /// </summary>
         public void SetActive(bool isActive)
         {
             if (_activeHighlight != null)
             {
                 _activeHighlight.SetActive(isActive);
             }
-            if (_portrait != null)
-            {
-                _portrait.color = isActive ? _highlightColor : _idleColor;
-            }
+            ApplyFrame(isActive);
+        }
+
+        private void ApplyFrame(bool isActive)
+        {
+            if (_frame == null) return;
+            var sprite = ResolveFrame(isActive);
+            if (sprite != null) _frame.sprite = sprite;
+        }
+
+        // Mapa de frames: player/enemigo común comparten el idle (_10); el boss
+        // tiene idle propio (_16); activos: player _11, enemigo _15, boss _12.
+        private Sprite ResolveFrame(bool isActive)
+        {
+            if (_isBoss) return isActive ? _frameBossActive : _frameBossIdle;
+            if (!isActive) return _frameIdle;
+            return _isPlayer ? _framePlayerActive : _frameEnemyActive;
         }
 
         /// <summary>Togglea el overlay "destruido".</summary>
@@ -106,7 +138,7 @@ namespace Rollgeon.UI.HUD
             }
         }
 
-        /// <summary>Hook opcional para que un futuro <c>IEntityPortraitResolver</c> setee el sprite.</summary>
+        /// <summary>Setea el portrait. Lo llama <see cref="TurnQueueView"/> resolviendo <c>IEntityPortraitResolver</c>.</summary>
         public void SetPortrait(Sprite portrait)
         {
             if (_portrait != null && portrait != null)

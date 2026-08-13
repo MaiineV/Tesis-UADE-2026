@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.ActionRolls;
+using Rollgeon.Combat.Damage;
+using Rollgeon.Combat.Pipelines;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
-using Rollgeon.Upgrades.Combos;
-using Rollgeon.Upgrades.Dice;
+using Rollgeon.Items;
+using Rollgeon.Player;
 using TMPro;
 using UnityEngine;
 
@@ -28,14 +32,40 @@ namespace Rollgeon.UI.HUD
                  "se intenta auto-resolver buscando un hijo llamado 'ThresholdLabel'.")]
         [SerializeField] private TextMeshProUGUI _thresholdLabel;
 
+        [Tooltip("Feedback visual del value text (color por board type + efectos por momento). " +
+                 "Opcional: sin cablear, el label se comporta como antes (sin color/efectos).")]
+        [SerializeField] private ValueTextFeedbackController _feedback;
+
+        [Tooltip("Opcional — el 'N × M' que reemplaza al texto en modo daño-por-combo. Esta " +
+                 "view sigue siendo dueña de la detección de modo: en daño-combo delega acá; " +
+                 "en escudo/action-roll/degradados lo oculta y renderiza su propio label.")]
+        [SerializeField] private Rollgeon.UI.HUD.Breakdown.DamageBreakdownView _breakdownView;
+
         private Guid _playerGuid;
         private HeroActionBehavior _currentBehavior;
         private string _lastComboDisplayName;
         private string _lastComboId;
         private int _lastComboBaseDamage;
+        private IReadOnlyList<ContributingDie> _lastContributingDice;
         private Action<ComboMatchedPayload> _onComboMatched;
+
+        // Enemigo objetivo elegido antes de tirar (CNF-002). Guid.Empty = sin target →
+        // el preview muestra el daño pre-mitigación. Con target, aplica weakness + escudo real.
+        private Guid _currentTargetGuid;
+        private EventManager.EventReceiver _onCombatTargetChanged;
         private IActionRollService _actionRollService;
         private Action<ActionRollPhase> _onActionRollPhase;
+
+        // Fase de defensa del chain (Spec Escudo v2): la fórmula muestra el escudo
+        // esperado de la tirada de escudo, no el daño de la fase anterior.
+        private bool _inDefensePhase;
+        private EventManager.EventReceiver _onChainPhaseStarted;
+        private EventManager.EventReceiver _onChainCompleted;
+
+        // Board type vigente del value text (color + tag por tipo). Dedup para no re-lanzar
+        // el tween de color en cada update.
+        private DiceBoardType _boardType = DiceBoardType.Default;
+        private bool _boardTypeSet;
 
         private void Awake()
         {
@@ -75,9 +105,39 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<IActionRollService>(out _actionRollService)
                 && _actionRollService != null)
             {
-                _onActionRollPhase = _ => UpdateFormula();
+                _onActionRollPhase = _ =>
+                {
+                    // Exploración (Heal/Forzar Puerta): el board type sale del spec activo.
+                    if (_actionRollService != null && _actionRollService.IsActive)
+                        SetBoardType(_actionRollService.CurrentSpec.BoardType);
+                    UpdateFormula();
+                };
                 _actionRollService.OnPhaseChanged += _onActionRollPhase;
             }
+
+            // args: [playerGuid, phaseIndex, phaseCount] — fase > 0 = defensa post-attack.
+            _onChainPhaseStarted = args =>
+            {
+                if (args.Length < 2 || (Guid)args[0] != _playerGuid) return;
+                _inDefensePhase = (int)args[1] > 0;
+                UpdateFormula();
+            };
+            _onChainCompleted = args =>
+            {
+                _inDefensePhase = false;
+            };
+            EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
+            EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
+
+            // args: [playerGuid, targetGuid]. Cachear el enemigo apuntado y refrescar la
+            // fórmula para que el preview refleje weakness/escudo aunque no cambie la tirada.
+            _onCombatTargetChanged = args =>
+            {
+                if (args.Length < 2 || (Guid)args[0] != _playerGuid) return;
+                _currentTargetGuid = (Guid)args[1];
+                UpdateFormula();
+            };
+            EventManager.Subscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
 
             _bound = true;
             ClearFormula();
@@ -106,10 +166,28 @@ namespace Rollgeon.UI.HUD
                 _onActionRollPhase = null;
                 _actionRollService = null;
             }
+            if (_onChainPhaseStarted != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
+                _onChainPhaseStarted = null;
+            }
+            if (_onChainCompleted != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
+                _onChainCompleted = null;
+            }
+            if (_onCombatTargetChanged != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
+                _onCombatTargetChanged = null;
+            }
             _currentBehavior = null;
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
+            _lastContributingDice = null;
+            _currentTargetGuid = Guid.Empty;
+            _inDefensePhase = false;
             _bound = false;
             _bindCount = 0;
             ClearFormula();
@@ -128,6 +206,8 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = null;
             _lastComboId = null;
             _lastComboBaseDamage = 0;
+            _lastContributingDice = null;
+            _inDefensePhase = false;
             ClearFormula();
             HideThreshold();
         }
@@ -138,6 +218,7 @@ namespace Rollgeon.UI.HUD
             _lastComboDisplayName = payload.DisplayName;
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
+            _lastContributingDice = payload.ContributingDice;
             UpdateFormula();
         }
 
@@ -145,9 +226,70 @@ namespace Rollgeon.UI.HUD
         {
             if (_formulaLabel == null) return;
 
+            // Default: el N×M solo aplica al modo daño-por-combo — la rama de abajo lo
+            // re-muestra; cualquier otra rama (action roll, defensa, degradados) lo apaga.
+            if (_breakdownView != null) _breakdownView.Hide();
+
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
+
+            // Fase de defensa del chain: la tirada activa genera ESCUDO, no daño. Se
+            // recomputa en vivo con la MISMA fórmula compartida que la aplicación real
+            // (anti-drift, igual que la rama de ataque). Misma nota de orden que abajo:
+            // Resolve lee LastComboScratch poblado por el mismo ComboMatchedPayload.
+            if (_inDefensePhase)
+            {
+                HideThreshold();
+                if (string.IsNullOrEmpty(_lastComboId))
+                {
+                    RenderLabel("Defensa - armá un combo para generar escudo", 0);
+                    return;
+                }
+
+                string shieldComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? _lastComboDisplayName : "Combo";
+                var shieldEff = _currentBehavior?.FindFirstAddShieldEffect();
+
+                // Paridad con ataque: el breakdown N×M toma el preview de defensa
+                // (N = base de la tabla de escudo del combo, M = perilla de la habilidad);
+                // el resto llega volando en la secuencia del confirm. El label viejo queda
+                // solo como fallback sin _breakdownView cableado.
+                if (_breakdownView != null)
+                {
+                    _breakdownView.SetComboName(shieldComboName);
+                    _breakdownView.ShowPreview(ResolvePlayerShieldBase(_lastComboId),
+                        shieldEff?.ComboMultiplier ?? 1f);
+                    ClearLabelKeepingBreakdown();
+                    return;
+                }
+                int shieldPreview = PlayerComboShield.Resolve(
+                    _playerGuid, ResolvePlayerShieldBase(_lastComboId),
+                    _lastContributingDice, shieldEff?.ComboMultiplier ?? 1f, out var shieldBd);
+
+                // Bono at-played de items: entra al escudo real (BeginPlay abre la ventana
+                // por fase, también en defensa) — se previsualiza en dorado como en ataque.
+                // Con preview 0 (sin entrada en tabla o bloqueado) el efecto no aplica nada,
+                // así que el bono tampoco se muestra. Sin Mitigate: el escudo no pasa por
+                // el DamagePipeline.
+                int shieldItemBonus = 0;
+                if (shieldPreview > 0
+                    && ServiceLocator.TryGetService<IInventoryService>(out var shieldInv)
+                    && shieldInv != null)
+                    shieldItemBonus = shieldInv.GetComboDamageBonusPreview(_lastComboId);
+
+                // v3: el bono entra a N y escala por M — mismo redondeo que el golpe real.
+                int shieldTotal = shieldItemBonus > 0
+                    ? PlayerComboDamage.RoundNxM(shieldBd.N + shieldItemBonus, shieldBd.M)
+                    : shieldPreview;
+                int shieldItemPortion = shieldTotal - shieldPreview;
+
+                string shieldText = shieldItemPortion > 0
+                    ? $"{shieldComboName}: escudo {shieldPreview} <color=#{ItemBonusColorHex}>+ {shieldItemPortion}</color>"
+                    : $"{shieldComboName}: escudo {shieldPreview}";
+                RenderLabel(shieldText, shieldTotal);
+                return;
+            }
 
             HideThreshold();
             if (_currentBehavior == null) { ClearFormula(); return; }
@@ -157,61 +299,115 @@ namespace Rollgeon.UI.HUD
 
             if (dmgEff.Source == DamageSource.Constant)
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} ({dmgEff.BaseAmount})";
+                RenderLabel($"{_currentBehavior.ActionName} ({dmgEff.BaseAmount})", 0);
                 return;
             }
 
             if (dmgEff.Source == DamageSource.FromReader)
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} (stat)";
-                Debug.Log($"[DamageFormulaView] UpdateFormula — FromReader → \"{_formulaLabel.text}\"");
+                string statText = $"{_currentBehavior.ActionName} (stat)";
+                RenderLabel(statText, 0);
+                Debug.Log($"[DamageFormulaView] UpdateFormula — FromReader → \"{statText}\"");
                 return;
             }
 
-            if (_lastComboBaseDamage <= 0)
+            // BUG-040: gate por PRESENCIA de combo, no por base plano > 0 — un combo de
+            // base dinámica (Higher Number: flat 0 en tabla + valor del dado) matchea con
+            // base plano 0 y el label decía "(sin combo)" aunque el daño sí lo sumaba.
+            if (string.IsNullOrEmpty(_lastComboId))
             {
-                _formulaLabel.text = $"{_currentBehavior.ActionName} (sin combo)";
+                RenderLabel($"{_currentBehavior.ActionName} (sin combo)", 0);
                 return;
             }
 
             string comboName = !string.IsNullOrEmpty(_lastComboDisplayName) ? _lastComboDisplayName : "Combo";
-            int comboPart = Mathf.RoundToInt(_lastComboBaseDamage * dmgEff.ComboMultiplier);
-            int bonus = ResolveComboBonusDamage(_lastComboId);
-            int total = comboPart + bonus;
 
-            // Resumen completo en el formula label: combo + daño base, multiplicador (si
-            // ≠ 1), agregados de mejoras (si los hay) y el total final. Mismo cálculo que
-            // EffDealDamage.ResolveArgs (pre-mitigación). Ejemplos:
-            //   "Par: 50"                  (sin multiplicador ni mejoras)
-            //   "Par: 50 + 60 = 110"       (mejora de +60)
-            //   "Par: 50 × 2 = 100"        (multiplicador 2)
-            //   "Par: 50 × 2 + 60 = 160"   (ambos)
-            bool hasMultiplier = !Mathf.Approximately(dmgEff.ComboMultiplier, 1f);
-            string formula = $"{comboName}: {_lastComboBaseDamage}";
-            if (hasMultiplier) formula += $" × {dmgEff.ComboMultiplier}";
-            if (bonus > 0) formula += $" + {bonus}";
-            if (hasMultiplier || bonus > 0) formula += $" = {total}";
-            _formulaLabel.text = formula;
+            // Modo N×M: el breakdown muestra los contadores iniciales (N = base del combo,
+            // M = perilla de la habilidad) y el resto llega volando en la secuencia del
+            // confirm. El label viejo queda vacío mientras el breakdown esté a cargo.
+            if (_breakdownView != null)
+            {
+                _breakdownView.SetComboName(comboName);
+                _breakdownView.ShowPreview(_lastComboBaseDamage, dmgEff.ComboMultiplier);
+                ClearLabelKeepingBreakdown();
+                return;
+            }
+
+            // Daño pre-mitigación EXACTO: misma función que el golpe real, así el número
+            // arrastra ATQ base del PJ, scratchMultiplier de encantamientos y el bono de
+            // combo sin re-derivar la fórmula acá (era la causa del desfase reportado).
+            // Nota de orden: Resolve lee LastComboScratch de los services de passives/
+            // enchants, que se pueblan al procesar el MISMO ComboMatchedPayload — depende de
+            // que esos services estén suscriptos antes que esta view (misma dependencia que
+            // tenía el viejo ResolveComboBonusDamage).
+            int preMitigation = PlayerComboDamage.Resolve(
+                _playerGuid, _lastComboBaseDamage, _lastContributingDice, dmgEff.ComboMultiplier,
+                PlayerComboFormulaKind.Damage, out var bd);
+
+            // Bono at-played de los items passive del inventario para este combo. No entra
+            // en Resolve durante el preview (el LastPlayScratch se limpia al inicio del
+            // turno), así que lo previsualizamos aparte para mostrarlo en dorado.
+            // Limitación conocida: GetComboDamageBonusPreview solo suma EffAddComboBonus —
+            // un item at-played MULTIPLICATIVO sigue sin previsualizarse (follow-up).
+            int itemBonus = 0;
+            if (ServiceLocator.TryGetService<IInventoryService>(out var inventory) && inventory != null)
+                itemBonus = inventory.GetComboDamageBonusPreview(_lastComboId);
+
+            // v3: el bono de item entra a N y escala por M — igual que hará el golpe real
+            // cuando el item escriba al play scratch (en v2 se sumaba POST-fórmula).
+            int preWithItems = itemBonus != 0 && !bd.Blocked
+                ? PlayerComboDamage.RoundNxM(bd.N + itemBonus, bd.M)
+                : preMitigation;
+
+            // Mitigación real (weakness + escudo) por separado para base y total, así el
+            // "+ N" dorado refleja la contribución de los objetos ya mitigada.
+            int shownBase = Mitigate(preMitigation);
+            int shownTotal = itemBonus != 0 ? Mitigate(preWithItems) : shownBase;
+            int itemPortion = shownTotal - shownBase;
+
+            string formulaText = itemPortion > 0
+                ? $"{comboName}: {shownBase} <color=#{ItemBonusColorHex}>+ {itemPortion}</color>"
+                : $"{comboName}: {shownBase}";
+            RenderLabel(formulaText, shownTotal);
         }
 
-        // Suma los bonuses de combo passives (tienda) y dice enchantments igual que
-        // EffDealDamage.ResolveArgs — así el total mostrado coincide con el golpe real
-        // (antes de mitigación del pipeline, que depende del target). GetBonusDamage es
-        // una query sin side-effects; el scratch de enchantments ya quedó computado por
-        // su service al procesar el mismo ComboMatchedPayload.
-        private int ResolveComboBonusDamage(string comboId)
+        // Dorado para el bono aportado por los objetos (rich text de TMP).
+        private const string ItemBonusColorHex = "FFC93C";
+
+        // Sheet del player como fuente de la tabla de escudo — mismo criterio que
+        // EffAddShield.ResolveComboShield, para que preview y aplicación lean la misma base.
+        private static int ResolvePlayerShieldBase(string comboId)
         {
-            int bonus = 0;
-            if (!string.IsNullOrEmpty(comboId)
-                && ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
-                && passives != null)
-                bonus += passives.GetBonusDamage(comboId);
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            return sheet?.GetShieldBase(comboId) ?? 0;
+        }
 
-            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
-                && enchants?.LastComboScratch != null)
-                bonus += enchants.LastComboScratch.BonusComboDamage;
-
-            return bonus;
+        /// <summary>
+        /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN
+        /// side-effects, para que el label == golpe que va a recibir. Sin target devuelve
+        /// el daño pre-mitigación.
+        /// </summary>
+        private int Mitigate(int preMitigation)
+        {
+            if (_currentTargetGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline)
+                && pipeline != null)
+            {
+                var ctx = new DamageContext
+                {
+                    SourceId = _playerGuid,
+                    TargetId = _currentTargetGuid,
+                    BaseDamage = preMitigation,
+                    ComboId = _lastComboId,
+                    // Enemigos sin debilidad ("None") resuelven a ×1.0 dentro del Preview.
+                    IsWeaknessHit = !string.IsNullOrEmpty(_lastComboId),
+                };
+                pipeline.Preview(ctx);
+                return ctx.FinalDamage;
+            }
+            return preMitigation;
         }
 
         private bool TryShowActionRollMode()
@@ -232,9 +428,9 @@ namespace Rollgeon.UI.HUD
             string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
 
             if (combo != null)
-                _formulaLabel.text = $"{actionTag} - {combo.DisplayName} ({effective})";
+                RenderLabel($"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})", effective);
             else
-                _formulaLabel.text = $"{actionTag} - seleccioná los dados de tu combo";
+                RenderLabel($"{actionTag} - seleccioná los dados de tu combo", 0);
             return true;
         }
 
@@ -245,7 +441,36 @@ namespace Rollgeon.UI.HUD
 
         private void ClearFormula()
         {
-            if (_formulaLabel != null) _formulaLabel.text = string.Empty;
+            if (_breakdownView != null) _breakdownView.Hide();
+            ClearLabelKeepingBreakdown();
+        }
+
+        // Limpia SOLO el label de texto (el breakdown, si está mostrado, queda a cargo).
+        private void ClearLabelKeepingBreakdown()
+        {
+            if (_feedback != null) _feedback.Clear();
+            else if (_formulaLabel != null) _formulaLabel.text = string.Empty;
+        }
+
+        /// <summary>
+        /// Fija el board type vigente del value text (color + efectos por tipo). Lo empuja
+        /// combate vía <c>CombatHUDView</c>; exploración lo deriva del spec activo. Dedup para
+        /// no re-lanzar el tween de color en cada update.
+        /// </summary>
+        public void SetBoardType(DiceBoardType type)
+        {
+            if (_boardTypeSet && type == _boardType) return;
+            _boardType = type;
+            _boardTypeSet = true;
+            _feedback?.SetBoardType(type);
+        }
+
+        // Renderiza el value text por el controller de feedback (color + tag del tipo con amplitud
+        // según el valor del combo) si está cableado, o directo al TMP si no.
+        private void RenderLabel(string text, int value)
+        {
+            if (_feedback != null) _feedback.Show(text, value);
+            else if (_formulaLabel != null) _formulaLabel.text = text;
         }
     }
 }
