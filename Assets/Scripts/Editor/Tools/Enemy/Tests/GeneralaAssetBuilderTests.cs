@@ -244,6 +244,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Tiene que compartir canal con el Execute del inicio del turno.");
         }
 
+        [Test]
+        public void CupToll_PaintsItsOverlayMilitaryBlue_NotTheGenericViolet()
+        {
+            // Act
+            var mark = Descendants(FindCupGate().Else).OfType<AINode_AuxTelegraph>().First();
+
+            // Assert — el 3×3 del cubilete convive en pantalla con el telegraph naranja de la mano:
+            // el canal secundario tiene que distinguirse, y el violeta default no dice nada del jefe.
+            Assert.AreEqual(GeneralaAssetBuilder.CupOverlayTint, mark.OverlayTint);
+            Assert.Greater(mark.OverlayTint.b, mark.OverlayTint.r, "El tinte del cubilete es azul.");
+            Assert.Greater(mark.OverlayTint.b, mark.OverlayTint.g, "El tinte del cubilete es azul.");
+            Assert.Greater(mark.OverlayTint.a, 0f, "Un tinte transparente pintaría quads invisibles.");
+        }
+
         // ======================================================================
         // Fase 2
         // ======================================================================
@@ -330,9 +344,98 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
+        [Test]
+        public void PopulateEnemyData_AssignsTheVisualPrefabAndThePortrait()
+        {
+            // Arrange
+            var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var visual = new GameObject("PF_Boss_Generala_Probe");
+            var portrait = MakeSprite();
+            try
+            {
+                // Act
+                GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, visual, portrait);
+
+                // Assert — sin VisualPrefab, EntityVisualService loguea error y no spawnea nada.
+                Assert.AreSame(visual, boss.VisualPrefab);
+                Assert.AreSame(portrait, boss.Portrait,
+                    "El retrato alimenta la cola de turnos y la BossBar por el mismo campo.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(boss);
+                UnityEngine.Object.DestroyImmediate(visual);
+                DestroySprite(portrait);
+            }
+        }
+
+        [Test]
+        public void PopulateData_KeepsTheExistingVisual_WhenNothingIsPassed()
+        {
+            // Arrange — el builder es re-ejecutable: una corrida sin arte no puede borrar el wiring.
+            var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var visual = new GameObject("PF_Boss_Generala_Probe");
+            var portrait = MakeSprite();
+            try
+            {
+                GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, visual, portrait);
+
+                // Act
+                GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, null, null);
+
+                // Assert
+                Assert.AreSame(visual, boss.VisualPrefab);
+                Assert.AreSame(portrait, boss.Portrait);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(boss);
+                UnityEngine.Object.DestroyImmediate(visual);
+                DestroySprite(portrait);
+            }
+        }
+
+        [Test]
+        public void PopulateDiceData_AssignsItsOwnVisualPrefabAndPortrait()
+        {
+            // Arrange
+            var dice = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var visual = new GameObject("PF_Obj_DadoCasa_Probe");
+            var portrait = MakeSprite();
+            try
+            {
+                // Act
+                GeneralaAssetBuilder.PopulateDiceData(dice, visual, portrait);
+
+                // Assert — el dado tiene visual propio: con el del jefe no se leería como dado.
+                Assert.AreSame(visual, dice.VisualPrefab);
+                Assert.AreSame(portrait, dice.Portrait);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(dice);
+                UnityEngine.Object.DestroyImmediate(visual);
+                DestroySprite(portrait);
+            }
+        }
+
         // ======================================================================
         // Helpers
         // ======================================================================
+
+        private static Sprite MakeSprite()
+        {
+            var texture = new Texture2D(4, 4);
+            return Sprite.Create(texture, new Rect(0f, 0f, 4f, 4f), new Vector2(0.5f, 0.5f));
+        }
+
+        private static void DestroySprite(Sprite sprite)
+        {
+            if (sprite == null) return;
+            var texture = sprite.texture;
+            UnityEngine.Object.DestroyImmediate(sprite);
+            if (texture != null) UnityEngine.Object.DestroyImmediate(texture);
+        }
 
         private AINode_Selector FindHandTable()
         {
