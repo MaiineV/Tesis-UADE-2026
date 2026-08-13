@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Combat.AI.Decisions;
@@ -554,6 +555,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             int colon = name.LastIndexOf(':');
             if (colon >= 0 && colon < name.Length - 1) name = name.Substring(colon + 1);
+
+            // El importer de Unity sanitiza el ':' del namespace de Maya a '_', así que
+            // "Enemy_:Wood1" llega como "Enemy__Wood1" y el strip de arriba no dispara.
+            int doubleUnderscore = name.LastIndexOf("__", StringComparison.Ordinal);
+            if (doubleUnderscore >= 0 && doubleUnderscore < name.Length - 2)
+                name = name.Substring(doubleUnderscore + 2);
 
             if (name.StartsWith("Mat_")) name = name.Substring("Mat_".Length);
 
