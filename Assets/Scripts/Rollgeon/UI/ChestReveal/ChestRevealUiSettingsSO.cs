@@ -50,6 +50,11 @@ namespace Rollgeon.UI.ChestReveal
 
         [Title("Skip / seguridad")]
         [MinValue(1f)] public float SkipSpeedMultiplier = 3f;
+        [Range(0f, 1f)]
+        [Tooltip("Progreso del spin a partir del cual un click salta directo al estado " +
+                 "final (snap al ganador) en vez de acelerar: durante la frenada las " +
+                 "celdas ya se leen y el empujón del Fast parecería alterar el resultado.")]
+        public float SpinSnapT = 0.55f;
         [MinValue(1f)]
         [Tooltip("Watchdog: si la secuencia no terminó en este tiempo real, se fuerza el " +
                  "estado final y se libera el gate de turnos — nunca soft-lock.")]

@@ -11,6 +11,7 @@ using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.ChestReveal
@@ -19,8 +20,11 @@ namespace Rollgeon.UI.ChestReveal
     /// Vista del reveal gacha del cofre. Vive persistente bajo <c>ScreenHost</c> en
     /// <c>Canvas_ChestReveal.prefab</c> con <see cref="_root"/> apagado (patrón
     /// <c>BossBarView</c> — NO entra al screen stack: <c>PushOverlay</c> es alias de
-    /// <c>Push</c> y taparía el CombatHUD). El dim con raycast bloquea el input; cada
-    /// click sobre él avanza el skip de dos etapas del <see cref="ChestRevealPlayer"/>.
+    /// <c>Push</c> y taparía el CombatHUD). El dim con raycast bloquea el input; el
+    /// click que avanza el skip de dos etapas del <see cref="ChestRevealPlayer"/> se
+    /// captura acá vía <see cref="IPointerClickHandler"/>: el panel central y sus hijos
+    /// tienen raycast propio y se tragarían el click del dim, pero todos burbujean
+    /// hasta este root — así el click funciona en cualquier parte del overlay.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -37,7 +41,7 @@ namespace Rollgeon.UI.ChestReveal
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Chest Reveal/Chest Reveal View")]
-    public sealed class ChestRevealView : MonoBehaviour, IChestRevealStage
+    public sealed class ChestRevealView : MonoBehaviour, IChestRevealStage, IPointerClickHandler
     {
         [Title("Settings")]
         [SerializeField, Required] private ChestRevealUiSettingsSO _settings;
@@ -345,12 +349,31 @@ namespace Rollgeon.UI.ChestReveal
             }
         }
 
+        // Los clicks sobre el panel (o cualquier hijo con raycast) no llegan al Button
+        // del dim porque es un sibling, no un ancestro — pero sí burbujean hasta acá.
+        // El click directo sobre el dim lo consume su Button, así que no hay doble fire.
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button != PointerEventData.InputButton.Left) return;
+            OnDimClicked();
+        }
+
         private void OnDimClicked()
         {
             if (!_player.IsRunning) return;
 
             if (_player.Beat == ChestRevealPlayer.RevealBeat.WaitDismiss)
                 _juice?.OnDismissRequested();
+
+            // Frenada: el reel ya corre a velocidad de celdas legibles, y el empujón
+            // animado del Fast se leería como si el click alterara el resultado (no
+            // puede: el ganador se fijó en BuildReel). Snap directo al estado final.
+            if (_player.Beat == ChestRevealPlayer.RevealBeat.Spin
+                && _lastSpinT >= _settings.SpinSnapT)
+            {
+                _player.RequestJumpToFinal();
+                return;
+            }
 
             bool wasSpinNoSkip = _player.Beat == ChestRevealPlayer.RevealBeat.Spin
                                  && _player.Skip == ChestRevealPlayer.SkipStage.None;
