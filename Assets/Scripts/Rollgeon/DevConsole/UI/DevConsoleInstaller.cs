@@ -1,4 +1,5 @@
 using Patterns;
+using Rollgeon.Combat.Handoff;
 using Rollgeon.Dice;
 using UnityEngine;
 
@@ -21,6 +22,12 @@ namespace Rollgeon.DevConsole.UI
             // Estado consumido por DiceRoller para riggear tiradas (setdiceroll).
             if (!ServiceLocator.HasService<RiggedRollState>())
                 ServiceLocator.AddService<RiggedRollState>(new RiggedRollState(), ServiceScope.Global);
+
+            // Seam consumido por DefaultEnemySpawnResolver para forzar el boss del piso
+            // (comando `boss <entityId>`). Global: sobrevive el reinicio de run, y en release
+            // no existe ⇒ el resolver siempre rolea el BossPool.
+            if (!ServiceLocator.HasService<IBossSelectionOverride>())
+                BossSelectionOverride.CreateAndRegister();
 
             var go = new GameObject("DevConsole");
             go.AddComponent<DevConsoleUI>();
