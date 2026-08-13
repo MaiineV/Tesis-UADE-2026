@@ -9,9 +9,14 @@ namespace Rollgeon.Combos
     /// Campos:
     /// <list type="bullet">
     /// <item><description><see cref="IsMatch"/> — <c>true</c> si el combo detecto match.</description></item>
-    /// <item><description><see cref="BaseDamage"/> — dano base resultante. Para combos planos
-    /// (Par, FullHouse, etc.) coincide con el campo del SO; para <c>Combo_SumaX</c> incluye la
-    /// suma dinamica de los dados con valor X (ver plan §4.4).</description></item>
+    /// <item><description><see cref="BaseDamage"/> — dano base PLANO del combo (piso). Nunca
+    /// incluye valores de dados: la formula v3 ya suma las caras contribuyentes por separado
+    /// (Σcaras) y sumarlas aca las contaria dos veces (Fix#0047).</description></item>
+    /// <item><description><see cref="DynamicBonus"/> — parte dependiente de los dados de los
+    /// combos de base dinamica (SumaX: <c>X × hits</c>; Higher Number: la cara mas alta;
+    /// Fuerza Bruta: Σ de los 5 valores). <c>0</c> para combos planos. NO entra a la formula
+    /// v3 (ahi las caras van via Σcaras) — existe para que la formula B legacy
+    /// (<see cref="EffectiveTotal"/>) conserve el valor del combo.</description></item>
     /// <item><description><see cref="CountUsed"/> — cantidad de DADOS consumidos por el combo
     /// (no la "cuenta" ponderada del §5.1.1). Usado por counters Balatro-style (T97c) y UI de
     /// feedback. Ver plan §4.3 para la distincion semantica.</description></item>
@@ -37,10 +42,25 @@ namespace Rollgeon.Combos
         public bool IsMatch { get; }
 
         /// <summary>
-        /// Dano base del combo para este match. Coincide con el <c>BaseDamage</c> del SO para
-        /// combos planos; para <c>Combo_SumaX</c> es <c>BaseDamage + X * hits</c>.
+        /// Dano base PLANO del combo para este match (el campo del SO, o el override de la
+        /// tabla por clase). Es el termino <c>comboBase</c> de la formula v3 — las caras de
+        /// los dados NO viven aca (van una sola vez via Σcaras, Fix#0047).
         /// </summary>
         public int BaseDamage { get; }
+
+        /// <summary>
+        /// Parte dinamica (dependiente de los dados) de los combos de base variable — 0 para
+        /// combos planos. Solo la consume la formula B legacy via <see cref="EffectiveTotal"/>;
+        /// la formula v3 de dano/escudo NO la usa (ahi las caras entran por Σcaras).
+        /// </summary>
+        public int DynamicBonus { get; }
+
+        /// <summary>
+        /// "Valor del combo" de la formula B (Force Door, Heal, thresholds de action rolls):
+        /// <c>BaseDamage + DynamicBonus</c>. Reproduce exactamente el numero que
+        /// <c>BaseDamage</c> transportaba antes de separar el doble conteo (Fix#0047).
+        /// </summary>
+        public int EffectiveTotal => BaseDamage + DynamicBonus;
 
         /// <summary>
         /// Cantidad de dados consumidos. Contrato por combo en plan §4.3 (Par=2, Trio=3, etc.).
@@ -63,30 +83,36 @@ namespace Rollgeon.Combos
         private static readonly int[] EmptyIndices = Array.Empty<int>();
 
         private ComboDetectionResult(bool isMatch, string comboId, int baseDamage, int countUsed,
-            IReadOnlyList<int> contributingIndices)
+            IReadOnlyList<int> contributingIndices, int dynamicBonus)
         {
             IsMatch = isMatch;
             ComboId = comboId ?? string.Empty;
             BaseDamage = baseDamage;
             CountUsed = countUsed;
             ContributingIndices = contributingIndices ?? EmptyIndices;
+            DynamicBonus = dynamicBonus;
         }
 
-        /// <summary>Factory para resultado positivo con id de combo e índices de dados contribuyentes.</summary>
+        /// <summary>
+        /// Factory para resultado positivo con id de combo e índices de dados contribuyentes.
+        /// <paramref name="dynamicBonus"/> solo lo setean los combos de base dinamica.
+        /// </summary>
         public static ComboDetectionResult Match(string comboId, int baseDamage, int countUsed,
-            IReadOnlyList<int> contributingIndices)
-            => new ComboDetectionResult(true, comboId, baseDamage, countUsed, contributingIndices);
+            IReadOnlyList<int> contributingIndices, int dynamicBonus = 0)
+            => new ComboDetectionResult(true, comboId, baseDamage, countUsed, contributingIndices,
+                dynamicBonus);
 
         /// <summary>
         /// Overload legacy sin id ni índices — para resultados sintéticos (action rolls) y tests
         /// de detección pura. <c>ComboId</c> queda vacío y <c>ContributingIndices</c> vacío:
         /// consumers por-combo (tabla de escudo) tratan estos resultados como "sin datos".
         /// </summary>
-        public static ComboDetectionResult Match(int baseDamage, int countUsed)
-            => new ComboDetectionResult(true, string.Empty, baseDamage, countUsed, EmptyIndices);
+        public static ComboDetectionResult Match(int baseDamage, int countUsed, int dynamicBonus = 0)
+            => new ComboDetectionResult(true, string.Empty, baseDamage, countUsed, EmptyIndices,
+                dynamicBonus);
 
         /// <summary>Factory para resultado negativo (valores en 0, sin id ni índices).</summary>
         public static ComboDetectionResult NoMatch()
-            => new ComboDetectionResult(false, string.Empty, 0, 0, EmptyIndices);
+            => new ComboDetectionResult(false, string.Empty, 0, 0, EmptyIndices, 0);
     }
 }

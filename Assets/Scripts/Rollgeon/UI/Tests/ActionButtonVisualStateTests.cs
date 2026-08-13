@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Rollgeon.UI.HUD;
@@ -47,10 +48,14 @@ namespace Rollgeon.UI.Tests
             _outline = _go.GetComponent<Outline>();
         }
 
+        private readonly List<Object> _spawned = new();
+
         [TearDown]
         public void TearDown()
         {
             if (_go != null) Object.DestroyImmediate(_go);
+            foreach (var o in _spawned) if (o != null) Object.DestroyImmediate(o);
+            _spawned.Clear();
         }
 
         [Test]
@@ -204,6 +209,165 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.AreEqual(_authoredCostColor, _costLabel.color);
+        }
+
+        // ------------------------------------------------------------------
+        // Sprites por estado — base vs highlight (ChipWarrior_0 / ChipWarrior_1)
+        // ------------------------------------------------------------------
+
+        private (Sprite baseSprite, Sprite highlight, Image image) SetupSprites()
+        {
+            var image = _go.GetComponent<Image>();
+            var tex = new Texture2D(4, 4);
+            var baseSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            baseSprite.name = "base";
+            var highlight = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            highlight.name = "highlight";
+            _spawned.Add(tex);
+            _spawned.Add(baseSprite);
+            _spawned.Add(highlight);
+
+            image.sprite = baseSprite;
+            AssignPrivate(_button, "_highlightSprite", highlight);
+            // Re-Awake para que capture el sprite base con el wiring completo.
+            InvokePrivate(_button, "Awake");
+            return (baseSprite, highlight, image);
+        }
+
+        [Test]
+        public void test_actionButton_hoverWhileAvailable_swapsToHighlightSprite()
+        {
+            // Arrange
+            var (baseSprite, highlight, image) = SetupSprites();
+            _button.SetState(ActionButtonState.Available);
+            Assert.AreSame(baseSprite, image.sprite, "sanity: en reposo usa el base");
+
+            // Act + Assert — enter swapea, exit restaura.
+            _button.OnPointerEnter(null);
+            Assert.AreSame(highlight, image.sprite);
+            _button.OnPointerExit(null);
+            Assert.AreSame(baseSprite, image.sprite);
+        }
+
+        [Test]
+        public void test_actionButton_selected_usesHighlightSpriteAtFullAlpha()
+        {
+            // Arrange
+            var (_, highlight, image) = SetupSprites();
+
+            // Act
+            _button.SetState(ActionButtonState.Selected);
+
+            // Assert
+            Assert.AreSame(highlight, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_actionButton_locked_showsBaseSpriteAtFullAlpha()
+        {
+            // Arrange — nada de atenuar (feedback playtest): Locked queda con el
+            // sprite base; la distinción es interactiva (tap → shake + motivo).
+            var (baseSprite, _, image) = SetupSprites();
+
+            // Act
+            _button.SetState(ActionButtonState.Locked);
+
+            // Assert
+            Assert.AreSame(baseSprite, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_actionButton_unaffordable_keepsFullAlphaSoTheOutlineReads()
+        {
+            // Arrange — el Outline de uGUI multiplica su alpha por el del gráfico:
+            // con el cuerpo atenuado el recuadro rojo salía fantasma (regresión de
+            // playtest). Unaffordable va a alpha pleno.
+            var (_, highlight, image) = SetupSprites();
+
+            // Act
+            _button.SetState(ActionButtonState.Unaffordable);
+
+            // Assert
+            Assert.AreSame(highlight, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f, "el cuerpo no se atenúa — el outline debe leerse");
+            Assert.IsTrue(_outline.enabled);
+        }
+
+        [Test]
+        public void test_actionButton_used_showsDedicatedSpriteAtFullAlpha()
+        {
+            // Arrange — la ficha usada NO se atenúa: sprite propio + hundimiento.
+            var (_, _, image) = SetupSprites();
+            var tex = new Texture2D(4, 4);
+            var usedSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            _spawned.Add(tex);
+            _spawned.Add(usedSprite);
+            AssignPrivate(_button, "_usedSprite", usedSprite);
+
+            // Act
+            _button.SetState(ActionButtonState.Used);
+
+            // Assert
+            Assert.AreSame(usedSprite, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f, "Used no atenúa el alpha");
+        }
+
+        [Test]
+        public void test_actionButton_pointerDownWhileLocked_raisesBlockedPressed()
+        {
+            // Arrange — el tap sobre cualquier chip no usable avisa al view para que
+            // muestre el motivo; la pila de energía (OnRejected) NO se sacude si el
+            // problema no es la plata.
+            int blocked = 0, rejections = 0;
+            _button.OnBlockedPressed += _ => blocked++;
+            _button.OnRejected += () => rejections++;
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(true);
+
+            // Act
+            _button.OnPointerDown(null);
+
+            // Assert
+            Assert.AreEqual(1, blocked, "el view tiene que enterarse para mostrar el motivo");
+            Assert.AreEqual(0, rejections, "sin problema de energía la pila no se sacude");
+        }
+
+        [Test]
+        public void test_actionButton_leavingDisabled_restoresBaseSpriteAndAlpha()
+        {
+            // Arrange
+            var (baseSprite, _, image) = SetupSprites();
+            _button.SetState(ActionButtonState.Used);
+
+            // Act
+            _button.SetState(ActionButtonState.Available);
+
+            // Assert
+            Assert.AreSame(baseSprite, image.sprite);
+            Assert.AreEqual(1f, image.color.a, 0.001f);
+        }
+
+        [Test]
+        public void test_actionButton_withoutHighlightSprite_neverSwapsTheSprite()
+        {
+            // Arrange — compat: chips sin el sprite wireado (installer sin correr)
+            // conservan su sprite en todos los estados.
+            var image = _go.GetComponent<Image>();
+            var tex = new Texture2D(4, 4);
+            var authored = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            _spawned.Add(tex);
+            _spawned.Add(authored);
+            image.sprite = authored;
+            InvokePrivate(_button, "Awake");
+
+            // Act
+            _button.SetState(ActionButtonState.Selected);
+            _button.SetState(ActionButtonState.Used);
+
+            // Assert
+            Assert.AreSame(authored, image.sprite);
         }
 
         // ------------------------------------------------------------------

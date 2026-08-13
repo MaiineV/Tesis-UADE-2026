@@ -23,6 +23,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new ClearItemsCommand());
             r.Register(new PotionCommand());
             r.Register(new ShopCommand());
+            r.Register(new ChestCommand());
 
             // Dados
             r.Register(new DiceCommand());
@@ -31,6 +32,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new EnchantCommand());
             r.Register(new DiceModeCommand());
             r.Register(new DiceMotionCommand());
+            r.Register(new RerollModeCommand());
             r.Register(new DiceJuiceLogCommand());
 
             // Mundo

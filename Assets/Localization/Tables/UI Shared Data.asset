@@ -527,6 +527,106 @@ MonoBehaviour:
     m_Key: inventory.items_caption
     m_Metadata:
       m_Items: []
+  - m_Id: 10000862892814336
+    m_Key: chest.reveal.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311808
+    m_Key: chest.reveal.gold_amount
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311809
+    m_Key: chest.reveal.skip_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311810
+    m_Key: chest.reveal.continue_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311811
+    m_Key: chest.rarity.common
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311812
+    m_Key: chest.rarity.uncommon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311813
+    m_Key: chest.rarity.rare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10000862968311814
+    m_Key: chest.rarity.legendary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000887107584
+    m_Key: tutorial.turn_order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050624
+    m_Key: tutorial.contract_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000929050625
+    m_Key: tutorial.camera_controls
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244928
+    m_Key: tutorial.backpack_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244929
+    m_Key: tutorial.enchant_reroll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10309000933244930
+    m_Key: tutorial.dicebag_icon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614179115008
+    m_Key: tutorial.escape_aftermath
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319614204280832
+    m_Key: tutorial.map_rooms
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649726468096
+    m_Key: action.reject.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216832
+    m_Key: action.reject.no_range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216833
+    m_Key: action.reject.no_energy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216834
+    m_Key: action.reject.used
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216835
+    m_Key: action.reject.full_health
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216836
+    m_Key: action.reject.no_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10374649764216837
+    m_Key: action.reject.not_turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10378091215814656
+    m_Key: action.reject.no_potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10403289960906752
+    m_Key: tutorial.reroll_teach
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

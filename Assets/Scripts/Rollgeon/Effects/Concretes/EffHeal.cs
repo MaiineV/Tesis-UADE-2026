@@ -53,7 +53,7 @@ namespace Rollgeon.Effects.Concretes
 
         [SerializeField, ShowIf("_healSource", DamageSource.ComboValue)]
         [MinValue(0.01f)]
-        [Tooltip("Multiplicador aplicado al BaseDamage del combo resuelto.")]
+        [Tooltip("Multiplicador aplicado al EffectiveTotal del combo resuelto (piso + parte dinámica).")]
         private float _comboMultiplier = 1f;
 
         [OdinSerialize, SerializeReference]
@@ -80,7 +80,7 @@ namespace Rollgeon.Effects.Concretes
 
         [SerializeField, MinValue(0)]
         [ShowIf(nameof(_useBuildDice))]
-        [Tooltip("Threshold del 'effective total' de la tirada (formula B: combo.BaseDamage " +
+        [Tooltip("Threshold del 'effective total' de la tirada (formula B: combo.EffectiveTotal " +
                  "si hay combo, sino suma cruda). Si lo alcanza, el excedente se suma al heal " +
                  "base. Default 30 — alineado con Force Door para que requiera al menos un Trio.")]
         private int _healThreshold = 30;
@@ -299,7 +299,7 @@ namespace Rollgeon.Effects.Concretes
             int rawAmount = _healSource switch
             {
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                    => Mathf.RoundToInt(combo.EffectiveTotal * _comboMultiplier),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null && context != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),

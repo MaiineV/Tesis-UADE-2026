@@ -1220,7 +1220,7 @@ MonoBehaviour:
     Attack:
       Mode: 1
       Multiplier: 1
-      ManualValue: 3
+      ManualValue: 30
     Speed:
       Mode: 0
       Multiplier: 1.1
@@ -1246,7 +1246,7 @@ MonoBehaviour:
     Attack:
       Mode: 1
       Multiplier: 1
-      ManualValue: 4
+      ManualValue: 40
     Speed:
       Mode: 0
       Multiplier: 1.2

@@ -6,16 +6,17 @@ namespace Rollgeon.Combos.Concretes
 {
     /// <summary>
     /// Suma X — combo parametrizado por valor objetivo <c>X</c>. Matchea si hay al menos un dado
-    /// con valor X. Dano resultante (hard rule #9): <c>BaseDamage + X * hits</c>, donde <c>hits</c>
-    /// es la cantidad de dados con valor X. <c>CountUsed = hits</c> (variable).
+    /// con valor X. <c>BaseDamage</c> del resultado = piso plano; los dados que muestran X
+    /// entran al daño UNA sola vez vía Σcaras de la fórmula v3 (Fix#0047 — <c>X * hits</c> iba
+    /// también dentro del base y se contaba doble). <c>CountUsed = hits</c> (variable).
     /// <para>
     /// El warrior usa <c>X = 4</c> (Suma 4 del GD). El asset puede clonarse con <c>X = 5, 6</c> para
     /// otras clases que necesiten "Suma-5" / "Suma-6" sin duplicar codigo.
     /// </para>
     /// <para>
-    /// <b>Contrato especial</b> (plan §4.4): <see cref="Detect"/> se overridea para devolver
-    /// <c>BaseDamage + sum</c> dinamico. GD canonico: <c>X = 4</c>, <c>BaseDamage = 25</c> (piso
-    /// plano que se suma encima de la suma de los 4s).
+    /// <b>Contrato especial</b> (plan §4.4): <see cref="Detect"/> se overridea para poblar
+    /// <c>ContributingIndices</c> con los dados que muestran X y llevar <c>X * hits</c> en
+    /// <c>DynamicBonus</c> (formula B legacy). GD canonico: <c>X = 4</c>, <c>BaseDamage = 25</c>.
     /// </para>
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Combos/Suma X", fileName = "Combo_SumaX")]
@@ -26,17 +27,12 @@ namespace Rollgeon.Combos.Concretes
         [Tooltip("Valor objetivo (pip del dado). Warrior usa X=4. Rango limitado a 1..6 per hard rule #9.")]
         protected int _x = 4;
 
-        [Title("Suma X — base configurable")]
-        [SerializeField, Range(0, 500)]
-        [Tooltip("Piso plano que se suma encima de la suma de los dados que muestran X. " +
-                 "GD default: 25 (editable en inspector). El daño final es BaseDamageConfigurable + X * hits.")]
-        protected int _baseDamageConfigurable = 25;
+        // Fix#0047 parte 2: el piso plano vive en el _baseDamage heredado (GD canonico: 25).
+        // El _baseDamageConfigurable separado era la misma trampa de autoría que en
+        // Fuerza Bruta — ver ese archivo.
 
         /// <summary>Valor objetivo del combo (1..6).</summary>
         public int X => _x;
-
-        /// <summary>Piso plano configurable (se suma encima de la suma dinamica).</summary>
-        public int BaseDamageConfigurable => _baseDamageConfigurable;
 
         /// <inheritdoc />
         public override bool Matches(int[] finalDice)
@@ -62,11 +58,11 @@ namespace Rollgeon.Combos.Concretes
         }
 
         /// <summary>
-        /// Override de <see cref="BaseComboSO.Detect(IReadOnlyList{int}, int?)"/>. Formula del
-        /// contrato §4.4: <c>BaseDamage = _baseDamageConfigurable + X * hits</c>,
-        /// <c>CountUsed = hits</c>. <c>ContributingIndices</c> (Spec de Daño v2) = los índices
-        /// exactos de los dados que muestran X — son los únicos que entran a <c>multi_dmg_combo</c>.
-        /// El override de la tabla por clase reemplaza solo el piso plano; <c>X * hits</c> suma encima.
+        /// Override de <see cref="BaseComboSO.Detect(IReadOnlyList{int}, int?)"/> (Fix#0047):
+        /// <c>BaseDamage = piso plano</c> (override de tabla o campo del SO),
+        /// <c>CountUsed = hits</c>. <c>ContributingIndices</c> = los índices exactos de los
+        /// dados que muestran X — la fórmula v3 los suma UNA vez vía Σcaras. <c>X * hits</c>
+        /// va en <c>DynamicBonus</c> solo para la formula B legacy (Force Door / Heal).
         /// </summary>
         public override ComboDetectionResult Detect(IReadOnlyList<int> diceValues, int? flatBaseOverride)
         {
@@ -79,7 +75,8 @@ namespace Rollgeon.Combos.Concretes
             if (hitIndices.Count == 0) return ComboDetectionResult.NoMatch();
             int hits = hitIndices.Count;
             return ComboDetectionResult.Match(
-                ComboId, (flatBaseOverride ?? _baseDamageConfigurable) + _x * hits, hits, hitIndices);
+                ComboId, flatBaseOverride ?? BaseDamage, hits, hitIndices,
+                dynamicBonus: _x * hits);
         }
     }
 }

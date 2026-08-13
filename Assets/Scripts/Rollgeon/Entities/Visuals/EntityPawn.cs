@@ -220,31 +220,47 @@ namespace Rollgeon.Entities.Visuals
         /// </summary>
         private void SetMovementAnim(bool moving)
         {
-            if (!_animatorResolved)
-            {
-                _animatorResolved = true;
-                // El Animator vive en el hijo del modelo rigeado, no en la raíz del pawn.
-                // Mismo cuidado con el fake-null que FeedbackManager.ResolveAnimator: con
-                // `??` el fallback al hijo no dispara porque GetComponent devuelve un
-                // UnityEngine.Object "null" que no es null para el operador.
-                var own = GetComponent<Animator>();
-                _animator = own != null ? own : GetComponentInChildren<Animator>(includeInactive: true);
-                _hasMovementParam = HasBoolParam(_animator, MovementParam);
-            }
-
+            ResolveAnimator();
             if (_animator == null || !_hasMovementParam) return;
             _animator.SetBool(MovementParam, moving);
         }
 
-        private static bool HasBoolParam(Animator animator, string param)
+        /// <summary>
+        /// Dispara un Trigger del Animator del modelo (ej. "Awaken" del Mimic al
+        /// activarse). No-op que devuelve false si el pawn no tiene Animator o su
+        /// controller no declara el param como Trigger.
+        /// </summary>
+        public bool TrySetTrigger(string trigger)
+        {
+            ResolveAnimator();
+            if (_animator == null
+                || !HasParam(_animator, trigger, AnimatorControllerParameterType.Trigger))
+                return false;
+            _animator.SetTrigger(trigger);
+            return true;
+        }
+
+        private void ResolveAnimator()
+        {
+            if (_animatorResolved) return;
+            _animatorResolved = true;
+            // El Animator vive en el hijo del modelo rigeado, no en la raíz del pawn.
+            // Mismo cuidado con el fake-null que FeedbackManager.ResolveAnimator: con
+            // `??` el fallback al hijo no dispara porque GetComponent devuelve un
+            // UnityEngine.Object "null" que no es null para el operador.
+            var own = GetComponent<Animator>();
+            _animator = own != null ? own : GetComponentInChildren<Animator>(includeInactive: true);
+            _hasMovementParam = HasParam(_animator, MovementParam, AnimatorControllerParameterType.Bool);
+        }
+
+        private static bool HasParam(Animator animator, string param, AnimatorControllerParameterType type)
         {
             if (animator == null || animator.runtimeAnimatorController == null) return false;
 
             var parameters = animator.parameters;
             for (int i = 0; i < parameters.Length; i++)
             {
-                if (parameters[i].type == AnimatorControllerParameterType.Bool
-                    && parameters[i].name == param)
+                if (parameters[i].type == type && parameters[i].name == param)
                     return true;
             }
             return false;
@@ -269,6 +285,6 @@ namespace Rollgeon.Entities.Visuals
                 yield return null;
         }
 
-        public enum PawnKind { Hero, Enemy, Boss }
+        public enum PawnKind { Hero, Enemy, Boss, Prop }
     }
 }

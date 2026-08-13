@@ -41,6 +41,10 @@ namespace Rollgeon.ActionRolls
         // sin re-detectar.
         private BaseComboSO _currentCombo;
         private int _currentEffectiveTotal;
+        // Fix#0047: base plano (post contract-mods) y parte dinámica del combo actual,
+        // computados en RecomputeComboAndTotal — el payload y el effective total salen de acá.
+        private int _currentComboFlatBase;
+        private int _currentComboDynamicBonus;
 
         // Mascara de holds — el user la actualiza via SetHolds() cuando clickea
         // dados en el panel. El combo y el effective total se calculan sobre el
@@ -217,11 +221,13 @@ namespace Rollgeon.ActionRolls
 
         public void RequestReroll()
         {
-            // Sin keep mask explícito → usar los holds internos (seteados por SetHolds
-            // desde DiceZoneView). Los dados marcados como "held" se conservan en el
-            // reroll; los demás se re-tiran. Semántica coherente con el botón Reroll
-            // compartido entre combat y action rolls.
-            RequestReroll((IReadOnlyList<bool>)_currentHolds);
+            // Los holds internos (SetHolds desde DiceZoneView / panel) marcan los
+            // dados SELECCIONADOS; RerollSelectionPrefs decide qué significa eso para
+            // el roller: invertido (default, Balatro) ⇒ los seleccionados vuelan;
+            // clásico ⇒ los seleccionados se quedan. Si el mapeo deja keep all-true,
+            // el guard de RequestReroll(keep) bailea sin cobrar. Semántica coherente
+            // con el botón Reroll del combate.
+            RequestReroll(RerollSelectionPrefs.SelectionToKeep(_currentHolds, _currentRoll?.Length ?? 0));
         }
 
         public void RequestReroll(IReadOnlyList<bool> keep)
@@ -235,13 +241,14 @@ namespace Rollgeon.ActionRolls
             // Boss 1 (§2): los dados bloqueados nunca se re-rollean — forzamos keep=true en ellos.
             keep = ForceKeepBlocked(keep, _currentRoll?.Length ?? 0);
 
-            // BUG-014: si el user holdeó todos los dados, el reroll no re-tiraría
-            // ningún dado — cobrar energía sería un drain sin efecto. Bail sin
-            // mutar phase ni cobrar; el panel debería haber deshabilitado el
-            // botón antes vía CanAffordReroll, esto es solo el guard defensivo.
+            // BUG-014: keep all-true = ningún dado va a volar (invertido: nada
+            // seleccionado; clásico: todo lockeado o bloqueado) — cobrar energía
+            // sería un drain sin efecto. Bail sin mutar phase ni cobrar; el panel
+            // debería haber deshabilitado el botón antes vía CanAffordReroll, esto
+            // es solo el guard defensivo.
             if (keep != null && AllTrue(keep))
             {
-                Debug.LogWarning("[ActionRollService] RequestReroll bloqueado — todos los dados están holdeados.");
+                Debug.LogWarning("[ActionRollService] RequestReroll bloqueado — ningún dado quedaría para re-tirar.");
                 return;
             }
 
@@ -255,6 +262,15 @@ namespace Rollgeon.ActionRolls
                 ResolveWithCurrentRoll();
                 return;
             }
+
+            // Invertido: el descarte consume la selección (Balatro) — la tirada nueva
+            // arranca sin holds y el jugador re-selecciona para el combo. Clásico: los
+            // holds persisten — los dados lockeados siguen lockeados y siguen siendo
+            // el pick de combo (RecomputeComboAndTotal post-reroll los re-lee). El
+            // keep ya quedó materializado arriba, así que esto no afecta qué dados
+            // vuelan. (DiceZoneView espeja el mismo branch al escuchar OnRerollStarted.)
+            if (!RerollSelectionPrefs.KeepSelected)
+                _currentHolds = new bool[_currentRoll != null ? _currentRoll.Length : 0];
 
             EventManager.Trigger(EventName.OnRerollStarted, _playerGuid, _rollIndex);
 
@@ -325,6 +341,36 @@ namespace Rollgeon.ActionRolls
             if (mask == null || mask.Count == 0) return false;
             for (int i = 0; i < mask.Count; i++) if (!mask[i]) return false;
             return true;
+        }
+
+        // ≥1 dado seleccionado que además pueda volar (Boss 1: los bloqueados no se
+        // re-rollean nunca, seleccionarlos no habilita el reroll).
+        private bool AnySelectedRerollable()
+        {
+            if (_currentHolds == null) return false;
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db);
+            for (int i = 0; i < _currentHolds.Length; i++)
+            {
+                if (!_currentHolds[i]) continue;
+                if (db != null && db.IsBlocked(i)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        // Clásico: algún dado NO lockeado (y no bloqueado por boss) va a volar.
+        // Holds null cuenta como nada seleccionado — reroll de toda la mano, válido.
+        private bool AnyUnselectedRerollable()
+        {
+            if (_currentRoll == null) return false;
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db);
+            for (int i = 0; i < _currentRoll.Length; i++)
+            {
+                if (_currentHolds != null && i < _currentHolds.Length && _currentHolds[i]) continue;
+                if (db != null && db.IsBlocked(i)) continue;
+                return true;
+            }
+            return false;
         }
 
         public void DeclineReroll()
@@ -410,6 +456,8 @@ namespace Rollgeon.ActionRolls
             if (_currentRoll == null || _currentRoll.Length == 0)
             {
                 _currentCombo = null;
+                _currentComboFlatBase = 0;
+                _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
                 return;
             }
@@ -446,6 +494,8 @@ namespace Rollgeon.ActionRolls
             if (heldDice.Count == 0)
             {
                 _currentCombo = null;
+                _currentComboFlatBase = 0;
+                _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
                 EmitComboMatched();
                 return;
@@ -462,7 +512,7 @@ namespace Rollgeon.ActionRolls
             if (fromSheet != null)
             {
                 _currentCombo = fromSheet;
-                _currentEffectiveTotal = EffectiveBase(fromSheet);
+                ComputeComboTotals(fromSheet, heldDice, heldTypes);
                 EmitComboMatched();
                 return;
             }
@@ -475,7 +525,7 @@ namespace Rollgeon.ActionRolls
                 if (result.IsMatch)
                 {
                     _currentCombo = best;
-                    _currentEffectiveTotal = EffectiveBase(best);
+                    ComputeComboTotals(best, heldDice, heldTypes);
                     EmitComboMatched();
                     return;
                 }
@@ -484,8 +534,41 @@ namespace Rollgeon.ActionRolls
             // 3) Sin combo del contrato — effective = suma cruda (fail path para Force Door,
             //    base-only para Heal). El user va a ver "(no combo)" en el panel.
             _currentCombo = null;
+            _currentComboFlatBase = 0;
+            _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = heldSum;
             EmitComboMatched();
+        }
+
+        // Formula B con el layering de combate (espejo de DetectWithContractMods +
+        // ActionRollTotals): Capa 1 tabla por clase (Detect con el override plano), Capa 2
+        // contract mods sobre el base PLANO; la parte dinámica (DynamicBonus) va encima sin
+        // escalar y las caras NO se duplican (Fix#0047). Antes acá se usaba el BaseDamage
+        // del SO a secas — que en Fuerza Bruta era el campo-trampa de prioridad (30).
+        private void ComputeComboTotals(BaseComboSO combo,
+            IReadOnlyList<int> heldDice, IReadOnlyList<DiceType> heldTypes)
+        {
+            Rollgeon.Heroes.ContractSheet sheet = null;
+            if (ServiceLocator.TryGetService<IPlayerService>(out var player))
+                sheet = player?.CurrentHero?.Sheet;
+
+            var detected = combo.Detect(heldDice, heldTypes,
+                sheet?.GetBaseDamageOverride(combo.ComboId));
+
+            // Defensivo: el caller ya matcheó via MatchBest/DetectBest, así que IsMatch
+            // debería ser true — si no, caemos al base plano del sheet/SO sin dinámica.
+            int flatBase = detected.IsMatch
+                ? detected.BaseDamage
+                : (sheet != null ? sheet.GetBaseDamage(combo) : combo.BaseDamage);
+            int dynamicBonus = detected.IsMatch ? detected.DynamicBonus : 0;
+
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
+                && mods != null)
+                flatBase = mods.GetEffectiveBaseDamage(combo.ComboId, flatBase);
+
+            _currentComboFlatBase = flatBase;
+            _currentComboDynamicBonus = dynamicBonus;
+            _currentEffectiveTotal = flatBase + dynamicBonus;
         }
 
         // Publica el combo actual en el bus tipado para que el DamageFormulaView (y
@@ -498,24 +581,9 @@ namespace Rollgeon.ActionRolls
                 SourceGuid = _playerGuid,
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
                 DisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
-                BaseDamage = EffectiveBase(_currentCombo),
+                BaseDamage = _currentComboFlatBase,
+                DynamicBonus = _currentComboDynamicBonus,
             });
-        }
-
-        // Capa 1 — tabla por clase (Spec Daño v2): base plano del ContractSheet del player.
-        // Capa 2 — Boss 3 (§4): modificadores del Contrato encima. Sin sheet/servicio ⇒ base original.
-        // Mismo layering que CombatHandoffService.DetectWithContractMods para que el preview
-        // del HUD muestre el número que el golpe real va a usar.
-        private static int EffectiveBase(BaseComboSO combo)
-        {
-            if (combo == null) return 0;
-            int b = combo.BaseDamage;
-            if (ServiceLocator.TryGetService<IPlayerService>(out var player)
-                && player?.CurrentHero?.Sheet != null)
-                b = player.CurrentHero.Sheet.GetBaseDamage(combo);
-            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods) && mods != null)
-                b = mods.GetEffectiveBaseDamage(combo.ComboId, b);
-            return b;
         }
 
         public bool CanAffordReroll
@@ -523,10 +591,14 @@ namespace Rollgeon.ActionRolls
             get
             {
                 if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
-                // BUG-014: si todos los dados están holdeados, no hay nada para
-                // re-tirar — el botón debe quedar deshabilitado aunque sobre energía.
-                if (_currentHolds != null && _currentHolds.Length > 0 && AllTrue(_currentHolds))
-                    return false;
+                // Sin ningún dado que vaya a volar (los bloqueados por boss nunca
+                // vuelan) no hay nada que re-tirar, el botón queda deshabilitado
+                // aunque sobre energía. Qué dado vuela depende del modo: invertido
+                // ⇒ los seleccionados; clásico ⇒ los no seleccionados.
+                bool anyRerollable = RerollSelectionPrefs.KeepSelected
+                    ? AnyUnselectedRerollable()
+                    : AnySelectedRerollable();
+                if (!anyRerollable) return false;
                 int cost = Mathf.Max(0, _spec.RerollEnergyCost);
                 if (cost <= 0) return true;
                 return _energy.GetCurrent(_playerGuid) >= cost;
@@ -601,6 +673,8 @@ namespace Rollgeon.ActionRolls
             _playerGuid = Guid.Empty;
             _spec = default;
             _currentCombo = null;
+            _currentComboFlatBase = 0;
+            _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = 0;
             _currentHolds = null;
             // Phase queda en Resolved/Cancelled hasta el proximo StartFlow para que la UI

@@ -127,8 +127,14 @@ namespace Patterns
         /// <summary>Nombre legible del combo para UI.</summary>
         public string DisplayName;
 
-        /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
+        /// <summary>Daño base PLANO del combo (término comboBase de la fórmula v3), antes de
+        /// mitigaciones / multiplicadores. Las caras contribuyentes NO viven acá (Fix#0047).</summary>
         public int BaseDamage;
+
+        /// <summary>Parte dinámica de los combos de base variable (SumaX, Higher Number,
+        /// Fuerza Bruta) — 0 para combos planos. Solo para consumers de formula B legacy;
+        /// la fórmula v3 suma las caras vía <see cref="ContributingDice"/>.</summary>
+        public int DynamicBonus;
 
         /// <summary>
         /// Dados que contribuyen al combo (slot + cara + tipo), para que el preview del HUD
@@ -171,5 +177,35 @@ namespace Patterns
         /// <summary>Índices de slot del bag (0-based) 1:1 con <see cref="KeptDice"/> —
         /// permite checks "mi dado participó" del canal de encantamientos.</summary>
         public IReadOnlyList<int> KeptDiceOriginalIndices;
+    }
+
+    /// <summary>
+    /// Payload tipado para "cofre abierto por el jugador". Se emite DESPUÉS de que la
+    /// recompensa fue otorgada (inventario/oro ya actualizados) — el reveal gacha es
+    /// presentación pura. Canalizado únicamente vía
+    /// <c>TypedEvent&lt;ChestOpenedPayload&gt;</c>; el entry legacy
+    /// <see cref="EventName.OnChestOpened"/> existe solo para telemetría/tests.
+    /// </summary>
+    public struct ChestOpenedPayload
+    {
+        /// <summary>InstanceId del cofre abierto.</summary>
+        public Guid ChestGuid;
+
+        /// <summary>Tier del cofre (Common/Uncommon/Rare/Legendary).</summary>
+        public Rollgeon.Items.ItemRarity Tier;
+
+        /// <summary>Ítem otorgado. <c>null</c> cuando la recompensa fue oro.</summary>
+        public Rollgeon.Items.ItemSO Item;
+
+        /// <summary>Oro otorgado. 0 cuando la recompensa fue un ítem.</summary>
+        public int GoldAmount;
+
+        /// <summary><c>true</c> si el roll fue un ítem pero el inventario no pudo
+        /// recibirlo (slots activos llenos) y se otorgó oro de fallback en su lugar.</summary>
+        public bool WasInventoryFullFallback;
+
+        /// <summary>Ítems del pool del tier, relleno para el reel gacha. Puede ser
+        /// vacío — la UI debe degradar (repetir ganador + fillers de oro).</summary>
+        public IReadOnlyList<Rollgeon.Items.ItemSO> PoolPreview;
     }
 }

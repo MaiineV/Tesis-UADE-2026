@@ -90,6 +90,26 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void PickTarget_IgnoresProps_EvenWhenCloserThanEnemies()
+        {
+            // Arrange — un cofre (Props) pegado al owner; el enemigo real más lejos.
+            // Regresión Feature#0046: la IA nunca elige al cofre como target single.
+            var chest = Spawn(EntityFilterMask.Props, new GridCoord(5, 6));            // dist 1
+            var enemy = Spawn(EntityFilterMask.Enemies | EntityFilterMask.Player, new GridCoord(5, 9)); // dist 4
+            var selector = new TargetSelector_Nearest
+            {
+                Relation = EntityFilterMask.Player | EntityFilterMask.Enemies
+            };
+
+            // Act
+            var pick = selector.PickTarget(BuildContext(), _owner);
+
+            // Assert
+            Assert.AreEqual(enemy, pick);
+            Assert.AreNotEqual(chest, pick);
+        }
+
+        [Test]
         public void PickTarget_FiltersByRelation_IgnoresNonMatching()
         {
             // Arrange — aliado más cerca que el enemigo; Relation=Enemies debe ignorar al aliado.

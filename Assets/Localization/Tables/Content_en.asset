@@ -39,7 +39,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024132
-    m_Localized: 2 dice of the same value
+    m_Localized: 2 pairs of different values
     m_Metadata:
       m_Items: []
   - m_Id: 5318351024133
@@ -568,8 +568,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1211498485350400
-    m_Localized: When your health is 3 or less, your base damage increases by 5 points.
-      Healing above that threshold returns it to normal.
+    m_Localized: When your health is 30 or less, your base damage increases by 5
+      points. Healing above that threshold returns it to normal.
     m_Metadata:
       m_Items: []
   - m_Id: 7800250105098240
@@ -793,6 +793,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9716852768735275
     m_Localized: Restores health when used.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612576890880
+    m_Localized: Pair Bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10319612602056704
+    m_Localized: +50 damage when matching a Pair.
     m_Metadata:
       m_Items: []
   references:

@@ -47,9 +47,23 @@ namespace Rollgeon.Tutorial.UI
 
         private TutorialStepDisplayRequest _request;
         private Action _onContinue;
+        private Canvas _canvas;
         private int _anchorQuadrant;
+        private int _popupSide;
         private float _arrowBobPhase;
         private Tween _showTween;
+
+        // Anti-baile con la cámara en movimiento (zoom/rotación): si el anchor no
+        // resuelve por un frame se usa el último conocido durante una gracia corta
+        // (el fallback instantáneo al centro hacía aparecer/desaparecer el popup),
+        // y el centro del popup se suaviza en vez de teletransportarse.
+        private const float AnchorLossGraceSeconds = 0.35f;
+        private const float PopupSmoothing = 14f;
+        private Vector2 _lastAnchorPos;
+        private bool _hadAnchor;
+        private float _anchorLostAt = -1f;
+        private Vector2 _smoothedPopupCenter;
+        private bool _popupCenterInitialized;
 
         public bool IsVisible { get; private set; }
 
@@ -87,9 +101,9 @@ namespace Rollgeon.Tutorial.UI
 
         private void BuildHierarchy()
         {
-            var canvas = gameObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = _settings.SortingOrder;
+            _canvas = gameObject.AddComponent<Canvas>();
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.sortingOrder = _settings.SortingOrder;
 
             var scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -143,7 +157,9 @@ namespace Rollgeon.Tutorial.UI
             _popupText = CreateText("Text", _popupRoot);
             _popupFooter = CreateText("Footer", _popupRoot);
             _popupFooter.fontSize = _settings.PopupFontSize * 0.65f;
-            _popupFooter.alpha = 0.7f;
+            // El guard cubre assets serializados antes de que existiera el campo
+            // (un float nuevo deserializa 0 = footer invisible).
+            _popupFooter.alpha = _settings.PopupFooterAlpha > 0f ? _settings.PopupFooterAlpha : 0.9f;
         }
 
         private static Image CreateImage(string name, Transform parent)
@@ -181,6 +197,10 @@ namespace Rollgeon.Tutorial.UI
             _request = request;
             _onContinue = onContinue;
             _anchorQuadrant = -1;
+            _popupSide = -1;
+            _hadAnchor = false;
+            _anchorLostAt = -1f;
+            _popupCenterInitialized = false;
 
             if (request.InputPolicy == TutorialInputPolicy.BlockUntilContinue && onContinue == null)
             {
@@ -241,19 +261,37 @@ namespace Rollgeon.Tutorial.UI
         private void UpdateLayout()
         {
             var screenSize = new Vector2(Screen.width, Screen.height);
+            Vector2 anchorPos = default;
             bool hasAnchor = _request.AnchorKind != TutorialAnchorKind.None
-                             && TutorialAnchorResolver.TryResolve(_request, out var anchorPos);
+                             && TutorialAnchorResolver.TryResolve(_request, out anchorPos);
+
+            // Gracia ante pérdida transitoria del anchor (zoom/rotación de cámara):
+            // sin esto el popup saltaba al centro y volvía frame a frame.
+            if (hasAnchor)
+            {
+                _hadAnchor = true;
+                _lastAnchorPos = anchorPos;
+                _anchorLostAt = -1f;
+            }
+            else if (_hadAnchor && _request.AnchorKind != TutorialAnchorKind.None)
+            {
+                if (_anchorLostAt < 0f) _anchorLostAt = Time.unscaledTime;
+                if (Time.unscaledTime - _anchorLostAt <= AnchorLossGraceSeconds)
+                {
+                    anchorPos = _lastAnchorPos;
+                    hasAnchor = true;
+                }
+            }
 
             if (!hasAnchor)
             {
                 // Centrado sin recorte (paso de texto puro o anchor irresoluble).
                 _dimMaterial.SetFloat(CutoutRadiusId, 0f);
                 _arrow.enabled = false;
-                LayoutPopup(screenSize * 0.5f, screenSize);
+                MeasurePopup(screenSize);
+                PlacePopup(SmoothPopupCenter(screenSize * 0.5f));
                 return;
             }
-
-            TutorialAnchorResolver.TryResolve(_request, out anchorPos);
 
             // El recorte que dibuja el shader es circular, pero la flecha se ubica contra
             // la caja cuando el anchor es de UI — ver ResolveArrowPositionForBox.
@@ -283,11 +321,38 @@ namespace Rollgeon.Tutorial.UI
             _dimMaterial.SetVector(CutoutCenterId, new Vector4(anchorPos.x, anchorPos.y, 0f, 0f));
             _dimMaterial.SetFloat(CutoutRadiusId, radius);
 
-            _anchorQuadrant = TutorialOverlayLayout.ResolveQuadrantWithHysteresis(
-                anchorPos, screenSize, _anchorQuadrant, _settings.QuadrantHysteresis);
-            var popupCenter = TutorialOverlayLayout.PopupCenterForQuadrant(
-                _anchorQuadrant, screenSize, _settings.PopupScreenMargin);
-            LayoutPopup(popupCenter, screenSize);
+            // El tamaño se necesita ANTES de elegir el lado. sizeDelta está en
+            // unidades de canvas y los anchors en píxeles de pantalla — convertir
+            // por el scale factor del canvas.
+            float canvasScale = _canvas != null && _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;
+            var popupSizePx = MeasurePopup(screenSize) * canvasScale;
+
+            Vector2 popupCenter;
+            if (_settings.LegacyQuadrantPlacement)
+            {
+                _anchorQuadrant = TutorialOverlayLayout.ResolveQuadrantWithHysteresis(
+                    anchorPos, screenSize, _anchorQuadrant, _settings.QuadrantHysteresis);
+                popupCenter = TutorialOverlayLayout.PopupCenterForQuadrant(
+                    _anchorQuadrant, screenSize, _settings.PopupScreenMargin);
+            }
+            else
+            {
+                // Popup adyacente al anchor (feedback playtest: el cuadrante opuesto
+                // tapaba HUD y tiles). Sin lado válido cae al centro del cuadrante.
+                // Guard del gap: 0 = asset serializado antes de que existiera el campo.
+                float gap = _settings.PopupAnchorGapPx > 0f ? _settings.PopupAnchorGapPx : 90f;
+                var anchorHalf = hasBox ? halfSize : new Vector2(radius, radius);
+                _popupSide = TutorialOverlayLayout.ResolveSideWithHysteresis(
+                    anchorPos, anchorHalf, popupSizePx, screenSize,
+                    gap, _settings.PopupScreenMargin, _popupSide);
+                popupCenter = _popupSide >= 0
+                    ? TutorialOverlayLayout.PopupCenterForSide(
+                        _popupSide, anchorPos, anchorHalf, popupSizePx, screenSize,
+                        gap, _settings.PopupScreenMargin)
+                    : TutorialOverlayLayout.ResolvePopupCenter(
+                        anchorPos, screenSize, _settings.PopupScreenMargin);
+            }
+            PlacePopup(SmoothPopupCenter(popupCenter));
 
             if (_request.ShowArrow && _arrow.sprite != null)
             {
@@ -316,11 +381,13 @@ namespace Rollgeon.Tutorial.UI
             }
         }
 
-        private void LayoutPopup(Vector2 screenCenter, Vector2 screenSize)
+        /// <summary>
+        /// Mide y acomoda los hijos del popup; devuelve el tamaño resultante en
+        /// unidades de canvas (multiplicar por el scale factor para píxeles).
+        /// </summary>
+        private Vector2 MeasurePopup(Vector2 screenSize)
         {
-            // El popup se posiciona por rect.position (píxeles de pantalla — válido
-            // en ScreenSpaceOverlay, ver TooltipController.PositionAt). El tamaño se
-            // deriva del preferred size del TMP contra el ancho máximo.
+            // El tamaño se deriva del preferred size del TMP contra el ancho máximo.
             float maxTextWidth = Mathf.Min(_settings.PopupMaxWidth, screenSize.x * 0.4f);
             var padding = _settings.PopupPadding;
 
@@ -349,6 +416,28 @@ namespace Rollgeon.Tutorial.UI
             _popupRoot.sizeDelta = new Vector2(
                 textWidth + padding.x * 2f,
                 textHeight + footerHeight + padding.y * 2f);
+            return _popupRoot.sizeDelta;
+        }
+
+        /// <summary>Suaviza el centro del popup con damping exponencial: sigue al
+        /// target pero sin teletransportarse cuando la cámara mueve el anchor.</summary>
+        private Vector2 SmoothPopupCenter(Vector2 target)
+        {
+            if (!_popupCenterInitialized || !Application.isPlaying)
+            {
+                _popupCenterInitialized = true;
+                _smoothedPopupCenter = target;
+                return target;
+            }
+            float t = 1f - Mathf.Exp(-PopupSmoothing * Time.unscaledDeltaTime);
+            _smoothedPopupCenter = Vector2.Lerp(_smoothedPopupCenter, target, t);
+            return _smoothedPopupCenter;
+        }
+
+        private void PlacePopup(Vector2 screenCenter)
+        {
+            // Posicionado por rect.position (píxeles de pantalla — válido en
+            // ScreenSpaceOverlay, ver TooltipController.PositionAt).
             _popupRoot.pivot = new Vector2(0.5f, 0.5f);
             _popupRoot.position = new Vector3(screenCenter.x, screenCenter.y, 0f);
         }
@@ -402,11 +491,18 @@ namespace Rollgeon.Tutorial.UI
             callback?.Invoke();
         }
 
-        /// <summary>Click-catcher del dim para pasos BlockUntilContinue.</summary>
+        /// <summary>Click-catcher del dim para pasos BlockUntilContinue. Solo botón
+        /// izquierdo: el paso de cámara invita a rotar con el derecho y panear con
+        /// el central — soltar esos botones sobre el dim no debe cerrarlo.</summary>
         private sealed class ContinueClickCatcher : MonoBehaviour, IPointerClickHandler
         {
             public TutorialOverlay Owner;
-            public void OnPointerClick(PointerEventData eventData) => Owner?.HandleContinueClick();
+
+            public void OnPointerClick(PointerEventData eventData)
+            {
+                if (eventData.button != PointerEventData.InputButton.Left) return;
+                Owner?.HandleContinueClick();
+            }
         }
     }
 }

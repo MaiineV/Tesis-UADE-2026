@@ -83,8 +83,8 @@ namespace Rollgeon.UI.Screens
             {
                 _bodyLabel.text = LocalizedContent.Ui(
                     "menu.analytics_consent_body",
-                    "¿Nos ayudás a balancear el juego? Enviamos datos anónimos de tus " +
-                    "partidas (combates, oro, combos). Sin datos personales. Podés " +
+                    "¿Nos ayudas a balancear el juego? Enviamos datos anónimos de tus " +
+                    "partidas (combates, oro, combos). Sin datos personales. Puedes " +
                     "cambiarlo cuando quieras desde el menú.");
             }
 

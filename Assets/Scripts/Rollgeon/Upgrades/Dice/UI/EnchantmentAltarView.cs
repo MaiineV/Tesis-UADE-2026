@@ -406,7 +406,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void ShowEmptyStateMessage()
         {
             if (_resultLabel == null) return;
-            _resultLabel.text = "<color=#ff8888>No se pudieron cargar los dados — cerrá la mesa y volvé a intentar.</color>";
+            _resultLabel.text = "<color=#ff8888>No se pudieron cargar los dados — cierra la mesa y vuelve a intentar.</color>";
         }
 
         private static int CountUsedSlots(RuntimeDiceBag bag, int bagIndex)

@@ -72,6 +72,14 @@ namespace Rollgeon.UI.HUD
             if (_bound) Unbind();
         }
 
+        /// <summary>RectTransform del container de slots — anchor del overlay del
+        /// tutorial. Falso mientras la cola está vacía (no hay nada que señalar).</summary>
+        public bool TryGetQueueRect(out RectTransform rect)
+        {
+            rect = _container as RectTransform;
+            return rect != null && _slotsByGuid.Count > 0;
+        }
+
         // ======================================================================
         // API publica (hooks para tests y tooling T95T — plan §7)
         // ======================================================================

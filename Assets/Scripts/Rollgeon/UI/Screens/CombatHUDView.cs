@@ -185,6 +185,13 @@ namespace Rollgeon.UI.Screens
             return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
         }
 
+        /// <summary>RectTransform de la cola de orden de turnos — anchor del overlay del tutorial.</summary>
+        public bool TryGetTurnQueueRect(out RectTransform rect)
+        {
+            rect = null;
+            return _turnQueue != null && _turnQueue.TryGetQueueRect(out rect);
+        }
+
         // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
@@ -459,6 +466,12 @@ namespace Rollgeon.UI.Screens
         {
             if (_diceZone != null) _diceZone.ClearHolds();
         }
+
+        /// <summary>
+        /// True si hay al menos un dado seleccionado. Lo usa el router de click derecho
+        /// para decidir el deselect-all (Balatro-style). No-op (false) sin wiring.
+        /// </summary>
+        public bool AnyDieHeld() => _diceZone != null && _diceZone.AnyDieHeld();
 
         // ======================================================================
         // Internals

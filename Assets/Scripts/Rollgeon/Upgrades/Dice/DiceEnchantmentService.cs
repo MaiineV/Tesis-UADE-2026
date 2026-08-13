@@ -206,7 +206,8 @@ namespace Rollgeon.Upgrades.Dice
             {
                 SourceGuid = payload.SourceGuid,
                 DiceResult = _lastFinalRoll,
-                ComboResult = ComboDetectionResult.Match(payload.BaseDamage, _lastFinalRoll?.Count ?? 0),
+                ComboResult = ComboDetectionResult.Match(payload.BaseDamage, _lastFinalRoll?.Count ?? 0,
+                    payload.DynamicBonus),
             };
             var scratch = DispatchComboMatched(effectCtx, payload.ComboId);
             LastComboScratch = scratch;

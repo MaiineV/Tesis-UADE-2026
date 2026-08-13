@@ -216,6 +216,29 @@ namespace Rollgeon.Combat.AI.Decisions
                 }
             }
 
+            // Daño incidental al cofre (Feature#0046, GDD §22): un AoE que cubre su
+            // tile lo golpea con el mismo daño y source no-jugador (⇒ rama "se rompe"
+            // si es letal; en un Mimic el pipeline clampea a 1). Deliberadamente SOLO
+            // el cofre — no se itera al resto de los ocupantes para no introducir
+            // friendly fire entre enemigos.
+            if (grid != null
+                && context.DamagePipeline != null
+                && area.Damage > 0
+                && ServiceLocator.TryGetService<Rollgeon.Chests.IChestRegistry>(out var chests)
+                && chests != null
+                && chests.TryGetActiveChest(out var chestGuid)
+                && grid.TryGetPosition(chestGuid, out var chestCoord)
+                && area.Contains(chestCoord))
+            {
+                context.DamagePipeline.Resolve(new DamageContext
+                {
+                    SourceId = context.SelfGuid,
+                    TargetId = chestGuid,
+                    BaseDamage = area.Damage,
+                    Kind = area.Kind,
+                });
+            }
+
             EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, hit);
         }
 
