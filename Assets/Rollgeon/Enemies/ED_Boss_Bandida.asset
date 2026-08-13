@@ -438,7 +438,7 @@ MonoBehaviour:
   DisplayName: La Bandida
   Description: 'A three-reel slot machine bolted to the wall. It never chases you:
     it counts to the jackpot. Break any reel to cancel the count.'
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: a82854fa343807a45a79990bcb5639f5, type: 3}
   WeaknessComboId: combo.ladder
   WeaknessMultiplierOverride: 1.5
   BaseHP: 140
@@ -448,6 +448,6 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 5047352166231496340, guid: e9fa077d66130974b8ee953161b1b85f, type: 3}
+  VisualPrefab: {fileID: 4256035605858373344, guid: 6eeb034791598da41821a380e2a9d39d, type: 3}
   MinGoldDrop: 15
   MaxGoldDrop: 23

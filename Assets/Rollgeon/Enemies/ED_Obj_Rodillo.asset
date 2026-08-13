@@ -44,7 +44,7 @@ MonoBehaviour:
   DisplayName: Reel
   Description: 'One of La Bandida''s three reels. Three hit points, bolted in a row
     against the wall: any hit breaks it and cancels the jackpot count.'
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: 042f56cf989a1484c98dd857b500872c, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 3
@@ -54,6 +54,6 @@ MonoBehaviour:
   MaxEnergy: 1
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 5047352166231496340, guid: e9fa077d66130974b8ee953161b1b85f, type: 3}
+  VisualPrefab: {fileID: 1991033538973086034, guid: a647e828c0b7acd4ab78cc80f2ee603b, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0

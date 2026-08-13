@@ -484,16 +484,16 @@ MonoBehaviour:
       Data: UnityEngine.Color, UnityEngine.CoreModule
     - Name: 
       Entry: 4
-      Data: 0.55
+      Data: 0.42
     - Name: 
       Entry: 4
-      Data: 0.35
+      Data: 0.45
     - Name: 
       Entry: 4
-      Data: 0.95
+      Data: 0.58
     - Name: 
       Entry: 4
-      Data: 0.55
+      Data: 0.6
     - Name: 
       Entry: 8
       Data: 
@@ -620,7 +620,7 @@ MonoBehaviour:
   DisplayName: El Anotador
   Description: "El que lleva la planilla. No juega contra vos: te corrige el puntaje
     mientras tir\xE1s, y nunca a tu favor."
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: a8d8cc5409ce3714a9fabab61573909a, type: 3}
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
   BaseHP: 190
@@ -630,6 +630,6 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 5047352166231496340, guid: d5850ff2d25822f48967f044a77ef5b0, type: 3}
+  VisualPrefab: {fileID: 4956226314291901843, guid: a75067ac703ab3145b6a767b5c32b2b5, type: 3}
   MinGoldDrop: 30
   MaxGoldDrop: 60

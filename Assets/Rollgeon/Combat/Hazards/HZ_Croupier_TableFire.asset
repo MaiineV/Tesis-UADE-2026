@@ -24,4 +24,7 @@ MonoBehaviour:
   DurationRounds: 2
   ConsumeOnTrigger: 0
   OverlayTint: {r: 0.85, g: 0.1, b: 0.05, a: 0.6}
+  TriggerVfxPrefab: {fileID: 0}
+  TriggerVfxLifetime: 2
+  TriggerVfxYOffset: 0.1
   SourceId: c0a17e11-0001-4c00-b001-6f75706965f1

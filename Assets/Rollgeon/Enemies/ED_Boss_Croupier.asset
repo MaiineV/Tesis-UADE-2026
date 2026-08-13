@@ -355,7 +355,7 @@ MonoBehaviour:
     he confiscates from your bag. Hitting him while the number hangs in the air spins
     the wheel one step further \u2014 and on odd numbers the house charges you 8
     for the privilege. He never leaves the middle row."
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: 41f4667a57452d24aaea9813a6b290b6, type: 3}
   WeaknessComboId: combo.pair
   WeaknessMultiplierOverride: 1.5
   BaseHP: 140
@@ -365,6 +365,6 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 5047352166231496340, guid: e9fa077d66130974b8ee953161b1b85f, type: 3}
+  VisualPrefab: {fileID: 5114700699361353106, guid: 41a68bb3a6429f34f86fd8cb5b4cd61e, type: 3}
   MinGoldDrop: 15
   MaxGoldDrop: 23

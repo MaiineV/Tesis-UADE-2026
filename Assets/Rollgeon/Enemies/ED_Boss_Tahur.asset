@@ -594,7 +594,7 @@ MonoBehaviour:
   DisplayName: "El Tah\xFAr"
   Description: "The bank calls your hand before you play it. Building it exactly
     pays out; overshooting is greed \u2014 and the pot keeps count of greed."
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: 5c527279c7561c745b82b3d15c7ce4fa, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 290
@@ -604,6 +604,6 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 8816966952657547766, guid: 1d91f0f914a935c4cb6d3767044294c2, type: 3}
+  VisualPrefab: {fileID: 4166952165966172845, guid: b650e15acd2a1f54daf61757e145c745, type: 3}
   MinGoldDrop: 60
   MaxGoldDrop: 80

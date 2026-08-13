@@ -395,7 +395,7 @@ MonoBehaviour:
   DisplayName: El Cajero
   Description: "Cort\xE9s, contable, imperturbable. Su da\xF1o lo decide el oro que
     llev\xE1s encima, y cada golpe tuyo tira fichas al piso."
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: a970cee845d592c4aa79f94394215945, type: 3}
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
   BaseHP: 190
@@ -405,6 +405,6 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 1
   ExtraTiers: []
-  VisualPrefab: {fileID: 5047352166231496340, guid: d5850ff2d25822f48967f044a77ef5b0, type: 3}
+  VisualPrefab: {fileID: 6599822130843330628, guid: 9f6550eda0606eb4da5a8e431eebecda, type: 3}
   MinGoldDrop: 30
   MaxGoldDrop: 60
