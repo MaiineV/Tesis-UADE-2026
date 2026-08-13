@@ -359,6 +359,9 @@ namespace Rollgeon.Combat.AI.Tests
             var combo = Create<T>();
             SetPrivateField(combo, "_comboId", comboId);
             SetPrivateField(combo, "_baseDamage", baseDamage);
+            // Priority ya no defaultea a _baseDamage (Fix#0047): sin esto todas las manos
+            // empatan en 0 y DetectBest elige la primera registrada, no la mejor.
+            SetPrivateField(combo, "_priority", baseDamage);
             _catalog.EditorAdd(combo);
         }
 
