@@ -278,6 +278,52 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "IContractModifierService no tiene expiración por modificador.\n\n" +
                 "ImmuneComboIds saca combos del sorteo: combo.generala es la debilidad del jefe y " +
                 "la única mano que no depende de la tabla.",
+
+            // ---- La Generala (piso 3) — mano de dados propia -------------------------
+
+            [typeof(AINode_RollHand)] =
+                "Roll Hand: tira la mano de dados del propio boss y la corre por el MISMO " +
+                "detector de combos que usa el jugador (ComboResolver + ComboCatalogSO). " +
+                "Publica el resultado (caras + combo) en IBossDiceHandService; las ramas de " +
+                "ataque lo leen con la precondición PcBossHandCombo.\n\n" +
+                "SizeSource=AliveAllies tira tantos dados como aliados vivos tenga el boss — " +
+                "sus dados SON sus aliados (objetos en el piso), así que romperle uno le borra " +
+                "una categoría gratis: Generala pide 5 dados en la tirada, Póker 4. NO metas " +
+                "otros enemigos en la arena o van a contar como dados. Fixed = siempre MaxDice.\n\n" +
+                "SlowCombos: esos combos se publican 'cantados pero no armados' — ese turno " +
+                "nadie marca y el siguiente el nodo los arma SIN re-tirar. Eso es la ronda " +
+                "extra de aviso (2 rondas entre la tirada y el impacto).\n\n" +
+                "Con rerolls habilitados (AINode_SetHandReroll) re-tira los dados que no " +
+                "contribuyen al combo y se queda con la mejor mano por prioridad.",
+
+            [typeof(AINode_SetHandReroll)] =
+                "Set Hand Reroll: habilita (o saca) el reroll de la mano de dados del boss — " +
+                "cuántas veces re-tira por tirada los dados que no le sirven.\n\n" +
+                "Setup de Fase 2: metelo en If(PcOwnerHpBelow) → Once(...). El flag vive en el " +
+                "servicio de la mano (run-scoped), así que aplicarlo una vez alcanza.",
+
+            [typeof(AINode_AdoptWeakness)] =
+                "Adopt Weakness: le reasigna la debilidad al propio boss al combo que el " +
+                "jugador MÁS viene usando — lee IComboLogService y escribe IWeaknessRegistry.\n\n" +
+                "Empates: gana el más reciente. El marcador de 'sin combo' del log se ignora. " +
+                "Con el log vacío devuelve Succeeded y deja la debilidad como estaba (poné " +
+                "FailWhenLogEmpty si preferís que falle).\n\n" +
+                "Setup de Fase 2: If(PcOwnerHpBelow) → Once(...).",
+
+            [typeof(AINode_AuxTelegraph)] =
+                "Aux Telegraph: telegraph de canal SECUNDARIO. Misma semántica que " +
+                "TelegraphMark + ExecuteTelegraph (marco en el turno N, cobro en el N+1), pero " +
+                "bajo una fuente propia derivada de ChannelId, así que NO se pisa con el " +
+                "telegraph principal del boss.\n\n" +
+                "Existe porque IThreatenedAreaService guarda UN área pendiente por fuente y " +
+                "Mark sobrescribe la anterior: un boss que amenaza dos áreas el mismo turno " +
+                "perdería una.\n\n" +
+                "Se cablea de a dos instancias con el MISMO ChannelId: una en Step=Execute " +
+                "arriba del Sequence (al lado del ExecuteTelegraph principal y FUERA de todo " +
+                "gate — el aviso hay que cobrarlo aunque este turno no se marque de nuevo) y " +
+                "una en Step=Mark donde corresponda.\n\n" +
+                "Shapes soportadas: las centradas (SquareAroundSelf, SquareAroundPlayer, Row, " +
+                "Column, HalfRoom). DirectionalBand y ScatteredSquares no — usá el nodo principal.",
         };
 
         /// <summary>
