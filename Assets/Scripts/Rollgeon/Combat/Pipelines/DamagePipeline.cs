@@ -2,6 +2,8 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.ComboLog;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Weakness;
 using UnityEngine;
 
@@ -20,6 +22,13 @@ namespace Rollgeon.Combat.Pipelines
     /// </summary>
     public class DamagePipeline : IDamagePipeline
     {
+        /// <summary>
+        /// HP con los que queda un target salvado por <see cref="ILethalDamageOverride"/>
+        /// (tutorial). 10% del pool base de 100 — el mismo ratio que tenía 1 HP sobre
+        /// el pool viejo de 10.
+        /// </summary>
+        public const int LethalOverrideRemainingHp = 10;
+
         private readonly AttributesManager _attributes;
         private readonly IWeaknessChecker _weaknessChecker;
 
@@ -90,23 +99,21 @@ namespace Rollgeon.Combat.Pipelines
 
             // ── 4. Shield absorption ─────────────────────────────────────
             bool shieldBroken = false;
-            var shieldAttr = _attributes.GetAttribute<Shield>(ctx.TargetId);
-            if (shieldAttr != null && shieldAttr.Value > 0)
+            int shieldBefore = ReadShield(ctx.TargetId);
+            int absorbed = ComputeShieldAbsorbed(shieldBefore, damage);
+            if (absorbed > 0)
             {
-                int shield = shieldAttr.Value;
-                int absorbed = Mathf.Min(shield, damage);
                 damage -= absorbed;
-                int newShield = shield - absorbed;
+                int newShield = shieldBefore - absorbed;
                 _attributes.SetAttributeValue<Shield, int>(ctx.TargetId, newShield);
                 ctx.ShieldAbsorbed = absorbed;
 
                 // Shield "broken" = estaba arriba (>0) y quedó en 0 tras absorber. Lo
                 // exponemos en el payload para que la UI pueda spawnear un "Broken Shield"
                 // junto con el número de daño residual (si hay).
-                shieldBroken = absorbed > 0 && newShield == 0;
+                shieldBroken = newShield == 0;
 
-                if (absorbed > 0)
-                    EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, newShield);
+                EventManager.Trigger(EventName.OnShieldChanged, ctx.TargetId, newShield);
             }
 
             ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
@@ -114,6 +121,9 @@ namespace Rollgeon.Combat.Pipelines
             // ── 5. Apply: commit to Health ────────────────────────────────────
             int finalDamage = damage;
             ctx.FinalDamage = finalDamage;
+
+            int hpBefore = -1;
+            int hpAfter = -1;
 
             if (finalDamage > 0)
             {
@@ -123,6 +133,24 @@ namespace Rollgeon.Combat.Pipelines
                     int currentHp = health.Value;
                     int newHp = currentHp - finalDamage;
                     if (newHp < 0) newHp = 0;
+
+                    // Override de letalidad (tutorial): el golpe letal deja al target
+                    // con un resto de vida y WasLethal queda false — el DeathWatcher
+                    // nunca lo ve. Clampeado a la vida actual para no curar a un target
+                    // que ya estaba por debajo del resto.
+                    if (newHp <= 0
+                        && ServiceLocator.TryGetService<ILethalDamageOverride>(out var lethalOverride)
+                        && lethalOverride != null
+                        && lethalOverride.ShouldPreventLethal(ctx.TargetId))
+                    {
+                        newHp = currentHp < LethalOverrideRemainingHp
+                            ? currentHp
+                            : LethalOverrideRemainingHp;
+                        ctx.FinalDamage = currentHp - newHp;
+                    }
+
+                    hpBefore = currentHp;
+                    hpAfter = newHp;
 
                     _attributes.SetAttributeValue<Health, int>(ctx.TargetId, newHp);
                     ctx.WasLethal = newHp <= 0;
@@ -153,7 +181,87 @@ namespace Rollgeon.Combat.Pipelines
                 ShieldBroken = shieldBroken,
             });
 
+            DamageDebugLogger.LogApplication(ctx, shieldBefore, hpBefore, hpAfter);
+
             return ctx;
+        }
+
+        /// <inheritdoc />
+        public DamageContext Preview(DamageContext ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            int damage = ctx.BaseDamage;
+            if (damage <= 0)
+            {
+                ctx.FinalDamage = 0;
+                ctx.WeaknessMultiplier = 1f;
+                ctx.ShieldAbsorbed = 0;
+                ctx.BlockedByShield = false;
+                return ctx;
+            }
+
+            // Stage 2 — weakness (read-only: PeekMultiplier NO dispara OnWeaknessHit).
+            float weakMult = 1f;
+            if (ctx.IsWeaknessHit && _weaknessChecker != null)
+            {
+                weakMult = _weaknessChecker.PeekMultiplier(ctx.SourceId, ctx.TargetId, ctx.ComboId);
+                if (weakMult > 1f) damage = Mathf.RoundToInt(damage * weakMult);
+            }
+            ctx.WeaknessMultiplier = weakMult;
+
+            // Stage 4 — shield absorption (computar, NO escribir Shield ni disparar eventos).
+            int absorbed = ComputeShieldAbsorbed(ReadShield(ctx.TargetId), damage);
+            if (absorbed > 0)
+            {
+                damage -= absorbed;
+                ctx.ShieldAbsorbed = absorbed;
+            }
+            ctx.BlockedByShield = damage == 0 && ctx.ShieldAbsorbed > 0;
+            ctx.FinalDamage = damage;
+            return ctx;
+        }
+
+        /// <summary>
+        /// <b>Regla huérfana, a propósito.</b> "Combo repetido = 0 daño": nadie la llama hoy.
+        /// Vivía detrás del pasivo global anti-repetición (A/B), que se eliminó porque su presión
+        /// la ejerce ahora el propio boss desde su árbol (<c>AINode_RotateBlock</c>) y porque
+        /// anular daño sin aviso en pantalla se sentía como un bug. Se conserva el cálculo —no el
+        /// wiring— para cuando se quiera reintroducir la mecánica con UI que la comunique.
+        /// <para>
+        /// Contrato original: <c>Resolve()</c> corría DESPUÉS de que <c>Record()</c> empujara el
+        /// combo del golpe al frente del historial (el "anterior real" queda en el índice 1);
+        /// <c>Preview()</c> corría ANTES de confirmarlo (el anterior es directamente
+        /// <c>LastCombo</c>). ComboId vacío (ataques sin combo / no-jugador) nunca la activa.
+        /// </para>
+        /// </summary>
+        private static bool IsRepeatOfPreviousCombo(string comboId, bool alreadyRecordedThisAttack)
+        {
+            if (string.IsNullOrEmpty(comboId)) return false;
+            if (!ServiceLocator.TryGetService<IComboLogService>(out var log) || log == null) return false;
+
+            if (alreadyRecordedThisAttack)
+            {
+                var lastTwo = log.Last(2);
+                return lastTwo.Count >= 2 && lastTwo[1] == comboId;
+            }
+
+            return log.LastCombo == comboId;
+        }
+
+        private int ReadShield(Guid targetId)
+        {
+            var shieldAttr = _attributes.GetAttribute<Shield>(targetId);
+            return shieldAttr != null ? shieldAttr.Value : 0;
+        }
+
+        // Cuánto absorbe el escudo actual de un golpe — aritmética compartida entre Resolve
+        // (que además escribe y emite el evento) y Preview (solo computa). Único source of
+        // truth para que preview y golpe real nunca driftéen.
+        private static int ComputeShieldAbsorbed(int shieldValue, int damage)
+        {
+            if (shieldValue <= 0 || damage <= 0) return 0;
+            return Mathf.Min(shieldValue, damage);
         }
     }
 }

@@ -19,6 +19,7 @@ namespace Rollgeon.EditorTools
         {
             "Assets/Prefabs/Rooms/FloorOne",
             "Assets/Prefabs/Rooms/FloorTwo",
+            "Assets/Prefabs/Rooms/FloorThree",
         };
 
         [MenuItem("Rollgeon/Tools/Rebake Room NavGraphs")]

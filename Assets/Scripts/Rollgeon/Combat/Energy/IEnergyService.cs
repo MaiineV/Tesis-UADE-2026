@@ -48,8 +48,8 @@ namespace Rollgeon.Combat.EnergyLib
         int GetCurrent(Guid entityId);
 
         /// <summary>
-        /// Lee la energia maxima. En el FP = <c>EnergyConfig.EnergyMax</c>;
-        /// items que suban el cap son followup (plan R8).
+        /// Lee la energia maxima efectiva: <c>MaxEnergy.ModifiedValue</c> (base del ruleset
+        /// + grants in-run del canal Character, BUG-022) con fallback al ruleset.
         /// </summary>
         int GetMax(Guid entityId);
     }

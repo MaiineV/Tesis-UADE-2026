@@ -29,10 +29,8 @@ namespace Rollgeon.UI.HUD
             var health = attrs.GetAttribute<Health>(playerGuid);
             if (health == null) return true;
 
-            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps?.CurrentHero == null)
-                return true;
-
-            int maxHp = ps.CurrentHero.BaseMaxHp;
+            // BUG-022: el max efectivo incluye los grants in-run (MaxHealth.ModifiedValue).
+            int maxHp = PlayerMaxHp.Resolve(playerGuid);
             if (maxHp <= 0) return true;
 
             // Mismo criterio que HealPipeline.Resolve: headroom = max - Value.

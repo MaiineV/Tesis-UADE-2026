@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Patterns
 {
@@ -73,6 +74,45 @@ namespace Patterns
     }
 
     /// <summary>
+    /// Payload tipado para "empezó un encuentro de jefe". Lo consume la barra de vida de jefe
+    /// en pantalla (<c>BossBarView</c>) para encenderse, bindearse al jefe y poblar su nombre.
+    /// Canalizado únicamente vía <c>TypedEvent&lt;BossEncounterStartedPayload&gt;</c> — no existe
+    /// entry legacy en <see cref="EventName"/>. El apagado reusa <see cref="EventName.OnCombatEnd"/>
+    /// y <see cref="EventName.OnEntityDestroyed"/>.
+    /// </summary>
+    public struct BossEncounterStartedPayload
+    {
+        /// <summary>InstanceId del jefe al que se bindea la barra (su <c>Health</c>).</summary>
+        public Guid BossGuid;
+
+        /// <summary>Nombre del jefe ya localizado, listo para mostrar en la UI.</summary>
+        public string DisplayName;
+    }
+
+    /// <summary>
+    /// Payload tipado para "el jugador intentó usar una acción que no puede pagar". Canalizado
+    /// únicamente vía <c>TypedEvent&lt;InsufficientEnergyPayload&gt;</c> — no existe entry legacy
+    /// en <see cref="EventName"/>.
+    /// </summary>
+    /// <remarks>
+    /// Lo emite el chip de la acción y lo consume la pila de energía del HUD, que vive en otro
+    /// prefab (<c>Canvas_PlayerStatus</c>) y tiene su propio ciclo de vida — la bindea tanto el
+    /// HUD de combate como el de exploración. Un evento evita la ref cruzada y deja que mañana
+    /// se enganchen audio o shake de cámara sin tocar a ninguno de los dos.
+    /// </remarks>
+    public struct InsufficientEnergyPayload
+    {
+        /// <summary>InstanceId del jugador que intentó la acción.</summary>
+        public Guid PlayerGuid;
+
+        /// <summary>Costo real de la acción rechazada (el que se iba a cobrar, no el legacy).</summary>
+        public int Cost;
+
+        /// <summary>Energía disponible al momento del rechazo.</summary>
+        public int Current;
+    }
+
+    /// <summary>
     /// Payload tipado para "combo matcheado" al resolver una tirada. Canalizado únicamente vía
     /// <c>TypedEvent&lt;ComboMatchedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
     /// </summary>
@@ -89,5 +129,47 @@ namespace Patterns
 
         /// <summary>Daño base del combo antes de mitigaciones / multiplicadores.</summary>
         public int BaseDamage;
+
+        /// <summary>
+        /// Dados que contribuyen al combo (slot + cara + tipo), para que el preview del HUD
+        /// recompute el daño real con <c>PlayerComboDamage.Resolve</c> (misma fórmula que el
+        /// golpe) en vez de una copia paralela. <c>null</c> = sin combo o sin bag disponible.
+        /// </summary>
+        public IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ContributingDice;
+    }
+
+    /// <summary>
+    /// Payload tipado para "combo jugado": la acción con combo matcheado se está ejecutando,
+    /// ANTES de que ningún efecto consuma <c>ComboResult</c> (daño, escudo, heal). Se emite
+    /// UNA vez por ejecución de acción — a diferencia de <see cref="ComboMatchedPayload"/>,
+    /// que dispara en cada preview de hold sin que el jugador ataque. Canalizado únicamente
+    /// vía <c>TypedEvent&lt;ComboPlayedPayload&gt;</c> — no existe entry legacy en <see cref="EventName"/>.
+    /// </summary>
+    public struct ComboPlayedPayload
+    {
+        /// <summary>InstanceId de la entidad que juega el combo (quien ejecuta la acción).</summary>
+        public Guid SourceGuid;
+
+        /// <summary>Target resuelto de la acción. <see cref="Guid.Empty"/> fuera de combate
+        /// (Heal / ForceDoor en exploración) o sin target específico.</summary>
+        public Guid TargetGuid;
+
+        /// <summary>Id del combo jugado (clave del catálogo). Nunca vacío: los resultados
+        /// sintéticos sin id (action rolls) no emiten este evento.</summary>
+        public string ComboId;
+
+        /// <summary>Resultado completo del match (BaseDamage post contract-mods,
+        /// ContributingIndices, CountUsed).</summary>
+        public Rollgeon.Combos.ComboDetectionResult ComboResult;
+
+        /// <summary>Tirada completa (las caras). Null si el behavior no usa dados.</summary>
+        public IReadOnlyList<int> DiceResult;
+
+        /// <summary>Subset holdeado que participa del ataque. Null = sin keep explícito.</summary>
+        public IReadOnlyList<int> KeptDice;
+
+        /// <summary>Índices de slot del bag (0-based) 1:1 con <see cref="KeptDice"/> —
+        /// permite checks "mi dado participó" del canal de encantamientos.</summary>
+        public IReadOnlyList<int> KeptDiceOriginalIndices;
     }
 }

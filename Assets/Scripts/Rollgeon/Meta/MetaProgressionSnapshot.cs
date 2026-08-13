@@ -23,5 +23,11 @@ namespace Rollgeon.Meta
 
         /// <summary>Contador de acumulación: clases distintas jugadas. NO se resetea al morir.</summary>
         public List<string> ClassesPlayed = new List<string>();
+
+        /// <summary>El jugador ya completó el tutorial — Play va directo al flujo normal.</summary>
+        public bool TutorialCompleted;
+
+        /// <summary>El jugador apagó el tutorial desde el toggle del main menu.</summary>
+        public bool TutorialDisabled;
     }
 }

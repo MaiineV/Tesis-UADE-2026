@@ -10,10 +10,11 @@ namespace Rollgeon.UI.Screens
 {
     /// <summary>
     /// Screen overlay persistente durante <c>GamePhase.Exploration</c>. Coordina las
-    /// sub-views (<see cref="HealthBarView"/>, <see cref="EnergyBarView"/>,
-    /// <see cref="GoldCounterView"/>, <see cref="ActiveItemsView"/>, <see cref="MinimapView"/>,
+    /// sub-views (<see cref="HealthChipStackView"/>, <see cref="EnergyChipStackView"/>,
+    /// <see cref="ActiveItemsView"/>, <see cref="MinimapView"/>,
     /// <see cref="RoomNavigationView"/>) propagando el <c>playerGuid</c> resuelto via
-    /// <see cref="IPlayerService"/>.
+    /// <see cref="IPlayerService"/>. El oro (<see cref="GoldChipStackView"/>) es
+    /// autónomo y no se bindea.
     /// </summary>
     /// <remarks>
     /// Plan §4.1 / TECHNICAL.md §17.D. No tiene logica propia de render — solo
@@ -40,21 +41,22 @@ namespace Rollgeon.UI.Screens
         [Title("Exploration HUD — Sub-views")]
         [InfoBox("Cablear los 6 widgets del HUD. Null = sub-view skipped con warning " +
                  "(no crashea, pero esa parte del HUD no actualiza).")]
-        [Required("Arrastrar el HealthBarView del widget.")]
+        [Required("Arrastrar el HealthChipStackView del widget (pila vida+escudo).")]
         [SerializeField]
-        private HealthBarView _healthBar;
+        private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar el EnergyBarView del widget.")]
+        [Required("Arrastrar el EnergyChipStackView del widget (pila de energía).")]
         [SerializeField]
-        private EnergyBarView _energyBar;
-
-        [Required("Arrastrar el GoldCounterView del widget.")]
-        [SerializeField]
-        private GoldCounterView _goldCounter;
+        private EnergyChipStackView _energyChips;
 
         [Required("Arrastrar el ActiveItemsView del widget.")]
         [SerializeField]
         private ActiveItemsView _activeItems;
+
+        [SerializeField]
+        [Tooltip("Opcional. Fila de estados del player en Canvas_PlayerStatus — se " +
+                 "auto-resuelve en escena, igual que las pilas de fichas.")]
+        private Rollgeon.UI.HUD.Status.PlayerStatusIconsView _statusIcons;
 
         [Required("Arrastrar el MinimapView del widget.")]
         [SerializeField]
@@ -176,14 +178,30 @@ namespace Rollgeon.UI.Screens
         {
             _playerGuid = playerGuid;
 
-            if (_healthBar != null) _healthBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_healthBar no esta cableado en el Inspector.", this);
+            // Estos tres viven en Canvas_PlayerStatus (otro prefab) — la referencia
+            // cross-prefab es imposible en el Inspector, así que se auto-resuelven
+            // en escena igual que DiceZone/DamageFormula más abajo.
+            if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
 
-            if (_energyBar != null) _energyBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_energyBar no esta cableado en el Inspector.", this);
+            // La fila de estados también vive en Canvas_PlayerStatus. La bindea esta screen
+            // y no CombatHUDView porque es la base del stack y no se popea en toda la run —
+            // así los estados siguen vivos en combate, que es cuando más importan.
+            if (_statusIcons == null) _statusIcons = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Status.PlayerStatusIconsView>(FindObjectsInactive.Include);
 
-            if (_goldCounter != null) _goldCounter.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_goldCounter no esta cableado en el Inspector.", this);
+            if (_healthChips != null) _healthChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_healthChips no esta cableado en el Inspector.", this);
+
+            if (_energyChips != null) _energyChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_energyChips no esta cableado en el Inspector.", this);
+
+            // El oro no se bindea: GoldChipStackView es autónomo (OnGoldChanged no
+            // trae Guid) y vive siempre activo en Canvas_PlayerStatus.
+
+            // Sin warning si falta: hay escenas de test y setups viejos sin el cluster, y la
+            // fila es informativa — su ausencia no rompe nada.
+            if (_statusIcons != null) _statusIcons.Bind(playerGuid);
 
             if (_activeItems != null) _activeItems.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_activeItems no esta cableado en el Inspector.", this);
@@ -218,9 +236,8 @@ namespace Rollgeon.UI.Screens
             if (_diceZone != null) _diceZone.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
-            if (_healthBar != null) _healthBar.Unbind();
-            if (_energyBar != null) _energyBar.Unbind();
-            if (_goldCounter != null) _goldCounter.Unbind();
+            if (_healthChips != null) _healthChips.Unbind();
+            if (_energyChips != null) _energyChips.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             if (_minimap != null) _minimap.Unbind();
             if (_roomNavigation != null) _roomNavigation.Unbind();

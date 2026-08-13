@@ -1,0 +1,5238 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4319ec96e0078cc4b99e90f69a9ccc75, type: 3}
+  m_Name: CH_Warrior_Tutorial
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Heroes.ClassHeroSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    - {fileID: 11400000, guid: 814ee3cb46fe989429e05b0495db4a30, type: 2}
+    - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
+    - {fileID: 11400000, guid: 7f06d84d69aa67e418408330684cd299, type: 2}
+    - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Sheet
+      Entry: 7
+      Data: 0|Rollgeon.Heroes.ContractSheet, Rollgeon
+    - Name: Combos
+      Entry: 7
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Combos.BaseComboSO, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 9
+    - Name: 
+      Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 10
+      Data: 4
+    - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
+      Entry: 10
+      Data: 7
+    - Name: 
+      Entry: 10
+      Data: 8
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _displayLabel
+      Entry: 6
+      Data: 
+    - Name: BaseDamageTable
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Heroes.ComboBaseDamageEntry,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ShieldBaseTable
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.Heroes.ComboShieldBaseEntry,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 8
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.pair
+    - Name: ShieldBase
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.higher_number
+    - Name: ShieldBase
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.double_pair
+    - Name: ShieldBase
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.trio
+    - Name: ShieldBase
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.full_house
+    - Name: ShieldBase
+      Entry: 3
+      Data: 4
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.ladder
+    - Name: ShieldBase
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.poker
+    - Name: ShieldBase
+      Entry: 3
+      Data: 6
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboShieldBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.generala
+    - Name: ShieldBase
+      Entry: 3
+      Data: 8
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PhaseBehaviors
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 7
+    - Name: 
+      Entry: 7
+      Data: 5|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Movement
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 0
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: ShowConditions
+      Entry: 7
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 9|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 10|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 11|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 12|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: RangeMode
+      Entry: 3
+      Data: 1
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 13|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 14|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551611
+    - Name: ActionName
+      Entry: 1
+      Data: ExpMovement
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 0
+    - Name: EnergyCost
+      Entry: 3
+      Data: 0
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: ShowConditions
+      Entry: 7
+      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 17|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 18|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 20|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 21|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 20
+    - Name: RangeMode
+      Entry: 3
+      Data: 1
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 22|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 23|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Base Attack
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 1
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: BoardType
+      Entry: 3
+      Data: 1
+    - Name: ShowConditions
+      Entry: 7
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 26|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 27|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 4
+    - Name: 
+      Entry: 7
+      Data: 29|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 30|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 31|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Phases
+      Entry: 7
+      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 33|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Attack
+    - Name: Effects
+      Entry: 7
+      Data: 34|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 35|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 36|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 37|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 38|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 39|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 40|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 6
+    - Name: 
+      Entry: 7
+      Data: 41|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: anim.player.warrior.attack
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 42|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 44|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 2
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 45|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 4
+    - Name: FeedbackRefId
+      Entry: 6
+      Data: 
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 46|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Damage on impact
+    - Name: PreConditions
+      Entry: 7
+      Data: 47|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 48|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 49|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 9
+      Data: 39
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _damageSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _attackKind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 3
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 51|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: vfx.player.warrior.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 52|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 53|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 54|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 55|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: sfx.player.warrior.hit
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 56|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 57|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 58|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 59|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: feel.player.warrior.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 60|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 61|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 62|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 63|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: hit.impulse
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 64|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 65|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OverrideBoardType
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 67|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Shield
+    - Name: Effects
+      Entry: 7
+      Data: 68|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 69|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 70|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 71|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 72|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 73|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _shieldSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 5
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 74|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 75|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 76|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: shield.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OverrideBoardType
+      Entry: 5
+      Data: true
+    - Name: BoardType
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 77|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 78|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 79|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 80|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 81|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 82|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.impulse
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 83|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 84|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 85|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: sfx.hit
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 86|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Special Attack
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 2
+    - Name: EnergyCost
+      Entry: 3
+      Data: 2
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 3
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: true
+    - Name: BoardType
+      Entry: 3
+      Data: 1
+    - Name: ShowConditions
+      Entry: 7
+      Data: 87|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 88|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 89|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 90|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 91|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 4
+    - Name: 
+      Entry: 7
+      Data: 92|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 93|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 94|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Phases
+      Entry: 7
+      Data: 95|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 96|Rollgeon.Effects.ChainPhase, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Attack
+    - Name: Effects
+      Entry: 7
+      Data: 97|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 98|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 99|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 100|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 101|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 102|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 103|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 6
+    - Name: 
+      Entry: 7
+      Data: 104|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: anim.player.warrior.attack
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 105|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 106|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 107|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 2
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 108|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 4
+    - Name: FeedbackRefId
+      Entry: 6
+      Data: 
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 109|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Damage on impact
+    - Name: PreConditions
+      Entry: 7
+      Data: 110|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 111|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 112|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 113|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 9
+      Data: 102
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _damageSource
+      Entry: 3
+      Data: 1
+    - Name: _baseAmount
+      Entry: 3
+      Data: 10
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 1
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _attackKind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 3
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 114|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: vfx.player.warrior.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 115|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 116|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 117|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 118|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: sfx.player.warrior.hit
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 119|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 120|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 121|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 122|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: feel.player.warrior.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 123|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 124|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 125|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 126|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: hit.impulse
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: InlineEffects
+      Entry: 7
+      Data: 127|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 128|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 129|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: StartMode
+      Entry: 3
+      Data: 3
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OverrideBoardType
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 130|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 131|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 132|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 133|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 134|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 135|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: hit.impulse
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 136|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 137|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 138|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: sfx.hit
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 139|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551615
+    - Name: ActionName
+      Entry: 1
+      Data: Healing
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 3
+    - Name: EnergyCost
+      Entry: 3
+      Data: 1
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: true
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: ShowConditions
+      Entry: 7
+      Data: 140|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 141|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 142|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 143|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 144|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: ItemId
+      Entry: 1
+      Data: potion.healing
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 145|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 146|Rollgeon.Effects.Concretes.EffRemoveInventoryItem, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 147|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 148|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ItemId
+      Entry: 1
+      Data: potion.healing
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 149|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 150|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 151|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _healSource
+      Entry: 3
+      Data: 0
+    - Name: _baseAmount
+      Entry: 3
+      Data: 100
+    - Name: _comboMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _reader
+      Entry: 6
+      Data: 
+    - Name: _readerMultiplier
+      Entry: 4
+      Data: 0
+    - Name: _isPercentOfMax
+      Entry: 5
+      Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: true
+    - Name: _healThreshold
+      Entry: 3
+      Data: 25
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 0
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _energyCostInCombat
+      Entry: 3
+      Data: 2
+    - Name: _useDiceRoll
+      Entry: 5
+      Data: true
+    - Name: _diceCount
+      Entry: 3
+      Data: 1
+    - Name: _diceFaces
+      Entry: 3
+      Data: 10
+    - Name: _diceResultMultiplier
+      Entry: 3
+      Data: 0
+    - Name: _sourceTag
+      Entry: 6
+      Data: 
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 152|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 153|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 0
+    - Name: Timing
+      Entry: 3
+      Data: 1
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 0
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 154|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _feedbackId
+      Entry: 1
+      Data: heal.basic
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 155|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551611
+    - Name: ActionName
+      Entry: 1
+      Data: Pass door
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: false
+    - Name: Slot
+      Entry: 3
+      Data: 4
+    - Name: EnergyCost
+      Entry: 3
+      Data: 0
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: false
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: false
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: ShowConditions
+      Entry: 7
+      Data: 156|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 157|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 158|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 159|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 160|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 161|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 162|Rollgeon.Effects.Concretes.EffPassDoor, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 163|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 2
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 0
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 164|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: true
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 165|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 0
+    - Name: AllowedPhases
+      Entry: 3
+      Data: 18446744073709551613
+    - Name: ActionName
+      Entry: 1
+      Data: Force Door
+    - Name: IsBaseBehavior
+      Entry: 5
+      Data: true
+    - Name: Slot
+      Entry: 3
+      Data: 4
+    - Name: EnergyCost
+      Entry: 3
+      Data: 2
+    - Name: BlockOnRepeat
+      Entry: 5
+      Data: false
+    - Name: NeedsDiceRoll
+      Entry: 5
+      Data: true
+    - Name: FreeRollCount
+      Entry: 3
+      Data: 1
+    - Name: AllowsReroll
+      Entry: 5
+      Data: true
+    - Name: AllowsEnergyReroll
+      Entry: 5
+      Data: false
+    - Name: BoardType
+      Entry: 3
+      Data: 0
+    - Name: ShowConditions
+      Entry: 7
+      Data: 166|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 167|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 168|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 169|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 170|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 171|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 172|Rollgeon.Effects.Concretes.EffForceDoor, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 173|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 174|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: RequiredValue
+      Entry: 3
+      Data: 1
+    - Name: EnergyCostInCombat
+      Entry: 3
+      Data: 2
+    - Name: EnemyHealPercentOnSuccess
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: warrior_tutorial
+  DisplayName: Guerrero (Tutorial)
+  Description: 
+  Sheet:
+    Combos:
+    - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
+    - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
+    - {fileID: 11400000, guid: 2c317dabe8f63b1469803c2f50245bcb, type: 2}
+    - {fileID: 11400000, guid: 063255e881e1e144eb63e9c54c5a5d27, type: 2}
+    - {fileID: 11400000, guid: 814ee3cb46fe989429e05b0495db4a30, type: 2}
+    - {fileID: 11400000, guid: 9b65377baec1f6a46b8d777b50dac137, type: 2}
+    - {fileID: 11400000, guid: 7f06d84d69aa67e418408330684cd299, type: 2}
+    - {fileID: 11400000, guid: 732c24542e84eda49bba63a8726d6499, type: 2}
+    - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
+    _displayLabel: 
+    BaseDamageTable: []
+    ShieldBaseTable:
+    - ComboId: combo.pair
+      ShieldBase: 8
+    - ComboId: combo.higher_number
+      ShieldBase: 0
+    - ComboId: combo.double_pair
+      ShieldBase: 15
+    - ComboId: combo.trio
+      ShieldBase: 22
+    - ComboId: combo.full_house
+      ShieldBase: 35
+    - ComboId: combo.ladder
+      ShieldBase: 40
+    - ComboId: combo.poker
+      ShieldBase: 55
+    - ComboId: combo.generala
+      ShieldBase: 90
+  VisualPrefab: {fileID: 34603293247297731, guid: 3df3062a618028c41961bcdaffb0c069, type: 3}
+  PhaseBehaviors:
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Movement
+    IsBaseBehavior: 1
+    Slot: 0
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    BoardType: 0
+    ShowConditions: []
+    Effects:
+    - rid: 6878114991212855971
+  - Trigger: 0
+    AllowedPhases: -5
+    ActionName: ExpMovement
+    IsBaseBehavior: 1
+    Slot: 0
+    EnergyCost: 0
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    BoardType: 0
+    ShowConditions: []
+    Effects:
+    - rid: 6878114991212855972
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Base Attack
+    IsBaseBehavior: 1
+    Slot: 1
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 3
+    AllowsReroll: 1
+    AllowsEnergyReroll: 1
+    BoardType: 1
+    ShowConditions: []
+    Effects:
+    - rid: 6878114991212855973
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Special Attack
+    IsBaseBehavior: 1
+    Slot: 2
+    EnergyCost: 2
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 3
+    AllowsReroll: 1
+    AllowsEnergyReroll: 1
+    BoardType: 1
+    ShowConditions: []
+    Effects:
+    - rid: 6878114991212855974
+  - Trigger: 0
+    AllowedPhases: -1
+    ActionName: Healing
+    IsBaseBehavior: 1
+    Slot: 3
+    EnergyCost: 1
+    BlockOnRepeat: 1
+    NeedsDiceRoll: 1
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    BoardType: 0
+    ShowConditions: []
+    Effects:
+    - rid: 6878114991212855975
+  - Trigger: 0
+    AllowedPhases: -5
+    ActionName: Pass door
+    IsBaseBehavior: 0
+    Slot: 4
+    EnergyCost: 0
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 0
+    FreeRollCount: 1
+    AllowsReroll: 0
+    AllowsEnergyReroll: 0
+    BoardType: 0
+    ShowConditions:
+    - rid: 6878114991212855976
+    Effects:
+    - rid: 6878114991212855977
+  - Trigger: 0
+    AllowedPhases: -3
+    ActionName: Force Door
+    IsBaseBehavior: 1
+    Slot: 4
+    EnergyCost: 2
+    BlockOnRepeat: 0
+    NeedsDiceRoll: 1
+    FreeRollCount: 1
+    AllowsReroll: 1
+    AllowsEnergyReroll: 0
+    BoardType: 0
+    ShowConditions:
+    - rid: 6878114991212855978
+    Effects:
+    - rid: 6878114991212855979
+  BaseMaxHp: 100
+  BaseSpeed: 5
+  BaseAttack: 5
+  Portrait: {fileID: 978970783, guid: 6936ca4a4cbe42b45ad242a410a47fc4, type: 3}
+  StartingDiceBagRef: {fileID: 11400000, guid: 6988ff59247d8b7408e5172395b98872, type: 2}
+  DiceBagPool: {fileID: 11400000, guid: b9b9a7f2c39c8a74e8a246de66f32b32, type: 2}
+  Passive: {fileID: 11400000, guid: 0c1101a7c04f1784baf9a552f617256d, type: 2}
+  StartingItems:
+  - {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6878114991212855971
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855980
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855972
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855981
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855973
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855982
+        - rid: 6878114991212855983
+        - rid: 6878114991212855984
+        - rid: 6878114991212855985
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855974
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855986
+        - rid: 6878114991212855987
+        - rid: 6878114991212855988
+        - rid: 6878114991212855989
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855975
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions:
+        - rid: 6878114991212855990
+        Effects:
+        - rid: 6878114991212855991
+        - rid: 6878114991212855992
+        - rid: 6878114991212855993
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855976
+      type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+    - rid: 6878114991212855977
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855994
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855978
+      type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+    - rid: 6878114991212855979
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212855995
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212855980
+      type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 4
+          RangeMode: 1
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+    - rid: 6878114991212855981
+      type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 20
+          RangeMode: 1
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+    - rid: 6878114991212855982
+      type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        Phases:
+        - rid: 6878114991212855996
+        - rid: 6878114991212855997
+    - rid: 6878114991212855983
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.basic
+    - rid: 6878114991212855984
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.impulse
+    - rid: 6878114991212855985
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: sfx.hit
+    - rid: 6878114991212855986
+      type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        Phases:
+        - rid: 6878114991212855998
+    - rid: 6878114991212855987
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.basic
+    - rid: 6878114991212855988
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: hit.impulse
+    - rid: 6878114991212855989
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: sfx.hit
+    - rid: 6878114991212855990
+      type: {class: PCHasInventoryItem, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
+      data:
+        _isConstantValue: 1
+        ItemId: potion.healing
+    - rid: 6878114991212855991
+      type: {class: EffRemoveInventoryItem, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        ItemId: potion.healing
+    - rid: 6878114991212855992
+      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 1
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _healSource: 0
+        _baseAmount: 100
+        _comboMultiplier: 0
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _isPercentOfMax: 0
+        _useBuildDice: 1
+        _healThreshold: 25
+        _healScaleFactor: 0
+        _healMaxCap: 0
+        _energyCostInCombat: 2
+        _useDiceRoll: 1
+        _diceCount: 1
+        _diceFaces: 10
+        _diceResultMultiplier: 0
+        _sourceTag: 
+        _selfHealOnNoTarget: 1
+    - rid: 6878114991212855993
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 1
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 0
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 0
+        _feedbackId: heal.basic
+    - rid: 6878114991212855994
+      type: {class: EffPassDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 2
+          Timing: 0
+          EntityFilter: 0
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 1
+          AutoAccept: 1
+    - rid: 6878114991212855995
+      type: {class: EffForceDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        RequiredValue: 1
+        EnergyCostInCombat: 2
+        EnemyHealPercentOnSuccess: 0
+    - rid: 6878114991212855996
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Attack
+        Effects:
+          rid: 6878114991212855999
+        OverrideBoardType: 0
+        BoardType: 0
+    - rid: 6878114991212855997
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Shield
+        Effects:
+          rid: 6878114991212856000
+        OverrideBoardType: 1
+        BoardType: 2
+    - rid: 6878114991212855998
+      type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Attack
+        Effects:
+          rid: 6878114991212856001
+        OverrideBoardType: 0
+        BoardType: 0
+    - rid: 6878114991212855999
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212856002
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212856000
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212856003
+        - rid: 6878114991212856004
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212856001
+      type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
+      data:
+        Label: Effect Group
+        PreConditions: []
+        Effects:
+        - rid: 6878114991212856005
+        TargetSelector:
+          rid: -2
+    - rid: 6878114991212856002
+      type: {class: EffPlaySequence, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _steps:
+        - Source: 0
+          FeedbackRefId: anim.player.warrior.attack
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 0
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: 
+          StartDelay: 0
+          EndMode: 2
+          DurationOverride: 0
+          EndOnEventKey: hit
+          BlockSequence: 1
+        - Source: 4
+          FeedbackRefId: 
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Damage on impact
+            PreConditions: []
+            Effects:
+            - rid: 6878114991212856006
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 3
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: vfx.player.warrior.impact
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: sfx.player.warrior.hit
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: feel.player.warrior.impact
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: hit.impulse
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+    - rid: 6878114991212856003
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _shieldSource: 1
+        _baseAmount: 5
+        _comboMultiplier: 1
+        _reader:
+          rid: -2
+        _readerMultiplier: 1
+    - rid: 6878114991212856004
+      type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 0
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _feedbackId: shield.basic
+    - rid: 6878114991212856005
+      type: {class: EffPlaySequence, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 4
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _steps:
+        - Source: 0
+          FeedbackRefId: anim.player.warrior.attack
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 0
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: 
+          StartDelay: 0
+          EndMode: 2
+          DurationOverride: 0
+          EndOnEventKey: hit
+          BlockSequence: 1
+        - Source: 4
+          FeedbackRefId: 
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Damage on impact
+            PreConditions: []
+            Effects:
+            - rid: 6878114991212856007
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 3
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: vfx.player.warrior.impact
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: sfx.player.warrior.hit
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: feel.player.warrior.impact
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+        - Source: 0
+          FeedbackRefId: hit.impulse
+          WaitDuration: 0.25
+          InlineAnimTrigger: 
+          InlineAnimOnSource: 1
+          InlineBehaviorValueKey: 0
+          InlineBehaviorValueTarget: 1
+          InlineEffects:
+            Label: Effect Group
+            PreConditions: []
+            Effects: []
+            TargetSelector:
+              rid: -2
+          StartMode: 3
+          StartDependsOnStepIndex: 0
+          StartOnEventKey: hit
+          StartDelay: 0
+          EndMode: 0
+          DurationOverride: 0
+          EndOnEventKey: 
+          BlockSequence: 1
+    - rid: 6878114991212856006
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _damageSource: 1
+        _baseAmount: 10
+        _comboMultiplier: 1
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _attackKind: 1
+    - rid: 6878114991212856007
+      type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 4
+          RangeMode: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 0
+          PatternRows: 0
+          PatternCols: 0
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _damageSource: 1
+        _baseAmount: 10
+        _comboMultiplier: 1
+        _reader:
+          rid: -2
+        _readerMultiplier: 0
+        _attackKind: 1

@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Effects;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;
 using Rollgeon.Player;
@@ -101,25 +99,9 @@ namespace Rollgeon.UI.Tooltips
             var behavior = playerService.CurrentHero.ResolveBaseBehavior(_slot, phaseToResolve);
             if (behavior == null) return null;
 
-            return FirstTooltipFromEffects(behavior.Effects);
-        }
-
-        private static string FirstTooltipFromEffects(List<EffectData> effects)
-        {
-            if (effects == null) return null;
-            foreach (var group in effects)
-            {
-                if (group?.Effects == null) continue;
-                foreach (var eff in group.Effects)
-                {
-                    if (eff is IHasTooltipInfo info)
-                    {
-                        var text = info.BuildTooltip();
-                        if (!string.IsNullOrEmpty(text)) return text;
-                    }
-                }
-            }
-            return null;
+            var context = new TooltipContext(playerService.PlayerGuid, playerService.CurrentHero,
+                phaseToResolve);
+            return HeroActionTooltip.BuildFor(behavior, context);
         }
     }
 }

@@ -2,22 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Player;
 using Rollgeon.PreConditions;
+using Rollgeon.Upgrades;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Items
 {
-    public sealed class InventoryService : IInventoryService, IDisposable
+    public sealed class InventoryService : IInventoryService, ISaveable, IDisposable
     {
         private readonly List<InventorySlot> _passiveItems = new();
         private readonly List<InventorySlot> _activeItems = new();
 
-        private readonly List<(EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
+        /// <summary>
+        /// Cada handler suscripto, con el item que lo puso. El <c>itemId</c> es lo que hace posible
+        /// desenganchar un item sin tocar los de otro — ver <see cref="UnbindPassiveHooks"/>.
+        /// Misma clave que <see cref="_appliedModifierIds"/>, así los dos tratan igual a un item.
+        /// </summary>
+        private readonly List<(string itemId, EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
+
+        /// <summary>
+        /// Handlers tipados de ComboPlayed, en lista paralela a <see cref="_hookHandlers"/>
+        /// (el bus tipado no comparte el shape de EventReceiver). Mismo contrato de unbind
+        /// por <c>itemId</c>.
+        /// </summary>
+        private readonly List<(string itemId, Action<ComboPlayedPayload> handler)> _comboPlayedHandlers = new();
         private readonly Dictionary<string, List<Guid>> _appliedModifierIds = new();
 
         private readonly ItemCatalogSO _catalog;
@@ -183,6 +200,43 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Preview helpers
+        // ======================================================================
+
+        /// <summary>
+        /// Suma el bono de daño at-played (<see cref="EffAddComboBonus"/>) que los items
+        /// passive del inventario aportarían al <paramref name="comboId"/>. Lo usa el
+        /// preview de daño para mostrar la contribución de los objetos ANTES de jugar el
+        /// combo — el bono real se aplica recién en ComboPlayed (ver <c>LastPlayScratch</c>).
+        /// Solo suma <see cref="EffAddComboBonus"/> (evita side-effects de otros efectos del
+        /// hook); readers dinámicos se leen con un contexto mínimo.
+        /// </summary>
+        public int GetComboDamageBonusPreview(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId)) return 0;
+
+            var ctx = new EffectContext { SourceGuid = GetPlayerGuid() };
+            int total = 0;
+            foreach (var slot in _passiveItems)
+            {
+                var item = slot?.Item;
+                if (item?.PassiveHooks == null) continue;
+                foreach (var hook in item.PassiveHooks)
+                {
+                    if (hook == null || hook.Kind != PassiveHookKind.ComboPlayed) continue;
+                    if (hook.ComboFilter != null && !hook.ComboFilter.Matches(comboId)) continue;
+                    if (hook.Effect?.Effects == null) continue;
+                    foreach (var eff in hook.Effect.Effects)
+                    {
+                        if (eff is EffAddComboBonus bonus && bonus.Amount != null)
+                            total += bonus.Amount.Read(ctx);
+                    }
+                }
+            }
+            return total;
+        }
+
+        // ======================================================================
         // Passive hooks — subscribe/unsubscribe to EventManager
         // ======================================================================
 
@@ -193,6 +247,12 @@ namespace Rollgeon.Items
             foreach (var hook in item.PassiveHooks)
             {
                 if (hook?.Effect == null) continue;
+
+                if (hook.Kind == PassiveHookKind.ComboPlayed)
+                {
+                    BindComboPlayedHook(item, hook);
+                    continue;
+                }
 
                 var capturedHook = hook;
                 var capturedItem = item;
@@ -216,34 +276,92 @@ namespace Rollgeon.Items
                 };
 
                 EventManager.Subscribe(hook.TriggerEvent, handler);
-                _hookHandlers.Add((hook.TriggerEvent, handler));
+                _hookHandlers.Add((item.ItemId, hook.TriggerEvent, handler));
             }
         }
 
+        private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)
+        {
+            var capturedHook = hook;
+            var capturedItem = item;
+            Action<ComboPlayedPayload> handler = payload =>
+            {
+                var playerGuid = GetPlayerGuid();
+                if (payload.SourceGuid != playerGuid) return;
+                if (capturedHook.ComboFilter != null && !capturedHook.ComboFilter.Matches(payload.ComboId)) return;
+
+                // El efecto corre DENTRO de la ventana de combo jugado: el play scratch
+                // viaja como trigger context para que un EffAddComboBonus del item sume
+                // al daño del golpe en curso. Efectos directos (oro, heal) no lo necesitan.
+                var play = ServiceLocator.TryGetService<IComboPlayService>(out var p) ? p : null;
+                var ctx = new EffectContext
+                {
+                    SourceGuid = playerGuid,
+                    TargetGuid = payload.TargetGuid != Guid.Empty ? payload.TargetGuid : playerGuid,
+                    DiceResult = payload.DiceResult,
+                    KeptDice = payload.KeptDice,
+                    KeptDiceOriginalIndices = payload.KeptDiceOriginalIndices,
+                    ComboResult = payload.ComboResult,
+                    lastResult = true,
+                    TriggerContext = new ScratchTriggerContext
+                    {
+                        Scratch = play?.CurrentPlayScratch,
+                        ComboId = payload.ComboId,
+                        Channel = ScratchChannel.Item,
+                    },
+                };
+                var preCtx = new PreConditionContext
+                {
+                    OwnerGuid = playerGuid,
+                    OpponentGuid = ctx.TargetGuid,
+                    Effect = ctx,
+                };
+                // Snapshot-delta por (item, hook): atribuye al journal lo que ESTE item
+                // aportó al combo en curso. Sin ventana de play no hay scratch que medir.
+                var scratch = play?.CurrentPlayScratch;
+                var before = scratch != null ? ScratchSnapshot.Of(scratch) : default;
+                capturedHook.Effect.TryExecute(ctx, preCtx);
+                if (scratch != null)
+                    ScratchSnapshot.RecordDelta(scratch, in before,
+                        ScratchSourceKind.Item, capturedItem.ItemId, capturedItem, bagSlot: -1);
+            };
+
+            TypedEvent<ComboPlayedPayload>.Subscribe(handler);
+            _comboPlayedHandlers.Add((item.ItemId, handler));
+        }
+
+        /// <summary>
+        /// Desengancha exactamente los handlers que puso <paramref name="item"/>.
+        /// </summary>
+        /// <remarks>
+        /// Matchea por <c>itemId</c>, no por <c>TriggerEvent</c>. Con dos pasivas colgadas del mismo
+        /// evento, matchear por evento desenganchaba una cualquiera (la última, por el recorrido
+        /// LIFO): quitar la pasiva A mataba el hook de B y dejaba vivo el de A. Con un solo item
+        /// autorado no se notaba.
+        /// <para>
+        /// Tampoco recorre <c>item.PassiveHooks</c> para decidir qué sacar: se desengancha lo que se
+        /// enganchó. Si el SO cambió entre el bind y el unbind, mirar los hooks de ahora dejaría
+        /// suscripciones colgadas apuntando a un item que ya no está en el inventario.
+        /// </para>
+        /// </remarks>
         private void UnbindPassiveHooks(ItemSO item)
         {
-            // Unbind all handlers that were registered for this item's hooks.
-            // Since we track (event, handler) pairs and can't distinguish per-item
-            // in the flat list, we remove handlers matching the item's trigger events.
-            // For a full implementation, track per-item handler lists.
-            // For now, this works correctly because BindPassiveHooks appends and
-            // we remove in LIFO order for the matching event count.
-            if (item.PassiveHooks == null) return;
+            if (item == null || string.IsNullOrEmpty(item.ItemId)) return;
 
-            for (int i = item.PassiveHooks.Count - 1; i >= 0; i--)
+            for (int i = _hookHandlers.Count - 1; i >= 0; i--)
             {
-                var hook = item.PassiveHooks[i];
-                if (hook == null) continue;
+                if (_hookHandlers[i].itemId != item.ItemId) continue;
 
-                for (int j = _hookHandlers.Count - 1; j >= 0; j--)
-                {
-                    if (_hookHandlers[j].evt == hook.TriggerEvent)
-                    {
-                        EventManager.UnSubscribe(_hookHandlers[j].evt, _hookHandlers[j].handler);
-                        _hookHandlers.RemoveAt(j);
-                        break;
-                    }
-                }
+                EventManager.UnSubscribe(_hookHandlers[i].evt, _hookHandlers[i].handler);
+                _hookHandlers.RemoveAt(i);
+            }
+
+            for (int i = _comboPlayedHandlers.Count - 1; i >= 0; i--)
+            {
+                if (_comboPlayedHandlers[i].itemId != item.ItemId) continue;
+
+                TypedEvent<ComboPlayedPayload>.Unsubscribe(_comboPlayedHandlers[i].handler);
+                _comboPlayedHandlers.RemoveAt(i);
             }
         }
 
@@ -392,11 +510,28 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // ISaveable (§15) — el service vivo es lo que se registra; InventoryState
+        // queda como converter/DTO holder para los helpers de arriba y sus tests.
+        // ======================================================================
+
+        string ISaveable.SaveKey => "run.inventory";
+
+        object ISaveable.CaptureState() => CaptureState().CaptureState();
+
+        void ISaveable.RestoreState(object state)
+        {
+            var holder = new InventoryState();
+            holder.RestoreState(state);
+            RestoreState(holder);
+        }
+
+        // ======================================================================
         // Dispose
         // ======================================================================
 
         public void Dispose()
         {
+            SaveSystem.Unregister(this);
             ClearAllHooksAndModifiers();
             _passiveItems.Clear();
             _activeItems.Clear();
@@ -404,9 +539,13 @@ namespace Rollgeon.Items
 
         private void ClearAllHooksAndModifiers()
         {
-            foreach (var (evt, handler) in _hookHandlers)
+            foreach (var (_, evt, handler) in _hookHandlers)
                 EventManager.UnSubscribe(evt, handler);
             _hookHandlers.Clear();
+
+            foreach (var (_, handler) in _comboPlayedHandlers)
+                TypedEvent<ComboPlayedPayload>.Unsubscribe(handler);
+            _comboPlayedHandlers.Clear();
 
             var playerGuid = GetPlayerGuid();
             if (playerGuid != Guid.Empty && ServiceLocator.TryGetService<AttributesManager>(out var attrMgr))

@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.UI.Tooltips;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -23,7 +29,7 @@ namespace Rollgeon.Effects.Concretes
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class EffDealDamage : BaseEffect<DamageArgs, int>,
-        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior, IHasTooltipInfo
     {
         [Title("Damage")]
         [SerializeField]
@@ -60,17 +66,61 @@ namespace Rollgeon.Effects.Concretes
 
         public override string GetEffectName() => "Deal Damage";
 
+        // IHasTooltipInfo — texto dinámico por personaje: ComboValue lee el ATQ del
+        // owner en hover-time; FromReader ejecuta el reader configurado (ej. un stat
+        // del character) con un contexto mínimo. Expansión de personajes = data-driven.
+        public string BuildTooltip()
+            => TooltipContext.TryForCurrentHero(Rollgeon.Phase.GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
+
+        public string BuildTooltip(in TooltipContext context)
+        {
+            switch (_damageSource)
+            {
+                case DamageSource.ComboValue:
+                {
+                    int attack = ResolveOwnerAttack(context.OwnerGuid);
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append("Daño: ATQ (").Append(attack).Append(") + puntaje del combo");
+                    if (!Mathf.Approximately(_comboMultiplier, 1f))
+                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                    sb.AppendLine();
+                    sb.Append("Sin combo: ATQ + dado más alto elegido");
+                    return sb.ToString();
+                }
+                case DamageSource.FromReader when _reader != null:
+                    return "Daño: " + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                case DamageSource.FromReader:
+                    return null;
+                default:
+                    return "Daño: " + _baseAmount;
+            }
+        }
+
+        private static int ResolveOwnerAttack(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                || attributes == null)
+                return 0;
+            return attributes.GetAttribute<Attack>(ownerGuid)?.ModifiedValue ?? 0;
+        }
+
         protected override DamageArgs ResolveArgs(EffectContext context)
         {
             int amount = _damageSource switch
             {
-                // Ataque de combo del jugador: fórmula unificada
-                // (dañoBasePJ + bonosPJ + (comboBase + bonosCombo)) × multiplicador.
-                // El comboBase ya llega ajustado por el Contrato (Boss 3). Ver PlayerComboDamage.
+                // Ver PlayerComboDamage.Resolve para la fórmula completa.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
                     => Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
-                        ResolveSourceId(context), combo.BaseDamage, _comboMultiplier),
-                DamageSource.ComboValue => 0,
+                        ResolveSourceId(context), combo.BaseDamage,
+                        ResolveContributingDice(context, combo.ContributingIndices), _comboMultiplier),
+                // Sin combo el ataque NO es 0 — daño mínimo del GD §5 ("número más
+                // alto"): el dado más alto de los holdeados entra a la misma fórmula
+                // (v3: UNA sola vez, vía Σcaras cuando hay detalle de bag).
+                DamageSource.ComboValue => ResolveNoComboFallback(context),
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
                 DamageSource.FromReader => 0,
@@ -79,6 +129,36 @@ namespace Rollgeon.Effects.Concretes
 
             return new DamageArgs { BaseAmount = amount };
         }
+
+        // Prioriza KeptDice (los dados que el jugador eligió) sobre DiceResult (la tirada
+        // completa): si holdeó solo un 3 y quedó un 6 sin holdear, el mínimo es 3, no 6.
+        // Sin dados (behavior ComboValue sin tirada) sigue siendo 0, como antes.
+        private int ResolveNoComboFallback(EffectContext context)
+        {
+            var dice = context?.KeptDice ?? context?.DiceResult;
+            if (dice == null || dice.Count == 0) return 0;
+
+            int max = 0;
+            int maxIndex = -1;
+            for (int i = 0; i < dice.Count; i++)
+                if (dice[i] > max) { max = dice[i]; maxIndex = i; }
+            if (max <= 0) return 0;
+
+            var contributingDice = maxIndex >= 0
+                ? ResolveContributingDice(context, new[] { maxIndex })
+                : null;
+
+            // v3: la cara del dado más alto entra UNA sola vez a N. Con detalle de bag va
+            // por Σcaras (comboBase 0, conserva la atribución del dado para la UI); sin bag
+            // entra como comboBase — mismo N por ambos caminos.
+            return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                ResolveSourceId(context), contributingDice != null ? 0 : max,
+                contributingDice, _comboMultiplier);
+        }
+
+        private static IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ResolveContributingDice(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+            => Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 
@@ -109,6 +189,10 @@ namespace Rollgeon.Effects.Concretes
                         TargetId = targetGuid,
                         BaseDamage = amount,
                         Kind = _attackKind,
+                        // Combo → habilita la etapa de weakness del pipeline. El combo que
+                        // matcheó decide qué debilidad del target dispara (o ninguna → ×1.0).
+                        ComboId = context.ComboResult?.ComboId,
+                        IsWeaknessHit = context.ComboResult?.IsMatch ?? false,
                     };
                     pipeline.Resolve(dmgCtx);
                     resolvedDamage = dmgCtx.FinalDamage;

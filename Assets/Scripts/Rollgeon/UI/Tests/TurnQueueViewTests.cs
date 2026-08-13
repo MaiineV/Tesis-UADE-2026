@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Entities.Portraits;
 using Rollgeon.UI.HUD;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tests
 {
@@ -45,8 +47,44 @@ namespace Rollgeon.UI.Tests
         public void Teardown()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.RemoveService<IEntityPortraitResolver>();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
             if (_prefab != null) UnityEngine.Object.DestroyImmediate(_prefab.gameObject);
+            foreach (var obj in _createdObjects)
+            {
+                if (obj != null) UnityEngine.Object.DestroyImmediate(obj);
+            }
+            _createdObjects.Clear();
+        }
+
+        private readonly List<UnityEngine.Object> _createdObjects = new();
+
+        /// <summary>Agrega la Image de portrait al prefab del slot (no viene en el Setup base).</summary>
+        private Image AddPortraitImageToPrefab()
+        {
+            var image = _prefab.gameObject.AddComponent<Image>();
+            AssignPrivate(_prefab, "_portrait", image);
+            return image;
+        }
+
+        private Sprite CreateSprite()
+        {
+            var texture = new Texture2D(2, 2);
+            _createdObjects.Add(texture);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, 2, 2), Vector2.zero);
+            _createdObjects.Add(sprite);
+            return sprite;
+        }
+
+        /// <summary>Fake con sprites fijos por guid; sin lazy player.</summary>
+        private sealed class FakePortraitResolver : IEntityPortraitResolver
+        {
+            public readonly Dictionary<Guid, Sprite> Portraits = new();
+            public void Register(Guid entityId, Sprite portrait) => Portraits[entityId] = portrait;
+            public void Unregister(Guid entityId) => Portraits.Remove(entityId);
+            public bool TryGetPortrait(Guid entityId, out Sprite portrait)
+                => Portraits.TryGetValue(entityId, out portrait);
+            public void Clear() => Portraits.Clear();
         }
 
         [Test]
@@ -105,6 +143,61 @@ namespace Rollgeon.UI.Tests
 
             var slot = _view.FindSlot(guids[0]);
             Assert.IsNotNull(slot, "El slot debe seguir en el mapping post-destroyed.");
+        }
+
+        [Test]
+        public void RebuildQueue_WithResolverRegistered_SetsSlotPortrait()
+        {
+            // Arrange
+            AddPortraitImageToPrefab();
+            var guid = Guid.NewGuid();
+            var sprite = CreateSprite();
+            var fake = new FakePortraitResolver();
+            fake.Register(guid, sprite);
+            ServiceLocator.AddService<IEntityPortraitResolver>(fake, ServiceScope.Run);
+
+            // Act
+            _view.Bind(Guid.NewGuid());
+            _view.RebuildQueue(new List<Guid> { guid });
+
+            // Assert
+            var image = _view.FindSlot(guid).GetComponent<Image>();
+            Assert.AreSame(sprite, image.sprite,
+                "El slot debe mostrar el sprite resuelto para su guid.");
+        }
+
+        [Test]
+        public void RebuildQueue_GuidWithoutSprite_KeepsPrefabDefaultSprite()
+        {
+            // Arrange — resolver registrado pero sin entrada para este guid.
+            var prefabImage = AddPortraitImageToPrefab();
+            var defaultSprite = CreateSprite();
+            prefabImage.sprite = defaultSprite;
+            var guid = Guid.NewGuid();
+            ServiceLocator.AddService<IEntityPortraitResolver>(
+                new FakePortraitResolver(), ServiceScope.Run);
+
+            // Act
+            _view.Bind(Guid.NewGuid());
+            _view.RebuildQueue(new List<Guid> { guid });
+
+            // Assert
+            var image = _view.FindSlot(guid).GetComponent<Image>();
+            Assert.AreSame(defaultSprite, image.sprite,
+                "Sin sprite resuelto, el slot conserva el default del prefab.");
+        }
+
+        [Test]
+        public void RebuildQueue_WithoutResolverService_DoesNotThrow()
+        {
+            // Arrange
+            AddPortraitImageToPrefab();
+            var guids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+
+            // Act + Assert
+            _view.Bind(Guid.NewGuid());
+            Assert.DoesNotThrow(() => _view.RebuildQueue(guids));
+            Assert.AreEqual(2, _container.childCount);
         }
 
         [Test]

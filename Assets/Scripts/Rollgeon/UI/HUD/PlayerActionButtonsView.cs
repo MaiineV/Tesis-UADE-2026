@@ -8,12 +8,14 @@ using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
+using Rollgeon.Input;
 using Rollgeon.Movement;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
@@ -63,6 +65,15 @@ namespace Rollgeon.UI.HUD
 
         public Action<int> OnBehaviorSelected;
 
+        /// <summary>Slot actualmente Selected (pressed), o null si no hay selección.
+        /// Lo consume <see cref="CombatHudZoneFlow"/> para saber qué chip mover al
+        /// anchor de "acción activa" durante la fase de dados (CNF-007).</summary>
+        public int? SelectedSlot => _selectedSlot;
+
+        /// <summary>Botón del slot pedido, o null si el índice está fuera de rango.</summary>
+        public ActionButton GetButtonAt(int slotIndex)
+            => slotIndex >= 0 && slotIndex < _buttons.Length ? _buttons[slotIndex] : null;
+
         // ======================================================================
         // Internal state
         // ======================================================================
@@ -98,6 +109,7 @@ namespace Rollgeon.UI.HUD
         private int? _selectedSlot;
 
         private IMovementService _movementService;
+        private IGameplayHotkeyService _hotkeys;
 
         // ======================================================================
         // Lifecycle
@@ -110,6 +122,7 @@ namespace Rollgeon.UI.HUD
                 if (_buttons[i] == null) continue;
                 int captured = i;
                 _buttons[i].OnClicked += () => HandleBehaviorClick(captured);
+                _buttons[i].OnRejected += () => HandleBehaviorRejected(captured);
             }
 
             if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClick);
@@ -122,7 +135,9 @@ namespace Rollgeon.UI.HUD
             // destruye antes que los botones).
             for (int i = 0; i < _buttons.Length; i++)
             {
-                if (_buttons[i] != null) _buttons[i].OnClicked = null;
+                if (_buttons[i] == null) continue;
+                _buttons[i].OnClicked = null;
+                _buttons[i].OnRejected = null;
             }
 
             if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClick);
@@ -154,9 +169,16 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
+            EventManager.Subscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
             TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
 
+            HookHotkeys(true);
+
             if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
+            // Spin/outro de dados en curso lockea el Confirm — re-gateamos en cada
+            // cambio de estado de animación (el hotkey ya respeta interactable).
+            if (_diceZone != null) _diceZone.DiceAnimationStateChanged += RecomputeButtonStates;
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
             {
@@ -184,6 +206,30 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        /// <summary>
+        /// RectTransform del botón de un slot — usado por el overlay del tutorial
+        /// para recortar/señalar el botón. <c>false</c> si el slot no está cableado.
+        /// </summary>
+        public bool TryGetButtonRect(HeroBehaviorSlot slot, out RectTransform rect)
+        {
+            rect = null;
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                var button = _buttons[i];
+                if (button == null || button.Slot != slot) continue;
+                rect = button.transform as RectTransform;
+                return rect != null;
+            }
+            return false;
+        }
+
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmRect(out RectTransform rect)
+        {
+            rect = _confirmButton != null ? _confirmButton.transform as RectTransform : null;
+            return rect != null;
+        }
+
         public void Unbind()
         {
             if (!_bound) return;
@@ -199,7 +245,13 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
+            EventManager.UnSubscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
+
+            HookHotkeys(false);
+
+            if (_diceZone != null) _diceZone.DiceAnimationStateChanged -= RecomputeButtonStates;
 
             if (_movementService != null)
             {
@@ -230,6 +282,11 @@ namespace Rollgeon.UI.HUD
             _rolled = false;
             _awaitingSelection = false;
             _selectedSlot = null;
+
+            // Los costos contextuales (Heal, Forzar Puerta) valen distinto dentro y fuera
+            // de combate, y el Bind puede correr antes de que la fase esté seteada. Para
+            // cuando el jugador puede actuar, el número tiene que ser el bueno.
+            RefreshCostLabels();
             RecomputeButtonStates();
         }
 
@@ -329,6 +386,25 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
+        // Tutorial: un slot recién desbloqueado debe pasar de Locked a Available
+        // sin esperar otro evento de turno.
+        private void HandleTutorialActionUnlocked(params object[] args)
+        {
+            RecomputeButtonStates();
+        }
+
+        // Los costos contextuales (Heal, Forzar Puerta) los resuelve el spec del effect
+        // preguntándole la fase VIVA al IPhaseService, así que fuera de combate valen 0.
+        // El Bind del HUD corre antes de que la fase sea Combat: sin este refresh el
+        // label del heal quedaba en el _zeroCostText (vacío) todo el combate, y el gate
+        // de energía lo trataba como gratis. PhaseService setea CurrentBase ANTES de
+        // disparar OnPhaseEnter, así que acá ya se lee el valor nuevo.
+        private void HandlePhaseEnter(params object[] args)
+        {
+            RefreshCostLabels();
+            RecomputeButtonStates();
+        }
+
         private void HandleEntityMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
             // Cualquier movimiento puede cambiar la disponibilidad (range-based attack
@@ -367,6 +443,106 @@ namespace Rollgeon.UI.HUD
 
             _selectedSlot = index;
             RecomputeButtonStates();
+
+            // El botón solo es clickeable si su estado lo permite (gating incluido),
+            // así que esto anuncia una selección efectiva — el tutorial lo usa para
+            // encadenar el paso siguiente (p.e. señalar los dados).
+            if (index >= 0 && index < _buttons.Length && _buttons[index] != null)
+                EventManager.Trigger(EventName.OnHeroBehaviorClicked, _buttons[index].Slot);
+        }
+
+        // El chip avisa que lo intentaron usar sin energia; nosotros somos los que
+        // sabemos de quien es y cuanto cuesta, asi que enriquecemos y publicamos. La
+        // pila de energia escucha el evento — vive en otro prefab y con otro ciclo de
+        // vida, asi que una ref directa seria fragil.
+        private void HandleBehaviorRejected(int index)
+        {
+            var behavior = ResolveBehaviorForSlot(index);
+            if (behavior == null) return;
+
+            int current = ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null
+                ? energy.GetCurrent(_playerGuid)
+                : 0;
+
+            TypedEvent<InsufficientEnergyPayload>.Raise(new InsufficientEnergyPayload
+            {
+                PlayerGuid = _playerGuid,
+                Cost = ResolveDisplayCost(behavior),
+                Current = current,
+            });
+        }
+
+        // ======================================================================
+        // Hotkeys (teclado) — mirror del click, gateado por interactable
+        // ======================================================================
+
+        // Suscribe/desuscribe las teclas a los mismos paths que los botones. Un
+        // hotkey solo dispara si el botón está interactable, así hereda el gating
+        // (turno, energía, chain, once-per-turn) sin duplicar reglas.
+        private void HookHotkeys(bool subscribe)
+        {
+            if (subscribe)
+            {
+                if (_hotkeys == null
+                    && !ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys))
+                    return;
+            }
+            if (_hotkeys == null) return;
+
+            if (subscribe)
+            {
+                _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Subscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
+            }
+            else
+            {
+                _hotkeys.Unsubscribe(GameplayHotkey.Move, OnHotkeyMove);
+                _hotkeys.Unsubscribe(GameplayHotkey.Attack, OnHotkeyAttack);
+                _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
+                _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Unsubscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
+                _hotkeys = null;
+            }
+        }
+
+        private void OnHotkeyMove(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Movement);
+        private void OnHotkeyAttack(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.BaseAttack);
+        private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
+        private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
+        private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
+
+        private void OnHotkeyConfirm(InputAction.CallbackContext _)
+        {
+            if (_confirmButton != null && _confirmButton.interactable)
+            {
+                // Space también dispara EndTurn. Consumimos el frame para que, cuando confirmar
+                // el roll re-habilite el botón End Turn en el mismo press, éste no pase turno.
+                _hotkeys?.ConsumeFrame();
+                _confirmButton.onClick.Invoke();
+            }
+        }
+
+        // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
+        // click real → HandleBehaviorClick con el index correcto). Si el botón no está
+        // interactable porque no alcanza la energía, la tecla responde con el mismo
+        // rechazo que el mouse en vez de no hacer nada.
+        private void TriggerSlotHotkey(HeroBehaviorSlot slot)
+        {
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                var button = _buttons[i];
+                if (button == null || button.Slot != slot) continue;
+                if (button.Button != null && button.Button.interactable)
+                    button.Button.onClick.Invoke();
+                else if (button.State == ActionButtonState.Unaffordable || !button.IsAffordable)
+                    button.PlayRejectFeedback();
+                return;
+            }
         }
 
         private void HandleConfirmClick()
@@ -381,6 +557,13 @@ namespace Rollgeon.UI.HUD
                 return;
             }
             _onConfirmPressed?.Invoke();
+
+            // BUG-018: en chain el OnRollResolved que apagaría el botón viene diferido por
+            // el feedback del golpe — lo apagamos ya para que el spam ni llegue al service
+            // (que igual tiene su propio lock de re-entrada). El próximo Recompute con
+            // estado fresco lo re-habilita cuando corresponda.
+            if (_inChain && _confirmButton != null)
+                _confirmButton.interactable = false;
         }
 
         // ======================================================================
@@ -392,14 +575,23 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < _buttons.Length; i++)
             {
                 if (_buttons[i] == null) continue;
-                _buttons[i].SetState(ComputeStateForSlot(i));
+
+                var behavior = ResolveBehaviorForSlot(i);
+                _buttons[i].SetState(ComputeStateForSlot(i, behavior));
+
+                // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
+                // razon de la cascada, asi que un chip Locked por rango o por vida llena
+                // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
+                if (behavior != null) _buttons[i].SetAffordable(HasEnoughEnergy(behavior));
             }
 
             // Confirm se habilita cuando hay dados rolleados AND el jugador holdeó
             // al menos un dado. Sin holds confirmar no tiene sentido (no hay combo
-            // posible), y el botón quedaría engañando al usuario.
+            // posible), y el botón quedaría engañando al usuario. Mientras los dados
+            // giran o vuelan (modo Classic) tampoco: el resultado aún no se reveló.
             if (_confirmButton != null)
-                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld();
+                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld()
+                                              && !(_diceZone != null && _diceZone.IsDiceAnimating);
         }
 
         private bool AnyDieHeld()
@@ -412,14 +604,21 @@ namespace Rollgeon.UI.HUD
             return false;
         }
 
-        private ActionButtonState ComputeStateForSlot(int slotIndex)
+        private ActionButtonState ComputeStateForSlot(int slotIndex, HeroActionBehavior behavior)
         {
-            // [DIAG temporal] Logueamos el motivo de cada Locked/Used para pinpointear
-            // el bug de "botón sigue activo tras usar" y "boss: botones grises con energía".
-            // Quitar estos Debug.Log una vez diagnosticado.
             if (!_isPlayerTurn)
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (no es turno del player)");
+                return ActionButtonState.Locked;
+            }
+
+            // Tutorial: slots que el tutorial todavía no desbloqueó quedan Locked.
+            // Gate visual — el backstop de ejecución vive en
+            // TurnManager.IsForbiddenByRuleset (mismo servicio).
+            if (ServiceLocator.TryGetService<Rollgeon.Tutorial.ITutorialActionGateService>(out var tutorialGate)
+                && tutorialGate != null
+                && _buttons[slotIndex] != null
+                && tutorialGate.IsSlotLocked(_buttons[slotIndex].Slot))
+            {
                 return ActionButtonState.Locked;
             }
 
@@ -427,10 +626,8 @@ namespace Rollgeon.UI.HUD
             // o rolled — el jugador ve "esta es la accion que estoy ejecutando".
             if (_selectedSlot == slotIndex) return ActionButtonState.Selected;
 
-            var behavior = ResolveBehaviorForSlot(slotIndex);
             if (behavior == null)
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} → Locked (behavior null — no resuelve en Combat)");
                 return ActionButtonState.Locked;
             }
 
@@ -440,7 +637,6 @@ namespace Rollgeon.UI.HUD
             // que acá ignoramos BlockOnRepeat y gateamos sólo por WasUsedThisTurn.
             if (WasUsedThisTurn(behavior.ActionName))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Used");
                 return ActionButtonState.Used;
             }
 
@@ -468,22 +664,26 @@ namespace Rollgeon.UI.HUD
             if (behavior.Slot == HeroBehaviorSlot.Healing
                 && !HealAvailability.CanHealMore(_playerGuid))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HP lleno — heal sin headroom)");
                 return ActionButtonState.Locked;
             }
 
-            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason))
+            // includeEnergyGate:false — HasUsableEffectGroup tiene su propio gate de
+            // energía contra behavior.EnergyCost, y al consultarlo antes que HasEnoughEnergy
+            // devolvía Locked para todo chip impagable: el Unaffordable de abajo era
+            // inalcanzable salvo cuando el costo del spec supera al legacy (Heal con
+            // exactamente 1 de energía). Sin ni outline ni shake, que es lo que se reportó.
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason,
+                                               includeEnergyGate: false))
             {
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (HasUsableEffectGroup=false: {usableReason})");
                 return ActionButtonState.Locked;
             }
 
+            // Ultimo gate de la cascada: si llegamos hasta aca todo lo demas esta
+            // listo y lo unico que falta es energia. Por eso Unaffordable puede
+            // decirle al jugador POR QUE no puede — los Locked de arriba no.
             if (!HasEnoughEnergy(behavior))
             {
-                int cur = ServiceLocator.TryGetService<IEnergyService>(out var es) && es != null
-                    ? es.GetCurrent(_playerGuid) : -1;
-                Debug.Log($"[PABV-DIAG] slot {slotIndex} ({behavior.ActionName}) → Locked (energía: current={cur} < cost={behavior.EnergyCost}, playerGuid={_playerGuid})");
-                return ActionButtonState.Locked;
+                return ActionButtonState.Unaffordable;
             }
 
             return ActionButtonState.Available;
@@ -512,12 +712,19 @@ namespace Rollgeon.UI.HUD
             return tm.WasUsedThisTurn(actionName);
         }
 
+        // Gatea contra el costo que REALMENTE se cobra, no contra behavior.EnergyCost.
+        // Cuando el behavior tiene un IActionRollEffect, el spec pisa al valor legacy
+        // (ej. Heal: EnergyCost=1 pero el spec cobra 2). Usar el legacy dejaba el chip
+        // Available con energia insuficiente: el jugador lo activaba, ActionRollService
+        // no podia cobrar y cancelaba con un Debug.Log — el rechazo silencioso que este
+        // feedback existe para eliminar. Misma fuente que el cost label y el tooltip.
         private bool HasEnoughEnergy(HeroActionBehavior behavior)
         {
-            if (behavior.EnergyCost <= 0) return true;
+            int cost = ResolveDisplayCost(behavior);
+            if (cost <= 0) return true;
             if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
                 return true; // sin servicio de energia, no bloqueamos en UI
-            return energy.GetCurrent(_playerGuid) >= behavior.EnergyCost;
+            return energy.GetCurrent(_playerGuid) >= cost;
         }
 
         // ======================================================================
@@ -548,33 +755,9 @@ namespace Rollgeon.UI.HUD
 
         // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
         // IActionRollService con el cost del spec — el behavior.EnergyCost queda
-        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Para
-        // que el label refleje lo que efectivamente se va a cobrar, priorizamos
-        // el spec del effect.
+        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Regla
+        // compartida con el texto de tooltips (HeroActionTooltip).
         private int ResolveDisplayCost(HeroActionBehavior behavior)
-        {
-            if (TryFindActionRollSpec(behavior, out var spec))
-                return spec.EnergyCost;
-            return behavior.EnergyCost;
-        }
-
-        private bool TryFindActionRollSpec(HeroActionBehavior behavior, out ActionRollSpec spec)
-        {
-            spec = default;
-            if (behavior?.Effects == null) return false;
-            foreach (var group in behavior.Effects)
-            {
-                if (group?.Effects == null) continue;
-                foreach (var eff in group.Effects)
-                {
-                    if (eff is IActionRollEffect rollEffect
-                        && rollEffect.TryGetRollSpec(_playerGuid, out spec))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+            => Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
     }
 }

@@ -1,4 +1,5 @@
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Patterns.Bootstrap;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -30,6 +31,7 @@ namespace Rollgeon.Items
 
             _instance = new InventoryService(_catalog, _maxActiveSlots);
             ServiceLocator.AddService<IInventoryService>(_instance, ServiceScope.Run);
+            SaveSystem.Register(_instance);
         }
     }
 }

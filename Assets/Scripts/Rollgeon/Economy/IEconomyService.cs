@@ -33,5 +33,12 @@ namespace Rollgeon.Economy
 
         /// <summary><c>true</c> si el balance actual cubre <paramref name="amount"/>.</summary>
         bool CanAfford(int amount);
+
+        /// <summary>
+        /// Setea el balance a un valor absoluto y notifica <c>OnGoldChanged</c>.
+        /// Para transiciones de sesión (inicio de tutorial, fresh run post-tutorial) —
+        /// el service es Global y no se resetea solo entre runs.
+        /// </summary>
+        void ResetTo(int amount);
     }
 }

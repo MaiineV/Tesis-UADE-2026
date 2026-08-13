@@ -9,9 +9,10 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Screens
 {
     /// <summary>
-    /// Pause menu overlay (UI#0014c). Provides resume, settings (stub),
-    /// and quit-run buttons. Pushes <see cref="PhaseOverlay.Pause"/> on
-    /// the <see cref="IPhaseService"/> while active.
+    /// Pause menu overlay (UI#0014c). Provides resume, settings (opens the
+    /// shared <see cref="OptionsScreen"/>), and quit-run buttons. Pushes
+    /// <see cref="PhaseOverlay.Pause"/> on the <see cref="IPhaseService"/>
+    /// while active.
     /// </summary>
     /// <remarks>
     /// [SETUP] GameObject lives as child of the Canvas in the run scene,
@@ -90,7 +91,18 @@ namespace Rollgeon.UI.Screens
 
         private void OnSettingsClicked()
         {
-            Debug.Log(LogPrefix + "Settings pressed (stub — pending settings screen).");
+            // Mismo panel de opciones que el menú principal (overlay no
+            // destructivo: la pausa queda viva detrás y el PhaseOverlay.Pause
+            // sigue pusheado). La instancia vive en este mismo prefab — la
+            // cablea el installer Rollgeon → Juicy Menu → 5.
+            if (ServiceLocator.TryGetService<IScreenManager>(out var screens))
+            {
+                screens.PushOverlay<OptionsScreen>();
+            }
+            else
+            {
+                Debug.LogWarning(LogPrefix + "IScreenManager not registered — can't open options.", this);
+            }
         }
 
         private void OnQuitRunClicked()
@@ -109,7 +121,7 @@ namespace Rollgeon.UI.Screens
             // End the current run if context is available
             if (ServiceLocator.TryGetService<IRunContextService>(out var runCtx))
             {
-                RunBootstrapper.EndRun(runCtx.RunId);
+                RunBootstrapper.EndRun(runCtx.RunId, runCompleted: false);
             }
             else
             {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dungeon;
+using Rollgeon.Items;
 using Rollgeon.Shop;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -57,16 +58,16 @@ namespace Rollgeon.Meta.Tests
             return def;
         }
 
-        private ShopItemDef NewShopItem(string itemId)
+        private ItemSO NewShopItem(string itemId)
         {
-            var item = ScriptableObject.CreateInstance<ShopItemDef>();
+            var item = ScriptableObject.CreateInstance<ItemSO>();
             item.ItemId = itemId;
             item.DisplayName = itemId;
             _assets.Add(item);
             return item;
         }
 
-        private ShopPoolSO NewShopPool(params ShopItemDef[] items)
+        private ShopPoolSO NewShopPool(params ItemSO[] items)
         {
             var pool = ScriptableObject.CreateInstance<ShopPoolSO>();
             foreach (var item in items)

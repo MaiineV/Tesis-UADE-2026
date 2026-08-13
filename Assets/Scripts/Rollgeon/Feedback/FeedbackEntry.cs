@@ -1,4 +1,5 @@
 using System;
+using MoreMountains.Feedbacks;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -65,6 +66,36 @@ namespace Rollgeon.Feedback
         public bool TargetSourcePawn = true;
 
         // ================================================================
+        // Feel (MMF_Player)
+        // ================================================================
+        [Title("Feel"), ShowIf(nameof(IsFeel))]
+        [Tooltip("Prefab con un MMF_Player. Se instancia, se dispara y se auto-destruye.")]
+        public MMF_Player FeelPlayerPrefab;
+
+        [ShowIf(nameof(IsFeel)), Range(0f, 3f)]
+        [Tooltip("Feedbacks intensity del MMF_Player. 1 = como está autorado.")]
+        public float FeelIntensity = 1f;
+
+        // ================================================================
+        // PawnDeath
+        // ================================================================
+        [Title("Pawn Death"), ShowIf(nameof(IsPawnDeath))]
+        [Tooltip("Grados que gira sobre su propio eje Y durante el tween. 720 = dos vueltas.")]
+        public float DeathSpinDegrees = 720f;
+
+        [ShowIf(nameof(IsPawnDeath)), Range(0f, 1f)]
+        [Tooltip("Escala final relativa a la inicial. 0 = colapsa a nada.")]
+        public float DeathEndScale;
+
+        [ShowIf(nameof(IsPawnDeath))]
+        [Tooltip("Altura del arco que sube mientras colapsa. 0 = colapsa en el piso.")]
+        public float DeathRiseHeight = 0.35f;
+
+        [ShowIf(nameof(IsPawnDeath))]
+        [Tooltip("Apaga la barra de vida al arrancar. Si no, se encoge junto al pawn.")]
+        public bool DeathHideHealthBar = true;
+
+        // ================================================================
         // BehaviorValue
         // ================================================================
         [Title("Behavior Value"), ShowIf(nameof(IsBehaviorValue))]
@@ -83,6 +114,8 @@ namespace Rollgeon.Feedback
         private bool IsVFX() => Type == FeedbackType.VFX;
         private bool IsSFX() => Type == FeedbackType.SFX;
         private bool IsAnimation() => Type == FeedbackType.Animation;
+        private bool IsFeel() => Type == FeedbackType.Feel;
+        private bool IsPawnDeath() => Type == FeedbackType.PawnDeath;
         private bool IsBehaviorValue() => Type == FeedbackType.BehaviorValue;
         private bool IsFloatingNumber() => Type == FeedbackType.FloatingNumber;
         private bool UsesPositionReader() => Position == SpawnPosition.FromReader;

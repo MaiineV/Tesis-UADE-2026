@@ -40,7 +40,50 @@ namespace Rollgeon.Upgrades
                 lifetime: ModifierLifetime.Run,
                 tickEvent: EventName.OnTurnFinished);
 
-            return ApplyToStat(stat, attrs, ps.PlayerGuid, modifier);
+            if (!ApplyToStat(stat, attrs, ps.PlayerGuid, modifier)) return false;
+
+            // BUG-022 (decisión de diseño): subir un máximo también otorga la misma
+            // cantidad del recurso actual — el pickup se siente al instante y el HUD
+            // refresca solo (HealResolvedPayload / OnPlayerEnergyChanged). El modifier
+            // del máximo ya está aplicado, así que el clamp usa el cap nuevo.
+            if (amount > 0)
+            {
+                if (stat == CharacterRewardTargetStat.Health)
+                    HealCurrentHp(attrs, ps.PlayerGuid, amount);
+                else if (stat == CharacterRewardTargetStat.Energy)
+                    RaiseCurrentEnergy(ps.PlayerGuid, amount);
+            }
+
+            return true;
+        }
+
+        private static void HealCurrentHp(AttributesManager attrs, Guid playerGuid, int amount)
+        {
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Pipelines.IHealPipeline>(out var heal)
+                && heal != null)
+            {
+                heal.Resolve(new Rollgeon.Combat.Pipelines.HealContext
+                {
+                    SourceId = playerGuid,
+                    TargetId = playerGuid,
+                    BaseHeal = amount,
+                });
+                return;
+            }
+
+            // Fallback sin pipeline (tests / bootstrap parcial): clamp manual al max nuevo.
+            int maxHp = PlayerMaxHp.Resolve(playerGuid);
+            attrs.Modify<Health, int>(playerGuid,
+                current => maxHp > 0 ? Math.Min(maxHp, current + amount) : current + amount);
+        }
+
+        private static void RaiseCurrentEnergy(Guid playerGuid, int amount)
+        {
+            // RestoreCurrent no está en la interfaz — mismo downcast que CombatResumeService.
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.EnergyLib.IEnergyService>(out var energyIf)
+                || !(energyIf is Rollgeon.Combat.EnergyLib.EnergyService energy))
+                return;
+            energy.RestoreCurrent(playerGuid, energy.GetCurrent(playerGuid) + amount);
         }
 
         /// <summary>Aplica una lista de grants. Devuelve cuántos se aplicaron efectivamente.</summary>
@@ -59,8 +102,12 @@ namespace Rollgeon.Upgrades
         {
             switch (target)
             {
-                case CharacterRewardTargetStat.Health: return attrs.AddModifier<Health, int>(playerGuid, modifier);
-                case CharacterRewardTargetStat.Energy: return attrs.AddModifier<Energy, int>(playerGuid, modifier);
+                // BUG-022: Health/Energy rutean a los stats de MÁXIMO. Antes iban a
+                // Health/Energy (valor actual): nadie leía esos ModifiedValue como cap
+                // (max HP era la constante BaseMaxHp, cap de energía el del ruleset) y
+                // encima inflaban el "HP actual" que la IA lee vía ModifiedValue.
+                case CharacterRewardTargetStat.Health: return attrs.AddModifier<MaxHealth, int>(playerGuid, modifier);
+                case CharacterRewardTargetStat.Energy: return attrs.AddModifier<MaxEnergy, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Speed:  return attrs.AddModifier<Speed, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Attack: return attrs.AddModifier<Attack, int>(playerGuid, modifier);
                 default: return false;

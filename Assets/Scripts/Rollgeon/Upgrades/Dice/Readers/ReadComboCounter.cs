@@ -25,6 +25,7 @@ namespace Rollgeon.Upgrades.Dice.Readers
     [Serializable, HideReferenceObjectPicker]
     public sealed class ReadComboCounter : EffectIntReader
     {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()")]
         [Tooltip("ID canónico del combo (ej. 'combo.par', 'combo.trio'). " +
                  "Debe matchear el ComboId de un BaseComboSO del catalogo.")]
         public string ComboId;

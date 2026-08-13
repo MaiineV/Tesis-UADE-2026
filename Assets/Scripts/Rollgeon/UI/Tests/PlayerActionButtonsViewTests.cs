@@ -272,6 +272,54 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(0, selectedIndex, "Movement click debe invocar OnBehaviorSelected(0).");
         }
 
+        [Test]
+        public void should_not_invoke_behavior_selected_when_click_activation_disabled()
+        {
+            // Arrange — CNF-002 v2: los chips de combate son drag-only; el
+            // ActionDragController apaga el click via SetClickActivation(false).
+            int selectedIndex = -1;
+            _view.OnBehaviorSelected = (idx) => selectedIndex = idx;
+
+            var actionButton = CreateActionButton("MovementBtn", _go, HeroBehaviorSlot.Movement);
+            actionButton.SetClickActivation(false);
+            var array = new ActionButton[4];
+            array[0] = actionButton;
+            AssignPrivate(_view, "_buttons", array);
+
+            InvokeAwake(_view);
+
+            // Act
+            actionButton.Button.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(-1, selectedIndex,
+                "Con la activación por click deshabilitada, el click no debe invocar OnBehaviorSelected.");
+        }
+
+        [Test]
+        public void should_invoke_behavior_selected_via_delegate_when_click_disabled()
+        {
+            // Arrange — el seam OnClicked (usado por el drag dispatcher) NO pasa por el
+            // gate de click: debe seguir activando el behavior aunque el click esté off.
+            int selectedIndex = -1;
+            _view.OnBehaviorSelected = (idx) => selectedIndex = idx;
+
+            var actionButton = CreateActionButton("MovementBtn", _go, HeroBehaviorSlot.Movement);
+            actionButton.SetClickActivation(false);
+            var array = new ActionButton[4];
+            array[0] = actionButton;
+            AssignPrivate(_view, "_buttons", array);
+
+            InvokeAwake(_view);
+
+            // Act
+            actionButton.OnClicked?.Invoke();
+
+            // Assert
+            Assert.AreEqual(0, selectedIndex,
+                "OnClicked directo (drag dispatcher) debe activar el behavior aun con click off.");
+        }
+
         // ======================================================================
         // Helpers
         // ======================================================================

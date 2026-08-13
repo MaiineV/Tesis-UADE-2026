@@ -149,7 +149,7 @@ namespace Rollgeon.Meta
                 UnlockId = definition.UnlockId,
                 Category = definition.Category,
                 TargetId = definition.TargetId,
-                DisplayName = definition.DisplayName,
+                DisplayName = Rollgeon.Localization.LocalizedContent.Name(definition.UnlockId, definition.DisplayName),
                 DuringRun = duringRun,
             });
             return true;
@@ -173,6 +173,31 @@ namespace Rollgeon.Meta
             // el set de clases jugadas nunca.
             State.ConsecutiveWins = won ? State.ConsecutiveWins + 1 : 0;
             SaveNow();
+        }
+
+        /// <inheritdoc />
+        public bool IsTutorialCompleted => State.TutorialCompleted;
+
+        /// <inheritdoc />
+        public void MarkTutorialCompleted()
+        {
+            if (State.TutorialCompleted) return;
+            State.TutorialCompleted = true;
+            SaveNow();
+            Debug.Log(LogPrefix + "Tutorial completado — persiste en el save de meta-progresión.");
+        }
+
+        /// <inheritdoc />
+        public bool IsTutorialEnabled => !State.TutorialDisabled;
+
+        /// <inheritdoc />
+        public void SetTutorialEnabled(bool enabled)
+        {
+            bool disabled = !enabled;
+            if (State.TutorialDisabled == disabled) return;
+            State.TutorialDisabled = disabled;
+            SaveNow();
+            Debug.Log(LogPrefix + $"Tutorial {(enabled ? "habilitado" : "deshabilitado")} — persiste en el save de meta-progresión.");
         }
 
         /// <inheritdoc />

@@ -1,9 +1,30 @@
+using System.Collections.Generic;
 using NUnit.Framework;
+using Rollgeon.Effects;
+using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Selection;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Rollgeon.Feedback.Tests
 {
+    /// <summary>
+    /// Efecto de prueba que solo cuenta invocaciones — sirve para verificar
+    /// <b>cuándo</b> corre un step, sin arrastrar el pipeline de daño real.
+    /// </summary>
+    internal sealed class CountingEffect : BaseEffect
+    {
+        public int ApplyCount;
+
+        public override string GetEffectName() => "Counting";
+
+        public override bool ApplyEffect(EffectContext context)
+        {
+            ApplyCount++;
+            return true;
+        }
+    }
+
     /// <summary>
     /// Cobertura del trío de secuenciación (§10.8): bus latched, puntero runtime
     /// y el puente de Animation Events.
@@ -152,6 +173,136 @@ namespace Rollgeon.Feedback.Tests
             {
                 Object.DestroyImmediate(go);
             }
+        }
+
+        // ── StepSource.InlineEffect ─────────────────────────────────────
+
+        private static FeedbackSequenceStep MakeInlineEffectStep(params IEffect[] effects)
+        {
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.InlineEffect,
+                StartMode = StepStartMode.OnEvent,
+                StartOnEventKey = "hit",
+                EndMode = StepEndMode.Immediate,
+                InlineEffects = new EffectData(),
+            };
+            step.InlineEffects.Effects = new List<IEffect>(effects);
+            return step;
+        }
+
+        [Test]
+        public void InlineEffect_RunsAuthoredEffects_AndReportsHandled()
+        {
+            var effect = new CountingEffect();
+            var step = MakeInlineEffectStep(effect);
+            var ctx = new EffectContext();
+
+            var handled = FeedbackManager.RunInlineEffects(step, ctx, out _);
+
+            Assert.IsTrue(handled, "El step tenía efectos y contexto — debería reportar que corrió.");
+            Assert.AreEqual(1, effect.ApplyCount);
+        }
+
+        [Test]
+        public void InlineEffect_ResetsShortCircuit_SoDeferredEffectsStillRun()
+        {
+            var effect = new CountingEffect();
+            var step = MakeInlineEffectStep(effect);
+
+            // El pass original cortocircuitó después de armar el request. Ese false no debe
+            // arrastrarse hasta el frame de impacto y comerse el daño diferido.
+            var ctx = new EffectContext { lastResult = false };
+
+            FeedbackManager.RunInlineEffects(step, ctx, out _);
+
+            Assert.AreEqual(1, effect.ApplyCount);
+        }
+
+        [Test]
+        public void InlineEffect_WithoutContext_WarnsAndSkipsEffects()
+        {
+            var effect = new CountingEffect();
+            var step = MakeInlineEffectStep(effect);
+
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex(
+                @"\[FeedbackManager\] Step InlineEffect sin EffectContext"));
+            var handled = FeedbackManager.RunInlineEffects(step, null, out _);
+
+            Assert.IsFalse(handled);
+            Assert.AreEqual(0, effect.ApplyCount,
+                "Sin contexto no hay a quién aplicarle el efecto — no debe correr a ciegas.");
+        }
+
+        [Test]
+        public void InlineEffect_EmptyStep_IsNoOpAndReportsUnhandled()
+        {
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.InlineEffect,
+                InlineEffects = null,
+            };
+
+            var handled = FeedbackManager.RunInlineEffects(step, new EffectContext(), out _);
+
+            Assert.IsFalse(handled,
+                "Un step vacío no debe pisar el StoredValues del request con un snapshot nuevo.");
+        }
+
+        [Test]
+        public void InlineEffect_NestedEffect_IsInvisibleToPhaseSelectionScan()
+        {
+            // Regresión: mover el EffDealDamage de la fase a un step InlineEffect dejó al
+            // ataque sin targets seleccionables. FindPhaseSelectionAt solo recorre los
+            // efectos DE LA FASE, así que un efecto escondido en un step no se ve — quien
+            // mueva un efecto adentro de una secuencia tiene que subir su SelectionSettings
+            // al efecto contenedor.
+            var targeting = new CountingEffect();
+            targeting.Selection.SlotState = SlotState.Occupied;
+            targeting.Selection.Timing = SelectionTiming.BeforeRoll;
+            Assert.IsTrue(targeting.RequiresSelectionAt(SelectionTiming.BeforeRoll),
+                "Precondición del test: el efecto anidado sí pide selección por su cuenta.");
+
+            var sequence = new EffPlaySequence();
+            sequence.Selection.SlotState = SlotState.Self;
+
+            var phase = new ChainPhase();
+            phase.Effects = new EffectData();
+            phase.Effects.Effects = new List<IEffect> { sequence };
+
+            // El efecto que pide selección vive adentro del step, no en la fase.
+            var step = MakeInlineEffectStep(targeting);
+            typeof(EffPlaySequence)
+                .GetField("_steps", System.Reflection.BindingFlags.NonPublic
+                                    | System.Reflection.BindingFlags.Instance)
+                .SetValue(sequence, new List<FeedbackSequenceStep> { step });
+
+            var found = EffChain.FindPhaseSelectionAt(phase, SelectionTiming.BeforeRoll);
+
+            Assert.IsNull(found,
+                "El scan de la fase no ve adentro de los steps — este es el modo de falla " +
+                "que dejó al ataque sin targets.");
+
+            // Y con la selección subida al contenedor, la fase vuelve a ofrecer targets.
+            sequence.Selection.SlotState = SlotState.Occupied;
+            sequence.Selection.Timing = SelectionTiming.BeforeRoll;
+
+            found = EffChain.FindPhaseSelectionAt(phase, SelectionTiming.BeforeRoll);
+
+            Assert.IsNotNull(found);
+            Assert.AreEqual(SlotState.Occupied, found.SlotState);
+        }
+
+        [Test]
+        public void StepSource_InlineEffect_IsAppendedLast_SoExistingDataKeepsMeaning()
+        {
+            // Los steps ya autorados serializan Source por índice: si InlineEffect no fuera
+            // el último, toda la data existente cambiaría de significado en silencio.
+            Assert.AreEqual(0, (int)StepSource.FeedbackRef);
+            Assert.AreEqual(1, (int)StepSource.InlineWait);
+            Assert.AreEqual(2, (int)StepSource.InlineAnimation);
+            Assert.AreEqual(3, (int)StepSource.InlineBehaviorValue);
+            Assert.AreEqual(4, (int)StepSource.InlineEffect);
         }
     }
 }

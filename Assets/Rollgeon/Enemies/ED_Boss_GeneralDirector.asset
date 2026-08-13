@@ -47,6 +47,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: ImpactEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -297,7 +303,7 @@ MonoBehaviour:
       Data: 0
     - Name: Damage
       Entry: 3
-      Data: 10
+      Data: 100
     - Name: Kind
       Entry: 3
       Data: 1
@@ -387,10 +393,11 @@ MonoBehaviour:
     up. He enforces them with complete conviction and full bureaucratic authority.
     Whether they benefit or harm the player is just an administrative detail that
     doesn\u2019t factor into his judgment."
+  Portrait: {fileID: -2114528188, guid: 05b0a715b01245d4087eaf3431f05722, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
-  BaseAttack: 4
+  BaseAttack: 40
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3

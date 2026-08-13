@@ -1,10 +1,17 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Damage;
+using Rollgeon.Combos;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Player;
+using Rollgeon.UI.Tooltips;
+using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -13,11 +20,13 @@ namespace Rollgeon.Effects.Concretes
 {
     [Serializable, HideReferenceObjectPicker]
     public class EffAddShield : BaseEffect<ShieldArgs, int>,
-        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior
+        IUsesValue, ICanBeConstantValue, IShouldStoreValuesOnBehavior, IHasTooltipInfo
     {
         [Title("Shield")]
         [SerializeField]
-        [Tooltip("Source: Constant uses _baseAmount, ComboValue uses the resolved combo's BaseDamage.")]
+        [Tooltip("Source: Constant usa _baseAmount; ComboValue usa la fórmula compartida " +
+                 "daño/escudo v3 (ATQ + tabla escudo_combo_base del ContractSheet × multi " +
+                 "de dados × scratch, sin cap).")]
         private DamageSource _shieldSource = DamageSource.Constant;
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.Constant)]
@@ -26,7 +35,8 @@ namespace Rollgeon.Effects.Concretes
 
         [SerializeField, ShowIf("_shieldSource", DamageSource.ComboValue)]
         [MinValue(0.01f)]
-        [Tooltip("Multiplier applied to the combo's BaseDamage.")]
+        [Tooltip("Perilla por habilidad: escala solo el término base del combo (igual que " +
+                 "en EffDealDamage). ATQ y bonos planos no se multiplican.")]
         private float _comboMultiplier = 1f;
 
         [OdinSerialize, SerializeReference]
@@ -45,12 +55,45 @@ namespace Rollgeon.Effects.Concretes
 
         public override string GetEffectName() => "Add Shield";
 
+        // IHasTooltipInfo — mismo criterio que EffDealDamage: valores dinámicos cuando
+        // la fuente lo permite (FromReader lee stats del owner en hover-time).
+        public string BuildTooltip()
+            => TooltipContext.TryForCurrentHero(Rollgeon.Phase.GamePhase.Combat, out var ctx)
+                ? BuildTooltip(ctx)
+                : BuildTooltip(default(TooltipContext));
+
+        public string BuildTooltip(in TooltipContext context)
+        {
+            switch (_shieldSource)
+            {
+                case DamageSource.ComboValue:
+                {
+                    int attack = ResolveOwnerAttack(context.OwnerGuid);
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append("Escudo: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
+                    if (!Mathf.Approximately(_comboMultiplier, 1f))
+                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                    return sb.ToString();
+                }
+                case DamageSource.FromReader when _reader != null:
+                    return "Escudo: +" + Mathf.RoundToInt(
+                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                case DamageSource.FromReader:
+                    return null;
+                default:
+                    return "Escudo: +" + _baseAmount;
+            }
+        }
+
         protected override ShieldArgs ResolveArgs(EffectContext context)
         {
             int amount = _shieldSource switch
             {
+                // El escudo NUNCA lee combo.BaseDamage (tabla de ATAQUE — causa raíz del
+                // bug de escudo trivial, BUG-021). Del ComboResult solo se usan los dados
+                // contribuyentes; la base sale de la tabla de escudo por clase.
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => Mathf.RoundToInt(combo.BaseDamage * _comboMultiplier),
+                    => ResolveComboShield(context, combo),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
@@ -59,6 +102,43 @@ namespace Rollgeon.Effects.Concretes
             };
             return new ShieldArgs { BaseAmount = amount };
         }
+
+        // Sheet del player como fuente de verdad de la tabla de escudo — mismo criterio
+        // que ActionRollService. Un ComboId vacío (resultado sintético de action roll)
+        // significa "sin datos por combo": no genera escudo.
+        private int ResolveComboShield(EffectContext context, ComboDetectionResult combo)
+        {
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            if (sheet == null || string.IsNullOrEmpty(combo.ComboId)) return 0;
+
+            return PlayerComboShield.Resolve(
+                ResolveSourceId(context),
+                sheet.GetShieldBase(combo.ComboId),
+                ResolveContributingDice(context, combo.ContributingIndices),
+                _comboMultiplier);
+        }
+
+        // Guid del dueño del escudo para leer su stat Attack (término base de la fórmula
+        // compartida) — mismo criterio que EffDealDamage.ResolveSourceId.
+        private static Guid ResolveSourceId(EffectContext context)
+            => context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
+
+        private static int ResolveOwnerAttack(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                || attributes == null)
+                return 0;
+            return attributes.GetAttribute<Attack>(ownerGuid)?.ModifiedValue ?? 0;
+        }
+
+        // Mismo mecanismo que EffDealDamage: dados reales de la bag (slot + cara + tipo)
+        // para los índices que formaron el combo — la fórmula pondera ESOS dados.
+        private static IReadOnlyList<ContributingDie> ResolveContributingDice(
+            EffectContext context, IReadOnlyList<int> contributingIndices)
+            => ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
 
         protected override int ResolveValue(EffectContext context) => ResolveArgs(context).BaseAmount;
 

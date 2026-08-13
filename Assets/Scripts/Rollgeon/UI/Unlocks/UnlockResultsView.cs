@@ -47,7 +47,7 @@ namespace Rollgeon.UI.Unlocks
             {
                 if (def == null) continue;
                 if (sb.Length > 0) sb.AppendLine();
-                sb.Append("• ").Append(string.IsNullOrEmpty(def.DisplayName) ? def.TargetId : def.DisplayName);
+                sb.Append("• ").Append(Rollgeon.Localization.LocalizedContent.Name(def.UnlockId, string.IsNullOrEmpty(def.DisplayName) ? def.TargetId : def.DisplayName));
             }
 
             if (_unlocksLabel != null) _unlocksLabel.text = sb.ToString();

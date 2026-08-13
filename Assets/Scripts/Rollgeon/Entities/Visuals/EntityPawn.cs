@@ -18,7 +18,7 @@ namespace Rollgeon.Entities.Visuals
     /// una barra de HP y un animator, pero no se requieren para FP.
     /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Entity Pawn")]
-    public sealed class EntityPawn : MonoBehaviour
+    public sealed class EntityPawn : MonoBehaviour, Rollgeon.UI.Cursor.ICursorHoverable
     {
         // Offset Y aplicado a TODOS los pawns (hero + enemies) para que ninguno
         // clipée con el piso/grid. Antes solo el hero se elevaba — los enemigos
@@ -30,10 +30,19 @@ namespace Rollgeon.Entities.Visuals
         // el ritmo (≈8 tiles/s a 0.12). Override por arg si querés tunear.
         private const float DefaultSecondsPerStep = 0.12f;
 
+        // Bool del Animator que gatea Idle ⇄ Run. Lo declaran AnimCon_Warrior, _Goblin
+        // (CardEnemy), _Healer, _Mecha y _RangedMachine. Los que todavía no tienen clip de
+        // caminata (SunkedGrand, GeneralDirector) no lo declaran — ver _hasMovementParam.
+        private const string MovementParam = "Movement";
+
         [SerializeField, Tooltip("Barra de HP world-space. Null en heroes o pawns sin barra.")]
         private WorldSpaceHealthBar _healthBar;
 
         private Coroutine _moveAnim;
+
+        private Animator _animator;
+        private bool _animatorResolved;
+        private bool _hasMovementParam;
 
         public WorldSpaceHealthBar HealthBar => _healthBar;
 
@@ -58,9 +67,32 @@ namespace Rollgeon.Entities.Visuals
             transform.position = world;
         }
 
+        /// <summary>
+        /// Cancela la animación de path en curso (si la hay) dejando al pawn donde está.
+        /// </summary>
+        /// <remarks>
+        /// BUG-021: la coroutine de <see cref="AnimatePath"/> recalcula
+        /// <c>grid.GridToWorld(next)</c> por step. Al cruzar una sala, LoadRoom cambia el
+        /// GridOrigin y los steps restantes del path viejo se remapean al espacio de la
+        /// sala nueva — el pawn "seguía de largo" hasta la puerta siguiente.
+        /// </remarks>
+        public void StopMovement()
+        {
+            // Incondicional (antes del guard): StopCoroutine no corre el cierre de la
+            // corutina, así que este es el único lugar que garantiza que el pawn no quede
+            // corriendo en el lugar cuando se le corta el path.
+            SetMovementAnim(false);
+
+            if (_moveAnim == null) return;
+            StopCoroutine(_moveAnim);
+            _moveAnim = null;
+        }
+
         public void SnapToGrid(IGridManager grid, GridCoord coord)
         {
             if (grid == null) return;
+            // Un snap es posición autoritativa: cualquier path en vuelo quedó obsoleto.
+            StopMovement();
             var pos = grid.GridToWorld(coord);
             pos.y += PawnYOffset;
             transform.position = pos;
@@ -111,11 +143,7 @@ namespace Rollgeon.Entities.Visuals
         {
             if (grid == null || path == null || path.Count == 0) return;
 
-            if (_moveAnim != null)
-            {
-                StopCoroutine(_moveAnim);
-                _moveAnim = null;
-            }
+            StopMovement();
 
             // Sin coroutines (EditMode) o path trivial → snap al destino y listo.
             if (!Application.isPlaying || path.Count < 2)
@@ -124,6 +152,7 @@ namespace Rollgeon.Entities.Visuals
                 return;
             }
 
+            SetMovementAnim(true);
             _moveAnim = StartCoroutine(AnimatePathCoroutine(grid, path, Mathf.Max(0.01f, secondsPerStep), movement));
         }
 
@@ -180,7 +209,45 @@ namespace Rollgeon.Entities.Visuals
                 transform.position = endPos;
                 i++;
             }
+            SetMovementAnim(false);
             _moveAnim = null;
+        }
+
+        /// <summary>
+        /// Prende/apaga el bool <see cref="MovementParam"/> del Animator del modelo.
+        /// No-op si el pawn no tiene Animator (primitives del FP) o si su controller no
+        /// declara el param — setearlo igual haría que Unity logueara un warning por step.
+        /// </summary>
+        private void SetMovementAnim(bool moving)
+        {
+            if (!_animatorResolved)
+            {
+                _animatorResolved = true;
+                // El Animator vive en el hijo del modelo rigeado, no en la raíz del pawn.
+                // Mismo cuidado con el fake-null que FeedbackManager.ResolveAnimator: con
+                // `??` el fallback al hijo no dispara porque GetComponent devuelve un
+                // UnityEngine.Object "null" que no es null para el operador.
+                var own = GetComponent<Animator>();
+                _animator = own != null ? own : GetComponentInChildren<Animator>(includeInactive: true);
+                _hasMovementParam = HasBoolParam(_animator, MovementParam);
+            }
+
+            if (_animator == null || !_hasMovementParam) return;
+            _animator.SetBool(MovementParam, moving);
+        }
+
+        private static bool HasBoolParam(Animator animator, string param)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return false;
+
+            var parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].type == AnimatorControllerParameterType.Bool
+                    && parameters[i].name == param)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -73,12 +74,13 @@ namespace Rollgeon.UI.Unlocks
             {
                 var payload = _queue.Dequeue();
 
-                if (_titleLabel != null) _titleLabel.text = "¡Desbloqueado!";
+                if (_titleLabel != null) _titleLabel.text = LocalizedContent.Ui("toast.unlocked", "¡Desbloqueado!");
                 if (_bodyLabel != null)
                 {
-                    _bodyLabel.text = string.IsNullOrEmpty(payload.DisplayName)
-                        ? payload.TargetId
-                        : payload.DisplayName;
+                    var fallback = string.IsNullOrEmpty(payload.DisplayName) ? payload.TargetId : payload.DisplayName;
+                    // Por UnlockId, no por TargetId: las keys de la tabla son las de la
+                    // definición ("unlock.dice.d8"), no las del elemento ("D8").
+                    _bodyLabel.text = LocalizedContent.Name(payload.UnlockId, fallback);
                 }
 
                 if (_panelRoot != null) _panelRoot.SetActive(true);

@@ -304,11 +304,12 @@ MonoBehaviour:
   DefaultFocusOffset: {x: 0, y: 0, z: 0}
   EnableRotation: 1
   RotationStepDegrees: 45
-  DragPixelsPerStep: 50
+  DragPixelsPerStep: 140
   RotationTweenSeconds: 0.25
   RotationEase: 6
+  RotationStepCooldownSeconds: 0.2
   EnablePan: 1
-  PanSpeed: 18
+  PanSpeed: 1
   PanClampToFloorBounds: 1
   PanLerpSeconds: 0.08
   EnableZoom: 1

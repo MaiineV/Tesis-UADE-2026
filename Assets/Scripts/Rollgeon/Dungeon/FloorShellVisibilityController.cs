@@ -144,6 +144,7 @@ namespace Rollgeon.Dungeon
 
         private void ApplyVisibility()
         {
+            if (_dungeon == null) return;
             MaterializeShellsIfNeeded();
             EnsureShellMaterials();
 

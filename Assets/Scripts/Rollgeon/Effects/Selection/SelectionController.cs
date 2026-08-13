@@ -17,19 +17,60 @@ namespace Rollgeon.Effects.Selection
         // TileHighlightServiceBootstrap (rojo por default).
         private const string DoorHighlightStyle = "door";
 
+        // Estilo del underlay de rango de un ataque (todo el alcance). Se pinta DEBAJO de
+        // los targets seleccionables. Configurable via TileHighlightServiceBootstrap.
+        private const string RangeHighlightStyle = "range";
+
+        // Estilo del área AoE previewada al hovear un ancla válida (TargetMode.Aoe).
+        // Configurable via TileHighlightServiceBootstrap.
+        private const string AoeHighlightStyle = "aoe";
+
         private SelectionRequest _request;
         private List<TargetRef> _selected;
         private HashSet<GridCoord> _validCoords;
         private HashSet<GridCoord> _doorCoords;
+
+        // Rango geométrico completo del ataque (solo visual, NO clickeable). Se pinta
+        // debajo de _validCoords. Vacío para movimiento/heal/puertas.
+        private HashSet<GridCoord> _rangeCoords;
 
         // Cache del último coord hovered para evitar recomputar el A* cada frame cuando
         // el cursor está quieto. Null = sin hover (el mouse no está sobre un tile válido).
         private GridCoord? _lastHoveredCoord;
         private bool _hasPathPreview;
 
+        // Si true, no se pinta el rango de fondo: solo el path verde (en hover) y las
+        // puertas. Lo setea el movimiento de Exploración (siempre armado). Sin rango de
+        // fondo que sobrescriba, el path anterior se limpia con ClearAll en cada cambio.
+        private bool _suppressRange;
+
+        // Si true, no se pinta NINGÚN tinte de piso (ni path en hover, ni "selected" al
+        // clickear); solo las puertas. Movimiento de Exploración → click-to-move limpio.
+        private bool _suppressPathPreview;
+
         public bool IsSelecting => _request != null;
 
+        public bool CanOverlayHoverPreview => _request == null || _suppressRange;
+
         public event Action<TargetSelectionResult> OnSelectionCompleted;
+
+        public void RefreshHighlights()
+        {
+            if (_request == null) return;
+            if (!ServiceLocator.TryGetService<ITileHighlightService>(out var highlight)) return;
+
+            if (!_suppressRange)
+            {
+                RepaintRange(highlight);
+                highlight.Highlight(_validCoords, _request.HighlightStyle ?? "move");
+            }
+            RepaintDoors(highlight);
+
+            // El path preview quedó borrado por el ClearAll ajeno; se recomputa en el
+            // próximo hover de tile.
+            _hasPathPreview = false;
+            _lastHoveredCoord = null;
+        }
 
         public void BeginSelection(SelectionRequest request)
         {
@@ -37,13 +78,24 @@ namespace Rollgeon.Effects.Selection
             _selected = new List<TargetRef>();
             _validCoords = new HashSet<GridCoord>();
             _doorCoords = new HashSet<GridCoord>();
+            _rangeCoords = new HashSet<GridCoord>();
             _lastHoveredCoord = null;
             _hasPathPreview = false;
+            _suppressRange = request.SuppressRangeHighlight;
+            _suppressPathPreview = request.SuppressPathPreview;
 
             if (request.ValidTargets != null)
             {
                 foreach (var t in request.ValidTargets)
                     _validCoords.Add(t.Coord);
+            }
+
+            // El rango es solo visual: NO se agrega a _validCoords, así que clickear una
+            // casilla del rango sin target sigue siendo no-op (OnTargetClicked lo filtra).
+            if (request.RangeTiles != null)
+            {
+                foreach (var c in request.RangeTiles)
+                    _rangeCoords.Add(c);
             }
 
             // Las casillas de puerta son clickeables aunque queden fuera del rango de
@@ -61,8 +113,15 @@ namespace Rollgeon.Effects.Selection
 
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                var style = request.HighlightStyle ?? "move";
-                highlight.Highlight(_validCoords, style);
+                // Con _suppressRange no se pinta el rango: el player ve la sala limpia y
+                // solo aparece el path verde al apuntar una casilla. Las puertas sí.
+                if (!_suppressRange)
+                {
+                    // Primero el underlay del rango completo (ataques), luego los targets
+                    // seleccionables por encima con su color propio.
+                    RepaintRange(highlight);
+                    highlight.Highlight(_validCoords, request.HighlightStyle ?? "move");
+                }
                 RepaintDoors(highlight);
             }
             else
@@ -79,10 +138,48 @@ namespace Rollgeon.Effects.Selection
             if (Nullable.Equals(coord, _lastHoveredCoord)) return;
             _lastHoveredCoord = coord;
 
+            // Movimiento de Exploración: click-to-move limpio, sin ningún tinte que siga
+            // al cursor. No calculamos ni pintamos path (las puertas ya viven aparte).
+            if (_suppressPathPreview) return;
+
             // Solo hacemos path preview en selecciones de movimiento. El estilo "move" lo
             // configuran los HeroActionBehavior de Movement; otras selecciones (attack,
             // heal) usan estilos distintos y no tienen sentido como "camino A*".
             var style = _request.HighlightStyle ?? "move";
+
+            // Preview del área AoE: al apuntar un ancla válida se pinta el área que sería
+            // afectada. El área puede exceder el rango pintado (clipea a grilla, no al
+            // Range del caster), así que tanto el repintado como la limpieza hacen
+            // ClearAll — repintar solo _validCoords dejaría celdas del tinte AoE pegadas
+            // fuera del rango.
+            var settings = _request.Settings;
+            if (settings != null && settings.TargetMode == TargetMode.Aoe)
+            {
+                if (!coord.HasValue || !_validCoords.Contains(coord.Value))
+                {
+                    ClearAoePreview(style);
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<ITileHighlightService>(out var hl))
+                {
+                    hl.ClearAll();
+                    if (!_suppressRange)
+                    {
+                        RepaintRange(hl);
+                        hl.Highlight(_validCoords, style);
+                    }
+
+                    var area = settings.ExpandAoe(coord.Value, _request.OwnerGuid);
+                    var areaCoords = new List<GridCoord>(area.Count);
+                    foreach (var t in area) areaCoords.Add(t.Coord);
+                    hl.Highlight(areaCoords, AoeHighlightStyle);
+
+                    RepaintDoors(hl);
+                    _hasPathPreview = true; // mismo flag: "hay overlay de hover que limpiar"
+                }
+                return;
+            }
 
             // La casilla "frente a puerta" también previewa camino: el héroe CAMINA
             // hasta ella antes de cruzar (CrossDoorAfterArrival), así que el A* aplica
@@ -113,11 +210,36 @@ namespace Rollgeon.Effects.Selection
             // SetPropertyBlock es barato.
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                highlight.Highlight(_validCoords, style);
+                // Sin rango de fondo, el path verde anterior no se sobrescribe solo —
+                // hay que limpiarlo con ClearAll antes de pintar el nuevo. Con rango, el
+                // repintado del rango ya tapa el path viejo (más barato que ClearAll).
+                if (_suppressRange)
+                    highlight.ClearAll();
+                else
+                    highlight.Highlight(_validCoords, style);
                 highlight.Highlight(path, PathHighlightStyle);
                 RepaintDoors(highlight); // las puertas quedan rojas por encima del rango/path
                 _hasPathPreview = true;
             }
+        }
+
+        // Limpia el overlay AoE de un hover anterior. A diferencia de ClearPathPreview,
+        // SIEMPRE hace ClearAll: el área AoE puede exceder _rangeCoords/_validCoords y
+        // repintar solo esos sets dejaría celdas naranjas pegadas.
+        private void ClearAoePreview(string rangeStyle)
+        {
+            if (!_hasPathPreview) return;
+            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+            {
+                highlight.ClearAll();
+                if (!_suppressRange)
+                {
+                    RepaintRange(highlight);
+                    highlight.Highlight(_validCoords, rangeStyle);
+                }
+                RepaintDoors(highlight);
+            }
+            _hasPathPreview = false;
         }
 
         private void ClearPathPreview(string rangeStyle)
@@ -125,7 +247,10 @@ namespace Rollgeon.Effects.Selection
             if (!_hasPathPreview) return;
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
             {
-                highlight.Highlight(_validCoords, rangeStyle);
+                if (_suppressRange)
+                    highlight.ClearAll(); // borra el path verde; no hay rango que repintar
+                else
+                    highlight.Highlight(_validCoords, rangeStyle);
                 RepaintDoors(highlight);
             }
             _hasPathPreview = false;
@@ -137,6 +262,14 @@ namespace Rollgeon.Effects.Selection
         {
             if (_doorCoords != null && _doorCoords.Count > 0)
                 highlight.Highlight(_doorCoords, DoorHighlightStyle);
+        }
+
+        // Pinta el underlay del rango completo (ataques). Se llama ANTES de _validCoords
+        // para que los targets seleccionables queden con su color por encima.
+        private void RepaintRange(ITileHighlightService highlight)
+        {
+            if (_rangeCoords != null && _rangeCoords.Count > 0)
+                highlight.Highlight(_rangeCoords, _request?.RangeHighlightStyle ?? RangeHighlightStyle);
         }
 
         public void OnTargetClicked(TargetRef target)
@@ -163,13 +296,16 @@ namespace Rollgeon.Effects.Selection
 
             _selected.Add(target);
 
-            if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
+            // En movimiento de Exploración no queremos ningún tinte de piso: saltamos el
+            // "selected" para que el destino no quede pintado mientras el pawn camina.
+            if (!_suppressPathPreview
+                && ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
                 highlight.HighlightSingle(target.Coord, "selected");
 
             var settings = _request.Settings;
             if (settings != null && settings.AutoAccept)
             {
-                int required = settings.GetSelectionCount(default);
+                int required = settings.GetSelectionCount(new ReadInfo { ownerGuid = _request.OwnerGuid });
                 UnityEngine.Debug.Log($"[SelectionController] AutoAccept check — selected={_selected.Count} required={required}");
                 if (_selected.Count >= required)
                     Complete();
@@ -189,6 +325,7 @@ namespace Rollgeon.Effects.Selection
             _selected = null;
             _validCoords = null;
             _doorCoords = null;
+            _rangeCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 
@@ -200,16 +337,27 @@ namespace Rollgeon.Effects.Selection
             UnityEngine.Debug.Log($"[SelectionController] Complete — {_selected.Count} targets selected");
             ClearHighlights();
 
+            // Único punto de expansión AoE del flujo manual: los consumidores (FSM, chain,
+            // exploración, drag-drop) reciben SelectedTargets ya expandidos (ancla + área
+            // filtrada contra la grilla viva) sin cambios en su código.
+            var settings = _request?.Settings;
+            var selected = settings != null
+                           && settings.TargetMode == TargetMode.Aoe
+                           && _selected.Count > 0
+                ? settings.ExpandAoe(_selected[0].Coord, _request.OwnerGuid)
+                : new List<TargetRef>(_selected);
+
             var result = new TargetSelectionResult
             {
                 WasCompleted = true,
-                SelectedTargets = new List<TargetRef>(_selected),
+                SelectedTargets = selected,
             };
 
             _request = null;
             _selected = null;
             _validCoords = null;
             _doorCoords = null;
+            _rangeCoords = null;
             _lastHoveredCoord = null;
             _hasPathPreview = false;
 

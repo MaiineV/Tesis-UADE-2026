@@ -50,6 +50,14 @@ Shader "Rollgeon/PaletteCelLit"
         _AlphaCutoff ("Alpha Cutoff (1=visible, 0=hidden)", Range(0,1)) = 1
         // 1 = pixel-perfect (default); 4 = chunks de 4×4; 32 = bloques grandes.
         _DitherScale ("Dither Scale (pixel chunkiness)", Range(1,32)) = 1
+
+        [Header(Hit Flash)]
+        _HitFlashAmount ("Hit Flash Amount", Range(0,1))   = 0
+        _HitFlashColor  ("Hit Flash Color",  Color)        = (1,1,1,1)
+
+        [Header(Emission)]
+        [Toggle] _EnableEmission ("Enable Emission", Float) = 0
+        [HDR] _EmissionColor     ("Emission Color",  Color) = (0,0,0,0)
     }
 
     SubShader
@@ -81,7 +89,7 @@ Shader "Rollgeon/PaletteCelLit"
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_instancing
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -123,6 +131,10 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -207,7 +219,7 @@ Shader "Rollgeon/PaletteCelLit"
                 // LIGHT_LOOP_BEGIN maneja Forward (usa _ADDITIONAL_LIGHTS) y
                 // Forward+ (usa tile clustering — requiere normalizedScreenSpaceUV).
                 float3 addTint = float3(0, 0, 0);
-                #if defined(_FORWARD_PLUS) || defined(_ADDITIONAL_LIGHTS)
+                #if defined(_CLUSTER_LIGHT_LOOP) || defined(_ADDITIONAL_LIGHTS)
                 {
                     // URP 17 Forward+ requiere 'inputData' en scope internamente.
                     InputData inputData = (InputData)0;
@@ -301,7 +313,7 @@ Shader "Rollgeon/PaletteCelLit"
                 // VERDE   → luces detectadas pero addTint≈0 (ángulo / rango / sombra)
                 // COLOR   → addTint amplificado 5× — iluminación llegando correctamente
                 #if DEBUG_ADDITIONAL_LIGHTS
-                #if defined(_FORWARD_PLUS)
+                #if defined(_CLUSTER_LIGHT_LOOP)
                 {
                     float _dbgMag = dot(addTint, addTint);
                     if (_dbgMag < 0.0001)
@@ -324,6 +336,8 @@ Shader "Rollgeon/PaletteCelLit"
                 #endif
                 // ─────────────────────────────────────────────────────────────────
 
+                color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
+                color += _EmissionColor.rgb * _EnableEmission;
                 return half4(color, 1.0);
             }
             ENDHLSL
@@ -374,6 +388,10 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -471,6 +489,10 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame
@@ -551,6 +573,10 @@ Shader "Rollgeon/PaletteCelLit"
                 float  _AlphaCutoff;
                 float  _DitherScale;
                 float  _SpotDither;
+                float  _HitFlashAmount;
+                float4 _HitFlashColor;
+                float  _EnableEmission;
+                float4 _EmissionColor;
             CBUFFER_END
 
             // Arrays globales subidos por GlobalPaletteManager cada frame

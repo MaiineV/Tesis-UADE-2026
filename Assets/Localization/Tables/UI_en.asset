@@ -1,0 +1,570 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: UI_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 5089735e86d021d4f932cffd19d7f524, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2083988992000
+    m_Localized: Play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084072878080
+    m_Localized: Continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072384
+    m_Localized: Unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072385
+    m_Localized: Delete Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084077072386
+    m_Localized: Tutorial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2084081266688
+    m_Localized: Quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643793694720
+    m_Localized: Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643860803584
+    m_Localized: Back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997888
+    m_Localized: Clear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997889
+    m_Localized: No dice bag configured
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4643864997890
+    m_Localized: UNLOCKS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6240405843968
+    m_Localized: Unlocked!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056374784000
+    m_Localized: Warrior
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366912
+    m_Localized: Rogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24056387366913
+    m_Localized: Mage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518357938176
+    m_Localized: Resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435648
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518433435649
+    m_Localized: Quit Run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629952
+    m_Localized: Victory!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629953
+    m_Localized: Defeat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629954
+    m_Localized: Return to Menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629955
+    m_Localized: Continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629956
+    m_Localized: Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629957
+    m_Localized: Enchantment Altar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629958
+    m_Localized: 'Selected die slots:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629959
+    m_Localized: 'Your dice:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629960
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629961
+    m_Localized: Proceed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32518437629962
+    m_Localized: Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929280
+    m_Localized: Attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929281
+    m_Localized: Move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929282
+    m_Localized: Special Attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929283
+    m_Localized: Force Door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290952929284
+    m_Localized: Heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123584
+    m_Localized: End Turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123585
+    m_Localized: Pass
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33290957123586
+    m_Localized: Pass Door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553817686016
+    m_Localized: 'Tutorial: ON'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794880
+    m_Localized: 'Tutorial: OFF'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794881
+    m_Localized: Enchanted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794882
+    m_Localized: Empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794883
+    m_Localized: Cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794884
+    m_Localized: gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794885
+    m_Localized: Current faces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35553884794886
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134464
+    m_Localized: Rooms
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134465
+    m_Localized: Floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134466
+    m_Localized: Start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134467
+    m_Localized: Combat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134468
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134469
+    m_Localized: Shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134470
+    m_Localized: Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35744499134471
+    m_Localized: Enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236889440256
+    m_Localized: 'Analytics: ON'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160512
+    m_Localized: 'Analytics: OFF'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160513
+    m_Localized: Anonymous gameplay data
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160514
+    m_Localized: Help us balance the game? We send anonymous gameplay data (combats,
+      gold, combos). No personal data. You can change this anytime from the menu.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160515
+    m_Localized: Accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160516
+    m_Localized: Decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 296236948160517
+    m_Localized: Privacy policy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601589063680
+    m_Localized: Language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949760
+    m_Localized: Are you sure?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 878601672949761
+    m_Localized: Back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211500024659968
+    m_Localized: Contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211500091768832
+    m_Localized: Minimum damage = highest die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786932191232
+    m_Localized: 'Your dice:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134272
+    m_Localized: 'Choose the selected die''s slot:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134273
+    m_Localized: Slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134274
+    m_Localized: slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134275
+    m_Localized: Enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2019786974134276
+    m_Localized: Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251619241984
+    m_Localized: Click a tile to move. Walk to the highlighted door to leave the
+      room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905280
+    m_Localized: Combat! This is your enemy. In the tutorial you always act first.
+      (Click to continue.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905281
+    m_Localized: 'Your hero fights in melee: you need to close the distance first.
+      Select MOVE ({0}).'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905282
+    m_Localized: The highlighted tiles are where you can reach this turn. Click a
+      tile next to the enemy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905283
+    m_Localized: "You ended up far from the enemy \u2014 and you can only move once
+      per turn. Press END TURN ({0}) and let them come to you."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905284
+    m_Localized: 'This is your HEALTH: if it hits zero, the run is over. Look after
+      it. (Click to continue.)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905285
+    m_Localized: 'This is your ENERGY: moving, attacking and rerolling dice all spend
+      it. Manage it every turn. (Click to continue.)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905286
+    m_Localized: ATTACK ({0}) is unlocked. Select it to choose who to hit.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905287
+    m_Localized: 'First you pick the target: click the enemy highlighted in red.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905288
+    m_Localized: 'Target locked! These are your dice: grab them by holding left click
+      and throw them with a quick flick of the mouse.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905289
+    m_Localized: "Build generala combos (pair, trio, straight...). Click a die to
+      lock it and keep it. Want to reroll? Grab the dice you want to change and throw
+      them again \u2014 you get up to 3 rolls. When you like the combo, press CONFIRM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905290
+    m_Localized: 'Hit landed! You had rolls left over from the attack, so the DEFENSE
+      phase begins: grab and throw the dice to build a SHIELD that absorbs the next
+      hit. Lock, reroll and CONFIRM your defense combo.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905291
+    m_Localized: Attack complete! When there's nothing else you want to do, press
+      END TURN ({0}) to hand the turn over to the enemy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905292
+    m_Localized: "That's how you fight! Repeat the process \u2014 move, attack, build
+      combos \u2014 until the enemy is down. (Click to continue.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905293
+    m_Localized: 'You got hit! HEAL ({0}) is unlocked: use it on your turn when you''re
+      low on health.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905294
+    m_Localized: 'Healing uses the dice too: grab them with a held click, throw them
+      and beat the threshold to recover health. Lock the high dice, reroll the rest
+      if you need to, and confirm.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905295
+    m_Localized: "Well done! Head through the highlighted door. The other one is
+      locked \u2014 you'll open it later."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905296
+    m_Localized: "There are too many of them! FORCE DOOR ({0}) is unlocked: use it
+      to escape the way you came. It only works if you're next to a door \u2014 and
+      right now you are."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905297
+    m_Localized: 'Forcing the door is resolved with the dice: grab them, throw them
+      and beat the threshold to escape the fight.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905298
+    m_Localized: 'The room is unlocked: go in and finish what you started.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905299
+    m_Localized: Now you're ready! With the PAIR upgrade you can take on both enemies.
+      (Click to continue.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905300
+    m_Localized: 'You escaped! The shop door is open. Head in: something that will
+      give you the edge is waiting.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905301
+    m_Localized: 'This is the shop. Walk up to the pedestal and press F to buy the
+      upgrade: your PAIR combo will deal +50 damage.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905302
+    m_Localized: 'Upgrade bought! Now you''re ready: head back the way you came and
+      finish those enemies.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905303
+    m_Localized: 'Excellent! Move on to the last room: the enchantment room.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905304
+    m_Localized: 'This is the enchantment table: it upgrades one of your dice for
+      gold, for the rest of the run. Walk up to the altar and press F to open it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905305
+    m_Localized: "Pick one of your dice, pick the enchantment and confirm: the die
+      stays upgraded for the rest of the run. The stronger the die, the more enchantment
+      slots it has. Each enchantment costs gold \u2014 what you saved is enough for
+      exactly ONE. (Click to continue.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905306
+    m_Localized: "Die enchanted! You know everything you need \u2014 close the table."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905307
+    m_Localized: Step through the highlighted door to begin your real adventure.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800251719905308
+    m_Localized: Click to continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867763907198976
+    m_Localized: Coming soon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026612039680
+    m_Localized: Reroll  -1 {ENERGY}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8159026649788416
+    m_Localized: '{0} Roll  -1 {ENERGY}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8187299979096064
+    m_Localized: 'You have no free rolls left!
+
+      Each additional roll costs
+      1 Energy.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671167614976
+    m_Localized: These are your class dice. Click one to add it to your bag; the
+      number on each row shows how many of that type you can carry.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382080
+    m_Localized: Your bag is built here, always sorted from lowest to highest. Click
+      a die in the strip to send it back to the pool.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382081
+    m_Localized: Clear empties the whole bag so you can start over.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8535671486382082
+    m_Localized: Once your bag is full, Confirm unlocks and starts the run.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833236307968
+    m_Localized: Active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639616
+    m_Localized: Inactive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639617
+    m_Localized: Lasts {0} turns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9367833286639618
+    m_Localized: Last turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993563127808
+    m_Localized: Example
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487936
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9381993592487937
+    m_Localized: Base DMG
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001792126976
+    m_Localized: Contract
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487104
+    m_Localized: Inventory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9389001821487105
+    m_Localized: Dice bag
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930415779840
+    m_Localized: Dice Bag
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168448
+    m_Localized: Enchantment slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168449
+    m_Localized: slots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9558930424168450
+    m_Localized: Empty slot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9562303533776896
+    m_Localized: No enchantments.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9649666772463616
+    m_Localized: 'Speed: x{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840189206528
+    m_Localized: 'Repeated combo: 0 damage'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760960
+    m_Localized: Inventory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9946840222760961
+    m_Localized: Items
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

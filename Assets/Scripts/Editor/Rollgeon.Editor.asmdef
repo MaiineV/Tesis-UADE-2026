@@ -2,7 +2,15 @@
     "name": "Rollgeon.Editor",
     "rootNamespace": "",
     "references": [
-        "Rollgeon"
+        "Rollgeon",
+        "Rollgeon.Steam",
+        "Unity.Addressables.Editor",
+        "Unity.Localization",
+        "Unity.Localization.Editor",
+        "Unity.TextMeshPro",
+        "Unity.2D.Sprite.Editor",
+        "Febucci.TextAnimatorForUnity.Runtime",
+        "Febucci.TextAnimatorForUnity.TMP.Runtime"
     ],
     "includePlatforms": [
         "Editor"

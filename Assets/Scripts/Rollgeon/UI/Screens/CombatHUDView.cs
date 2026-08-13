@@ -62,13 +62,13 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private PlayerActionButtonsView _playerActionButtons;
 
-        [Required("Arrastrar HealthBarView.")]
+        [Required("Arrastrar HealthChipStackView (pila de fichas de vida+escudo).")]
         [SerializeField]
-        private HealthBarView _healthBar;
+        private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar EnergyBarView.")]
+        [Required("Arrastrar EnergyChipStackView (pila de fichas de energía).")]
         [SerializeField]
-        private EnergyBarView _energyBar;
+        private EnergyChipStackView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -78,9 +78,22 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DamageFormulaView _damageFormula;
 
-        [Tooltip("Opcional — muestra el shield actual del jugador.")]
+        [Tooltip("Opcional — espada + dano base del player a la izquierda del dice board " +
+                 "(breakdown N×M). Ref cross-canvas a Canvas_ActionRoll, igual que el board skin.")]
         [SerializeField]
-        private ShieldBarView _shieldBar;
+        private Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView _playerBaseDamage;
+
+        [Tooltip("Opcional — director de la secuencia animada del breakdown N×M. Ref " +
+                 "cross-canvas a Canvas_ActionRoll. Sin cablear, el confirm aplica el dano " +
+                 "directo como siempre (el gate nunca se levanta).")]
+        [SerializeField]
+        private Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector _breakdownDirector;
+
+
+        [Tooltip("Opcional — badge que se prende al lado de la vida cuando una pasiva de " +
+                 "hero (ej. Furia del Guerrero) está activa.")]
+        [SerializeField]
+        private PassiveBadgeView _passiveBadge;
 
         [Tooltip("Opcional — muestra la fase actual de un EffChain.")]
         [SerializeField]
@@ -90,6 +103,17 @@ namespace Rollgeon.UI.Screens
                  "Si null, no hay UI de items activos en el combate.")]
         [SerializeField]
         private ActiveItemsView _activeItems;
+
+        [Tooltip("Opcional — swappea el sprite del tablero de dados según el BoardType del " +
+                 "behavior seleccionado (ataque/defensa). Si null, el tablero no cambia de skin.")]
+        [SerializeField]
+        private DiceBoardSkinView _boardSkin;
+
+        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
+                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
+                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
+        [SerializeField]
+        private ChainRollPromptView _chainRollPrompt;
 
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
@@ -112,6 +136,54 @@ namespace Rollgeon.UI.Screens
                  "Sirve para editor / preview tool. El flujo canonico es que el " +
                  "CombatController llame PopOverlay explicito.")]
         private bool _autoPopOnCombatEnd = true;
+
+        // ======================================================================
+        // Tutorial anchors — mismo patrón que PlayerActionButtonsView.TryGetButtonRect
+        // ======================================================================
+
+        /// <summary>RectTransform de la pila de vida del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetHealthBarRect(out RectTransform rect)
+        {
+            rect = _healthChips != null ? _healthChips.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la pila de energía del jugador — anchor del overlay del tutorial.</summary>
+        public bool TryGetEnergyBarRect(out RectTransform rect)
+        {
+            rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform de la zona de dados (roll area) — anchor del overlay del tutorial.</summary>
+        public bool TryGetDiceZoneRect(out RectTransform rect)
+        {
+            rect = null;
+            if (_diceZone != null) rect = _diceZone.GetRollArea();
+            if (rect == null && _diceZone != null) rect = _diceZone.transform as RectTransform;
+            return rect != null;
+        }
+
+        /// <summary>RectTransform del botón Roll/Reroll — anchor del overlay del tutorial.</summary>
+        public bool TryGetRollButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _rerollCount != null && _rerollCount.TryGetRollButtonRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        public bool TryGetConfirmButtonRect(out RectTransform rect)
+        {
+            rect = null;
+            return _playerActionButtons != null && _playerActionButtons.TryGetConfirmRect(out rect);
+        }
+
+        /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
+        public bool TryGetEndTurnRect(out RectTransform rect)
+        {
+            rect = null;
+            return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
+        }
 
         // ======================================================================
         // Action delegates (wired by CombatController — setup doc §8.7)
@@ -145,16 +217,29 @@ namespace Rollgeon.UI.Screens
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
+        // Room del combate al que este push está bindeado (payload del handoff).
+        // Discrimina el safety-net de OnCombatEnd: un OnCombatEnd de OTRO room no
+        // debe desbindear este HUD (ver HandleCombatEndSafetyNet).
+        [ShowInInspector, ReadOnly]
+        private Guid _roomInstanceId;
+
         [ShowInInspector, ReadOnly]
         private bool _subViewsBound;
 
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Coroutine _flashCoroutine;
+        private bool _pushed;
 
         private void Awake()
         {
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
+
+            // BUG-034: el prompt "X Roll (1E)" es la affordance visible del pago —
+            // clickearlo debe pagar igual que el botón Roll. Mismo entry point para
+            // conservar el dispatch roll/reroll y el warning de "no cableado".
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.AddListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {
@@ -171,6 +256,9 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
 
+            if (_chainRollPrompt != null)
+                _chainRollPrompt.OnPromptClicked.RemoveListener(InvokeRollOrReroll);
+
             if (_playerActionButtons != null)
             {
                 _playerActionButtons.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
@@ -184,6 +272,13 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPushed(IScreenPayload payload)
         {
+            // ScreenManager no dedupea el stack: un doble push acumularía la suscripción
+            // del flash de daño y el safety-net de OnCombatEnd. Re-push → rebind limpio.
+            if (_pushed) OnPopped();
+            _pushed = true;
+
+            _roomInstanceId = payload is CombatHUDPayload p ? p.RoomInstanceId : Guid.Empty;
+
             ResolvePlayer();
 
             BindAll(_playerGuid);
@@ -201,6 +296,9 @@ namespace Rollgeon.UI.Screens
         /// <inheritdoc/>
         protected override void OnPopped()
         {
+            if (!_pushed) return;
+            _pushed = false;
+
             UnbindAll();
 
             if (_onDamageResolved != null)
@@ -219,6 +317,7 @@ namespace Rollgeon.UI.Screens
                 _flashCoroutine = null;
             }
             _playerGuid = Guid.Empty;
+            _roomInstanceId = Guid.Empty;
         }
 
         // ======================================================================
@@ -232,6 +331,14 @@ namespace Rollgeon.UI.Screens
         {
             _playerGuid = playerGuid;
 
+            // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
+            // el Inspector, se auto-resuelven en escena.
+            if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
+            if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
+            if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);
+
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
 
@@ -244,11 +351,11 @@ namespace Rollgeon.UI.Screens
             if (_playerActionButtons != null) _playerActionButtons.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_playerActionButtons no cableado.", this);
 
-            if (_healthBar != null) _healthBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_healthBar no cableado.", this);
+            if (_healthChips != null) _healthChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_healthChips no cableado.", this);
 
-            if (_energyBar != null) _energyBar.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_energyBar no cableado.", this);
+            if (_energyChips != null) _energyChips.Bind(playerGuid);
+            else Debug.LogWarning(LogPrefix + "_energyChips no cableado.", this);
 
             if (_diceZone != null) _diceZone.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
@@ -257,7 +364,12 @@ namespace Rollgeon.UI.Screens
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
 
             if (_damageFormula != null) _damageFormula.Bind(playerGuid);
-            if (_shieldBar != null) _shieldBar.Bind(playerGuid);
+            if (_playerBaseDamage != null) _playerBaseDamage.Bind(playerGuid);
+            if (_breakdownDirector != null) _breakdownDirector.Bind(playerGuid);
+            // _passiveBadge NO se bindea: lo reemplazó la fila de estados de
+            // Canvas_PlayerStatus, que se ve también en exploración. Bindearlo lo haría
+            // reaparecer (su Refresh hace SetActive(true)) encima del reemplazo. El
+            // componente y su GameObject quedan, desactivados, como rollback.
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
@@ -271,12 +383,16 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_floatingDamage != null) _floatingDamage.Unbind();
             if (_playerActionButtons != null) _playerActionButtons.Unbind();
-            if (_healthBar != null) _healthBar.Unbind();
-            if (_energyBar != null) _energyBar.Unbind();
+            if (_healthChips != null) _healthChips.Unbind();
+            if (_energyChips != null) _energyChips.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
-            if (_shieldBar != null) _shieldBar.Unbind();
+            if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
+            if (_breakdownDirector != null) _breakdownDirector.Unbind();
+            // Unbind sigue siendo seguro e idempotente: cubre el caso de haber quedado
+            // bindeado por una versión anterior de la escena.
+            if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             _subViewsBound = false;
@@ -293,12 +409,55 @@ namespace Rollgeon.UI.Screens
         {
             Debug.Log($"{LogPrefix}SetBehaviorForFormula — '{behavior?.ActionName ?? "null"}' _damageFormula={(_damageFormula != null ? "set" : "null")}");
             if (_damageFormula != null) _damageFormula.SetBehavior(behavior);
+            // Sin behavior no hay tipo que empujar: el board conserva su skin actual
+            // (política "el skin solo cambia cuando una acción pide otro", playtest 2026-07-20).
+            if (behavior == null) return;
+            var boardType = behavior.BoardType;
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(boardType);
+            if (_damageFormula != null) _damageFormula.SetBoardType(boardType);
         }
 
         public void ClearBehaviorForFormula()
         {
             Debug.Log($"{LogPrefix}ClearBehaviorForFormula");
             if (_damageFormula != null) _damageFormula.ClearBehavior();
+            // El board skin NO vuelve a Default al terminar la acción: se queda en su
+            // tipo actual hasta que la próxima acción empuje otro.
+        }
+
+        /// <summary>
+        /// Empuja un <see cref="DiceBoardType"/> directo al board skin, sin tocar la fórmula
+        /// de daño. Lo usa el chain para cambiar el skin por fase (cada fase tira aparte y
+        /// puede overridear el board del behavior — ej. daño=Attack, escudo=Defense).
+        /// </summary>
+        public void ApplyBoardType(DiceBoardType type)
+        {
+            if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
+            if (_damageFormula != null) _damageFormula.SetBoardType(type);
+        }
+
+        /// <summary>
+        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
+        /// fase de chain sin rolls sobrantes. No-op sin wiring.
+        /// </summary>
+        public void ShowChainRollPrompt(string phaseLabel)
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
+        }
+
+        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
+        public void HideChainRollPrompt()
+        {
+            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
+        }
+
+        /// <summary>
+        /// Suelta todos los holds de la zona de dados (BUG-030: el forced reroll del
+        /// Torpe re-tira la mano completa). No-op sin wiring.
+        /// </summary>
+        public void ClearDiceHolds()
+        {
+            if (_diceZone != null) _diceZone.ClearHolds();
         }
 
         // ======================================================================
@@ -407,6 +566,22 @@ namespace Rollgeon.UI.Screens
             // desbindeamos para no dejar handlers colgados. El pop real lo hace el
             // CombatController via ScreenManager; este handler solo protege flujos
             // edge-case (editor / preview).
+            //
+            // Guard por room: EventManager.Trigger captura el multicast al momento del
+            // trigger, así que este handler puede ejecutarse "tarde" — ya desuscripto
+            // por el pop pero todavía dentro de la invocación en curso. Pasa cuando un
+            // OnCombatEnd re-pushea este mismo HUD para un combate NUEVO dentro del
+            // mismo dispatch (Force Door hacia sala de combate: pop → push → StartCombat
+            // → ...tail del dispatch llega acá). Si el room que terminó no es el que
+            // este HUD tiene bindeado AHORA, desbindear mataría el combate nuevo
+            // (End Turn muerto, slots sin turno). Con payload sin room (editor/preview)
+            // el guard cae al comportamiento clásico.
+            if (args != null && args.Length >= 1 && args[0] is Guid endedRoomId
+                && _roomInstanceId != Guid.Empty && endedRoomId != _roomInstanceId)
+            {
+                return;
+            }
+
             if (_subViewsBound)
             {
                 UnbindAll();

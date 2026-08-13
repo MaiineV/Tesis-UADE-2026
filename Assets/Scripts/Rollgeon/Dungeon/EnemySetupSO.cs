@@ -53,7 +53,8 @@ namespace Rollgeon.Dungeon
 
         public EnemyDataSO Enemy;
 
-        [Tooltip("Distribucion de tier opcional para este enemigo (#158). Null/vacio ⇒ Tier 1.")]
+        [Tooltip("RETIRED (Feature#0023): el tier ahora es deterministico por piso " +
+                 "(EnemyTier.MinFloor). Estos pesos ya no se consultan en spawn.")]
         public EnemyTierWeights TierWeights;
     }
 }

@@ -1,17 +1,20 @@
 using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Phase;
+using Rollgeon.UI.HUD.DiceAnim;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Gateaje de visibilidad para los views compartidos (DiceZoneView, DamageFormulaView)
-    /// que viven en el Canvas raíz. Regla: en <see cref="GamePhase.Combat"/> siempre visible;
-    /// en <see cref="GamePhase.Exploration"/> visible solo cuando hay un <see cref="IActionRollService"/>
-    /// activo (heal con poción, etc.). Sin esto los slots de dados se ven en exploration
-    /// aunque el user no haya iniciado ninguna acción.
+    /// Gateaje de visibilidad para los views compartidos de la zona de dados (DiceZoneView,
+    /// RerollCountView, DamageFormulaView, ConfirmButton) que viven en el Canvas raíz.
+    /// Regla (CNF-007): en <see cref="GamePhase.Combat"/> visible solo mientras hay un
+    /// flujo de dados activo (entre <c>OnChainStarted</c>/<c>OnDiceRolled</c> y
+    /// <c>OnBehaviorExecuted</c>) — la zona de chips y la de dados se alternan.
+    /// En <see cref="GamePhase.Exploration"/> visible solo cuando hay un
+    /// <see cref="IActionRollService"/> activo (heal con poción, etc.).
     /// </summary>
     [AddComponentMenu("Rollgeon/UI/HUD/Action Roll Exploration Visibility")]
     [RequireComponent(typeof(CanvasGroup))]
@@ -30,6 +33,12 @@ namespace Rollgeon.UI.HUD
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
 
+        // CNF-007: true entre el arranque del flujo de dados (chain iniciado / dados
+        // tirados) y su resolución (behavior ejecutado / fin de combate / nuevo turno).
+        private bool _combatDiceFlowActive;
+        private EventManager.EventReceiver _onDiceFlowStart;
+        private EventManager.EventReceiver _onDiceFlowEnd;
+
         private void Awake()
         {
             _group = GetComponent<CanvasGroup>();
@@ -46,6 +55,20 @@ namespace Rollgeon.UI.HUD
             _onPhaseExit = _ => Refresh();
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
+
+            // CNF-007: en combate la zona vive solo durante el flujo de dados.
+            _onDiceFlowStart = _ => { _combatDiceFlowActive = true; Refresh(); };
+            _onDiceFlowEnd = _ => { _combatDiceFlowActive = false; Refresh(); };
+            EventManager.Subscribe(EventName.OnChainStarted, _onDiceFlowStart);
+            EventManager.Subscribe(EventName.OnDiceRolled, _onDiceFlowStart);
+            EventManager.Subscribe(EventName.OnBehaviorExecuted, _onDiceFlowEnd);
+            EventManager.Subscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
+            EventManager.Subscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
+
+            // El outro del confirm (todos los modos) corre DESPUÉS de OnBehaviorExecuted:
+            // la zona tiene que quedar visible hasta que los dados terminen de volar.
+            DiceOutroGate.Changed += Refresh;
+            Rollgeon.Feedback.BreakdownUiGate.Changed += Refresh;
 
             // El IActionRollService es Run-scoped (registered cuando arranca el Run).
             // Si OnEnable corre antes del bootstrap, _actionRoll queda null. Update()
@@ -93,6 +116,22 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnPhaseExit, _onPhaseExit);
                 _onPhaseExit = null;
             }
+            if (_onDiceFlowStart != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainStarted, _onDiceFlowStart);
+                EventManager.UnSubscribe(EventName.OnDiceRolled, _onDiceFlowStart);
+                _onDiceFlowStart = null;
+            }
+            if (_onDiceFlowEnd != null)
+            {
+                EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onDiceFlowEnd);
+                EventManager.UnSubscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
+                EventManager.UnSubscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
+                _onDiceFlowEnd = null;
+            }
+            DiceOutroGate.Changed -= Refresh;
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= Refresh;
+            _combatDiceFlowActive = false;
         }
 
         private void Refresh()
@@ -102,8 +141,13 @@ namespace Rollgeon.UI.HUD
                             && phase.CurrentBase == GamePhase.Combat;
             bool actionRollActive = _actionRoll != null && _actionRoll.IsActive;
 
-            // Combat: siempre visible. Exploration: solo durante action roll.
-            ApplyVisible(inCombat || actionRollActive);
+            // CNF-007 — Combat: visible solo durante el flujo de dados (la zona de chips
+            // y la de dados se alternan). Action roll activo (Heal/ForceDoor) también
+            // muestra la zona, en cualquier fase. Un outro pendiente (dados volando al
+            // centro tras el confirm) mantiene la zona visible hasta que termine.
+            ApplyVisible((inCombat && _combatDiceFlowActive) || actionRollActive
+                         || DiceOutroGate.OutroPending
+                         || Rollgeon.Feedback.BreakdownUiGate.Pending);
         }
 
         private void ApplyVisible(bool visible)

@@ -36,6 +36,11 @@ namespace Rollgeon.Dungeon.Tests
             foreach (var go in _objects)
                 if (go != null) Object.DestroyImmediate(go);
             _objects.Clear();
+            // El binder registra operaciones en el Undo stack GLOBAL del editor
+            // (Undo.DestroyObjectImmediate en BindOnPlace). Sin esto, un Ctrl+Z
+            // posterior del developer RESUCITA los GOs del test (huérfanos) en la
+            // escena abierta — aparecían "FirstNorth" fantasma en 00_Bootstrap.
+            UnityEditor.Undo.ClearAll();
         }
 
         [Test]

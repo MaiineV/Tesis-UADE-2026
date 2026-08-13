@@ -42,8 +42,8 @@ namespace Rollgeon.Upgrades.Combos
         [Title("Target Combo")]
         [ValueDropdown(nameof(GetComboIds))]
         [Tooltip("ID canónico del combo al que esta pasiva aplica (formato 'combo.<snake_case>'). " +
-                 "Cuando ese combo matchee, esta pasiva se activa.")]
-        [Required]
+                 "Cuando ese combo matchee, esta pasiva se activa. VACÍO = pasiva genérica: " +
+                 "sin afinidad de combo, solo reacciona vía los hooks de evento de ExtraTriggers.")]
         [OdinSerialize]
         protected string _targetComboId;
 
@@ -56,7 +56,9 @@ namespace Rollgeon.Upgrades.Combos
         [Title("Extra Triggers")]
         [InfoBox("Hooks composables para condiciones avanzadas tipo 'cada vez que matchea " +
                  "escalera, ganás +3 oro'. Cada trigger consume el EffectIntReader que el " +
-                 "designer prefiera.")]
+                 "designer prefiera. Para efectos arbitrarios sobre CUALQUIER evento de juego " +
+                 "(turno, sala, combate, oro, daño...) usá ExecuteEffectsOnEvent: elegís el " +
+                 "evento y le colgás EffectData del pipeline estándar.")]
         [OdinSerialize, SerializeReference]
         [ListDrawerSettings(ShowFoldout = false, DraggableItems = true)]
         protected List<IComboPassiveTrigger> _extraTriggers = new List<IComboPassiveTrigger>();

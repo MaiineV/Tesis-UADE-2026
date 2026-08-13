@@ -119,12 +119,48 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -155,6 +191,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -307,12 +346,48 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -343,6 +418,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -492,12 +570,48 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -528,6 +642,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -611,10 +728,10 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 3
     - Name: 
       Entry: 7
-      Data: 49|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 49|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -633,12 +750,187 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 51|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 52|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: anim.enemy.ranged.attack
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 2
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 53|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 54|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -659,7 +951,7 @@ MonoBehaviour:
       Data: 1
     - Name: _reader
       Entry: 7
-      Data: 51|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
+      Data: 55|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
     - Name: Entity
       Entry: 3
       Data: 0
@@ -678,6 +970,247 @@ MonoBehaviour:
     - Name: _attackKind
       Entry: 3
       Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 56|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 57|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 58|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 59|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: vfx.enemy.ranged.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 60|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: sfx.enemy.ranged.hit
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 61|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: feel.enemy.ranged.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -707,10 +1240,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 52|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+      Data: 62|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
     - Name: MaxSteps
       Entry: 7
-      Data: 53|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 63|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -719,7 +1252,7 @@ MonoBehaviour:
       Data: 
     - Name: IdealDistance
       Entry: 7
-      Data: 54|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 64|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 5
@@ -740,20 +1273,20 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 55|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+      Data: 65|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 56|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 57|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 67|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
     - Name: MaxSteps
       Entry: 7
-      Data: 58|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 68|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 2
@@ -762,13 +1295,13 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 59|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+      Data: 69|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 60|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 70|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 5
@@ -786,23 +1319,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 61|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 71|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 7
-      Data: 62|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+      Data: 72|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 63|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 73|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 64|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
+      Data: 74|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -823,20 +1356,20 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 65|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+      Data: 75|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 76|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 67|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+      Data: 77|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
     - Name: Behavior
       Entry: 7
-      Data: 68|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
+      Data: 78|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -848,26 +1381,26 @@ MonoBehaviour:
       Data: Remove energy
     - Name: TargetSelector
       Entry: 7
-      Data: 69|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 79|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 70|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 80|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 71|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 81|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 72|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 82|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -880,17 +1413,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 73|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 83|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 74|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 84|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 75|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 85|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -906,12 +1439,48 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -942,6 +1511,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _clampHealthToMax
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -953,7 +1525,7 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 76|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 86|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -974,10 +1546,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 77|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+      Data: 87|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
     - Name: Behavior
       Entry: 7
-      Data: 78|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
+      Data: 88|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -992,20 +1564,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 79|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 89|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 80|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 90|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 81|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 91|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1018,17 +1590,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 82|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 92|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 3
     - Name: 
       Entry: 7
-      Data: 83|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 93|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 84|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 94|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1044,12 +1616,187 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
     - Name: SelectionCount
       Entry: 3
       Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 95|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 96|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: anim.enemy.ranged.attack
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 2
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 1
+      Data: hit
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 97|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 98|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
     - Name: AutoResolve
       Entry: 5
       Data: false
@@ -1070,7 +1817,7 @@ MonoBehaviour:
       Data: 1
     - Name: _reader
       Entry: 7
-      Data: 85|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
+      Data: 99|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
     - Name: Entity
       Entry: 3
       Data: 0
@@ -1089,6 +1836,247 @@ MonoBehaviour:
     - Name: _attackKind
       Entry: 3
       Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 100|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 101|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 0
+    - Name: PatternRows
+      Entry: 3
+      Data: 0
+    - Name: PatternCols
+      Entry: 3
+      Data: 0
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 6
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _steps
+      Entry: 7
+      Data: 102|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 103|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: vfx.enemy.ranged.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 104|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: sfx.enemy.ranged.hit
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 105|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 0
+    - Name: FeedbackRefId
+      Entry: 1
+      Data: feel.enemy.ranged.impact
+    - Name: WaitDuration
+      Entry: 4
+      Data: 0.25
+    - Name: InlineAnimTrigger
+      Entry: 6
+      Data: 
+    - Name: InlineAnimOnSource
+      Entry: 5
+      Data: true
+    - Name: InlineBehaviorValueKey
+      Entry: 3
+      Data: 0
+    - Name: InlineBehaviorValueTarget
+      Entry: 3
+      Data: 1
+    - Name: StartMode
+      Entry: 3
+      Data: 0
+    - Name: StartDependsOnStepIndex
+      Entry: 3
+      Data: 0
+    - Name: StartOnEventKey
+      Entry: 6
+      Data: 
+    - Name: StartDelay
+      Entry: 4
+      Data: 0
+    - Name: EndMode
+      Entry: 3
+      Data: 0
+    - Name: DurationOverride
+      Entry: 4
+      Data: 0
+    - Name: EndOnEventKey
+      Entry: 6
+      Data: 
+    - Name: BlockSequence
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -1170,13 +2158,68 @@ MonoBehaviour:
   EntityId: RangedEnemy01
   DisplayName: RangedEnemy
   Description: Goblin con ataque a distancia, dispara con una ballesta.
+  Portrait: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0.14
-  BaseHP: 10
-  BaseAttack: 1
+  BaseHP: 40
+  BaseAttack: 10
   BaseHealStrength: 5
   BaseSpeed: 5
-  MaxEnergy: 1
+  MaxEnergy: 2
+  BaseAttackRange: 1
+  ExtraTiers:
+  - Label: T2
+    MinFloor: 2
+    HP:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 70
+    Attack:
+      Mode: 0
+      Multiplier: 2
+      ManualValue: 0
+    Speed:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+  - Label: T3
+    MinFloor: 3
+    HP:
+      Mode: 1
+      Multiplier: 1
+      ManualValue: 110
+    Attack:
+      Mode: 0
+      Multiplier: 2
+      ManualValue: 0
+    Speed:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    Energy:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    HealStrength:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
+    AttackRange:
+      Mode: 0
+      Multiplier: 1
+      ManualValue: 0
   VisualPrefab: {fileID: 8816966952657547766, guid: d1bfc05133e86344e8c12884968c7854, type: 3}
   MinGoldDrop: 4
   MaxGoldDrop: 8

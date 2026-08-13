@@ -108,6 +108,48 @@ namespace Rollgeon.GameCamera.Tests
             Assert.AreEqual(start, _service.CurrentFacing);
         }
 
+        [Test]
+        public void AccumulateRotationDrag_FastFlick_FiresSingleStep()
+        {
+            // Arrange — un flick violento acumula muchos umbrales en un solo evento.
+            var start = _service.CurrentFacing;
+
+            // Act
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep * 5f);
+
+            // Assert — con cooldown activo dispara UN paso, no una ráfaga (el
+            // temblor del bug original).
+            Assert.AreEqual(WrapFacing((int)start + 45), _service.CurrentFacing);
+        }
+
+        [Test]
+        public void AccumulateRotationDrag_SecondCallDuringCooldown_NoSecondStep()
+        {
+            // Arrange
+            var start = _service.CurrentFacing;
+
+            // Act — dos umbrales completos en el mismo instante (elapsed = 0 < cooldown).
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep);
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep);
+
+            // Assert
+            Assert.AreEqual(WrapFacing((int)start + 45), _service.CurrentFacing);
+        }
+
+        [Test]
+        public void AccumulateRotationDrag_ZeroCooldown_FiresAllAccumulatedSteps()
+        {
+            // Arrange — cooldown 0 = comportamiento legacy (todos los pasos acumulados).
+            _config.RotationStepCooldownSeconds = 0f;
+            var start = _service.CurrentFacing;
+
+            // Act
+            _service.AccumulateRotationDrag(_config.DragPixelsPerStep * 3f);
+
+            // Assert
+            Assert.AreEqual(WrapFacing((int)start + 135), _service.CurrentFacing);
+        }
+
         // ------------------------------------------------------------------ //
         // Pan                                                                 //
         // ------------------------------------------------------------------ //
@@ -375,6 +417,45 @@ namespace Rollgeon.GameCamera.Tests
             return occ;
         }
 
+        // ------------------------------------------------------------------ //
+        // Registro en el ServiceLocator                                       //
+        // ------------------------------------------------------------------ //
+
+        // Regresión: la cámara se registraba en ServiceScope.Run. Unity corre TODOS los
+        // Awake antes de cualquier Start, así que el registro se hacía y acto seguido
+        // GameplayBootstrapper.Start → StartRun → ClearScope(Run) lo borraba. Nadie lo
+        // volvía a registrar (Awake no corre dos veces) y tanto el SetFollowTarget del
+        // bootstrapper como el recenter del RoomGridLoader dejaban de resolver el service:
+        // la cámara no se centraba ni al arrancar ni al cambiar de sala.
+
+        [Test]
+        public void Initialize_RegistersItselfAsCameraService()
+        {
+            // El SetUp ya llamó Initialize sobre _service.
+            Assert.IsTrue(ServiceLocator.TryGetService<ICameraService>(out var registered));
+            Assert.AreSame(_service, registered);
+        }
+
+        [Test]
+        public void Initialize_RegistersOutsideRunScope_SurvivesClearScopeRun()
+        {
+            ServiceLocator.ClearScope(ServiceScope.Run);
+
+            Assert.IsTrue(ServiceLocator.TryGetService<ICameraService>(out var registered),
+                "La cámara vive con la scene, no con la run. Si ClearScope(Run) la borra, " +
+                "StartRun la desregistra y se pierde el recenter al entrar a una sala.");
+            Assert.AreSame(_service, registered);
+        }
+
+        // El desregistro en OnDestroy (lo que hace seguro el scope Global cuando se
+        // descarga la scene) no se cubre acá: EditMode no dispara los callbacks de
+        // lifecycle de Unity — ni Awake ni OnDestroy — así que el test pasaría por
+        // motivos equivocados. Verificado en playtest.
+
+        // El otro extremo de esta regresión — que StartRun no desregistre una cámara ya
+        // inicializada — se cubre en RunBootstrapperTests, el fixture que ya tiene armado
+        // el entorno de arranque de run.
+
         // -----------------------------------------------------------------
         // Stubs
         // -----------------------------------------------------------------
@@ -399,6 +480,8 @@ namespace Rollgeon.GameCamera.Tests
             }
             public bool EnterRoomByDoor(DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Occluders;
         }

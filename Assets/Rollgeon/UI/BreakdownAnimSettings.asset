@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 566221b1173dad54b833fb3991d37d89, type: 3}
+  m_Name: BreakdownAnimSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Breakdown.BreakdownAnimSettingsSO
+  FlightSeconds: 0.32
+  FlightArc: 60
+  ProcFlightSeconds: 0.38
+  ProcFlightArc: 110
+  StepGapSeconds: 0.08
+  CascadeFallSeconds: 0.15
+  ClashTravelSeconds: 0.22
+  ClashHoldSeconds: 0.4
+  MitigationSeconds: 0.3
+  SkipSpeedMultiplier: 3
+  MaxSequenceSeconds: 8
+  CounterNColor: {r: 0.30980393, g: 0.65882355, b: 1, a: 1}
+  CounterMNeutralColor: {r: 0.5411765, g: 0.56078434, b: 0.59607846, a: 1}
+  CounterMWarmColor: {r: 1, g: 0.41960785, b: 0.2784314, a: 1}
+  CounterMHotColor: {r: 1, g: 0.23137255, b: 0.18431373, a: 1}
+  WeaknessColor: {r: 1, g: 0.84313726, b: 0.3529412, a: 1}
+  MitigationColor: {r: 0.6392157, g: 0.7019608, b: 0.69411767, a: 1}
+  ContributionFaceColor: {r: 0.9607843, g: 0.9372549, b: 0.8784314, a: 1}
+  ContributionBonusColor: {r: 1, g: 0.84313726, b: 0.3529412, a: 1}
+  PreviewPopSeconds: 0.18
+  PreviewRollupSeconds: 0.15
+  WobbleMaxDegrees: 3
+  WobbleHz: 1.4
+  ContributionStaggerSeconds: 0.05
+  DiePitchStep: 0.06
+  SpentDieDim: 0.7
+  StepSpeedRampPerStep: 0.07
+  StepSpeedFloor: 0.45
+  PunchIntensityMax: 2
+  PunchRotationMaxDegrees: 4
+  SwordWindupSeconds: 0.1
+  ProcPopupSeconds: 0.12
+  ClashWindupSeconds: 0.08
+  ClashWindupPixels: 12
+  ClashRollupSeconds: 0.25
+  FlashPeakAlpha: 0.15
+  FlashSeconds: 0.12
+  HitstopSeconds: 0.06
+  ShakeAmplitude: 0.6
+  ShakeSeconds: 0.25
+  TierThreshold1: 30
+  TierThreshold2: 80
+  TierScaleSmall: 0.5
+  TierScaleMedium: 1
+  TierScaleBig: 1.7
+  FlamingNumberMinM: 2
+  ClashDuckFactor: 0.4
+  ClashDuckFadeSeconds: 0.15
+  MitigationTickDownSeconds: 0.3
+  EnableSfx: 1
+  EnableParticles: 1
+  EnableShakeAndHitstop: 1

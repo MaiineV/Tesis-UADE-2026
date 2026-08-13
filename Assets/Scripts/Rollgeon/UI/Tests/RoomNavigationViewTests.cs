@@ -44,6 +44,8 @@ namespace Rollgeon.UI.Tests
             public DoorDirection? LastEntryDirection => null;
             public bool EnterRoomByDoor(DoorDirection dir) => false;
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
 
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<Rollgeon.GameCamera.WallOccluder> GetCurrentRoomOccluders() =>
@@ -136,8 +138,8 @@ namespace Rollgeon.UI.Tests
             _view.Bind(Guid.NewGuid());
 
             Assert.AreEqual("Gran Salon", _roomNameLabel.text);
-            Assert.AreEqual("Rooms 1/8", _roomProgressLabel.text);
-            Assert.AreEqual("Start", _roomTypeLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} 1/8", _roomProgressLabel.text);
+            Assert.AreEqual(Rollgeon.Localization.LocalizedContent.Ui("room.type.start", "Start"), _roomTypeLabel.text);
         }
 
         [Test]
@@ -146,7 +148,7 @@ namespace Rollgeon.UI.Tests
             Assert.DoesNotThrow(() => _view.Bind(Guid.NewGuid()));
 
             Assert.AreEqual("???", _roomNameLabel.text);
-            Assert.AreEqual("Rooms ?/?", _roomProgressLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} ?/?", _roomProgressLabel.text);
             Assert.AreEqual("", _roomTypeLabel.text);
         }
 
@@ -169,8 +171,8 @@ namespace Rollgeon.UI.Tests
             _view.RefreshRoomInfo();
 
             Assert.AreEqual("Sala de Pociones", _roomNameLabel.text);
-            Assert.AreEqual("Rooms 4/10", _roomProgressLabel.text);
-            Assert.AreEqual("Potion", _roomTypeLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} 4/10", _roomProgressLabel.text);
+            Assert.AreEqual(Rollgeon.Localization.LocalizedContent.Ui("room.type.potion", "Potion"), _roomTypeLabel.text);
         }
 
         [Test]
@@ -209,7 +211,7 @@ namespace Rollgeon.UI.Tests
             EventManager.Trigger(EventName.OnRoomEntered);
 
             Assert.AreEqual("Tienda", _roomNameLabel.text);
-            Assert.AreEqual("Rooms 2/5", _roomProgressLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} 2/5", _roomProgressLabel.text);
         }
 
         [Test]
@@ -223,12 +225,12 @@ namespace Rollgeon.UI.Tests
             ServiceLocator.AddService<IExplorationController>(_stubExploration, ServiceScope.Run);
 
             _view.Bind(Guid.NewGuid());
-            Assert.AreEqual("Rooms 0/4", _roomProgressLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} 0/4", _roomProgressLabel.text);
 
             SeedInstances(cleared: 1, total: 4);
             EventManager.Trigger(EventName.OnRoomCleared);
 
-            Assert.AreEqual("Rooms 1/4", _roomProgressLabel.text);
+            Assert.AreEqual($"{Rollgeon.Localization.LocalizedContent.Ui("nav.rooms", "Rooms")} 1/4", _roomProgressLabel.text);
         }
 
         [Test]

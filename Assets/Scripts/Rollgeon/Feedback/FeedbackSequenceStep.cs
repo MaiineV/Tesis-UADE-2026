@@ -41,6 +41,11 @@ namespace Rollgeon.Feedback
         [ShowIf(nameof(IsInlineBehaviorValue))]
         public BehaviorValueTarget InlineBehaviorValueTarget = BehaviorValueTarget.Target;
 
+        [ShowIf(nameof(IsInlineEffect))]
+        [Tooltip("Efectos que corren cuando el step arranca. Sirve para atar una consecuencia " +
+                 "de gameplay (daño, curación) al frame de impacto en vez del click.")]
+        public Rollgeon.Effects.EffectData InlineEffects = new Rollgeon.Effects.EffectData();
+
         [Title("Timing")]
         [Tooltip("Cuándo arranca este step.")]
         public StepStartMode StartMode = StepStartMode.Immediate;
@@ -91,6 +96,7 @@ namespace Rollgeon.Feedback
         private bool IsInlineWait() => Source == StepSource.InlineWait;
         private bool IsInlineAnimation() => Source == StepSource.InlineAnimation;
         private bool IsInlineBehaviorValue() => Source == StepSource.InlineBehaviorValue;
+        private bool IsInlineEffect() => Source == StepSource.InlineEffect;
         private bool StartNeedsStepIndex() => StartMode == StepStartMode.AfterStep;
         private bool StartNeedsEventKey() => StartMode == StepStartMode.OnEvent;
         private bool EndNeedsDuration() => EndMode == StepEndMode.OnDuration;

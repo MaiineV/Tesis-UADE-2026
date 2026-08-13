@@ -42,13 +42,22 @@ namespace Rollgeon.Run
 
         // ---- ISaveable (#158) ------------------------------------------------
 
-        public string SaveKey => "run.floor_index";
+        public const string SaveKeyConst = "run.floor_index";
 
-        public object CaptureState() => FloorIndex;
+        public string SaveKey => SaveKeyConst;
+
+        public object CaptureState() => new RunContextSnapshot
+        {
+            FloorIndex = FloorIndex,
+            RunId = RunId.ToString(),
+        };
 
         public void RestoreState(object state)
         {
-            if (state is int floorIndex) FloorIndex = floorIndex;
+            // El RunId guardado NO se restaura acá (es init-only): el resume lo lee
+            // vía SaveSystem.TryGetCached y se lo pasa a StartRun — de él deriva el
+            // seed del dungeon (RunController: seed = runId.GetHashCode()).
+            if (state is RunContextSnapshot snapshot) FloorIndex = snapshot.FloorIndex;
         }
 
         /// <summary>
@@ -61,8 +70,22 @@ namespace Rollgeon.Run
 
         public void Dispose()
         {
-            // No unmanaged resources; exists so ClearScope disposes cleanly.
             IsRunActive = false;
+            // Sin este Unregister, la próxima run registraría un segundo RunContext con
+            // la misma SaveKey y CaptureAll (reverso) capturaría el viejo al final.
+            SaveSystem.Unregister(this);
         }
+    }
+
+    /// <summary>
+    /// DTO serializable de <see cref="RunContext"/>. <c>RunId</c> se persiste porque
+    /// el seed del dungeon deriva de él — un resume con el mismo RunId regenera los
+    /// pisos idénticos.
+    /// </summary>
+    [Serializable]
+    public class RunContextSnapshot
+    {
+        public int FloorIndex;
+        public string RunId;
     }
 }

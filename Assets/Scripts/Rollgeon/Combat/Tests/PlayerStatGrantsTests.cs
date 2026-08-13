@@ -34,6 +34,9 @@ namespace Rollgeon.Combat.Tests
             var a = new ModifiableAttributes();
             a.SetAttribute<Attack>(new Attack(0));
             a.SetAttribute<Health>(new Health(10));
+            // BUG-022: los grants de Health/Energy rutean a los stats de máximo.
+            a.SetAttribute<MaxHealth>(new MaxHealth(10));
+            a.SetAttribute<MaxEnergy>(new MaxEnergy(3));
             _attrs.Register(_player, a);
             ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
 
@@ -84,7 +87,53 @@ namespace Rollgeon.Combat.Tests
 
             Assert.AreEqual(2, applied);
             Assert.AreEqual(2, _attrs.GetAttribute<Attack>(_player).ModifiedValue);
-            Assert.AreEqual(15, _attrs.GetAttribute<Health>(_player).ModifiedValue);
+            // BUG-022: el grant de Health sube el MÁXIMO, no el stack de Health (que la
+            // IA lee como HP actual vía ModifiedValue).
+            Assert.AreEqual(15, _attrs.GetAttribute<MaxHealth>(_player).ModifiedValue);
+        }
+
+        // ================================================================
+        // Regression BUG-022 — "ningún ítem de recompensa de jefe funciona"
+        // ================================================================
+
+        [Test]
+        public void Apply_Health_RoutesToMaxHealth_AndHealsSameAmount()
+        {
+            // Arrange — HP 10/10.
+
+            // Act
+            bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.Health, 5);
+
+            // Assert — max 15 y el heal-on-gain llevó el HP actual a 15; el stack de
+            // Health quedó sin modifiers (ModifiedValue == Value).
+            Assert.IsTrue(ok);
+            Assert.AreEqual(15, PlayerMaxHp.Resolve(_player));
+            Assert.AreEqual(15, _attrs.GetAttribute<Health>(_player).Value);
+            Assert.AreEqual(_attrs.GetAttribute<Health>(_player).Value,
+                            _attrs.GetAttribute<Health>(_player).ModifiedValue);
+        }
+
+        [Test]
+        public void Apply_Health_HealOnGain_ClampsToNewMax()
+        {
+            // Arrange — HP actual 8 de 10: +5 de max cura 5 y clampea en 13 (< nuevo max 15).
+            _attrs.SetAttributeValue<Health, int>(_player, 8);
+
+            // Act
+            PlayerStatGrants.Apply(CharacterRewardTargetStat.Health, 5);
+
+            // Assert
+            Assert.AreEqual(15, PlayerMaxHp.Resolve(_player));
+            Assert.AreEqual(13, _attrs.GetAttribute<Health>(_player).Value);
+        }
+
+        [Test]
+        public void Apply_Energy_RoutesToMaxEnergy()
+        {
+            bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.Energy, 1);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(4, _attrs.GetAttribute<MaxEnergy>(_player).ModifiedValue);
         }
 
         private sealed class FakePlayerService : IPlayerService

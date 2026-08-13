@@ -80,6 +80,7 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
                     WasCompleted = true,
                     SelectedTargets = new List<TargetRef> { TargetRef.At(ownerPos) },
                 };
+                RaiseTargetChanged(Context.SelectionResult);
                 _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
                 return;
             }
@@ -87,6 +88,7 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             if (targetSettings.AutoResolve)
             {
                 Context.SelectionResult = targetSettings.AutoResolveTargets(ownerPos, Context.ActingGuid);
+                RaiseTargetChanged(Context.SelectionResult);
                 _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
                 return;
             }
@@ -127,7 +129,23 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
         private void OnSelectionDone(TargetSelectionResult result)
         {
             Context.SelectionResult = result;
+            RaiseTargetChanged(result);
             _ownerFSM?.SendInput(PlayerTurnSubInput.SelectionCompleted);
+        }
+
+        // Publica el enemigo objetivo (o Guid.Empty) para que el HUD previsualice la
+        // mitigación real. Excluimos al propio actor: acciones Self no apuntan a un enemigo.
+        private void RaiseTargetChanged(TargetSelectionResult result)
+        {
+            Guid target = Guid.Empty;
+            if (result?.WasCompleted == true
+                && result.SelectedTargets != null && result.SelectedTargets.Count > 0
+                && ServiceLocator.TryGetService<IGridManager>(out var grid)
+                && grid.TryGetOccupant(result.SelectedTargets[0].Coord, out var occupant)
+                && occupant != Context.ActingGuid)
+                target = occupant;
+
+            EventManager.Trigger(EventName.OnCombatTargetChanged, Context.ActingGuid, target);
         }
 
         public override bool CheckInput(PlayerTurnSubInput input,

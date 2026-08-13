@@ -98,7 +98,7 @@ namespace Rollgeon.UI.Screens
         {
             if (ServiceLocator.TryGetService<IRunContextService>(out var runCtx))
             {
-                RunBootstrapper.EndRun(runCtx.RunId);
+                RunBootstrapper.EndRun(runCtx.RunId, runCompleted: true);
             }
             else
             {

@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -628,7 +630,7 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
-        public void GenerateFloor_DoorSlotWithoutDoorRoot_DeactivatesDoorsWithoutNeighbor()
+        public void GenerateFloor_DoorSlotWithoutDoorRoot_TapiadaDoorsWithoutNeighbor()
         {
             // Arrange
             var prefab = CreateRoomPrefabWithOrphanDoors();
@@ -640,7 +642,8 @@ namespace Rollgeon.Dungeon.Tests
             // Act — el warning "DoorController sin DoorSlotRef" es esperado acá.
             _manager.GenerateFloor(layout, 42);
 
-            // Assert — ninguna puerta activa puede apuntar a una dirección sin vecino.
+            // Assert — sin vecino la puerta queda Tapiada pero ACTIVA para que el
+            // zócalo (wall-fill) complete la pared en vez de dejar un hueco.
             int orphansChecked = 0;
             foreach (var instance in _manager.GetAllRoomInstances().Values)
             {
@@ -656,9 +659,9 @@ namespace Rollgeon.Dungeon.Tests
                     if (instance.Connections.ContainsKey(ctrl.Direction)) continue;
 
                     orphansChecked++;
-                    Assert.IsFalse(ctrl.gameObject.activeSelf,
-                        $"BUG-014: puerta {ctrl.Direction} de '{instance.Template.RoomId}' " +
-                        "quedó activa sin sala vecina del otro lado.");
+                    Assert.IsTrue(ctrl.gameObject.activeSelf,
+                        $"puerta {ctrl.Direction} de '{instance.Template.RoomId}' " +
+                        "debe quedar activa para mostrar el zócalo sin vecino.");
                     Assert.AreEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
                         $"BUG-014: puerta {ctrl.Direction} sin vecino debe quedar Tapiada.");
                 }
@@ -667,6 +670,231 @@ namespace Rollgeon.Dungeon.Tests
             // La boss room es dead-end (1 conexión), así que siempre hay
             // al menos 3 puertas sin vecino — el assert no puede ser vacuo.
             Assert.Greater(orphansChecked, 0, "El escenario debe producir puertas sin vecino.");
+        }
+
+        // -----------------------------------------------------------------
+        // Visuales de puerta — CNF-012 v2 (abierta / reja / apagada)
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Prefab de sala espejo de los reales: cada DoorSlotRef tiene DoorRoot
+        /// (con DoorController) y los cuatro meshes hijos (open/closed/reja/wall-fill)
+        /// ACTIVOS por default — la estructura del Door.prefab anidado, donde el
+        /// WallPlug (la reja) es HIJO del DoorRoot. El root queda inactivo para que
+        /// Instantiate no dispare los Awake de tooltips en EditMode.
+        /// </summary>
+        private GameObject CreateRoomPrefabWithRejaDoors()
+        {
+            var root = new GameObject("RoomTemplate_RejaDoors");
+            root.SetActive(false);
+            _createdObjects.Add(root);
+
+            var layout = root.AddComponent<Components.RoomLayout>();
+            foreach (DoorDirection dir in Enum.GetValues(typeof(DoorDirection)))
+            {
+                var doorRoot = new GameObject($"Door_{dir}");
+                doorRoot.transform.SetParent(root.transform, false);
+                var ctrl = doorRoot.AddComponent<DoorController>();
+                ctrl.Direction = dir;
+
+                var meshOpen   = CreateDoorChild(doorRoot, "MeshOpen");
+                var meshClosed = CreateDoorChild(doorRoot, "MeshClose");
+                var reja       = CreateDoorChild(doorRoot, "WallPlug");
+                var wallFill   = CreateDoorChild(doorRoot, "WallFill");
+
+                SetPrivateField(ctrl, DoorController.EditorMeshOpenField, meshOpen);
+                SetPrivateField(ctrl, DoorController.EditorMeshClosedField, meshClosed);
+                SetPrivateField(ctrl, DoorController.EditorWallPlugField, reja);
+                SetPrivateField(ctrl, DoorController.EditorMeshWallFillField, wallFill);
+
+                layout.DoorSlots.Add(new DoorSlotRef
+                {
+                    Direction = dir,
+                    DoorRoot = doorRoot,
+                    WallPlug = reja,
+                });
+            }
+            return root;
+        }
+
+        private static GameObject CreateDoorChild(GameObject parent, string name)
+        {
+            // Espejo del Door.prefab real: los meshes arrancan activos y es
+            // SetState quien los colapsa al estado correcto.
+            var child = new GameObject(name);
+            child.transform.SetParent(parent.transform, false);
+            return child;
+        }
+
+        [Test]
+        public void GenerateFloor_SlotWithoutNeighbor_ShowsWallFillZocalo()
+        {
+            // Arrange
+            var prefab = CreateRoomPrefabWithRejaDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+
+            // Act
+            _manager.GenerateFloor(layout, 42);
+
+            // Assert — sin camino la pared se completa con el zócalo: DoorRoot activo,
+            // estado Tapiada, solo el wall-fill prendido (open y reja apagados).
+            int blockedChecked = 0;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                var roomLayout = instance.SpawnedPrefab.GetComponent<Components.RoomLayout>();
+                foreach (var slot in roomLayout.DoorSlots)
+                {
+                    var ctrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                    if (ctrl.IsExit) continue; // salida de piso: canal propio (#158)
+                    if (instance.Connections.ContainsKey(slot.Direction)) continue;
+
+                    blockedChecked++;
+                    Assert.IsTrue(slot.DoorRoot.activeSelf,
+                        $"CNF-012 v2 rev: DoorRoot {slot.Direction} de '{instance.Template.RoomId}' " +
+                        "sin vecino debe quedar activo para mostrar el zócalo.");
+                    Assert.AreEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
+                        $"Puerta {slot.Direction} sin vecino debe quedar Tapiada.");
+                    Assert.IsTrue(ctrl.EditorMeshWallFill.activeSelf,
+                        $"El zócalo de {slot.Direction} debe prenderse sin camino.");
+                    Assert.IsFalse(ctrl.EditorWallPlug.activeSelf,
+                        $"La reja de {slot.Direction} debe quedar apagada sin camino.");
+                    Assert.IsFalse(ctrl.EditorMeshOpen.activeSelf,
+                        $"El mesh open de {slot.Direction} debe quedar apagado sin camino.");
+                }
+            }
+
+            // La boss room es dead-end (1 conexión + 1 exit), así que siempre
+            // hay al menos 2 puertas bloqueadas — el assert no puede ser vacuo.
+            Assert.Greater(blockedChecked, 0, "El escenario debe producir puertas bloqueadas.");
+        }
+
+        [Test]
+        public void GenerateFloor_SlotWithNeighbor_ShowsOpenMeshOrRejaByState()
+        {
+            // Arrange
+            var prefab = CreateRoomPrefabWithRejaDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+
+            // Act
+            _manager.GenerateFloor(layout, 42);
+
+            // Assert — puerta con vecino: abierta = mesh open, bloqueada = reja,
+            // y la puerta sólida (mesh closed) nunca se prende.
+            int connectedChecked = 0;
+            foreach (var instance in _manager.GetAllRoomInstances().Values)
+            {
+                var roomLayout = instance.SpawnedPrefab.GetComponent<Components.RoomLayout>();
+                foreach (var slot in roomLayout.DoorSlots)
+                {
+                    var ctrl = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
+                    if (ctrl.IsExit) continue;
+                    if (!instance.Connections.ContainsKey(slot.Direction)) continue;
+
+                    connectedChecked++;
+                    Assert.IsTrue(slot.DoorRoot.activeSelf,
+                        $"Puerta {slot.Direction} de '{instance.Template.RoomId}' con vecino debe estar activa.");
+                    Assert.AreNotEqual(DoorVisualState.Tapiada, ctrl.CurrentState,
+                        $"Puerta {slot.Direction} con vecino no puede quedar Tapiada.");
+
+                    bool open   = ctrl.CurrentState == DoorVisualState.Open;
+                    bool locked = ctrl.CurrentState == DoorVisualState.LockedCombat
+                                  || ctrl.CurrentState == DoorVisualState.LockedSkillCheck;
+                    Assert.AreEqual(open, ctrl.EditorMeshOpen.activeSelf,
+                        $"Mesh open de {slot.Direction} debe seguir al estado Open.");
+                    Assert.AreEqual(locked, ctrl.EditorWallPlug.activeSelf,
+                        $"La reja de {slot.Direction} debe prenderse solo bloqueada (estado {ctrl.CurrentState}).");
+                    Assert.IsFalse(ctrl.EditorMeshClosed.activeSelf,
+                        $"La puerta sólida de {slot.Direction} no tiene estado asignado — siempre off.");
+                    Assert.IsFalse(ctrl.EditorMeshWallFill.activeSelf,
+                        $"El zócalo de {slot.Direction} solo se ve sin camino, no con vecino.");
+                }
+            }
+
+            Assert.Greater(connectedChecked, 0, "El escenario debe producir puertas conectadas.");
+        }
+
+        [Test]
+        public void SetState_MapsVisuals_OpenMesh_RejaWhenLocked_ZocaloWhenTapiada()
+        {
+            // Arrange
+            var go = new GameObject("Door_VisualMap");
+            _createdObjects.Add(go);
+            var ctrl = go.AddComponent<DoorController>();
+            var meshOpen   = CreateDoorChild(go, "MeshOpen");
+            var meshClosed = CreateDoorChild(go, "MeshClose");
+            var reja       = CreateDoorChild(go, "WallPlug");
+            var wallFill   = CreateDoorChild(go, "WallFill");
+            SetPrivateField(ctrl, DoorController.EditorMeshOpenField, meshOpen);
+            SetPrivateField(ctrl, DoorController.EditorMeshClosedField, meshClosed);
+            SetPrivateField(ctrl, DoorController.EditorWallPlugField, reja);
+            SetPrivateField(ctrl, DoorController.EditorMeshWallFillField, wallFill);
+
+            // Act + Assert — abierta: solo mesh open.
+            ctrl.SetState(DoorVisualState.Open);
+            Assert.IsTrue(meshOpen.activeSelf, "Open debe prender el mesh de puerta abierta.");
+            Assert.IsFalse(reja.activeSelf, "Open no muestra la reja.");
+            Assert.IsFalse(meshClosed.activeSelf, "La puerta sólida queda siempre off.");
+            Assert.IsFalse(wallFill.activeSelf, "Open no muestra el zócalo.");
+
+            // Bloqueada (forzable): solo la reja — tanto lock de combate como skill check.
+            ctrl.SetState(DoorVisualState.LockedCombat);
+            Assert.IsTrue(reja.activeSelf, "LockedCombat debe mostrar la reja.");
+            Assert.IsFalse(meshOpen.activeSelf, "LockedCombat no muestra la puerta abierta.");
+            Assert.IsFalse(meshClosed.activeSelf, "La puerta sólida queda siempre off.");
+            Assert.IsFalse(wallFill.activeSelf, "LockedCombat no muestra el zócalo.");
+
+            ctrl.SetState(DoorVisualState.LockedSkillCheck);
+            Assert.IsTrue(reja.activeSelf, "LockedSkillCheck debe mostrar la reja.");
+
+            // Sin camino: solo el zócalo que completa la pared.
+            ctrl.SetState(DoorVisualState.Tapiada);
+            Assert.IsTrue(wallFill.activeSelf, "Tapiada debe mostrar el zócalo.");
+            Assert.IsFalse(meshOpen.activeSelf, "Tapiada no muestra la puerta abierta.");
+            Assert.IsFalse(meshClosed.activeSelf, "Tapiada no muestra la puerta sólida.");
+            Assert.IsFalse(reja.activeSelf, "Tapiada no muestra la reja.");
+        }
+
+        [Test]
+        public void SetState_Tapiada_DisablesForceDoorTooltip_AndOpenReenablesIt()
+        {
+            // Arrange — Awake por reflection (en EditMode no corre solo).
+            var go = new GameObject("Door_TooltipGate");
+            _createdObjects.Add(go);
+            var ctrl = go.AddComponent<DoorController>();
+            InvokeAwake(ctrl);
+
+            var trigger = go.GetComponent<WorldTooltipTrigger>();
+            Assert.IsNotNull(trigger, "Awake debe auto-agregar el WorldTooltipTrigger.");
+
+            // Act + Assert — sin camino no hay acción: sin tooltip de Forzar Puerta.
+            ctrl.SetState(DoorVisualState.Tapiada);
+            Assert.IsFalse(trigger.enabled,
+                "CNF-012: Tapiada debe deshabilitar el tooltip de Forzar Puerta.");
+
+            ctrl.SetState(DoorVisualState.Open);
+            Assert.IsTrue(trigger.enabled,
+                "Volver a Open debe rehabilitar el tooltip.");
+        }
+
+        private static void InvokeAwake(object target)
+        {
+            var awake = target.GetType().GetMethod("Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            awake?.Invoke(target, null);
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
+            field.SetValue(target, value);
         }
     }
 }

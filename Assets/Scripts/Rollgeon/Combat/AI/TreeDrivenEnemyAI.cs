@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Combat.Handoff;
@@ -35,6 +36,20 @@ namespace Rollgeon.Combat.AI
         private int _roundIndex;
         private bool _subscribed;
 
+        // Coroutines de turno en vuelo, por enemigo. CoroutineHost es un singleton
+        // persistente: sin este tracking, una coroutine que sobrevive a su turno (o al
+        // combate entero, ej. el golpe que mata al player) sigue tickeando el árbol y
+        // puede aplicar daño extra fuera de su turno.
+        private readonly Dictionary<Guid, Coroutine> _running = new Dictionary<Guid, Coroutine>();
+
+        // Refuerzos spawneados mid-combate (AINode_SpawnReinforcements) que todavía no
+        // consumieron su turno de aparición. Se los appendea a la ronda en curso, así que
+        // actuarían antes de que el jugador vuelva a jugar: sin diferir, pegan de una (daño
+        // gratis). El primer HandleEnemyTurn de un guid en este set NO tickea el árbol — el
+        // refuerzo "aparece" sin actuar y recién pega en su siguiente turno, cuando el jugador
+        // ya tuvo una ronda para reaccionar.
+        private readonly HashSet<Guid> _deferredFirstTurn = new HashSet<Guid>();
+
         public TreeDrivenEnemyAI(
             IEnemyAIRegistry registry,
             AttributesManager attributes,
@@ -51,6 +66,8 @@ namespace Rollgeon.Combat.AI
             _onTurnComplete = onTurnComplete ?? throw new ArgumentNullException(nameof(onTurnComplete));
 
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
+            EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEnd);
+            EventManager.Subscribe(EventName.OnReinforcementSpawned, OnReinforcementSpawned);
             _subscribed = true;
         }
 
@@ -60,11 +77,24 @@ namespace Rollgeon.Combat.AI
         {
             if (!_subscribed) return;
             EventManager.UnSubscribe(EventName.OnTurnQueueBuilt, OnTurnQueueBuilt);
+            EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEnd);
+            EventManager.UnSubscribe(EventName.OnReinforcementSpawned, OnReinforcementSpawned);
+            StopAllRunning();
+            _deferredFirstTurn.Clear();
             _subscribed = false;
         }
 
         public void HandleEnemyTurn(Guid enemyId)
         {
+            // Un refuerzo recién spawneado difiere su PRIMERA activación: aparece en la ronda
+            // en curso pero no actúa (no hace daño gratis). El turno se cierra de inmediato para
+            // que la cola avance; en su siguiente turno el refuerzo ya tickea su árbol normal.
+            if (_deferredFirstTurn.Remove(enemyId))
+            {
+                _onTurnComplete();
+                return;
+            }
+
             if (!_registry.TryGet(enemyId, out var root, out var maxHp) || root == null)
             {
                 _fallback.HandleEnemyTurn(enemyId);
@@ -75,7 +105,11 @@ namespace Rollgeon.Combat.AI
 
             if (Application.isPlaying)
             {
-                CoroutineHost.Run(HandleEnemyTurnCoroutine(root, ctx));
+                // Un turno nuevo del mismo enemigo invalida cualquier coroutine previa
+                // suya que haya quedado en vuelo — nunca dos árboles del mismo guid.
+                if (_running.TryGetValue(enemyId, out var stale))
+                    CoroutineHost.Stop(stale);
+                _running[enemyId] = CoroutineHost.Run(HandleEnemyTurnCoroutine(root, ctx, enemyId));
             }
             else
             {
@@ -85,7 +119,7 @@ namespace Rollgeon.Combat.AI
             }
         }
 
-        private IEnumerator HandleEnemyTurnCoroutine(Decisions.AIDecisionNode root, AIContext ctx)
+        private IEnumerator HandleEnemyTurnCoroutine(Decisions.AIDecisionNode root, AIContext ctx, Guid enemyId)
         {
             AIResult result = AIResult.Failed;
             IEnumerator co = null;
@@ -96,6 +130,7 @@ namespace Rollgeon.Combat.AI
             catch (Exception ex)
             {
                 Debug.LogError($"[TreeDrivenEnemyAI] Exception creating tick coroutine for {ctx.SelfGuid}: {ex}");
+                _running.Remove(enemyId);
                 _onTurnComplete();
                 yield break;
             }
@@ -112,7 +147,23 @@ namespace Rollgeon.Combat.AI
                 if (hasMore) yield return co.Current;
             }
 
+            _running.Remove(enemyId);
             _onTurnComplete();
+        }
+
+        private void OnCombatEnd(params object[] args)
+        {
+            // El combate puede cerrarse en mitad de un turno enemigo (ej. el golpe que
+            // mata al player, o Victory instantánea): las coroutines de AI en vuelo no
+            // deben seguir tickeando contra un combate que ya no existe.
+            StopAllRunning();
+        }
+
+        private void StopAllRunning()
+        {
+            foreach (var co in _running.Values)
+                CoroutineHost.Stop(co);
+            _running.Clear();
         }
 
         private AIContext BuildContext(Guid enemyId, int maxHp)
@@ -141,6 +192,13 @@ namespace Rollgeon.Combat.AI
         {
             if (args == null || args.Length < 2) return;
             if (args[1] is int idx) _roundIndex = idx + 1; // 1-based for condition UX
+        }
+
+        private void OnReinforcementSpawned(params object[] args)
+        {
+            if (args == null || args.Length < 1) return;
+            if (args[0] is Guid guid && guid != Guid.Empty)
+                _deferredFirstTurn.Add(guid);
         }
     }
 }

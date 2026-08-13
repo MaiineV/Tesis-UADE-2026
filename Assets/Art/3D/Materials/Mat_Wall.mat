@@ -26,6 +26,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
+  - _FLATTENTOPFACES_ON
   - _USESHADOWDITHER_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -102,7 +103,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BorderWidth: 0.055
+    - _BorderWidth: 0.14
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -117,16 +118,19 @@ Material:
     - _DetailNormalMapScale: 1
     - _DetailType: 1.95
     - _DitherScale: 1
-    - _DitherStrength: 0.15
+    - _DitherStrength: 0
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnableCrease: 0
+    - _EnableEmission: 0
     - _EnvironmentReflections: 1
+    - _FlattenTopFaces: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HitFlashAmount: 0
     - _LightBrighten: 0.18
-    - _LightTintStrength: 0.003
+    - _LightTintStrength: 0.613
     - _LightWrap: 0.1
     - _Metallic: 0
     - _MidThreshold: 0.36
@@ -135,13 +139,13 @@ Material:
     - _PatternType: 1.9
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _ShadowDarken: 0.5
-    - _ShadowDitherDensity: 0.307
+    - _ShadowDarken: 0.577
+    - _ShadowDitherDensity: 0.194
     - _ShadowSmooth: 0
     - _ShadowThreshold: 0.228
-    - _ShapeOpacity: 0.494
-    - _ShapeScaleX: 0.83
-    - _ShapeScaleY: 1.24
+    - _ShapeOpacity: 0.429
+    - _ShapeScaleX: 1.03
+    - _ShapeScaleY: 1.42
     - _ShapeSize: 0.84
     - _ShapeType: 0.69
     - _Smoothness: 0.5
@@ -149,25 +153,26 @@ Material:
     - _SolidRows: 0
     - _SpecularHighlights: 1
     - _SpotBandBoost: 1.5
-    - _SpotDither: 0
+    - _SpotDither: 0.338
     - _SpotQuantize: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _TileScale: 2.01
+    - _TileScale: 1.99
     - _UseDither: 0
     - _UseShadowDither: 1
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BGColor: {r: 0.17999998, g: 0.04, b: 0.04, a: 1}
+    - _BGColor: {r: 0.18039216, g: 0.22745098, b: 0.24313726, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ColorA: {r: 0.37999994, g: 0.09999997, b: 0.09999997, a: 1}
-    - _ColorB: {r: 0.25999996, g: 0.059999965, b: 0.059999965, a: 1}
-    - _DetailColor: {r: 0.16981131, g: 0.111444876, b: 0.026432894, a: 1}
+    - _ColorA: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 1}
+    - _ColorB: {r: 0.5137255, g: 0.59607846, b: 0.627451, a: 1}
+    - _DetailColor: {r: 0.654902, g: 0.72156864, b: 0.74509805, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

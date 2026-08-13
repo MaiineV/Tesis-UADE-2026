@@ -27,6 +27,12 @@ MonoBehaviour:
     Volume: 1
     AnimTrigger: 
     TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 1
@@ -44,6 +50,12 @@ MonoBehaviour:
     Volume: 1
     AnimTrigger: 
     TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 2
@@ -61,6 +73,12 @@ MonoBehaviour:
     Volume: 1
     AnimTrigger: 
     TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
     BehaviorValueKey: 4
     ValueTarget: 1
     FloatingNumberSourceKey: 1
@@ -78,6 +96,12 @@ MonoBehaviour:
     Volume: 0.8
     AnimTrigger: 
     TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 1
@@ -95,6 +119,610 @@ MonoBehaviour:
     Volume: 1
     AnimTrigger: 
     TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 3
+  - FeedbackId: anim.enemy.melee.attack
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.ranged.attack
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.85
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.healer.cast
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.enemy.melee.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.enemy.ranged.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.enemy.healer.heal
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 1316803763528841526, guid: cd9af66b986e2d44db8315d2eabf3aef, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.enemy.melee.hit
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
+    Volume: 0.9
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.enemy.ranged.hit
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
+    Volume: 0.65
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.enemy.healer.cast
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.5
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: b29ea7b6373ad414ca6022e0113a4e1b, type: 3}
+    Volume: 0.7
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.enemy.melee.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.enemy.ranged.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.22
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.enemy.healer.cast
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.22
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7740204526863467715, guid: ebaf72f7a4b910e42b6ab657af6acf94, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: death.tween
+    Type: 7
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.6
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.enemy.death
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0.8, z: 0}
+    Duration: 0.5
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: e641fb1c71f6dfe4e99c50e990e771f5, type: 3}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.enemy.death
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.enemy.death
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: 84b8efe29c56d7443af2090f5fabc48b, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.player.warrior.attack
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.player.warrior.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: sfx.player.warrior.hit
+    Type: 1
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.4
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 8300000, guid: 47cee7224ef15d44da54aaece3a0e9ce, type: 3}
+    Volume: 0.9
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.player.warrior.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.sunken_grand.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.sunken_grand.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.95
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  _sequences:
+  - SequenceId: death.enemy
+    Steps:
+    - Source: 0
+      FeedbackRefId: death.tween
+      WaitDuration: 0.25
+      InlineAnimTrigger: 
+      InlineAnimOnSource: 1
+      InlineBehaviorValueKey: 0
+      InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
+      StartMode: 0
+      StartDependsOnStepIndex: 0
+      StartOnEventKey: 
+      StartDelay: 0
+      EndMode: 1
+      DurationOverride: 0
+      EndOnEventKey: 
+      BlockSequence: 1
+    - Source: 0
+      FeedbackRefId: vfx.enemy.death
+      WaitDuration: 0.25
+      InlineAnimTrigger: 
+      InlineAnimOnSource: 1
+      InlineBehaviorValueKey: 0
+      InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
+      StartMode: 0
+      StartDependsOnStepIndex: 0
+      StartOnEventKey: 
+      StartDelay: 0
+      EndMode: 0
+      DurationOverride: 0
+      EndOnEventKey: 
+      BlockSequence: 0
+    - Source: 0
+      FeedbackRefId: sfx.enemy.death
+      WaitDuration: 0.25
+      InlineAnimTrigger: 
+      InlineAnimOnSource: 1
+      InlineBehaviorValueKey: 0
+      InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
+      StartMode: 0
+      StartDependsOnStepIndex: 0
+      StartOnEventKey: 
+      StartDelay: 0
+      EndMode: 3
+      DurationOverride: 0
+      EndOnEventKey: 
+      BlockSequence: 0
+    - Source: 0
+      FeedbackRefId: feel.enemy.death
+      WaitDuration: 0.25
+      InlineAnimTrigger: 
+      InlineAnimOnSource: 1
+      InlineBehaviorValueKey: 0
+      InlineBehaviorValueTarget: 1
+      InlineEffects:
+        Label: Effect Group
+        PreConditions: []
+        Effects: []
+        TargetSelector:
+          rid: -2
+      StartMode: 0
+      StartDependsOnStepIndex: 0
+      StartOnEventKey: 
+      StartDelay: 0
+      EndMode: 0
+      DurationOverride: 0
+      EndOnEventKey: 
+      BlockSequence: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

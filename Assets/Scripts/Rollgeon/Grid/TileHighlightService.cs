@@ -5,7 +5,12 @@ namespace Rollgeon.Grid
 {
     public sealed class TileHighlightService : ITileHighlightService
     {
-        private static readonly int ColorId = Shader.PropertyToID("_BaseColor");
+        // Tinte vía shader (PaletteCelFloor comparte el contrato _HitFlash* de
+        // PaletteCelLit): en vez de pisar _BaseColor con un color plano, se lerpea
+        // el resultado final del shading hacia el color del estilo — el patrón del
+        // piso sigue leyéndose debajo del highlight.
+        private static readonly int HitFlashColorId = Shader.PropertyToID("_HitFlashColor");
+        private static readonly int HitFlashAmountId = Shader.PropertyToID("_HitFlashAmount");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
 
         private readonly Dictionary<GridCoord, Renderer> _tileRenderers;
@@ -13,22 +18,36 @@ namespace Rollgeon.Grid
         private readonly Dictionary<string, Texture> _styleTextures;
         private readonly HashSet<GridCoord> _active = new HashSet<GridCoord>();
         private readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
+        private readonly float _tintStrength;
 
         /// <summary>
         /// Crea el service con la paleta default. Los <paramref name="colorOverrides"/> y
         /// <paramref name="textureOverrides"/> pisan/agregan estilos por nombre — usados por
         /// el bootstrap para hacer configurable el color (y, opcionalmente, un sprite) de
         /// la casilla "frente a puerta" sin tener que redefinir toda la paleta.
+        /// <paramref name="tintStrength"/> escala globalmente la fuerza del tinte
+        /// (el alpha de cada estilo aporta la fuerza relativa por estilo).
         /// </summary>
         public TileHighlightService(
             IReadOnlyDictionary<string, Color> colorOverrides = null,
-            IReadOnlyDictionary<string, Texture> textureOverrides = null)
+            IReadOnlyDictionary<string, Texture> textureOverrides = null,
+            float tintStrength = 1f)
         {
+            _tintStrength = Mathf.Clamp01(tintStrength);
             _tileRenderers = new Dictionary<GridCoord, Renderer>();
             _styleColors = new Dictionary<string, Color>
             {
-                { "move", new Color(0.3f, 0.8f, 1f, 0.6f) },
+                // El rango de movimiento ahora está SIEMPRE pintado en Exploración
+                // (click-to-move permanente), así que se baja el alpha para que el
+                // tinte permanente no sea molesto. El path A* (verde) sigue marcando
+                // claramente el destino al hacer hover.
+                { "move", new Color(0.3f, 0.8f, 1f, 0.28f) },
                 { "attack", new Color(1f, 0.3f, 0.3f, 0.6f) },
+                // Rango geométrico completo de un ataque: rojo suave, alpha bajo. Se pinta
+                // sobre TODO el alcance y los enemigos targeteables quedan con "attack"
+                // (rojo vívido) por encima, así el jugador ve el rango sin confundirlo con
+                // los slots seleccionables.
+                { "range", new Color(1f, 0.5f, 0.35f, 0.22f) },
                 { "selected", new Color(1f, 0.9f, 0.2f, 0.7f) },
                 // Verde brillante para el camino A* previewado durante hover. Se pinta
                 // sobre el rango "move" así que tiene que distinguirse claramente.
@@ -39,6 +58,10 @@ namespace Rollgeon.Grid
                 // Naranja de advertencia para el área telegráfica de los Bosses: estas
                 // casillas van a recibir daño el próximo turno del Boss (Bosses §1).
                 { "warning", new Color(1f, 0.55f, 0.1f, 0.65f) },
+                // Área AoE previewada al hovear/elegir un ancla (TargetMode.Aoe). Naranja
+                // fuerte: tiene que leerse por encima del underlay "range" (alpha 0.22) y
+                // distinguirse del "attack" rojo y del "selected" amarillo.
+                { "aoe", new Color(1f, 0.6f, 0.1f, 0.55f) },
             };
             _styleTextures = new Dictionary<string, Texture>();
 
@@ -72,7 +95,6 @@ namespace Rollgeon.Grid
                 _active.Add(coord);
                 matched++;
             }
-            Debug.Log($"[TileHighlightService] Highlight style='{style}' — {matched}/{total} tiles matched ({_tileRenderers.Count} registered renderers)");
         }
 
         public void HighlightSingle(GridCoord coord, string style)
@@ -90,7 +112,10 @@ namespace Rollgeon.Grid
         private void ApplyStyle(Renderer renderer, Color color, Texture tex)
         {
             _block.Clear();
-            _block.SetColor(ColorId, color);
+            // RGB del estilo = color del tinte; alpha del estilo × strength global =
+            // fuerza del lerp (0 = piso intacto, 1 = color plano como antes).
+            _block.SetColor(HitFlashColorId, color);
+            _block.SetFloat(HitFlashAmountId, color.a * _tintStrength);
             if (tex != null) _block.SetTexture(BaseMapId, tex);
             renderer.SetPropertyBlock(_block);
         }

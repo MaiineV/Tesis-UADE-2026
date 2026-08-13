@@ -3549,28 +3549,67 @@ public class TargetSelectionResult
 
 ### 11.2 `SelectionSettings`
 
+> Forma real post-rework Feature#0026 (la implementación reemplazó la `BaseTargetQuery`
+> del diseño original de §11.2b por los filtros directos `SlotState` + `EntityFilterMask`).
+
 ```csharp
 [Serializable]
 public class SelectionSettings
 {
-    public bool RequiresSelection;
-    public SelectionTiming Timing;
+    public SlotState SlotState;             // Self | Occupied | Empty | Both
+    public SelectionTiming Timing;          // BeforeRoll | AfterRoll
+    public EntityFilterMask EntityFilter;   // filtro de facción (si Occupied/Both)
+    public bool IsGlobal;                   // toda la sala vs Range desde el owner
+    public int Range;                       // 1..20
+    public RangeMode RangeMode;             // Manhattan | PathReachable
+
+    public TargetMode TargetMode;           // Single | Aoe (default Single)
+    public AoeShape AoeShape;               // Radius | Custom (solo Aoe)
+    public int AoeRadius;                   // diamante Manhattan desde el ancla
+    public int PatternRows, PatternCols;    // patrón bool-grid (AoeShape.Custom)
+    public Vector2Int PatternCenter;        // celda del patrón apoyada en el ancla
+    [BoolGrid(...)] public bool[] PatternFlat;
+
     public bool IsConstantSelectionCount;
-    public int SelectionCount;
-    public bool IsSkippable;
-    public bool RequireEmptySlot;
-    public bool RequireOccupiedSlot;        // excluyentes — validado
-
+    public int SelectionCount;              // count constante (1..16)
     [OdinSerialize, SerializeReference]
-    [HideReferenceObjectPicker]
-    public BaseTargetQuery TargetQuery;     // inline polimórfico — ver §11.2b
+    public ISelectionCountReader SelectionCountReader;  // count dinámico (patrón §13.6.1)
 
-    public int GetSelectionCount(ReadInfo info);
+    public bool AutoResolve;                // random entre válidos, sin interacción
+    public bool AutoAccept;                 // auto-confirma al llegar al count
+
+    public int GetSelectionCount(ReadInfo info);   // PICKS requeridos (Aoe => 1)
     public bool NeedsSelectionAt(SelectionTiming t);
+    public List<TargetRef> ResolveValidTiles(GridCoord ownerPos, Guid ownerGuid);
+    public List<GridCoord> ResolveRangeTiles(GridCoord ownerPos, Guid ownerGuid);
+    public List<TargetRef> ExpandAoe(GridCoord anchor, Guid ownerGuid);
+    public TargetSelectionResult AutoResolveTargets(GridCoord ownerPos, Guid ownerGuid);
 }
 ```
 
-`BaseTargetQuery` define la query lógica inline (qué casillas/entidades son válidas). Cada efecto configura su propia instancia — no es un SO compartido. Ver §11.2b.
+**TargetMode (rework Feature#0026).** `Single` = N picks individuales (comportamiento
+histórico). `Aoe` = se elige UNA celda ancla entre las válidas y el efecto se expande
+alrededor (`AoeShape.Radius` = diamante Manhattan ≤ `AoeRadius`; `AoeShape.Custom` =
+patrón bool-grid relativo al ancla, drawer `BoolGridAttributeDrawer`). Reglas del área:
+se clipea a la grilla (`InBounds`), **NO al `Range` del caster**; cada celda re-aplica
+los filtros `SlotState` + `EntityFilter` (un heal AoE no incluye enemigos); el ancla
+entra siempre; la celda del owner nunca.
+
+**Puntos de expansión AoE (exactamente 2).** `SelectionController.Complete()` (flujo
+manual) y `SelectionSettings.AutoResolveTargets()` (flujo auto), ambos vía `ExpandAoe`.
+Los consumidores (`PlayerSelectingSubState`, chain de combate, `EffDealDamage`, drag-drop)
+reciben `SelectedTargets` ya expandidos sin cambios.
+
+**Count dinámico.** `GetSelectionCount(ReadInfo)` significa "picks requeridos": `Aoe` → 1
+(el ancla); constante → `SelectionCount`; dinámico → `SelectionCountReader?.Read(info) ?? 1`.
+Readers concretos: `StatCountReader` (stat del owner, clamp Min/Max) y
+`AliveEnemiesCountReader` (enemigos vivos con tope). Contrato defensivo: con `ReadInfo`
+default o servicios sin registrar devuelven su mínimo seguro (hay call sites sin owner,
+ej. `ActionDragPolicy`).
+
+**UI.** El hover de un ancla válida pinta el área con el estilo `"aoe"` (naranja,
+configurable en `TileHighlightServiceBootstrap`). Como el área puede exceder el rango
+pintado, la limpieza del overlay usa `ClearAll` + repintado.
 
 ### 11.2b `BaseTargetQuery`
 
@@ -4771,6 +4810,38 @@ public void RoomObjectState_Polymorphism_SurvivesRoundTrip()
 **Migración de campos agregados.** Si un subtipo agrega un campo en un patch (p. ej. `ChestState.LootTier : int` v1.2), los saves antiguos tendrán `default(int) = 0`. Regla: los campos nuevos deben tolerar `default` como valor legítimo, o la clase implementa una override simple en `RestoreState` que completa el campo a partir de otros (p. ej. derivar `LootTier` del `RoomSO` correspondiente). No usar Unity `ISerializationCallbackReceiver` para esto — es un pattern frágil con Odin. Ver §15 para versioning general de saves.
 
 **Anti‑patrón.** Usar `[SerializeField]` en lugar de `[SerializeReference]`: `[SerializeField]` es value‑type serialization y **no** soporta polimorfismo. El doc lo aclara porque es el error más común cuando alguien "tipea rápido" el atributo.
+
+#### 13.6.1a Autorar data de Odin — `PropertyTree`, nunca `SerializedProperty`
+
+**Regla.** Toda tool que edite un `SerializedScriptableObject` lo hace con un Odin `PropertyTree`
+ruteado en el asset, y graba undo con `Undo.RecordObject` **del objeto completo**. `SerializedObject`
+/ `SerializedProperty` **no sirven acá** — y fallan en silencio, que es lo peligroso.
+
+**Por qué.** Verificado leyendo los `.asset` en disco. `Item_HealingPotion.asset` guarda los datos
+**dos veces**: el blob `serializationData.SerializationNodes` de Odin *y* el bloque nativo
+`references:`/`rid:` de `[SerializeReference]`. Pero `SerializedScriptableObject` implementa
+`ISerializationCallbackReceiver`, y su `OnAfterDeserialize` repuebla todo campo `[OdinSerialize]`
+desde el blob **después** del pase nativo de Unity. `ApplyModifiedProperties()` escribe estado nativo
+pero no toca `serializationData` → **la edición se revierte al próximo reload**, sin warning ni
+excepción. `Undo.RecordObject` sí funciona porque el undo serializa el objeto, lo que dispara
+`OnBeforeSerialize` y regenera el blob desde el estado vivo. **No hay undo granular disponible; no
+diseñar para uno.**
+
+`ED_Healer.asset` lo confirma desde el otro lado: 1890 líneas y **cero `rid`**, porque
+`EnemyDataSO.AIRoot` es `[OdinSerialize]` sin `[SerializeReference]` — o sea el `EffectData` de los
+enemigos es directamente invisible a `SerializedObject`. Mismo caso: `EnemyCatalogSO` (ver el
+comentario en `EnemyEditorWindow`) y `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
+sin `[SerializeField]`).
+
+**Deuda: el racional de "doble cobertura" es inventado.** El docstring de `EffectData.cs` dice que
+`[OdinSerialize]` + `[SerializeReference]` da "doble cobertura (Odin + Unity native)". §13.6.1 nunca
+mandó `[OdinSerialize]` — pide *abstract base + `[Serializable]` en los subtipos + `[SerializeReference]`
+en el contenedor*. En la práctica el par produce almacenamiento duplicado donde **la mitad de Unity
+es vestigial**: se escribe, nadie la lee, y engorda el `.asset`. **No cambiar las anotaciones** —
+reescribiría 26 assets por cero beneficio de gameplay. Queda registrado para que el próximo que lea
+`EffectData.cs:20-22` no se lo crea.
+
+**Cross‑ref §26.12** — el motor de autoría polimórfica que implementa esta regla.
 
 **Lifecycle**:
 
@@ -6439,6 +6510,8 @@ screens.Push(ScreenId.MainMenu); // o la screen inicial
 
 Servicio scripteado registrado en el bootstrap (§1.1.1). La implementación concreta (`CameraService : MonoBehaviour, ICameraService`) vive en la scene de gameplay como un único `Camera` + rig, inicializado desde el `CameraConfigSO` y registrado al despertar.
 
+**Scope: `Global`, no `Run`.** La cámara es un objeto de la *scene* `02_Gameplay` — su lifetime es el de la scene, no el de la run, y se desregistra sola en `OnDestroy`. Registrarla en `ServiceScope.Run` es un bug: Unity corre **todos** los `Awake()` antes de cualquier `Start()`, así que `CameraService.Awake` registra el service y acto seguido `GameplayBootstrapper.Start` → `RunBootstrapper.StartRun` → `ClearScope(ServiceScope.Run)` lo borra. Nada lo vuelve a registrar (`Awake` no corre dos veces), y como `CameraService` no es `IDisposable` ni depende del `ServiceLocator` para sus propios eventos, la falla es **silenciosa y parcial**: la rotación y el wall occlusion siguen andando (van por el `EventManager` estático) pero `SetFollowTarget` y el recenter al entrar a una sala (`RoomGridLoader`) dejan de resolver el service y la cámara nunca se centra. Ver §17.E.10.
+
 ```csharp
 public interface ICameraService
 {
@@ -7435,7 +7508,12 @@ public enum ItemRarity { Common, Uncommon, Rare, Legendary }
 [Serializable]
 public class PassiveItemHook
 {
-    [InfoBox("Evento que dispara el efecto pasivo. Ej: OnTurnStarted, OnComboMatched, OnDamageResolved.")]
+    [InfoBox("Evento del bus que dispara el efecto. Usables: OnTurnStarted, OnTurnFinished, " +
+             "OnRollStarted, OnDiceRolled, OnRollResolved, OnDamageIncoming, OnDamageOutgoing, " +
+             "OnComboCrossed, OnWeaknessHit, OnPlayerHealthChanged.")]
+    [InfoBox("El hook filtra por args[0] == Guid del jugador (convención §18). Un evento que NO " +
+             "arranca con un Guid dispara siempre — no hay a quién comparar.",
+             InfoMessageType.Warning)]
     public EventName TriggerEvent;
 
     [OdinSerialize]
@@ -7466,11 +7544,51 @@ public class PersistentModifierDef
 
 | Ítem | Type | Efecto |
 |---|---|---|
-| "Guante de espinas" | Passive | Hook en `OnDamageResolved` → si el player recibió daño, `EffDealDamage(3)` al atacante |
+| "Guante de espinas" | Passive | Hook en `OnDamageIncoming` → si el player recibió daño, `EffDealDamage(3)` al atacante |
 | "Amuleto de regeneración" | Passive | PersistentModifier: `Health regen +2` via hook en `OnTurnFinished` |
 | "Dado de la suerte" | Passive | Hook en `OnRollStarted` → `EffAddIntModifier` en `RerollBudget` (+1 reroll gratuito) |
 | "Bomba de humo" | Active | `OnActivate`: `EffAddStatusEffect(Invisible, 2 turnos)`, Cooldown = 5 |
 | "Poción de furia" | Active | `OnActivate`: `EffAddFloatModifier(OutgoingDamageMultiplier, ×1.5, 3 turnos)`, Cooldown = 8 |
+
+#### 18.2.0 Qué eventos se pueden hookear
+
+`TriggerEvent` es un `EventName` — el bus legacy. **`OnComboMatched` y `OnDamageResolved` no existen
+ahí** y no se pueden hookear desde un item: son `TypedEvent<T>` por diseño (§1.2.1). Hasta 2026-07 el
+InfoBox de este campo los recomendaba igual, y la tabla de ejemplos de acá abajo también — el enum es
+un dropdown, así que el diseñador no los encontraba y no sabía por qué.
+
+Equivalentes reales:
+
+| Si buscabas | Usá |
+|---|---|
+| `OnDamageResolved` (recibir daño) | `OnDamageIncoming` |
+| `OnDamageResolved` (pegar) | `OnDamageOutgoing` |
+| `OnComboMatched` | `OnComboCrossed`, `OnWeaknessHit`, `OnComboCounterIncremented` |
+| cambio de HP | `OnPlayerHealthChanged` |
+
+**Filtro de owner.** `InventoryService.BindPassiveHooks` corre el efecto sólo si
+`args[0]` es el `Guid` del jugador (convención §18: `args[0]` es la entidad del evento). Un evento que
+**no** arranca con un `Guid` no tiene contra qué comparar y **dispara siempre** — para un item del
+jugador suele dar igual, pero conviene saberlo antes de colgar una pasiva de un evento global.
+
+#### 18.2.1 Invariante de bind/unbind
+
+**Regla.** `InventoryService._hookHandlers` guarda `(itemId, evt, handler)` y
+`UnbindPassiveHooks` desengancha **matcheando por `itemId`** — misma clave que
+`_appliedModifierIds`, así los dos tratan igual a un item.
+
+**Por qué importa.** Matchear por `TriggerEvent` parece equivalente y no lo es: dos pasivas colgadas
+del mismo evento producen handlers indistinguibles en una lista plana, y sacar "el que matchea" saca
+uno cualquiera. La versión original recorría LIFO, así que **quitar la pasiva A desenganchaba la de B
+y dejaba viva la de A** — el resultado exactamente invertido. Con un solo item autorado era
+invisible; aparece apenas hay dos.
+
+**Corolario.** El unbind **no** recorre `item.PassiveHooks` para decidir qué sacar: desengancha lo que
+efectivamente enganchó. Si el SO se re-autora entre el bind y el unbind (posible con las tools de
+§26.13), mirar los hooks de ahora dejaría suscripciones colgadas de un item que ya no está en el
+inventario.
+
+Cubierto por `Rollgeon.Items.Tests.PassiveHookBindingTests`.
 
 ### 18.3 `IInventoryService`
 
@@ -8853,6 +8971,99 @@ Menú `Assets > Create > Rollgeon > Templates >` con presets:
 | "Active Item" | `ItemSO` | Type = Active, 1 effect vacío, cooldown 5 |
 
 **Cross‑ref §26.** Todos los sistemas del proyecto — cada tool opera sobre sus SOs respectivos.
+
+### 26.12 Polymorphic Content Authoring (motor compartido)
+
+**Estado: implementado.** `Assets/Scripts/Editor/Tools/Polymorphic/`, namespace
+`Rollgeon.Editor.Tools.Polymorphic`.
+
+#### El problema que resuelve
+
+La regla §13.6.1 obliga a marcar toda base polimórfica con `[HideReferenceObjectPicker]` — hoy lo
+llevan **120 tipos**. Ese atributo le apaga a Odin el selector de tipo, y **Odin lo apaga según el
+tipo *declarado* del campo**, no según el valor:
+
+| Slot | Tipo declarado | ¿Odin da picker? |
+|---|---|---|
+| `EffectData.PreConditions.$i` | `BasePreCondition` (abstract + atributo) | **No** |
+| `EffectData.TargetSelector` | `BaseEnemyTargetSelector` | **No** |
+| `ComboPassiveSO._flatDamageBonus` | `EffectIntReader` | **No** |
+| `EffectData.Effects.$i` (null) | `IEffect` (interfaz, sin atributo) | Sí |
+| `EnchantmentSO._triggers.$i` (null) | `IEnchantmentTrigger` | Sí |
+| Cualquier slot **ya asignado** | el concreto (todos llevan el atributo) | **No** |
+
+O sea: **las precondiciones, los target selectors y los readers no se podían autorar en ningún
+lado** salvo la tool de enemigos, que se construyó dropdowns propios. Y nada se podía **re-tipar**
+una vez asignado. Eso explica por qué ningún encantamiento tiene precondiciones y por qué el pipeline
+de efectos de `CH_Warrior` se sembró por código.
+
+#### El seam
+
+El motor es genérico sobre **miembros con picker oculto**, no sobre `EffectData`. La diferencia no es
+académica: `ComboPassiveSO → _extraTriggers → ExecuteEffectsOnEvent → List<EffectData>` llega a
+`EffectData` **transitivamente**, así que un drawer atado a `EffectData` necesitaría un caso especial
+para ese puente. Atado a los pickers ocultos, sale gratis y a profundidad arbitraria.
+
+| Pieza | Rol |
+|---|---|
+| `PolymorphicAuthoringContext` | Asset raíz + `PropertyTree` + undo. `Mutate()` hace record → mutar → dirty → notify, en el único orden que funciona |
+| `PolymorphicMemberScanner` | `Scan()` = dónde va un picker (tipo declarado abstract/interface). `BlockMembersOf()` = por dónde caminar (contenedores concretos con un picker oculto abajo) |
+| `PolymorphicBlockDrawer` | Dibuja solo el picker; Odin dibuja el contenido. Recursivo, depth cap 6 |
+| `PolymorphicPicker` | Dropdown por reflexión (`TypeCache`) — ya es el registry |
+| `Graph/BlockGraphModel` + `BlockGraphLayout` | Proyección izq→der. Puros, testeables |
+| `Graph/BlockGraphView` + `BlockNodeView` | Canvas. Navega; **no** edita |
+| `BlockEditorWindow<T>` | Shell: lista + búsqueda + CRUD + tabs + panel |
+
+**Hosts:** `EnemyEditorWindow` (AI tree), `HeroClassEditorWindow`, `ItemEditorWindow` (§26.13),
+`EnchantmentEditorWindow`.
+
+#### Reglas que hay que respetar
+
+1. **`PropertyTree` ruteado en el `UnityEngine.Object`, nunca en el POCO.** Rutearlo en un POCO hace
+   que Odin resuelva con `SerializationBackend.None` y **descarte en silencio** todo campo tipado por
+   interfaz — justo los que estas tools existen para autorar.
+2. **Undo de objeto completo. No hay granular.** Ver §13.6.1a.
+3. **La topología es derivada.** Todo padre/hijo sale de un campo o un índice de lista. Por eso el
+   grafo no persiste posiciones (a diferencia del AI tree, donde son intención real de autoría): una
+   posición guardada podría desincronizarse del orden de la lista, y un grafo que miente sobre el
+   orden de ejecución es peor que no tener grafo.
+4. **Un path cacheado no se confía** después de un edit estructural — re-resolver con `FindPathTo`.
+5. **`BlockMembersOf` testea "tiene un picker *oculto* abajo"**, no "tiene un slot polimórfico".
+   `SelectionSettings` tiene un `ISelectionCountReader` que Odin dibuja bien; con la regla laxa todos
+   los efectos pasarían a dibujarse campo por campo y cambiaría la apariencia de las tools que
+   funcionan. Hay un test que lo fija.
+6. **Nunca IMGUI adentro de un nodo de GraphView** — ver el comentario de `AIDecisionTreeGraphView`.
+
+#### Deuda conocida
+
+`PolymorphicBlockDrawer.DrawReaderPickers` sabe una regla de negocio que la reflexión no puede
+inferir: el reader solo aplica cuando un campo `DamageSource` vale `FromReader`. Expresarlo como
+`[ShowIf]` en el campo de runtime dejaría que Odin lo gatee y borraría el método. Es el precio de la
+abstracción — chico, real, y va a repetirse.
+
+### 26.13 Item Editor
+
+`Tools/Item Editor` — cierra el hueco que §26.1 promete ("un diseñador crea … un item … sin escribir
+una línea de C#") y que §26.2–26.11 nunca cubrieron. Hosteado sobre §26.12.
+
+Avisa cuando el `ItemId` no está en `ItemCatalog`: la shop, `EffAddItemToInventory` y `giveitem`
+resuelven **todos** por el catálogo, así que olvidarlo hace el item silenciosamente inentregable.
+
+### 26.14 Enchantment Editor
+
+`Tools/Enchantment Editor` — 33 assets autorados que hasta ahora se editaban con el inspector crudo.
+`EnchantmentSO` (`IFaceFilter` + `List<IEnchantmentTrigger>`) es **isomorfo** a `EffectData`
+(listas polimórficas + un slot simple opcional sobre un blob de Odin), así que el host costó casi
+nada sobre §26.12.
+
+**Validación de no-ops.** Lee `Rollgeon.Attributes.NotYetWiredAttribute` y avisa cuando un trigger
+compila y se configura pero no hace nada in-game (falta hold-detection, historial de rerolls, o que
+`ContractSheet` lea el flag). Hoy marca 7 de 33: Ancla, Cargado, Comodín, Escalador, Lento, Mimético,
+Torpe — exactamente los que `docs/balance/item-inventory.html` trackeaba a mano.
+
+**Aplicar el marker con criterio:** un `TODO Phase 4` en el código **no** alcanza.
+`LuckyChanceComboBonus` y `ChanceToNotCount` tienen uno (por el seed determinístico) pero sí aplican
+su efecto; marcarlos sería mentir. El test es si el jugador nota la diferencia.
 
 ---
 

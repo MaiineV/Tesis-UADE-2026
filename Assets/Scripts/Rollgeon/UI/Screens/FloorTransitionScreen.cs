@@ -60,8 +60,8 @@ namespace Rollgeon.UI.Screens
             // Populate floor number label
             if (_floorNumberLabel != null)
                 _floorNumberLabel.text = _currentFloorNumber > 0
-                    ? $"Piso {_currentFloorNumber}"
-                    : "Piso ?";
+                    ? $"{Rollgeon.Localization.LocalizedContent.Ui("floor.label", "Piso")} {_currentFloorNumber}"
+                    : $"{Rollgeon.Localization.LocalizedContent.Ui("floor.label", "Piso")} ?";
 
             // Populate or hide floor title label
             if (_floorTitleLabel != null)

@@ -7,8 +7,11 @@ using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Combos.Tests;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
+using Rollgeon.Meta;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,12 +30,27 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class ClassSelectionScreenTests
     {
+        private class SpyScreenManager : IScreenManager
+        {
+            public IBaseScreen Current { get; set; }
+            public int PopCurrentCallCount { get; private set; }
+
+            public void Push<TScreen>(IScreenPayload payload = null) where TScreen : class, IBaseScreen { }
+            public void PushByStringId(string screenId, IScreenPayload payload = null) { }
+            public void PopCurrent() => PopCurrentCallCount++;
+            public void PushOverlay<TScreen>(IScreenPayload payload = null) where TScreen : class, IBaseScreen { }
+            public void PopOverlay() { }
+            public void RegisterScreen(IBaseScreen screen) { }
+            public void UnregisterScreen(IBaseScreen screen) { }
+        }
+
         private GameObject _screenGO;
         private ClassSelectionScreen _screen;
         private Button _warriorButton;
         private Button _magoButton;
         private Button _picaroButton;
         private Button _confirmButton;
+        private Button _backButton;
         private GameObject _indicator;
         private Image _portrait;
         private ContractDisplayView _contractDisplay;
@@ -58,6 +76,7 @@ namespace Rollgeon.UI.Tests
             _magoButton = AttachButton("MagoButton");
             _picaroButton = AttachButton("PicaroButton");
             _confirmButton = AttachButton("ConfirmButton");
+            _backButton = AttachButton("BackButton");
 
             _indicator = new GameObject("WarriorIndicator");
             _indicator.transform.SetParent(_screenGO.transform, false);
@@ -86,7 +105,7 @@ namespace Rollgeon.UI.Tests
             // Warrior hero con 8 combos poblados (priorities ascendentes — matchea §5.4).
             _par = ComboTestUtils.CreateCombo<Combo_Par>(ComboId.Par, 10);
             _doblePar = ComboTestUtils.CreateCombo<Combo_DoblePar>(ComboId.DoublePair, 18);
-            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.SumX, 25);
+            _sumaX = ComboTestUtils.CreateCombo<Combo_SumaX>(ComboId.HigherNumber, 25);
             _trio = ComboTestUtils.CreateCombo<Combo_Trio>(ComboId.Triple, 28);
             _escalera = ComboTestUtils.CreateCombo<Combo_Escalera>(ComboId.Straight, 35);
             _fullHouse = ComboTestUtils.CreateCombo<Combo_FullHouse>(ComboId.FullHouse, 40);
@@ -110,6 +129,7 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_screen, "_magoButton", _magoButton);
             AssignPrivate(_screen, "_picaroButton", _picaroButton);
             AssignPrivate(_screen, "_confirmButton", _confirmButton);
+            AssignPrivate(_screen, "_backButton", _backButton);
             AssignPrivate(_screen, "_contractDisplay", _contractDisplay);
             AssignPrivate(_screen, "_portraitDisplay", _portrait);
             // _passiveDisplay se deja null — el screen tiene null-check (TMP requiere TMP_Settings).
@@ -120,6 +140,8 @@ namespace Rollgeon.UI.Tests
         public void TearDown()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.RemoveService<IScreenManager>();
+            ServiceLocator.RemoveService<IMetaProgressionService>();
             if (_screenGO != null) UnityEngine.Object.DestroyImmediate(_screenGO);
             if (_warriorHero != null) UnityEngine.Object.DestroyImmediate(_warriorHero);
             if (_par != null) UnityEngine.Object.DestroyImmediate(_par);
@@ -140,16 +162,17 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnPushed_DisablesConfirmButton_AndLocksMagoPicaro()
+        public void OnPushed_AutoSelectsWarrior_AndLocksMagoPicaro()
         {
             InvokePushed(null);
 
-            Assert.IsFalse(_confirmButton.interactable,
-                "Confirm arranca deshabilitado hasta que el usuario seleccione al Guerrero.");
+            // Default del mock: el Guerrero arranca seleccionado.
+            Assert.IsTrue(_confirmButton.interactable,
+                "Confirm arranca habilitado — el Guerrero se auto-selecciona al pushear.");
             Assert.IsFalse(_magoButton.interactable, "Mago bloqueado en MVP.");
             Assert.IsFalse(_picaroButton.interactable, "Picaro bloqueado en MVP.");
             Assert.IsTrue(_warriorButton.interactable, "Guerrero esta disponible.");
-            Assert.IsFalse(_indicator.activeSelf, "El indicador arranca apagado — aun no hay seleccion.");
+            Assert.IsTrue(_indicator.activeSelf, "El indicador del Guerrero arranca prendido.");
         }
 
         [Test]
@@ -195,6 +218,187 @@ namespace Rollgeon.UI.Tests
             }
         }
 
+        [Test]
+        public void BackClick_CallsPopCurrent_OnScreenManager()
+        {
+            // Arrange
+            var spy = new SpyScreenManager();
+            ServiceLocator.AddService<IScreenManager>(spy);
+            InvokePushed(null);
+
+            // Act
+            _backButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, spy.PopCurrentCallCount,
+                "Atrás debe popear la screen actual para volver al menú.");
+        }
+
+        [Test]
+        public void BackClick_WithoutScreenManager_DoesNotThrow()
+        {
+            InvokePushed(null);
+
+            Assert.DoesNotThrow(() => _backButton.onClick.Invoke(),
+                "Sin IScreenManager registrado, Atrás loggea warning y no explota.");
+        }
+
+        [Test]
+        public void OnPopped_RemovesBackListener()
+        {
+            // Arrange: push + pop deja el listener removido.
+            InvokePushed(null);
+            InvokePopped();
+
+            var spy = new SpyScreenManager();
+            ServiceLocator.AddService<IScreenManager>(spy);
+
+            // Act: un click posterior al pop no debe invocar nada.
+            _backButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(0, spy.PopCurrentCallCount,
+                "Tras OnPopped el listener de Atrás debe estar removido.");
+        }
+
+        [Test]
+        public void OnPushed_UnlockableEntryWithoutHero_LocksButtonAndShowsLockIndicator()
+        {
+            // Arrange: Mago gestionado por _unlockableClasses, sin ClassHeroSO
+            // (clase no implementada). Sin IMetaProgressionService el gate degrada
+            // a "disponible", pero Hero==null debe mantenerlo bloqueado igual.
+            var lockGO = new GameObject("LockIcon");
+            lockGO.transform.SetParent(_screenGO.transform, false);
+            lockGO.SetActive(false);
+            var selectionGO = new GameObject("MagoUnderline");
+            selectionGO.transform.SetParent(_screenGO.transform, false);
+
+            AssignPrivate(_screen, "_unlockableClasses",
+                new List<ClassSelectionScreen.SelectableClassEntry>
+                {
+                    new ClassSelectionScreen.SelectableClassEntry
+                    {
+                        Hero = null,
+                        ClassId = "Mage",
+                        Button = _magoButton,
+                        SelectionIndicator = selectionGO,
+                        LockIndicator = lockGO,
+                    },
+                });
+
+            // Act
+            InvokePushed(null);
+            _magoButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsFalse(_magoButton.interactable, "Sin ClassHeroSO la clase queda bloqueada.");
+            Assert.IsTrue(lockGO.activeSelf, "El candado se muestra mientras está bloqueada.");
+            Assert.IsFalse(selectionGO.activeSelf,
+                "El click en un botón bloqueado no debe seleccionar la clase (sin listener).");
+            Assert.IsTrue(_indicator.activeSelf, "El Guerrero sigue auto-seleccionado.");
+        }
+
+        [Test]
+        public void OnPushed_LockedEntry_AddsTooltipTriggerWithFallbackText()
+        {
+            // Arrange
+            AssignPrivate(_screen, "_unlockableClasses",
+                new List<ClassSelectionScreen.SelectableClassEntry>
+                {
+                    new ClassSelectionScreen.SelectableClassEntry
+                    {
+                        Hero = null,
+                        ClassId = "Mage",
+                        Button = _magoButton,
+                    },
+                });
+
+            // Act
+            InvokePushed(null);
+
+            // Assert: sin IMetaProgressionService el provider usa el texto genérico de la
+            // tabla UI. Se resuelve por el mismo camino que la producción para no depender del
+            // locale activo (sale de un PlayerPref y no siempre es español).
+            var trigger = _magoButton.GetComponent<UITooltipTrigger>();
+            Assert.IsNotNull(trigger, "El botón bloqueado debe tener UITooltipTrigger.");
+            Assert.IsNotNull(trigger.TextProvider, "El trigger debe tener TextProvider cableado.");
+            Assert.AreEqual(GenericLockedTooltip, trigger.TextProvider(),
+                "Sin servicio meta el tooltip usa el fallback genérico.");
+        }
+
+        [Test]
+        public void ResolveLockedTooltip_WithHeroClassDefinition_ReturnsDefinitionHint()
+        {
+            // Arrange
+            // UnlockId sintético a propósito: "unlock.class.mage" SÍ existe en la tabla Content
+            // (con el placeholder "Coming soon"/"Próximamente", que coincide con el tooltip
+            // genérico), así que usarlo hacía indistinguible "usó el hint de la definición" de
+            // "cayó al genérico". Con una key inexistente el hint degrada al HintText autorado.
+            var def = ScriptableObject.CreateInstance<UnlockDefinitionSO>();
+            def.UnlockId = "unlock.class.test_only_mage";
+            def.Category = UnlockableCategory.HeroClass;
+            def.TargetId = "Mage";
+            def.HintText = "Hint de prueba del Mago";
+            ServiceLocator.AddService<IMetaProgressionService>(new StubMetaService(def));
+
+            try
+            {
+                // Act
+                string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
+
+                // Assert: usa el hint DE ESA definición, no el genérico. El valor se resuelve
+                // por el mismo camino que la producción (si la tabla no tiene la key, degrada al
+                // HintText autorado) para que el test no dependa del locale activo.
+                Assert.AreEqual(LocalizedContent.Hint(def.UnlockId, def.HintText), tooltip);
+                Assert.AreNotEqual(GenericLockedTooltip, tooltip,
+                    "Con definición registrada no debe caer al tooltip genérico.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(def);
+            }
+        }
+
+        [Test]
+        public void ResolveLockedTooltip_WithoutService_ReturnsUiFallback()
+        {
+            // Arrange: sin IMetaProgressionService registrado (TearDown lo garantiza).
+
+            // Act
+            string tooltip = ClassSelectionScreen.ResolveLockedTooltip("Mage");
+
+            // Assert
+            Assert.AreEqual(GenericLockedTooltip, tooltip,
+                "Sin servicio meta se usa el fallback de la tabla UI.");
+        }
+
+        /// <summary>Texto genérico de clase bloqueada, resuelto igual que en producción
+        /// (<c>ClassSelectionScreen.ResolveLockedTooltip</c>) para no atarse a un idioma.</summary>
+        private static string GenericLockedTooltip =>
+            LocalizedContent.Ui("class_select.locked_tooltip", "Próximamente");
+
+        private sealed class StubMetaService : IMetaProgressionService
+        {
+            private readonly List<UnlockDefinitionSO> _definitions;
+
+            public StubMetaService(params UnlockDefinitionSO[] definitions)
+                => _definitions = new List<UnlockDefinitionSO>(definitions);
+
+            public bool IsAvailable(UnlockableCategory category, string targetId) => false;
+            public bool IsDefinitionCompleted(UnlockDefinitionSO definition) => false;
+            public IReadOnlyList<UnlockDefinitionSO> Definitions => _definitions;
+            public bool TryUnlock(UnlockDefinitionSO definition, bool duringRun) => false;
+            public int ConsecutiveWins => 0;
+            public IReadOnlyCollection<string> ClassesPlayed => Array.Empty<string>();
+            public void RecordRunCompleted(bool won, string classId) { }
+            public bool IsTutorialCompleted => true;
+            public void MarkTutorialCompleted() { }
+            public bool IsTutorialEnabled => true;
+            public void SetTutorialEnabled(bool enabled) { }
+            public void SaveNow() { }
+            public void ResetProgression() { }
+        }
+
         // ---------------- helpers ----------------
 
         private Button AttachButton(string name)
@@ -208,6 +412,11 @@ namespace Rollgeon.UI.Tests
         {
             // OnPushed es protected — usamos el forwarder explicito de IBaseScreen.
             ((IBaseScreen)_screen)._Internal_OnPushed(payload);
+        }
+
+        private void InvokePopped()
+        {
+            ((IBaseScreen)_screen)._Internal_OnPopped();
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Patterns.Save;
 using Rollgeon.Dice;
+using UnityEngine;
 
 namespace Rollgeon.Upgrades.Dice
 {
@@ -24,19 +26,28 @@ namespace Rollgeon.Upgrades.Dice
     /// counters se purgan via <see cref="ClearCountersForSlot"/>.
     /// </para>
     /// </remarks>
-    public sealed class RuntimeDiceBag
+    public sealed class RuntimeDiceBag : ISaveable, IDisposable
     {
+        public const string SaveKeyConst = "run.dice_enchantments";
+        private const string LogPrefix = "[RuntimeDiceBag] ";
+
         private readonly DiceType[] _dice;
         private readonly EnchantmentSO[][] _enchantments;
         private readonly Dictionary<(int bag, int slot, string key), int> _counters
             = new Dictionary<(int bag, int slot, string key), int>();
+        private readonly Func<string, EnchantmentSO> _resolveById;
 
         /// <summary>Tipos de dado en el bag, en orden de slot.</summary>
         public IReadOnlyList<DiceType> Dice => _dice;
 
-        public RuntimeDiceBag(IReadOnlyList<DiceType> dice)
+        /// <param name="resolveById">
+        /// Resolver UpgradeId → <see cref="EnchantmentSO"/> para rehidratar un save
+        /// (§15). Null = el restore descarta enchantments con warning.
+        /// </param>
+        public RuntimeDiceBag(IReadOnlyList<DiceType> dice, Func<string, EnchantmentSO> resolveById = null)
         {
             if (dice == null) throw new ArgumentNullException(nameof(dice));
+            _resolveById = resolveById;
             _dice = new DiceType[dice.Count];
             _enchantments = new EnchantmentSO[dice.Count][];
             for (int i = 0; i < dice.Count; i++)
@@ -127,5 +138,112 @@ namespace Rollgeon.Upgrades.Dice
             }
             foreach (var k in toRemove) _counters.Remove(k);
         }
+
+        // ---- ISaveable (§15) ---------------------------------------------------
+
+        public string SaveKey => SaveKeyConst;
+
+        public object CaptureState()
+        {
+            var snapshot = new RuntimeDiceBagSnapshot();
+            for (int bag = 0; bag < _enchantments.Length; bag++)
+            {
+                var arr = _enchantments[bag];
+                for (int slot = 0; slot < arr.Length; slot++)
+                {
+                    if (arr[slot] == null || string.IsNullOrEmpty(arr[slot].UpgradeId)) continue;
+                    snapshot.Enchantments.Add(new EnchantmentSlotSnapshot
+                    {
+                        BagIndex = bag,
+                        SlotIndex = slot,
+                        EnchantmentId = arr[slot].UpgradeId,
+                    });
+                }
+            }
+            foreach (var kv in _counters)
+            {
+                snapshot.Counters.Add(new EnchantmentCounterSnapshot
+                {
+                    BagIndex = kv.Key.bag,
+                    SlotIndex = kv.Key.slot,
+                    Key = kv.Key.key,
+                    Value = kv.Value,
+                });
+            }
+            return snapshot;
+        }
+
+        public void RestoreState(object state)
+        {
+            for (int i = 0; i < _enchantments.Length; i++)
+                Array.Clear(_enchantments[i], 0, _enchantments[i].Length);
+            _counters.Clear();
+
+            if (state is not RuntimeDiceBagSnapshot snapshot) return;
+
+            if (snapshot.Enchantments.Count > 0 && _resolveById == null)
+            {
+                Debug.LogWarning(LogPrefix + "Save con enchantments pero sin resolver " +
+                                 "(EnchantmentCatalogSO ausente) — se descartan.");
+            }
+            else
+            {
+                foreach (var e in snapshot.Enchantments)
+                {
+                    var ench = _resolveById(e.EnchantmentId);
+                    if (ench == null)
+                    {
+                        Debug.LogWarning(LogPrefix + $"Enchantment '{e.EnchantmentId}' del save " +
+                                         "no existe en el catálogo — se descarta.");
+                        continue;
+                    }
+                    // SetEnchantmentAt bounds-checkea: un save de un bag distinto
+                    // (menos slots) degrada descartando en vez de romper.
+                    SetEnchantmentAt(e.BagIndex, e.SlotIndex, ench);
+                }
+            }
+
+            foreach (var c in snapshot.Counters)
+            {
+                if (string.IsNullOrEmpty(c.Key)) continue;
+                _counters[(c.BagIndex, c.SlotIndex, c.Key)] = c.Value;
+            }
+        }
+
+        // ---- IDisposable -------------------------------------------------------
+
+        /// <summary>
+        /// Invocado por <c>ClearScope(Run)</c>. El Unregister explícito evita que dos
+        /// instancias con la misma SaveKey convivan en el registry entre runs.
+        /// </summary>
+        public void Dispose()
+        {
+            SaveSystem.Unregister(this);
+        }
+    }
+
+    /// <summary>DTO serializable de <see cref="RuntimeDiceBag"/> (§15).</summary>
+    [Serializable]
+    public class RuntimeDiceBagSnapshot
+    {
+        public List<EnchantmentSlotSnapshot> Enchantments = new List<EnchantmentSlotSnapshot>();
+        public List<EnchantmentCounterSnapshot> Counters = new List<EnchantmentCounterSnapshot>();
+    }
+
+    [Serializable]
+    public class EnchantmentSlotSnapshot
+    {
+        public int BagIndex;
+        public int SlotIndex;
+        public string EnchantmentId;
+    }
+
+    [Serializable]
+    public class EnchantmentCounterSnapshot
+    {
+        public int BagIndex;
+        public int SlotIndex;
+        public string Key;
+        public int Value;
     }
 }

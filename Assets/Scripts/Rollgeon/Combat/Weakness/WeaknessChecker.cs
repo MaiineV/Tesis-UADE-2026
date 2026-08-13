@@ -30,6 +30,26 @@ namespace Rollgeon.Combat.Weakness
         /// <inheritdoc />
         public float GetMultiplier(Guid attacker, Guid target, string matchedComboId)
         {
+            float multiplier = ResolveMultiplier(target, matchedComboId);
+            if (multiplier <= 1.0f) return 1.0f;
+
+            // Fire event — informativo, no-transaccional (plan §10.6).
+            EventManager.Trigger(EventName.OnWeaknessHit, attacker, target);
+
+            return multiplier;
+        }
+
+        /// <inheritdoc />
+        public float PeekMultiplier(Guid attacker, Guid target, string matchedComboId)
+        {
+            // Mismo lookup que GetMultiplier pero sin disparar OnWeaknessHit — para previews.
+            float multiplier = ResolveMultiplier(target, matchedComboId);
+            return multiplier <= 1.0f ? 1.0f : multiplier;
+        }
+
+        // Lookup puro del multiplicador (registry + ruleset default), sin side-effects.
+        private float ResolveMultiplier(Guid target, string matchedComboId)
+        {
             if (target == Guid.Empty) return 1.0f;
             if (string.IsNullOrEmpty(matchedComboId)) return 1.0f;
 
@@ -37,16 +57,9 @@ namespace Rollgeon.Combat.Weakness
             if (string.IsNullOrEmpty(data.comboId)) return 1.0f;
             if (data.comboId != matchedComboId) return 1.0f;
 
-            float multiplier = data.mult > 0f
+            return data.mult > 0f
                 ? data.mult
                 : _ruleset.Weakness.DefaultMultiplier;
-
-            if (multiplier <= 1.0f) return 1.0f;
-
-            // Fire event — informativo, no-transaccional (plan §10.6).
-            EventManager.Trigger(EventName.OnWeaknessHit, attacker, target);
-
-            return multiplier;
         }
 
         /// <summary>

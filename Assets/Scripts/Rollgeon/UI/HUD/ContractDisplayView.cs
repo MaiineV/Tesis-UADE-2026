@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combos;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -57,6 +58,8 @@ namespace Rollgeon.UI.HUD
         // cuando el Boss 3 cambia la capa de modificadores del Contrato (§4).
         private readonly List<ComboRowView> _rows = new List<ComboRowView>();
         private bool _subscribed;
+        private bool _headerHasTextAnimator;
+        private bool _headerAnimatorChecked;
 
         /// <summary>
         /// Limpia rows previas, setea el header y re-instancia una <see cref="ComboRowView"/>
@@ -76,8 +79,23 @@ namespace Rollgeon.UI.HUD
 
             if (_headerLabel != null)
             {
+                // Lane B (code-set, Bind lo pisa en cada llamada): key UI con
+                // fallback al DisplayLabel del sheet si viene autorado.
                 var label = sheet.DisplayLabel;
-                _headerLabel.text = string.IsNullOrEmpty(label) ? "Contrato" : label;
+                var text = string.IsNullOrEmpty(label)
+                    ? LocalizedContent.Ui("class_select.contract_title", "Contrato")
+                    : label;
+
+                // Wave del Text Animator (Febucci) solo si el label lo tiene —
+                // sin el componente, TMP renderizaría los tags como texto plano.
+                if (!_headerAnimatorChecked)
+                {
+                    // Por nombre: el runtime no referencia el assembly de Febucci
+                    // (solo Rollgeon.Editor) — el installer agrega el componente.
+                    _headerHasTextAnimator = _headerLabel.GetComponent("TextAnimator_TMP") != null;
+                    _headerAnimatorChecked = true;
+                }
+                _headerLabel.text = _headerHasTextAnimator ? $"<wave>{text}</wave>" : text;
             }
 
             if (_rowPrefab == null)
@@ -118,7 +136,9 @@ namespace Rollgeon.UI.HUD
                 }
 
                 var row = Instantiate(_rowPrefab, _rowsContainer);
-                row.Bind(combo);
+                // El sheet viaja como override: en selección de clase todavía no
+                // hay CurrentHero y sin esto la fila mostraría el daño de catálogo.
+                row.Bind(combo, sheet);
                 _rows.Add(row);
             }
 

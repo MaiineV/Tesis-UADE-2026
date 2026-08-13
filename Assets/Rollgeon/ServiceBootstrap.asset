@@ -21,8 +21,12 @@ MonoBehaviour:
     - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
     - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
     - {fileID: 11400000, guid: 8ff5bb6fab3ceb747bfe8ec8dda67c02, type: 2}
+    - {fileID: 11400000, guid: 9bfa27dab95ec8847a7692892a7a9df7, type: 2}
+    - {fileID: 11400000, guid: 28358bd4a899ce54b918e3d20bb8089e, type: 2}
     - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
     - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
+    - {fileID: 11400000, guid: 4400eee50af376345913e8827c1a428b, type: 2}
+    - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
     - {fileID: 11400000, guid: 770d23ca67712434fba66c1720131b74, type: 2}
     - {fileID: 11400000, guid: 497954e0bde12fa43bd6148abb7e0fc3, type: 2}
@@ -58,6 +62,14 @@ MonoBehaviour:
     - {fileID: 11400000, guid: e13a052b1109ba14abfd13eca1a17960, type: 2}
     - {fileID: 11400000, guid: 0ba2f2645c2a0684fba7b3959685062e, type: 2}
     - {fileID: 11400000, guid: dcf023303989e2b47a0491d189c68838, type: 2}
+    - {fileID: 11400000, guid: a4a86d95b69f49a48a419e0ea537bbee, type: 2}
+    - {fileID: 11400000, guid: 7c55120d7c3341ed8103acd8ccdfae1a, type: 2}
+    - {fileID: 11400000, guid: ea5940d0bc86fef4b8e91836b1e5be93, type: 2}
+    - {fileID: 11400000, guid: 60a5116217cf18b4eb4775b1e3c0bfbb, type: 2}
+    - {fileID: 11400000, guid: a79e9fad8d9a1ed4588e5ee2ec2e59d7, type: 2}
+    - {fileID: 11400000, guid: 4d217010a209a784899b798194deabb2, type: 2}
+    - {fileID: 11400000, guid: eeb127687103f7b4faf3864e6fa66271, type: 2}
+    - {fileID: 11400000, guid: 5e9a30023dcf2eb49bc59b5ae992e9e6, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -69,7 +81,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 5
+      Data: 7
     - Name: 
       Entry: 10
       Data: 0
@@ -86,6 +98,12 @@ MonoBehaviour:
       Entry: 10
       Data: 4
     - Name: 
+      Entry: 10
+      Data: 5
+    - Name: 
+      Entry: 10
+      Data: 6
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -97,13 +115,19 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 4
     - Name: 
       Entry: 10
-      Data: 5
+      Data: 7
     - Name: 
       Entry: 10
-      Data: 6
+      Data: 8
+    - Name: 
+      Entry: 10
+      Data: 9
+    - Name: 
+      Entry: 10
+      Data: 10
     - Name: 
       Entry: 13
       Data: 
@@ -116,28 +140,13 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 40
+      Data: 53
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 10
-      Data: 7
-    - Name: 
-      Entry: 10
-      Data: 8
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 10
-      Data: 9
-    - Name: 
-      Entry: 10
-      Data: 10
     - Name: 
       Entry: 10
       Data: 11
@@ -193,12 +202,6 @@ MonoBehaviour:
       Entry: 10
       Data: 28
     - Name: 
-      Entry: 7
-      Data: 4|Rollgeon.Combat.ComboBlock.ComboBlockService, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
       Entry: 10
       Data: 29
     - Name: 
@@ -210,6 +213,12 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 32
+    - Name: 
+      Entry: 7
+      Data: 4|Rollgeon.Combat.ComboBlock.ComboBlockService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 10
       Data: 33
@@ -238,6 +247,18 @@ MonoBehaviour:
       Entry: 10
       Data: 41
     - Name: 
+      Entry: 10
+      Data: 42
+    - Name: 
+      Entry: 10
+      Data: 43
+    - Name: 
+      Entry: 10
+      Data: 44
+    - Name: 
+      Entry: 10
+      Data: 45
+    - Name: 
       Entry: 7
       Data: 5|Rollgeon.Meta.MetaProgressionService, Rollgeon
     - Name: 
@@ -250,6 +271,69 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 10
+      Data: 46
+    - Name: 
+      Entry: 10
+      Data: 47
+    - Name: 
+      Entry: 10
+      Data: 48
+    - Name: 
+      Entry: 10
+      Data: 49
+    - Name: 
+      Entry: 7
+      Data: 7|Rollgeon.Steam.SteamServiceBootstrap, Rollgeon.Steam
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.Achievements.AchievementService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 9|Patterns.Save.SaveSystemBootstrap, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 10
+      Data: 50
+    - Name: 
+      Entry: 7
+      Data: 10|Rollgeon.Localization.LocalizationServiceBootstrap, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 11|Rollgeon.Analytics.Ugs.UgsAnalyticsBootstrap, Rollgeon.Analytics.Ugs
+    - Name: _sendFromEditor
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 12|Rollgeon.Analytics.AnalyticsTrackerService, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 10
+      Data: 51
+    - Name: 
+      Entry: 10
+      Data: 52
+    - Name: 
+      Entry: 10
+      Data: 53
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -261,7 +345,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a5a66fbed78ca884694aad024e9aeff1, type: 2}
   - {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
   - {fileID: 11400000, guid: 8ff5bb6fab3ceb747bfe8ec8dda67c02, type: 2}
+  - {fileID: 11400000, guid: 9bfa27dab95ec8847a7692892a7a9df7, type: 2}
+  - {fileID: 11400000, guid: 28358bd4a899ce54b918e3d20bb8089e, type: 2}
   SettingsAssets:
   - {fileID: 11400000, guid: 7735b0d5250f4904fac28f6611b3ae65, type: 2}
   - {fileID: 11400000, guid: f2c2842ae39e12145a18bf8498ae7ce1, type: 2}
+  - {fileID: 11400000, guid: 4400eee50af376345913e8827c1a428b, type: 2}
+  - {fileID: 11400000, guid: 49f5a4f671778514c88916591b03cf1a, type: 2}
   _nextSceneName: 01_MainMenu

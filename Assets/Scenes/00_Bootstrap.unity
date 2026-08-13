@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &554311722
+--- !u!1 &733386600
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,43 +127,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 554311724}
-  - component: {fileID: 554311723}
+  - component: {fileID: 733386602}
+  - component: {fileID: 733386601}
   m_Layer: 0
-  m_Name: FirstNorth
+  m_Name: '[CoroutineHost]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &554311723
+--- !u!114 &733386601
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 554311722}
+  m_GameObject: {fileID: 733386600}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 010d90d15f0497b4093d6058e1ec6040, type: 3}
+  m_Script: {fileID: 11500000, guid: 5e458f962b3acc04fb1971c4a6ed83c8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorController
-  Direction: 0
-  IsExit: 0
-  SpawnPointId: 
-  _meshOpen: {fileID: 0}
-  _meshClosed: {fileID: 0}
-  _wallPlug: {fileID: 0}
---- !u!4 &554311724
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Patterns.CoroutineHost
+--- !u!4 &733386602
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 554311722}
+  m_GameObject: {fileID: 733386600}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 4}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -180,6 +174,7 @@ GameObject:
   - component: {fileID: 2145963334}
   - component: {fileID: 2145963333}
   - component: {fileID: 2145963335}
+  - component: {fileID: 2145963336}
   m_Layer: 0
   m_Name: Bootstrap
   m_TagString: Untagged
@@ -231,9 +226,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Run.RunControllerBootstrapper
   _defaultLayout: {fileID: 11400000, guid: 0da9005a48665e64091210ba7299224c, type: 2}
+--- !u!114 &2145963336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2145963332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed797ff38c0994d49998cf3c9aaf360f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Input.GameplayHotkeyService
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _mapName: Gameplay
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 2145963334}
-  - {fileID: 554311724}
+  - {fileID: 733386602}

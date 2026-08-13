@@ -9,6 +9,29 @@ desde abril 2026 (ver [`CLAUDE.md`](./CLAUDE.md)).
 
 ---
 
+## [Sin publicar]
+
+### Agregado
+
+- **Pipeline de build de Windows** (Feature#0036): `RollgeonBuild` con menú
+  **Rollgeon → Build** y entry points para `-executeMethod`, que valida los
+  invariantes que fallan en silencio (identidad del producto, define
+  `STEAMWORKS_NET`, build target, orden de escenas) antes de buildear.
+  Ver [`docs/setup/windows-build.md`](./docs/setup/windows-build.md).
+- **Scripts de SteamPipe** (`SteamPipe/`) para subir depots a la App 4889850,
+  commiteados en modo preview. Ver [`SteamPipe/README.md`](./SteamPipe/README.md).
+
+### Cambiado
+
+- `productName` pasa de `Rolllgeon` (typo) a `Rollgeon`, y el
+  `applicationIdentifier` de Standalone deja de ser el del template URP.
+  **Mueve `persistentDataPath`**: los saves y la meta-progresión locales quedan
+  huérfanos en `LocalLow/LetItRide/Rolllgeon/`.
+- Addressables construye su contenido junto con el player de forma determinista,
+  en vez de depender de un `EditorPrefs` local a cada máquina.
+
+---
+
 ## [0.0.5] — 2026-06-16
 
 Primer release etiquetado. `main` quedó anclada a `develop`: consolida todo el

@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Patterns.Save;
 using Rollgeon.Balance;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEngine;
@@ -116,6 +117,7 @@ namespace Rollgeon.Combos.Counters
             // Instancia un state fresco por run y lo inscribe en el scope Run.
             var state = new RunComboCounterState();
             ServiceLocator.AddService<RunComboCounterState>(state, ServiceScope.Run);
+            SaveSystem.Register(state);
         }
 
         // Schema EventName.OnRunEnd: args = [Guid runId, RunOutcome outcome]

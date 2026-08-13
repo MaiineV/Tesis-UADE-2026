@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Rollgeon.Effects;
+using Rollgeon.Shop;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace Rollgeon.Items
 {
     [CreateAssetMenu(menuName = "Rollgeon/Items/Item")]
-    public class ItemSO : SerializedScriptableObject
+    public class ItemSO : SerializedScriptableObject, IShopRewardEntry
     {
         [Title("Identity")]
         public string ItemId;
@@ -56,5 +57,13 @@ namespace Rollgeon.Items
         [Title("Visual")]
         [InfoBox("Prefab opcional para la representacion 3D del item en el mundo (pedestal, drop).")]
         public GameObject WorldPrefab;
+
+        // ---- IShopRewardEntry (explicit impl — los fields publicos no satisfacen
+        // properties de interface). EntryId mapea a ItemId; se persiste como
+        // ShopItemState.ReservedItemId en re-entry de tienda. ----
+        string IShopRewardEntry.EntryId => ItemId;
+        string IShopRewardEntry.DisplayName => DisplayName;
+        string IShopRewardEntry.Description => Description;
+        Sprite IShopRewardEntry.Icon => Icon;
     }
 }

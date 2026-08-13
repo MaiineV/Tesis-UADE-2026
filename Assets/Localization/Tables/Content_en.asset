@@ -1,0 +1,800 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Content_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 2bbd99212b054c54da253d71aabc13ca, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5318321664000
+    m_Localized: Warrior
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024128
+    m_Localized: Warrior (Tutorial)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024129
+    m_Localized: Warrior's Regeneration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024130
+    m_Localized: At the start of each turn, the warrior heals 2 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024131
+    m_Localized: Double Pair
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024132
+    m_Localized: 2 dice of the same value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024133
+    m_Localized: Straight
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024134
+    m_Localized: Dice in a run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024135
+    m_Localized: Brute Force
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024136
+    m_Localized: 'Sums the values of all dice that landed in the upper half of their
+      own range (d6: 4-6, d8: 5-8, d12: 7-12).'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024137
+    m_Localized: Full House
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024138
+    m_Localized: 2 dice of one value and 3 of another
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024139
+    m_Localized: Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024140
+    m_Localized: 5 dice of the same value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024141
+    m_Localized: Higher Number
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024142
+    m_Localized: Highest die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024143
+    m_Localized: Pair
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024144
+    m_Localized: 2 dice of the same value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024145
+    m_Localized: Poker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024146
+    m_Localized: 4 dice of the same value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024147
+    m_Localized: Trio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024148
+    m_Localized: 3 dice of the same value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024149
+    m_Localized: Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024150
+    m_Localized: Berserker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024151
+    m_Localized: The Berserker becomes selectable on the character selection screen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024152
+    m_Localized: Gambler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024153
+    m_Localized: The Gambler becomes selectable on the character selection screen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024154
+    m_Localized: D8 Die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024155
+    m_Localized: The D8 becomes available on the build screen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024156
+    m_Localized: D10 Die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5318351024157
+    m_Localized: The D10 becomes available on the build screen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151808
+    m_Localized: Boss Test
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151809
+    m_Localized: Healer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151810
+    m_Localized: Card Enemy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151811
+    m_Localized: Ranged Enemy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151812
+    m_Localized: A goblin with a ranged attack; fires a crossbow.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151813
+    m_Localized: Recruit (Tutorial)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151814
+    m_Localized: Thug (Tutorial)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151815
+    m_Localized: General Director
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151816
+    m_Localized: The oldest of them all. He has been alone on the top floor for so
+      long that he no longer remembers for sure what the original casino rules were.
+      At some point, he stopped looking for them in the manual and started making
+      them up. He enforces them with complete conviction and full bureaucratic authority.
+      Whether they benefit or harm the player is just an administrative detail that
+      doesn't factor into his judgment.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151817
+    m_Localized: Security Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151818
+    m_Localized: He has spent centuries reviewing casino security protocols. Every
+      action is recorded in his incident book. He detected thousands of cheaters
+      in his lifetime and continues applying the same procedures even if there is
+      no one left alive to protect. If the player repeats a move, he already has
+      it recorded.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151819
+    m_Localized: The Sunken Grand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5406620151820
+    m_Localized: 'He has been calculating odds in the casino for centuries. He doesn''t
+      need to guess what combo the player is going to roll: it is enough for him
+      to take a part of the equation out of it. He speaks during combat making cool
+      statistical observations about the player''s roll. He''s not cruel, he''s an
+      actuary who never learned to shut up.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623680
+    m_Localized: Attack +3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623681
+    m_Localized: Energy +1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623682
+    m_Localized: Max Health +5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623683
+    m_Localized: Speed +2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623684
+    m_Localized: Greed on Ladder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623685
+    m_Localized: Each Ladder combo grants gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623686
+    m_Localized: Pair Bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623687
+    m_Localized: +50 damage when matching a Pair.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623688
+    m_Localized: Sharpened
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623689
+    m_Localized: The minimum result is always half the maximum, rounded up. A sharpened
+      d6 never rolls below 3.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623690
+    m_Localized: Anchor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623691
+    m_Localized: If this die is held between rolls, its result increases by +1 per
+      held roll (max +3).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623692
+    m_Localized: Miser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623693
+    m_Localized: Grants 3 extra gold when you complete a trio combo or better.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623694
+    m_Localized: Middle Faces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623695
+    m_Localized: Blocks the top and bottom quarter. d8:{3,4,5,6} d12:{4,5,6,7,8,9}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623696
+    m_Localized: Loaded
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623697
+    m_Localized: Once per combat you can reroll this die and keep the higher result.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623698
+    m_Localized: Covetous
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623699
+    m_Localized: The die joins any combo and grants +3 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623700
+    m_Localized: Wild
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623701
+    m_Localized: This die counts as any number for combo purposes (straights, trio,
+      generala).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623702
+    m_Localized: Climber
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623703
+    m_Localized: For straights, this die counts as both its value and its value+1
+      at the same time.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623704
+    m_Localized: Shielded
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623705
+    m_Localized: If used in a full house combo it grants 2 extra shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623706
+    m_Localized: Extremes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623707
+    m_Localized: Only shows the top and bottom quarter. d8:{1,2,7,8} d12:{1,2,3,10,11,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623708
+    m_Localized: Fortress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623709
+    m_Localized: The die shows its maximum value and joins the combo; it generates
+      2 shield points.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623710
+    m_Localized: Fragile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623711
+    m_Localized: 50% chance the die doesn't count toward the combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623712
+    m_Localized: Twin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623713
+    m_Localized: If this die shows the same number as another in the roll, both count
+      x1.5 toward the combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623714
+    m_Localized: Greed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623715
+    m_Localized: If the die isn't part of a combo, it grants 2 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623716
+    m_Localized: Odd
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623717
+    m_Localized: Only shows odd faces. d6:{1,3,5} d8:{1,3,5,7} d12:{1,3,5,7,9,11}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623718
+    m_Localized: Inverted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623719
+    m_Localized: The result becomes max+1 minus the result. A d6 that rolls 1 counts
+      as 6.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623720
+    m_Localized: Sluggish
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623721
+    m_Localized: This die cannot be held between rolls.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623722
+    m_Localized: Merchant
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623723
+    m_Localized: Grants 5 gold when you complete a straight.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623724
+    m_Localized: Mimic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623725
+    m_Localized: Copies the result of the last rerolled die in this roll for combo
+      purposes.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623726
+    m_Localized: Lower Half
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623727
+    m_Localized: Only shows the lower half of the die. d6:{1,2,3} d8:{1,2,3,4} d12:{1,2,3,4,5,6}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623728
+    m_Localized: Upper Half
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623729
+    m_Localized: Only shows the upper half of the die. d6:{4,5,6} d8:{5,6,7,8} d12:{7,8,9,10,11,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623730
+    m_Localized: Multiple of 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623731
+    m_Localized: Only shows multiples of 3. d12:{3,6,9,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623732
+    m_Localized: Non-Prime
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623733
+    m_Localized: Only shows non-prime numbers (1 included). d8:{1,4,6,8}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623734
+    m_Localized: Only Evens
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531895623735
+    m_Localized: This die only rolls even numbers.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817984
+    m_Localized: Rusty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817985
+    m_Localized: The die loses 1 from its final result (minimum 1).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817986
+    m_Localized: Even
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817987
+    m_Localized: Only shows even faces. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817988
+    m_Localized: Parity Gamble
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817989
+    m_Localized: If this die rolls an odd number it multiplies x3; otherwise x0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817990
+    m_Localized: Heavy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817991
+    m_Localized: Adds +2 to the die's final result.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817992
+    m_Localized: Prime
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817993
+    m_Localized: Only shows prime numbers. d12:{2,3,5,7,11}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817994
+    m_Localized: Resonant
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817995
+    m_Localized: If 2 or more dice show the same number in the final roll, this die
+      adds its value to the combo twice.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817996
+    m_Localized: Thirsty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817997
+    m_Localized: Each time it joins a combo it consumes 2 gold. With no gold it can't
+      take part.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817998
+    m_Localized: Clumsy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899817999
+    m_Localized: Forces a full reroll on turn 2 of the combat.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818000
+    m_Localized: Volatile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531899818001
+    m_Localized: On a maximum roll the result doubles. On a minimum roll it's worth
+      0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315456
+    m_Localized: Boss Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315457
+    m_Localized: Combat Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315458
+    m_Localized: Combat Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315459
+    m_Localized: Combat Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531975315460
+    m_Localized: Combat Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5531983704064
+    m_Localized: Enchantment Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590144
+    m_Localized: Potion Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590145
+    m_Localized: Shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590146
+    m_Localized: Starting Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590147
+    m_Localized: Starting Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590148
+    m_Localized: "Tutorial \u2014 Combat 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5532067590149
+    m_Localized: "Tutorial \u2014 Combat 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211498464378880
+    m_Localized: Warrior's Fury
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1211498485350400
+    m_Localized: When your health is 3 or less, your base damage increases by 5 points.
+      Healing above that threshold returns it to normal.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250105098240
+    m_Localized: 'Master the standard die: win a run relying only on the classic
+      six-sider.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846976
+    m_Localized: There's an exact dice recipe that opens this door. Experiment with
+      the mix.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846977
+    m_Localized: 'Prove your eight-sided strength: carry the new die to a victory.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7800250142846978
+    m_Localized: A true gambler never leaves a Contract play uncashed.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867749369741312
+    m_Localized: Coming soon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867749415878656
+    m_Localized: Coming soon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539513700352
+    m_Localized: Mage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643392
+    m_Localized: The Mage will become selectable in a future version.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643393
+    m_Localized: Rogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539555643394
+    m_Localized: The Rogue will become selectable in a future version.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852756152320
+    m_Localized: Reflection Amulet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735232
+    m_Localized: When you take damage, deal 10 damage back to the enemy that hit
+      you.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735233
+    m_Localized: Royal Feast
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735234
+    m_Localized: Full Houses deal +30 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735235
+    m_Localized: Blessing of Fate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735236
+    m_Localized: Each Generala heals 15 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735237
+    m_Localized: Merchant's Pouch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735238
+    m_Localized: Each Double Pair grants +5 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735239
+    m_Localized: Climber's Boots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735240
+    m_Localized: The Ladder deals +25 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735241
+    m_Localized: Light Boots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735242
+    m_Localized: +1 base movement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735243
+    m_Localized: Trade Chain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735244
+    m_Localized: Double Pair deals +20 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735245
+    m_Localized: Champion's Cup
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735246
+    m_Localized: The Generala deals +50 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735247
+    m_Localized: Reinforced Plate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735248
+    m_Localized: +2 max health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735249
+    m_Localized: Noble Crown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735250
+    m_Localized: Each Full House restores 5 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735251
+    m_Localized: The Selfish One
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735252
+    m_Localized: The more gold you have, the more damage you deal.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735253
+    m_Localized: Imperial Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735254
+    m_Localized: Each Poker grants +2 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735255
+    m_Localized: Fire Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735256
+    m_Localized: The Brute Force combo deals +35 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735257
+    m_Localized: Gambler's Gloves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735258
+    m_Localized: Pairs deal +20 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735259
+    m_Localized: Master's Gloves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735260
+    m_Localized: The Poker deals +25 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735261
+    m_Localized: Survival Instinct
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735262
+    m_Localized: When you drop below 30% HP you gain +1 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735263
+    m_Localized: Lucky Coin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735264
+    m_Localized: Each Pair grants +2 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735265
+    m_Localized: Blood Ritual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735266
+    m_Localized: Each Trio restores 1 HP.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735267
+    m_Localized: Steel Kneepads
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735268
+    m_Localized: You start each combat with +3 shield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735269
+    m_Localized: Vital Talisman
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735270
+    m_Localized: Restore 1 HP when combat starts.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735271
+    m_Localized: Legendary Treasure
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735272
+    m_Localized: Each Generala grants +30 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735273
+    m_Localized: Clan Totem
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735274
+    m_Localized: Trios deal +30 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9716852768735275
+    m_Localized: Restores health when used.
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

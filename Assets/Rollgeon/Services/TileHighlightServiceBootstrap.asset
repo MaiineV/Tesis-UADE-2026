@@ -12,3 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87a52d1191eec9345964bfa5ba6b1c8c, type: 3}
   m_Name: TileHighlightServiceBootstrap
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileHighlightServiceBootstrap
+  _doorTileColor: {r: 1, g: 0, b: 0, a: 1}
+  _doorTileSprite: {fileID: 0}
+  _moveColor: {r: 0, g: 1, b: 1, a: 1}
+  _attackColor: {r: 1, g: 0.3, b: 0.3, a: 0.6}
+  _rangeColor: {r: 1, g: 0.6571664, b: 0.5518868, a: 1}
+  _selectedColor: {r: 1, g: 0.9, b: 0.2, a: 0.7}
+  _pathColor: {r: 0.45, g: 1, b: 0.55, a: 0.85}
+  _warningColor: {r: 1, g: 0.55, b: 0.1, a: 0.65}
+  _aoeColor: {r: 1, g: 0.6, b: 0.1, a: 0.55}
+  _tintStrength: 0.901

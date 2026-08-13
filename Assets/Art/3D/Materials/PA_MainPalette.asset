@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: PA_MainPalette
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Rendering.PaletteAsset
   slots:
-  - label: Black
-    baseColor: {r: 0.1, g: 0.1, b: 0.12, a: 1}
+  - label: Black, DarkBlue, Navy, Charcoal
+    baseColor: {r: 0.12156863, g: 0.13725491, b: 0.18039216, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -25,8 +25,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.1, g: 0.1, b: 0.12, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Bone
-    baseColor: {r: 0.88, g: 0.83, b: 0.72, a: 1}
+  - label: LightGray, White
+    baseColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -37,8 +37,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.88, g: 0.83, b: 0.72, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Brown
-    baseColor: {r: 0.42, g: 0.24, b: 0.1, a: 1}
+  - label: DarkGray, Green, Lavender, Purple
+    baseColor: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -49,8 +49,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.42, g: 0.24, b: 0.1, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: DarkGray
-    baseColor: {r: 0.25, g: 0.25, b: 0.28, a: 1}
+  - label: Gray, LightGreen, Cyan, LightBlue, Mint
+    baseColor: {r: 0.6392157, g: 0.7019608, b: 0.69411767, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -61,8 +61,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.25, g: 0.25, b: 0.28, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: DarkYellow
-    baseColor: {r: 0.55, g: 0.46, b: 0.08, a: 1}
+  - label: Brown, DarkYellow
+    baseColor: {r: 0.6901961, g: 0.5372549, b: 0.40784314, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -73,8 +73,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.55, g: 0.46, b: 0.08, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Gold
-    baseColor: {r: 1, g: 0.6203928, b: 0, a: 1}
+  - label: Gold, Yellow
+    baseColor: {r: 0.8509804, g: 0.6431373, b: 0.30588236, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -85,8 +85,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.82, g: 0.67, b: 0.08, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Gray
-    baseColor: {r: 0.5, g: 0.5, b: 0.53, a: 1}
+  - label: Bone, LightBrown, LightYellow, Pink, Peach
+    baseColor: {r: 0.8784314, g: 0.7529412, b: 0.6627451, a: 1}
     autoGenerate: 1
     shadowHueShift: -160
     shadowSatShift: 0.1
@@ -97,8 +97,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.5, g: 0.5, b: 0.53, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Green
-    baseColor: {r: 0.12, g: 0.48, b: 0.12, a: 1}
+  - label: Red
+    baseColor: {r: 0.6509804, g: 0.20784314, b: 0.31764707, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -109,8 +109,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.12, g: 0.48, b: 0.12, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: LightBrown
-    baseColor: {r: 0.64, g: 0.44, b: 0.24, a: 1}
+  - label: Coral
+    baseColor: {r: 0.7019608, g: 0.22745098, b: 0.12156863, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -121,8 +121,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.64, g: 0.44, b: 0.24, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: LightGray
-    baseColor: {r: 0.74, g: 0.74, b: 0.76, a: 1}
+  - label: DarkRed
+    baseColor: {r: 0.54901963, g: 0.12156863, b: 0.12156863, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -133,8 +133,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.74, g: 0.74, b: 0.76, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: LightGreen
-    baseColor: {r: 0.3, g: 0.72, b: 0.22, a: 1}
+  - label: Salmon
+    baseColor: {r: 0.8509804, g: 0.5372549, b: 0.5372549, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -145,8 +145,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.3, g: 0.72, b: 0.22, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: LightYellow
-    baseColor: {r: 0.95, g: 0.9, b: 0.52, a: 1}
+  - label: Green
+    baseColor: {r: 0.24313726, g: 0.41960785, b: 0.41960785, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -157,8 +157,8 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.95, g: 0.9, b: 0.52, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Red
-    baseColor: {r: 0.68, g: 0.1, b: 0.1, a: 1}
+  - label: "Exclusivo \u2014 armadura del Guerrero"
+    baseColor: {r: 0.23921569, g: 0.22745098, b: 0.41960785, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -169,231 +169,39 @@ MonoBehaviour:
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.68, g: 0.1, b: 0.1, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: DarkGreen
-    baseColor: {r: 0.23215556, g: 0.4433962, b: 0.25759387, a: 1}
+  - label: "Exclusivo \u2014 vestimenta del Mago"
+    baseColor: {r: 0.23921569, g: 0.22745098, b: 0.41960785, a: 0}
     autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.78, g: 0.16, b: 0.14, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: White
-    baseColor: {r: 0.94, g: 0.94, b: 0.94, a: 1}
+    shadowHueShift: 0
+    shadowSatShift: 0
+    shadowValShift: 0
+    lightHueShift: 0
+    lightSatShift: 0
+    lightValShift: 0
+    lightColor: {r: 0, g: 0, b: 0, a: 0}
+    midColor: {r: 0, g: 0, b: 0, a: 0}
+    shadowColor: {r: 0, g: 0, b: 0, a: 0}
+  - label: "Exclusivo \u2014 vestimenta del Rogue"
+    baseColor: {r: 0.16862746, g: 0.22745098, b: 0.1882353, a: 0}
     autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.94, g: 0.94, b: 0.94, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Yellow
-    baseColor: {r: 0.9, g: 0.78, b: 0.08, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.9, g: 0.78, b: 0.08, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Teal
-    baseColor: {r: 0.08, g: 0.55, b: 0.5, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.08, g: 0.55, b: 0.5, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Cyan
-    baseColor: {r: 0.1, g: 0.72, b: 0.8, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.1, g: 0.72, b: 0.8, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Purple
-    baseColor: {r: 0.4, g: 0.12, b: 0.58, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.4, g: 0.12, b: 0.58, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Pink
-    baseColor: {r: 0.88, g: 0.42, b: 0.62, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.88, g: 0.42, b: 0.62, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Orange
-    baseColor: {r: 0.85, g: 0.42, b: 0.08, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.85, g: 0.42, b: 0.08, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: DarkRed
-    baseColor: {r: 0.42, g: 0.05, b: 0.05, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.42, g: 0.05, b: 0.05, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: DarkBlue
-    baseColor: {r: 0.08, g: 0.12, b: 0.42, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.08, g: 0.12, b: 0.42, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: LightBlue
-    baseColor: {r: 0.45, g: 0.65, b: 0.9, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.45, g: 0.65, b: 0.9, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Salmon
-    baseColor: {r: 0.9, g: 0.52, b: 0.42, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.9, g: 0.52, b: 0.42, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Olive
-    baseColor: {r: 0.38, g: 0.42, b: 0.08, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.38, g: 0.42, b: 0.08, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Lavender
-    baseColor: {r: 0.68, g: 0.58, b: 0.88, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.68, g: 0.58, b: 0.88, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Mint
-    baseColor: {r: 0.52, g: 0.88, b: 0.68, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.52, g: 0.88, b: 0.68, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Coral
-    baseColor: {r: 0.88, g: 0.38, b: 0.3, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.88, g: 0.38, b: 0.3, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Navy
-    baseColor: {r: 0.05, g: 0.08, b: 0.3, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.05, g: 0.08, b: 0.3, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Peach
-    baseColor: {r: 0.95, g: 0.72, b: 0.58, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.95, g: 0.72, b: 0.58, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  - label: Charcoal
-    baseColor: {r: 0.18, g: 0.18, b: 0.2, a: 1}
-    autoGenerate: 1
-    shadowHueShift: 15
-    shadowSatShift: 0.1
-    shadowValShift: -0.28
-    lightHueShift: -10
-    lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.18, g: 0.18, b: 0.2, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+    shadowHueShift: 0
+    shadowSatShift: 0
+    shadowValShift: 0
+    lightHueShift: 0
+    lightSatShift: 0
+    lightValShift: 0
+    lightColor: {r: 0, g: 0, b: 0, a: 0}
+    midColor: {r: 0, g: 0, b: 0, a: 0}
+    shadowColor: {r: 0, g: 0, b: 0, a: 0}
+  - label: 
+    baseColor: {r: 0, g: 0, b: 0, a: 0}
+    autoGenerate: 0
+    shadowHueShift: 0
+    shadowSatShift: 0
+    shadowValShift: 0
+    lightHueShift: 0
+    lightSatShift: 0
+    lightValShift: 0
+    lightColor: {r: 0, g: 0, b: 0, a: 0}
+    midColor: {r: 0, g: 0, b: 0, a: 0}
+    shadowColor: {r: 0, g: 0, b: 0, a: 0}

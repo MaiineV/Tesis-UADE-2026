@@ -117,8 +117,10 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         [Test]
-        public void StartCombat_EnemyHighestSpeed_TransitionsToEnemyTurn()
+        public void StartCombat_EnemyHighestSpeed_StillTransitionsToPlayerTurn_PlayerFirstPolicy()
         {
+            // CNF-006: el jugador SIEMPRE tiene el primer turno del combate,
+            // incluso si un enemigo tiene la mayor initiative rolleada.
             StackOrderEnemyFirst();
             bool handlerCalled = false;
             var fsm = new CombatTurnFSM(BuildContext(enemyHandler: g => handlerCalled = true));
@@ -126,8 +128,8 @@ namespace Rollgeon.Combat.FSM.Tests
             fsm.Start();
             fsm.SendInput(CombatInput.StartCombat);
 
-            Assert.IsInstanceOf<EnemyTurnState>(fsm.Current);
-            Assert.IsTrue(handlerCalled, "EnemyActionHandler debe invocarse al entrar a EnemyTurn.");
+            Assert.IsInstanceOf<PlayerTurnState>(fsm.Current);
+            Assert.IsFalse(handlerCalled, "EnemyActionHandler no debe invocarse: el player abre la cola.");
         }
 
         [Test]
@@ -205,6 +207,35 @@ namespace Rollgeon.Combat.FSM.Tests
             ctx.PendingOutcome = CombatOutcome.Victory;
             fsm.SendInput(CombatInput.CombatEnded);
             Assert.Contains($"OnCombatEnd:{_roomId}:{CombatOutcome.Victory}", _eventLog);
+        }
+
+        [Test]
+        public void CombatEnded_OnCombatEndFiresAfterOnFinished()
+        {
+            // Arrange
+            StackOrderPlayerFirst();
+            var ctx = BuildContext();
+            var fsm = new CombatTurnFSM(ctx);
+            fsm.SetParticipants(new[] { _playerId, _enemyAId });
+            fsm.Start();
+            fsm.SendInput(CombatInput.StartCombat);
+
+            var order = new List<string>();
+            fsm.OnFinished += _ => order.Add("OnFinished");
+            EventManager.EventReceiver onEndHandler = args => order.Add("OnCombatEnd");
+            EventManager.Subscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Act
+            ctx.PendingOutcome = CombatOutcome.Aborted;
+            fsm.SendInput(CombatInput.CombatEnded);
+
+            EventManager.UnSubscribe(EventName.OnCombatEnd, onEndHandler);
+
+            // Assert — el CombatController hace el teardown (_fsm = null) dentro de
+            // OnFinished; OnCombatEnd debe salir DESPUÉS para que un StartCombat
+            // disparado por su cascada (Force Door hacia sala de combate) encuentre
+            // el controller libre en vez de ignorarse contra la FSM vieja.
+            Assert.AreEqual(new[] { "OnFinished", "OnCombatEnd" }, order);
         }
 
         [Test]
@@ -463,12 +494,15 @@ namespace Rollgeon.Combat.FSM.Tests
         [Test]
         public void EnemyActionHandler_InvokedWithCurrentEnemyGuid()
         {
+            // CNF-006: con player-first, el enemy sólo entra a su turno después de
+            // que el player cierre el suyo — hay que avanzar la cola explícitamente.
             StackOrderEnemyFirst();
             Guid captured = Guid.Empty;
             var fsm = new CombatTurnFSM(BuildContext(enemyHandler: g => captured = g));
             fsm.SetParticipants(new[] { _playerId, _enemyAId });
             fsm.Start();
             fsm.SendInput(CombatInput.StartCombat);
+            fsm.SendInput(CombatInput.PlayerEndTurn);
 
             Assert.AreEqual(_enemyAId, captured);
         }

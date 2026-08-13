@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Entities.Portraits;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -95,11 +96,24 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            // Portraits — servicio run-scoped opcional: sin él (o sin sprite para un
+            // guid) el slot conserva el sprite default del prefab.
+            ServiceLocator.TryGetService<IEntityPortraitResolver>(out var portraits);
+
+            // Frames de boss: los enemigos de una sala Boss usan los bordes de boss
+            // (no hay flag por entidad — la sala define el combate).
+            bool bossCombat = IsBossCombat();
+
             for (int i = 0; i < order.Count; i++)
             {
                 var guid = order[i];
                 var slot = Instantiate(_slotPrefab, _container);
-                slot.Bind(guid, guid == _playerGuid, i);
+                bool isPlayer = guid == _playerGuid;
+                slot.Bind(guid, isPlayer, i, isBoss: bossCombat && !isPlayer);
+                if (portraits != null && portraits.TryGetPortrait(guid, out var sprite))
+                {
+                    slot.SetPortrait(sprite);
+                }
                 _slotsByGuid[guid] = slot;
             }
         }
@@ -122,6 +136,15 @@ namespace Rollgeon.UI.HUD
         {
             _slotsByGuid.TryGetValue(guid, out var slot);
             return slot;
+        }
+
+        // Mismo criterio que EffForceDoor.IsBossRoom: la sala actual define si el
+        // combate es de boss (sin IDungeonService, ej. tests, degrada a false).
+        private static bool IsBossCombat()
+        {
+            return ServiceLocator.TryGetService<Rollgeon.Dungeon.IDungeonService>(out var dungeon)
+                   && dungeon?.CurrentRoom != null
+                   && dungeon.CurrentRoom.Type == Rollgeon.Dungeon.RoomType.Boss;
         }
 
         // ======================================================================

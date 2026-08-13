@@ -99,7 +99,8 @@ namespace Rollgeon.Entities
         [InfoBox("Tier 1 = los Base Stats de arriba. Agregá tiers para variantes mas fuertes. " +
                  "Cada stat por tier es Multiplicador (×base) o Manual (valor exacto), y se pueden " +
                  "mezclar dentro del mismo tier. Los tiers cambian solo stats, nunca la apariencia. " +
-                 "Sin tiers configurados, el enemigo siempre es Tier 1 = comportamiento actual.")]
+                 "En spawn se usa determinísticamente el tier más alto cuyo MinFloor <= piso actual " +
+                 "(Tier 1 = desde piso 1). Sin tiers configurados, el enemigo siempre es Tier 1.")]
         public List<EnemyTier> ExtraTiers = new List<EnemyTier>();
 
         [Title("Visual")]
@@ -187,6 +188,60 @@ namespace Rollgeon.Entities
         /// HP maximo resuelto para el tier — fuente unica de verdad para healthbar / AI / state.
         /// </summary>
         public int ResolveMaxHP(int tier) => ResolveStat(tier, t => t.HP, BaseHP);
+
+        /// <summary>
+        /// MinFloor efectivo de un tier (1-based). Único punto de normalización legacy:
+        /// tiers autorados antes de MinFloor deserializan 0 ⇒ efectivo = número de tier
+        /// (T2 ⇒ piso 2). Tier 1 (base) es siempre piso 1.
+        /// </summary>
+        public int EffectiveMinFloor(int tierNumber)
+        {
+            if (tierNumber <= 1) return 1;
+            var t = GetTier(tierNumber);
+            if (t == null) return 1;
+            return t.MinFloor > 0 ? t.MinFloor : tierNumber;
+        }
+
+        /// <summary>
+        /// Tier (1-based) a usar en el piso dado: el más alto cuyo MinFloor efectivo
+        /// &lt;= <paramref name="floorNumber"/> (1-based, clampeado a ≥1). Determinístico —
+        /// la aleatoriedad de spawn decide QUÉ enemigo aparece, no su tier.
+        /// </summary>
+        public int ResolveTierForFloor(int floorNumber)
+        {
+            int floor = Mathf.Max(1, floorNumber);
+            for (int tier = TierCount; tier >= 2; tier--)
+            {
+                if (EffectiveMinFloor(tier) <= floor) return tier;
+            }
+            return 1;
+        }
+
+        /// <summary>
+        /// Template para el próximo tier: copia memberwise del último extra tier (los
+        /// <see cref="TierStat"/> son structs ⇒ copia por valor) con
+        /// <c>MinFloor = efectivo(último) + 1</c> y Label auto. Sin extras ⇒ copia de
+        /// Tier 1 (todo ×1 base) desde piso 2. El caller lo agrega a <see cref="ExtraTiers"/>.
+        /// </summary>
+        public EnemyTier CreateNextTierTemplate()
+        {
+            int nextNumber = TierCount + 1;
+            var last = GetTier(TierCount);
+            if (last == null)
+                return new EnemyTier { Label = "T2", MinFloor = 2 };
+
+            return new EnemyTier
+            {
+                Label = $"T{nextNumber}",
+                MinFloor = EffectiveMinFloor(TierCount) + 1,
+                HP = last.HP,
+                Attack = last.Attack,
+                Speed = last.Speed,
+                Energy = last.Energy,
+                HealStrength = last.HealStrength,
+                AttackRange = last.AttackRange
+            };
+        }
 
         private int ResolveStat(int tier, Func<EnemyTier, TierStat> pick, int baseValue)
         {

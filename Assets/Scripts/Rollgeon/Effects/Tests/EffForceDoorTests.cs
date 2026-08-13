@@ -168,16 +168,16 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void BuildTooltip_InCombat_ContainsThresholdAndCost()
+        public void BuildTooltip_InCombat_ContainsThreshold()
         {
+            // El costo y el header ya no van acá: los agrega HeroActionTooltip.BuildFor
+            // (costo desde el ActionRollSpec). El body solo describe el umbral.
             _phase.CurrentBase = GamePhase.Combat;
-            _effect.EnergyCostInCombat = 2;
             _effect.RequiredValue = 25;
 
             var text = _effect.BuildTooltip();
             Assert.IsNotNull(text);
-            StringAssert.Contains("25", text);
-            StringAssert.Contains("2", text);
+            StringAssert.Contains("Puntaje a superar: 25", text);
         }
 
         [Test]
@@ -270,6 +270,8 @@ namespace Rollgeon.Effects.Tests
                 return EnterResult;
             }
             public bool EnterRoomByInstanceId(Guid id) => false;
+            public bool SetRoomState(Guid id, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid id) { }
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Array.Empty<WallOccluder>();
         }

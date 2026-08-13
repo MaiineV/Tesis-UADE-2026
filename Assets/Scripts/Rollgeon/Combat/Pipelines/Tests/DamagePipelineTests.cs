@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Weakness;
 
@@ -23,6 +24,7 @@ namespace Rollgeon.Combat.Pipelines.Tests
         {
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
 
             _attrManager = new AttributesManager();
             _sourceId = Guid.NewGuid();
@@ -49,6 +51,60 @@ namespace Rollgeon.Combat.Pipelines.Tests
             _attrManager.Dispose();
             EventManager.ResetEventDictionary();
             TypedEvent<DamageResolvedPayload>.Clear();
+            ServiceLocator.Clear();
+        }
+
+        // ── Combo repetido: la regla de "0 daño" ya NO está wireada ──────────
+        //
+        // Vivía detrás del pasivo global anti-repetición (A/B), que se eliminó: la presión la
+        // ejerce ahora el boss desde su árbol y anular daño sin aviso se leía como un bug. El
+        // cálculo quedó huérfano en DamagePipeline para reintroducirlo con UI en el futuro.
+
+        [Test]
+        public void Resolve_SameComboTwiceInARow_DealsFullDamage()
+        {
+            // Arrange — el mismo combo dos turnos seguidos, el caso que antes anulaba el daño.
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");   // turno anterior
+            comboLog.Record("combo.par");   // este golpe (CombatHandoffService ya lo registró)
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            // Act
+            pipeline.Resolve(ctx);
+
+            // Assert
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "Repetir el mismo combo debe pegar completo — la regla de 0 daño está desactivada.");
+        }
+
+        [Test]
+        public void Preview_SameComboTwiceInARow_MatchesResolve()
+        {
+            // Arrange
+            var comboLog = new ComboLogService();
+            comboLog.Register();
+            comboLog.Record("combo.par");
+
+            var pipeline = new DamagePipeline(_attrManager);
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack, ComboId = "combo.par",
+            };
+
+            // Act
+            pipeline.Preview(ctx);
+
+            // Assert — preview y golpe real no deben divergir por esta regla.
+            Assert.AreEqual(30, ctx.FinalDamage,
+                "El preview tampoco debe anular el combo repetido.");
         }
 
         // ── 1. Apply_ReducesTargetHealth ─────────────────────────────────
@@ -340,6 +396,102 @@ namespace Rollgeon.Combat.Pipelines.Tests
             Assert.AreEqual(0, captured.Value.FinalDamage);
         }
 
+        // ── Preview (read-only) ──────────────────────────────────────────
+
+        [Test]
+        public void Preview_WithShield_ComputesFinalDamage_WithoutMutatingShieldOrHealth()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(20));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 50,
+                Kind = AttackKind.BasicAttack,
+            };
+
+            pipeline.Preview(ctx);
+
+            // Mismo resultado que Resolve (50 - 20 escudo = 30) pero SIN escribir estado.
+            Assert.AreEqual(30, ctx.FinalDamage);
+            Assert.AreEqual(20, ctx.ShieldAbsorbed);
+            Assert.AreEqual(20, _attrManager.GetAttribute<Shield>(_targetId).Value,
+                "Preview no debe consumir el escudo del target.");
+            Assert.AreEqual(100, _attrManager.GetAttribute<Health>(_targetId).Value,
+                "Preview no debe tocar el Health del target.");
+        }
+
+        [Test]
+        public void Preview_WithWeakness_UsesPeekMultiplier_WithoutFiringOnWeaknessHit()
+        {
+            var weakChecker = new FakeWeaknessChecker(2.0f);
+            var pipeline = new DamagePipeline(_attrManager, weakChecker);
+
+            bool weaknessHitFired = false;
+            EventManager.Subscribe(EventName.OnWeaknessHit, _ => weaknessHitFired = true);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId,
+                TargetId = _targetId,
+                BaseDamage = 20,
+                IsWeaknessHit = true,
+                ComboId = "combo.par",
+                Kind = AttackKind.ComboAttack,
+            };
+
+            pipeline.Preview(ctx);
+
+            Assert.AreEqual(40, ctx.FinalDamage, "Preview aplica el multiplicador de weakness.");
+            Assert.AreEqual(2.0f, ctx.WeaknessMultiplier);
+            Assert.IsFalse(weaknessHitFired, "Preview NO debe disparar OnWeaknessHit.");
+            Assert.AreEqual(100, _attrManager.GetAttribute<Health>(_targetId).Value);
+        }
+
+        [Test]
+        public void Preview_MatchesResolveFinalDamage_ForSameInput()
+        {
+            _attrManager.GetAttributes(_targetId).SetAttribute<Shield>(new Shield(12));
+            var pipeline = new DamagePipeline(_attrManager);
+
+            var previewCtx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 40,
+                Kind = AttackKind.BasicAttack,
+            };
+            pipeline.Preview(previewCtx);
+
+            var resolveCtx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 40,
+                Kind = AttackKind.BasicAttack,
+            };
+            pipeline.Resolve(resolveCtx);
+
+            Assert.AreEqual(resolveCtx.FinalDamage, previewCtx.FinalDamage,
+                "Preview y Resolve deben coincidir en FinalDamage para el mismo input.");
+        }
+
+        [Test]
+        public void Preview_DoesNotFireDamageResolvedEvent()
+        {
+            var pipeline = new DamagePipeline(_attrManager);
+
+            bool anyPayload = false;
+            TypedEvent<DamageResolvedPayload>.Subscribe(_ => anyPayload = true);
+
+            var ctx = new DamageContext
+            {
+                SourceId = _sourceId, TargetId = _targetId, BaseDamage = 30,
+                Kind = AttackKind.BasicAttack,
+            };
+            pipeline.Preview(ctx);
+
+            Assert.IsFalse(anyPayload, "Preview no debe emitir DamageResolvedPayload.");
+        }
+
         // ── Fake implementations ─────────────────────────────────────────
 
         private class FakeWeaknessChecker : IWeaknessChecker
@@ -352,6 +504,11 @@ namespace Rollgeon.Combat.Pipelines.Tests
             }
 
             public float GetMultiplier(Guid attacker, Guid target, string matchedComboId)
+            {
+                return _multiplier;
+            }
+
+            public float PeekMultiplier(Guid attacker, Guid target, string matchedComboId)
             {
                 return _multiplier;
             }

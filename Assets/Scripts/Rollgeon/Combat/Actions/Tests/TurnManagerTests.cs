@@ -6,6 +6,7 @@ using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Effects;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.Actions.Tests
 {
@@ -305,6 +306,92 @@ namespace Rollgeon.Combat.Actions.Tests
             // Tras OnTurnStarted (cambio de turno), actor B puede ejecutar.
             EventManager.Trigger(EventName.OnTurnStarted, actorB);
             Assert.IsTrue(_tm.CanExecute(def, actorB, out _));
+        }
+
+        // --- Feedback gate (§10.9) --------------------------------------
+        // Sostienen el diferido del daño al frame de impacto: el chain del héroe
+        // corre en CombatHandoffService, que no es MonoBehaviour y no puede usar
+        // WaitForFeedbackCompletion, así que encola su continuación acá.
+
+        [Test]
+        public void RunWhenFeedbackSettles_NoFeedbackInFlight_RunsSynchronously()
+        {
+            var ran = 0;
+
+            _tm.RunWhenFeedbackSettles(() => ran++);
+
+            Assert.AreEqual(1, ran,
+                "Sin feedback en vuelo el caller espera comportamiento sincrónico — " +
+                "es el flujo viejo, no debe cambiar.");
+        }
+
+        [Test]
+        public void RunWhenFeedbackSettles_FeedbackInFlight_DefersUntilComplete()
+        {
+            var ran = 0;
+            _tm.BeginFeedbackWait();
+
+            _tm.RunWhenFeedbackSettles(() => ran++);
+            Assert.AreEqual(0, ran, "El golpe todavía no conectó — la continuación no debe correr.");
+
+            _tm.OnFeedbackComplete();
+
+            Assert.AreEqual(1, ran);
+        }
+
+        [Test]
+        public void RunWhenFeedbackSettles_NestedWaits_RunsOnlyAfterTheLastCompletes()
+        {
+            var ran = 0;
+            _tm.BeginFeedbackWait();
+            _tm.BeginFeedbackWait();
+            _tm.RunWhenFeedbackSettles(() => ran++);
+
+            _tm.OnFeedbackComplete();
+            Assert.AreEqual(0, ran, "Queda un feedback en vuelo — todavía no.");
+
+            _tm.OnFeedbackComplete();
+            Assert.AreEqual(1, ran);
+        }
+
+        [Test]
+        public void RunWhenFeedbackSettles_ContinuationQueuingAnother_DoesNotLoseIt()
+        {
+            // El caso real: la fase 1 del chain encola su propia continuación mientras
+            // corre la de la fase 0. Si el flush no copia antes de invocar, se pierde
+            // o revienta por mutación en pleno recorrido.
+            var order = new List<string>();
+            _tm.BeginFeedbackWait();
+            _tm.RunWhenFeedbackSettles(() =>
+            {
+                order.Add("first");
+                _tm.RunWhenFeedbackSettles(() => order.Add("second"));
+            });
+
+            _tm.OnFeedbackComplete();
+
+            Assert.AreEqual(new[] { "first", "second" }, order.ToArray());
+        }
+
+        [Test]
+        public void RunWhenFeedbackSettles_ThrowingContinuation_DoesNotBlockTheRest()
+        {
+            var ran = 0;
+            _tm.BeginFeedbackWait();
+            _tm.RunWhenFeedbackSettles(() => throw new InvalidOperationException("boom"));
+            _tm.RunWhenFeedbackSettles(() => ran++);
+
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex(
+                @"\[TurnManager\] Feedback continuation falló"));
+            _tm.OnFeedbackComplete();
+
+            Assert.AreEqual(1, ran, "Una continuación rota no debe dejar el turno colgado.");
+        }
+
+        [Test]
+        public void RunWhenFeedbackSettles_NullContinuation_IsSafeNoOp()
+        {
+            Assert.DoesNotThrow(() => _tm.RunWhenFeedbackSettles(null));
         }
     }
 }

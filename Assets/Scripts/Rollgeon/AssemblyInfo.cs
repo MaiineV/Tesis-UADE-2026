@@ -7,3 +7,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Rollgeon.Run.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Exploration.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Meta.Tests")]
+[assembly: InternalsVisibleTo("Rollgeon.Feedback.Tests")]
+[assembly: InternalsVisibleTo("Rollgeon.Combat.Handoff.Tests")]
