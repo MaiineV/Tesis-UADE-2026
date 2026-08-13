@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Grid;
+using UnityEngine;
 
 namespace Rollgeon.Combat.Threat
 {
@@ -13,8 +14,17 @@ namespace Rollgeon.Combat.Threat
     /// </summary>
     public interface IThreatOverlayService
     {
-        /// <summary>Muestra (o reemplaza) el área amenazada de <paramref name="sourceGuid"/>.</summary>
+        /// <summary>Muestra (o reemplaza) el área amenazada de <paramref name="sourceGuid"/> con el
+        /// naranja de advertencia por defecto.</summary>
         void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles);
+
+        /// <summary>
+        /// Igual que <see cref="Show(Guid,IEnumerable{GridCoord})"/> pero con color propio, para que
+        /// dos amenazas simultáneas (fuego vs. hielo) no se lean idénticas.
+        /// </summary>
+        /// <remarks>El alpha del tint lo sobrescribe el pulso del overlay en runtime; lo que aporta
+        /// el parámetro es el matiz.</remarks>
+        void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, Color tint);
 
         /// <summary>Apaga el overlay de <paramref name="sourceGuid"/> (telegraph resuelto/cancelado).</summary>
         void Clear(Guid sourceGuid);

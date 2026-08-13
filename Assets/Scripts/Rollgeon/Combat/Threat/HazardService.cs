@@ -5,8 +5,13 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Grid;
+using Rollgeon.Movement;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
+using UnityEngine;
+// Alias explícito (mismo criterio que ThreatTelegraphOverlay): sin él, `Object` en este archivo
+// resolvería a System.Object y los helpers de escena no compilarían.
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.Combat.Threat
 {
@@ -18,19 +23,36 @@ namespace Rollgeon.Combat.Threat
     /// it" — no new service code required.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Same POCO + <see cref="IPreloadableService"/> pattern as <c>ThreatenedAreaService</c>.
     /// Reuses <see cref="AINode_ExecuteTelegraph"/>/<see cref="AINode_TelegraphMark"/> as-is via a
     /// hand-built <see cref="AIContext"/> per active hazard, once per <c>OnTurnQueueBuilt</c> —
     /// zero telegraph logic duplicated.
+    /// </para>
+    /// <para>
+    /// <b>Two state buckets.</b> <see cref="_active"/> holds cycle-telegraph definitions keyed by
+    /// source id (the historical rain path, untouched). <see cref="_instances"/> holds dynamic-area
+    /// instances keyed by their own instance id, because <see cref="IThreatenedAreaService"/> stores
+    /// one pending area per source — routing several fires from the same SO through it would make
+    /// them silently overwrite each other.
+    /// </para>
     /// </remarks>
     public sealed class HazardService : IHazardService, IPreloadableService, IDisposable
     {
         private readonly Dictionary<Guid, HazardDefinitionSO> _active = new Dictionary<Guid, HazardDefinitionSO>();
+        private readonly Dictionary<Guid, HazardInstance> _instances = new Dictionary<Guid, HazardInstance>();
         private readonly System.Random _rng = new System.Random();
 
         private EventManager.EventReceiver _onTurnQueueBuiltHandler;
+        private EventManager.EventReceiver _onTurnFinishedHandler;
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
+
+        // The exact IMovementService we subscribed to, not just "are we subscribed". That service is
+        // run-scoped while this one is Global, so the registered instance can be swapped between
+        // runs: `-=` has to target the same object `+=` ran on, and re-resolving from the locator at
+        // unsubscribe time could hand us the new instance and leak the old subscription forever.
+        private IMovementService _movementSubscribedTo;
 
         /// <summary>Junto al resto de servicios de combate (ver <c>ThreatenedAreaService.Priority</c> = 80).</summary>
         public int Priority => 80;
@@ -42,10 +64,12 @@ namespace Rollgeon.Combat.Threat
         public void Register()
         {
             _onTurnQueueBuiltHandler = OnTurnQueueBuiltExternal;
+            _onTurnFinishedHandler = OnTurnFinishedExternal;
             _onCombatEndHandler = OnScopeEndedExternal;
             _onRunEndHandler = OnScopeEndedExternal;
 
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuiltHandler);
+            EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
             EventManager.Subscribe(EventName.OnRunEnd, _onRunEndHandler);
 
@@ -59,6 +83,11 @@ namespace Rollgeon.Combat.Threat
             {
                 EventManager.UnSubscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuiltHandler);
                 _onTurnQueueBuiltHandler = null;
+            }
+            if (_onTurnFinishedHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+                _onTurnFinishedHandler = null;
             }
             if (_onCombatEndHandler != null)
             {
@@ -90,18 +119,77 @@ namespace Rollgeon.Combat.Threat
         }
 
         /// <inheritdoc />
+        public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+        {
+            if (definition == null || tiles == null) return Guid.Empty;
+
+            var set = new HashSet<GridCoord>(tiles);
+            if (set.Count == 0) return Guid.Empty;
+
+            // No SourceGuid check here on purpose: an instance is addressed by its own id, so a
+            // definition with an unparseable SourceId still works as a dynamic-area hazard.
+            var instance = new HazardInstance
+            {
+                InstanceId = Guid.NewGuid(),
+                Definition = definition,
+                Tiles = set,
+                RemainingRounds = definition.DurationRounds < 0 ? 0 : definition.DurationRounds,
+            };
+            _instances[instance.InstanceId] = instance;
+
+            EnsureMovementSubscription();
+            ShowInstanceOverlay(instance);
+            EventManager.Trigger(EventName.OnHazardActivated, instance.InstanceId);
+            return instance.InstanceId;
+        }
+
+        /// <inheritdoc />
         public bool IsActive(HazardDefinitionSO definition) => definition != null && IsActive(definition.SourceGuid);
 
         /// <inheritdoc />
         public bool IsActive(Guid sourceId) => sourceId != Guid.Empty && _active.ContainsKey(sourceId);
 
+        /// <inheritdoc />
+        public bool TryGetHazardAt(GridCoord coord, out HazardInstanceInfo info)
+        {
+            foreach (var instance in _instances.Values)
+            {
+                if (!instance.Tiles.Contains(coord)) continue;
+                info = instance.ToInfo();
+                return true;
+            }
+            info = default;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<HazardInstanceInfo> ActiveInstances()
+        {
+            // Materialized, not lazy: callers routinely react to an instance by damaging/consuming
+            // it, which mutates the dictionary mid-enumeration.
+            var snapshot = new List<HazardInstanceInfo>(_instances.Count);
+            foreach (var instance in _instances.Values)
+                snapshot.Add(instance.ToInfo());
+            return snapshot;
+        }
+
+        /// <inheritdoc />
+        public void Deactivate(Guid instanceId) => ExpireInstance(instanceId);
+
+        /// <inheritdoc />
+        public void SkipNextTick(Guid instanceId)
+        {
+            if (_instances.TryGetValue(instanceId, out var instance))
+                instance.SkipNextTick = true;
+        }
+
         // ======================================================================
-        // Internals
+        // Internals — lifecycle
         // ======================================================================
 
         private void ResetAll()
         {
-            if (_active.Count == 0) return;
+            UnsubscribeMovement();
 
             bool hasThreat = ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) && threat != null;
             bool hasOverlay = ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null;
@@ -112,15 +200,77 @@ namespace Rollgeon.Combat.Threat
                 if (hasOverlay) overlay.Clear(sourceId);
             }
             _active.Clear();
+
+            // No OnHazardExpired here: same call as ComboBlockService.Clear, which deliberately
+            // stays quiet on scope teardown so listeners don't run "the fire went out" reactions
+            // while combat is already over.
+            foreach (var instanceId in _instances.Keys)
+            {
+                if (hasOverlay) overlay.Clear(instanceId);
+            }
+            _instances.Clear();
         }
 
-        private void OnScopeEndedExternal(params object[] args) => ResetAll();
+        private void ExpireInstance(Guid instanceId)
+        {
+            if (instanceId == Guid.Empty) return;
+            if (!_instances.Remove(instanceId)) return;
 
-        private void OnTurnQueueBuiltExternal(params object[] args)
+            ClearOverlay(instanceId);
+            EventManager.Trigger(EventName.OnHazardExpired, instanceId);
+        }
+
+        private void EnsureMovementSubscription()
+        {
+            if (_movementSubscribedTo != null) return;
+            if (!HasInstanceWithTrigger(HazardTriggerMode.OnEnter)) return;
+            if (!ServiceLocator.TryGetService<IMovementService>(out var movement) || movement == null) return;
+
+            movement.OnEntityMoved += OnEntityMovedExternal;
+            _movementSubscribedTo = movement;
+        }
+
+        private void UnsubscribeMovement()
+        {
+            if (_movementSubscribedTo == null) return;
+
+            _movementSubscribedTo.OnEntityMoved -= OnEntityMovedExternal;
+            _movementSubscribedTo = null;
+        }
+
+        private bool HasInstanceWithTrigger(HazardTriggerMode trigger)
+        {
+            foreach (var instance in _instances.Values)
+                if (instance.Definition != null && instance.Definition.Trigger == trigger) return true;
+            return false;
+        }
+
+        // ======================================================================
+        // Internals — ticking
+        // ======================================================================
+
+        private void TickInstanceDurations()
+        {
+            if (_instances.Count == 0) return;
+
+            List<Guid> expired = null;
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.RemainingRounds <= 0) continue; // 0 = never expires on its own.
+
+                instance.RemainingRounds--;
+                if (instance.RemainingRounds <= 0)
+                    (expired ??= new List<Guid>()).Add(instance.InstanceId);
+            }
+
+            if (expired == null) return;
+            foreach (var instanceId in expired)
+                ExpireInstance(instanceId);
+        }
+
+        private void TickCycleTelegraphs(int roundIndex)
         {
             if (_active.Count == 0) return;
-            if (args == null || args.Length < 2 || !(args[1] is int roundIndex)) return;
-            if (roundIndex <= 0) return;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null) return;
@@ -155,6 +305,215 @@ namespace Rollgeon.Combat.Threat
                     Kind = definition.Kind,
                 }.Tick(ctx);
             }
+        }
+
+        // ======================================================================
+        // Internals — effects
+        // ======================================================================
+
+        private static void ShowInstanceOverlay(HazardInstance instance)
+        {
+            if (instance.Tiles.Count == 0) return;
+
+            ThreatTelegraphOverlay.ResolveOrCreate()
+                .Show(instance.InstanceId, instance.Tiles, instance.Definition.EffectiveOverlayTint);
+        }
+
+        private static void ClearOverlay(Guid key)
+        {
+            // TryGet, not ResolveOrCreate: clearing must never be the reason an overlay (and its
+            // scene GameObject) springs into existence.
+            if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
+                overlay.Clear(key);
+        }
+
+        private static void ApplyHazardDamage(HazardInstance instance, Guid targetGuid)
+        {
+            int damage = instance.Definition.Damage;
+            if (damage <= 0) return; // Ice deals no damage — it only needs to raise the trigger event.
+            if (!ServiceLocator.TryGetService<IDamagePipeline>(out var pipeline) || pipeline == null) return;
+
+            pipeline.Resolve(new DamageContext
+            {
+                SourceId = instance.InstanceId,
+                TargetId = targetGuid,
+                BaseDamage = damage,
+                Kind = instance.Definition.Kind,
+            });
+        }
+
+        /// <summary>
+        /// Applies one hazard hit: damage (if any), the trigger event, and tile consumption. The
+        /// event is what carries the effect other systems layer on top — the ice stun lives in
+        /// StunService listening to <c>OnHazardTriggered</c>, not here.
+        /// </summary>
+        /// <summary>
+        /// Spawns <see cref="HazardDefinitionSO.TriggerVfxPrefab"/> over <paramref name="coord"/>.
+        /// No-op — byte for byte the pre-VFX behaviour — when the definition carries no prefab.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>The seam is the spawned GameObject itself.</b> This service is a POCO, so it has no
+        /// scene to hang the effect off; it already reaches for the scene the same way through
+        /// <see cref="ThreatTelegraphOverlay.ResolveOrCreate"/>. Rather than add a spawner interface
+        /// (a whole indirection for one <c>Instantiate</c>) the side effect stays observable: an
+        /// EditMode test hands a marker prefab, fires a trigger, and finds the clone in the scene.
+        /// </para>
+        /// <para>
+        /// <b>The delayed destroy is play-mode only.</b> <c>Object.Destroy(go, delay)</c> is a no-op
+        /// that logs in edit mode, so the lifetime is only armed while playing and the EditMode test
+        /// owns the cleanup of what it spawned. Hazards never trigger outside play mode in the game.
+        /// </para>
+        /// </remarks>
+        private static void SpawnTriggerVfx(HazardDefinitionSO definition, GridCoord coord)
+        {
+            var prefab = definition?.TriggerVfxPrefab;
+            if (prefab == null) return;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
+            {
+                Debug.LogWarning("[HazardService] IGridManager no registrado — el hazard cobra igual, " +
+                                 "pero sin VFX (no hay con qué ubicar la tile en el mundo).");
+                return;
+            }
+
+            var world = grid.GridToWorld(coord) + Vector3.up * definition.TriggerVfxYOffset;
+            var instance = Object.Instantiate(prefab, world, Quaternion.identity);
+            instance.name = $"{prefab.name} (hazard)";
+
+            if (Application.isPlaying && definition.TriggerVfxLifetime > 0f)
+                Object.Destroy(instance, definition.TriggerVfxLifetime);
+        }
+
+        private void TriggerInstance(HazardInstance instance, Guid entityGuid, GridCoord coord)
+        {
+            ApplyHazardDamage(instance, entityGuid);
+
+            // Antes del evento a propósito: un listener puede reaccionar expirando la instancia
+            // (o matando al que pisó), y el golpe ya ocurrió — el visual no debería depender de eso.
+            SpawnTriggerVfx(instance.Definition, coord);
+
+            EventManager.Trigger(EventName.OnHazardTriggered, instance.InstanceId, entityGuid);
+
+            if (!instance.Definition.ConsumeOnTrigger) return;
+            if (!instance.Tiles.Remove(coord)) return;
+
+            if (instance.Tiles.Count == 0)
+            {
+                ExpireInstance(instance.InstanceId);
+                return;
+            }
+            ShowInstanceOverlay(instance); // Repaint without the spent tile.
+        }
+
+        // ======================================================================
+        // Event handlers
+        // ======================================================================
+
+        private void OnScopeEndedExternal(params object[] args) => ResetAll();
+
+        private void OnTurnQueueBuiltExternal(params object[] args)
+        {
+            if (args == null || args.Length < 2 || !(args[1] is int roundIndex)) return;
+            if (roundIndex <= 0) return;
+
+            // Retry here too: an OnEnter hazard can be activated before IMovementService is
+            // registered (or after a run swapped it out), and this is the cheapest recurring hook.
+            EnsureMovementSubscription();
+
+            TickInstanceDurations();
+            TickCycleTelegraphs(roundIndex);
+        }
+
+        private void OnTurnFinishedExternal(params object[] args)
+        {
+            if (args == null || args.Length == 0) return;
+            if (!(args[0] is Guid entityGuid) || entityGuid == Guid.Empty) return;
+            if (_instances.Count == 0) return;
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
+            if (!grid.TryGetPosition(entityGuid, out var coord)) return;
+
+            foreach (var instance in new List<HazardInstance>(_instances.Values))
+            {
+                // The snapshot can outlive an instance: an earlier iteration may have expired it.
+                if (!_instances.ContainsKey(instance.InstanceId)) continue;
+                if (instance.Definition == null) continue;
+                if (instance.Definition.Trigger != HazardTriggerMode.OnTurnEndInTile) continue;
+                if (!instance.Tiles.Contains(coord)) continue;
+
+                if (instance.SkipNextTick)
+                {
+                    // Consumed only by a tick that would actually have landed, so a boss can arm it
+                    // during its own turn without knowing yet whether anyone is standing in the fire.
+                    instance.SkipNextTick = false;
+                    continue;
+                }
+
+                TriggerInstance(instance, entityGuid, coord);
+            }
+        }
+
+        private void OnEntityMovedExternal(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
+        {
+            if (entity == Guid.Empty || _instances.Count == 0) return;
+
+            foreach (var coord in EnteredTiles(from, to, path))
+            {
+                // Re-snapshot per step: a trigger can consume tiles or expire an instance mid-scan.
+                foreach (var instance in new List<HazardInstance>(_instances.Values))
+                {
+                    // An earlier step of this same path may have consumed the instance's last tile.
+                    if (!_instances.ContainsKey(instance.InstanceId)) continue;
+                    if (instance.Definition == null) continue;
+                    if (instance.Definition.Trigger != HazardTriggerMode.OnEnter) continue;
+                    if (!instance.Tiles.Contains(coord)) continue;
+
+                    TriggerInstance(instance, entity, coord);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tiles the entity actually stepped <i>into</i>, in travel order — the whole path minus the
+        /// origin, so walking through a trap triggers it instead of only landing on one.
+        /// </summary>
+        private static IEnumerable<GridCoord> EnteredTiles(GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
+        {
+            if (path == null || path.Count == 0)
+            {
+                // Teleports / instant repositioning report no path, but the destination is still an entry.
+                if (!to.Equals(from)) yield return to;
+                yield break;
+            }
+
+            // IMovementService paths include the origin (see IMovementService.FindPath). Dropping it
+            // by value rather than by index keeps this correct whichever end it is serialized at.
+            foreach (var coord in path)
+            {
+                if (!coord.Equals(from)) yield return coord;
+            }
+        }
+
+        // ======================================================================
+        // Instance state
+        // ======================================================================
+
+        /// <summary>Mutable runtime state of one dynamic-area hazard activation.</summary>
+        private sealed class HazardInstance
+        {
+            public Guid InstanceId;
+            public HazardDefinitionSO Definition;
+            public HashSet<GridCoord> Tiles;
+
+            /// <summary>Rounds left before expiry; <c>0</c> means "never expires".</summary>
+            public int RemainingRounds;
+
+            /// <summary>One-shot suppression armed by <see cref="IHazardService.SkipNextTick"/>.</summary>
+            public bool SkipNextTick;
+
+            /// <summary>Copies the tile set — the info struct promises an immutable snapshot.</summary>
+            public HazardInstanceInfo ToInfo()
+                => new HazardInstanceInfo(InstanceId, Definition, new List<GridCoord>(Tiles), RemainingRounds);
         }
     }
 }

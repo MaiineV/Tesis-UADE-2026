@@ -26,8 +26,16 @@ namespace Rollgeon.Combat.Threat
             new Dictionary<Guid, List<GameObject>>();
         private readonly Stack<GameObject> _free = new Stack<GameObject>();
 
+        // Keyed by Color32, not Color: Color is four floats, so a tint that round-trips through the
+        // Inspector can miss a Color-keyed lookup by a bit of float drift and leak a duplicate
+        // material per Show. Quantizing to bytes makes "visually the same colour" hash the same.
+        private readonly Dictionary<Color32, Material> _materialsByTint = new Dictionary<Color32, Material>();
+
+        // Same Material objects as the dict, in a list the pulse component holds by reference so
+        // materials created after the root exists still get pulsed.
+        private readonly List<Material> _pulseTargets = new List<Material>();
+
         private GameObject _root;
-        private Material _material;
 
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
@@ -86,18 +94,22 @@ namespace Rollgeon.Combat.Threat
             _free.Clear();
             DestroyCompat(_root);
             _root = null;
-            if (_material != null)
-            {
-                DestroyCompat(_material);
-                _material = null;
-            }
+
+            // One material per tint now, so teardown has to drain the whole cache — a missed entry
+            // is a leaked Material that Unity reports as a leak in EditMode tests.
+            foreach (var material in _materialsByTint.Values)
+                DestroyCompat(material);
+            _materialsByTint.Clear();
+            _pulseTargets.Clear();
         }
 
         // ======================================================================
         // IThreatOverlayService
         // ======================================================================
 
-        public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles)
+        public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles) => Show(sourceGuid, tiles, DefaultTint);
+
+        public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, Color tint)
         {
             if (sourceGuid == Guid.Empty || tiles == null) return;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
@@ -108,6 +120,7 @@ namespace Rollgeon.Combat.Threat
 
             Clear(sourceGuid);
 
+            var material = MaterialFor(tint);
             var quads = new List<GameObject>();
             float scale = Mathf.Max(grid.TileSize, 0.01f) * QuadScale;
             foreach (var coord in tiles)
@@ -115,6 +128,12 @@ namespace Rollgeon.Combat.Threat
                 var quad = NextFreeQuad();
                 quad.transform.position = grid.GridToWorld(coord) + Vector3.up * YOffset;
                 quad.transform.localScale = new Vector3(scale, scale, 1f);
+
+                // Assigned here rather than at creation: quads are pooled across sources, so a
+                // recycled one still carries the previous hazard's tint.
+                var renderer = quad.GetComponent<MeshRenderer>();
+                if (renderer != null) renderer.sharedMaterial = material;
+
                 quad.SetActive(true);
                 quads.Add(quad);
             }
@@ -159,29 +178,40 @@ namespace Rollgeon.Combat.Threat
 
                     _root = new GameObject("ThreatTelegraphOverlay");
                     var pulse = _root.AddComponent<ThreatOverlayPulse>();
-                    pulse.Target = Material;
+                    pulse.Targets = _pulseTargets;
                 }
                 return _root;
             }
         }
 
-        private Material Material
+        /// <summary>El naranja de advertencia histórico — el look de todo telegraph antes de que los
+        /// hazards pudieran tintarse por separado, y el default del overload sin color.</summary>
+        public static readonly Color DefaultTint = new Color(1f, 0.45f, 0.1f, 0.55f);
+
+        private Material MaterialFor(Color tint)
         {
-            get
+            var key = (Color32)tint;
+            if (_materialsByTint.TryGetValue(key, out var cached))
             {
-                if (_material == null)
-                {
-                    // Sprites/Default: transparente y tinteable sin keywords de
-                    // pipeline. El día que arte quiera un sprite/material propio,
-                    // se reemplaza acá o se expone override por bootstrap.
-                    _material = new Material(Shader.Find("Sprites/Default"))
-                    {
-                        name = "ThreatTelegraphOverlay (runtime)",
-                        color = new Color(1f, 0.45f, 0.1f, 0.55f),
-                    };
-                }
-                return _material;
+                if (cached != null) return cached;
+
+                // Fake-null: the material was destroyed under us (Dispose on another instance, or a
+                // domain reload). Drop the corpse so the pulse list doesn't accumulate dead entries.
+                _pulseTargets.Remove(cached);
             }
+
+            // Sprites/Default: transparente y tinteable sin keywords de
+            // pipeline. El día que arte quiera un sprite/material propio,
+            // se reemplaza acá o se expone override por bootstrap.
+            var material = new Material(Shader.Find("Sprites/Default"))
+            {
+                name = $"ThreatTelegraphOverlay {key} (runtime)",
+                color = tint,
+            };
+
+            _materialsByTint[key] = material;
+            _pulseTargets.Add(material);
+            return material;
         }
 
         private GameObject NextFreeQuad()
@@ -205,7 +235,7 @@ namespace Rollgeon.Combat.Threat
 
             quad.transform.SetParent(Root.transform, worldPositionStays: false);
             quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            quad.GetComponent<MeshRenderer>().sharedMaterial = Material;
+            // No material here — Show assigns the caller's tint, including on pooled reuse.
             quad.SetActive(false);
             return quad;
         }
@@ -221,22 +251,39 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// Pulso de alpha del material compartido del overlay — todos los quads
-    /// laten juntos. Vive en el root del overlay; sin target es no-op.
+    /// Pulso de alpha de los materiales del overlay — todos los quads laten
+    /// juntos, sea cual sea su tint. Vive en el root del overlay; sin targets
+    /// es no-op.
     /// </summary>
+    /// <remarks>
+    /// <see cref="Targets"/> es la <b>misma</b> lista que mantiene
+    /// <see cref="ThreatTelegraphOverlay"/>, no una copia: los materiales se
+    /// crean por demanda (uno por tint) y el pulso tiene que agarrar también
+    /// los que aparezcan después de que este componente exista.
+    /// </remarks>
     public sealed class ThreatOverlayPulse : MonoBehaviour
     {
-        public Material Target;
+        public List<Material> Targets;
         public float Speed = 2.5f;
         [Range(0f, 1f)] public float MinAlpha = 0.35f;
         [Range(0f, 1f)] public float MaxAlpha = 0.65f;
 
         private void Update()
         {
-            if (Target == null) return;
-            var color = Target.color;
-            color.a = Mathf.Lerp(MinAlpha, MaxAlpha, (Mathf.Sin(Time.time * Speed) + 1f) * 0.5f);
-            Target.color = color;
+            if (Targets == null || Targets.Count == 0) return;
+
+            // Banda de alpha absoluta (no proporcional al alpha del tint): así el naranja histórico
+            // late exactamente igual que antes de que existieran los tints por hazard.
+            float alpha = Mathf.Lerp(MinAlpha, MaxAlpha, (Mathf.Sin(Time.time * Speed) + 1f) * 0.5f);
+            for (int i = 0; i < Targets.Count; i++)
+            {
+                var target = Targets[i];
+                if (target == null) continue; // Destruido por un Dispose en curso.
+
+                var color = target.color;
+                color.a = alpha;
+                target.color = color;
+            }
         }
     }
 }

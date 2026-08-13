@@ -59,18 +59,72 @@ namespace Rollgeon.Combat.Threat
 
         [Header("Cadence")]
         [Tooltip("Telegraph/resolve every N rounds (turn-queue round index, not per-hazard elapsed " +
-                 "rounds — matches the original rain cadence: round % CycleRounds == 0).")]
+                 "rounds — matches the original rain cadence: round % CycleRounds == 0). " +
+                 "Only used when Trigger = CycleTelegraph.")]
         [Min(1)]
         public int CycleRounds = 2;
+
+        [Header("Trigger")]
+        [Tooltip("When this hazard hurts someone. CycleTelegraph = rain (mark now, resolve next " +
+                 "cycle, uses Shape). OnTurnEndInTile = fire (hits whoever ends their turn on a " +
+                 "tile). OnEnter = ice (hits on stepping in, scans the whole path). The last two " +
+                 "need a dynamic area — activate them with the tiles overload of IHazardService.")]
+        public HazardTriggerMode Trigger = HazardTriggerMode.CycleTelegraph;
+
+        [Tooltip("Rounds the hazard survives once activated. 0 = never expires on its own (the " +
+                 "historical rain behavior). Counted on round wrap, so a value of 1 means \"gone " +
+                 "at the start of the next round\".")]
+        [Min(0)]
+        public int DurationRounds;
+
+        [Tooltip("Ice: the tile that fired is removed from the area, so a trap is single-use per " +
+                 "tile. When the last tile is consumed the whole instance dies.")]
+        public bool ConsumeOnTrigger;
+
+        [Header("Presentation")]
+        [Tooltip("Colour of the telegraph quads for this hazard, so fire and ice don't read as the " +
+                 "same threat. Alpha is driven by the overlay's pulse at runtime.")]
+        public Color OverlayTint = DefaultOverlayTint;
+
+        [Tooltip("Optional one-shot VFX spawned on the tile that fired. Leave empty for the " +
+                 "tinted-quad-only look every hazard had before this field existed — the quad is " +
+                 "the telegraph, this is the payoff.")]
+        public GameObject TriggerVfxPrefab;
+
+        [Tooltip("Seconds before the spawned TriggerVfxPrefab is destroyed. The project's VFX " +
+                 "prefabs are ParticleSystems with stopAction = None, so nobody destroys them on " +
+                 "their own and a hazard walked over ten times would leak ten of them.")]
+        [Min(0.1f)]
+        public float TriggerVfxLifetime = 2f;
+
+        [Tooltip("Height above the tile where the trigger VFX spawns. Matches the overlay quad's " +
+                 "own lift off the floor so the burst reads as coming out of the marked tile.")]
+        public float TriggerVfxYOffset = 0.1f;
 
         [Header("Identity")]
         [Tooltip("Stable unique id for this hazard source (GUID as string — see class remarks). " +
                  "Generate a fresh one per definition; never reuse another hazard's id.")]
         public string SourceId = Guid.NewGuid().ToString();
 
-        // Reserved for future telegraph VFX/style (e.g. a FeedbackDBSO id or tint) — today the
-        // warning look is hardcoded in ThreatTelegraphOverlay. Add a field here once hazards need
-        // to look different from one another.
+        /// <summary>Alias of <see cref="ThreatTelegraphOverlay.DefaultTint"/> — the orange painted for
+        /// every threat before hazards could be tinted individually, and the default for
+        /// <see cref="OverlayTint"/> so definitions authored before that field existed keep their exact
+        /// look. Points at the overlay's constant rather than re-declaring the colour so the two can't
+        /// drift apart.</summary>
+        public static readonly Color DefaultOverlayTint = ThreatTelegraphOverlay.DefaultTint;
+
+        /// <summary>
+        /// <see cref="OverlayTint"/>, falling back to <see cref="DefaultOverlayTint"/> when it is
+        /// fully transparent.
+        /// </summary>
+        /// <remarks>
+        /// Guards the one case the field initializer can't: a hand-edited <c>.asset</c> that carries
+        /// an explicit all-zero <c>OverlayTint</c> (or one written by a tool that serialized the
+        /// struct default) would otherwise paint invisible quads and read as "the hazard is broken".
+        /// The trade-off is that an intentionally invisible hazard isn't authorable — no design
+        /// wants one today, and a silently missing telegraph is the far worse failure.
+        /// </remarks>
+        public Color EffectiveOverlayTint => OverlayTint.a <= 0f ? DefaultOverlayTint : OverlayTint;
 
         private Guid? _sourceGuidCache;
 

@@ -288,6 +288,34 @@ namespace Patterns
         /// reaccionar antes de que el golpe caiga.</summary>
         OnReinforcementSpawned,
 
+        // --- Combat: hazards (fire / ice) ---------------------------------------
+        /// <summary>args: [Guid instanceId]. Se activó una instancia de hazard de área dinámica
+        /// (<c>IHazardService.Activate</c> con tiles). El id es de la <b>instancia</b>, no de la
+        /// definición: varias llamas del mismo SO conviven, cada una con su propio id. Hook para
+        /// VFX/SFX de aparición.</summary>
+        OnHazardActivated,
+        /// <summary>args: [Guid instanceId, Guid entityGuid]. Una entidad activó el hazard — pisó
+        /// una tile (OnEnter) o terminó su turno parada en una (OnTurnEndInTile). El daño, si hay,
+        /// ya pasó por el pipeline cuando esto se dispara. Es el hook con el que otros sistemas
+        /// montan su efecto encima sin que el hazard los conozca: el stun del hielo lo aplica
+        /// <c>StunService</c> escuchando acá.</summary>
+        OnHazardTriggered,
+        /// <summary>args: [Guid instanceId]. La instancia se terminó: se le acabó DurationRounds, se
+        /// consumió su última tile (ConsumeOnTrigger) o alguien llamó <c>Deactivate</c>. NO se
+        /// dispara en el cleanup de OnCombatEnd/OnRunEnd (mismo criterio que OnComboUnblocked).</summary>
+        OnHazardExpired,
+
+        // --- Combat: stun -------------------------------------------------------
+        /// <summary>args: [Guid entityGuid, int turns]. Se aplicó stun a la entidad. <c>turns</c> es
+        /// el total RESTANTE tras el <c>max(actual, nuevo)</c> — <c>IStunService.ApplyStun</c> no
+        /// acumula. Sale en cada llamada a ApplyStun, incluso si el max() no movió el contador
+        /// (el feedback es del disparo, no del delta).</summary>
+        OnStunApplied,
+        /// <summary>args: [Guid entityGuid]. El stun de la entidad llegó a 0: se consumió el último
+        /// turno o se curó con <c>IStunService.Clear(entity)</c>. El teardown
+        /// (<c>ClearAll</c> en OnCombatEnd/OnRunEnd) NO lo dispara.</summary>
+        OnStunExpired,
+
         // --- Chests (Feature#0046) ----------------------------------------------
         /// <summary>args: [Guid chestGuid, int tier (ItemRarity), bool isMimic]. Un cofre
         /// spawneó en la sala de combate al iniciar el combate.</summary>

@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Entities.Portraits;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -48,6 +49,10 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         [Tooltip("Nombre del jefe, poblado al encender la barra.")]
         private TextMeshProUGUI _nameText;
+
+        [SerializeField, Optional]
+        [Tooltip("Retrato del jefe (opcional). Se resuelve por guid; sin sprite se esconde.")]
+        private Image _portrait;
 
         [SerializeField]
         [Tooltip("Formato del contador. {0} = current, {1} = max.")]
@@ -108,6 +113,8 @@ namespace Rollgeon.UI.HUD
 
             if (_nameText != null)
                 _nameText.text = displayName;
+
+            ApplyPortrait(bossGuid);
 
             if (_root != null)
                 _root.SetActive(true);
@@ -217,6 +224,34 @@ namespace Rollgeon.UI.HUD
         private void HandleCombatEnd(params object[] args)
         {
             Hide();
+        }
+
+        /// <summary>
+        /// Pone el retrato del jefe resuelto por <see cref="IEntityPortraitResolver"/>. Sin Image
+        /// cableada, sin servicio o sin sprite para el guid, esconde la Image en vez de dejar el
+        /// cuadro blanco del default de uGUI.
+        /// </summary>
+        /// <remarks>
+        /// Mismo contrato que <see cref="TurnQueueView"/>: el resolver es run-scoped y opcional
+        /// (los tests y las escenas de tooling corren sin él), así que nada de esto puede tirar.
+        /// </remarks>
+        private void ApplyPortrait(Guid bossGuid)
+        {
+            if (_portrait == null) return;
+
+            ServiceLocator.TryGetService<IEntityPortraitResolver>(out var portraits);
+            if (portraits != null
+                && bossGuid != Guid.Empty
+                && portraits.TryGetPortrait(bossGuid, out var sprite)
+                && sprite != null)
+            {
+                _portrait.sprite = sprite;
+                _portrait.enabled = true;
+                return;
+            }
+
+            _portrait.sprite = null;
+            _portrait.enabled = false;
         }
 
         private float Ratio(int current) => _maxHp > 0 ? Mathf.Clamp01((float)current / _maxHp) : 0f;

@@ -58,6 +58,12 @@ namespace Rollgeon.Dungeon
                  "se gana la run → Victory).")]
         public FloorLayoutSO NextFloor;
 
+        [Title("Boss Pool")]
+        [InfoBox("Pool pesado de bosses del piso: la sala de boss rolea contra él (pesos relativos, " +
+                 "Weight = 0 o Enabled = off para desactivar uno). Null = comportamiento previo " +
+                 "(el boss lo definen los SpawnPointConfig del prefab / el EnemyPool de la sala).")]
+        public Entities.Bosses.BossPoolSO BossPool;
+
         [Title("Room Slots")]
         [InfoBox("Use Tools ▸ Floor Editor for a richer authoring experience.")]
         public List<RoomTypeSlot> Slots = new List<RoomTypeSlot>();
