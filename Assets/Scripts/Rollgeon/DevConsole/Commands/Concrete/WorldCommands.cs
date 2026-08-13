@@ -301,7 +301,8 @@ namespace Rollgeon.DevConsole.Commands
         public static IEnumerable<string> SuggestArgs(IDevConsoleContext ctx)
         {
             var options = new List<string> { ListKeyword };
-            FindBossById(ctx, query: null, out var ids);
+            // El query null no matchea nada: solo nos interesa la lista de ids conocidos.
+            FindBossById(ctx, null, out var ids);
             options.AddRange(ids);
             return options;
         }
