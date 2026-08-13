@@ -112,6 +112,39 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "forma regular y estable, como cualquier otro participante.\n\n" +
                 "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
                 "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
+
+            // --- El Cajero (piso 2) ---------------------------------------
+            [typeof(AINode_TelegraphMarkGoldScaled)] =
+                "Telegraph Mark Gold-Scaled: igual que Telegraph Mark, pero el ancho (Size) y " +
+                "el daño salen de la tabla Tiers según el ORO del jugador — es la columna que " +
+                "engorda del Cajero.\n\n" +
+                "Tiers: cada escalón declara MinGold (umbral inclusive), ColumnSize y Damage. " +
+                "Se elige el escalón más alto cuyo MinGold <= oro actual; el orden en que los " +
+                "arrastres no importa (se rankean por MinGold).\n\n" +
+                "ApplyBribeStepDown: si hay un soborno vigente (ICashierLedgerService), baja un " +
+                "escalón el resultado. Sin economía registrada asume oro 0 (escalón más barato) " +
+                "en vez de fallar — un jefe que no marca nada es peor que uno que pega flojo.",
+
+            [typeof(AINode_CashierAudit)] =
+                "Cashier Audit (arqueo de caja): guarda TaxPercent del oro del jugador en la caja " +
+                "del jefe, lo cura por lo guardado con tope MaxHeal, y sube el valor de las fichas " +
+                "a ChipValueMultiplierAfterAudit.\n\n" +
+                "El oro NO se destruye: vuelve completo al jugador cuando el jefe muere (lo " +
+                "devuelve CashierLedgerService al escuchar OnEntityDestroyed). Si el jugador muere " +
+                "primero, se pierde.\n\n" +
+                "Devuelve Succeeded incluso cobrando 0 (jugador sin oro) para no romper el " +
+                "Once → Sequence[Audit, ApplyStatModifier] del gate de fase.",
+
+            [typeof(AINode_CashierDropChips)] =
+                "Cashier Drop Chips: suelta Count ficha(s) de MinValue-MaxValue de oro dentro del " +
+                "área telegráfica pendiente del propio enemigo (la columna que marcó ESTE turno), " +
+                "a MinDistanceFromPlayer-MaxDistanceFromPlayer casillas del jugador.\n\n" +
+                "La ficha es un hazard: apuntá Chip a un HazardDefinitionSO con Trigger=OnEnter, " +
+                "Damage=0, ConsumeOnTrigger=true y DurationRounds=1. Cobrarla la paga el " +
+                "CashierLedgerService cuando el hazard se dispara.\n\n" +
+                "Con RequireDamageTaken sólo suelta ficha en turnos en que el enemigo recibió " +
+                "daño. Devuelve Failed cuando no hay nada que soltar (no le pegaron, no hay " +
+                "columna marcada, no hay casilla válida) ⇒ va SIEMPRE en Selector[DropChips, Wait].",
         };
 
         /// <summary>
