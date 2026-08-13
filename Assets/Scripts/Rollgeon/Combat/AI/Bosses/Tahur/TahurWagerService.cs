@@ -207,8 +207,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             _chipsFloor = Mathf.Clamp(chipsFloor, 0, Mathf.Max(1, _maxChips));
             _graceOnNextSettle = graceNextSettle;
 
-            // Con el rastrillo encendido el pozo ya no puede quedar por debajo de su piso.
-            if (_chips < _chipsFloor) SetChips(_chipsFloor);
+            // El piso NO se aplica acá: el volteo no regala fichas. Es el rastrillo el que sube el
+            // pozo por ronda, y el piso solo entra al cobrar (ver AINode_TahurSettleWager).
         }
 
         public bool ConsumeGrace()
