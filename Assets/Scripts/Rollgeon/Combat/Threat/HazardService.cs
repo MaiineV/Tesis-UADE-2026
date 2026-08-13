@@ -8,6 +8,10 @@ using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
+using UnityEngine;
+// Alias explícito (mismo criterio que ThreatTelegraphOverlay): sin él, `Object` en este archivo
+// resolvería a System.Object y los helpers de escena no compilarían.
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.Combat.Threat
 {
@@ -343,9 +347,52 @@ namespace Rollgeon.Combat.Threat
         /// event is what carries the effect other systems layer on top — the ice stun lives in
         /// StunService listening to <c>OnHazardTriggered</c>, not here.
         /// </summary>
+        /// <summary>
+        /// Spawns <see cref="HazardDefinitionSO.TriggerVfxPrefab"/> over <paramref name="coord"/>.
+        /// No-op — byte for byte the pre-VFX behaviour — when the definition carries no prefab.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>The seam is the spawned GameObject itself.</b> This service is a POCO, so it has no
+        /// scene to hang the effect off; it already reaches for the scene the same way through
+        /// <see cref="ThreatTelegraphOverlay.ResolveOrCreate"/>. Rather than add a spawner interface
+        /// (a whole indirection for one <c>Instantiate</c>) the side effect stays observable: an
+        /// EditMode test hands a marker prefab, fires a trigger, and finds the clone in the scene.
+        /// </para>
+        /// <para>
+        /// <b>The delayed destroy is play-mode only.</b> <c>Object.Destroy(go, delay)</c> is a no-op
+        /// that logs in edit mode, so the lifetime is only armed while playing and the EditMode test
+        /// owns the cleanup of what it spawned. Hazards never trigger outside play mode in the game.
+        /// </para>
+        /// </remarks>
+        private static void SpawnTriggerVfx(HazardDefinitionSO definition, GridCoord coord)
+        {
+            var prefab = definition?.TriggerVfxPrefab;
+            if (prefab == null) return;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
+            {
+                Debug.LogWarning("[HazardService] IGridManager no registrado — el hazard cobra igual, " +
+                                 "pero sin VFX (no hay con qué ubicar la tile en el mundo).");
+                return;
+            }
+
+            var world = grid.GridToWorld(coord) + Vector3.up * definition.TriggerVfxYOffset;
+            var instance = Object.Instantiate(prefab, world, Quaternion.identity);
+            instance.name = $"{prefab.name} (hazard)";
+
+            if (Application.isPlaying && definition.TriggerVfxLifetime > 0f)
+                Object.Destroy(instance, definition.TriggerVfxLifetime);
+        }
+
         private void TriggerInstance(HazardInstance instance, Guid entityGuid, GridCoord coord)
         {
             ApplyHazardDamage(instance, entityGuid);
+
+            // Antes del evento a propósito: un listener puede reaccionar expirando la instancia
+            // (o matando al que pisó), y el golpe ya ocurrió — el visual no debería depender de eso.
+            SpawnTriggerVfx(instance.Definition, coord);
+
             EventManager.Trigger(EventName.OnHazardTriggered, instance.InstanceId, entityGuid);
 
             if (!instance.Definition.ConsumeOnTrigger) return;
