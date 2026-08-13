@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.Pipelines;
 using Rollgeon.Grid;
 using Rollgeon.Patterns.Bootstrap;
 

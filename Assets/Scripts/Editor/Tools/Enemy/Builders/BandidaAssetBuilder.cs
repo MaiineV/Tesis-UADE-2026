@@ -88,8 +88,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <list type="number">
         /// <item>ExecuteTelegraph — cobra la marca del turno anterior (jackpot o brazo).</item>
         /// <item>Gate de Fase 2 — HOLD del rodillo del medio + reposición a 1 turno.</item>
-        /// <item>Fila de rodillos — arma, detecta rotos y repone.</item>
         /// <item>TickJackpot — baja el número gigante.</item>
+        /// <item>Fila de rodillos — arma, detecta rotos y repone (rearmando la cuenta).</item>
         /// <item>Pool de acción — jackpot XOR brazo XOR nada.</item>
         /// </list>
         /// <para>
@@ -98,6 +98,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// abortaría la secuencia y la fase no tickearía. Los dos hijos que pueden devolver
         /// <c>Failed</c> (gate de fase y fila de rodillos) van envueltos en
         /// <c>Selector[nodo, Wait]</c> para que su fallo no le cancele el turno al jefe.
+        /// </para>
+        /// <para>
+        /// <b>TickJackpot va antes de la fila</b> y no después: la reposición rearma la cuenta en 2,
+        /// y con el tick posterior el jugador vería un 1 el turno en que el rodillo vuelve — se
+        /// comería una de las dos rondas de aviso que compró rompiéndolo.
         /// </para>
         /// <para>
         /// El <c>Selector</c> del pool es lo que garantiza que jackpot y brazo nunca resuelven el
@@ -112,8 +117,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 {
                     new AINode_ExecuteTelegraph(),
                     IsolateFailure(BuildPhaseTwoGate()),
-                    IsolateFailure(BuildReelRow(reelData)),
                     new AINode_TickJackpot(),
+                    IsolateFailure(BuildReelRow(reelData)),
                     BuildActionPool(),
                 },
             };
