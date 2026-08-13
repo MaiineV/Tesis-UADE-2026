@@ -11,6 +11,7 @@ using Rollgeon.Dungeon.State;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Bosses;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
@@ -49,6 +50,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly EnemyGoldDropService _goldDrops;
         private readonly IEntityPortraitResolver _portraits;
         private readonly IRunContextService _runContext;
+        private readonly IFloorProgressionService _floorProgression;
 
         /// <summary>
         /// One-shot: cuando es <c>true</c>, el próximo re-spawn desde estado guardado usa
@@ -68,7 +70,8 @@ namespace Rollgeon.Combat.Handoff
             IEntityVisualService visuals = null,
             EnemyGoldDropService goldDrops = null,
             IEntityPortraitResolver portraits = null,
-            IRunContextService runContext = null)
+            IRunContextService runContext = null,
+            IFloorProgressionService floorProgression = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
@@ -78,6 +81,7 @@ namespace Rollgeon.Combat.Handoff
             _goldDrops = goldDrops;
             _portraits = portraits;
             _runContext = runContext;
+            _floorProgression = floorProgression;
         }
 
         /// <summary>
@@ -194,6 +198,21 @@ namespace Rollgeon.Combat.Handoff
                 if (forced != null) return forced;
             }
 
+            // Boss pool del piso: le gana a los SpawnPointConfig del prefab. Los 3 prefabs
+            // de boss room traen su boss clavado en el spawn point, así que la precedencia
+            // se resuelve acá por código — no vaciando data que el resto del wiring usa.
+            if (room.Type == RoomType.Boss)
+            {
+                var boss = ResolveBossForFloor(rng);
+                if (boss != null)
+                {
+                    return new List<PlannedSpawn>
+                    {
+                        new PlannedSpawn(boss, boss.ResolveTierForFloor(floor))
+                    };
+                }
+            }
+
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
             if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
             {
@@ -279,6 +298,34 @@ namespace Rollgeon.Combat.Handoff
                 plan.Add(new PlannedSpawn(slot.Enemy, tier));
             }
             return plan;
+        }
+
+        /// <summary>
+        /// Boss de la sala: primero el override one-shot de la dev console, después el
+        /// <see cref="BossPoolSO"/> del piso actual. <c>null</c> en cualquier eslabón
+        /// (sin override, sin progresión, piso sin pool, pool sin entries) ⇒ el caller
+        /// sigue con el path de spawn de siempre, sin ruido en consola.
+        /// </summary>
+        private EnemyDataSO ResolveBossForFloor(System.Random rng)
+        {
+            if (ServiceLocator.TryGetService<IBossSelectionOverride>(out var bossOverride)
+                && bossOverride != null
+                && bossOverride.TryConsume(out var forcedBoss)
+                && forcedBoss != null)
+            {
+                return forcedBoss;
+            }
+
+            var progression = _floorProgression;
+            if (progression == null)
+                ServiceLocator.TryGetService<IFloorProgressionService>(out progression);
+            if (progression == null) return null;
+
+            var layout = progression.CurrentLayout;
+            var pool = layout != null ? layout.BossPool : null;
+            if (pool == null) return null;
+
+            return pool.Roll(rng);
         }
 
         private Guid RegisterEnemy(

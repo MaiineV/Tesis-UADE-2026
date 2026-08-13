@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Handoff;
 using Rollgeon.DevConsole.Cheats;
 using Rollgeon.DevConsole.Core;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
+using Rollgeon.Entities;
+using Rollgeon.Entities.Bosses;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
 using Rollgeon.Player;
+using Rollgeon.Run;
 
 namespace Rollgeon.DevConsole.Commands
 {
@@ -143,14 +147,49 @@ namespace Rollgeon.DevConsole.Commands
 
     public sealed class BossCommand : DevCommandBase
     {
+        private const string ListKeyword = "list";
+
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("list|<bossId>", ArgKind.String, optional: true, ArgProviders.Bosses)
+        };
+
         public override string Name => "boss";
-        public override string Description => "Teleporta directo a la sala de boss del piso actual.";
+        public override string Description =>
+            "Boss: 'boss' teleporta a la sala del piso, 'boss list' muestra el pool del piso " +
+            "con pesos, 'boss <entityId>' fuerza ese boss y teleporta.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
 
         public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
         {
             if (!RequireRun(ctx, out var e1)) return e1;
             if (!RequireService<IDungeonService>(ctx, out var dungeon, out var e2)) return e2;
 
+            if (args.Count > 0 && string.Equals(args[0], ListKeyword, StringComparison.OrdinalIgnoreCase))
+                return ListCurrentFloorPool(ctx);
+
+            if (args.Count > 0)
+            {
+                var boss = FindBossById(ctx, args[0], out var knownIds);
+                if (boss == null)
+                {
+                    return CommandResult.Fail(
+                        $"Boss desconocido: '{args[0]}'. Pools alcanzables desde este piso: " +
+                        $"[{string.Join(", ", knownIds)}].");
+                }
+
+                if (!RequireService<IBossSelectionOverride>(ctx, out var bossOverride, out var e3)) return e3;
+                bossOverride.ForceNext(boss);
+                ctx.Log.Info($"Forzado '{boss.EntityId}' para el próximo spawn de boss. " +
+                             "Ojo: si la sala ya se visitó, los enemigos están persistidos y el " +
+                             "override queda pendiente para la próxima sala de boss.");
+            }
+
+            return TeleportToBossRoom(dungeon);
+        }
+
+        private static CommandResult TeleportToBossRoom(IDungeonService dungeon)
+        {
             foreach (var kv in dungeon.GetAllRoomInstances())
             {
                 if (kv.Value?.Template != null && kv.Value.Template.Type == RoomType.Boss)
@@ -161,6 +200,110 @@ namespace Rollgeon.DevConsole.Commands
                 }
             }
             return CommandResult.Fail("No se encontró sala de boss en el piso actual.");
+        }
+
+        private static CommandResult ListCurrentFloorPool(IDevConsoleContext ctx)
+        {
+            var layout = CurrentLayout(ctx);
+            if (layout == null)
+                return CommandResult.Fail("No hay layout de piso activo (IFloorProgressionService).");
+
+            var pool = layout.BossPool;
+            if (pool == null)
+            {
+                return CommandResult.Fail(
+                    $"'{layout.name}' no tiene BossPool asignado — el boss lo define el prefab / " +
+                    "EnemyPool de la sala (comportamiento previo).");
+            }
+
+            if (pool.Entries == null || pool.Entries.Count == 0)
+                return CommandResult.Fail($"BossPool '{pool.name}' está vacío.");
+
+            ctx.Log.Info($"BossPool de '{layout.name}' ({pool.Entries.Count} entries):");
+            float total = 0f;
+            foreach (var entry in pool.Entries)
+            {
+                if (BossPoolSO.IsActive(entry)) total += entry.Weight;
+            }
+
+            foreach (var entry in pool.Entries)
+            {
+                if (entry == null) continue;
+                string id = entry.Boss != null ? entry.Boss.EntityId : "<sin boss>";
+                bool active = BossPoolSO.IsActive(entry);
+                string status = active
+                    ? $"activo  w={entry.Weight:0.##} ({(total > 0f ? entry.Weight / total * 100f : 0f):0.#}%)"
+                    : $"OFF     w={entry.Weight:0.##}{(entry.Enabled ? string.Empty : " (Enabled=off)")}";
+                ctx.Log.Info($"  {status}  {id}");
+            }
+            return CommandResult.Ok();
+        }
+
+        /// <summary>
+        /// Busca un boss por <c>EntityId</c> (o nombre de asset) en el pool del piso actual y
+        /// en los de todos los pisos alcanzables por <c>NextFloor</c> — así se puede forzar un
+        /// boss de otro piso. Los pools son la única fuente: nada de AssetDatabase en runtime.
+        /// Devuelve también los ids conocidos, para el mensaje de error.
+        /// </summary>
+        private static EnemyDataSO FindBossById(
+            IDevConsoleContext ctx, string query, out List<string> knownIds)
+        {
+            knownIds = new List<string>();
+            EnemyDataSO match = null;
+
+            foreach (var layout in ReachableLayouts(ctx))
+            {
+                var pool = layout.BossPool;
+                if (pool?.Entries == null) continue;
+
+                foreach (var entry in pool.Entries)
+                {
+                    var boss = entry?.Boss;
+                    if (boss == null) continue;
+
+                    if (!string.IsNullOrEmpty(boss.EntityId) && !knownIds.Contains(boss.EntityId))
+                        knownIds.Add(boss.EntityId);
+
+                    if (match != null) continue;
+                    if (string.Equals(boss.EntityId, query, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(boss.name, query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        match = boss;
+                    }
+                }
+            }
+            return match;
+        }
+
+        /// <summary>
+        /// Piso actual + los siguientes por la cadena <c>NextFloor</c>. El <c>HashSet</c>
+        /// corta ciclos si alguien encadena un layout consigo mismo por error.
+        /// </summary>
+        private static List<FloorLayoutSO> ReachableLayouts(IDevConsoleContext ctx)
+        {
+            var result = new List<FloorLayoutSO>();
+            var seen = new HashSet<FloorLayoutSO>();
+            var layout = CurrentLayout(ctx);
+            while (layout != null && seen.Add(layout))
+            {
+                result.Add(layout);
+                layout = layout.NextFloor;
+            }
+            return result;
+        }
+
+        private static FloorLayoutSO CurrentLayout(IDevConsoleContext ctx)
+            => ctx.TryResolve<IFloorProgressionService>(out var progression) && progression != null
+                ? progression.CurrentLayout
+                : null;
+
+        /// <summary>Autocompletado: 'list' + los EntityId de los pools alcanzables.</summary>
+        public static IEnumerable<string> SuggestArgs(IDevConsoleContext ctx)
+        {
+            var options = new List<string> { ListKeyword };
+            FindBossById(ctx, query: null, out var ids);
+            options.AddRange(ids);
+            return options;
         }
     }
 

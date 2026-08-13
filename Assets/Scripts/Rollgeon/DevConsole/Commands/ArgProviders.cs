@@ -30,6 +30,11 @@ namespace Rollgeon.DevConsole.Commands
         public static readonly IArgProvider Enchants = new FuncArgProvider(ctx =>
             ctx.TryResolve<EnchantmentCatalogSO>(out var cat) && cat != null ? cat.AllIds : Enumerable.Empty<string>());
 
+        // Los bosses no están en un catálogo: las opciones salen de los BossPoolSO
+        // alcanzables desde el piso actual (ver BossCommand.SuggestArgs).
+        public static readonly IArgProvider Bosses =
+            new FuncArgProvider(ctx => BossCommand.SuggestArgs(ctx));
+
         public static readonly IArgProvider Heroes = new FuncArgProvider(ctx =>
             ctx.TryResolve<HeroCatalogSO>(out var cat) && cat != null ? cat.AllIds : Enumerable.Empty<string>());
 
