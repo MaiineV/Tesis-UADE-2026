@@ -91,10 +91,12 @@ namespace Rollgeon.Combat.Threat
                  "Generate a fresh one per definition; never reuse another hazard's id.")]
         public string SourceId = Guid.NewGuid().ToString();
 
-        /// <summary>The orange <see cref="ThreatTelegraphOverlay"/> painted for every threat before
-        /// hazards could be tinted individually. Also the default for <see cref="OverlayTint"/>, so
-        /// definitions authored before that field existed keep their exact look.</summary>
-        public static readonly Color DefaultOverlayTint = new Color(1f, 0.45f, 0.1f, 0.55f);
+        /// <summary>Alias of <see cref="ThreatTelegraphOverlay.DefaultTint"/> — the orange painted for
+        /// every threat before hazards could be tinted individually, and the default for
+        /// <see cref="OverlayTint"/> so definitions authored before that field existed keep their exact
+        /// look. Points at the overlay's constant rather than re-declaring the colour so the two can't
+        /// drift apart.</summary>
+        public static readonly Color DefaultOverlayTint = ThreatTelegraphOverlay.DefaultTint;
 
         /// <summary>
         /// <see cref="OverlayTint"/>, falling back to <see cref="DefaultOverlayTint"/> when it is
