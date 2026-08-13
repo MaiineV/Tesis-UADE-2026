@@ -6,6 +6,7 @@ using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combat.Handoff;
+using Rollgeon.Combat.Status;
 using Rollgeon.Patterns.Bootstrap;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -66,6 +67,11 @@ namespace Rollgeon.Combat.FSM
         private EventManager.EventReceiver _onOverlayPushedHandler;
         private EventManager.EventReceiver _onOverlayPoppedHandler;
 
+        // Skip de turno por stun. Vive mientras el controller exista (no per-combate):
+        // OnTurnStarted solo sale con un combate corriendo, y el skipper es inerte si
+        // IStunService no esta registrado.
+        private StunTurnSkipper _stunSkipper;
+
         // Freeze flag: stub. Ver class remarks.
         private bool _phaseFrozen;
 
@@ -119,6 +125,17 @@ namespace Rollgeon.Combat.FSM
             EventManager.Subscribe(EventName.OnOverlayPushed, _onOverlayPushedHandler);
             EventManager.Subscribe(EventName.OnOverlayPopped, _onOverlayPoppedHandler);
 
+            // Stun: si el actor que arranca turno esta stuneado, se consume 1 turno de stun y
+            // el turno se cierra por el input normal. IStunService se resuelve lazy porque su
+            // bootstrap puede correr despues de este Awake; si no existe (escenas viejas,
+            // tests sin bootstrap) el skipper queda inerte y el flujo de turnos no cambia.
+            _stunSkipper = new StunTurnSkipper(
+                ResolveStunService,
+                () => _context?.PlayerId ?? Guid.Empty,
+                EndPlayerTurn,
+                SendEnemyDone);
+            _stunSkipper.Attach();
+
             // Expone este controller como ICombatStarter / ICombatSignaller para que
             // CombatHandoffService + RunController (scope Run, registrados en
             // GameplayBootstrapper.Start) los resuelvan sin stubs. AddService es upsert
@@ -142,6 +159,9 @@ namespace Rollgeon.Combat.FSM
                 EventManager.UnSubscribe(EventName.OnOverlayPopped, _onOverlayPoppedHandler);
                 _onOverlayPoppedHandler = null;
             }
+
+            _stunSkipper?.Dispose();
+            _stunSkipper = null;
 
             if (_fsm != null && _fsm.IsRunning)
             {
@@ -297,6 +317,14 @@ namespace Rollgeon.Combat.FSM
 
             OnCombatFinished?.Invoke(outcome);
         }
+
+        /// <summary>
+        /// Resolucion lazy (y sin cache) del <see cref="IStunService"/>: el bootstrap puede
+        /// registrarlo despues del Awake de este controller, y en tests el ServiceLocator se
+        /// limpia entre casos. Es un lookup de diccionario por turno — no vale cachear.
+        /// </summary>
+        private static IStunService ResolveStunService()
+            => ServiceLocator.TryGetService<IStunService>(out var svc) ? svc : null;
 
         private void OnOverlayPushed(params object[] args)
         {

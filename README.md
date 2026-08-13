@@ -78,7 +78,7 @@ El detalle vive en [`CLAUDE.md`](./CLAUDE.md). Resumen:
 
 ## Contribuidores
 
-Agustin Martinez · Ignacio Martinez · Franco Delocca · Gabriel Omar Guerrero ·
+Ignacio Martinez · Franco Delocca · Gabriel Omar Guerrero ·
 Santiago Bocco · Sebastian Luser
 
 ---
