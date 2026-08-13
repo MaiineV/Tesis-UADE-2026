@@ -211,6 +211,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "camino derecho pagaría 12 en vez de 42.");
         }
 
+        /// <summary>
+        /// Tres marcas pueden convivir en el piso de esta pelea y cada una cobra distinto: fila (30),
+        /// estela (stun) y lápiz (12). Con el lápiz en el violeta default del nodo, "12 de daño" y
+        /// "perdés el turno" se decidirían a ojo.
+        /// </summary>
+        [Test]
+        public void Pencil_IsAuthoredWithItsOwnOverlayTint()
+        {
+            var pencil = Descendants(_root).OfType<AINode_AuxTelegraph>()
+                .First(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark);
+
+            Assert.AreEqual(AnotadorAssetBuilder.PencilOverlayTint, pencil.OverlayTint,
+                "El anillo del lápiz tiene que salir en el grafito autorado, no en el default del nodo.");
+            Assert.AreNotEqual(_ice.EffectiveOverlayTint, pencil.OverlayTint,
+                "Lápiz y estela no pueden compartir color: uno pega 12 y el otro te saca el turno.");
+        }
+
         [Test]
         public void NoSingleMark_BreaksTheFloor2DamageCeiling()
         {
@@ -274,6 +291,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(_ice.EffectiveOverlayTint.b, _ice.EffectiveOverlayTint.r,
                 "El overlay de la estela tiene que ser celeste, no el naranja del telegraph.");
             Assert.Greater(_ice.EffectiveOverlayTint.a, 0f, "Un tint transparente pintaría quads invisibles.");
+        }
+
+        /// <summary>
+        /// El burst es decoración: la estela tiene que quedar jugable si el prefab de VFX no está
+        /// construido (o si el builder corre sin él).
+        /// </summary>
+        [Test]
+        public void IceHazard_TriggerVfx_IsOptional()
+        {
+            Assert.IsNull(_ice.TriggerVfxPrefab,
+                "Sin prefab pasado, ConfigureIceHazard no debería inventar uno.");
+            Assert.Greater(_ice.TriggerVfxLifetime, 0f,
+                "Los VFX del proyecto no se autodestruyen (stopAction = None): sin lifetime, cada " +
+                "pisada dejaría un ParticleSystem colgado en la escena.");
+        }
+
+        [Test]
+        public void IceHazard_TakesTheBurstWhenTheBuilderHasOne()
+        {
+            var burst = new GameObject("VFX_IceBurst_Fake");
+            try
+            {
+                AnotadorAssetBuilder.ConfigureIceHazard(_ice, burst);
+
+                Assert.AreSame(burst, _ice.TriggerVfxPrefab,
+                    "El hazard tiene que quedar apuntando al burst que arma el builder.");
+                Assert.AreEqual(0, _ice.Damage,
+                    "El VFX no cambia el contrato: la estela sigue cobrando en turnos, no en HP.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(burst);
+            }
         }
 
         // ======================================================================
@@ -345,6 +395,43 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
             finally
             {
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        /// <summary>
+        /// Arte y retrato entran por parámetro, con guarda de null: correr el builder en una copia del
+        /// repo a la que le falte el prefab no debería <b>borrar</b> el arte que el asset ya tiene.
+        /// </summary>
+        [Test]
+        public void PopulateEnemyData_AssignsArtAndPortrait_ButNeverClearsThem()
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.hideFlags = HideFlags.HideAndDontSave;
+            var visual = new GameObject("PF_Boss_Anotador_Fake");
+            // La textura se guarda aparte: Sprite.Create no la adopta, y una Texture2D sin destruir
+            // la reporta el detector de leaks de EditMode.
+            var texture = new Texture2D(4, 4);
+            var portrait = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.one * 0.5f);
+            try
+            {
+                AnotadorAssetBuilder.PopulateEnemyData(data, _ice, visual, portrait);
+
+                Assert.AreSame(visual, data.VisualPrefab);
+                Assert.AreSame(portrait, data.Portrait,
+                    "El retrato es el set de 6 dados: sin él el frame del jefe sale vacío.");
+
+                // Segunda corrida sin arte (el caso "el prefab no está en el disco").
+                AnotadorAssetBuilder.PopulateEnemyData(data, _ice, null, null);
+
+                Assert.AreSame(visual, data.VisualPrefab, "Un null no debería pisar el arte asignado.");
+                Assert.AreSame(portrait, data.Portrait, "Un null no debería pisar el retrato asignado.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(portrait);
+                Object.DestroyImmediate(texture);
+                Object.DestroyImmediate(visual);
                 Object.DestroyImmediate(data);
             }
         }
