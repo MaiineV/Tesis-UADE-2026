@@ -36,9 +36,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Bandida.asset";
         public const string ReelAssetPath = "Assets/Rollgeon/Enemies/ED_Obj_Rodillo.asset";
 
-        /// <summary>Placeholder: el jefe todavía no tiene arte propio.</summary>
-        public const string PlaceholderPrefabPath = "Assets/Prefabs/Enemies/SunkedGrand.prefab";
-
         public const string BossEntityId = "boss.one_armed";
         public const string ReelEntityId = "obj.reel";
 
@@ -74,6 +71,86 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const float Phase2HpThreshold = 0.5f;
         public const int Phase2Index = 2;
+
+        // ======================================================================
+        // Contrato visual — arte, retinte y retratos.
+        // ======================================================================
+
+        /// <summary>
+        /// Arte del jefe. Mech humanoide con <b>tres cañones en el pecho</b> (<c>Cannon</c>,
+        /// <c>Cannon_1</c>, <c>Cannon_2</c>): son los tres rodillos leídos como parte del cuerpo, que
+        /// es exactamente lo que la ficha pide contar de un vistazo. Trae además el set de anims más
+        /// completo del proyecto (<c>AnimCon_Mecha</c>: Idle/IdleVar/Walk/AttackMelee/AttackRange), y
+        /// estaba huérfano — ningún otro enemigo lo referencia.
+        /// </summary>
+        public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
+
+        public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Bandida.prefab";
+
+        /// <summary>Tragamonedas con 7s y palanca — el símbolo de la máquina, no de un humanoide.</summary>
+        public const string BossPortraitPath = "Assets/Art/2D/Symbols/Sprites/Casino_004D.png";
+
+        /// <summary>
+        /// Arte del rodillo: una tragamonedas real. Sin <c>Animator</c> ni rig, que es justo lo que
+        /// tiene que ser un objeto de 3 de vida — el jugador no puede confundirlo con un enemigo que
+        /// actúa.
+        /// </summary>
+        public const string ReelArtPrefabPath = "Assets/Prefabs/Props/slotv02.prefab";
+
+        public const string ReelVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Rodillo.prefab";
+
+        /// <summary>Cerezas: el símbolo del rodillo, distinto del 7 del jackpot del jefe.</summary>
+        public const string ReelPortraitPath = "Assets/Art/2D/Symbols/Sprites/Casino_0049.png";
+
+        /// <summary>Los clones de material del retinte viven acá (uno por material fuente).</summary>
+        public const string MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/Bandida";
+
+        /// <summary>
+        /// Tope del radio del capsule del jefe, en tiles (<c>GridManager.TileSize</c> = 1).
+        /// </summary>
+        /// <remarks>
+        /// El mech está en T-pose: los bounds del arte dan un radio de ~1.5 (manos y cañones) y
+        /// <c>PawnPicker</c> resuelve el pick por collider, así que ese capsule taparía las casillas
+        /// vecinas. Los rodillos se paran justo al lado del jefe y romperlos es <b>la</b> mecánica de
+        /// la pelea: el collider del jefe no puede pasarse de su propia casilla.
+        /// </remarks>
+        public const float BossColliderRadius = 0.5f;
+
+        /// <summary>Misma altura que el resto del roster (GeneralDirector, Healer, CardEnemy).</summary>
+        public static readonly Vector3 BossHealthBarOffset = new Vector3(0f, 3f, 0f);
+
+        /// <summary>
+        /// La barra del rodillo va más abajo que la del jefe a propósito: con las cuatro a 3 de altura
+        /// la fila queda una sopa de barras y no se lee cuál es la del jefe.
+        /// </summary>
+        public static readonly Vector3 ReelHealthBarOffset = new Vector3(0f, 2.2f, 0f);
+
+        /// <summary>
+        /// Corrección de altura del arte del rodillo. <c>slotv02</c> trae su malla en un hijo a
+        /// <c>y = -0.5</c> (las salas la compensan colocando la instancia a <c>y = +1</c> sobre un
+        /// GridOrigin a <c>0.5</c>). El wrapper fuerza el hijo Art a identidad, así que sin este
+        /// lift la máquina queda medio tile hundida en el piso.
+        /// </summary>
+        public const float ReelArtYLift = 0.5f;
+
+        // Paleta: gabinete rojo tragamonedas + herrajes dorados. Los nombres son por FUNCIÓN y no
+        // por material fuente porque el retinte cruza colores (Mat_Gold pasa a ser el rojo del
+        // gabinete: es el material que cubre torso, brazos y piernas, o sea la carcasa).
+        public static readonly Color CabinetLight = new Color32(0xF2, 0x56, 0x4B, 0xFF);
+        public static readonly Color CabinetMid = new Color32(0xC8, 0x1D, 0x2E, 0xFF);
+        public static readonly Color CabinetShadow = new Color32(0x5E, 0x0A, 0x16, 0xFF);
+
+        public static readonly Color TrimLight = new Color32(0xFF, 0xE0, 0x8A, 0xFF);
+        public static readonly Color TrimMid = new Color32(0xE0, 0xA8, 0x25, 0xFF);
+        public static readonly Color TrimShadow = new Color32(0x6B, 0x44, 0x10, 0xFF);
+
+        public static readonly Color ReelFaceLight = new Color32(0xFF, 0xFF, 0xFF, 0xFF);
+        public static readonly Color ReelFaceMid = new Color32(0xC9, 0xCE, 0xD9, 0xFF);
+        public static readonly Color ReelFaceShadow = new Color32(0x5A, 0x62, 0x72, 0xFF);
+
+        public static readonly Color AccentLight = new Color32(0x8C, 0x2A, 0x33, 0xFF);
+        public static readonly Color AccentMid = new Color32(0x59, 0x15, 0x1F, 0xFF);
+        public static readonly Color AccentShadow = new Color32(0x2A, 0x08, 0x10, 0xFF);
 
         // ======================================================================
         // Árbol (puro — testeable sin assets)
@@ -248,7 +325,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Populate (puro — testeable sin assets)
         // ======================================================================
 
-        public static void PopulateEnemyData(EnemyDataSO boss, EnemyDataSO reelData, GameObject visualPrefab)
+        /// <remarks>
+        /// <paramref name="visualPrefab"/> y <paramref name="portrait"/> son opcionales para que los
+        /// tests de wiring puedan verificar números sin cargar assets; el menú siempre los pasa.
+        /// </remarks>
+        public static void PopulateEnemyData(EnemyDataSO boss, EnemyDataSO reelData,
+            GameObject visualPrefab, Sprite portrait = null)
         {
             if (boss == null) return;
 
@@ -272,6 +354,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             boss.MaxGoldDrop = MaxGold;
 
             if (visualPrefab != null) boss.VisualPrefab = visualPrefab;
+            if (portrait != null) boss.Portrait = portrait;
 
             boss.AIRoot = BuildAIRoot(reelData);
         }
@@ -280,7 +363,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// El rodillo: objeto de 3 de vida que no actúa. Su árbol es un <c>Wait</c> — está en la cola
         /// de turnos solo para que la limpieza de fin de combate lo levante junto con el resto.
         /// </summary>
-        public static void PopulateReelData(EnemyDataSO reel, GameObject visualPrefab)
+        public static void PopulateReelData(EnemyDataSO reel, GameObject visualPrefab,
+            Sprite portrait = null)
         {
             if (reel == null) return;
 
@@ -307,7 +391,132 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             if (visualPrefab != null) reel.VisualPrefab = visualPrefab;
 
+            // El retrato del rodillo también alimenta la cola de turnos: AINode_SpawnReels registra
+            // ReelData.Portrait en el IEntityPortraitResolver al reponer cada rodillo.
+            if (portrait != null) reel.Portrait = portrait;
+
             reel.AIRoot = new AINode_Wait();
+        }
+
+        // ======================================================================
+        // Specs de wrapper (puras — el test las arma y las redirige a una carpeta temporal)
+        // ======================================================================
+
+        /// <summary>
+        /// Ficha del wrapper del jefe: el mech retintado a gabinete rojo con herrajes dorados.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Por qué colores directos y no <c>PaletteSlot</c></b>: los labels guardados en
+        /// <c>PA_MainPalette.asset</c> están desalineados respecto de la tabla de
+        /// <see cref="PaletteSlots"/>, así que pedir "slot Red" no garantiza rojo. Con
+        /// <see cref="MaterialRetint.FromColors"/> el color queda escrito en el material y no depende
+        /// de un asset que alguien editó a mano.
+        /// </para>
+        /// <para>
+        /// <b>El cruce de nombres es a propósito.</b> El material que cubre torso, brazos y piernas
+        /// del mech es <c>Mat_Gold</c> (10 slots): esa es la carcasa, y la carcasa de una tragamonedas
+        /// es roja. El dorado se reserva para <c>Mat_DarkGray</c>, que son los herrajes/articulaciones
+        /// más <c>Cannon_2</c>. <c>Mat_Gray</c> (sólo <c>Cannon_1</c>) se va a blanco cromo para que el
+        /// cañón del medio lea como el vidrio del rodillo. <c>Mat_White</c> queda <b>sin retintar</b>:
+        /// es el punto de luz del torso y sobre gabinete rojo hace de "777" iluminado.
+        /// </para>
+        /// </remarks>
+        public static BossWrapperSpec BuildBossWrapperSpec(
+            string outputPrefabPath = BossVisualPrefabPath,
+            string materialsFolder = MaterialsFolder)
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = BossArtPrefabPath,
+                OutputPrefabPath = outputPrefabPath,
+                BossName = "Bandida",
+                MaterialsFolder = materialsFolder,
+                Collider = ColliderKind.Capsule,
+                AddHealthBar = true,
+                HealthBarOffset = BossHealthBarOffset,
+                Retints = new Dictionary<string, MaterialRetint>
+                {
+                    { "Mat_Gold", MaterialRetint.FromColors(CabinetLight, CabinetMid, CabinetShadow) },
+                    { "Mat_DarkGray", MaterialRetint.FromColors(TrimLight, TrimMid, TrimShadow) },
+                    { "Mat_Gray", MaterialRetint.FromColors(ReelFaceLight, ReelFaceMid, ReelFaceShadow) },
+                    { "Mat_Brown", MaterialRetint.FromColors(AccentLight, AccentMid, AccentShadow) },
+                },
+            };
+        }
+
+        /// <summary>
+        /// Ficha del wrapper del rodillo. <b>Sin retinte</b>: el prop ya es una tragamonedas autorada
+        /// con ocho materiales por submalla y desde el YAML no hay forma de saber cuál es el gabinete
+        /// y cuál la palanca — retintar a ciegas repinta la pieza equivocada. Queda como pendiente de
+        /// una pasada con el editor abierto.
+        /// </summary>
+        /// <remarks>
+        /// Collider <see cref="ColliderKind.Box"/> y no capsule: la máquina es una caja, y el pick de
+        /// un blanco de 3 de vida que hay que romper rápido tiene que cubrir la silueta entera.
+        /// </remarks>
+        public static BossWrapperSpec BuildReelWrapperSpec(
+            string outputPrefabPath = ReelVisualPrefabPath,
+            string materialsFolder = MaterialsFolder)
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = ReelArtPrefabPath,
+                OutputPrefabPath = outputPrefabPath,
+                BossName = "Rodillo",
+                MaterialsFolder = materialsFolder,
+                Collider = ColliderKind.Box,
+                AddHealthBar = true,
+                HealthBarOffset = ReelHealthBarOffset,
+            };
+        }
+
+        // ======================================================================
+        // Wrappers (AssetDatabase)
+        // ======================================================================
+
+        /// <summary>
+        /// Construye <see cref="BossVisualPrefabPath"/> y lo devuelve. Idempotente: el wrapper se
+        /// reescribe sobre el mismo path (GUID estable) y el ajuste de collider se re-aplica con
+        /// valores absolutos, así que dos corridas dan el mismo prefab.
+        /// </summary>
+        public static GameObject BuildBossVisual(
+            string outputPrefabPath = BossVisualPrefabPath,
+            string materialsFolder = MaterialsFolder)
+        {
+            var spec = BuildBossWrapperSpec(outputPrefabPath, materialsFolder);
+            if (BossVisualWrapperBuilder.BuildWrapper(spec) == null) return null;
+
+            EditPrefab(outputPrefabPath, root =>
+            {
+                var capsule = root.GetComponent<CapsuleCollider>();
+                if (capsule == null) return;
+                if (capsule.radius > BossColliderRadius) capsule.radius = BossColliderRadius;
+            });
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(outputPrefabPath);
+        }
+
+        /// <summary>Construye <see cref="ReelVisualPrefabPath"/> y lo devuelve.</summary>
+        public static GameObject BuildReelVisual(
+            string outputPrefabPath = ReelVisualPrefabPath,
+            string materialsFolder = MaterialsFolder)
+        {
+            var spec = BuildReelWrapperSpec(outputPrefabPath, materialsFolder);
+            if (BossVisualWrapperBuilder.BuildWrapper(spec) == null) return null;
+
+            EditPrefab(outputPrefabPath, root =>
+            {
+                var art = root.transform.Find("Art");
+                if (art != null) art.localPosition = new Vector3(0f, ReelArtYLift, 0f);
+
+                // El box lo dimensionó el wrapper con el arte todavía en el origen: hay que subirlo
+                // lo mismo que el arte o el pick queda medio tile por debajo de la máquina.
+                var box = root.GetComponent<BoxCollider>();
+                if (box != null) box.center += new Vector3(0f, ReelArtYLift, 0f);
+            });
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(outputPrefabPath);
         }
 
         // ======================================================================
@@ -317,26 +526,60 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         [MenuItem("Tools/Rollgeon/Bosses/Build Bandida")]
         public static void BuildBandida()
         {
-            var placeholder = AssetDatabase.LoadAssetAtPath<GameObject>(PlaceholderPrefabPath);
-            if (placeholder == null)
-                Debug.LogWarning($"[BandidaAssetBuilder] No se encontró el prefab placeholder en " +
-                                 $"'{PlaceholderPrefabPath}' — los assets quedan sin VisualPrefab.");
+            var bossVisual = BuildBossVisual();
+            var reelVisual = BuildReelVisual();
+
+            // Los símbolos de casino están importados como Default: sin este paso
+            // LoadAssetAtPath<Sprite> devuelve null y el Portrait quedaría vacío en silencio.
+            var bossPortrait = SpriteImportUtility.EnsureSpriteImport(BossPortraitPath);
+            var reelPortrait = SpriteImportUtility.EnsureSpriteImport(ReelPortraitPath);
 
             var reel = LoadOrCreate(ReelAssetPath);
-            PopulateReelData(reel, placeholder);
+            PopulateReelData(reel, reelVisual, reelPortrait);
             EditorUtility.SetDirty(reel);
 
             var boss = LoadOrCreate(BossAssetPath);
-            PopulateEnemyData(boss, reel, placeholder);
+            PopulateEnemyData(boss, reel, bossVisual, bossPortrait);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[BandidaAssetBuilder] Listo: '{BossAssetPath}' + '{ReelAssetPath}'. " +
-                      "Falta a mano: Portrait de los dos SOs, prefab propio del jefe, la UI del " +
-                      "número gigante (TypedEvent<JackpotCountdownPayload>) y el alta del jefe en " +
-                      "el BossFloorManagerSO del piso 1.");
+            Debug.Log($"[BandidaAssetBuilder] Listo: '{BossAssetPath}' + '{ReelAssetPath}' con " +
+                      $"'{BossVisualPrefabPath}' + '{ReelVisualPrefabPath}'. " +
+                      "Falta a mano: la UI del número gigante " +
+                      "(TypedEvent<JackpotCountdownPayload>) y el alta del jefe en el " +
+                      "BossFloorManagerSO del piso 1.");
+        }
+
+        /// <summary>
+        /// Abre el prefab guardado, le aplica <paramref name="edit"/> y lo vuelve a guardar sobre el
+        /// mismo path (GUID estable).
+        /// </summary>
+        /// <remarks>
+        /// Existe porque <see cref="BossVisualWrapperBuilder"/> es fundación compartida por los seis
+        /// jefes: los ajustes que sólo valen para La Bandida (el capsule que no puede tapar la fila de
+        /// rodillos, el lift del arte del prop) se hacen acá y no agregándole campos al spec común.
+        /// </remarks>
+        private static void EditPrefab(string prefabPath, System.Action<GameObject> edit)
+        {
+            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (contents == null)
+            {
+                Debug.LogWarning($"[BandidaAssetBuilder] No se pudo abrir '{prefabPath}' para el " +
+                                 $"post-proceso — queda con los valores del wrapper genérico.");
+                return;
+            }
+
+            try
+            {
+                edit(contents);
+                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
         }
 
         private static EnemyDataSO LoadOrCreate(string path)
