@@ -112,6 +112,60 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "forma regular y estable, como cualquier otro participante.\n\n" +
                 "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
                 "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
+
+            // --- El Tahúr (piso 3). Tipos calificados a propósito: este archivo lo comparten
+            // varias ramas de jefes y agregar usings arriba multiplica los conflictos de merge.
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurSettleWager)] =
+                "Tahúr — Settle Wager: liquida la ronda. Lee la mano que el jugador jugó " +
+                "(ComboPlayedPayload), la mide contra el canto sobre la escalera del contrato " +
+                "(ordenada por Priority, NO por daño base) y mueve el pozo.\n\n" +
+                "• Exacto ⇒ 0 dmg y, si el jugador está en La Mesa, cobra 12 × fichas contra el " +
+                "propio jefe. El cobro REEMPLAZA su ataque: esa ronda no marca Castigo.\n" +
+                "• Codicia (mano mejor) ⇒ +2 fichas y el Castigo más ancho (Scattered 6×2).\n" +
+                "• Fallo (mano peor, o ninguna) ⇒ +1 ficha y la forma dice cuánto faltó: " +
+                "Column 1 → Row 1 → Column 3 → Scattered 4×2.\n" +
+                "• Fase 2 con el canto invertido, armar el canto ⇒ te leyó: el peor resultado.\n\n" +
+                "El daño sale de PotDamageTable por cantidad de fichas (26/32/38/42/45) y jamás " +
+                "supera DamageCeiling (45 = techo por golpe del piso 3). Marca vía " +
+                "IThreatenedAreaService, así que lo detona el ExecuteTelegraph estándar el turno " +
+                "siguiente. Puede fallar (sin contrato, sin grilla) ⇒ envolver en " +
+                "Selector[nodo, Wait].",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurCallHand)] =
+                "Tahúr — Call Hand: canta un escalón de la escalera del contrato del jugador y lo " +
+                "publica como el objetivo de la próxima ronda.\n\n" +
+                "No inventa mecánicas: usa las dos reglas del Contrato que ya existen — " +
+                "ForbidCombo (R03) sobre la mano cantada (armarla hace 0: cobrar cuesta el ataque, " +
+                "no la vida) y MultiplyCombo ×2 (R01) sobre todo lo que esté por encima del " +
+                "escalón a armar (la codicia paga doble en el golpe y doble en el pozo).\n\n" +
+                "La válvula nunca canta dos escalones altos seguidos (HighRankThreshold) y " +
+                "UseRotationMemory evita repetir hasta agotar el conjunto — rotativo se aprende " +
+                "más rápido. En fase 2 (canto invertido) nunca canta el escalón 1: no habría " +
+                "escalón debajo desde el que cobrar.",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurMarkTable)] =
+                "Tahúr — Mark Table: pinta La Mesa, su 3×3, daño 0, en cian. Es el único lugar " +
+                "desde donde se cobra el pozo.\n\n" +
+                "Va DESPUÉS del movimiento: la mesa de esta ronda no está donde estaba la anterior, " +
+                "así que hasta la ronda perfecta pide un paso. No usa IThreatenedAreaService (se " +
+                "indexa por guid de fuente y pisaría al Castigo): las casillas viven en " +
+                "ITahurWagerService y el overlay usa una key propia.",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurFlipCard)] =
+                "Tahúr — Flip Card: setup de Fase 2 (se voltea la carta). El cartel pasa de PIDE a " +
+                "LEE — la mano cantada es ahora la que NO hay que armar y se cobra el escalón " +
+                "inmediatamente inferior —, entra el rastrillo (+1 ficha por ronda, sola) y cobrar " +
+                "deja el pozo en 1, nunca en 0.\n\n" +
+                "No cambia un solo número: cambia el puzzle. La primera liquidación después del " +
+                "volteo es de gracia (el canto pendiente se armó con las reglas viejas). Envolver " +
+                "en If(PcOwnerHpBelow 0.40) → Once(...).",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurPoke)] =
+                "Tahúr — Poke: 12 de daño melee, solo en ronda limpia. Es el precio fijo de cobrar, " +
+                "porque cobrar es estar en su cara.\n\n" +
+                "Se auto-gatea con RequireCleanRound: el poke y el Castigo nunca resuelven la misma " +
+                "ronda porque 12 + 45 rompe el techo de 45 por golpe del piso 3. El árbol lo gatea " +
+                "además con PcTahurCleanRound + PcTargetInRange 1.",
         };
 
         /// <summary>
