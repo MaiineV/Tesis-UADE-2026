@@ -21576,6 +21576,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5557984108784284507}
   - component: {fileID: 1589386151326281997}
+  - component: {fileID: 4382001731693567153}
+  - component: {fileID: 3128508228830567685}
   m_Layer: 0
   m_Name: PlayerBaseDamage
   m_TagString: Untagged
@@ -21618,6 +21620,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView
   _valueLabel: {fileID: 8511035292166236057}
   _flyAnchor: {fileID: 0}
+--- !u!225 &4382001731693567153
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7953913925464783815}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &3128508228830567685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7953913925464783815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd9d267af7a0053459f32ae5bc21b27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
+  _forceButtonInteractable: 0
 --- !u!1 &7956540871538038925
 GameObject:
   m_ObjectHideFlags: 0
