@@ -1,7 +1,10 @@
 using System.Collections.Generic;
+using Rollgeon.Combat.Status;
+using Rollgeon.Combat.Threat;
 using Rollgeon.Dungeon;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Bosses;
+using Rollgeon.Patterns.Bootstrap;
 using UnityEditor;
 using UnityEngine;
 
@@ -65,6 +68,49 @@ namespace Rollgeon.Editor.Tools
 
             AssetDatabase.SaveAssets();
             Debug.Log(LogPrefix + "Pools de piso instalados y asignados a los layouts.");
+        }
+
+        /// <summary>
+        /// Registra los bootstraps nuevos (hazards v2 y stun) en
+        /// <c>ServiceBootstrap.ExtraServices</c>. Sin el de stun, la estela del Anotador pinta
+        /// pero no saltea el turno. Idempotente: no duplica los que ya están.
+        /// </summary>
+        [MenuItem("Tools/Rollgeon/Bosses/Register Service Bootstraps")]
+        public static void RegisterServiceBootstraps()
+        {
+            var serviceBootstrap = AssetDatabase.LoadAssetAtPath<ServiceBootstrapSO>(
+                "Assets/Rollgeon/ServiceBootstrap.asset");
+            if (serviceBootstrap == null)
+            {
+                Debug.LogError(LogPrefix + "No se encontró Assets/Rollgeon/ServiceBootstrap.asset.");
+                return;
+            }
+
+            var hazard = AssetDatabase.LoadAssetAtPath<HazardServiceBootstrap>(
+                "Assets/Rollgeon/Services/HazardServiceBootstrap.asset");
+            var stun = AssetDatabase.LoadAssetAtPath<StunServiceBootstrap>(
+                "Assets/Rollgeon/Services/StunServiceBootstrap.asset");
+
+            int added = 0;
+            added += AddIfMissing(serviceBootstrap, hazard) ? 1 : 0;
+            added += AddIfMissing(serviceBootstrap, stun) ? 1 : 0;
+
+            if (added > 0)
+            {
+                EditorUtility.SetDirty(serviceBootstrap);
+                AssetDatabase.SaveAssets();
+            }
+            Debug.Log(LogPrefix + $"Bootstraps registrados en ExtraServices: {added} nuevos " +
+                      "(0 = ya estaban o faltan los .asset en Assets/Rollgeon/Services/).");
+        }
+
+        private static bool AddIfMissing(ServiceBootstrapSO bootstrap, IPreloadableService service)
+        {
+            if (service == null) return false;
+            bootstrap.ExtraServices ??= new List<IPreloadableService>();
+            if (bootstrap.ExtraServices.Contains(service)) return false;
+            bootstrap.ExtraServices.Add(service);
+            return true;
         }
 
         private static WeightedBoss Entry(string path, float weight, bool enabled)
