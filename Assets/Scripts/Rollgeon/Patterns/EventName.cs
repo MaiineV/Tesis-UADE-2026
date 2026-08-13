@@ -287,5 +287,22 @@ namespace Patterns
         /// en que aparece no actúa (no hace daño gratis), así el jugador tiene un turno para
         /// reaccionar antes de que el golpe caiga.</summary>
         OnReinforcementSpawned,
+
+        // --- Combat: hazards (fire / ice) ---------------------------------------
+        /// <summary>args: [Guid instanceId]. Se activó una instancia de hazard de área dinámica
+        /// (<c>IHazardService.Activate</c> con tiles). El id es de la <b>instancia</b>, no de la
+        /// definición: varias llamas del mismo SO conviven, cada una con su propio id. Hook para
+        /// VFX/SFX de aparición.</summary>
+        OnHazardActivated,
+        /// <summary>args: [Guid instanceId, Guid entityGuid]. Una entidad activó el hazard — pisó
+        /// una tile (OnEnter) o terminó su turno parada en una (OnTurnEndInTile). El daño, si hay,
+        /// ya pasó por el pipeline cuando esto se dispara. Es el hook con el que otros sistemas
+        /// montan su efecto encima sin que el hazard los conozca: el stun del hielo lo aplica
+        /// <c>StunService</c> escuchando acá.</summary>
+        OnHazardTriggered,
+        /// <summary>args: [Guid instanceId]. La instancia se terminó: se le acabó DurationRounds, se
+        /// consumió su última tile (ConsumeOnTrigger) o alguien llamó <c>Deactivate</c>. NO se
+        /// dispara en el cleanup de OnCombatEnd/OnRunEnd (mismo criterio que OnComboUnblocked).</summary>
+        OnHazardExpired,
     }
 }
