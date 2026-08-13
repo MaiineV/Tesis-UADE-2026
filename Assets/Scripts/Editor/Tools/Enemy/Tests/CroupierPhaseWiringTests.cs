@@ -244,8 +244,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             try
             {
-                // Act
-                CroupierAssetBuilder.PopulateEnemyData(data, _fire, _firePhase2, null);
+                // Act — prefab visual y retrato van en null: son assets, y lo que se afirma acá son los
+                // números de la ficha. El wiring visual vive en CroupierVisualWiringTests.
+                CroupierAssetBuilder.PopulateEnemyData(data, _fire, _firePhase2, null, null);
 
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
