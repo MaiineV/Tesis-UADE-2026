@@ -297,6 +297,57 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void PopulateEnemyData_TakesTheVisualPrefabAndPortraitHandedToIt()
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.hideFlags = HideFlags.HideAndDontSave;
+            var visual = new GameObject("PF_Boss_Cajero") { hideFlags = HideFlags.HideAndDontSave };
+            var portrait = NewPortrait();
+            try
+            {
+                CajeroAssetBuilder.PopulateEnemyData(data, visual, chip: null, portrait: portrait);
+
+                Assert.AreSame(visual, data.VisualPrefab,
+                    "El MenuItem construye el wrapper y lo inyecta acá.");
+                Assert.AreSame(portrait, data.Portrait,
+                    "Sin retrato, la cola de turnos y la barra de jefe caen a su visual default.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+                Object.DestroyImmediate(visual);
+                DestroyPortrait(portrait);
+            }
+        }
+
+        [Test]
+        public void PopulateEnemyData_DoesNotClearTheVisualsWhenCalledWithoutThem()
+        {
+            // El builder se re-corre para refrescar números; si nulease el visual, cada rebuild dejaría
+            // al jefe sin cuerpo y sin cara hasta que alguien lo notara en un playtest.
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.hideFlags = HideFlags.HideAndDontSave;
+            var visual = new GameObject("PF_Boss_Cajero") { hideFlags = HideFlags.HideAndDontSave };
+            var portrait = NewPortrait();
+            try
+            {
+                data.VisualPrefab = visual;
+                data.Portrait = portrait;
+
+                CajeroAssetBuilder.PopulateEnemyData(data);
+
+                Assert.AreSame(visual, data.VisualPrefab);
+                Assert.AreSame(portrait, data.Portrait);
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+                Object.DestroyImmediate(visual);
+                DestroyPortrait(portrait);
+            }
+        }
+
+        [Test]
         public void PopulateEnemyData_IsIdempotent_AndBuildsAFreshTreeEachTime()
         {
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
@@ -320,6 +371,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // ---- Helpers ------------------------------------------------------
+
+        /// <summary>Sprite in-memory de 4×4: alcanza para afirmar la asignación del retrato sin
+        /// tocar el AssetDatabase ni reimportar la textura compartida del pack de símbolos.</summary>
+        private static Sprite NewPortrait()
+        {
+            var texture = new Texture2D(4, 4) { hideFlags = HideFlags.HideAndDontSave };
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, 4f, 4f), new Vector2(0.5f, 0.5f));
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            return sprite;
+        }
+
+        private static void DestroyPortrait(Sprite portrait)
+        {
+            if (portrait == null) return;
+
+            var texture = portrait.texture;
+            Object.DestroyImmediate(portrait);
+            if (texture != null) Object.DestroyImmediate(texture);
+        }
 
         private T FindNode<T>() where T : class
         {
