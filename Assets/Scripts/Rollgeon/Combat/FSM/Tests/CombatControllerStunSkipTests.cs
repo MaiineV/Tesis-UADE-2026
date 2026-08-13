@@ -116,11 +116,9 @@ namespace Rollgeon.Combat.FSM.Tests
             _provider.SetRoll(_enemyId, 10);
         }
 
-        private void StackOrderEnemyFirst()
-        {
-            _provider.SetRoll(_playerId, 10);
-            _provider.SetRoll(_enemyId, 100);
-        }
+        // Nota: no existe "enemy first" acá — CNF-006 hace que BuildForCombat reciba
+        // PlayerId como priorityGuid, así que el player abre la cola siempre. Para
+        // testear el turno enemigo hay que cerrar el turno del player primero.
 
         // ======================================================================
         // Player stuneado
@@ -237,7 +235,7 @@ namespace Rollgeon.Combat.FSM.Tests
         [Test]
         public void EnemyStunned_TurnIsSkipped_WithoutInvokingAiHandler()
         {
-            StackOrderEnemyFirst();
+            StackOrderPlayerFirst();
             var stun = RegisterStunService();
             InvokeAwake(_controller);
             stun.ApplyStun(_enemyId, 1);
@@ -245,6 +243,11 @@ namespace Rollgeon.Combat.FSM.Tests
             int handlerCalls = 0;
             _controller.StartCombat(_playerId, new[] { _playerId, _enemyId }, Guid.NewGuid(),
                 enemyActionHandler: g => handlerCalls++);
+
+            // CNF-006: el player abre siempre; le cerramos el turno para que el
+            // enemy stuneado reciba el suyo.
+            Assert.IsInstanceOf<States.PlayerTurnState>(_controller.FSM.Current);
+            _controller.EndPlayerTurn();
 
             Assert.IsInstanceOf<States.PlayerTurnState>(_controller.FSM.Current,
                 "El turno del enemy stuneado se cierra por EnemyDone y pasa al player.");
