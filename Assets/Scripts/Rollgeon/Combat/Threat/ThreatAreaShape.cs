@@ -38,6 +38,15 @@ namespace Rollgeon.Combat.Threat
         /// del boss, no la del jugador.
         /// </summary>
         SquareAroundSelf,
+
+        /// <summary>
+        /// Uno de los seis sectores del paño del Croupier (3 columnas × 2 filas de bloques),
+        /// numerados 1-2-3 arriba y 4-5-6 abajo. Ni el jugador ni el boss son el centro: el
+        /// sector se elige por índice, que en <see cref="ThreatAreaShape.Compute"/> viaja en el
+        /// parámetro <c>size</c> (1..6). La fila central de la sala nunca pertenece a ningún
+        /// sector — es el pasillo. Ver <see cref="ThreatAreaShape.ComputeRoomSector"/>.
+        /// </summary>
+        RoomSector,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -108,7 +117,120 @@ namespace Rollgeon.Combat.Threat
                     AddHalfRoom(grid, center, axis, result);
                     break;
                 }
+
+                case ThreatShape.RoomSector:
+                {
+                    // El índice del sector viaja en `size` — mismo criterio que el resto de las
+                    // shapes, donde ese parámetro ya significa cosas distintas según la forma
+                    // (radio / ancho de franja / lado del cuadrado). `center` no se usa: el
+                    // sector no está centrado en nadie.
+                    result.UnionWith(ComputeRoomSector(grid, size));
+                    break;
+                }
             }
+
+            return result;
+        }
+
+        /// <summary>Cantidad de sectores del paño (3 columnas × 2 filas de bloques).</summary>
+        public const int RoomSectorCount = 6;
+
+        /// <summary>
+        /// Casillas del sector <paramref name="sector"/> (1..6) del paño del Croupier: 1-2-3 la
+        /// fila de bloques de arriba (izquierda → derecha), 4-5-6 la de abajo. En la sala canónica
+        /// de 11×7 cada sector mide 4×3.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>El pasillo no cae nunca.</b> La fila central de la sala (<c>(minY+maxY)/2</c>) queda
+        /// fuera de los seis sectores por construcción: los bloques de arriba arrancan en
+        /// <c>mid+1</c> y los de abajo terminan en <c>mid-1</c>. Es la invariante que sostiene el
+        /// diseño del jefe — se queda parado ahí y llegar a pegarle nunca cuesta posición.
+        /// </para>
+        /// <para>
+        /// <b>Columna de costura.</b> El ancho de banda es <c>ceil(ancho/3)</c> y la banda derecha
+        /// se ancla al borde derecho (<c>maxX-ancho+1 .. maxX</c>) en vez de continuar a la banda
+        /// del medio. Con un ancho que no es múltiplo de 3 —11, el caso real— eso deja las bandas
+        /// en 0-3 / 4-7 / 7-10: la columna 7 pertenece a la vez al bloque del medio y al de la
+        /// derecha. Es la única franja donde dos números cantados pegan los dos (24 en fase 2), y
+        /// es determinístico, no un artefacto del redondeo: el solapamiento siempre cae en la
+        /// costura derecha.
+        /// </para>
+        /// <para>
+        /// Salas sin bounds reales (grafo vacío) o índices fuera de 1..6 devuelven vacío, igual que
+        /// el resto de las shapes que necesitan extensión de sala.
+        /// </para>
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeRoomSector(IGridManager grid, int sector)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+            if (sector < 1 || sector > RoomSectorCount) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in tiles)
+            {
+                if (c.X < minX) minX = c.X;
+                if (c.X > maxX) maxX = c.X;
+                if (c.Y < minY) minY = c.Y;
+                if (c.Y > maxY) maxY = c.Y;
+            }
+
+            int width = maxX - minX + 1;
+            int bandWidth = (width + 2) / 3; // ceil(width/3)
+            int column = (sector - 1) % 3;   // 0 = izquierda, 1 = medio, 2 = derecha
+            bool upperRow = sector <= 3;
+
+            int loX = column < 2 ? minX + column * bandWidth : maxX - bandWidth + 1;
+            int hiX = column < 2 ? loX + bandWidth - 1 : maxX;
+            if (loX < minX) loX = minX;
+            if (hiX > maxX) hiX = maxX;
+
+            int midY = (minY + maxY) / 2;
+            int loY = upperRow ? midY + 1 : minY;
+            int hiY = upperRow ? maxY : midY - 1;
+
+            foreach (var c in tiles)
+            {
+                if (c.X < loX || c.X > hiX) continue;
+                if (c.Y < loY || c.Y > hiY) continue;
+                result.Add(c);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Fila central de la sala — el pasillo que ningún sector cubre. Devuelve vacío si la sala
+        /// no tiene bounds reales.
+        /// </summary>
+        /// <remarks>
+        /// Expuesto porque el pasillo es una lectura de diseño en sí misma (once casillas seguras
+        /// por construcción): lo consumen los tests de invariante y cualquier feedback que quiera
+        /// pintarlo. Se calcula del mismo <c>midY</c> que <see cref="ComputeRoomSector"/> para que
+        /// las dos definiciones no puedan divergir.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeCorridorRow(IGridManager grid)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            int minY = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in tiles)
+            {
+                if (c.Y < minY) minY = c.Y;
+                if (c.Y > maxY) maxY = c.Y;
+            }
+
+            int midY = (minY + maxY) / 2;
+            foreach (var c in tiles)
+                if (c.Y == midY) result.Add(c);
 
             return result;
         }

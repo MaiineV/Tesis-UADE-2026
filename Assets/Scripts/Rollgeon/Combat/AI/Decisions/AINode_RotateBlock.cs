@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.ContractMod;
 using Rollgeon.Combat.DiceBlock;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
@@ -41,7 +43,17 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(1)]
         public int Count = 1;
 
-        public override string NodeName => $"Rotate Block ({Target} ×{Count})";
+        [OdinSerialize]
+        [ShowIf(nameof(Target), BlockTarget.Dice)]
+        [Tooltip("Opcional — sólo para Target = Dice. Si está seteado, el dado bloqueado no se sortea: " +
+                 "el índice sale de este reader (ej. el número que canta el Croupier), y Count se " +
+                 "ignora. Un índice mayor que la build da la vuelta (módulo); negativo = no bloquea " +
+                 "nada. Vacío = comportamiento histórico (sorteo al azar de Count dados).")]
+        public AIIntReader DirectedIndex;
+
+        public override string NodeName => DirectedIndex != null && Target == BlockTarget.Dice
+            ? "Rotate Block (Dice, directed)"
+            : $"Rotate Block ({Target} ×{Count})";
 
         public override AIResult Tick(AIContext context)
         {
@@ -65,6 +77,8 @@ namespace Rollgeon.Combat.AI.Decisions
             // Fresh cada turno: limpiamos y sorteamos Count dados distintos.
             dice.Clear();
 
+            if (DirectedIndex != null) return BlockDirected(context, dice, bagSize);
+
             int toBlock = Count < bagSize ? Count : bagSize;
             var indices = new List<int>(bagSize);
             for (int i = 0; i < bagSize; i++) indices.Add(i);
@@ -77,6 +91,28 @@ namespace Rollgeon.Combat.AI.Decisions
                 dice.Block(indices[i]);
             }
 
+            return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Bloqueo dirigido: el índice sale de <see cref="DirectedIndex"/> en vez del sorteo. Un solo
+        /// dado — cuando el índice lo decide una mecánica (el número que canta el Croupier es a la vez
+        /// el sector que cae y el dado que se confisca), "cuántos" ya lo dice esa mecánica y
+        /// <see cref="Count"/> no aplica.
+        /// </summary>
+        /// <remarks>
+        /// El índice da la vuelta con módulo en vez de clampear: los números de la mecánica pueden
+        /// exceder la build (un paño de 6 sectores contra una bolsa de 5 dados) y clampear le daría al
+        /// último dado el doble de probabilidad de ser confiscado. Un índice negativo es "no confisques
+        /// nada" — el reader lo usa para decir que no hay número en el aire, y bloquear un dado al azar
+        /// en ese caso sería un candado que el jugador no puede leer en pantalla.
+        /// </remarks>
+        private AIResult BlockDirected(AIContext context, IDiceBlockService dice, int bagSize)
+        {
+            int raw = DirectedIndex.Read(context);
+            if (raw < 0) return AIResult.Succeeded;
+
+            dice.Block(raw % bagSize);
             return AIResult.Succeeded;
         }
 
