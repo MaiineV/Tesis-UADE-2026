@@ -112,6 +112,36 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "forma regular y estable, como cualquier otro participante.\n\n" +
                 "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
                 "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
+
+            [typeof(AINode_IceTrail)] =
+                "Ice Trail (Anotador, piso 2): congela las casillas que el boss ACABA de pisar " +
+                "en su repliegue. Pisarlas no hace daño: stunea StunTurns turno(s) y derrite esa " +
+                "casilla.\n\n" +
+                "Va SIEMPRE inmediatamente después del nodo de repliegue (KeepDistance/Move) — " +
+                "lee el path real que publicó IMovementService en ese movimiento, así que antes " +
+                "del repliegue no tiene nada que congelar.\n\n" +
+                "El Hazard tiene que ser una HazardDefinitionSO con Trigger=OnEnter, Damage=0, " +
+                "ConsumeOnTrigger=true y DurationRounds=2 (una ronda entera del jugador: con 1 " +
+                "la estela expira en el wrap de ronda, antes de que el jugador vuelva a moverse). " +
+                "El stun NO lo aplica el hazard: lo aplica AnotadorIceStunBinder escuchando " +
+                "OnHazardTriggered, y solo para las instancias que este nodo publicó.\n\n" +
+                "Sin repliegue este turno devuelve Succeeded (no-op transparente): un Failed acá " +
+                "abortaría el Sequence del turno y el boss perdería su marca de fila.",
+
+            [typeof(AINode_ShiftComboToNeighbor)] =
+                "Shift Combo To Neighbor (Anotador, piso 2): corre el combo que el jugador MÁS " +
+                "viene usando (ComboLog, ventana ComboLogWindow) al vecino de la hoja por daño " +
+                "base — su Escalera pasa a pagar como Doble Par, o al revés si Direction=Up.\n\n" +
+                "Efecto de inicio de turno: va como hijo del Sequence raíz, antes del pool, y no " +
+                "consume la acción. Direction=RandomNeighbor sortea el vecino por corrimiento (hay " +
+                "corrimientos aprovechables, no solo castigos).\n\n" +
+                "Maneja la fase 2 internamente leyendo su propia vida (igual que PromulgateRule con " +
+                "su intervalo): bajo Phase2HpThreshold pasa a ShiftsPerTurnPhase2 corrimientos y " +
+                "deja de devolverlos — se acumulan hasta el final del combate. En fase 1 'dura 1 " +
+                "turno' se implementa como ClearAll + volver a promulgar, porque " +
+                "IContractModifierService no tiene expiración por modificador.\n\n" +
+                "ImmuneComboIds saca combos del sorteo: combo.generala es la debilidad del jefe y " +
+                "la única mano que no depende de la tabla.",
         };
 
         /// <summary>
