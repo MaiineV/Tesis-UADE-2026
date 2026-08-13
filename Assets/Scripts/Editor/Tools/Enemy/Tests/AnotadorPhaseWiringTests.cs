@@ -63,7 +63,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El telegráfico del turno pasado se resuelve SIEMPRE primero.");
-            Assert.IsInstanceOf<AINode_ShiftComboToNeighbor>(_root.Children[1],
+            Assert.IsNotNull(Child<AINode_ShiftComboToNeighbor>(_root.Children[1]),
                 "La 'tacha' (corrimiento de la hoja) es efecto de inicio de turno.");
             Assert.IsNotNull(Child<AINode_KeepDistance>(_root.Children[2]), "Falta el repliegue.");
             Assert.IsNotNull(Child<AINode_IceTrail>(_root.Children[3]), "Falta la estela helada.");
@@ -108,8 +108,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             foreach (var child in _root.Children)
             {
-                if (child is AINode_ExecuteTelegraph) continue;      // siempre Succeeded.
-                if (child is AINode_ShiftComboToNeighbor) continue;  // Succeeded salvo servicio ausente.
+                if (child is AINode_ExecuteTelegraph) continue; // contrato del nodo: siempre Succeeded.
 
                 var selector = child as AINode_Selector;
                 Assert.IsNotNull(selector,
@@ -263,7 +262,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Shift_RunsOneComboPerTurn_TwoAndPermanentInPhase2()
         {
-            var shift = _root.Children.OfType<AINode_ShiftComboToNeighbor>().FirstOrDefault();
+            var shift = Child<AINode_ShiftComboToNeighbor>(_root.Children[1]);
 
             Assert.IsNotNull(shift);
             Assert.AreEqual(1, shift.ShiftsPerTurnPhase1, "Fase 1: 1 corrimiento por turno.");

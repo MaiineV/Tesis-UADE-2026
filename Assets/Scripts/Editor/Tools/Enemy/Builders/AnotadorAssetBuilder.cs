@@ -149,8 +149,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 1. Detona la marca del turno pasado.
                     new AINode_ExecuteTelegraph(),
 
-                    // 2. Tacha: corre el combo más jugado al vecino de la hoja.
-                    BuildShiftNode(),
+                    // 2. Tacha: corre el combo más jugado al vecino de la hoja. Envuelto igual que
+                    // el resto: devuelve Failed si IContractModifierService no está registrado, y
+                    // ese Failed dejaría al boss sin marcar la fila por un bootstrap incompleto.
+                    Fallback(BuildShiftNode()),
 
                     // 3. Se acomoda: si lo tienen a 3 o menos, se repliega a 4.
                     Fallback(new AINode_KeepDistance
