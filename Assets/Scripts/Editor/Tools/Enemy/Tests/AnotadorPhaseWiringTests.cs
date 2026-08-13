@@ -302,9 +302,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             Assert.IsNull(_ice.TriggerVfxPrefab,
                 "Sin prefab pasado, ConfigureIceHazard no debería inventar uno.");
-            Assert.Greater(_ice.TriggerVfxLifetime, 0f,
-                "Los VFX del proyecto no se autodestruyen (stopAction = None): sin lifetime, cada " +
-                "pisada dejaría un ParticleSystem colgado en la escena.");
+            Assert.AreEqual(AnotadorAssetBuilder.TrailBurstLifetime, _ice.TriggerVfxLifetime,
+                PercentTolerance,
+                "Los VFX del proyecto no se autodestruyen (stopAction = None): sin un lifetime " +
+                "autorado, cada pisada dejaría un ParticleSystem colgado en la escena.");
         }
 
         [Test]

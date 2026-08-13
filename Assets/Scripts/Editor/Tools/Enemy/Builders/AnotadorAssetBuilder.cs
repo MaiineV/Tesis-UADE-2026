@@ -292,6 +292,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static readonly Color IceVfxColor = new Color(0.35f, 0.8f, 1f, 1f);
 
+        /// <summary>
+        /// Vida del burst. Se autorea explícito (y no se deja el default del campo) porque
+        /// <c>IceTrailHazardDefinition.asset</c> es anterior a <c>TriggerVfxLifetime</c>: dejar el valor
+        /// al azar de cómo deserialice un asset viejo es cómo se filtra un ParticleSystem por pisada.
+        /// 1.5s le sobra al glow, que emite 0.5s.
+        /// </summary>
+        public const float TrailBurstLifetime = 1.5f;
+
         // ======================================================================
         // Capa pura — testeable sin assets
         // ======================================================================
@@ -496,6 +504,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             definition.DurationRounds = TrailDurationRounds;
             definition.OverlayTint = IceOverlayTint;
             definition.SourceId = IceHazardSourceId;
+            definition.TriggerVfxLifetime = TrailBurstLifetime;
 
             if (triggerVfx != null) definition.TriggerVfxPrefab = triggerVfx;
         }
