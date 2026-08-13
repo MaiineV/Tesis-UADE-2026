@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combat.AI.Bosses.Bandida;
+using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.AI.Decisions;
 
 namespace Rollgeon.Editor.Tools.Enemy.AITree
@@ -112,6 +114,270 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "forma regular y estable, como cualquier otro participante.\n\n" +
                 "Pensado para envolver en If(PcOwnerHpBelow) → Once(...) — dispara una sola " +
                 "vez al cruzar el umbral de HP, igual que otros triggers de fase.",
+
+            [typeof(AINode_SpinWheel)] =
+                "Spin Wheel (Croupier): canta 1 número del 1 al 6 (2 en fase 2) y lo deja " +
+                "flotando sobre el jefe. Ese número es dos cosas a la vez — el sector del " +
+                "paño que va a caer el turno que viene y el dado de la bolsa que se " +
+                "confisca — así que este nodo sólo lo elige: marcar y confiscar son los dos " +
+                "nodos siguientes, que leen de la rueda.\n\n" +
+                "Abre el windup: desde acá y hasta que el sector detona, pegarle al jefe " +
+                "corre la rueda +1 y, si el número es impar, cobra RetaliationDamage al " +
+                "atacante. Con la rueda trucada (fase 2) no dispara ninguno de los dos.\n\n" +
+                "AvoidRepeatingLastNumber saca el número del turno anterior del pool (no " +
+                "re-sortea), así el paño se mueve todos los turnos sin sesgar el azar.",
+
+            [typeof(AINode_MarkSungSectors)] =
+                "Mark Sung Sectors (Croupier): marca como amenazado el sector de cada número " +
+                "cantado, para que detone en el próximo turno del jefe. No hace daño este " +
+                "turno.\n\n" +
+                "Es el TelegraphMark de este jefe: existe aparte porque el área sale de un " +
+                "número decidido en runtime (no de un Size autorado) y porque en fase 2 hay " +
+                "DOS áreas simultáneas, marcadas bajo fuentes distintas para que se resuelvan " +
+                "por separado — el jugador parado en la columna de costura, donde los dos " +
+                "sectores se pisan, cobra los dos golpes (2 × SectorDamagePhase2).\n\n" +
+                "El daño se congela al marcar: un sector marcado en fase 1 detona por " +
+                "SectorDamage aunque el jefe cruce el umbral en el medio.",
+
+            [typeof(AINode_DetonateSungSectors)] =
+                "Detonate Sung Sectors (Croupier): detona los sectores cantados el turno " +
+                "pasado y cierra el windup (pegarle ya no mueve la rueda hasta que vuelva a " +
+                "cantar).\n\n" +
+                "Va PRIMERO en el Sequence raíz, como ExecuteTelegraph, y siempre devuelve " +
+                "Succeeded: 'no había nada marcado' (turno 1) o 'el jugador se fue del " +
+                "sector' son resoluciones válidas, no fallos que deban cortarle el turno al " +
+                "jefe.",
+
+            [typeof(AINode_IgniteDetonatedSectors)] =
+                "Ignite Detonated Sectors (Croupier): prende fuego el/los sector(es) que " +
+                "detonaron en ESTE turno — 6 de daño a quien termine su turno adentro. Mata " +
+                "la lectura de que el bloque recién explotado es el lugar más seguro del " +
+                "paño.\n\n" +
+                "Duración por fase = dos definiciones (Fire / FirePhase2), porque " +
+                "HazardService toma DurationRounds del SO. OJO: pedí una ronda MÁS que lo que " +
+                "dice la ficha — el fuego nace en el turno del jefe y el jugador juega " +
+                "primero en cada ronda, así que DurationRounds=1 expira antes de poder " +
+                "tickear. 'Un turno' = 2, 'dos turnos' = 3.\n\n" +
+                "BlastConsumesFlame: si el jugador se comió la detonación, el fuego de ese " +
+                "sector se saltea su primer tick (SkipNextTick) y el peor caso de la costura " +
+                "sigue siendo 24 en vez de 30. Se arma sólo cuando el jugador estaba adentro: " +
+                "el flag se consume recién con un tick que hubiera pegado, así que armarlo a " +
+                "ciegas se tragaría el primer tick legítimo.",
+
+            [typeof(AINode_SetWheelMode)] =
+                "Set Wheel Mode (Croupier): el setup de 'Pleno y color'. Cambia cuántos " +
+                "números canta por turno y truca la rueda (pegarle deja de correrla y de " +
+                "cobrar Represalia: la fase abarata pegarle, lo que te saca es la palanca).\n\n" +
+                "Va envuelto en If(PcOwnerHpBelow 0.5) → Once, al lado del ApplyStatModifier " +
+                "que dispara el feedback de fase. El PhaseIndex que setea acá es el que leen " +
+                "los nodos con valores por fase (daño de sector, definición de fuego), así " +
+                "que hay un único lugar del árbol que decide 'estamos en fase 2'.",
+
+            // --- La Bandida (piso 1) ----------------------------------------------------
+            [typeof(AINode_SpawnReels)] =
+                "Spawn Reels (La Bandida): mantiene la fila de rodillos. La arma alineada en " +
+                "el primer turno —Count casillas consecutivas a un paso del jefe, del lado con " +
+                "más tiles libres (Direction fija el lado a mano)—, detecta los rotos y los " +
+                "repone en su MISMA ranura a los RespawnDelayTurns turnos del jefe.\n\n" +
+                "Al devolver un rodillo rearma la cuenta del jackpot en CountdownOnRespawn: " +
+                "reponer y resetear la cuenta son el mismo paso, si no el jackpot dispararía al " +
+                "turno siguiente del respawn.\n\n" +
+                "NO envolver en Once: se auto-gatea (arma la fila una sola vez) pero necesita " +
+                "tickear cada turno para correr los relojes de reposición. Latcheado en Once, " +
+                "ningún rodillo vuelve nunca.",
+
+            [typeof(AINode_TickJackpot)] =
+                "Tick Jackpot Countdown (La Bandida): baja un turno la cuenta regresiva del " +
+                "jackpot (2 → 1 → 0) y la publica para el número gigante sobre la máquina. " +
+                "No-op si la cuenta está cancelada.\n\n" +
+                "Va suelto en el Sequence raíz, antes del pool de acción, y devuelve siempre " +
+                "Succeeded. Quién marca el jackpot al llegar a 0 lo decide el pool vía la " +
+                "PreCondition Jackpot Countdown — este nodo solo lleva la cuenta.",
+
+            [typeof(AINode_ResetJackpotCountdown)] =
+                "Reset Jackpot Countdown (La Bandida): rearma la cuenta en Value y la vuelve a " +
+                "poner a contar.\n\n" +
+                "Va inmediatamente después del TelegraphMark del jackpot, en el mismo Sequence: " +
+                "la cuenta que dispara se rearma en el acto. Esa asimetría es de diseño — la " +
+                "ronda muerta solo la cobra quien rompe un rodillo (la reposición). La pausa es " +
+                "el premio de cancelar; tanquear el jackpot no la recibe.",
+
+            [typeof(AINode_LockReel)] =
+                "Lock Reel (La Bandida, Fase 2 · HOLD): traba una ranura de la fila. El rodillo " +
+                "trabado deja de cancelar la cuenta y se repone con LockedHp de vida (pool " +
+                "inagotable: el pipeline de daño no tiene canal de inmunidad), así que quedan " +
+                "dos blancos válidos — los dos de la punta, los que están más lejos.\n\n" +
+                "One-shot: va dentro del Once del gate de fase. Devuelve Failed si la fila " +
+                "todavía no está armada, para que el Once no latchee en falso.",
+
+            [typeof(AINode_SetReelRespawnDelay)] =
+                "Set Reel Respawn Delay (La Bandida, Fase 2): pisa el delay de reposición de los " +
+                "rodillos. Bajarlo a 1 hace que la cuenta arranque de nuevo cada ronda en vez de " +
+                "cada dos.\n\n" +
+                "Solo cambia frecuencia: ningún número de daño se mueve.",
+
+            // --- El Cajero (piso 2) ---------------------------------------
+            [typeof(AINode_TelegraphMarkGoldScaled)] =
+                "Telegraph Mark Gold-Scaled: igual que Telegraph Mark, pero el ancho (Size) y " +
+                "el daño salen de la tabla Tiers según el ORO del jugador — es la columna que " +
+                "engorda del Cajero.\n\n" +
+                "Tiers: cada escalón declara MinGold (umbral inclusive), ColumnSize y Damage. " +
+                "Se elige el escalón más alto cuyo MinGold <= oro actual; el orden en que los " +
+                "arrastres no importa (se rankean por MinGold).\n\n" +
+                "ApplyBribeStepDown: si hay un soborno vigente (ICashierLedgerService), baja un " +
+                "escalón el resultado. Sin economía registrada asume oro 0 (escalón más barato) " +
+                "en vez de fallar — un jefe que no marca nada es peor que uno que pega flojo.",
+
+            [typeof(AINode_CashierAudit)] =
+                "Cashier Audit (arqueo de caja): guarda TaxPercent del oro del jugador en la caja " +
+                "del jefe, lo cura por lo guardado con tope MaxHeal, y sube el valor de las fichas " +
+                "a ChipValueMultiplierAfterAudit.\n\n" +
+                "El oro NO se destruye: vuelve completo al jugador cuando el jefe muere (lo " +
+                "devuelve CashierLedgerService al escuchar OnEntityDestroyed). Si el jugador muere " +
+                "primero, se pierde.\n\n" +
+                "Devuelve Succeeded incluso cobrando 0 (jugador sin oro) para no romper el " +
+                "Once → Sequence[Audit, ApplyStatModifier] del gate de fase.",
+
+            [typeof(AINode_CashierDropChips)] =
+                "Cashier Drop Chips: suelta Count ficha(s) de MinValue-MaxValue de oro dentro del " +
+                "área telegráfica pendiente del propio enemigo (la columna que marcó ESTE turno), " +
+                "a MinDistanceFromPlayer-MaxDistanceFromPlayer casillas del jugador.\n\n" +
+                "La ficha es un hazard: apuntá Chip a un HazardDefinitionSO con Trigger=OnEnter, " +
+                "Damage=0, ConsumeOnTrigger=true y DurationRounds=1. Cobrarla la paga el " +
+                "CashierLedgerService cuando el hazard se dispara.\n\n" +
+                "Con RequireDamageTaken sólo suelta ficha en turnos en que el enemigo recibió " +
+                "daño. Devuelve Failed cuando no hay nada que soltar (no le pegaron, no hay " +
+                "columna marcada, no hay casilla válida) ⇒ va SIEMPRE en Selector[DropChips, Wait].",
+
+            [typeof(AINode_IceTrail)] =
+                "Ice Trail (Anotador, piso 2): congela las casillas que el boss ACABA de pisar " +
+                "en su repliegue. Pisarlas no hace daño: stunea StunTurns turno(s) y derrite esa " +
+                "casilla.\n\n" +
+                "Va SIEMPRE inmediatamente después del nodo de repliegue (KeepDistance/Move) — " +
+                "lee el path real que publicó IMovementService en ese movimiento, así que antes " +
+                "del repliegue no tiene nada que congelar.\n\n" +
+                "El Hazard tiene que ser una HazardDefinitionSO con Trigger=OnEnter, Damage=0, " +
+                "ConsumeOnTrigger=true y DurationRounds=2 (una ronda entera del jugador: con 1 " +
+                "la estela expira en el wrap de ronda, antes de que el jugador vuelva a moverse). " +
+                "El stun NO lo aplica el hazard: lo aplica AnotadorIceStunBinder escuchando " +
+                "OnHazardTriggered, y solo para las instancias que este nodo publicó.\n\n" +
+                "Sin repliegue este turno devuelve Succeeded (no-op transparente): un Failed acá " +
+                "abortaría el Sequence del turno y el boss perdería su marca de fila.",
+
+            [typeof(AINode_ShiftComboToNeighbor)] =
+                "Shift Combo To Neighbor (Anotador, piso 2): corre el combo que el jugador MÁS " +
+                "viene usando (ComboLog, ventana ComboLogWindow) al vecino de la hoja por daño " +
+                "base — su Escalera pasa a pagar como Doble Par, o al revés si Direction=Up.\n\n" +
+                "Efecto de inicio de turno: va como hijo del Sequence raíz, antes del pool, y no " +
+                "consume la acción. Direction=RandomNeighbor sortea el vecino por corrimiento (hay " +
+                "corrimientos aprovechables, no solo castigos).\n\n" +
+                "Maneja la fase 2 internamente leyendo su propia vida (igual que PromulgateRule con " +
+                "su intervalo): bajo Phase2HpThreshold pasa a ShiftsPerTurnPhase2 corrimientos y " +
+                "deja de devolverlos — se acumulan hasta el final del combate. En fase 1 'dura 1 " +
+                "turno' se implementa como ClearAll + volver a promulgar, porque " +
+                "IContractModifierService no tiene expiración por modificador.\n\n" +
+                "ImmuneComboIds saca combos del sorteo: combo.generala es la debilidad del jefe y " +
+                "la única mano que no depende de la tabla.",
+
+            // ---- La Generala (piso 3) — mano de dados propia -------------------------
+
+            [typeof(AINode_RollHand)] =
+                "Roll Hand: tira la mano de dados del propio boss y la corre por el MISMO " +
+                "detector de combos que usa el jugador (ComboResolver + ComboCatalogSO). " +
+                "Publica el resultado (caras + combo) en IBossDiceHandService; las ramas de " +
+                "ataque lo leen con la precondición PcBossHandCombo.\n\n" +
+                "SizeSource=AliveAllies tira tantos dados como aliados vivos tenga el boss — " +
+                "sus dados SON sus aliados (objetos en el piso), así que romperle uno le borra " +
+                "una categoría gratis: Generala pide 5 dados en la tirada, Póker 4. NO metas " +
+                "otros enemigos en la arena o van a contar como dados. Fixed = siempre MaxDice.\n\n" +
+                "SlowCombos: esos combos se publican 'cantados pero no armados' — ese turno " +
+                "nadie marca y el siguiente el nodo los arma SIN re-tirar. Eso es la ronda " +
+                "extra de aviso (2 rondas entre la tirada y el impacto).\n\n" +
+                "Con rerolls habilitados (AINode_SetHandReroll) re-tira los dados que no " +
+                "contribuyen al combo y se queda con la mejor mano por prioridad.",
+
+            [typeof(AINode_SetHandReroll)] =
+                "Set Hand Reroll: habilita (o saca) el reroll de la mano de dados del boss — " +
+                "cuántas veces re-tira por tirada los dados que no le sirven.\n\n" +
+                "Setup de Fase 2: metelo en If(PcOwnerHpBelow) → Once(...). El flag vive en el " +
+                "servicio de la mano (run-scoped), así que aplicarlo una vez alcanza.",
+
+            [typeof(AINode_AdoptWeakness)] =
+                "Adopt Weakness: le reasigna la debilidad al propio boss al combo que el " +
+                "jugador MÁS viene usando — lee IComboLogService y escribe IWeaknessRegistry.\n\n" +
+                "Empates: gana el más reciente. El marcador de 'sin combo' del log se ignora. " +
+                "Con el log vacío devuelve Succeeded y deja la debilidad como estaba (poné " +
+                "FailWhenLogEmpty si preferís que falle).\n\n" +
+                "Setup de Fase 2: If(PcOwnerHpBelow) → Once(...).",
+
+            [typeof(AINode_AuxTelegraph)] =
+                "Aux Telegraph: telegraph de canal SECUNDARIO. Misma semántica que " +
+                "TelegraphMark + ExecuteTelegraph (marco en el turno N, cobro en el N+1), pero " +
+                "bajo una fuente propia derivada de ChannelId, así que NO se pisa con el " +
+                "telegraph principal del boss.\n\n" +
+                "Existe porque IThreatenedAreaService guarda UN área pendiente por fuente y " +
+                "Mark sobrescribe la anterior: un boss que amenaza dos áreas el mismo turno " +
+                "perdería una.\n\n" +
+                "Se cablea de a dos instancias con el MISMO ChannelId: una en Step=Execute " +
+                "arriba del Sequence (al lado del ExecuteTelegraph principal y FUERA de todo " +
+                "gate — el aviso hay que cobrarlo aunque este turno no se marque de nuevo) y " +
+                "una en Step=Mark donde corresponda.\n\n" +
+                "Shapes soportadas: las centradas (SquareAroundSelf, SquareAroundPlayer, Row, " +
+                "Column, HalfRoom). DirectionalBand y ScatteredSquares no — usá el nodo principal.",
+
+            // --- El Tahúr (piso 3). Tipos calificados a propósito: este archivo lo comparten
+            // varias ramas de jefes y agregar usings arriba multiplica los conflictos de merge.
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurSettleWager)] =
+                "Tahúr — Settle Wager: liquida la ronda. Lee la mano que el jugador jugó " +
+                "(ComboPlayedPayload), la mide contra el canto sobre la escalera del contrato " +
+                "(ordenada por Priority, NO por daño base) y mueve el pozo.\n\n" +
+                "• Exacto ⇒ 0 dmg y, si el jugador está en La Mesa, cobra 12 × fichas contra el " +
+                "propio jefe. El cobro REEMPLAZA su ataque: esa ronda no marca Castigo.\n" +
+                "• Codicia (mano mejor) ⇒ +2 fichas y el Castigo más ancho (Scattered 6×2).\n" +
+                "• Fallo (mano peor, o ninguna) ⇒ +1 ficha y la forma dice cuánto faltó: " +
+                "Column 1 → Row 1 → Column 3 → Scattered 4×2.\n" +
+                "• Fase 2 con el canto invertido, armar el canto ⇒ te leyó: el peor resultado.\n\n" +
+                "El daño sale de PotDamageTable por cantidad de fichas (26/32/38/42/45) y jamás " +
+                "supera DamageCeiling (45 = techo por golpe del piso 3). Marca vía " +
+                "IThreatenedAreaService, así que lo detona el ExecuteTelegraph estándar el turno " +
+                "siguiente. Puede fallar (sin contrato, sin grilla) ⇒ envolver en " +
+                "Selector[nodo, Wait].",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurCallHand)] =
+                "Tahúr — Call Hand: canta un escalón de la escalera del contrato del jugador y lo " +
+                "publica como el objetivo de la próxima ronda.\n\n" +
+                "No inventa mecánicas: usa las dos reglas del Contrato que ya existen — " +
+                "ForbidCombo (R03) sobre la mano cantada (armarla hace 0: cobrar cuesta el ataque, " +
+                "no la vida) y MultiplyCombo ×2 (R01) sobre todo lo que esté por encima del " +
+                "escalón a armar (la codicia paga doble en el golpe y doble en el pozo).\n\n" +
+                "La válvula nunca canta dos escalones altos seguidos (HighRankThreshold) y " +
+                "UseRotationMemory evita repetir hasta agotar el conjunto — rotativo se aprende " +
+                "más rápido. En fase 2 (canto invertido) nunca canta el escalón 1: no habría " +
+                "escalón debajo desde el que cobrar.",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurMarkTable)] =
+                "Tahúr — Mark Table: pinta La Mesa, su 3×3, daño 0, en cian. Es el único lugar " +
+                "desde donde se cobra el pozo.\n\n" +
+                "Va DESPUÉS del movimiento: la mesa de esta ronda no está donde estaba la anterior, " +
+                "así que hasta la ronda perfecta pide un paso. No usa IThreatenedAreaService (se " +
+                "indexa por guid de fuente y pisaría al Castigo): las casillas viven en " +
+                "ITahurWagerService y el overlay usa una key propia.",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurFlipCard)] =
+                "Tahúr — Flip Card: setup de Fase 2 (se voltea la carta). El cartel pasa de PIDE a " +
+                "LEE — la mano cantada es ahora la que NO hay que armar y se cobra el escalón " +
+                "inmediatamente inferior —, entra el rastrillo (+1 ficha por ronda, sola) y cobrar " +
+                "deja el pozo en 1, nunca en 0.\n\n" +
+                "No cambia un solo número: cambia el puzzle. La primera liquidación después del " +
+                "volteo es de gracia (el canto pendiente se armó con las reglas viejas). Envolver " +
+                "en If(PcOwnerHpBelow 0.40) → Once(...).",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Tahur.AINode_TahurPoke)] =
+                "Tahúr — Poke: 12 de daño melee, solo en ronda limpia. Es el precio fijo de cobrar, " +
+                "porque cobrar es estar en su cara.\n\n" +
+                "Se auto-gatea con RequireCleanRound: el poke y el Castigo nunca resuelven la misma " +
+                "ronda porque 12 + 45 rompe el techo de 45 por golpe del piso 3. El árbol lo gatea " +
+                "además con PcTahurCleanRound + PcTargetInRange 1.",
         };
 
         /// <summary>
