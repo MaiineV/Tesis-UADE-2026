@@ -180,13 +180,17 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         public void Reset()
         {
             Unhook();
+
+            // El windup se limpia ANTES de soltar el guid: apagar los overlays de los slots necesita
+            // saber de quién eran.
+            ClearWindup(notify: true);
+
             _bossGuid = Guid.Empty;
             PhaseIndex = 1;
             NumbersPerTurn = 1;
             Rigged = false;
             RetaliationDamage = 8;
             _detonated.Clear();
-            ClearWindup(notify: true);
         }
 
         // ======================================================================
