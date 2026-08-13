@@ -15,20 +15,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 {
     /// <summary>
     /// Arma por código el jefe de piso 1 <b>El Croupier</b>: su <see cref="EnemyDataSO"/> con el árbol
-    /// de AI inline y las dos definiciones de fuego de paño.
+    /// de AI inline, las dos definiciones de fuego de paño y su prefab visual (arte del Healer
+    /// retintado a carmesí de crupier + la ruleta parenteada al costado).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Dos mitades a propósito.</b> <see cref="BuildAIRoot"/> y
+    /// <b>Dos mitades a propósito.</b> <see cref="BuildAIRoot"/>, <see cref="BuildWrapperSpec"/> y
     /// <see cref="PopulateEnemyData"/> son estáticos puros y no tocan <c>AssetDatabase</c>: los tests
-    /// de wiring arman el árbol en memoria y le afirman orden de gates, fallbacks y números sin
-    /// depender de que el <c>.asset</c> esté generado ni de que Unity lo haya reimportado. El
-    /// <see cref="BuildCroupier"/> del menú es la capa que persiste, y es idempotente: correrlo dos
-    /// veces deja exactamente el mismo asset.
+    /// de wiring arman el árbol y la ficha visual en memoria y les afirman orden de gates, fallbacks,
+    /// números y retintes sin depender de que el <c>.asset</c> esté generado ni de que Unity lo haya
+    /// reimportado. El <see cref="BuildCroupier"/> del menú es la capa que persiste, y es idempotente:
+    /// correrlo dos veces deja exactamente el mismo asset (el wrapper se reescribe sobre su path, que
+    /// preserva el GUID, así que la referencia del <c>ED_</c> sobrevive al rebuild).
     /// </para>
     /// <para>
-    /// El <c>VisualPrefab</c> es un <b>placeholder</b> (el pawn del Sunken Grand) hasta que exista arte
-    /// propio: el jefe no se mueve nunca, así que sólo necesita algo que se pare en el pasillo.
+    /// <b>El arte es el del Healer</b> (<c>Healer_Animated</c>): mago con sombrero de copa, moño, capa
+    /// y bastón — literalmente un crupier con otro tinte. Se reusa en vez de pedir arte nuevo porque el
+    /// jefe no se mueve nunca y su lectura la lleva el paño, no la silueta.
     /// </para>
     /// </remarks>
     public static class CroupierAssetBuilder
@@ -40,7 +43,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Croupier.asset";
         public const string FirePhase1Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire.asset";
         public const string FirePhase2Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire_Phase2.asset";
-        public const string PlaceholderVisualPrefabPath = "Assets/Prefabs/Enemies/SunkedGrand.prefab";
+
+        /// <summary>Arte a vestir: el Healer ya viene con copa, moño, capa y bastón.</summary>
+        public const string ArtPrefabPath = "Assets/Prefabs/Enemies/Healer_Animated.prefab";
+
+        /// <summary>Prefab de gameplay que sale del wrapper y va a <c>EnemyData.VisualPrefab</c>.</summary>
+        public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Croupier.prefab";
+
+        /// <summary>Ruleta parenteada al wrapper — la mesa del jefe, y lo que gira al cantar.</summary>
+        public const string WheelPropPrefabPath = "Assets/Prefabs/Props/Ruletav03.prefab";
+
+        /// <summary>Nombre del hijo de la ruleta. Lo busca <c>CroupierWheelSpinVisual</c> por fallback.</summary>
+        public const string WheelChildName = CroupierWheelSpinVisual.DefaultWheelChildName;
+
+        /// <summary>Retrato: hombre de smoking fumando. Ver <see cref="SpriteImportUtility"/>.</summary>
+        public const string PortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0050.png";
 
         // ======================================================================
         // Ficha de diseño — todos los números del jefe, en un solo lugar
@@ -88,6 +105,60 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Rojo de brasa — se tiene que leer distinto del naranja del telegraph.</summary>
         public static readonly Color FireOverlayTint = new Color(0.85f, 0.10f, 0.05f, 0.60f);
 
+        // ======================================================================
+        // Ficha visual — paleta y transform del prop, en un solo lugar
+        // ======================================================================
+
+        // Los tres materiales que dominan la silueta del Healer y qué visten:
+        //   Mat_Red      → capa, moño, banda del sombrero y mango del bastón.
+        //   Mat_DarkGray → copa del sombrero y traje.
+        //   Mat_Gold     → vivos del traje y cabeza del bastón.
+        // Mat_White (camisa, guantes, esclerótica), Mat_Bone (piel) y Mat_Black (pupila) quedan
+        // sin clonar a propósito: los guantes blancos son la mitad de la lectura "crupier", y
+        // retintar el blanco también le cambiaría el ojo.
+        //
+        // Todos los colores van explícitos y no por PaletteSlot: los labels guardados en
+        // PA_MainPalette están desalineados respecto de la tabla de PaletteSlots (Mat_Red hoy
+        // apunta al slot 7, que en la tabla es "Green"), así que un slot no dice qué color sale.
+
+        /// <summary>Carmesí de terciopelo del paño — el color que el jefe le presta a la mesa.</summary>
+        public static readonly Color WineLight = new Color(0.647f, 0.157f, 0.251f);
+        public static readonly Color WineMid = new Color(0.404f, 0.055f, 0.129f);
+        public static readonly Color WineShadow = new Color(0.212f, 0.024f, 0.075f);
+
+        /// <summary>Smoking casi negro con tiro a borravino: mantiene la luminancia del gris original.</summary>
+        public static readonly Color TuxLight = new Color(0.196f, 0.145f, 0.169f);
+        public static readonly Color TuxMid = new Color(0.129f, 0.090f, 0.110f);
+        public static readonly Color TuxShadow = new Color(0.063f, 0.043f, 0.055f);
+
+        /// <summary>Latón más brillante que el Mat_Gold de fábrica: los vivos tienen que saltar del vino.</summary>
+        public static readonly Color BrassLight = new Color(0.980f, 0.855f, 0.529f);
+        public static readonly Color BrassMid = new Color(0.831f, 0.635f, 0.196f);
+        public static readonly Color BrassShadow = new Color(0.439f, 0.310f, 0.078f);
+
+        /// <summary>
+        /// La ruleta a su derecha (el bastón lo lleva en +X, así que el prop va en -X para no
+        /// atravesarlo) y a la altura del pecho. El prop mide ~0.9 de diámetro y su malla cuelga
+        /// -0.5 de su root, así que este Y es casi el centro del disco.
+        /// </summary>
+        public static readonly Vector3 WheelLocalPosition = new Vector3(-1.15f, 1.15f, 0f);
+
+        /// <summary>
+        /// Euler cero <b>a propósito</b>: el disco del prop mira a ±Z y el jefe también encara -Z
+        /// (ojos y moño están en -Z), así que sin rotarlo la cara de la rueda queda hacia la cámara y
+        /// el giro se ve. Rotarlo la pondría de perfil.
+        /// </summary>
+        public static readonly Vector3 WheelLocalEuler = Vector3.zero;
+
+        /// <summary>0.85 uniforme: acompaña al jefe (~1.95 de alto) sin taparlo.</summary>
+        public static readonly Vector3 WheelLocalScale = new Vector3(0.85f, 0.85f, 0.85f);
+
+        /// <summary>
+        /// Barra de vida más baja que el default de 3: el arte del Healer mide ~1.95 con bastón, y a 3
+        /// la barra quedaba flotando con un hueco de una unidad sobre el sombrero.
+        /// </summary>
+        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.4f, 0f);
+
         // Ids fijos y escritos a mano (no Guid.NewGuid): el builder es idempotente, y un id nuevo por
         // corrida haría que el asset cambie en cada build y que un fuego ya activo quede huérfano.
         private const string FirePhase1SourceId = "c0a17e11-0001-4c00-b001-6f75706965f1";
@@ -103,22 +174,129 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var fire = BuildFireDefinition(FirePhase1Path, FireDurationRounds, FirePhase1SourceId);
             var firePhase2 = BuildFireDefinition(FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId);
 
-            var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            var visual = AssetDatabase.LoadAssetAtPath<GameObject>(PlaceholderVisualPrefabPath);
-            if (visual == null)
-            {
-                Debug.LogWarning($"[CroupierAssetBuilder] No se encontró el prefab placeholder en " +
-                                 $"'{PlaceholderVisualPrefabPath}' — el jefe queda sin VisualPrefab.");
-            }
+            var visual = BuildVisualPrefab();
+            var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
 
-            PopulateEnemyData(boss, fire, firePhase2, visual);
+            var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
+            PopulateEnemyData(boss, fire, firePhase2, visual, portrait);
 
             EditorUtility.SetDirty(boss);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + fuego de paño (fase 1 y 2).");
+            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + fuego de paño (fase 1 y 2) + " +
+                      $"'{VisualPrefabPath}'.");
             Selection.activeObject = boss;
+        }
+
+        // ======================================================================
+        // Prefab visual
+        // ======================================================================
+
+        /// <summary>
+        /// Ficha de armado del wrapper. Pura (no toca <c>AssetDatabase</c>) para que los tests puedan
+        /// afirmar arte, retintes y transform del prop sin construir el prefab.
+        /// </summary>
+        public static BossWrapperSpec BuildWrapperSpec()
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = ArtPrefabPath,
+                OutputPrefabPath = VisualPrefabPath,
+                BossName = "Croupier",
+                HealthBarOffset = HealthBarOffset,
+                Retints = new Dictionary<string, MaterialRetint>
+                {
+                    { "Mat_Red", MaterialRetint.FromColors(WineLight, WineMid, WineShadow) },
+                    { "Mat_DarkGray", MaterialRetint.FromColors(TuxLight, TuxMid, TuxShadow) },
+                    { "Mat_Gold", MaterialRetint.FromColors(BrassLight, BrassMid, BrassShadow) },
+                },
+                Props = new List<BossPropSpec>
+                {
+                    new BossPropSpec
+                    {
+                        PrefabPath = WheelPropPrefabPath,
+                        Name = WheelChildName,
+                        LocalPosition = WheelLocalPosition,
+                        LocalEuler = WheelLocalEuler,
+                        LocalScale = WheelLocalScale,
+                    },
+                },
+            };
+        }
+
+        /// <summary>
+        /// Construye el wrapper y le cuelga el giro de la rueda. Devuelve <c>null</c> (con warning ya
+        /// logueado por el wrapper) si el arte no está: el jefe queda sin <c>VisualPrefab</c>, que es
+        /// exactamente lo que hay que ver en consola en vez de un prefab a medias.
+        /// </summary>
+        private static GameObject BuildVisualPrefab()
+        {
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
+            if (wrapper == null) return null;
+
+            AttachWheelSpinVisual(VisualPrefabPath);
+
+            // Re-load: AttachWheelSpinVisual reescribe el prefab, y la instancia devuelta por el
+            // wrapper apunta al contenido anterior.
+            return AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
+        }
+
+        /// <summary>
+        /// Agrega (idempotente) el <see cref="CroupierWheelSpinVisual"/> al root del wrapper y le cablea
+        /// la ruleta.
+        /// </summary>
+        /// <remarks>
+        /// Va acá y no en <c>BossVisualWrapperBuilder</c> porque es específico de este jefe: la
+        /// fundación compartida no tiene por qué saber que existe una rueda. Se edita por
+        /// <c>LoadPrefabContents</c> + <c>SaveAsPrefabAsset</c>, que reescribe sobre el mismo path y
+        /// preserva el GUID.
+        /// </remarks>
+        private static void AttachWheelSpinVisual(string prefabPath)
+        {
+            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (contents == null)
+            {
+                Debug.LogWarning($"[CroupierAssetBuilder] No se pudo abrir '{prefabPath}' para " +
+                                 $"colgarle el giro de la rueda.");
+                return;
+            }
+
+            try
+            {
+                var wheel = contents.transform.Find(WheelChildName);
+                if (wheel == null)
+                {
+                    Debug.LogWarning($"[CroupierAssetBuilder] '{prefabPath}' no tiene un hijo " +
+                                     $"'{WheelChildName}' — ¿faltó el prop '{WheelPropPrefabPath}'? " +
+                                     $"El jefe queda sin rueda que gire.");
+                    return;
+                }
+
+                var spin = contents.GetComponent<CroupierWheelSpinVisual>();
+                if (spin == null) spin = contents.AddComponent<CroupierWheelSpinVisual>();
+
+                // Explícito y no por el fallback de Awake: así el prefab queda inspeccionable y el giro
+                // no depende de que nadie renombre el hijo.
+                var so = new SerializedObject(spin);
+                var wheelProp = so.FindProperty("_wheel");
+                if (wheelProp != null)
+                {
+                    wheelProp.objectReferenceValue = wheel;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+                else
+                {
+                    Debug.LogWarning("[CroupierAssetBuilder] CroupierWheelSpinVisual no expone '_wheel' " +
+                                     "— ¿se renombró el campo? Queda el fallback por nombre de hijo.");
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
         }
 
         // ======================================================================
@@ -131,7 +309,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// real y para una instancia in-memory de test.
         /// </summary>
         public static void PopulateEnemyData(
-            EnemyDataSO data, HazardDefinitionSO fire, HazardDefinitionSO firePhase2, GameObject visualPrefab)
+            EnemyDataSO data,
+            HazardDefinitionSO fire,
+            HazardDefinitionSO firePhase2,
+            GameObject visualPrefab,
+            Sprite portrait)
         {
             if (data == null) return;
 
@@ -159,6 +341,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MinGoldDrop = MinGoldDrop;
             data.MaxGoldDrop = MaxGoldDrop;
             data.VisualPrefab = visualPrefab;
+
+            // Sin retrato la cola de turnos y la barra de jefe caen a su visual default: no rompe, pero
+            // el jefe se ve como cualquier otro enemigo del piso.
+            data.Portrait = portrait;
 
             // Sin behaviors: el Croupier no tiene melee ni rango. Su único daño directo es la
             // Represalia, y esa entra por el hook de daño de la rueda, no por el árbol.
