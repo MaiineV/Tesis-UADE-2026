@@ -129,7 +129,7 @@ namespace Rollgeon.UI.ChestReveal
         public float GoldCountUpSeconds = 0.35f;
         [MinValue(0.1f)] public float IdlePulsePeriod = 0.9f;
         [Range(0f, 1f)]
-        [Tooltip("Cuánto se acerca a blanco el marco del ganador en el pulse idle.")]
+        [Tooltip("Cuánto se oscurece el fondo del ganador en el pulse idle.")]
         public float IdlePulseColorLerp = 0.35f;
         [MinValue(1f)] public float IdlePulseScale = 1.03f;
     }
