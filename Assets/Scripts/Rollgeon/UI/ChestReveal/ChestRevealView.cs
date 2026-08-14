@@ -263,11 +263,11 @@ namespace Rollgeon.UI.ChestReveal
 
             var winner = _current.Item != null
                 ? ChestReelCellData.ForItem(_current.Item, isWinner: true)
-                : ChestReelCellData.ForGold(_current.GoldAmount, _current.Tier, isWinner: true);
+                : ChestReelCellData.ForGold(_current.GoldAmount, isWinner: true);
 
             _winnerIndex = ChestReelMath.PickWinnerIndex(_settings.TotalCells, _settings.MinSpinCells, _rng);
             var strip = ChestReelBuilder.BuildStrip(
-                winner, _current.PoolPreview, _current.Tier,
+                winner, _current.PoolPreview,
                 _settings.TotalCells, _winnerIndex,
                 _settings.GoldFillerPerMille, _settings.GoldFillerMin, _settings.GoldFillerMax, _rng);
 
