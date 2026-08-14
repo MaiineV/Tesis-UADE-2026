@@ -8,6 +8,7 @@ using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Heroes;
 using Rollgeon.Items;
+using Rollgeon.Loot;
 using Rollgeon.Patterns.Bootstrap;
 using UnityEditor;
 using UnityEngine;
@@ -27,6 +28,7 @@ namespace Rollgeon.EditorTools.Chests
         private const string LogPrefix = "[ChestSetup] ";
 
         private const string ChestFolder = "Assets/Rollgeon/Chests";
+        private const string LootFolder = "Assets/Rollgeon/Loot";
         private const string ConfigPath = ChestFolder + "/ChestConfig.asset";
         private const string LootPoolPath = ChestFolder + "/ChestLootPool.asset";
         private const string BootstrapPath = ChestFolder + "/ChestManagerBootstrap.asset";
@@ -265,8 +267,15 @@ namespace Rollgeon.EditorTools.Chests
                 AssetDatabase.CreateAsset(pool, LootPoolPath);
             }
 
-            if (pool.Buckets == null || pool.Buckets.Count == 0)
+            // Reseed si está vacío o si quedó algún bucket sin LootPool wireado (formato
+            // legacy con lista inline, o migración a medias). Data placeholder TBD-01 —
+            // el tuning real vive en los LootPool_Chest* que SÍ se respetan si existen.
+            bool needsReseed = pool.Buckets == null || pool.Buckets.Count == 0
+                               || pool.Buckets.Exists(b => b == null || b.Pool == null);
+            if (needsReseed)
             {
+                if (pool.Buckets != null && pool.Buckets.Count > 0)
+                    Debug.Log(LogPrefix + "Buckets legacy/incompletos — se reseedean referenciando LootPools.");
                 var catalog = FindItemCatalog();
                 pool.Buckets = new List<ChestLootBucket>
                 {
@@ -326,20 +335,60 @@ namespace Rollgeon.EditorTools.Chests
             };
         }
 
-        // Bucket seedeado desde el catálogo por rareza (placeholder TBD-01: el pool
-        // real por tier lo define Balance; mientras, cada tier ofrece sus ítems de
-        // esa rareza).
+        // Bucket del tier: referencia su LootPool genérico + slot de oro. GoldChance
+        // queda en el default del campo (~ el viejo slot uniforme 1/(N+1)).
         private static ChestLootBucket NewBucket(ItemCatalogSO catalog, ItemRarity tier, int goldMin, int goldMax)
         {
-            var bucket = new ChestLootBucket { Tier = tier, GoldMin = goldMin, GoldMax = goldMax };
+            return new ChestLootBucket
+            {
+                Tier = tier,
+                Pool = EnsureTierLootPool(catalog, tier),
+                GoldMin = goldMin,
+                GoldMax = goldMax,
+            };
+        }
+
+        // LootPool placeholder EDITABLE del tier (se respeta si ya existe): todo el
+        // catálogo como candidatos y pesos que sesgan la categoría según el tier —
+        // de acá sale la variedad de rarezas del reel (TBD-01: Balance ajusta pesos
+        // e ítems en el asset, no acá).
+        private static LootPoolSO EnsureTierLootPool(ItemCatalogSO catalog, ItemRarity tier)
+        {
+            if (!AssetDatabase.IsValidFolder(LootFolder))
+                AssetDatabase.CreateFolder("Assets/Rollgeon", "Loot");
+
+            string path = LootFolder + "/LootPool_Chest" + tier + ".asset";
+            var lootPool = AssetDatabase.LoadAssetAtPath<LootPoolSO>(path);
+            if (lootPool != null) return lootPool;
+
+            lootPool = ScriptableObject.CreateInstance<LootPoolSO>();
+            lootPool.Items = new List<ItemSO>();
             if (catalog != null)
             {
-                foreach (var item in catalog.GetByRarity(tier))
+                foreach (var entry in catalog.Entries)
                 {
-                    if (item != null) bucket.Items.Add(item);
+                    if (entry != null) lootPool.Items.Add(entry);
                 }
             }
-            return bucket;
+            lootPool.Weights = TierWeights(tier);
+            AssetDatabase.CreateAsset(lootPool, path);
+            Debug.Log(LogPrefix + path + " creado (placeholder editable).");
+            return lootPool;
+        }
+
+        private static RarityWeights TierWeights(ItemRarity tier)
+        {
+            switch (tier)
+            {
+                case ItemRarity.Uncommon:
+                    return new RarityWeights { Common = 40f, Uncommon = 40f, Rare = 18f, Legendary = 2f };
+                case ItemRarity.Rare:
+                    return new RarityWeights { Common = 15f, Uncommon = 40f, Rare = 35f, Legendary = 10f };
+                case ItemRarity.Legendary:
+                    return new RarityWeights { Common = 5f, Uncommon = 20f, Rare = 40f, Legendary = 35f };
+                default:
+                    return new RarityWeights { Common = 70f, Uncommon = 25f, Rare = 5f, Legendary = 0f };
+            }
         }
 
         private static ItemCatalogSO FindItemCatalog()
