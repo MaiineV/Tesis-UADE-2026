@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Items;
+using Rollgeon.Loot;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -30,10 +31,15 @@ namespace Rollgeon.Chests
     {
         public ItemRarity Tier;
 
-        [Tooltip("Ítems del pool de este tier. El GDD confirma que el pool escala en " +
-                 "tamaño y calidad con el tier; el contenido exacto es TBD-01.")]
-        [ListDrawerSettings(ShowFoldout = false)]
-        public List<ItemSO> Items = new List<ItemSO>();
+        [Required]
+        [Tooltip("Pool genérico del que rolean los ítems de este tier — define qué " +
+                 "objetos puede integrar y el porcentaje por categoría de rareza.")]
+        public LootPoolSO Pool;
+
+        [Range(0f, 1f)]
+        [Tooltip("Probabilidad de que el open dé oro en vez de ítem. Antes era un slot " +
+                 "uniforme implícito 1/(N+1).")]
+        public float GoldChance = 0.15f;
 
         [MinValue(0)]
         [Tooltip("Oro mínimo del slot de oro del pool.")]
@@ -45,44 +51,39 @@ namespace Rollgeon.Chests
     }
 
     /// <summary>
-    /// Pool de recompensas del cofre, por tier. El roll es <b>uniforme</b> entre los
-    /// ítems del bucket + un slot de oro — placeholder explícito del GDD (§20 TBD-01)
-    /// hasta que Balance defina pesos por rareza; la animación gacha sugiere que a
-    /// futuro será ponderado, y en ese momento solo cambia <see cref="Roll"/>.
+    /// Pool de recompensas del cofre, por tier: cada bucket referencia un
+    /// <see cref="LootPoolSO"/> genérico (ítems + pesos por rareza, editable y
+    /// reutilizable) más su slot de oro. La API que consume <c>ChestService</c>
+    /// (<see cref="Roll"/> / <see cref="GetPoolPreview"/>) no cambió con la
+    /// migración desde los buckets con lista inline.
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Chests/Chest Loot Pool", fileName = "ChestLootPool")]
     public sealed class ChestLootPoolSO : SerializedScriptableObject
     {
         [Title("Buckets por tier")]
-        [InfoBox("Una entry por ItemRarity. Cada bucket tiene N ítems + 1 slot de oro; " +
-                 "el roll placeholder es uniforme entre los N+1 slots.")]
+        [InfoBox("Una entry por ItemRarity: LootPool del tier + probabilidad y rango " +
+                 "del slot de oro.")]
         [ListDrawerSettings(ShowFoldout = false)]
         [OdinSerialize]
         public List<ChestLootBucket> Buckets = new List<ChestLootBucket>();
 
         /// <summary>
-        /// Rolea la recompensa del tier: uniforme entre <c>Items.Count + 1</c> slots
-        /// (el +1 es el slot de oro). Bucket vacío o inexistente ⇒ oro.
+        /// Rolea la recompensa del tier. Orden de rolls FIJO para determinismo por
+        /// seed (patrón <c>ChestService.RollChest</c>): 1) chance de oro, 2) ítem del
+        /// pool. Bucket inexistente, pool null o vacío ⇒ oro (degradación).
         /// </summary>
         public ChestLootResult Roll(System.Random rng, ItemRarity tier)
         {
             var bucket = GetBucket(tier);
             if (bucket == null) return ChestLootResult.ForGold(0);
 
-            int itemCount = CountValidItems(bucket);
-            if (itemCount == 0) return ChestLootResult.ForGold(RollGold(rng, bucket));
+            if (rng.NextDouble() < bucket.GoldChance)
+                return ChestLootResult.ForGold(RollGold(rng, bucket));
 
-            int slot = rng.Next(itemCount + 1);
-            if (slot == itemCount) return ChestLootResult.ForGold(RollGold(rng, bucket));
-
-            int cursor = 0;
-            for (int i = 0; i < bucket.Items.Count; i++)
-            {
-                if (bucket.Items[i] == null) continue;
-                if (cursor == slot) return ChestLootResult.ForItem(bucket.Items[i]);
-                cursor++;
-            }
-            return ChestLootResult.ForGold(RollGold(rng, bucket));
+            var item = bucket.Pool != null ? bucket.Pool.RollItem(rng) : null;
+            return item != null
+                ? ChestLootResult.ForItem(item)
+                : ChestLootResult.ForGold(RollGold(rng, bucket));
         }
 
         /// <summary>
@@ -92,14 +93,8 @@ namespace Rollgeon.Chests
         public IReadOnlyList<ItemSO> GetPoolPreview(ItemRarity tier)
         {
             var bucket = GetBucket(tier);
-            if (bucket == null) return Array.Empty<ItemSO>();
-
-            var preview = new List<ItemSO>(bucket.Items.Count);
-            for (int i = 0; i < bucket.Items.Count; i++)
-            {
-                if (bucket.Items[i] != null) preview.Add(bucket.Items[i]);
-            }
-            return preview;
+            if (bucket == null || bucket.Pool == null) return Array.Empty<ItemSO>();
+            return bucket.Pool.GetPreview();
         }
 
         public ChestLootBucket GetBucket(ItemRarity tier)
@@ -109,16 +104,6 @@ namespace Rollgeon.Chests
                 if (Buckets[i] != null && Buckets[i].Tier == tier) return Buckets[i];
             }
             return null;
-        }
-
-        private static int CountValidItems(ChestLootBucket bucket)
-        {
-            int count = 0;
-            for (int i = 0; i < bucket.Items.Count; i++)
-            {
-                if (bucket.Items[i] != null) count++;
-            }
-            return count;
         }
 
         private static int RollGold(System.Random rng, ChestLootBucket bucket)

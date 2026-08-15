@@ -3,9 +3,10 @@ using Rollgeon.Items;
 namespace Rollgeon.UI.ChestReveal
 {
     /// <summary>
-    /// Contenido de una celda del reel gacha. <see cref="IsGold"/> cuando no hay
-    /// ítem; <see cref="Rarity"/> de una celda de oro = tier del cofre (tinta el
-    /// marco igual que un ítem).
+    /// Contenido de una celda del reel gacha. <see cref="Rarity"/> es SIEMPRE la
+    /// del contenido de la celda (el fondo por rareza la refleja): el ítem aporta
+    /// la suya; el oro es <see cref="ItemRarity.Common"/> fijo — nunca el tier del
+    /// cofre.
     /// </summary>
     public readonly struct ChestReelCellData
     {
@@ -26,7 +27,7 @@ namespace Rollgeon.UI.ChestReveal
         public static ChestReelCellData ForItem(ItemSO item, bool isWinner = false) =>
             new ChestReelCellData(item, 0, item != null ? item.Rarity : ItemRarity.Common, isWinner);
 
-        public static ChestReelCellData ForGold(int amount, ItemRarity chestTier, bool isWinner = false) =>
-            new ChestReelCellData(null, amount, chestTier, isWinner);
+        public static ChestReelCellData ForGold(int amount, bool isWinner = false) =>
+            new ChestReelCellData(null, amount, ItemRarity.Common, isWinner);
     }
 }
