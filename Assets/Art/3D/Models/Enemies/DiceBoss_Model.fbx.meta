@@ -3,7 +3,52 @@ guid: bd0211dedbc7623448ea9a5867adbfd8
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Back
+    second: {fileID: 2100000, guid: 6d93331fa16eb554cb8e5d22047d8647, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Base
+    second: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Down
+    second: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Left
+    second: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Red
+    second: {fileID: 2100000, guid: 32fe36c4195d3974484250e7e67bb49d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Right
+    second: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Top
+    second: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Trim
+    second: {fileID: 2100000, guid: f64cf3682df8ae34897f1bc6701b772e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__White.001
+    second: {fileID: 2100000, guid: 0603a7d8f2a88de4abab48feacb6abe7, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -91,7 +136,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.01
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
