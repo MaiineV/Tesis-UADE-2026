@@ -3,7 +3,6 @@ using Patterns;
 using Rollgeon.Combos;
 using Rollgeon.Heroes;
 using Rollgeon.Localization;
-using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -12,13 +11,22 @@ namespace Rollgeon.UI.HUD.Contract
 {
     /// <summary>
     /// Contenido del drawer de contrato: la tabla de combos del héroe, de menor a mayor
-    /// daño base. Es una cheat sheet — se puede jugar con ella abierta.
+    /// daño base, con la marca de cada regla que el jefe le puso encima. Es una cheat
+    /// sheet — se puede jugar con ella abierta.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// El gesto de abrir/cerrar lo maneja <see cref="SlidingDrawer"/>, en el mismo
-    /// GameObject; acá vive solo lo que se muestra. Las filas se arman al ABRIR y no al
-    /// bindear: el contrato cambia durante la run (combos tachados, cambios de daño base)
-    /// y así esta vista no necesita escuchar nada.
+    /// GameObject; acá vive solo lo que se muestra. Las filas se arman al ABRIR, así que
+    /// una tabla cerrada ya se pinta correcta sola al abrirse.
+    /// </para>
+    /// <para>
+    /// <b>Y además escucha.</b> Se puede jugar con el drawer abierto, y el Anotador corre
+    /// filas en pleno turno del jefe: sin la suscripción, la tabla que el jugador está
+    /// mirando se quedaba con el valor viejo justo cuando cambia. Estando cerrada no
+    /// repinta — no hay a quién mentirle, y la planilla persistente
+    /// (<see cref="ContractRuleBoardView"/>) es la que avisa que algo cambió.
+    /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Contract Drawer View")]
     [RequireComponent(typeof(SlidingDrawer))]
@@ -44,13 +52,47 @@ namespace Rollgeon.UI.HUD.Contract
 
             RefreshHeaders();
             LocalizationRefresh.Subscribe(RefreshHeaders);
+            SubscribeToRuleChanges();
         }
 
         private void OnDestroy()
         {
             if (_drawer != null) _drawer.Opened -= RebuildRows;
             LocalizationRefresh.Unsubscribe(RefreshHeaders);
+            UnsubscribeFromRuleChanges();
         }
+
+        // ------------------------------------------------------------------
+        // Reglas en vivo
+        // ------------------------------------------------------------------
+
+        private void SubscribeToRuleChanges()
+        {
+            EventManager.Subscribe(EventName.OnContractModifierChanged, HandleRuleChanged);
+            EventManager.Subscribe(EventName.OnComboBlocked, HandleRuleChanged);
+            EventManager.Subscribe(EventName.OnComboUnblocked, HandleRuleChanged);
+            // La cuenta regresiva del bloqueo baja al cerrarse un turno, y nadie emite un
+            // evento por el decremento — sin esto el badge muestra los turnos de cuando abriste.
+            EventManager.Subscribe(EventName.OnTurnFinished, HandleRuleChanged);
+        }
+
+        private void UnsubscribeFromRuleChanges()
+        {
+            EventManager.UnSubscribe(EventName.OnContractModifierChanged, HandleRuleChanged);
+            EventManager.UnSubscribe(EventName.OnComboBlocked, HandleRuleChanged);
+            EventManager.UnSubscribe(EventName.OnComboUnblocked, HandleRuleChanged);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, HandleRuleChanged);
+        }
+
+        private void HandleRuleChanged(params object[] args)
+        {
+            if (_drawer != null && !_drawer.IsOpen) return;
+            RebuildRows();
+        }
+
+        // ------------------------------------------------------------------
+        // Contenido
+        // ------------------------------------------------------------------
 
         /// <summary>
         /// Encabezados desde la tabla UI. El texto autorado en el prefab queda de fallback
@@ -69,18 +111,16 @@ namespace Rollgeon.UI.HUD.Contract
         }
 
         /// <summary>
-        /// Repuebla las filas con el contrato del héroe actual. Sin héroe (escena suelta en
-        /// el editor) deja la tabla vacía en vez de romper.
+        /// Repuebla las filas con el contrato del héroe actual y las marcas vigentes. Sin
+        /// héroe (escena suelta en el editor) deja la tabla vacía en vez de romper.
         /// </summary>
         public void RebuildRows()
         {
             if (_rowsContainer == null || _rowPrefab == null) return;
 
-            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var players)
-                ? players?.CurrentHero?.Sheet
-                : null;
-
+            var sheet = ContractRowStateResolver.ResolvePlayerSheet();
             var combos = SortedByBaseDamage(sheet);
+            var states = ContractRowStateResolver.ResolveAll(combos, sheet);
             int count = combos.Count;
 
             EnsureRows(count);
@@ -89,35 +129,15 @@ namespace Rollgeon.UI.HUD.Contract
             {
                 bool used = i < count;
                 _rows[i].gameObject.SetActive(used);
-                if (used) _rows[i].Bind(combos[i], sheet, _settings);
+                if (used) _rows[i].Bind(combos[i], _settings, states[i]);
             }
         }
 
-        /// <summary>
-        /// Combos de menor a mayor daño base — es el orden en que el jugador los va a
-        /// buscar, y deja la escalera de valor a la vista.
-        /// </summary>
-        /// <remarks>
-        /// Ordena una COPIA: <c>sheet.Combos</c> es la lista viva del contrato del héroe y
-        /// reordenarla desde la UI le cambiaría el orden a todo el que la recorra.
-        /// </remarks>
+        // El orden vive en el resolver porque la planilla persistente tiene que listar las
+        // mismas filas en el mismo orden que la tabla: dos criterios distintos harían que la
+        // fila corrida apareciera en distinto lugar según dónde la mires.
         private static List<BaseComboSO> SortedByBaseDamage(ContractSheet sheet)
-        {
-            var ordered = new List<BaseComboSO>();
-            if (sheet?.Combos == null) return ordered;
-
-            foreach (var combo in sheet.Combos)
-                if (combo != null) ordered.Add(combo);
-
-            ordered.Sort((a, b) =>
-            {
-                int byDamage = ComboRowView.ResolveBaseDamage(a, sheet)
-                    .CompareTo(ComboRowView.ResolveBaseDamage(b, sheet));
-                // Empate: por nombre, para que el orden no baile entre aperturas.
-                return byDamage != 0 ? byDamage : string.CompareOrdinal(a.ComboId, b.ComboId);
-            });
-            return ordered;
-        }
+            => ContractRowStateResolver.SortByBaseDamage(sheet);
 
         // Los slots se reusan y solo se apagan: la tabla se repuebla en cada apertura y
         // destruir/instanciar nueve filas cada vez sería churn de GC en pleno combate.

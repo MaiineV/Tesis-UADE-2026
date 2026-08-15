@@ -53,6 +53,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Borde de la barra — pulsa cuando la vida está baja.")]
         private Image _lifeBorder;
 
+        [SerializeField, Optional, Tooltip("Badge de debilidad del BossBarView — punchea al conectar la debilidad.")]
+        private RectTransform _weaknessBadge;
+
         [Title("Fill / chip")]
         [SerializeField, Tooltip("Duración de la bajada del fill principal.")]
         private float _fillDropDuration = 0.15f;
@@ -107,6 +110,14 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, Tooltip("Duración del punch del contador.")]
         private float _hpPunchDuration = 0.3f;
+
+        // El flash amarillo dice "pegaste a la debilidad" pero no dice DÓNDE está escrita esa regla.
+        // El punch del badge cierra el circuito: el icono que venías leyendo es el que acaba de pagar.
+        [SerializeField, Tooltip("Fuerza del punch del badge de debilidad al conectarla.")]
+        private float _weaknessBadgePunch = 0.45f;
+
+        [SerializeField, Tooltip("Duración del punch del badge de debilidad.")]
+        private float _weaknessBadgePunchDuration = 0.32f;
 
         [Title("Particles")]
         [SerializeField, Tooltip("Dirección del abanico de partículas.")]
@@ -177,6 +188,7 @@ namespace Rollgeon.UI.HUD
         private bool _shakeRestValid;
         private Vector3 _shakeRestScale = Vector3.one;
         private Vector3 _hpRestScale = Vector3.one;
+        private Vector3 _weaknessBadgeRestScale = Vector3.one;
         private Color _fillRestColor = Color.white;
         private Color _borderRestColor = Color.white;
         private float _rootRestAlpha = 1f;
@@ -184,6 +196,7 @@ namespace Rollgeon.UI.HUD
 
         // Tweens vivos.
         private Tween _fillTween, _ghostTween, _flashTween, _shakeTween, _hpPunchTween, _introTween, _fadeTween, _lowHpTween;
+        private Tween _weaknessPunchTween;
 
         private static bool Active => Application.isPlaying;
         private static bool Motion => !DiceAnim.DiceUiMotionPrefs.ReducedMotion;
@@ -197,6 +210,7 @@ namespace Rollgeon.UI.HUD
             if (_restCaptured) return;
             if (_shakeTarget != null) _shakeRestScale = _shakeTarget.localScale;
             if (_hpText != null) _hpRestScale = _hpText.transform.localScale;
+            if (_weaknessBadge != null) _weaknessBadgeRestScale = _weaknessBadge.localScale;
             if (_fillImage != null) _fillRestColor = _fillImage.color;
             if (_lifeBorder != null) _borderRestColor = _lifeBorder.color;
             if (_rootGroup != null) _rootRestAlpha = _rootGroup.alpha;
@@ -286,6 +300,15 @@ namespace Rollgeon.UI.HUD
             {
                 if (_hpPunchTween.isAlive) _hpPunchTween.Stop();
                 _hpPunchTween = Tween.PunchScale(_hpText.transform, Vector3.one * _hpPunch, _hpPunchDuration, frequency: 4);
+            }
+
+            // Punch del badge de debilidad — sólo cuando la debilidad es lo que pagó.
+            if (Motion && p.WeaknessHit && _weaknessBadge != null)
+            {
+                if (_weaknessPunchTween.isAlive) _weaknessPunchTween.Stop();
+                _weaknessBadge.localScale = _weaknessBadgeRestScale;
+                _weaknessPunchTween = Tween.PunchScale(
+                    _weaknessBadge, Vector3.one * _weaknessBadgePunch, _weaknessBadgePunchDuration, frequency: 4);
             }
 
             // Partículas en el borde del fill.
@@ -419,6 +442,7 @@ namespace Rollgeon.UI.HUD
             if (_hpPunchTween.isAlive) _hpPunchTween.Stop();
             if (_introTween.isAlive) _introTween.Stop();
             if (_fadeTween.isAlive) _fadeTween.Stop();
+            if (_weaknessPunchTween.isAlive) _weaknessPunchTween.Stop();
         }
 
         /// <summary>Frena todos los tweens y restaura el reposo — se llama al ocultar la barra.</summary>
@@ -430,6 +454,7 @@ namespace Rollgeon.UI.HUD
 
             if (_shakeTarget != null) { RestoreShakePos(); _shakeTarget.localScale = _shakeRestScale; }
             if (_hpText != null) _hpText.transform.localScale = _hpRestScale;
+            if (_weaknessBadge != null) _weaknessBadge.localScale = _weaknessBadgeRestScale;
             if (_fillImage != null) _fillImage.color = _fillRestColor;
             if (_lifeBorder != null) _lifeBorder.color = _borderRestColor;
             if (_rootGroup != null) _rootGroup.alpha = _rootRestAlpha;

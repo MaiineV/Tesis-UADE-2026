@@ -65,6 +65,14 @@ namespace Rollgeon.EditorTools.HUD
         private static readonly float NameX = RowPadding + DiceAreaSize.x + RowPadding;
         private static readonly float DamageX = NameX + NameWidth + 6f;
 
+        // Tachadura y badge de regla (planilla del Anotador). El badge se dibuja ENCIMA de la
+        // mano de ejemplo en vez de agregar una columna: una columna más ensancharía el drawer
+        // entero por algo que casi siempre está apagado, y con la fila marcada el ejemplo es lo
+        // que menos importa.
+        private static readonly Vector2 StrikeSize = new Vector2(NameWidth + 6f + DamageBoxSize.x, 4f);
+        private const float BadgeFontMin = 12f;
+        private const float BadgeFontMax = 18f;
+
         // 44 y no 32: "Daño base" entra en dos líneas sobre una columna de 66 px.
         private const float HeaderHeight = 44f;
         private const float PanelPadding = 12f;
@@ -80,6 +88,13 @@ namespace Rollgeon.EditorTools.HUD
         // izquierda. Cuesta tapar la mochila y la bolsa mientras está abierto.
         private const float PanelTopY = -136f;
 
+        // La planilla persistente cuelga del mismo borde y a la misma altura que el drawer
+        // abierto: sólo aparece con una regla encima, y si el jugador abre la tabla completa,
+        // ésta la tapa y dice lo mismo en grande.
+        private const float BoardX = PanelOpenX;
+        private const float BoardY = PanelTopY;
+        private const float BoardTitleHeight = 28f;
+
         [MenuItem("Rollgeon/Contract Drawer/Setup All")]
         public static void SetupAll()
         {
@@ -87,6 +102,7 @@ namespace Rollgeon.EditorTools.HUD
             CreateDiePrefab();
             CreateRowPrefab();
             SetupDrawer();
+            SetupRuleBoard();
         }
 
         // ================================================================
@@ -267,12 +283,45 @@ namespace Rollgeon.EditorTools.HUD
                 Stretch(damageRect, 0f);
                 var damageLabel = EnsureLabel(damageRect.gameObject, font, 28f, TextAlignmentOptions.Center);
 
+                // -- Tachadura: cruza nombre + daño --
+                var strikeRect = EnsureChildRect(rootRect, "Strike", new Vector2(NameX, 0f), StrikeSize);
+                AnchorLeftMiddle(strikeRect, new Vector2(NameX, 0f), StrikeSize);
+                var strikeImage = Ensure<Image>(strikeRect.gameObject);
+                strikeImage.raycastTarget = false;
+                // El color y el prendido los pone la fila según la marca; queda apagada.
+                strikeImage.enabled = false;
+
+                // -- Badge de regla, encima de la mano de ejemplo --
+                var badgeRect = EnsureChildRect(rootRect, "RuleBadge", new Vector2(DiceAreaX, 0f), DiceAreaSize);
+                AnchorLeftMiddle(badgeRect, new Vector2(DiceAreaX, 0f), DiceAreaSize);
+                var badgeBg = Ensure<Image>(badgeRect.gameObject);
+                badgeBg.sprite = damageBoxSprite;
+                badgeBg.type = Image.Type.Sliced;
+                badgeBg.raycastTarget = false;
+
+                var badgeValue = EnsureChildRect(badgeRect, "Value", Vector2.zero, Vector2.zero);
+                Stretch(badgeValue, 6f);
+                var badgeLabel = EnsureLabel(badgeValue.gameObject, font, BadgeFontMax, TextAlignmentOptions.Center);
+                // "PAGA COMO Doble Par" no entra de una línea sobre la zona de dados.
+                badgeLabel.textWrappingMode = TextWrappingModes.Normal;
+                badgeLabel.enableAutoSizing = true;
+                badgeLabel.fontSizeMin = BadgeFontMin;
+                badgeLabel.fontSizeMax = BadgeFontMax;
+
+                // Últimos en la jerarquía: la tachadura cruza los labels y el badge tapa la mano.
+                strikeRect.SetAsLastSibling();
+                badgeRect.SetAsLastSibling();
+                badgeRect.gameObject.SetActive(false);
+
                 var view = Ensure<ContractComboRowView>(root);
                 var so = new SerializedObject(view);
                 so.FindProperty("_diceContainer").objectReferenceValue = diceRow;
                 so.FindProperty("_diePrefab").objectReferenceValue = dieView;
                 so.FindProperty("_nameLabel").objectReferenceValue = nameLabel;
                 so.FindProperty("_damageLabel").objectReferenceValue = damageLabel;
+                so.FindProperty("_strike").objectReferenceValue = strikeImage;
+                so.FindProperty("_badge").objectReferenceValue = badgeRect.gameObject;
+                so.FindProperty("_badgeLabel").objectReferenceValue = badgeLabel;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var layout = Ensure<LayoutElement>(root);
@@ -382,6 +431,104 @@ namespace Rollgeon.EditorTools.HUD
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerStatusPrefabPath);
                 Debug.Log("[ContractDrawer] Drawer armado en Canvas_PlayerStatus.");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        // ================================================================
+        // 5 - Planilla persistente (reglas del jefe siempre a la vista)
+        // ================================================================
+
+        /// <summary>
+        /// Arma el cartel que muestra SÓLO las filas del contrato que tienen una regla encima.
+        /// Requisito de entrega del Anotador: su mecánica es corregir la hoja, y encerrada en
+        /// un drawer cerrado la pelea es ilegible.
+        /// </summary>
+        [MenuItem("Rollgeon/Contract Drawer/5 - Setup Rule Board")]
+        public static void SetupRuleBoard()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<ContractSheetUiSettingsSO>(SettingsPath);
+            var rowPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RowPrefabPath);
+            var panelSprite = LoadSpriteOrError(UiSheetPath, PanelSlice);
+            if (settings == null || rowPrefab == null || panelSprite == null)
+            {
+                Debug.LogError("[ContractDrawer] Faltan pasos previos (settings / row prefab / slice).");
+                return;
+            }
+            var rowView = rowPrefab.GetComponent<ContractComboRowView>();
+            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+
+            var root = PrefabUtility.LoadPrefabContents(PlayerStatusPrefabPath);
+            try
+            {
+                var canvas = root.GetComponentInChildren<Canvas>(true);
+                if (canvas == null)
+                {
+                    Debug.LogError("[ContractDrawer] Canvas no encontrado en Canvas_PlayerStatus.");
+                    return;
+                }
+                var canvasRect = (RectTransform)canvas.transform;
+
+                var boardRect = EnsureChildRect(canvasRect, "ContractRuleBoard", Vector2.zero, Vector2.zero);
+                boardRect.anchorMin = boardRect.anchorMax = new Vector2(0f, 1f);
+                boardRect.pivot = new Vector2(0f, 1f);
+                boardRect.anchoredPosition = Vector2.zero;
+                boardRect.sizeDelta = Vector2.zero;
+                boardRect.SetAsLastSibling();
+                // Y el drawer después: abrir la tabla completa tiene que tapar el cartel.
+                var drawer = canvasRect.Find("ContractDrawer");
+                if (drawer != null) drawer.SetAsLastSibling();
+
+                var panel = EnsureChildRect(boardRect, "Panel",
+                    new Vector2(BoardX, BoardY), new Vector2(PanelSize.x, 0f));
+                panel.anchorMin = panel.anchorMax = new Vector2(0f, 1f);
+                panel.pivot = new Vector2(0f, 1f);
+                panel.anchoredPosition = new Vector2(BoardX, BoardY);
+                panel.sizeDelta = new Vector2(PanelSize.x, 0f);
+                var panelImage = Ensure<Image>(panel.gameObject);
+                panelImage.sprite = panelSprite;
+                panelImage.type = Image.Type.Sliced;
+                // A diferencia del drawer, NO come clicks: es un cartel de lectura y el
+                // tablero tiene que seguir siendo clickeable debajo.
+                panelImage.raycastTarget = false;
+
+                // El alto lo pone el contenido: con una regla activa el cartel es una fila.
+                var layout = Ensure<VerticalLayoutGroup>(panel.gameObject);
+                layout.padding = new RectOffset((int)PanelPadding, (int)PanelPadding,
+                    (int)PanelPadding, (int)PanelPadding);
+                layout.spacing = RowSpacing;
+                layout.childAlignment = TextAnchor.UpperCenter;
+                layout.childControlWidth = false;
+                layout.childControlHeight = false;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+                var fitter = Ensure<ContentSizeFitter>(panel.gameObject);
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+                var titleRect = EnsureChildRect(panel, "Title", Vector2.zero,
+                    new Vector2(RowSize.x, BoardTitleHeight));
+                titleRect.SetAsFirstSibling();
+                var titleLabel = EnsureLabel(titleRect.gameObject, font, 20f, TextAlignmentOptions.Left);
+                titleLabel.text = "PLANILLA";
+                var titleLayout = Ensure<LayoutElement>(titleRect.gameObject);
+                titleLayout.preferredWidth = RowSize.x;
+                titleLayout.preferredHeight = BoardTitleHeight;
+
+                var view = Ensure<ContractRuleBoardView>(boardRect.gameObject);
+                var so = new SerializedObject(view);
+                so.FindProperty("_rowsContainer").objectReferenceValue = panel;
+                so.FindProperty("_rowPrefab").objectReferenceValue = rowView;
+                so.FindProperty("_settings").objectReferenceValue = settings;
+                so.FindProperty("_panel").objectReferenceValue = panel.gameObject;
+                so.FindProperty("_titleLabel").objectReferenceValue = titleLabel;
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                // Apagado de fábrica: sin regla activa la planilla no ocupa pantalla.
+                panel.gameObject.SetActive(false);
+
+                PrefabUtility.SaveAsPrefabAsset(root, PlayerStatusPrefabPath);
+                Debug.Log("[ContractDrawer] Planilla persistente armada en Canvas_PlayerStatus.");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }

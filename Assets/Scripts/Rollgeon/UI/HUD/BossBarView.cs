@@ -2,6 +2,9 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Balance;
+using Rollgeon.Combat.Weakness;
+using Rollgeon.Combos;
 using Rollgeon.Entities.Portraits;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -23,11 +26,21 @@ namespace Rollgeon.UI.HUD
     /// (<see cref="EventName.OnEntityDestroyed"/>) o al terminar el combate
     /// (<see cref="EventName.OnCombatEnd"/>).
     /// </para>
+    /// <para>
+    /// Al lado del contador vive el <b>badge de debilidad</b> (icono del combo + multiplicador):
+    /// la fila "La debilidad del jefe" de la tabla de reglas invisibles de
+    /// <c>docs/design/bosses-seis-refinados.html</c>. El destello al conectarla ya lo hace
+    /// <see cref="BossBarJuice"/>; el badge es la mitad persistente, la que se lee ANTES de tirar.
+    /// Cableado en <c>docs/setup/boss-weakness-badge.md</c>.
+    /// </para>
     /// </summary>
     [AddComponentMenu("Rollgeon/UI/HUD/Boss Bar View")]
     public class BossBarView : MonoBehaviour
     {
         private const string LogPrefix = "[BossBarView] ";
+
+        /// <summary>Formato del multiplicador cuando el campo del prefab quedó vacío.</summary>
+        public const string DefaultWeaknessFormat = "x{0:0.##}";
 
         [Title("Boss Bar — refs")]
         [Required("Root visual de la barra. Se prende/apaga; arranca inactivo.")]
@@ -62,6 +75,26 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Companion de juice (opcional). Sin ref, la barra snapea sin animación.")]
         private BossBarJuice _juice;
 
+        [Title("Debilidad — badge")]
+        [SerializeField, Optional]
+        [Tooltip("Contenedor del badge de debilidad (icono + multiplicador). Se prende sólo si el " +
+                 "jefe tiene debilidad registrada. Sin ref, se prenden/apagan icono y label sueltos.")]
+        private GameObject _weaknessRoot;
+
+        [SerializeField, Optional]
+        [Tooltip("Icono del combo al que el jefe es débil. Sale de BaseComboSO.Icon vía el " +
+                 "ComboCatalogSO; sin sprite autorado se esconde y el label dice el nombre del combo.")]
+        private Image _weaknessIcon;
+
+        [SerializeField, Optional]
+        [Tooltip("Label del multiplicador de debilidad (formato en _weaknessFormat).")]
+        private TextMeshProUGUI _weaknessText;
+
+        [SerializeField]
+        [Tooltip("Formato del multiplicador. {0} = multiplicador resuelto. ASCII a propósito: " +
+                 "m6x11plus SDF no tiene glifo para '×' — cambialo si el font asset se extiende.")]
+        private string _weaknessFormat = DefaultWeaknessFormat;
+
         [ShowInInspector, ReadOnly]
         private Guid _bossGuid;
 
@@ -69,15 +102,34 @@ namespace Rollgeon.UI.HUD
         private float _lastRatio = 1f;
         private bool _shown;
 
+        /// <summary>
+        /// Sin <see cref="RulesetSO"/> registrado (escenas de tooling, tests) el badge cae al mismo
+        /// default que el config de balance en vez de a 1: un ×1 diría que pegarle ahí no paga, que
+        /// es lo contrario de lo que el jefe tiene autorado.
+        /// </summary>
+        private static readonly float FallbackWeaknessMultiplier = new WeaknessConfig().DefaultMultiplier;
+
         private Action<BossEncounterStartedPayload> _onBossStarted;
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Action<HealResolvedPayload> _onHealResolved;
+
+        /// <summary>Combo al que el jefe es débil ahora mismo. <c>null</c> = sin debilidad.</summary>
+        [ShowInInspector, ReadOnly]
+        public string WeaknessComboId { get; private set; }
+
+        /// <summary>Multiplicador que muestra el badge. <c>1</c> cuando no hay debilidad.</summary>
+        [ShowInInspector, ReadOnly]
+        public float WeaknessMultiplier { get; private set; } = 1f;
 
         private void Awake()
         {
             // Arranca apagada; el canvas queda vivo para poder escuchar el inicio del jefe.
             if (_root != null)
                 _root.SetActive(false);
+
+            // El badge se apaga aunque lo hayan dejado prendido en el prefab: sin jefe bindeado
+            // no hay debilidad que mostrar.
+            RenderWeakness();
         }
 
         private void OnEnable()
@@ -115,6 +167,7 @@ namespace Rollgeon.UI.HUD
                 _nameText.text = displayName;
 
             ApplyPortrait(bossGuid);
+            ApplyWeakness();
 
             if (_root != null)
                 _root.SetActive(true);
@@ -136,6 +189,7 @@ namespace Rollgeon.UI.HUD
                 _juice.StopAndRestore();
             UnsubscribeCombat();
             _bossGuid = Guid.Empty;
+            ApplyWeakness();
             if (_root != null)
                 _root.SetActive(false);
         }
@@ -151,6 +205,10 @@ namespace Rollgeon.UI.HUD
             TypedEvent<HealResolvedPayload>.Subscribe(_onHealResolved);
             EventManager.Subscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
             EventManager.Subscribe(EventName.OnCombatEnd, HandleCombatEnd);
+            // La debilidad no es fija: La Generala la reasigna en fase 2 (AINode_AdoptWeakness).
+            // Repintar en cada arranque de turno la deja actualizada ANTES de que el jugador
+            // elija su mano, que es cuando el dato sirve.
+            EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
 
             _shown = true;
         }
@@ -171,6 +229,7 @@ namespace Rollgeon.UI.HUD
             }
             EventManager.UnSubscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
             EventManager.UnSubscribe(EventName.OnCombatEnd, HandleCombatEnd);
+            EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
 
             _shown = false;
         }
@@ -224,6 +283,91 @@ namespace Rollgeon.UI.HUD
         private void HandleCombatEnd(params object[] args)
         {
             Hide();
+        }
+
+        private void HandleTurnStarted(params object[] args)
+        {
+            ApplyWeakness();
+        }
+
+        /// <summary>
+        /// Relee la debilidad del jefe del <see cref="IWeaknessRegistry"/> y repinta el badge. El
+        /// registry es la fuente viva: lo puebla el spawn desde <c>EnemyDataSO.WeaknessComboId</c> y
+        /// lo puede reescribir la IA mid-combate, así que leer el <c>EnemyDataSO</c> daría el dato
+        /// de autoría y no el vigente.
+        /// </summary>
+        /// <remarks>
+        /// Mismo contrato que <see cref="ApplyPortrait"/>: servicios opcionales, refs opcionales,
+        /// nada de esto puede tirar en escenas de tooling ni en tests.
+        /// </remarks>
+        private void ApplyWeakness()
+        {
+            WeaknessComboId = null;
+            WeaknessMultiplier = 1f;
+
+            if (_bossGuid != Guid.Empty
+                && ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry)
+                && registry != null
+                && registry.TryGet(_bossGuid, out var weakness)
+                && !string.IsNullOrEmpty(weakness.comboId))
+            {
+                WeaknessComboId = weakness.comboId;
+                WeaknessMultiplier = weakness.mult > 0f ? weakness.mult : DefaultWeaknessMultiplier();
+            }
+
+            RenderWeakness();
+        }
+
+        private void RenderWeakness()
+        {
+            bool hasWeakness = !string.IsNullOrEmpty(WeaknessComboId);
+            if (_weaknessRoot != null)
+                _weaknessRoot.SetActive(hasWeakness);
+
+            var combo = hasWeakness ? ResolveCombo(WeaknessComboId) : null;
+            var icon = combo != null ? combo.Icon : null;
+
+            if (_weaknessIcon != null)
+            {
+                _weaknessIcon.sprite = icon;
+                _weaknessIcon.enabled = icon != null;
+            }
+
+            if (_weaknessText == null) return;
+
+            if (!hasWeakness)
+            {
+                _weaknessText.text = string.Empty;
+                _weaknessText.enabled = false;
+                return;
+            }
+
+            _weaknessText.enabled = true;
+            string format = string.IsNullOrEmpty(_weaknessFormat) ? DefaultWeaknessFormat : _weaknessFormat;
+            string multiplier = string.Format(format, WeaknessMultiplier);
+            // El pipeline de arte de combos puede dejar el icono sin autorar: un "x1,5" pelado no
+            // dice a QUÉ le pega, así que sin sprite el nombre del combo entra al label.
+            _weaknessText.text = icon != null
+                ? multiplier
+                : $"{ComboLabel(combo)} {multiplier}";
+        }
+
+        private string ComboLabel(BaseComboSO combo)
+            => combo != null
+                ? Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)
+                : WeaknessComboId;
+
+        private static BaseComboSO ResolveCombo(string comboId)
+            => ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) && catalog != null
+                ? catalog.GetById(comboId)
+                : null;
+
+        private static float DefaultWeaknessMultiplier()
+        {
+            ServiceLocator.TryGetService<RulesetSO>(out var ruleset);
+            return ruleset != null && ruleset.Weakness != null
+                ? ruleset.Weakness.DefaultMultiplier
+                : FallbackWeaknessMultiplier;
         }
 
         /// <summary>
