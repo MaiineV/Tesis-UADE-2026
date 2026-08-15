@@ -42,12 +42,13 @@ MonoBehaviour:
       Data: 
   EntityId: obj.reel
   DisplayName: Reel
-  Description: 'One of La Bandida''s three reels. Three hit points, bolted in a row
-    against the wall: any hit breaks it and cancels the jackpot count.'
+  Description: "One of La Bandida's three reels: a wall bolted in a row against hers.
+    Any hit cancels the jackpot count, but breaking one costs most of a turn \u2014
+    and the tile it leaves behind burns."
   Portrait: {fileID: 21300000, guid: 042f56cf989a1484c98dd857b500872c, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  BaseHP: 3
+  BaseHP: 60
   BaseAttack: 0
   BaseHealStrength: 0
   BaseSpeed: 1

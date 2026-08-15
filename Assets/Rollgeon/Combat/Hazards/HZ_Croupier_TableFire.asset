@@ -21,7 +21,7 @@ MonoBehaviour:
   Kind: 3
   CycleRounds: 1
   Trigger: 1
-  DurationRounds: 2
+  DurationRounds: 3
   ConsumeOnTrigger: 0
   OverlayTint: {r: 0.85, g: 0.1, b: 0.05, a: 0.6}
   TriggerVfxPrefab: {fileID: 0}

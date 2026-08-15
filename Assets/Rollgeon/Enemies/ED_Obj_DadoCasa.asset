@@ -42,12 +42,13 @@ MonoBehaviour:
       Data: 
   EntityId: obj.dado_casa
   DisplayName: Dado de la Casa
-  Description: 'One of the five dice the house rolls. Four health, no attack: it
-    just sits on the table being part of her hand until you walk over and break it.'
+  Description: "One of the five dice the house rolls. No attack of its own \u2014
+    it sits on the table being part of her hand and blocking the way. Breaking one
+    costs you a full swing and erases a category from her sheet."
   Portrait: {fileID: 21300000, guid: a9fc014b5dcab1641b66a088781b4ea1, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  BaseHP: 4
+  BaseHP: 45
   BaseAttack: 0
   BaseHealStrength: 0
   BaseSpeed: 1

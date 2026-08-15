@@ -44,7 +44,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 5
+      Data: 6
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
@@ -195,20 +195,77 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 19|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMarkGoldScaled, Rollgeon
+      Data: 19|Rollgeon.Combat.AI.Decisions.AINode_CashierCounterToll, Rollgeon
+    - Name: Damage
+      Entry: 3
+      Data: 10
+    - Name: CounterRow
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 20|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 21|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 22|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 23|Rollgeon.Combat.AI.Decisions.AINode_Alternate, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMarkGoldScaled, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 2
     - Name: Tiers
       Entry: 7
-      Data: 20|System.Collections.Generic.List`1[[Rollgeon.Combat.Cashier.CashierGoldTier,
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.Cashier.CashierGoldTier,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 21|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
+      Data: 29|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
     - Name: MinGold
       Entry: 3
       Data: 0
@@ -223,10 +280,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 22|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
+      Data: 30|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
     - Name: MinGold
       Entry: 3
-      Data: 100
+      Data: 40
     - Name: ColumnSize
       Entry: 3
       Data: 3
@@ -238,10 +295,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 23|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
+      Data: 31|Rollgeon.Combat.Cashier.CashierGoldTier, Rollgeon
     - Name: MinGold
       Entry: 3
-      Data: 250
+      Data: 120
     - Name: ColumnSize
       Entry: 3
       Data: 3
@@ -263,12 +320,15 @@ MonoBehaviour:
     - Name: ApplyBribeStepDown
       Entry: 5
       Data: true
+    - Name: ApplyRakeStepUp
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -283,17 +343,84 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_CashierDropChips, Rollgeon
+      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_CashierRangedShot, Rollgeon
+    - Name: Damage
+      Entry: 3
+      Data: 12
+    - Name: Range
+      Entry: 3
+      Data: 4
+    - Name: Metric
+      Entry: 3
+      Data: 0
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 39|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_CashierDropChips, Rollgeon
     - Name: Chip
       Entry: 10
       Data: 0
@@ -320,7 +447,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 28|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -335,20 +462,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 30|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
     - Name: MaxSteps
       Entry: 7
-      Data: 32|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -357,7 +484,7 @@ MonoBehaviour:
       Data: 
     - Name: IdealDistance
       Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 46|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 4
@@ -369,7 +496,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 47|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -398,7 +525,7 @@ MonoBehaviour:
   Portrait: {fileID: 21300000, guid: a970cee845d592c4aa79f94394215945, type: 3}
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
-  BaseHP: 190
+  BaseHP: 450
   BaseAttack: 30
   BaseHealStrength: 0
   BaseSpeed: 4

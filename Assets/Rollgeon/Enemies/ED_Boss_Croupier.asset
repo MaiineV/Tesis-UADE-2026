@@ -352,13 +352,14 @@ MonoBehaviour:
   DisplayName: The Croupier
   Description: "\"Place your bets.\" He calls one number per turn, and that number
     is two things at once: the block of the table that falls next turn and the die
-    he confiscates from your bag. Hitting him while the number hangs in the air spins
-    the wheel one step further \u2014 and on odd numbers the house charges you 8
-    for the privilege. He never leaves the middle row."
+    he confiscates from your bag. Ending your turn inside the called block spins
+    the wheel one step further \u2014 moving the axe means standing under it. Hitting
+    him costs 8, always: the house charges for the melee tile. He never leaves the
+    middle row."
   Portrait: {fileID: 21300000, guid: 41f4667a57452d24aaea9813a6b290b6, type: 3}
   WeaknessComboId: combo.pair
   WeaknessMultiplierOverride: 1.5
-  BaseHP: 140
+  BaseHP: 350
   BaseAttack: 20
   BaseHealStrength: 0
   BaseSpeed: 5

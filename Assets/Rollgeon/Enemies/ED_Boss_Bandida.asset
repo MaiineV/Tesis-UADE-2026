@@ -17,6 +17,7 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 11400000, guid: e0097a1ee2660fa4c87ea84c2b80cb26, type: 2}
+    - {fileID: 11400000, guid: 00c6f60d28f114042b982c5430e4a417, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -205,6 +206,9 @@ MonoBehaviour:
     - Name: ReelData
       Entry: 10
       Data: 0
+    - Name: OnBreakHazard
+      Entry: 10
+      Data: 1
     - Name: Count
       Entry: 3
       Data: 3
@@ -379,25 +383,16 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
-    - Name: Shape
-      Entry: 3
-      Data: 6
-    - Name: Size
-      Entry: 3
-      Data: 1
-    - Name: Depth
-      Entry: 3
-      Data: 2
-    - Name: Count
-      Entry: 3
-      Data: 3
-    - Name: HalfAxis
-      Entry: 3
-      Data: 0
+      Data: 33|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaArm, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 9
+      Data: 12
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: Metric
+      Entry: 3
+      Data: 1
     - Name: Kind
       Entry: 3
       Data: 1
@@ -441,7 +436,7 @@ MonoBehaviour:
   Portrait: {fileID: 21300000, guid: a82854fa343807a45a79990bcb5639f5, type: 3}
   WeaknessComboId: combo.ladder
   WeaknessMultiplierOverride: 1.5
-  BaseHP: 140
+  BaseHP: 280
   BaseAttack: 20
   BaseHealStrength: 0
   BaseSpeed: 4
