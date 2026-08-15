@@ -51,6 +51,17 @@ namespace Rollgeon.Chests.Tests
             return mpb.GetColor(BaseColorId);
         }
 
+        // El round-trip por MaterialPropertyBlock convierte sRGB↔linear en color
+        // space Linear; los canales que no son 0/1 vuelven con drift de float.
+        private static void AssertColorApprox(Color expected, Color actual, string message)
+        {
+            const float tolerance = 1e-3f;
+            Assert.AreEqual(expected.r, actual.r, tolerance, message + " (r)");
+            Assert.AreEqual(expected.g, actual.g, tolerance, message + " (g)");
+            Assert.AreEqual(expected.b, actual.b, tolerance, message + " (b)");
+            Assert.AreEqual(expected.a, actual.a, tolerance, message + " (a)");
+        }
+
         // -----------------------------------------------------------------
         // ClassifySlot
         // -----------------------------------------------------------------
@@ -130,8 +141,8 @@ namespace Rollgeon.Chests.Tests
             ChestVisuals.Apply(go, tierDef, fittings);
 
             // Assert
-            Assert.AreEqual(Color.red, SlotColor(renderer, 0), "Slot Wood debe tintarse con BodyColor.");
-            Assert.AreEqual(fittings, SlotColor(renderer, 1), "Slot Frame debe tintarse con FittingsColor.");
+            AssertColorApprox(Color.red, SlotColor(renderer, 0), "Slot Wood debe tintarse con BodyColor.");
+            AssertColorApprox(fittings, SlotColor(renderer, 1), "Slot Frame debe tintarse con FittingsColor.");
             CollectionAssert.AreEqual(originalMats, renderer.sharedMaterials,
                 "Sin overrides los materiales no deben reemplazarse.");
         }
@@ -153,7 +164,7 @@ namespace Rollgeon.Chests.Tests
             Assert.AreSame(overrideMat, renderer.sharedMaterials[0], "Slot Wood debe recibir el material override.");
             Assert.AreSame(originalFrame, renderer.sharedMaterials[1], "Slot Frame no debe reemplazarse.");
             Assert.AreEqual(default(Color), SlotColor(renderer, 0), "El slot overrideado no debe tintarse.");
-            Assert.AreEqual(fittings, SlotColor(renderer, 1), "Slot Frame debe seguir tintándose.");
+            AssertColorApprox(fittings, SlotColor(renderer, 1), "Slot Frame debe seguir tintándose.");
         }
 
         [Test]
@@ -202,8 +213,8 @@ namespace Rollgeon.Chests.Tests
             // Assert — tint whole-renderer (sin índice de slot).
             var mpb = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(mpb);
-            Assert.AreEqual(Color.green, mpb.GetColor(BaseColorId));
-            Assert.AreEqual(Color.green, mpb.GetColor(ColorId));
+            AssertColorApprox(Color.green, mpb.GetColor(BaseColorId), "Renderer 'Body' debe tintarse (BaseColor).");
+            AssertColorApprox(Color.green, mpb.GetColor(ColorId), "Renderer 'Body' debe tintarse (Color).");
         }
     }
 }
