@@ -39,6 +39,7 @@ namespace Rollgeon.DevConsole.UI
         private bool _open;
         private bool _suggestionsActive;
         private int _historyIndex = -1;
+        private int _openedFrame = -1;
         private InputActionMap[] _disabledMaps;
 
         public bool IsOpen => _open;
@@ -78,6 +79,14 @@ namespace Rollgeon.DevConsole.UI
             if (kb.backquoteKey.wasPressedThisFrame || kb.f1Key.wasPressedThisFrame)
             {
                 Toggle();
+                return;
+            }
+
+            // La P solo ABRE: en teclados donde F1 exige Fn y el backquote es incómodo.
+            // No cierra — con la consola abierta la letra tiene que poder tipearse.
+            if (!_open && kb.pKey.wasPressedThisFrame)
+            {
+                Open();
                 return;
             }
 
@@ -221,6 +230,7 @@ namespace Rollgeon.DevConsole.UI
 
             if (open)
             {
+                _openedFrame = Time.frameCount;
                 DisableGameplayInput();
                 SwitchTab(0);
                 _input.SetTextWithoutNotify(string.Empty);
@@ -383,6 +393,7 @@ namespace Rollgeon.DevConsole.UI
 
             _playerPanel = BuildButtonTab(middle, "PlayerPanel", new (string, System.Action)[]
             {
+                ("Kit playtest (oro+items+ench)", () => RunQuick("kit")),
                 ("Heal full", () => RunQuick("heal full")),
                 ("God mode (toggle)", () => RunQuick("god")),
                 ("HP máximo (sethp 9999)", () => RunQuick("sethp 9999")),
@@ -481,8 +492,10 @@ namespace Rollgeon.DevConsole.UI
             }
 
             _input.onValueChanged.AddListener(OnInputChanged);
-            // Evita que el backquote (toggle) y el Tab se inserten en el campo.
-            _input.onValidateInput += (text, index, added) => (added == '`' || added == '\t') ? '\0' : added;
+            // Evita que el backquote (toggle) y el Tab se inserten en el campo. El filtro por
+            // frame traga la tecla que ABRIÓ la consola (ej. la P) para que no quede tipeada.
+            _input.onValidateInput += (text, index, added) =>
+                (added == '`' || added == '\t' || Time.frameCount - _openedFrame <= 1) ? '\0' : added;
         }
     }
 }
