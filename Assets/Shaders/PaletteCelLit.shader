@@ -11,8 +11,14 @@ Shader "Rollgeon/PaletteCelLit"
 {
     Properties
     {
+        // Los seis toggles de acá son [ToggleUI], no [Toggle], a propósito: el shader ramifica
+        // sobre el float en runtime y no declara ningún shader_feature. [Toggle] igual le pegaba
+        // un keyword <PROP>_ON al material — inválido, porque no existe— y ese keyword viajaba a
+        // los clones del BossVisualWrapperBuilder. Como el drawer de [Toggle] sincroniza
+        // keyword → float al reserializar, un clon con el float apagado y el keyword prendido se
+        // volvía a prender solo. Sin keyword, el float es la única fuente de verdad.
         [Header(Palette)]
-        [Toggle] _UsePalette ("Use Global Palette", Float) = 0
+        [ToggleUI] _UsePalette ("Use Global Palette", Float) = 0
         [PaletteSlot] _PaletteSlot ("Palette Slot", Float) = 0
 
         [Header(Palette Colors)]
@@ -27,9 +33,9 @@ Shader "Rollgeon/PaletteCelLit"
         _LightWrap       ("Light Wrap",       Range(-1, 1))  = 0.1
 
         [Header(Dither)]
-        [Toggle] _UseDither       ("Border Dither",          Float) = 0
+        [ToggleUI] _UseDither       ("Border Dither",          Float) = 0
         _DitherStrength           ("Border Dither Strength",  Range(0, 1)) = 0.15
-        [Toggle] _UseShadowDither ("Shadow Dither",           Float) = 0
+        [ToggleUI] _UseShadowDither ("Shadow Dither",           Float) = 0
         _ShadowDitherDensity      ("Shadow Dither Density",   Range(0, 1)) = 0.3
 
         [Header(Additional Lights)]
@@ -37,12 +43,12 @@ Shader "Rollgeon/PaletteCelLit"
         _SpotDither               ("Edge Dither",             Range(0,1))  = 0.0
 
         [Header(Crease)]
-        [Toggle] _EnableCrease  ("Enable Crease",  Float) = 0
+        [ToggleUI] _EnableCrease  ("Enable Crease",  Float) = 0
         _CreaseColor            ("Crease Color",   Color) = (0.15, 0.15, 0.2, 1)
         _CreaseThreshold        ("Crease Threshold", Range(0, 1)) = 0.35
         _CreaseSmooth           ("Crease Smooth",    Range(0, 0.3)) = 0.05
         _CreaseAlpha            ("Crease Alpha",     Range(0, 1))   = 0.8
-        [Toggle] _CreaseDither  ("Crease Dither",    Float) = 0
+        [ToggleUI] _CreaseDither  ("Crease Dither",    Float) = 0
 
         [Header(Alpha Cutoff)]
         // 1 = totalmente visible, 0 = totalmente oculto.
@@ -56,7 +62,7 @@ Shader "Rollgeon/PaletteCelLit"
         _HitFlashColor  ("Hit Flash Color",  Color)        = (1,1,1,1)
 
         [Header(Emission)]
-        [Toggle] _EnableEmission ("Enable Emission", Float) = 0
+        [ToggleUI] _EnableEmission ("Enable Emission", Float) = 0
         [HDR] _EmissionColor     ("Emission Color",  Color) = (0,0,0,0)
     }
 

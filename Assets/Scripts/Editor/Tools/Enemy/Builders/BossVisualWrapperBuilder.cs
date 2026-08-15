@@ -256,9 +256,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                     if (!clones.TryGetValue(src, out var clone))
                     {
-                        clone = CloneMaterial(src, folder, bossName);
+                        clone = CloneMaterial(src, folder, bossName, retint);
                         if (clone == null) continue;
-                        ApplyRetint(clone, retint);
                         clones[src] = clone;
                     }
 
@@ -284,7 +283,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (clones.Count > 0) AssetDatabase.SaveAssets();
         }
 
-        private static Material CloneMaterial(Material src, string folder, string bossName)
+        private static Material CloneMaterial(Material src, string folder, string bossName,
+                                              MaterialRetint retint)
         {
             EnsureFolder(folder);
 
@@ -299,11 +299,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // dos corridas con el mismo spec dan el mismo material, y el GUID no cambia.
                 existing.shader = src.shader;
                 existing.CopyPropertiesFromMaterial(src);
+                ApplyRetint(existing, retint);
                 EditorUtility.SetDirty(existing);
                 return existing;
             }
 
+            // El retinte se aplica ANTES de CreateAsset. Si el path se borró antes en la misma sesión
+            // —los fixtures de los *VisualWiringTests limpian su carpeta en el OneTimeTearDown—
+            // las mutaciones POSTERIORES a CreateAsset se pierden y el material queda con los valores
+            // del original: paleta prendida y sin retintar.
             var clone = new Material(src) { name = Path.GetFileNameWithoutExtension(path) };
+            ApplyRetint(clone, retint);
             AssetDatabase.CreateAsset(clone, path);
             return clone;
         }
@@ -326,6 +332,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Debug.LogWarning($"[BossVisualWrapperBuilder] '{material.name}' pide PaletteSlot y " +
                                  $"colores directos a la vez — ganan los colores directos.");
             }
+
+            // Los materiales origen (Mat_Gold y compañía) arrastran un `_USEPALETTE_ON` de cuando el
+            // shader usaba [Toggle]. El keyword no existe —el shader ramifica sobre el float— pero
+            // `new Material(src)` y `CopyPropertiesFromMaterial` lo copian igual al clon, y con el
+            // drawer viejo eso volvía a prender el float al reserializar. Se limpia al clonar para
+            // que ningún clon nazca con el estado inconsistente del original.
+            material.DisableKeyword("_USEPALETTE_ON");
 
             if (hasDirect)
             {
