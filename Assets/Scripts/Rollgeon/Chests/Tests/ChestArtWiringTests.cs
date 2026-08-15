@@ -55,6 +55,21 @@ namespace Rollgeon.Chests.Tests
         }
 
         [Test]
+        public void TierPrefabOverrides_WhenAssigned_HaveGameplayWiring()
+        {
+            // Arrange
+            var config = LoadConfig();
+
+            // Act + Assert — hoy no hay overrides configurados; el test es la red
+            // para cuando se asigne un prefab por tier sin pasar por Setup Art Prefabs.
+            foreach (var tier in config.Tiers)
+            {
+                if (tier?.ChestPrefabOverride == null) continue;
+                AssertPawnWiring(tier.ChestPrefabOverride, $"Tiers[{tier.Tier}].ChestPrefabOverride");
+            }
+        }
+
+        [Test]
         public void MimicVisualPrefab_HasGameplayWiring()
         {
             // Arrange
