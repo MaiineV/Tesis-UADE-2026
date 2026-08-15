@@ -74,11 +74,33 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private int _displayIndex;
 
+        private CanvasGroup _canvasGroup;
+
         /// <summary>Guid del actor que este slot representa.</summary>
         public Guid SlotGuid => _slotGuid;
 
         /// <summary><c>true</c> si el slot es del player (marker visual opcional).</summary>
         public bool IsPlayer => _isPlayer;
+
+        /// <summary>RectTransform del slot — el carrusel lo posiciona/escala a mano.</summary>
+        public RectTransform Rect => (RectTransform)transform;
+
+        /// <summary>
+        /// CanvasGroup del root, para fades y dimming del carrusel. Se agrega por
+        /// código si el prefab no lo trae (los slots viejos no lo tenían).
+        /// </summary>
+        public CanvasGroup Group
+        {
+            get
+            {
+                if (_canvasGroup == null)
+                {
+                    _canvasGroup = GetComponent<CanvasGroup>();
+                    if (_canvasGroup == null) _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+                return _canvasGroup;
+            }
+        }
 
         /// <summary>
         /// Popula el slot. Reset de overlays (ambos hidden) + asignacion de label.
@@ -98,6 +120,19 @@ namespace Rollgeon.UI.HUD
 
             SetActive(false);
             SetDestroyed(false);
+        }
+
+        /// <summary>
+        /// Setea el texto del label de orden. Vacío/null lo oculta — en el carrusel
+        /// centrado los números fijos 1..N ya no aplican y solo los próximos llevan
+        /// su orden relativo (+1/+2).
+        /// </summary>
+        public void SetLabel(string text)
+        {
+            if (_label == null) return;
+            bool visible = !string.IsNullOrEmpty(text);
+            _label.text = visible ? text : string.Empty;
+            _label.gameObject.SetActive(visible);
         }
 
         /// <summary>
@@ -138,13 +173,25 @@ namespace Rollgeon.UI.HUD
             }
         }
 
-        /// <summary>Setea el portrait. Lo llama <see cref="TurnQueueView"/> resolviendo <c>IEntityPortraitResolver</c>.</summary>
+        private Sprite _defaultPortrait;
+        private bool _defaultPortraitCaptured;
+
+        /// <summary>
+        /// Setea el portrait. Lo llama <see cref="TurnQueueView"/> resolviendo
+        /// <c>IEntityPortraitResolver</c>. Con <c>null</c> restaura el sprite default
+        /// del prefab — necesario ahora que el carrusel recicla slots entre actores.
+        /// </summary>
         public void SetPortrait(Sprite portrait)
         {
-            if (_portrait != null && portrait != null)
+            if (_portrait == null) return;
+
+            if (!_defaultPortraitCaptured)
             {
-                _portrait.sprite = portrait;
+                _defaultPortrait = _portrait.sprite;
+                _defaultPortraitCaptured = true;
             }
+
+            _portrait.sprite = portrait != null ? portrait : _defaultPortrait;
         }
     }
 }

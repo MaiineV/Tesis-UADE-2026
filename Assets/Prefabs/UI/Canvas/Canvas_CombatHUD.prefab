@@ -147,7 +147,6 @@ MonoBehaviour:
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
   _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _disabledAlpha: 0.5
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _usedSinkSpeed: 900
   _selectedScale: 1.08
@@ -1140,7 +1139,6 @@ MonoBehaviour:
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
   _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _disabledAlpha: 0.5
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _usedSinkSpeed: 900
   _selectedScale: 1.08
@@ -1486,7 +1484,6 @@ MonoBehaviour:
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
   _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _disabledAlpha: 0.5
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _usedSinkSpeed: 900
   _selectedScale: 1.08
@@ -2298,7 +2295,6 @@ MonoBehaviour:
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
   _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _disabledAlpha: 0.5
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _usedSinkSpeed: 900
   _selectedScale: 1.08
@@ -3147,7 +3143,6 @@ MonoBehaviour:
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
   _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _disabledAlpha: 0.5
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _usedSinkSpeed: 900
   _selectedScale: 1.08
@@ -4258,7 +4253,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -50, y: -50}
-  m_SizeDelta: {x: 400, y: 100}
+  m_SizeDelta: {x: 450, y: 120}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &5609443812509055921
 MonoBehaviour:
@@ -4274,6 +4269,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.TurnQueueView
   _slotPrefab: {fileID: 7304061337924185874, guid: 718a4cf2accc35c498b13ac5a4916e4f, type: 3}
   _container: {fileID: 4209319296404721839}
+  _carousel:
+    ActiveScale: 0.7
+    UpcomingScale: 0.6
+    UpcomingAlpha: 0.7
+    SlotWidth: 100
+    Spacing: 24
+  _transitionSeconds: 0.28
+  _exitSlideDistance: 60
+  _leftPadding: 10
 --- !u!114 &474383615655035639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4281,7 +4285,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6563654194539949530}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
   m_Name: 
