@@ -31,7 +31,10 @@ namespace Rollgeon.UI.ChestReveal
     /// primer click acelera (<see cref="SkipStage.Fast"/>, el stage lee
     /// <see cref="Skip"/> y multiplica sus tweens), segundo click salta al estado
     /// final (<see cref="SkipStage.Jump"/>); durante WaitDismiss cualquier click
-    /// cierra. Sin corutinas ni tiempo: el tiempo vive en el stage.
+    /// cierra. <see cref="RequestJumpToFinal"/> salta directo al final en un solo
+    /// click — la vista lo usa durante la frenada del reel, donde el empujón
+    /// animado del Fast se leería como manipulación del resultado. Sin corutinas
+    /// ni tiempo: el tiempo vive en el stage.
     /// </summary>
     public sealed class ChestRevealPlayer
     {
@@ -84,6 +87,26 @@ namespace Rollgeon.UI.ChestReveal
                 _stage.ForceFinalState();
                 EnterBeat(RevealBeat.WaitDismiss);
             }
+        }
+
+        /// <summary>
+        /// Salta directo al estado final sin pasar por <see cref="SkipStage.Fast"/>:
+        /// snap al ganador en un solo click. En WaitDismiss equivale a cerrar.
+        /// </summary>
+        public void RequestJumpToFinal()
+        {
+            if (!IsRunning) return;
+
+            if (Beat == RevealBeat.WaitDismiss)
+            {
+                RequestSkip();
+                return;
+            }
+
+            Skip = SkipStage.Jump;
+            _token++;
+            _stage.ForceFinalState();
+            EnterBeat(RevealBeat.WaitDismiss);
         }
 
         /// <summary>Teardown externo (OnDisable/pop): corta sin invocar onFinished.</summary>
