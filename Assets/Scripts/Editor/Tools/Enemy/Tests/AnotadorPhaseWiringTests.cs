@@ -521,8 +521,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 AnotadorAssetBuilder.PopulateEnemyData(data, _ice, null);
 
                 Assert.AreEqual("boss.scorekeeper", data.EntityId);
-                Assert.AreEqual(430, data.BaseHP,
-                    "HP recalibrado por la simulación de 3000 peleas: 190 → 430. No tocar sin re-simular.");
+                Assert.AreEqual(170, data.BaseHP,
+                    "Piso 2: ~7 turnos con el golpe base del piso (mediana 24), suficiente para " +
+                    "que la alternancia fila/columna se lea como patrón.");
                 Assert.AreEqual(30, data.BaseAttack);
                 Assert.AreEqual("combo.generala", data.WeaknessComboId);
                 Assert.AreEqual(1.5f, data.WeaknessMultiplierOverride, PercentTolerance);

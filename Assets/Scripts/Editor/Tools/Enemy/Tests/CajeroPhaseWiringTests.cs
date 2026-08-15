@@ -357,8 +357,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 Assert.AreEqual("boss.cashier", data.EntityId);
                 Assert.AreEqual("El Cajero", data.DisplayName);
-                Assert.AreEqual(450, data.BaseHP,
-                    "HP recalibrado por la simulación de 3000 peleas: 190 → 450. No tocar sin re-simular.");
+                Assert.AreEqual(170, data.BaseHP,
+                    "Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Lo que se cura " +
+                    "en el arqueo es presupuesto aparte.");
                 Assert.AreEqual(30, data.BaseAttack);
                 Assert.AreEqual(30, data.MinGoldDrop, "Drop de piso 2: 30-60.");
                 Assert.AreEqual(60, data.MaxGoldDrop);

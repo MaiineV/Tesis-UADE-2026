@@ -139,10 +139,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 190 se iba antes de que la alternancia fila/columna se leyera como patrón.
+        /// Piso 2: ~7 turnos con el golpe base del piso (mediana 24) — suficiente para que
+        /// la alternancia fila/columna se lea como patrón. Los turnos que saltea la estela
+        /// de hielo alargan la pelea sin figurar acá.
         /// </summary>
-        public const int BaseHp = 430;
+        public const int BaseHp = 170;
         public const int BaseAttack = 30;
         public const int MinGoldDrop = 30;
         public const int MaxGoldDrop = 60;

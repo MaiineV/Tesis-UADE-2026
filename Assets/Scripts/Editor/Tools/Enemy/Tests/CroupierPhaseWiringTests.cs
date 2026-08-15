@@ -267,8 +267,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
-                Assert.AreEqual(350, data.BaseHP,
-                    "HP recalibrado por la simulación de 3000 peleas: 140 → 350. No tocar sin re-simular.");
+                Assert.AreEqual(120, data.BaseHP,
+                    "Jefe de piso 1: ~6 turnos con el golpe base del piso (mediana 20). " +
+                    "La simulación que pedía 350 asumía un golpe de 42, que es de run avanzada.");
                 Assert.AreEqual(20, data.BaseAttack);
                 Assert.AreEqual("combo.pair", data.WeaknessComboId,
                     "El id real del combo Par en el catálogo es combo.pair.");

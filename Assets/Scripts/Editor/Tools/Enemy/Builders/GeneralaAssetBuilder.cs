@@ -52,10 +52,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- Números de la ficha ------------------------------------------------------
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 250 son seis turnos — no alcanza para que la mesa se arme, se rompa y se reponga.
+        /// Piso 3: ~8 turnos con el golpe base del piso (mediana 30) — alcanza para que la
+        /// mesa se arme, se rompa y se reponga. Los cinco dados de <see cref="DiceHp"/> no
+        /// se descuentan de acá: son terreno, y romperlos es opcional.
         /// </summary>
-        public const int BossHp = 560;
+        public const int BossHp = 240;
         public const int BossAttack = 40;
 
         /// <summary>

@@ -74,10 +74,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DisplayName = "El Tahúr";
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 290 no dejaba jugar el pozo entero. Es el jefe más largo del juego a propósito.
+        /// Piso 3: ~8 turnos con el golpe base del piso (mediana 30) — el pozo entero se
+        /// juega en esa ventana. Mismo presupuesto que la Generala: es el otro jefe del
+        /// piso, no uno más largo.
         /// </summary>
-        public const int BaseHP = 650;
+        public const int BaseHP = 240;
         public const int BaseAttack = 40;
         public const int BaseSpeed = 4;
         public const int MaxEnergy = 3;

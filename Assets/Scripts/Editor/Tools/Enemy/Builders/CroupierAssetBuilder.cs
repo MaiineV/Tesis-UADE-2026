@@ -69,10 +69,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float WeaknessMultiplier = 1.5f;
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 140 se caía en tres turnos y el ciclo de la ruleta no llegaba a cantar dos veces.
+        /// Jefe de piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20).
+        /// La simulación que había subido esto a 350 asumía un golpe mediano de 42, que es
+        /// daño de run avanzada y no el kit con el que se llega al primer jefe. Los tres
+        /// jefes que ya estaban en el juego tienen 200: 350 era casi el doble del techo real.
         /// </summary>
-        public const int MaxHp = 350;
+        public const int MaxHp = 120;
         public const int Attack = 20;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;

@@ -348,8 +348,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 BandidaAssetBuilder.PopulateEnemyData(boss, _reelData, null);
 
                 Assert.AreEqual("boss.one_armed", boss.EntityId);
-                Assert.AreEqual(280, boss.BaseHP,
-                    "HP recalibrado por la simulación de 3000 peleas: 140 → 280. No tocar sin re-simular.");
+                Assert.AreEqual(140, boss.BaseHP,
+                    "Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Va más bajo que " +
+                    "sus pares porque los rodillos aportan el resto del presupuesto.");
                 Assert.AreEqual(20, boss.BaseAttack);
                 Assert.AreEqual("combo.ladder", boss.WeaknessComboId,
                     "Debilidad: la mano que no alinea (escalera).");

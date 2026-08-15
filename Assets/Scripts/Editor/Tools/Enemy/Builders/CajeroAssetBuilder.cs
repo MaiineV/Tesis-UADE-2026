@@ -72,10 +72,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DisplayName = "El Cajero";
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 190 no daba para cruzar el arqueo de caja y ver la fase 2.
+        /// Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Los hasta
+        /// <see cref="AuditMaxHeal"/> que se cura en el arqueo son presupuesto aparte:
+        /// suman turnos sin figurar acá.
         /// </summary>
-        public const int BaseHP = 450;
+        public const int BaseHP = 170;
         public const int BaseAttack = 30;
         public const int BaseSpeed = 4;
         public const int MaxEnergy = 3;

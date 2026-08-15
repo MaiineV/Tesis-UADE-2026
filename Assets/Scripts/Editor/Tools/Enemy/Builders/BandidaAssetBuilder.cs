@@ -52,10 +52,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string ReelEntityId = "obj.reel";
 
         /// <summary>
-        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
-        /// 140 moría antes de que la cuenta llegara al primer jackpot.
+        /// Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Va más bajo que sus
+        /// pares del piso porque los tres rodillos de <see cref="ReelHp"/> aportan el resto
+        /// del presupuesto — y como reaparecen, la palanca de duración es
+        /// <see cref="RespawnDelayPhase1"/>, no esta vida.
         /// </summary>
-        public const int BossHp = 280;
+        public const int BossHp = 140;
         public const int BossAttack = 20;
         public const int BossSpeed = 4;
         public const int BossEnergy = 3;

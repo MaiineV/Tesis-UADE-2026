@@ -48,8 +48,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 TahurAssetBuilder.PopulateEnemyData(data);
 
                 Assert.AreEqual("boss.tahur", data.EntityId);
-                Assert.AreEqual(650, data.BaseHP,
-                    "HP recalibrado por la simulación de 3000 peleas: 290 → 650. No tocar sin re-simular.");
+                Assert.AreEqual(240, data.BaseHP,
+                    "Piso 3: ~8 turnos con el golpe base del piso (mediana 30). Mismo " +
+                    "presupuesto que la Generala: es el otro jefe del piso, no uno más largo.");
                 Assert.AreEqual(40, data.BaseAttack);
                 Assert.AreEqual(60, data.MinGoldDrop, "Gold drop de jefe de piso 3: 60-80.");
                 Assert.AreEqual(80, data.MaxGoldDrop);
