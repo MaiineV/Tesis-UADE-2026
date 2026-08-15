@@ -8,6 +8,7 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.Builders;
+using Rollgeon.EditorTools;
 using Rollgeon.Entities;
 using Rollgeon.PreConditions.Concretes;
 using UnityEngine;
@@ -53,24 +54,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Root_HasTheFourStepsOfTheSheet()
+        public void Root_HasTheStepsOfTheSheet()
         {
-            Assert.AreEqual(5, _root.Children.Count,
-                "Detona → arqueo → marca → suelta → se corre.");
+            Assert.AreEqual(6, _root.Children.Count,
+                "Detona → arqueo → arma el peaje → ataca (marca o dispara) → suelta → se corre.");
             Assert.IsNotNull(FindNode<AINode_TelegraphMarkGoldScaled>(), "Falta la columna que engorda.");
+            Assert.IsNotNull(FindNode<AINode_CashierRangedShot>(), "Falta el disparo de los turnos sin columna.");
+            Assert.IsNotNull(FindNode<AINode_CashierCounterToll>(), "Falta el peaje del mostrador.");
             Assert.IsNotNull(FindNode<AINode_CashierDropChips>(), "Faltan las fichas.");
             Assert.IsNotNull(FindNode<AINode_KeepDistance>(), "Falta el repliegue al otro lado del mostrador.");
             Assert.IsNotNull(FindNode<AINode_CashierAudit>(), "Falta el arqueo de caja.");
         }
 
         [Test]
-        public void Boss_NeverAttacksDirectly_AllDamageGoesThroughTheColumn()
+        public void Boss_HasNoMelee_AndItsDirectDamageIsTheSheetShot()
         {
             Assert.IsEmpty(Descendants(_root).OfType<AINode_Behavior>().ToList(),
-                "El Cajero no tiene melee ni ataque a rango: todo su daño entra por la columna.");
+                "El Cajero no pelea cuerpo a cuerpo: se repliega y cobra a distancia.");
             Assert.IsEmpty(Descendants(_root).OfType<AINode_TelegraphMark>().ToList(),
                 "La columna tiene que salir del nodo escalado por oro, no de un TelegraphMark plano " +
                 "con daño fijo (sería el jefe sin su mecánica).");
+
+            // La ficha le dio un ataque directo — el disparo de los turnos sin columna — porque la
+            // columna sola se esquivaba con un paso. Es el único daño suyo que no pasa por el área.
+            var shot = FindNode<AINode_CashierRangedShot>();
+            Assert.AreEqual(12, shot.Damage, "El disparo pega 12 fijos, no escala con el oro.");
+            Assert.AreEqual(4, shot.Range,
+                "Alcance 4: pegarle exige distancia 1, y distancia 1 tiene que estar adentro.");
         }
 
         // ---- Gate de fase -------------------------------------------------
@@ -135,8 +145,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             // Todos los hijos salvo ExecuteTelegraph (que siempre sucede) pueden devolver Failed:
             // KeepDistance cuando ya está lejos, DropChips cuando no le pegaron, la columna con área
-            // vacía, y el gate cuando su rama falla. Suelto en el Sequence, cualquiera de esos
-            // aborta el turno entero — el bug que dejó quieto al Sunken Grand.
+            // vacía, el disparo con el jugador fuera de rango, el peaje sin jugador en contexto, y
+            // el gate cuando su rama falla. Suelto en el Sequence, cualquiera de esos aborta el
+            // turno entero — el bug que dejó quieto al Sunken Grand.
             for (int i = 1; i < _root.Children.Count; i++)
             {
                 var selector = _root.Children[i] as AINode_Selector;
@@ -161,8 +172,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         // ---- La columna que engorda ---------------------------------------
 
+        /// <summary>
+        /// Los umbrales son 40/120 y no los 80/250 de la primera pasada: el jugador llega al piso 2
+        /// con ~65-70 de oro, así que con 80/250 la columna vivía clavada en el escalón pobre y el
+        /// jefe medía 0% de vida perdida en la mediana de 3000 peleas simuladas. Con 40/120, 65 de
+        /// oro ya paga el escalón medio.
+        /// </summary>
         [Test]
-        public void Column_ScalesWithGold_ExactlyAsTheSheet()
+        public void Column_ScalesWithGold_AtFortyAndOneTwenty()
         {
             var column = FindNode<AINode_TelegraphMarkGoldScaled>();
 
@@ -175,11 +192,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(1, ranked[0].ColumnSize);
             Assert.AreEqual(14, ranked[0].Damage);
 
-            Assert.AreEqual(100, ranked[1].MinGold);
+            Assert.AreEqual(40, ranked[1].MinGold,
+                "El escalón medio arranca en 40: con el oro real de entrada al piso 2 tiene que " +
+                "ser el default, no el premio.");
             Assert.AreEqual(3, ranked[1].ColumnSize);
             Assert.AreEqual(28, ranked[1].Damage);
 
-            Assert.AreEqual(250, ranked[2].MinGold);
+            Assert.AreEqual(120, ranked[2].MinGold,
+                "El escalón rico queda a una tanda de fichas de distancia, no a una run entera.");
             Assert.AreEqual(3, ranked[2].ColumnSize);
             Assert.AreEqual(35, ranked[2].Damage);
         }
@@ -194,6 +214,62 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.LessOrEqual(tier.Damage, 35,
                     $"El escalón desde {tier.MinGold} de oro pega {tier.Damage} — el techo de piso 2 es 35.");
             }
+        }
+
+        // ---- El peaje -----------------------------------------------------
+
+        [Test]
+        public void Toll_ChargesTheSheetTen()
+        {
+            var toll = FindNode<AINode_CashierCounterToll>();
+
+            Assert.AreEqual(CajeroAssetBuilder.CounterTollDamage, toll.Damage,
+                "El nodo tiene que salir cableado desde la constante de la ficha, no de su default.");
+            Assert.AreEqual(10, toll.Damage,
+                "Sin peaje, elegir abertura no cuesta nada y el mostrador es decorado.");
+        }
+
+        /// <summary>
+        /// El jefe no puede leer el terreno (los blockers son agujeros en el NavGraph, no props
+        /// tipados), así que la fila del mostrador va autorada. Este cruce contra el plano que
+        /// hornea <see cref="BossRoomBuilder"/> es lo único que impide que mover el mostrador deje
+        /// el peaje cobrando sobre una fila vacía — que no rompe nada, sólo deja de cobrar.
+        /// </summary>
+        [Test]
+        public void Toll_UsesTheRowTheRoomBuilderBakesTheCounterOn()
+        {
+            var plan = BossRoomBuilder.Plans.FirstOrDefault(p => p.BossName == "Cajero");
+            Assert.IsNotNull(plan, "No hay plano de sala del Cajero en BossRoomBuilder.Plans.");
+
+            var counterRows = plan.BlockerPlanCells
+                .Select(cell => BossRoomBuilder.PlanToRoom(cell).Y)
+                .Distinct()
+                .ToList();
+
+            Assert.AreEqual(1, counterRows.Count,
+                "El mostrador es una fila sola: si el plano bloquea más de una, 'el lado' deja de " +
+                "estar definido por un solo número y el peaje necesita otra regla.");
+            Assert.AreEqual(counterRows[0], CajeroAssetBuilder.CounterRow,
+                "La fila autorada en la ficha no es la fila donde la sala pone el mostrador.");
+
+            int bossRow = BossRoomBuilder.PlanToRoom(plan.BossPlanCell).Y;
+            Assert.AreNotEqual(CajeroAssetBuilder.CounterRow, bossRow,
+                "El jefe spawnea dentro del mostrador: sin lado propio no hay lado que compartir " +
+                "y el peaje no cobraría nunca.");
+        }
+
+        [Test]
+        public void Toll_IsArmedBeforeTheAttack_SoARunningCannotSkipIt()
+        {
+            int tollIdx = _root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_CashierCounterToll));
+            int attackIdx = _root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_TelegraphMarkGoldScaled));
+
+            Assert.Greater(tollIdx, -1);
+            Assert.Greater(attackIdx, tollIdx,
+                "El peaje arma el cobro del cierre de turno del jugador: en el path no-coroutine " +
+                "un Running del ataque lo dejaría sin armar justo en los turnos en que el jefe actuó.");
         }
 
         // ---- Fichas -------------------------------------------------------
@@ -281,7 +357,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 Assert.AreEqual("boss.cashier", data.EntityId);
                 Assert.AreEqual("El Cajero", data.DisplayName);
-                Assert.AreEqual(190, data.BaseHP);
+                Assert.AreEqual(450, data.BaseHP,
+                    "HP recalibrado por la simulación de 3000 peleas: 190 → 450. No tocar sin re-simular.");
                 Assert.AreEqual(30, data.BaseAttack);
                 Assert.AreEqual(30, data.MinGoldDrop, "Drop de piso 2: 30-60.");
                 Assert.AreEqual(60, data.MaxGoldDrop);
@@ -360,7 +437,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 var second = data.AIRoot as AINode_Sequence;
 
                 Assert.IsNotNull(second);
-                Assert.AreEqual(5, second.Children.Count, "Re-ejecutar el builder no acumula hijos.");
+                Assert.AreEqual(6, second.Children.Count, "Re-ejecutar el builder no acumula hijos.");
                 Assert.AreNotSame(first, second,
                     "Cada build es un árbol nuevo: nodos compartidos arrastrarían estado runtime.");
             }

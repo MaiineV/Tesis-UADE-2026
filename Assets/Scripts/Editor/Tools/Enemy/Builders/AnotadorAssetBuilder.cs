@@ -32,24 +32,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// <b>Vestuario.</b> El jefe usaba <c>SecurityGuardBoss.prefab</c> como placeholder: estático y sin
     /// Animator. Ahora <see cref="BuildVisualPrefab"/> lo viste con el mímico
     /// (<see cref="ArtModelPath"/>) — un cofre que se abre y muerde, o sea un libro de contabilidad
-    /// viviente — congelado con la paleta de <see cref="IcePaints"/>. Los tres colores del piso quedan
-    /// separados: fila naranja (default del overlay), estela celeste
-    /// (<see cref="IceOverlayTint"/>) y lápiz grafito (<see cref="PencilOverlayTint"/>).
+    /// viviente — congelado con la paleta de <see cref="IcePaints"/>. Los dos colores que quedan en el
+    /// piso están separados: la franja de fila/columna en el naranja default del overlay y la estela
+    /// en el celeste de <see cref="IceOverlayTint"/>.
     /// </para>
     /// <para>
-    /// <b>Ficha de diseño.</b> HP 190 · Attack 30 · fila Row 1 = 30 · lápiz SquareAroundSelf 1 = 12
-    /// en rondas impares · KeepDistance ideal 4 · estela de 1-3 casillas con stun 1 · fase 2 al 35%
-    /// (2 corrimientos por turno, permanentes, y columna 32 alternada con la fila). Techo de daño de
-    /// piso 2 = 35 por golpe: el 32 de la columna es el máximo que sale de acá.
+    /// <b>Ficha de diseño.</b> HP 190 · Attack 30 · fila Row 1 = 30 y columna Column 1 = 32
+    /// alternadas por paridad de ronda <b>desde la fase 1</b> · lápiz melee directo 12 en rondas
+    /// impares · KeepDistance ideal 4 con 4 pasos · estela de hasta 4 casillas, 3 rondas, stun 1 ·
+    /// fase 2 al 35% (columna de 3, 2 corrimientos por turno y permanentes). Techo de daño de piso 2
+    /// = 35 por golpe: el 32 de la columna es el máximo que sale de acá, y ensancharla en fase 2 no
+    /// lo mueve — sube lo que cuesta salirse del eje, no lo que cobra.
     /// </para>
     /// <para>
-    /// <b>El lápiz corre por canal secundario.</b> <see cref="IThreatenedAreaService"/> guarda
-    /// <b>un</b> área pendiente por source guid: si fila y lápiz marcaran los dos con
-    /// <c>context.SelfGuid</c>, en rondas impares la segunda marca pisaría a la primera y el camino
-    /// derecho pagaría 12 en vez de 42 (30 + 12). El lápiz marca y cobra vía
-    /// <see cref="AINode_AuxTelegraph"/> (canal <see cref="PencilChannelId"/>) — la misma solución
-    /// del cubilete de La Generala — así ambas marcas conviven y sus daños stackean si el jugador
-    /// queda dentro de las dos.
+    /// <b>La esquiva cuesta dos pasos.</b> Con un solo eje amenazado —la fila del jugador— un paso en
+    /// Y sacaba el turno entero del boss: la "diagonal eterna" que domina esta pelea en el catálogo.
+    /// Alternando fila y columna por paridad de ronda, salir del eje de este turno y del que viene
+    /// cuesta 2 de los 4 pasos, y cuál toca se sabe de antemano. El <c>Selector</c> del hijo de marca
+    /// garantiza que nunca sean las dos el mismo turno: 30 + 32 son 62 sobre 100 de vida y rompen el
+    /// techo del piso.
+    /// </para>
+    /// <para>
+    /// <b>El lápiz ya no telegrafía.</b> Era un anillo 3×3 avisado un turno antes por canal auxiliar;
+    /// ahora es un golpe melee directo (<see cref="AINode_AnotadorPencil"/>) contra quien esté a
+    /// distancia 1 al empezar su turno, y por eso va <b>antes</b> del repliegue. El anillo tenía que
+    /// convivir con la marca de fila sin pisarla —<see cref="IThreatenedAreaService"/> guarda un área
+    /// pendiente por source guid— y de ahí salía el canal aparte; un golpe sin área no toca ese
+    /// servicio, así que el problema desaparece junto con el nodo.
     /// </para>
     /// </remarks>
     public static class AnotadorAssetBuilder
@@ -129,7 +138,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Números de la ficha
         // ======================================================================
 
-        public const int BaseHp = 190;
+        /// <summary>
+        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
+        /// 190 se iba antes de que la alternancia fila/columna se leyera como patrón.
+        /// </summary>
+        public const int BaseHp = 430;
         public const int BaseAttack = 30;
         public const int MinGoldDrop = 30;
         public const int MaxGoldDrop = 60;
@@ -137,28 +150,63 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int RowDamage = 30;
         public const int ColumnDamage = 32;
         public const int PencilDamage = 12;
+
+        /// <summary>
+        /// Alcance del lápiz, en Manhattan. 1 = las casillas desde las que el jugador puede pegarle:
+        /// el golpe es el peaje de ocupar una de ellas.
+        /// </summary>
+        public const int PencilRange = 1;
+
         public const int MarkSize = 1;
 
-        /// <summary>Canal del lápiz — su marca no puede pisar (ni ser pisada por) la de la fila.</summary>
-        public const string PencilChannelId = "anotador.lapiz";
+        /// <summary>
+        /// Ancho de la columna en fase 2 — la "Columna de 3" de la ficha. El <c>Size</c> de
+        /// <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/> es el ancho de la franja en
+        /// casillas (3 ⇒ la columna del jugador ±1), así que la fase ensancha el eje sin tocar el
+        /// daño: lo que sube es cuántos pasos cuesta salirse, no cuánto cobra el golpe.
+        /// </summary>
+        public const int Phase2ColumnSize = 3;
 
         /// <summary>Distancia que el repliegue intenta mantener. Solo se mueve si lo tienen a 3 o menos.</summary>
         public const int IdealDistance = 4;
 
-        /// <summary>Pasos del repliegue ⇒ tope natural de casillas de la estela (1-3).</summary>
-        public const int RetreatSteps = 3;
+        /// <summary>
+        /// Pasos del repliegue ⇒ tope real de casillas de la estela. <b>4 y no 3</b>: el nodo de
+        /// estela recorta a <see cref="MaxTrailTiles"/>, pero nunca puede congelar más casillas que
+        /// las que el repliegue camina. Con 3 pasos, un <c>MaxTiles = 4</c> sería letra muerta.
+        /// <para>
+        /// No aleja más al jefe: <see cref="AINode_KeepDistance"/> puntúa los candidatos con
+        /// <c>min(distancia, ideal)</c>, así que el destino sigue topeado en
+        /// <see cref="IdealDistance"/>. El paso de más sólo habilita el rodeo — el repliegue que
+        /// bordea un escritorio en vez de irse derecho, que es de donde salen las estelas de 4.
+        /// </para>
+        /// </summary>
+        public const int RetreatSteps = 4;
 
-        public const int MaxTrailTiles = 3;
+        /// <summary>
+        /// Casillas de la estela. La ficha pide 4: con 3 el repliegue era una molestia puntual, con 4
+        /// cada repliegue tapa un tramo de corredor entre escritorios y rodearlo cuesta más pasos que
+        /// cruzarlo.
+        /// </summary>
+        public const int MaxTrailTiles = 4;
+
         public const int TrailStunTurns = 1;
 
         /// <summary>
-        /// Rondas de vida de la estela. <b>2, no 1</b>: la duración se descuenta en el wrap de ronda
-        /// (<c>OnTurnQueueBuilt</c>) y el jugador tiene forzado el primer turno de cada ronda
-        /// (CNF-006). Con 1, la estela que el boss deja en la ronda N muere en el arranque de la N+1,
-        /// <i>antes</i> de que el jugador vuelva a moverse: nunca podría pisarla. Con 2 vive
-        /// exactamente un turno del jugador, que es lo que la ficha llama "dura 1 turno".
+        /// Vida de la estela en el SO del hazard. La ficha pide <b>3 rondas</b> y acá va <b>4</b>:
+        /// <c>HazardService.TickInstanceDurations</c> descuenta una vez por wrap de ronda
+        /// (<c>OnTurnQueueBuilt</c>) y la estela nace en el turno del jefe, o sea con el turno del
+        /// jugador de esa ronda ya jugado (CNF-006: el jugador abre la cola siempre). La ronda en la
+        /// que se publica no le deja ningún turno de jugador por delante, así que
+        /// <c>DurationRounds = D</c> vale <c>D - 1</c> rondas pisables: con 3 el hielo duraba 2 y la
+        /// ficha decía 3. Mismo corrimiento de +1 que <c>CroupierAssetBuilder.FireDurationRounds</c>.
         /// </summary>
-        public const int TrailDurationRounds = 2;
+        /// <remarks>
+        /// Con 3 rondas la estela del repliegue anterior sigue viva cuando cae la siguiente: el
+        /// corredor central deja de reabrirse solo y rodear pasa a costar más que el turno que cuesta
+        /// cruzar. Ese solapamiento es el efecto buscado, no un residuo del redondeo de rondas.
+        /// </remarks>
+        public const int TrailDurationRounds = 4;
 
         public const float Phase2HpThreshold = 0.35f;
         public const int ShiftsPerTurnPhase1 = 1;
@@ -171,11 +219,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color IceOverlayTint = new Color(0.35f, 0.8f, 1f, 0.55f);
 
         /// <summary>
-        /// Grafito del lápiz. Tres marcas conviven en el piso de este jefe y cada una cobra distinto:
-        /// la fila va en el naranja default de <c>ThreatTelegraphOverlay</c> (30), la estela en el
-        /// celeste de <see cref="IceOverlayTint"/> (stun) y el anillo del lápiz acá (12). El default
-        /// del nodo aux es un violeta que no dice nada; el grafito lo ata al lápiz que lo dibuja y no
-        /// se confunde con ninguno de los otros dos.
+        /// Grafito del lápiz. Ya no pinta nada: el lápiz pasó a golpe directo y no marca casillas, así
+        /// que el piso de este jefe volvió a tener dos colores (franja naranja, estela celeste). Se
+        /// conserva porque <c>AnotadorVisualWiringTests</c> —de otro dueño— afirma que es legible
+        /// contra los otros dos, y como reserva del día que el golpe quiera su propio decal de impacto.
         /// </summary>
         /// <remarks>
         /// Azulado y no gris neutro para que no se pierda contra el piso, y con el alpha en la banda
@@ -306,27 +353,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Árbol del turno. Sequence raíz de 8 hijos, en el orden de la ficha:
-        /// <c>detona → cobra el lápiz → tacha → se acomoda → estela → fila/columna → lápiz → fase 2</c>.
+        /// Árbol del turno. Sequence raíz de 7 hijos, en el orden de la ficha:
+        /// <c>detona → tacha → lápiz → se acomoda → estela → fila/columna → fase 2</c>.
         /// </summary>
         /// <remarks>
         /// <para>
         /// Todo hijo que pueda devolver <c>Failed</c> va dentro de un <c>Selector[…, Wait]</c>: el
-        /// Sequence aborta el turno al primer Failed y este boss tiene UN ataque (la marca de fila).
-        /// El caso más peligroso es <see cref="AINode_KeepDistance"/>, que devuelve <c>Failed</c> en
-        /// el caso benigno "ya estoy a distancia ideal" — la mayoría de los turnos de esta pelea,
+        /// Sequence aborta el turno al primer Failed y este boss tiene UN ataque grande (la marca del
+        /// eje). El caso más peligroso es <see cref="AINode_KeepDistance"/>, que devuelve <c>Failed</c>
+        /// en el caso benigno "ya estoy a distancia ideal" — la mayoría de los turnos de esta pelea,
         /// porque solo se mueve si lo tienen a 3 casillas o menos. Es el mismo Failed que dejó quieto
-        /// al Sunken Grand.
+        /// al Sunken Grand. El lápiz falla igual de seguido (el jugador casi nunca está pegado) y por
+        /// eso comparte el idiom.
         /// </para>
         /// <para>
-        /// El <c>Selector</c> del hijo 5 es lo que garantiza <b>una sola</b> marca grande por turno:
+        /// El <c>Selector</c> del hijo 6 es lo que garantiza <b>una sola</b> marca grande por turno:
         /// fila (30) + columna (32) el mismo turno son 62 sobre 100 de vida y rompen el techo del
-        /// piso. Si la columna entra, el Selector corta y la fila no se marca.
+        /// piso. Si la columna entra, el Selector corta y la fila no se marca. La paridad de ronda
+        /// decide cuál, desde la ronda 1: el eje amenazado alterna toda la pelea y la fase 2 no toca
+        /// esa alternancia — lo que cambia en fase 2 son los corrimientos de la planilla y el ancho
+        /// de la columna (ver <see cref="BuildColumnMark"/>).
         /// </para>
         /// <para>
-        /// El lápiz va <b>después</b> del repliegue para que el anillo quede alrededor de la casilla
-        /// final del boss; marcado antes, telegrafía dónde ya no está. No lleva gate de rango: el
-        /// anillo ES la adyacencia.
+        /// El lápiz va <b>antes</b> del repliegue: cobra la casilla que el jugador eligió ocupar, y
+        /// después de <see cref="AINode_KeepDistance"/> el boss ya está a distancia 4 y no cobraría
+        /// nunca. Comparte la paridad impar de la fila para que el jugador sepa de antemano qué turno
+        /// cuesta acercarse.
         /// </para>
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(HazardDefinitionSO iceHazard)
@@ -338,27 +390,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 1. Detona la marca del turno pasado.
                     new AINode_ExecuteTelegraph(),
 
-                    // 1b. Cobra el lápiz pendiente. Fuera de todo gate: el aviso marcado en la
-                    // ronda impar N se paga en la N+1 aunque esa ronda no marque lápiz nuevo.
-                    new AINode_AuxTelegraph
-                    {
-                        Step = AINode_AuxTelegraph.TelegraphStep.Execute,
-                        ChannelId = PencilChannelId,
-                    },
-
                     // 2. Tacha: corre el combo más jugado al vecino de la hoja. Envuelto igual que
                     // el resto: devuelve Failed si IContractModifierService no está registrado, y
-                    // ese Failed dejaría al boss sin marcar la fila por un bootstrap incompleto.
+                    // ese Failed dejaría al boss sin marcar el eje por un bootstrap incompleto.
                     Fallback(BuildShiftNode()),
 
-                    // 3. Se acomoda: si lo tienen a 3 o menos, se repliega a 4.
+                    // 3. El lápiz, en rondas impares y antes de replegarse (ver remarks).
+                    Fallback(new AINode_If
+                    {
+                        Conditions = new List<BasePreCondition> { OddRound() },
+                        Then = new AINode_AnotadorPencil
+                        {
+                            Damage = PencilDamage,
+                            Range = PencilRange,
+                            Metric = DistanceMetric.Manhattan,
+                            Kind = AttackKind.BasicAttack,
+                        },
+                    }),
+
+                    // 4. Se acomoda: si lo tienen a 3 o menos, se repliega a 4.
                     Fallback(new AINode_KeepDistance
                     {
                         MaxSteps = new AIConstantInt { Value = RetreatSteps },
                         IdealDistance = new AIConstantInt { Value = IdealDistance },
                     }),
 
-                    // 4. Congela lo que acaba de caminar.
+                    // 5. Congela lo que acaba de caminar.
                     Fallback(new AINode_IceTrail
                     {
                         Hazard = iceHazard,
@@ -367,49 +424,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         ReplacePreviousTrail = true,
                     }),
 
-                    // 5. Marca: columna solo en fase 2 y ronda par; si no, fila.
+                    // 6. Marca: columna en ronda par, fila en impar. Sin gate de fase — alternan
+                    // desde el primer turno; la fase 2 sólo elige qué tan ancha sale la columna.
                     new AINode_Selector
                     {
                         Children = new List<AIDecisionNode>
                         {
                             new AINode_If
                             {
-                                Conditions = new List<BasePreCondition>
-                                {
-                                    new PcOwnerHpBelow { Percent = Phase2HpThreshold },
-                                    EvenRound(),
-                                },
-                                Then = BuildMark(ThreatShape.Column, ColumnDamage),
+                                Conditions = new List<BasePreCondition> { EvenRound() },
+                                Then = BuildColumnMark(),
                             },
                             BuildMark(ThreatShape.Row, RowDamage),
                         },
                     },
 
-                    // 6. El lápiz, solo en rondas impares — por su canal, para no pisar la fila.
-                    Fallback(new AINode_If
-                    {
-                        Conditions = new List<BasePreCondition> { OddRound() },
-                        Then = new AINode_AuxTelegraph
-                        {
-                            Step = AINode_AuxTelegraph.TelegraphStep.Mark,
-                            ChannelId = PencilChannelId,
-                            Shape = ThreatShape.SquareAroundSelf,
-                            Size = MarkSize,
-                            Damage = PencilDamage,
-                            Kind = AttackKind.BasicAttack,
-                            // Sin esto el anillo sale en el violeta default del nodo, que no significa
-                            // nada en este juego. Ver PencilOverlayTint.
-                            OverlayTint = PencilOverlayTint,
-                        },
-                    }),
-
                     // 7. Fase 2 ("muestra la manga"): feedback + diálogo, una sola vez.
                     Fallback(new AINode_If
                     {
-                        Conditions = new List<BasePreCondition>
-                        {
-                            new PcOwnerHpBelow { Percent = Phase2HpThreshold },
-                        },
+                        Conditions = new List<BasePreCondition> { Phase2Hp() },
                         Then = new AINode_Once
                         {
                             Child = new AINode_ApplyStatModifier
@@ -993,16 +1026,55 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
-        private static AINode_TelegraphMark BuildMark(ThreatShape shape, int damage)
+        private static AINode_TelegraphMark BuildMark(ThreatShape shape, int damage, int size = MarkSize)
         {
             return new AINode_TelegraphMark
             {
                 Shape = shape,
-                Size = MarkSize,
+                Size = size,
                 Damage = damage,
                 Kind = AttackKind.BasicAttack,
             };
         }
+
+        /// <summary>
+        /// La columna: <see cref="Phase2ColumnSize"/> de ancho en fase 2, una casilla antes.
+        /// </summary>
+        /// <remarks>
+        /// El gate de HP va <b>adentro</b> del de paridad y no envolviéndolo: la alternancia
+        /// fila/columna es de fase 1 (ver <see cref="BuildAIRoot"/>), así que colgar la columna entera
+        /// de un <see cref="PcOwnerHpBelow"/> la devolvería a ser un ataque de fase 2 y el eje dejaría
+        /// de alternar hasta el 35% — que es justo lo que la ficha sacó. Acá la fase no decide
+        /// <i>si</i> se marca la columna, sólo <i>cuál</i> de las dos.
+        /// <para>
+        /// Dos marcas autoradas y no un <c>Size</c> resuelto por fase adentro del nodo:
+        /// <see cref="AINode_TelegraphMark"/> es el nodo compartido de todo el roster y meterle una
+        /// palanca de fase para un jefe le agregaría estado que los otros cinco no usan. El árbol ya
+        /// sabe ramificar.
+        /// </para>
+        /// </remarks>
+        private static AINode_Selector BuildColumnMark()
+        {
+            return new AINode_Selector
+            {
+                Children = new List<AIDecisionNode>
+                {
+                    new AINode_If
+                    {
+                        Conditions = new List<BasePreCondition> { Phase2Hp() },
+                        Then = BuildMark(ThreatShape.Column, ColumnDamage, Phase2ColumnSize),
+                    },
+                    BuildMark(ThreatShape.Column, ColumnDamage),
+                },
+            };
+        }
+
+        /// <summary>
+        /// El umbral de fase 2, en un solo lugar: lo comparten el ancho de la columna y el gate que
+        /// dispara el feedback, y con dos literales sueltos podían quedar desfasados y el jefe
+        /// ensanchar el eje sin anunciar la fase (o al revés).
+        /// </summary>
+        private static PcOwnerHpBelow Phase2Hp() => new PcOwnerHpBelow { Percent = Phase2HpThreshold };
 
         private static PcRoundNumber EvenRound()
         {

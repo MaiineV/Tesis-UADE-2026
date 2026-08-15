@@ -22,7 +22,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// <remarks>
     /// Mismo criterio que <c>SunkenGrandPhaseWiringTests</c>: lo que se fija acá es el orden de los
     /// gates, los fallbacks que evitan que un <c>Failed</c> le cancele el turno al jefe, y los
-    /// números que el diseño trata como contrato (25 en 7×7, 9 en 3×3, cuenta de 2, reposición 2 → 1).
+    /// números que el diseño trata como contrato (jackpot de 25 en 7×7, brazo melee de 12, rodillos
+    /// de 60, cuenta de 2, reposición 2 → 1).
     /// Un test rojo acá significa que el árbol se desarmó en un merge o que alguien movió un número
     /// de la ficha sin querer.
     /// </remarks>
@@ -171,9 +172,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(lockReel, "Fase 2 = HOLD: falta el LockReel.");
             Assert.AreEqual(ReelSide.Middle, lockReel.Side,
                 "El HOLD traba el rodillo del medio — quedan los dos de la punta, los más lejanos.");
-            Assert.Greater(lockReel.LockedHp, 25 * 4,
-                "El rodillo trabado tiene que aguantar toda la pelea: su pool de vida debe estar " +
-                "muy por encima del techo de daño del jugador.");
+            Assert.Greater(lockReel.LockedHp, BandidaAssetBuilder.BossHp,
+                "El rodillo trabado tiene que aguantar toda la pelea. Con más vida que el propio " +
+                "jefe, el turno gastado en romperlo siempre rinde más pegándole al jefe — que es " +
+                "cómo se lee 'trabado' sin un canal de inmunidad en el DamagePipeline.");
+            Assert.Greater(lockReel.LockedHp, BandidaAssetBuilder.ReelHp,
+                "Un rodillo trabado con la vida de uno normal no es un HOLD: es un rodillo más.");
 
             Assert.IsNotNull(delay, "Fase 2 baja la reposición a un turno: falta el SetReelRespawnDelay.");
             Assert.AreEqual(BandidaAssetBuilder.RespawnDelayPhase2, delay.Value);
@@ -193,6 +197,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void ReelRow_CarriesTheBreakHazard_SoTheBrokenSlotBurns()
+        {
+            var fire = ScriptableObject.CreateInstance<HazardDefinitionSO>();
+            try
+            {
+                var root = BandidaAssetBuilder.BuildAIRoot(_reelData, fire);
+                var reels = Descendants(root).OfType<AINode_SpawnReels>().Single();
+
+                Assert.AreSame(fire, reels.OnBreakHazard,
+                    "El fuego tiene que llegar hasta la fila. Sin él el rodillo roto deja piso " +
+                    "limpio y la casilla desde la que se desarma el siguiente sale gratis — que es " +
+                    "la mitad del precio de romper.");
+            }
+            finally { Object.DestroyImmediate(fire); }
+        }
+
+        [Test]
         public void Jackpot_Is25InA7x7OnThePlayer_GatedByTheCounterNotByReelHp()
         {
             var jackpotGate = FindJackpotGate();
@@ -200,9 +221,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             var pc = jackpotGate.Conditions.OfType<PcJackpotCountdown>().FirstOrDefault();
             Assert.IsNotNull(pc,
-                "El jackpot tiene que gatearse por el contador. Un chequeo por HP de los rodillos " +
-                "nunca vería la cancelación: con el mínimo de 6 contra 3 de vida, 'dañado y vivo' " +
-                "no existe.");
+                "El jackpot tiene que gatearse por el contador y no por la vida de los rodillos. " +
+                "La ficha cancela la cuenta al DAÑAR un rodillo, no al romperlo: con 60 de vida " +
+                "'dañado y vivo' es el caso normal, y un chequeo por HP le sacaría al jugador su " +
+                "única palanca hasta el segundo golpe.");
             Assert.AreEqual(IntComparison.Equal, pc.Comparison);
             Assert.AreEqual(0, pc.Value, "El jackpot se marca cuando la cuenta llega a 0.");
             Assert.IsTrue(pc.RequireCounting,
@@ -213,7 +235,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(ThreatShape.SquareAroundPlayer, mark.Shape);
             Assert.AreEqual(3, mark.Size, "Size 3 ⇒ 7×7.");
             Assert.AreEqual(25, mark.Damage, "Jackpot = 25.");
-            Assert.LessOrEqual(mark.Damage, 25, "Techo de daño de piso 1 = 25 por golpe.");
+            Assert.Greater(mark.Damage, BandidaAssetBuilder.ArmDamage,
+                "El jackpot tiene que ser el golpe grande. Si el brazo lo alcanza, la cuenta deja " +
+                "de ser la amenaza que ordena el turno y el jefe pasa a leerse como un melee más.");
         }
 
         [Test]
@@ -236,30 +260,66 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Arm_Is9InA3x3AroundSelf_GatedByAdjacency()
+        public void Arm_Is12OfDirectMelee_GatedByAdjacency_WithGateAndNodeMeasuringTheSame()
         {
-            var armGate = _root.Children
-                .SelectMany(c => Descendants(c).OfType<AINode_If>())
-                .FirstOrDefault(i => i.Conditions != null && i.Conditions.OfType<PcTargetInRange>().Any());
+            var armGate = FindArmGate();
 
             Assert.IsNotNull(armGate, "No hay gate de adyacencia para el brazo.");
             var range = armGate.Conditions.OfType<PcTargetInRange>().First();
             Assert.AreEqual(1, range.Range, "El brazo es adyacente: un paso atrás lo esquiva.");
             Assert.AreEqual(DistanceMetric.Chebyshev, range.Metric,
-                "El gate tiene que cubrir el mismo 3×3 que marca el brazo, diagonales incluidas.");
+                "Chebyshev: el brazo alcanza las diagonales, que es por donde se llega a los " +
+                "rodillos de las puntas.");
 
-            var mark = Descendants(armGate.Then).OfType<AINode_TelegraphMark>().FirstOrDefault();
-            Assert.IsNotNull(mark);
-            Assert.AreEqual(ThreatShape.SquareAroundSelf, mark.Shape, "El brazo sale del propio jefe.");
-            Assert.AreEqual(1, mark.Size, "Size 1 ⇒ 3×3.");
-            Assert.AreEqual(9, mark.Damage, "Brazo = 9.");
+            var arm = armGate.Then as AINode_BandidaArm;
+            Assert.IsNotNull(arm,
+                "El brazo tiene que ser AINode_BandidaArm colgado directo del gate. Como marca de " +
+                "3×3 avisaba un turno antes y se esquivaba con un paso: era daño que nunca entraba.");
+            Assert.AreEqual(12, arm.Damage, "Brazo = 12 directos.");
+            Assert.AreEqual(range.Range, arm.Range,
+                "El nodo se auto-gatea: si mide otro alcance que el If, un rewire lo convierte en " +
+                "un golpe a distancia — justo lo que el jefe atornillado a la pared no puede tener.");
+            Assert.AreEqual(range.Metric, arm.Metric,
+                "Gate y nodo tienen que compartir métrica o una de las dos mitades miente sobre " +
+                "las diagonales.");
+        }
+
+        [Test]
+        public void Arm_HasNoMarkAndNeverSharesATurnWithTheJackpotMark()
+        {
+            var pool = FindActionPool();
+            var armGate = FindArmGate();
+            var jackpotGate = FindJackpotGate();
+
+            // Sin los gates, los IsEmpty de abajo pasarían sobre listas vacías y el test taparía
+            // justo el árbol desarmado que tiene que denunciar.
+            Assert.IsNotNull(armGate, "No hay gate de adyacencia para el brazo.");
+            Assert.IsNotNull(jackpotGate, "No hay gate de jackpot en el pool de acción.");
+
+            Assert.IsEmpty(Descendants(armGate).OfType<AINode_TelegraphMark>().ToList(),
+                "El brazo no marca: es el precio fijo de desarmar de cerca, no una amenaza que " +
+                "compita por la lectura con el número del jackpot.");
+            Assert.AreEqual(1, Descendants(_root).OfType<AINode_TelegraphMark>().Count(),
+                "Queda una sola marca en todo el árbol —la del jackpot—: una amenaza telegrafiada " +
+                "por turno se lee mejor.");
+
+            Assert.IsTrue(
+                pool.Children.Any(c => ReferenceEquals(c, armGate)) &&
+                pool.Children.Any(c => ReferenceEquals(c, jackpotGate)),
+                "Los dos gates tienen que colgar del MISMO Selector: es el corto-circuito al primer " +
+                "éxito lo que garantiza que el jefe no marque el jackpot y baje el brazo en el " +
+                "mismo turno.");
+            Assert.IsEmpty(Descendants(jackpotGate).OfType<AINode_BandidaArm>().ToList(),
+                "El brazo no puede vivir dentro de la rama del jackpot: ahí los dos resolverían " +
+                "juntos y el Selector dejaría de separarlos. (Lo que sí puede sumarse es el " +
+                "jackpot que COBRA, marcado el turno anterior, más el brazo de este: 25 + 12 es lo " +
+                "que cuesta quedarse pegado a la máquina ignorando la cuenta.)");
         }
 
         [Test]
         public void ActionPool_IsASelectorEndingInWait_SoJackpotAndArmNeverShareATurn()
         {
-            var pool = _root.Children.OfType<AINode_Selector>()
-                .First(s => Descendants(s).OfType<AINode_TelegraphMark>().Any());
+            var pool = FindActionPool();
 
             Assert.IsInstanceOf<AINode_Wait>(pool.Children.Last(),
                 "El pool tiene que cerrar en Wait: sin fallback el Selector devuelve Failed y " +
@@ -288,27 +348,37 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 BandidaAssetBuilder.PopulateEnemyData(boss, _reelData, null);
 
                 Assert.AreEqual("boss.one_armed", boss.EntityId);
-                Assert.AreEqual(140, boss.BaseHP);
+                Assert.AreEqual(280, boss.BaseHP,
+                    "HP recalibrado por la simulación de 3000 peleas: 140 → 280. No tocar sin re-simular.");
                 Assert.AreEqual(20, boss.BaseAttack);
                 Assert.AreEqual("combo.ladder", boss.WeaknessComboId,
                     "Debilidad: la mano que no alinea (escalera).");
                 Assert.AreEqual(1.5f, boss.WeaknessMultiplierOverride, 0.0001f);
                 Assert.AreEqual(15, boss.MinGoldDrop);
                 Assert.AreEqual(23, boss.MaxGoldDrop);
+                Assert.AreEqual(1, boss.BaseAttackRange,
+                    "El único ataque directo del jefe es el brazo, adyacente. Un rango mayor acá " +
+                    "le daría alcance a la máquina atornillada a la pared.");
                 Assert.IsInstanceOf<AINode_Sequence>(boss.AIRoot);
             }
             finally { Object.DestroyImmediate(boss); }
         }
 
         [Test]
-        public void PopulateReelData_IsAThreeHpObjectThatDoesNothing()
+        public void PopulateReelData_IsASixtyHpWallThatDoesNothing()
         {
             var reel = ScriptableObject.CreateInstance<EnemyDataSO>();
             try
             {
                 BandidaAssetBuilder.PopulateReelData(reel, null);
 
-                Assert.AreEqual(3, reel.BaseHP, "Tu mínimo de 6 ya parte un rodillo de 3.");
+                Assert.AreEqual(60, reel.BaseHP,
+                    "Rodillo = 60. Contra el turno mediano del jugador (42) romper uno cuesta casi " +
+                    "un turno entero de daño, y eso es lo que vuelve 'cuál rompo y cuándo' una " +
+                    "decisión. A 3 de vida cualquier golpe partía cualquier rodillo y la pelea no " +
+                    "preguntaba nada.");
+                Assert.GreaterOrEqual(reel.BaseHP, 50, "La ficha pide la banda 50-70.");
+                Assert.LessOrEqual(reel.BaseHP, 70, "La ficha pide la banda 50-70.");
                 Assert.AreEqual(0, reel.BaseAttack, "El rodillo es un objeto: no pega.");
                 Assert.IsInstanceOf<AINode_Wait>(reel.AIRoot, "El rodillo no actúa en su turno.");
             }
@@ -326,6 +396,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private AINode_If FindJackpotGate() =>
             _root.Children.SelectMany(c => Descendants(c).OfType<AINode_If>())
                 .FirstOrDefault(i => i.Conditions != null && i.Conditions.OfType<PcJackpotCountdown>().Any());
+
+        private AINode_If FindArmGate() =>
+            _root.Children.SelectMany(c => Descendants(c).OfType<AINode_If>())
+                .FirstOrDefault(i => i.Conditions != null && i.Conditions.OfType<PcTargetInRange>().Any());
+
+        /// <summary>El Selector que elige la acción del turno: jackpot XOR brazo XOR nada.</summary>
+        private AINode_Selector FindActionPool() =>
+            _root.Children.OfType<AINode_Selector>()
+                .First(s => Descendants(s).OfType<PcJackpotCountdown>().Any());
 
         private int IndexOfChildContaining<T>() where T : class =>
             _root.Children.FindIndex(c => Descendants(c).OfType<T>().Any());

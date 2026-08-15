@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Rollgeon.Combat.AI.Bosses.Generala;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
@@ -23,16 +24,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>El jefe.</b> Cinco dados propios sobre la mesa (objetos de 4 HP). Cada turno tira los que
-    /// le queden vivos, los corre por el mismo detector de combos que la mano del jugador, y el
-    /// combo que sale <b>es</b> el ataque: la Escalera una franja, el Full dos áreas, el Póker un
-    /// 5×5, la Generala casi toda la sala. Romperle un dado le borra una categoría.
+    /// <b>El jefe.</b> Cinco dados propios sobre la mesa (objetos de <see cref="DiceHp"/> HP que
+    /// además bloquean el paso). Cada turno tira los que le queden vivos, los corre por el mismo
+    /// detector de combos que la mano del jugador, y el combo que sale <b>es</b> el ataque: la
+    /// Escalera una franja, el Full dos áreas, el Póker un 5×5, la Generala ocho parches de 3×3.
+    /// Romperle un dado le borra una categoría y le abre un hueco a la sala: un golpe, dos
+    /// consecuencias.
     /// </para>
     /// <para>
-    /// <b>El cubilete.</b> Los turnos impares baja el cubilete: 3×3 alrededor suyo, 12 de daño. Es
-    /// el peaje de estar rompiéndole la mano, y va por un canal de telegraph secundario
-    /// (<see cref="AINode_AuxTelegraph"/>) porque <c>IThreatenedAreaService</c> guarda una sola
-    /// marca por fuente y la mano ya usa la principal.
+    /// <b>El cubilete.</b> Cada vez que tira, baja la copa sobre quien esté pegado:
+    /// <see cref="CupSlamDamage"/> de daño melee directo, sin aviso previo
+    /// (<see cref="AINode_GeneralaCupSlam"/>). Es el precio de romper de cerca — el resto de su daño
+    /// se avisa una ronda antes y se esquiva caminando.
     /// </para>
     /// </remarks>
     public static class GeneralaAssetBuilder
@@ -46,14 +49,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossEntityId = "boss.la_generala";
         public const string DiceEntityId = "obj.dado_casa";
 
-        /// <summary>Canal del telegraph secundario del cubilete. Compartido por Mark y Execute.</summary>
-        public const string CupChannelId = "generala.cubilete";
-
         // ---- Números de la ficha ------------------------------------------------------
 
-        public const int BossHp = 250;
+        /// <summary>
+        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
+        /// 250 son seis turnos — no alcanza para que la mesa se arme, se rompa y se reponga.
+        /// </summary>
+        public const int BossHp = 560;
         public const int BossAttack = 40;
-        public const int DiceHp = 4;
+
+        /// <summary>
+        /// Vida de cada dado. Con el golpe mínimo del jugador en 6, un dado de 4 HP se rompe de
+        /// cualquier roce y desarmarle la mesa es un trámite de cinco turnos que no cuesta nada. A
+        /// 45 romper un dado cuesta un golpe entero: cinco dados son cinco golpes que no fueron al
+        /// jefe, y esa es la decisión.
+        /// </summary>
+        public const int DiceHp = 45;
+
         public const int HandSize = 5;
 
         /// <summary>Turnos del boss que tarda en reponer la mesa entera.</summary>
@@ -72,8 +84,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public const int GeneralaDamage = 45;
 
-        /// <summary>Daño del cubilete (peaje de la mesa, turnos impares).</summary>
-        public const int CupTollDamage = 12;
+        /// <summary>
+        /// Daño del cubilete. Es un golpe melee directo contra quien esté pegado cuando ella tira
+        /// (<see cref="AINode_GeneralaCupSlam"/>), no un área avisada: el único aviso es la
+        /// distancia, y esa la elige el jugador.
+        /// </summary>
+        public const int CupSlamDamage = 18;
 
         public const float Phase2HpThreshold = 0.5f;
         public const float WeaknessMultiplier = 1.5f;
@@ -174,14 +190,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             new Color(0.34f, 0.38f, 0.46f),
             new Color(0.20f, 0.23f, 0.30f),
             new Color(0.08f, 0.09f, 0.13f));
-
-        /// <summary>
-        /// Tinte del overlay del cubilete. El default de <see cref="AINode_AuxTelegraph"/> es violeta
-        /// y los canales ya ocupados son naranja (telegraph principal), cyan (hielo del Anotador), oro
-        /// (fichas del Cajero) y rojo (fuego del Croupier): el azul militar es el hueco que queda y
-        /// además es el color de la propia Generala, así que el 3×3 se lee como suyo.
-        /// </summary>
-        public static readonly Color CupOverlayTint = new Color(0.20f, 0.38f, 0.88f, 0.60f);
 
         /// <summary>Cuerpo del dado: marfil de la casa. Compartido — un cubo no justifica un clon.</summary>
         public const string DiceBodyMaterialPath = "Assets/Art/3D/Materials/Mat_Bone.mat";
@@ -284,7 +292,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
-        /// <summary>Ficha del wrapper del dado: 4 HP ⇒ barra propia, y collider Box porque es un cubo.</summary>
+        /// <summary>Ficha del wrapper del dado: barra propia y collider Box, porque es un cubo.</summary>
         public static BossWrapperSpec BuildDiceSpec(ArtFit fit)
         {
             return new BossWrapperSpec
@@ -295,7 +303,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 MaterialsFolder = MaterialsFolder,
                 Collider = ColliderKind.Box,
 
-                // Tiene 4 HP y romperlo es la mecánica: sin barra no hay forma de saber cuánto falta.
+                // Romperlo es la mecánica y cuesta un golpe entero: sin barra no hay forma de saber
+                // cuánto falta, y el jugador no puede decidir si le conviene seguir.
                 AddHealthBar = true,
                 HealthBarOffset = fit.HealthBarOffset,
 
@@ -659,8 +668,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 "The house playing your own game. Five dice of her own on the table, the same combo " +
                 "sheet you use, and one hand per round. Her roll is public before it detonates: you " +
                 "see the five numbers and you know what is coming. Break a die and you erase a " +
-                "category — with four she cannot roll Generala, with three she loses Poker. Walking " +
-                "up to the table is not free: on odd turns the dice cup comes down around her.";
+                "category — with four she cannot roll Generala, with three she loses Poker — and you " +
+                "open a hole in a room made of her own dice. Walking up to the table is not free: " +
+                "every roll brings the cup down on whoever is standing next to her.";
 
             boss.BaseHP = BossHp;
             boss.BaseAttack = BossAttack;
@@ -697,8 +707,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             dice.EntityId = DiceEntityId;
             dice.DisplayName = "Dado de la Casa";
             dice.Description =
-                "One of the five dice the house rolls. Four health, no attack: it just sits on the " +
-                "table being part of her hand until you walk over and break it.";
+                "One of the five dice the house rolls. No attack of its own — it sits on the table " +
+                "being part of her hand and blocking the way. Breaking one costs you a full swing " +
+                "and erases a category from her sheet.";
 
             dice.BaseHP = DiceHp;
             dice.BaseAttack = 0;
@@ -730,9 +741,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Árbol de decisión del jefe. Orden del turno: cobra los dos avisos pendientes, corre el
-        /// gate de fase, repone la mesa, tira la mano, marca el área del combo y cierra con el
-        /// cubilete si el turno es impar.
+        /// Árbol de decisión del jefe. Orden del turno: cobra el aviso pendiente, corre el gate de
+        /// fase, repone la mesa, tira la mano —bajando el cubilete sobre quien esté pegado— y marca
+        /// el área del combo que le salió.
         /// </summary>
         public static AINode_Sequence BuildAIRoot(EnemyDataSO diceObject)
         {
@@ -743,19 +754,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 1. La mano de la ronda pasada explota con la forma del combo que le salió.
                     new AINode_ExecuteTelegraph(),
 
-                    // 2. Y el cubilete de la ronda pasada cobra su peaje, por su propio canal.
-                    new AINode_AuxTelegraph
-                    {
-                        Step = AINode_AuxTelegraph.TelegraphStep.Execute,
-                        ChannelId = CupChannelId,
-                    },
-
-                    // 3. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
+                    // 2. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
                     //    que cruza el umbral. En Selector[gate, Wait] para que un fallo del setup
                     //    (sin ComboLog, sin registry) no le cancele el turno.
                     Isolate(BuildPhaseTwoGate()),
 
-                    // 4. La mesa: cinco dados, reposición completa cada TableRefillTurns turnos.
+                    // 3. La mesa: cinco dados, reposición completa cada TableRefillTurns turnos.
                     //    Sin Once — el nodo se auto-gatea y necesita tickear para reponer.
                     Isolate(new AINode_SpawnReinforcements
                     {
@@ -764,7 +768,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         RespawnDelayTurns = TableRefillTurns,
                     }),
 
-                    // 5. Tira los dados vivos y canta el combo (público un turno antes de detonar).
+                    // 4. Tira los dados vivos y canta el combo (público un turno antes de detonar).
                     new AINode_RollHand
                     {
                         SizeSource = AINode_RollHand.HandSizeSource.AliveAllies,
@@ -773,14 +777,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala },
                     },
 
+                    // 5. Y con la misma tirada baja el cubilete sobre quien esté pegado. Aislado
+                    //    porque con el jugador lejos devuelve Failed, y un Failed acá le comería
+                    //    la marca de la mano.
+                    Isolate(BuildCupSlam()),
+
                     // 6. La tabla combo → telegraph. Es data: cambiar cuánto pega una mano es
                     //    editar el TelegraphMark de su rama, no tocar código.
                     BuildHandTelegraphTable(),
-
-                    // 7. El cubilete: turnos impares. PcRoundNumber sabe de múltiplos, no de
-                    //    paridad, así que "impar" es el Else de If(múltiplo de 2) — mismo compás
-                    //    que el lápiz del Anotador.
-                    BuildCupTollGate(),
                 },
             };
         }
@@ -894,35 +898,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Turnos impares ⇒ cubilete. El <c>Then</c> (ronda par) es un Wait real, si no el If
-        /// devolvería Failed y abortaría el Sequence del turno.
+        /// El cubilete: melee directo, sin ronda de aviso y sin gate de paridad. Cae en cada tirada
+        /// porque tirar <b>es</b> bajar la copa; el jugador lo esquiva con la única variable que
+        /// controla, que es dónde está parado.
         /// </summary>
-        private static AINode_If BuildCupTollGate()
+        /// <remarks>
+        /// Manhattan 1 a propósito: son las cuatro casillas desde las que él puede pegarle a ella o
+        /// a un dado pegado a ella. La regla queda simétrica y se aprende en un turno — si le
+        /// llegás, te llega.
+        /// </remarks>
+        public static AINode_GeneralaCupSlam BuildCupSlam()
         {
-            return new AINode_If
+            return new AINode_GeneralaCupSlam
             {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcRoundNumber
-                    {
-                        Mode = PcRoundNumber.CompareMode.Multiple,
-                        Value = 2,
-                    },
-                },
-                Then = new AINode_Wait(),
-                Else = Isolate(new AINode_AuxTelegraph
-                {
-                    Step = AINode_AuxTelegraph.TelegraphStep.Mark,
-                    ChannelId = CupChannelId,
-                    Shape = ThreatShape.SquareAroundSelf,
-                    Size = 1, // radio 1 ⇒ 3×3 alrededor suyo
-                    Damage = CupTollDamage,
-                    Kind = AttackKind.BasicAttack,
-
-                    // El violeta default es genérico: con el azul militar el 3×3 se lee como suyo y
-                    // no se confunde con el naranja del telegraph de la mano, que convive con él.
-                    OverlayTint = CupOverlayTint,
-                }),
+                Damage = CupSlamDamage,
+                Range = 1,
+                Metric = DistanceMetric.Manhattan,
+                Kind = AttackKind.BasicAttack,
             };
         }
 

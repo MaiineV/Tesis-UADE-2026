@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.BossHand;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
@@ -18,26 +18,46 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Corre el árbol REAL de La Generala (el que construye <see cref="GeneralaAssetBuilder"/>) y
-    /// verifica el compás del cubilete: <b>baja en los turnos impares y no en los pares</b>, sin
-    /// llevarse puesta la marca de la mano de dados.
+    /// Corre el árbol REAL de La Generala (el que arma <see cref="GeneralaAssetBuilder"/>) turno a
+    /// turno: la mano que tira es pública, el área que marca es la del combo que le salió, y el
+    /// cubilete le cobra <b>en el acto</b> a quien esté pegado cuando tira.
     /// </summary>
     /// <remarks>
-    /// Es el test que cubre el exploit que cerró el cubilete (pegarle a la mesa gratis) y, de paso,
-    /// el bug que existiría si los dos avisos compartieran fuente en <see cref="IThreatenedAreaService"/>.
+    /// <para>
+    /// El cubilete es el precio de romperle la mesa de cerca (ficha "La Generala", piso 3: melee 18
+    /// a quien esté pegado). Sin él los cinco dados se rompen gratis, porque el resto de su daño se
+    /// avisa una ronda antes y se esquiva caminando.
+    /// </para>
+    /// <para>
+    /// El bug que cubre este fixture es de convivencia: el cubilete devuelve <c>Failed</c> con el
+    /// jugador lejos —que es la mitad de la pelea— y un Failed suelto en el Sequence raíz le
+    /// cancelaría al jefe el telegraph de la mano. Los dos ocurren en el mismo turno y ninguno
+    /// puede pisar al otro.
+    /// </para>
     /// </remarks>
     [TestFixture]
-    public class GeneralaCupTollTests
+    public class GeneralaTurnCycleTests
     {
+        /// <summary>Tirada fija que resuelve a Par — el único combo del catálogo de estos tests.</summary>
+        private static readonly int[] ParHand = { 4, 4, 2, 5, 1 };
+
+        private static readonly GridCoord TableTile = new GridCoord(5, 3);
+
+        /// <summary>Manhattan 1: la casilla desde la que el jugador le pega a ella, y ella a él.</summary>
+        private static readonly GridCoord GluedTile = new GridCoord(6, 3);
+
+        /// <summary>Manhattan 2: fuera del cubilete y también fuera del alcance del jugador.</summary>
+        private static readonly GridCoord AwayTile = new GridCoord(7, 3);
+
         private GridManager _grid;
         private ThreatenedAreaService _threat;
         private Rollgeon.Attributes.AttributesManager _attributes;
         private ComboCatalogSO _catalog;
         private readonly List<ScriptableObject> _created = new List<ScriptableObject>();
+        private SpyDamagePipeline _pipeline;
         private EnemyDataSO _dice;
         private Guid _boss;
         private Guid _player;
-        private Guid _cupChannel;
 
         [SetUp]
         public void SetUp()
@@ -63,6 +83,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _catalog.EditorAdd(par);
             ServiceLocator.AddService<ComboCatalogSO>(_catalog);
 
+            _pipeline = new SpyDamagePipeline();
+
             _dice = ScriptableObject.CreateInstance<EnemyDataSO>();
             _created.Add(_dice);
 
@@ -77,9 +99,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 new Rollgeon.Attributes.Stats.Health(GeneralaAssetBuilder.BossHp));
             _attributes.Register(_boss, bossStats);
 
-            _grid.Register(_boss, new GridCoord(5, 3));
-            _grid.Register(_player, new GridCoord(6, 3)); // Pegado a la mesa: dentro del anillo.
-            _cupChannel = AINode_AuxTelegraph.ChannelGuid(_boss, GeneralaAssetBuilder.CupChannelId);
+            _grid.Register(_boss, TableTile);
+            _grid.Register(_player, GluedTile);
         }
 
         [TearDown]
@@ -93,59 +114,64 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _created.Clear();
         }
 
+        // ======================================================================
+        // El cubilete
+        // ======================================================================
+
         [Test]
-        public void Turn_OnAnOddRound_DropsTheCupTollAroundHerself()
+        public void Turn_WithThePlayerGluedToTheTable_ChargesTheCupSlamOnTheSpot()
         {
-            // Arrange
+            // Arrange — el jugador arranca pegado, que es de donde le rompe los dados.
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
+
+            // Act
+            root.Tick(NewContext(roundIndex: 1));
+
+            // Assert — tirar ES bajar la copa: el golpe entra en el mismo turno, sin marca previa.
+            CollectionAssert.AreEqual(new[] { GeneralaAssetBuilder.CupSlamDamage }, DamageAmounts(),
+                "El único daño del primer turno tiene que ser el cubilete, y por lo que pide la ficha.");
+            Assert.AreEqual(_boss, _pipeline.Resolved[0].SourceId);
+            Assert.AreEqual(_player, _pipeline.Resolved[0].TargetId);
+        }
+
+        [Test]
+        public void Turn_WithThePlayerTwoTilesFromTheTable_ChargesNothing()
+        {
+            // Arrange — la distancia es el único aviso que tiene el cubilete, y la elige el jugador.
+            MovePlayerTo(AwayTile);
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
 
             // Act
             root.Tick(NewContext(roundIndex: 1));
 
             // Assert
-            Assert.IsTrue(_threat.HasPending(_cupChannel),
-                "Turno impar: el cubilete tiene que quedar marcado.");
-            Assert.IsTrue(_threat.TryConsume(_cupChannel, out var cup));
-            Assert.AreEqual(GeneralaAssetBuilder.CupTollDamage, cup.Damage);
-            Assert.AreEqual(9, cup.Tiles.Count, "3×3 alrededor suyo.");
+            CollectionAssert.IsEmpty(_pipeline.Resolved,
+                "El cubilete es exactamente el precio de estar pegado: a distancia no cobra nada.");
         }
 
         [Test]
-        public void Turn_OnAnEvenRound_DropsNoCupToll()
+        public void Turn_ChargesTheCupSlam_EveryRoundThePlayerStaysGlued()
         {
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 2));
-
-            // Assert
-            Assert.IsFalse(_threat.HasPending(_cupChannel),
-                "Turno par: la mesa no cobra peaje — es la ventana para romperle dados.");
-        }
-
-        [Test]
-        public void Turn_AlternatesTheCupToll_RoundAfterRound()
-        {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
-            var marked = new List<bool>();
-
-            // Act — cinco rondas seguidas del mismo árbol (mismo instance state que en combate).
+            // Act — cinco rondas seguidas del mismo árbol (mismo instance state que en combate). La
+            // marca de la mano se limpia entre turnos para que lo único que llegue al pipeline sea
+            // el cubilete.
             for (int round = 1; round <= 5; round++)
             {
                 root.Tick(NewContext(round));
-                marked.Add(_threat.HasPending(_cupChannel));
-                _threat.Clear(_cupChannel); // El aviso se cobra al turno siguiente; acá solo medimos.
+                _threat.Clear(_boss);
             }
 
-            // Assert
-            Assert.AreEqual(new[] { true, false, true, false, true }, marked,
-                "El cubilete tiene que seguir el compás impar/par (el mismo que el lápiz del Anotador).");
+            // Assert — no hay compás par/impar: quedarse en la mesa no tiene ronda franca.
+            CollectionAssert.AreEqual(
+                Enumerable.Repeat(GeneralaAssetBuilder.CupSlamDamage, 5), DamageAmounts(),
+                "Cinco tiradas pegado a la mesa son cinco cubiletes.");
         }
 
         [Test]
-        public void Turn_OnAnOddRound_KeepsBothTheHandMarkAndTheCupToll()
+        public void Turn_LandsTheCupSlam_WithoutEatingTheHandMark()
         {
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
@@ -153,12 +179,37 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert — dos avisos, dos fuentes: la mano por la del boss, el cubilete por su canal.
+            // Assert — el cubilete ya cobró y la mano quedó marcada por el canal del boss.
+            CollectionAssert.Contains(DamageAmounts(), GeneralaAssetBuilder.CupSlamDamage,
+                "El cubilete tiene que haber cobrado en este mismo turno.");
             Assert.IsTrue(_threat.HasPending(_boss),
-                "La mano de dados tiene que quedar marcada por el canal principal del boss.");
-            Assert.IsTrue(_threat.HasPending(_cupChannel),
-                "Y el cubilete por el suyo — uno no puede sobrescribir al otro.");
+                "Y la mano tiene que quedar marcada: el cubilete no puede comerse el telegraph.");
+            Assert.AreEqual(1, _threat.SnapshotPending().Count,
+                "Un solo aviso pendiente — el cubilete no ocupa canal propio, o la tirada valdría " +
+                "dos golpes.");
         }
+
+        [Test]
+        public void Turn_WithThePlayerOutOfTheCupsReach_StillMarksTheHand()
+        {
+            // Arrange — lejos, el nodo del cubilete devuelve Failed. Sin su Selector de aislamiento
+            // ese Failed corta el Sequence raíz y el jefe se queda sin marcar la mano.
+            MovePlayerTo(AwayTile);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
+
+            // Act
+            root.Tick(NewContext(roundIndex: 1));
+
+            // Assert
+            Assert.IsTrue(_threat.TryConsume(_boss, out var hand),
+                "Esquivar el cubilete no puede apagarle el ataque de la ronda.");
+            Assert.AreEqual(GeneralaAssetBuilder.PairDamage, hand.Damage,
+                "Y la marca sigue siendo la del combo que le salió.");
+        }
+
+        // ======================================================================
+        // La mano
+        // ======================================================================
 
         [Test]
         public void Turn_PublishesTheRolledHand_SoThePlayerCanReadItBeforeItDetonates()
@@ -167,11 +218,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
 
             // Act
-            root.Tick(NewContext(roundIndex: 1, faces: new[] { 4, 4, 2, 5, 1 }));
+            root.Tick(NewContext(roundIndex: 1, faces: ParHand));
 
             // Assert
             Assert.IsTrue(BossDiceHandService.ResolveOrCreate().TryGetHand(_boss, out var hand));
-            Assert.AreEqual(new[] { 4, 4, 2, 5, 1 }, hand.Values, "Los cinco números son públicos.");
+            Assert.AreEqual(ParHand, hand.Values, "Los cinco números son públicos.");
             Assert.AreEqual(Rollgeon.Combos.ComboId.Par, hand.ComboId);
         }
 
@@ -182,7 +233,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
 
             // Act
-            root.Tick(NewContext(roundIndex: 2, faces: new[] { 4, 4, 2, 5, 1 }));
+            root.Tick(NewContext(roundIndex: 2, faces: ParHand));
 
             // Assert
             Assert.IsTrue(_threat.TryConsume(_boss, out var hand));
@@ -204,29 +255,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(GeneralaAssetBuilder.BustDamage, hand.Damage);
         }
 
-        [Test]
-        public void Turn_ChargesThePendingCupToll_OnTheFollowingTurn()
-        {
-            // Arrange — el jugador se queda en la mesa con el cubilete cantado.
-            var pipeline = new SpyDamagePipeline();
-            ServiceLocator.AddService<IDamagePipeline>(pipeline);
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice);
-            root.Tick(NewContext(roundIndex: 1, pipeline: pipeline));
-            Assert.IsTrue(_threat.HasPending(_cupChannel), "Precondición: el cubilete quedó marcado.");
-
-            // Act — turno siguiente del jefe.
-            root.Tick(NewContext(roundIndex: 2, pipeline: pipeline));
-
-            // Assert
-            CollectionAssert.Contains(DamageAmounts(pipeline), GeneralaAssetBuilder.CupTollDamage,
-                "Quedarse un turno de más en la mesa tiene que costar el peaje del cubilete.");
-        }
-
         // ======================================================================
         // Helpers
         // ======================================================================
 
-        private AIContext NewContext(int roundIndex, int[] faces = null, IDamagePipeline pipeline = null)
+        private void MovePlayerTo(GridCoord coord) => _grid.Register(_player, coord);
+
+        private AIContext NewContext(int roundIndex, int[] faces = null)
             => new AIContext
             {
                 SelfGuid = _boss,
@@ -234,15 +269,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 SelfMaxHp = GeneralaAssetBuilder.BossHp,
                 Grid = _grid,
                 Attributes = _attributes,
-                DamagePipeline = pipeline,
+                DamagePipeline = _pipeline,
                 RoundIndex = roundIndex,
-                Rng = new ScriptedRandom(faces ?? new[] { 4, 4, 2, 5, 1 }),
+                Rng = new ScriptedRandom(faces ?? ParHand),
             };
 
-        private static List<int> DamageAmounts(SpyDamagePipeline pipeline)
+        private List<int> DamageAmounts()
         {
-            var amounts = new List<int>(pipeline.Resolved.Count);
-            foreach (var ctx in pipeline.Resolved) amounts.Add(ctx.BaseDamage);
+            var amounts = new List<int>(_pipeline.Resolved.Count);
+            foreach (var ctx in _pipeline.Resolved) amounts.Add(ctx.BaseDamage);
             return amounts;
         }
 

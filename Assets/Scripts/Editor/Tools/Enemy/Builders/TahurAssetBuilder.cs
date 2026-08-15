@@ -27,9 +27,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// falta y lo actualiza si ya está.
     /// </para>
     /// <para>
-    /// <b>Ojo con BaseHP.</b> <c>EnemyDataSO.BaseHP</c> tiene <c>[Range(1, 200)]</c> y el Tahúr son
-    /// 290: el valor se escribe bien por código, pero tocar el slider en el Inspector lo clampea a
-    /// 200. Ensanchar ese Range es cambio de fundación — reportado, no aplicado acá.
+    /// <b>Ojo con BaseHP.</b> El Tahúr son 650 — el HP más alto del juego. El <c>[Range]</c> de
+    /// <c>EnemyDataSO.BaseHP</c> se ensanchó a 1000 justamente por él: con el tope viejo el valor se
+    /// escribía bien por código pero el Inspector lo clampeaba al primer roce del slider.
     /// </para>
     /// <para>
     /// <b>Tres capas desde el vestido visual.</b> A las dos de arriba se suma
@@ -73,7 +73,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string EntityId = "boss.tahur";
         public const string DisplayName = "El Tahúr";
 
-        public const int BaseHP = 290;
+        /// <summary>
+        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
+        /// 290 no dejaba jugar el pozo entero. Es el jefe más largo del juego a propósito.
+        /// </summary>
+        public const int BaseHP = 650;
         public const int BaseAttack = 40;
         public const int BaseSpeed = 4;
         public const int MaxEnergy = 3;
@@ -97,6 +101,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int MoveSteps = 3;
         public const int DesiredRange = 1;
 
+        /// <summary>
+        /// El rastrillo: fichas que el pozo sube por ronda, solo, <b>desde la fase 1</b>. Es lo que
+        /// le pone reloj a no jugar — sin él el Castigo se quedaba en 26 mientras el jugador
+        /// esquivara, y renunciar al pozo era una postura estable.
+        /// </summary>
+        public const int RakeChipsPerRound = 1;
+
+        /// <summary>Daño de La Banca — el techo del piso 3, igual que el Castigo con el pozo lleno.</summary>
+        public const int BancaDamage = DamageCeiling;
+
+        /// <summary>Fichas con las que La Banca barre la mesa: el pozo lleno.</summary>
+        public const int BancaChipsThreshold = MaxChips;
+
         /// <summary>Umbral de HP del volteo de la carta (PIDE → LEE).</summary>
         public const float Phase2HpThreshold = 0.40f;
 
@@ -106,7 +123,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// El turno del Tahúr, en orden: cobra el Castigo marcado, voltea la carta si toca,
-        /// liquida y marca, poke si la ronda quedó limpia, canta, se acerca y pone la mesa.
+        /// liquida y marca, poke si la ronda quedó limpia, canta, se acerca, pone la mesa y —con el
+        /// pozo lleno— barre la sala con La Banca.
         /// </summary>
         /// <remarks>
         /// Todo lo que puede fallar va en <c>Selector[nodo, Wait]</c>: en el path no-coroutine un
@@ -164,6 +182,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                     // 7 · Pone la mesa en su posición final.
                     Isolate(BuildMarkTable()),
+
+                    // 8 · La Banca, con el pozo lleno. Va DESPUÉS de la mesa: el hueco de la marca
+                    //     y el paño cian tienen que ser el mismo 3×3, y el paño se pinta recién
+                    //     cuando el jefe terminó de moverse.
+                    Isolate(BuildBanca()),
                 },
             };
         }
@@ -177,6 +200,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 DamageCeiling = DamageCeiling,
                 PayoutPerChip = PayoutPerChip,
                 MaxChips = MaxChips,
+                RakeChipsPerRound = RakeChipsPerRound,
                 MissChipGain = 1,
                 GreedChipGain = 2,
                 ReadChipGain = 2,
@@ -214,6 +238,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public static AINode_TahurMarkTable BuildMarkTable()
             => new AINode_TahurMarkTable { Size = TableSize, Tint = new Color(0f, 0.85f, 1f, 1f) };
+
+        /// <summary>
+        /// La Banca: con el pozo lleno, 45 en toda la sala menos La Mesa. El radio del hueco es el
+        /// mismo <see cref="TableSize"/> que pinta el paño cian — si se separan, el jugador lee una
+        /// zona segura que no lo es.
+        /// </summary>
+        public static AINode_TahurMarkBanca BuildBanca()
+            => new AINode_TahurMarkBanca
+            {
+                ChipsThreshold = BancaChipsThreshold,
+                Damage = BancaDamage,
+                DamageCeiling = DamageCeiling,
+                TableRadius = TableSize,
+                Kind = AttackKind.BasicAttack,
+            };
 
         public static AINode_TahurPoke BuildPoke()
             => new AINode_TahurPoke { Damage = PokeDamage, Range = 1, RequireCleanRound = true };
@@ -485,6 +524,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             Debug.Log($"[TahurAssetBuilder] {(created ? "Creado" : "Actualizado")} '{AssetPath}' " +
                       $"— HP {BaseHP}, castigos {string.Join("/", PotDamageTable)}, poke {PokeDamage}, " +
+                      $"rastrillo +{RakeChipsPerRound}/ronda desde fase 1, " +
+                      $"Banca {BancaDamage} con el pozo en {BancaChipsThreshold}, " +
                       $"visual '{(prefab != null ? VisualPrefabPath : "sin cambios")}'. " +
                       "Falta sumarlo al EnemyCatalog / pool de jefes del piso 3 (wiring de data, a mano).");
 

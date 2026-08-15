@@ -48,8 +48,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 TahurAssetBuilder.PopulateEnemyData(data);
 
                 Assert.AreEqual("boss.tahur", data.EntityId);
-                Assert.AreEqual(290, data.BaseHP,
-                    "HP calibrado el 12/08 por simulación: 250 → 290. No tocar sin re-simular.");
+                Assert.AreEqual(650, data.BaseHP,
+                    "HP recalibrado por la simulación de 3000 peleas: 290 → 650. No tocar sin re-simular.");
                 Assert.AreEqual(40, data.BaseAttack);
                 Assert.AreEqual(60, data.MinGoldDrop, "Gold drop de jefe de piso 3: 60-80.");
                 Assert.AreEqual(80, data.MaxGoldDrop);
@@ -99,6 +99,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void Turn_SweepsWithTheBanca_AfterPaintingTheTable()
+        {
+            int tableIdx = IndexOfSubtreeWith<AINode_TahurMarkTable>();
+            int bancaIdx = IndexOfSubtreeWith<AINode_TahurMarkBanca>();
+
+            Assert.Greater(bancaIdx, -1, "No hay nodo de La Banca en el árbol.");
+            Assert.Greater(bancaIdx, tableIdx,
+                "La Banca marca toda la sala MENOS La Mesa, y le resta las casillas del paño cian " +
+                "tal como quedaron. Marcarla antes de pintar la mesa le restaría el paño de la " +
+                "ronda pasada: el hueco seguro quedaría donde el jefe ya no está.");
+        }
+
+        [Test]
         public void Turn_TicksThePhaseGate_BeforeTheSettle()
         {
             int flipIdx = IndexOfSubtreeWith<AINode_TahurFlipCard>();
@@ -145,6 +158,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(5, settle.MaxChips, "La banca: el pozo tope es 5 fichas.");
             Assert.AreEqual(1, settle.MissChipGain);
             Assert.AreEqual(2, settle.GreedChipGain, "La codicia mueve el pozo dos fichas.");
+            Assert.AreEqual(1, settle.RakeChipsPerRound,
+                "El rastrillo corre desde la fase 1: +1 ficha por ronda. En 0 el pozo sólo se " +
+                "movería con los fallos del jugador y renunciar al pozo volvería a ser una postura " +
+                "estable — el Castigo clavado en 26 y La Banca inalcanzable.");
         }
 
         [Test]
@@ -174,6 +191,27 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Faltar más de 4 escalones usa la última forma, no una quinta inexistente.");
             AssertShape(settle.GreedShape, ThreatShape.ScatteredSquares, 2, 6,
                 "La codicia usa la forma más ancha: 6 cuadrados de 2×2.");
+        }
+
+        [Test]
+        public void Banca_CarriesTheFloorCeiling()
+        {
+            var banca = FindFirst<AINode_TahurMarkBanca>();
+
+            Assert.AreEqual(45, banca.Damage,
+                "La Banca pega el techo del piso 3, igual que el Castigo con el pozo lleno.");
+            Assert.AreEqual(45, banca.DamageCeiling,
+                "Sin el techo, subir el Damage de La Banca pasaría los 45 por golpe del piso 3 " +
+                "sin que nada lo cante.");
+            Assert.AreEqual(5, banca.ChipsThreshold,
+                "Barre la mesa con el pozo lleno, y lleno son las 5 fichas de la banca.");
+
+            Assert.AreEqual(TahurAssetBuilder.TableSize, banca.TableRadius,
+                "El hueco seguro y el paño cian son la misma promesa: si el radio se separa del " +
+                "Size de La Mesa, el jugador lee una zona segura que no lo es.");
+            Assert.AreEqual(FindFirst<AINode_TahurMarkTable>().Size, banca.TableRadius,
+                "El hueco tiene que medir lo que mide el paño que el jugador ve en pantalla, no " +
+                "lo que dice una constante que alguien movió de un solo lado.");
         }
 
         // -----------------------------------------------------------------

@@ -138,19 +138,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =================================================================
 
         [Test]
-        public void Miss_AddsOneChip_AndMarksTwentySixOnThePlayersColumn()
+        public void Miss_AddsOneChip_AndMarksThirtyTwoOnThePlayersColumn()
         {
             Call(3);
             PlayHand(2);
 
             Assert.AreEqual(AIResult.Succeeded, _settle.Tick(NewContext()));
 
-            Assert.AreEqual(1, _wager.Chips, "Cada fallo suma una ficha.");
+            Assert.AreEqual(2, _wager.Chips,
+                "El rastrillo empuja una ficha antes de liquidar y el fallo suma la otra.");
             Assert.AreEqual(TahurSettleOutcome.Miss, _wager.LastOutcome);
             Assert.IsTrue(_wager.MarkedPunishmentThisTurn);
 
             Assert.IsTrue(_threat.TryConsume(_boss, out var area), "El fallo tiene que marcar Castigo.");
-            Assert.AreEqual(26, area.Damage, "Una ficha ⇒ 26.");
+            Assert.AreEqual(32, area.Damage, "Dos fichas ⇒ 32.");
             var xs = area.Tiles.Select(t => t.X).Distinct().ToList();
             Assert.AreEqual(1, xs.Count, "Faltar un escalón marca Column 1: la columna del jugador.");
             Assert.AreEqual(8, xs[0], "El Castigo se centra en donde estaba el jugador.");
@@ -165,11 +166,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             _settle.Tick(NewContext());
 
-            Assert.AreEqual(2, _wager.Chips, "La codicia mueve el pozo dos fichas.");
+            Assert.AreEqual(3, _wager.Chips,
+                "La codicia mueve el pozo dos fichas, encima de la del rastrillo.");
             Assert.AreEqual(TahurSettleOutcome.Greed, _wager.LastOutcome);
 
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
-            Assert.AreEqual(32, area.Damage, "Dos fichas ⇒ 32.");
+            Assert.AreEqual(38, area.Damage, "Tres fichas ⇒ 38.");
             Assert.Greater(area.Tiles.Select(t => t.X).Distinct().Count(), 1,
                 "La codicia usa Scattered 6×2, no una franja.");
         }
@@ -182,9 +184,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             _settle.Tick(NewContext());
 
-            Assert.AreEqual(1, _wager.Chips);
+            Assert.AreEqual(2, _wager.Chips, "Una del rastrillo más la del fallo.");
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
-            Assert.AreEqual(26, area.Damage);
+            Assert.AreEqual(32, area.Damage, "Dos fichas ⇒ 32.");
             Assert.Greater(area.Tiles.Select(t => t.X).Distinct().Count(), 1,
                 "Faltar 4 escalones marca Scattered 4×2, no una franja.");
         }
@@ -218,7 +220,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(1, _pipeline.Contexts.Count, "El cobro resuelve un único daño.");
             var payout = _pipeline.Contexts[0];
-            Assert.AreEqual(36, payout.BaseDamage, "12 × 3 fichas.");
+            Assert.AreEqual(48, payout.BaseDamage,
+                "12 × 4 fichas: las 3 del pozo más la que empujó el rastrillo antes de liquidar.");
             Assert.AreEqual(_boss, payout.TargetId, "El pozo le pega a él, no al jugador.");
             Assert.AreEqual(_player, payout.SourceId);
 
@@ -237,7 +240,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _settle.Tick(NewContext());
 
             Assert.IsEmpty(_pipeline.Contexts, "Cobrar exige estar en La Mesa.");
-            Assert.AreEqual(3, _wager.Chips, "Sin cobro el pozo queda como estaba.");
+            Assert.AreEqual(4, _wager.Chips, "Sin cobro el pozo sólo sube lo que empujó el rastrillo.");
             Assert.IsFalse(_wager.MarkedPunishmentThisTurn, "Armar exacto nunca marca Castigo.");
             Assert.AreEqual(TahurSettleOutcome.Exact, _wager.LastOutcome);
         }
@@ -249,7 +252,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(TahurSettleOutcome.None, _wager.LastOutcome,
                 "En la primera ronda todavía no cantó: no hay nada que liquidar.");
-            Assert.AreEqual(0, _wager.Chips);
+            Assert.AreEqual(1, _wager.Chips,
+                "El rastrillo corre desde la fase 1: la carta sale y el pozo ya arranca en 1.");
             Assert.IsFalse(_threat.HasPending(_boss));
         }
 
@@ -273,12 +277,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =================================================================
 
         [Test]
-        public void FlipCard_InvertsTheCall_AndTurnsOnTheRake()
+        public void FlipCard_InvertsTheCall_AndFixesThePhaseTwoRake()
         {
             TahurAssetBuilder.BuildFlipCard().Tick(NewContext());
 
             Assert.IsTrue(_wager.CallInverted, "El cartel pasa de PIDE a LEE.");
-            Assert.AreEqual(1, _wager.RakeChipsPerRound);
+            Assert.AreEqual(1, _wager.RakeChipsPerRound,
+                "El rastrillo ya venía de fase 1: el volteo no lo enciende, le fija el ritmo — y " +
+                "desde acá la liquidación deja de pisar el valor.");
             Assert.AreEqual(1, _wager.ChipsFloor, "Cobrar deja el pozo en 1, nunca en 0.");
             Assert.IsTrue(_wager.GraceOnNextSettle);
         }
@@ -593,6 +599,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles) { }
             public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, Color tint) { }
+            public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, ThreatOverlayState state,
+                Color? tint = null) { }
             public void Clear(Guid sourceGuid) { }
             public void ClearAll() { }
         }

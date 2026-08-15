@@ -36,10 +36,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Bandida.asset";
         public const string ReelAssetPath = "Assets/Rollgeon/Enemies/ED_Obj_Rodillo.asset";
 
+        /// <summary>
+        /// El fuego que deja el rodillo roto: el <b>mismo</b> asset que el fuego de paño del
+        /// Croupier (6 por terminar el turno adentro, 2 rondas, <c>OnTurnEndInTile</c>).
+        /// </summary>
+        /// <remarks>
+        /// Reusar el asset y no clonar uno "de La Bandida" es deliberado: es la misma sustancia del
+        /// mundo, y dos definiciones gemelas se desincronizan en el primer ajuste de balance. Lo
+        /// construye <c>CroupierAssetBuilder</c>; si todavía no corrió, el menú avisa y el jefe queda
+        /// sin fuego en vez de autorar un asset a espaldas del otro builder.
+        /// </remarks>
+        public const string ReelFireHazardPath = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire.asset";
+
         public const string BossEntityId = "boss.one_armed";
         public const string ReelEntityId = "obj.reel";
 
-        public const int BossHp = 140;
+        /// <summary>
+        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
+        /// 140 moría antes de que la cuenta llegara al primer jackpot.
+        /// </summary>
+        public const int BossHp = 280;
         public const int BossAttack = 20;
         public const int BossSpeed = 4;
         public const int BossEnergy = 3;
@@ -56,16 +72,36 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int JackpotDamage = 25;
         public const int JackpotSize = 3;
 
-        /// <summary>Brazo: 9 en el 3×3 alrededor del jefe. Un paso atrás lo esquiva entero.</summary>
-        public const int ArmDamage = 9;
-        public const int ArmSize = 1;
+        /// <summary>
+        /// Brazo: 12 de melee directo, sin marca y sin área, a quien haya cerrado el turno pegado a
+        /// la máquina.
+        /// </summary>
+        /// <remarks>
+        /// Era una marca de 3×3 sobre el jefe: avisaba un turno antes, se esquivaba con un paso y no
+        /// entraba nunca. Directo, es el precio de desarmar de cerca — y como los rodillos viven en
+        /// el anillo del jefe, romperlos es exactamente estar a su alcance.
+        /// </remarks>
+        public const int ArmDamage = 12;
         public const int ArmRange = 1;
 
         /// <summary>Dos rondas de cuenta antes de marcar; el mark tarda un turno más.</summary>
         public const int CountdownStart = 2;
 
         public const int ReelCount = 3;
-        public const int ReelHp = 3;
+
+        /// <summary>
+        /// Vida del rodillo. La ficha pide 50-70: a 60, con el turno mediano del jugador en 42,
+        /// romper uno cuesta casi un turno entero de daño.
+        /// </summary>
+        /// <remarks>
+        /// Estuvo en 3, y a esa vida no había pelea: cualquier golpe partía cualquier rodillo, así
+        /// que la decisión que define al jefe —cuál rompés y cuándo, sabiendo que el brazo cobra por
+        /// estar cerca y que la casilla queda ardiendo— no existía. La cancelación del jackpot sigue
+        /// siendo por daño y no por rotura (ver <c>IBandidaJackpotService</c>): con 60 de vida el
+        /// caso normal es pegarle y que siga en pie.
+        /// </remarks>
+        public const int ReelHp = 60;
+
         public const int RespawnDelayPhase1 = 2;
         public const int RespawnDelayPhase2 = 1;
 
@@ -91,9 +127,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossPortraitPath = "Assets/Art/2D/Symbols/Sprites/Casino_004D.png";
 
         /// <summary>
-        /// Arte del rodillo: una tragamonedas real. Sin <c>Animator</c> ni rig, que es justo lo que
-        /// tiene que ser un objeto de 3 de vida — el jugador no puede confundirlo con un enemigo que
-        /// actúa.
+        /// Arte del rodillo: una tragamonedas real. Sin <c>Animator</c> ni rig — quieto es como el
+        /// jugador distingue una pared que hay que romper de un enemigo que va a actuar.
         /// </summary>
         public const string ReelArtPrefabPath = "Assets/Prefabs/Props/slotv02.prefab";
 
@@ -163,7 +198,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <remarks>
         /// <para>Orden del <c>Sequence</c> raíz:</para>
         /// <list type="number">
-        /// <item>ExecuteTelegraph — cobra la marca del turno anterior (jackpot o brazo).</item>
+        /// <item>ExecuteTelegraph — cobra la marca del turno anterior (el jackpot: es la única
+        /// amenaza telegrafiada que le queda al jefe).</item>
         /// <item>Gate de Fase 2 — HOLD del rodillo del medio + reposición a 1 turno.</item>
         /// <item>TickJackpot — baja el número gigante.</item>
         /// <item>Fila de rodillos — arma, detecta rotos y repone (rearmando la cuenta).</item>
@@ -182,11 +218,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// comería una de las dos rondas de aviso que compró rompiéndolo.
         /// </para>
         /// <para>
-        /// El <c>Selector</c> del pool es lo que garantiza que jackpot y brazo nunca resuelven el
-        /// mismo turno: una amenaza por turno se lee mejor.
+        /// El <c>Selector</c> del pool es lo que garantiza que el jefe no marque el jackpot y pegue
+        /// con el brazo en el mismo turno: una decisión por turno se lee mejor. Lo que sí puede
+        /// sumarse es el jackpot que <b>cobra</b> (marcado el turno anterior) más el brazo de este,
+        /// y es a propósito: 25 + 12 es lo que cuesta quedarse pegado a la máquina ignorando la
+        /// cuenta, y las dos mitades están cada una por debajo del techo por golpe del piso.
         /// </para>
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(EnemyDataSO reelData)
+        public static AINode_Sequence BuildAIRoot(EnemyDataSO reelData, HazardDefinitionSO reelFire = null)
         {
             return new AINode_Sequence
             {
@@ -195,7 +234,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     new AINode_ExecuteTelegraph(),
                     IsolateFailure(BuildPhaseTwoGate()),
                     new AINode_TickJackpot(),
-                    IsolateFailure(BuildReelRow(reelData)),
+                    IsolateFailure(BuildReelRow(reelData, reelFire)),
                     BuildActionPool(),
                 },
             };
@@ -203,7 +242,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Gate de Fase 2 (50% HP): traba el rodillo del medio y baja la reposición a un turno.
-        /// Ningún número de daño cambia — el jackpot sigue en 25 y el brazo en 9. Cambia la
+        /// Ningún número de daño cambia — el jackpot sigue en 25 y el brazo en 12. Cambia la
         /// frecuencia y la distancia.
         /// </summary>
         private static AINode_If BuildPhaseTwoGate()
@@ -239,11 +278,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// La fila de rodillos. <b>Sin <c>Once</c></b>: el nodo se auto-gatea pero necesita tickear
         /// cada turno para correr los relojes de reposición.
         /// </summary>
-        private static AINode_SpawnReels BuildReelRow(EnemyDataSO reelData)
+        /// <remarks>
+        /// <paramref name="reelFire"/> es opcional para que los tests de wiring armen el árbol sin
+        /// cargar assets; el menú siempre lo pasa. Sin él el rodillo roto deja piso limpio y la
+        /// casilla desde la que se desarma el siguiente sale gratis.
+        /// </remarks>
+        private static AINode_SpawnReels BuildReelRow(EnemyDataSO reelData, HazardDefinitionSO reelFire)
         {
             return new AINode_SpawnReels
             {
                 ReelData = reelData,
+                OnBreakHazard = reelFire,
                 Count = ReelCount,
                 RespawnDelayTurns = RespawnDelayPhase1,
                 CountdownOnRespawn = CountdownStart,
@@ -256,6 +301,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// nada. El <c>Wait</c> final es obligatorio — sin él el Selector devuelve <c>Failed</c> y
         /// aborta el turno.
         /// </summary>
+        /// <remarks>
+        /// El brazo va gateado por <c>PcTargetInRange</c> aunque <c>AINode_BandidaArm</c> también
+        /// mida la distancia: la condición queda declarada en el árbol —visible y editable desde el
+        /// editor de árboles— en vez de escondida adentro del nodo. La medición del nodo es la red:
+        /// gate y nodo tienen que compartir métrica, si no una de las dos mitades miente sobre las
+        /// diagonales.
+        /// </remarks>
         private static AINode_Selector BuildActionPool()
         {
             return new AINode_Selector
@@ -293,15 +345,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     {
                         Conditions = new List<BasePreCondition>
                         {
-                            // Chebyshev: el rango del gate tiene que coincidir con el área 3×3 que
-                            // marca el brazo, si no el jefe telegrafía en diagonal y no llega.
+                            // Chebyshev en los dos lados: el brazo alcanza las diagonales, que es
+                            // por donde se llega a los rodillos de las puntas.
                             new PcTargetInRange { Range = ArmRange, Metric = DistanceMetric.Chebyshev },
                         },
-                        Then = new AINode_TelegraphMark
+                        Then = new AINode_BandidaArm
                         {
-                            Shape = ThreatShape.SquareAroundSelf,
-                            Size = ArmSize,
                             Damage = ArmDamage,
+                            Range = ArmRange,
+                            Metric = DistanceMetric.Chebyshev,
                         },
                     },
                     new AINode_Wait(),
@@ -326,11 +378,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <remarks>
-        /// <paramref name="visualPrefab"/> y <paramref name="portrait"/> son opcionales para que los
-        /// tests de wiring puedan verificar números sin cargar assets; el menú siempre los pasa.
+        /// <paramref name="visualPrefab"/>, <paramref name="portrait"/> y <paramref name="reelFire"/>
+        /// son opcionales para que los tests de wiring puedan verificar números sin cargar assets; el
+        /// menú siempre los pasa.
         /// </remarks>
         public static void PopulateEnemyData(EnemyDataSO boss, EnemyDataSO reelData,
-            GameObject visualPrefab, Sprite portrait = null)
+            GameObject visualPrefab, Sprite portrait = null, HazardDefinitionSO reelFire = null)
         {
             if (boss == null) return;
 
@@ -356,12 +409,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (visualPrefab != null) boss.VisualPrefab = visualPrefab;
             if (portrait != null) boss.Portrait = portrait;
 
-            boss.AIRoot = BuildAIRoot(reelData);
+            boss.AIRoot = BuildAIRoot(reelData, reelFire);
         }
 
         /// <summary>
-        /// El rodillo: objeto de 3 de vida que no actúa. Su árbol es un <c>Wait</c> — está en la cola
-        /// de turnos solo para que la limpieza de fin de combate lo levante junto con el resto.
+        /// El rodillo: pared de <see cref="ReelHp"/> de vida que no actúa. Su árbol es un
+        /// <c>Wait</c> — está en la cola de turnos solo para que la limpieza de fin de combate lo
+        /// levante junto con el resto.
         /// </summary>
         public static void PopulateReelData(EnemyDataSO reel, GameObject visualPrefab,
             Sprite portrait = null)
@@ -371,8 +425,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             reel.EntityId = ReelEntityId;
             reel.DisplayName = "Reel";
             reel.Description =
-                "One of La Bandida's three reels. Three hit points, bolted in a row against the " +
-                "wall: any hit breaks it and cancels the jackpot count.";
+                "One of La Bandida's three reels: a wall bolted in a row against hers. Any hit " +
+                "cancels the jackpot count, but breaking one costs most of a turn — and the tile " +
+                "it leaves behind burns.";
 
             reel.BaseHP = ReelHp;
             reel.BaseAttack = 0;
@@ -453,7 +508,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// Collider <see cref="ColliderKind.Box"/> y no capsule: la máquina es una caja, y el pick de
-        /// un blanco de 3 de vida que hay que romper rápido tiene que cubrir la silueta entera.
+        /// un blanco al que hay que meterle varios turnos de daño tiene que cubrir la silueta entera.
         /// </remarks>
         public static BossWrapperSpec BuildReelWrapperSpec(
             string outputPrefabPath = ReelVisualPrefabPath,
@@ -534,12 +589,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var bossPortrait = SpriteImportUtility.EnsureSpriteImport(BossPortraitPath);
             var reelPortrait = SpriteImportUtility.EnsureSpriteImport(ReelPortraitPath);
 
+            var reelFire = LoadReelFire();
+
             var reel = LoadOrCreate(ReelAssetPath);
             PopulateReelData(reel, reelVisual, reelPortrait);
             EditorUtility.SetDirty(reel);
 
             var boss = LoadOrCreate(BossAssetPath);
-            PopulateEnemyData(boss, reel, bossVisual, bossPortrait);
+            PopulateEnemyData(boss, reel, bossVisual, bossPortrait, reelFire);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
@@ -549,7 +606,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"'{BossVisualPrefabPath}' + '{ReelVisualPrefabPath}'. " +
                       "Falta a mano: la UI del número gigante " +
                       "(TypedEvent<JackpotCountdownPayload>) y el alta del jefe en el " +
-                      "BossFloorManagerSO del piso 1.");
+                      "BossFloorManagerSO de su piso.");
+        }
+
+        /// <summary>
+        /// El fuego del rodillo roto, tomado del asset del Croupier. Devuelve <c>null</c> con un
+        /// aviso si ese builder todavía no corrió: preferimos un jefe sin fuego —y un log que dice
+        /// exactamente qué correr— antes que autorar acá una copia del hazard de otro jefe.
+        /// </summary>
+        private static HazardDefinitionSO LoadReelFire()
+        {
+            var fire = AssetDatabase.LoadAssetAtPath<HazardDefinitionSO>(ReelFireHazardPath);
+            if (fire != null) return fire;
+
+            Debug.LogWarning($"[BandidaAssetBuilder] No está '{ReelFireHazardPath}': el rodillo roto " +
+                             "va a dejar piso limpio. Corré Tools/Rollgeon/Bosses/Build Croupier y " +
+                             "volvé a correr este menú.");
+            return null;
         }
 
         /// <summary>

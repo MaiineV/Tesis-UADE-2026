@@ -40,17 +40,19 @@ namespace Rollgeon.Editor.Tools
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
-            // Piso 1: el boss actual queda + los dos nuevos, pesos iguales.
+            // Piso 1: el boss actual queda + el Croupier, pesos iguales.
             // Pisos 2 y 3: los nuevos suplantan al viejo — que queda en el pool
             // desactivado (Enabled = off) para poder re-activarlo desde el Inspector.
+            // La Bandida va en el 2: cuatro blancos y un turno cruzan dos palancas a la vez,
+            // y su jackpot pega el 60% de la vida — el piso 1 enseña de a una.
             var bp1 = BuildPool("BP_Floor1", new[]
             {
                 Entry(SunkenGrandPath, 1f, true),
                 Entry(CroupierPath, 1f, true),
-                Entry(BandidaPath, 1f, true),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
+                Entry(BandidaPath, 1f, true),
                 Entry(CajeroPath, 1f, true),
                 Entry(AnotadorPath, 1f, true),
                 Entry(SecurityBossPath, 1f, false),

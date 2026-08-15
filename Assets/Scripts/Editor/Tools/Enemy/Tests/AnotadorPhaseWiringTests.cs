@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -9,13 +10,16 @@ using Rollgeon.Entities;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEngine;
+// Alias explícito (mismo criterio que HazardService): con `using System` en el archivo —lo pide
+// Func<> de los matchers— `Object` quedaría ambiguo contra System.Object y el teardown no compilaría.
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
     /// Wiring del árbol de El Anotador (piso 2) validado <b>en memoria</b> vía
     /// <see cref="AnotadorAssetBuilder"/>: gates, fallbacks, números y el orden
-    /// <c>tacha → repliegue → estela → marca</c> que pide la ficha.
+    /// <c>tacha → lápiz → repliegue → estela → marca</c> que pide la ficha.
     /// </summary>
     /// <remarks>
     /// Mismo objetivo que <c>SunkenGrandPhaseWiringTests</c> —que un merge no se lleve puesta la
@@ -25,10 +29,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     [TestFixture]
     public class AnotadorPhaseWiringTests
     {
-        /// <summary>Techo de daño por golpe del piso 2 — ninguna marca puede pasarlo.</summary>
+        /// <summary>Techo de daño por golpe del piso 2 — ningún ataque puede pasarlo.</summary>
         private const int Floor2DamageCeiling = 35;
 
         private const float PercentTolerance = 0.0001f;
+
+        /// <summary>Casillas de estela que pide la ficha ("3 rondas, hasta 4 casillas").</summary>
+        private const int SheetTrailTiles = 4;
+
+        /// <summary>Rondas de estela pisables que pide la ficha.</summary>
+        private const int SheetTrailRounds = 3;
+
+        /// <summary>Ancho de la columna de fase 2 según la ficha ("Columna de 3").</summary>
+        private const int SheetPhase2ColumnWidth = 3;
 
         private AINode_Sequence _root;
         private HazardDefinitionSO _ice;
@@ -57,23 +70,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Root_HasTheEightChildrenOfTheDesignSheet_InOrder()
+        public void Root_HasTheSevenChildrenOfTheDesignSheet_InOrder()
         {
-            Assert.AreEqual(8, _root.Children.Count,
-                "La ficha define 7 pasos; el octavo es el Execute del canal del lápiz.");
+            Assert.AreEqual(7, _root.Children.Count,
+                "La ficha define 7 pasos: detona → tacha → lápiz → repliegue → estela → marca → fase 2.");
 
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El telegráfico del turno pasado se resuelve SIEMPRE primero.");
-            var pencilExecute = _root.Children[1] as AINode_AuxTelegraph;
-            Assert.IsNotNull(pencilExecute,
-                "El cobro del lápiz (canal secundario) va arriba, al lado del Execute principal.");
-            Assert.AreEqual(AINode_AuxTelegraph.TelegraphStep.Execute, pencilExecute.Step);
-            Assert.AreEqual(AnotadorAssetBuilder.PencilChannelId, pencilExecute.ChannelId,
-                "Mark y Execute tienen que compartir canal, o el aviso nunca se cobra.");
-            Assert.IsNotNull(Child<AINode_ShiftComboToNeighbor>(_root.Children[2]),
+            Assert.IsNotNull(Child<AINode_ShiftComboToNeighbor>(_root.Children[1]),
                 "La 'tacha' (corrimiento de la hoja) es efecto de inicio de turno.");
+            CollectionAssert.IsNotEmpty(Descendants(_root.Children[2]).OfType<AINode_AnotadorPencil>().ToList(),
+                "Falta el lápiz. Ya no es un telegraph de canal auxiliar: es un golpe melee directo.");
             Assert.IsNotNull(Child<AINode_KeepDistance>(_root.Children[3]), "Falta el repliegue.");
             Assert.IsNotNull(Child<AINode_IceTrail>(_root.Children[4]), "Falta la estela helada.");
+            CollectionAssert.IsNotEmpty(Descendants(_root.Children[5]).OfType<AINode_TelegraphMark>().ToList(),
+                "Falta la marca de eje — el único ataque grande del jefe.");
+            CollectionAssert.IsNotEmpty(Descendants(_root.Children[6]).OfType<AINode_ApplyStatModifier>().ToList(),
+                "Falta el setup de fase 2.");
         }
 
         [Test]
@@ -89,8 +102,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "inmediatamente después del repliegue.");
         }
 
+        /// <summary>
+        /// "Estar a 1 cuando le toca" se mide sobre la casilla que el jugador eligió ocupar. Después
+        /// de <see cref="AINode_KeepDistance"/> el boss ya está a 4 y el lápiz no cobraría nunca.
+        /// </summary>
         [Test]
-        public void Marks_ComeAfterTheRetreat_SoThePencilRingLandsOnHisFinalTile()
+        public void Pencil_ComesBeforeTheRetreat_SoItChargesTheTileThePlayerChose()
+        {
+            int pencilIdx = IndexOf<AINode_AnotadorPencil>();
+            int retreatIdx = IndexOf<AINode_KeepDistance>();
+
+            Assert.Greater(pencilIdx, -1, "No se encontró el lápiz en el Sequence raíz.");
+            Assert.Less(pencilIdx, retreatIdx,
+                "El lápiz quedó después del repliegue: el boss ya se fue a distancia 4 y el peaje " +
+                "de acercarse no se cobraría nunca.");
+        }
+
+        /// <summary>
+        /// La franja es lo último que pasa en el turno: el jugador la lee sobre el tablero final —
+        /// con el jefe ya replegado y el hielo ya puesto—, no sobre uno que el jefe todavía va a
+        /// cambiar.
+        /// </summary>
+        [Test]
+        public void Marks_ComeAfterTheRetreat_SoTheStripeIsReadOnTheFinalBoard()
         {
             int retreatIdx = IndexOf<AINode_KeepDistance>();
             var markIndices = MarkIndices();
@@ -99,8 +133,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var idx in markIndices)
             {
                 Assert.Greater(idx, retreatIdx,
-                    "Una marca quedó antes del repliegue: el anillo del lápiz telegrafiaría " +
-                    "dónde el boss ya no está.");
+                    "Una marca quedó antes del repliegue: la franja se pintaría sobre un tablero " +
+                    "que el propio turno del jefe todavía va a mover.");
             }
         }
 
@@ -108,7 +142,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// El bug que dejó quieto al Sunken Grand: <see cref="AINode_KeepDistance"/> devuelve
         /// <c>Failed</c> en el caso benigno "ya estoy a distancia ideal", que en esta pelea es la
         /// mayoría de los turnos (solo se mueve si lo tienen a 3 o menos). Suelto en el Sequence, ese
-        /// Failed le come la marca de fila — su único ataque.
+        /// Failed le come la marca de fila — su único ataque. El lápiz falla igual de seguido (el
+        /// jugador casi nunca está pegado) y por eso comparte el idiom.
         /// </summary>
         [Test]
         public void EveryFailableChild_IsWrappedInSelectorWithWaitFallback()
@@ -116,10 +151,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var child in _root.Children)
             {
                 if (child is AINode_ExecuteTelegraph) continue; // contrato del nodo: siempre Succeeded.
-                // El Execute del canal del lápiz también es siempre-Succeeded (y debe quedar fuera
-                // de todo gate para que el aviso pendiente se cobre aunque no se marque de nuevo).
-                if (child is AINode_AuxTelegraph aux
-                    && aux.Step == AINode_AuxTelegraph.TelegraphStep.Execute) continue;
 
                 var selector = child as AINode_Selector;
                 Assert.IsNotNull(selector,
@@ -135,7 +166,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // ======================================================================
-        // Marcas: una sola grande por turno
+        // Marcas: una sola grande por turno, alternando eje
         // ======================================================================
 
         [Test]
@@ -144,7 +175,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var selector = _root.Children.OfType<AINode_Selector>().FirstOrDefault(s =>
                 Descendants(s).OfType<AINode_TelegraphMark>().Any(m => m.Shape == ThreatShape.Column));
 
-            Assert.IsNotNull(selector, "No se encontró la marca de columna de fase 2.");
+            Assert.IsNotNull(selector, "No se encontró la marca de columna.");
 
             var row = selector.Children.OfType<AINode_TelegraphMark>()
                 .FirstOrDefault(m => m.Shape == ThreatShape.Row);
@@ -156,92 +187,158 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(AnotadorAssetBuilder.MarkSize, row.Size, "Row Size 1 = la línea del jugador.");
         }
 
+        /// <summary>
+        /// La ficha sacó el gate de fase de la columna: <i>"Row y Column alternadas desde fase 1: la
+        /// esquiva cuesta 2 de 4 pasos"</i>. Con un solo eje amenazado, un paso en Y sacaba el turno
+        /// entero del boss — la diagonal eterna. Alternando, salir del eje de este turno y del que
+        /// viene cuesta 2 de los 4 pasos, y cuál toca se sabe de antemano.
+        /// </summary>
         [Test]
-        public void ColumnMark_IsGatedByPhase2AndEvenRound()
+        public void ColumnMark_AlternatesByRoundParity_WithNoPhaseGate()
         {
-            var gate = Gates().FirstOrDefault(g =>
-                Descendants(g.Then).OfType<AINode_TelegraphMark>().Any(m => m.Shape == ThreatShape.Column));
+            var guards = GuardsOf(IsColumnOfWidth(AnotadorAssetBuilder.MarkSize));
+            Assert.IsNotNull(guards, "No se encontró la marca de columna de una casilla.");
 
-            Assert.IsNotNull(gate, "La columna no está detrás de un If.");
-
-            var hpGate = gate.Conditions.OfType<PcOwnerHpBelow>().FirstOrDefault();
-            Assert.IsNotNull(hpGate, "La columna debería exigir fase 2 (HP < 35%).");
-            Assert.AreEqual(AnotadorAssetBuilder.Phase2HpThreshold, hpGate.Percent, PercentTolerance);
-
-            var parity = gate.Conditions.OfType<PcRoundNumber>().FirstOrDefault();
+            var parity = guards.OfType<PcRoundNumber>().FirstOrDefault();
             Assert.IsNotNull(parity, "La columna debería exigir ronda par.");
             Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
             Assert.AreEqual(2, parity.Value, "Ronda par = múltiplo de 2.");
 
-            var column = Descendants(gate.Then).OfType<AINode_TelegraphMark>()
-                .First(m => m.Shape == ThreatShape.Column);
+            CollectionAssert.IsEmpty(guards.OfType<PcOwnerHpBelow>().ToList(),
+                "La alternancia volvió a estar detrás de un gate de HP: hasta el 35% el jefe " +
+                "amenazaría un solo eje y la diagonal eterna vuelve a ganar la pelea.");
+
+            var column = Find<AINode_TelegraphMark>(IsColumnOfWidth(AnotadorAssetBuilder.MarkSize));
             Assert.AreEqual(AnotadorAssetBuilder.ColumnDamage, column.Damage);
-            Assert.AreEqual(AnotadorAssetBuilder.MarkSize, column.Size);
         }
 
+        /// <summary>La fila no lleva gate: es el fallback del Selector, o sea "toda ronda impar".</summary>
         [Test]
-        public void Pencil_IsSquareAroundSelf_OnOddRoundsOnly_AndUngatedByRange()
+        public void RowMark_IsTheUngatedFallback_SoOneAxisIsAlwaysThreatened()
         {
-            var gate = Gates().FirstOrDefault(g =>
-                Descendants(g.Then).OfType<AINode_AuxTelegraph>()
-                    .Any(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark
-                              && m.Shape == ThreatShape.SquareAroundSelf));
+            var guards = GuardsOf(n => n is AINode_TelegraphMark m && m.Shape == ThreatShape.Row);
 
-            Assert.IsNotNull(gate, "Falta el lápiz (SquareAroundSelf, canal secundario).");
-
-            // Ronda impar = NOT(múltiplo de 2). PcRoundNumber no tiene negación propia.
-            var not = gate.Conditions.OfType<PCComposite>().FirstOrDefault(c => c.Mode == CompositeMode.Not);
-            Assert.IsNotNull(not, "El lápiz debería estar gateado por NOT(ronda múltiplo de 2).");
-            var parity = not.Children.OfType<PcRoundNumber>().FirstOrDefault();
-            Assert.IsNotNull(parity, "El NOT del lápiz no envuelve un PcRoundNumber.");
-            Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
-            Assert.AreEqual(2, parity.Value);
-
-            // El anillo ES la adyacencia: un gate de rango lo volvería redundante y podría
-            // saltearlo justo cuando el jugador está pegado.
-            Assert.IsEmpty(gate.Conditions.OfType<PcTargetInRange>().ToList(),
-                "El lápiz no lleva gate de rango — el anillo de 3×3 ya es el peaje de acercarse.");
-
-            var pencil = Descendants(gate.Then).OfType<AINode_AuxTelegraph>()
-                .First(m => m.Shape == ThreatShape.SquareAroundSelf);
-            Assert.AreEqual(AnotadorAssetBuilder.PencilDamage, pencil.Damage, "El lápiz pega 12.");
-            Assert.AreEqual(AnotadorAssetBuilder.MarkSize, pencil.Size, "Size 1 ⇒ anillo 3×3.");
-            Assert.AreEqual(AnotadorAssetBuilder.PencilChannelId, pencil.ChannelId,
-                "El lápiz marca por su canal: bajo el SelfGuid pisaría la marca de la fila y el " +
-                "camino derecho pagaría 12 en vez de 42.");
+            Assert.IsNotNull(guards, "No se encontró la marca de fila.");
+            CollectionAssert.IsEmpty(guards,
+                "La fila quedó detrás de una condición: si esa condición falla en una ronda impar " +
+                "el jefe se queda sin ataque ese turno.");
         }
 
         /// <summary>
-        /// Tres marcas pueden convivir en el piso de esta pelea y cada una cobra distinto: fila (30),
-        /// estela (stun) y lápiz (12). Con el lápiz en el violeta default del nodo, "12 de daño" y
-        /// "perdés el turno" se decidirían a ojo.
+        /// <i>"Fase 2 · Columna de 3 y dos corrimientos por turno"</i>. El ancho de franja de
+        /// <see cref="ThreatShape.Column"/> es <c>Size</c> en casillas (3 ⇒ ±1), y el gate de HP tiene
+        /// que quedar <b>adentro</b> del de paridad: envolviéndolo devolvería la columna a ser un
+        /// ataque de fase 2 y mataría la alternancia que la ficha pide desde la ronda 1.
         /// </summary>
         [Test]
-        public void Pencil_IsAuthoredWithItsOwnOverlayTint()
+        public void Phase2_WidensTheColumnToThree_WithoutRegatingTheAlternation()
         {
-            var pencil = Descendants(_root).OfType<AINode_AuxTelegraph>()
-                .First(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark);
+            var wide = Find<AINode_TelegraphMark>(IsColumnOfWidth(SheetPhase2ColumnWidth));
+            Assert.IsNotNull(wide,
+                $"No hay columna de Size {SheetPhase2ColumnWidth}: la fase 2 corre los corrimientos " +
+                "de la planilla pero deja el eje igual de ancho que en fase 1.");
+            Assert.AreEqual(AnotadorAssetBuilder.Phase2ColumnSize, wide.Size);
+            Assert.AreEqual(AnotadorAssetBuilder.ColumnDamage, wide.Damage,
+                "La fase 2 ensancha la columna, no la hace pegar más: el techo del piso no se toca.");
 
-            Assert.AreEqual(AnotadorAssetBuilder.PencilOverlayTint, pencil.OverlayTint,
-                "El anillo del lápiz tiene que salir en el grafito autorado, no en el default del nodo.");
-            Assert.AreNotEqual(_ice.EffectiveOverlayTint, pencil.OverlayTint,
-                "Lápiz y estela no pueden compartir color: uno pega 12 y el otro te saca el turno.");
+            var guards = GuardsOf(IsColumnOfWidth(SheetPhase2ColumnWidth));
+            var hpGate = guards.OfType<PcOwnerHpBelow>().FirstOrDefault();
+            Assert.IsNotNull(hpGate, "La columna ancha tiene que exigir fase 2 (HP < 35%).");
+            Assert.AreEqual(AnotadorAssetBuilder.Phase2HpThreshold, hpGate.Percent, PercentTolerance);
+
+            var parity = guards.OfType<PcRoundNumber>().FirstOrDefault();
+            Assert.IsNotNull(parity,
+                "La columna ancha se salteó la paridad: en fase 2 amenazaría la columna todas las " +
+                "rondas y la alternancia dejaría de ser predecible.");
+            Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
+            Assert.AreEqual(2, parity.Value);
         }
 
         [Test]
-        public void NoSingleMark_BreaksTheFloor2DamageCeiling()
+        public void NoSingleAttack_BreaksTheFloor2DamageCeiling()
         {
             foreach (var mark in Descendants(_root).OfType<AINode_TelegraphMark>())
             {
                 Assert.LessOrEqual(mark.Damage, Floor2DamageCeiling,
                     $"La marca {mark.Shape} pega {mark.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
             }
-            foreach (var mark in Descendants(_root).OfType<AINode_AuxTelegraph>()
-                         .Where(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark))
+
+            // El lápiz cobra directo (sin telegraph), así que también entra en el techo: es daño
+            // por golpe que el jugador come el mismo turno.
+            foreach (var pencil in Descendants(_root).OfType<AINode_AnotadorPencil>())
             {
-                Assert.LessOrEqual(mark.Damage, Floor2DamageCeiling,
-                    $"La marca aux {mark.Shape} pega {mark.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
+                Assert.LessOrEqual(pencil.Damage, Floor2DamageCeiling,
+                    $"El lápiz pega {pencil.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
             }
+        }
+
+        // ======================================================================
+        // El lápiz
+        // ======================================================================
+
+        /// <summary>
+        /// <i>"El lápiz · melee 12. Estar a 1 cuando le toca cuesta 12 directos"</i>. Era un anillo
+        /// 3×3 telegrafiado por canal auxiliar; ahora es un golpe sin marca ni área.
+        /// </summary>
+        [Test]
+        public void Pencil_IsDirectMelee_ForTwelve_AtRangeOne()
+        {
+            var pencil = Find<AINode_AnotadorPencil>(_ => true);
+
+            Assert.IsNotNull(pencil, "Falta el lápiz en el árbol.");
+            Assert.AreEqual(AnotadorAssetBuilder.PencilDamage, pencil.Damage, "El lápiz pega 12.");
+            Assert.AreEqual(AnotadorAssetBuilder.PencilRange, pencil.Range,
+                "Rango 1: el peaje es de la casilla desde la que el jugador le pega, no de acercarse.");
+            Assert.AreEqual(DistanceMetric.Manhattan, pencil.Metric,
+                "El rango del jugador se mide en Manhattan: en Chebyshev el lápiz cobraría la " +
+                "diagonal, desde donde nadie le puede pegar.");
+        }
+
+        /// <summary>
+        /// <i>"Va dentro de la alternancia: se sabe qué turno cobra"</i> — comparte la paridad impar
+        /// de la fila. Sin gate de rango: el <c>Range</c> del nodo es el único que decide el alcance,
+        /// y una PC de rango encima podría no coincidir con él.
+        /// </summary>
+        [Test]
+        public void Pencil_SharesTheOddRoundParityOfTheRow_AndCarriesNoRangeGate()
+        {
+            var guards = GuardsOf(n => n is AINode_AnotadorPencil);
+            Assert.IsNotNull(guards, "Falta el lápiz en el árbol.");
+
+            // Ronda impar = NOT(múltiplo de 2). PcRoundNumber no tiene negación propia.
+            var not = guards.OfType<PCComposite>().FirstOrDefault(c => c.Mode == CompositeMode.Not);
+            Assert.IsNotNull(not, "El lápiz debería estar gateado por NOT(ronda múltiplo de 2).");
+            var parity = not.Children.OfType<PcRoundNumber>().FirstOrDefault();
+            Assert.IsNotNull(parity, "El NOT del lápiz no envuelve un PcRoundNumber.");
+            Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
+            Assert.AreEqual(2, parity.Value);
+
+            CollectionAssert.IsEmpty(guards.OfType<PcTargetInRange>().ToList(),
+                "El lápiz no lleva gate de rango: el nodo ya falla solo cuando el jugador está " +
+                "lejos, y dos fuentes de alcance se desincronizan.");
+            CollectionAssert.IsEmpty(guards.OfType<PcOwnerHpBelow>().ToList(),
+                "El lápiz cobra desde la fase 1: es el peaje de la casilla de melee toda la pelea.");
+        }
+
+        /// <summary>
+        /// El piso de esta pelea pinta dos overlays y nada más —la franja del eje y la estela— y cada
+        /// uno cobra distinto (30/32 de daño vs. perder el turno). El lápiz era el tercero, y era el
+        /// que menos decisión cambiaba: 12 que sólo cobran si el jugador sigue pegado. Cobrado en el
+        /// acto no necesita color, y con tres tintes en el piso "12 de daño" y "perdés el turno" se
+        /// decidían a ojo.
+        /// </summary>
+        [Test]
+        public void Pencil_PaintsNoOverlay_SoTheFloorKeepsTwoColors()
+        {
+            CollectionAssert.IsEmpty(Descendants(_root).OfType<AINode_AuxTelegraph>().ToList(),
+                "Volvió a haber un canal de telegraph auxiliar: el lápiz es un golpe directo y un " +
+                "tercer overlay le saca legibilidad a los dos que sí se esquivan moviéndose.");
+
+            var shapes = Descendants(_root).OfType<AINode_TelegraphMark>()
+                .Select(m => m.Shape).Distinct().ToList();
+            CollectionAssert.AreEquivalent(new[] { ThreatShape.Row, ThreatShape.Column }, shapes,
+                "El jefe marca formas que la ficha no tiene: las únicas áreas de esta pelea son la " +
+                "fila y la columna.");
         }
 
         // ======================================================================
@@ -249,31 +346,48 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Retreat_KeepsDistanceFour_WithThreeSteps()
+        public void Retreat_KeepsDistanceFour_WithFourSteps()
         {
-            var retreat = Child<AINode_KeepDistance>(_root.Children[3]);
+            var retreat = Find<AINode_KeepDistance>(_ => true);
 
             Assert.IsNotNull(retreat);
             Assert.AreEqual(AnotadorAssetBuilder.IdealDistance, ReadConstant(retreat.IdealDistance),
                 "Ideal 4: solo se repliega si lo tienen a 3 casillas o menos.");
             Assert.AreEqual(AnotadorAssetBuilder.RetreatSteps, ReadConstant(retreat.MaxSteps),
-                "3 pasos de repliegue ⇒ la estela nunca pasa de 3 casillas.");
+                "4 pasos de repliegue: es el tope real de casillas que la estela puede congelar.");
         }
 
         [Test]
-        public void IceTrail_FreezesUpToThreeTiles_AndStunsForOneTurn()
+        public void IceTrail_FreezesUpToFourTiles_AndStunsForOneTurn()
         {
-            var trail = Child<AINode_IceTrail>(_root.Children[4]);
+            var trail = Find<AINode_IceTrail>(_ => true);
 
             Assert.IsNotNull(trail);
-            Assert.AreEqual(3, trail.MaxTiles, "La estela es de 1 a 3 casillas.");
+            Assert.AreEqual(SheetTrailTiles, trail.MaxTiles, "La ficha pide estela de hasta 4 casillas.");
             Assert.AreEqual(1, trail.StunTurns, "Pisarla cuesta 1 turno.");
             Assert.IsTrue(trail.ReplacePreviousTrail, "Una sola estela viva por vez.");
             Assert.AreSame(_ice, trail.Hazard, "El nodo tiene que apuntar a la definición del hielo.");
         }
 
+        /// <summary>
+        /// El tope de la estela no puede pedir más casillas que las que el repliegue camina: sería
+        /// letra muerta y la estela quedaría más corta que la ficha sin que nada la contradiga.
+        /// </summary>
         [Test]
-        public void IceHazard_IsOnEnter_ZeroDamage_MeltsOnStep_AndSurvivesOnePlayerTurn()
+        public void IceTrail_NeverAsksForMoreTilesThanTheRetreatWalks()
+        {
+            var trail = Find<AINode_IceTrail>(_ => true);
+            var retreat = Find<AINode_KeepDistance>(_ => true);
+
+            Assert.IsNotNull(trail, "Falta la estela helada.");
+            Assert.IsNotNull(retreat, "Falta el repliegue.");
+            Assert.LessOrEqual(trail.MaxTiles, ReadConstant(retreat.MaxSteps),
+                $"MaxTiles {trail.MaxTiles} contra un repliegue de " +
+                $"{ReadConstant(retreat.MaxSteps)} pasos: el tope de arriba nunca se alcanza.");
+        }
+
+        [Test]
+        public void IceHazard_IsOnEnter_ZeroDamage_MeltsOnStep_AndLastsThreePlayerRounds()
         {
             Assert.AreEqual(HazardTriggerMode.OnEnter, _ice.Trigger,
                 "La estela cobra al PISAR, no por ciclo ni al terminar el turno encima.");
@@ -282,11 +396,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(_ice.ConsumeOnTrigger,
                 "La casilla pisada se derrite — sin eso dos estelas seguidas encadenan stuns.");
 
-            // 2 y no 1: la duración se descuenta en el wrap de ronda y el jugador tiene forzado el
-            // primer turno de cada ronda, así que con 1 la estela muere antes de que pueda pisarla.
-            Assert.AreEqual(2, _ice.DurationRounds,
-                "Con DurationRounds=1 la estela expira en el arranque de la ronda siguiente, " +
-                "antes del turno del jugador: sería inalcanzable.");
+            // La duración se descuenta una vez por wrap de ronda y la estela nace en el turno del
+            // jefe, con el turno del jugador de esa ronda ya jugado (CNF-006): DurationRounds = D
+            // deja D-1 rondas pisables, así que las 3 de la ficha piden 4.
+            Assert.AreEqual(SheetTrailRounds + 1, _ice.DurationRounds,
+                $"Con DurationRounds = {_ice.DurationRounds} la estela vive " +
+                $"{_ice.DurationRounds - 1} rondas pisables y la ficha pide {SheetTrailRounds}: " +
+                "el hielo se derrite antes de tapar el corredor.");
 
             Assert.Greater(_ice.EffectiveOverlayTint.b, _ice.EffectiveOverlayTint.r,
                 "El overlay de la estela tiene que ser celeste, no el naranja del telegraph.");
@@ -334,7 +450,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Shift_RunsOneComboPerTurn_TwoAndPermanentInPhase2()
         {
-            var shift = Child<AINode_ShiftComboToNeighbor>(_root.Children[2]);
+            var shift = Find<AINode_ShiftComboToNeighbor>(_ => true);
 
             Assert.IsNotNull(shift);
             Assert.AreEqual(1, shift.ShiftsPerTurnPhase1, "Fase 1: 1 corrimiento por turno.");
@@ -369,6 +485,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "La fase 2 no sube el daño por golpe: lo que cambia es el eje de esquiva.");
         }
 
+        /// <summary>
+        /// Los dos efectos de fase 2 (el ancho de la columna y el feedback de "muestra la manga")
+        /// tienen que entrar juntos: con umbrales distintos el jefe ensancharía el eje sin anunciar
+        /// la fase, o al revés.
+        /// </summary>
+        [Test]
+        public void EveryPhase2Gate_UsesTheSameHpThreshold()
+        {
+            var thresholds = Descendants(_root).OfType<AINode_If>()
+                .SelectMany(g => g.Conditions ?? new List<BasePreCondition>())
+                .OfType<PcOwnerHpBelow>()
+                .Select(c => c.Percent)
+                .Distinct()
+                .ToList();
+
+            CollectionAssert.IsNotEmpty(thresholds, "No quedó ningún gate de fase 2 en el árbol.");
+            Assert.AreEqual(1, thresholds.Count,
+                $"Hay {thresholds.Count} umbrales de fase distintos en el árbol: " +
+                string.Join(", ", thresholds));
+            Assert.AreEqual(AnotadorAssetBuilder.Phase2HpThreshold, thresholds[0], PercentTolerance);
+        }
+
         // ======================================================================
         // EnemyDataSO
         // ======================================================================
@@ -383,7 +521,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 AnotadorAssetBuilder.PopulateEnemyData(data, _ice, null);
 
                 Assert.AreEqual("boss.scorekeeper", data.EntityId);
-                Assert.AreEqual(190, data.BaseHP);
+                Assert.AreEqual(430, data.BaseHP,
+                    "HP recalibrado por la simulación de 3000 peleas: 190 → 430. No tocar sin re-simular.");
                 Assert.AreEqual(30, data.BaseAttack);
                 Assert.AreEqual("combo.generala", data.WeaknessComboId);
                 Assert.AreEqual(1.5f, data.WeaknessMultiplierOverride, PercentTolerance);
@@ -441,6 +580,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // Helpers
         // ======================================================================
 
+        private static Func<object, bool> IsColumnOfWidth(int size) =>
+            node => node is AINode_TelegraphMark mark
+                    && mark.Shape == ThreatShape.Column
+                    && mark.Size == size;
+
         /// <summary>Hijo de tipo <typeparamref name="T"/> de un <c>Selector[node, Wait]</c>.</summary>
         private static T Child<T>(AIDecisionNode wrapper) where T : AIDecisionNode
         {
@@ -448,18 +592,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return (wrapper as AINode_Selector)?.Children.OfType<T>().FirstOrDefault();
         }
 
+        /// <summary>
+        /// Primer nodo del árbol de tipo <typeparamref name="T"/> que cumple <paramref name="match"/>.
+        /// Se busca por tipo y no por índice para que reordenar el ciclo de turno rompa el test de
+        /// orden —que es donde se lee— y no los quince que miran números.
+        /// </summary>
+        private T Find<T>(Func<object, bool> match) where T : class =>
+            Descendants(_root).OfType<T>().FirstOrDefault(n => match(n));
+
         private int IndexOf<T>() where T : AIDecisionNode
-            => _root.Children.FindIndex(c => Child<T>(c) != null);
+            => _root.Children.FindIndex(c => Descendants(c).OfType<T>().Any());
 
         private List<int> MarkIndices()
         {
             var indices = new List<int>();
             for (int i = 0; i < _root.Children.Count; i++)
             {
-                bool marks = Descendants(_root.Children[i]).OfType<AINode_TelegraphMark>().Any()
-                             || Descendants(_root.Children[i]).OfType<AINode_AuxTelegraph>()
-                                 .Any(m => m.Step == AINode_AuxTelegraph.TelegraphStep.Mark);
-                if (marks) indices.Add(i);
+                if (Descendants(_root.Children[i]).OfType<AINode_TelegraphMark>().Any()) indices.Add(i);
             }
             return indices;
         }
@@ -471,6 +620,59 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var constant = reader as AIConstantInt;
             Assert.IsNotNull(constant, "Se esperaba un AIConstantInt (valor literal del inspector).");
             return constant.Value;
+        }
+
+        /// <summary>
+        /// Condiciones de todos los <see cref="AINode_If"/> que hay que atravesar para llegar al
+        /// primer nodo que cumple <paramref name="match"/>, o <c>null</c> si no hay ninguno.
+        /// </summary>
+        /// <remarks>
+        /// Mirar las condiciones de un gate suelto no alcanza para afirmar "esto se gatea por X y por
+        /// nada más": un ancestro puede sumar otra. Justamente el bug que este fixture tiene que ver
+        /// es la alternancia de eje colgada de un gate de fase, que en el árbol vive un nivel arriba
+        /// de la marca.
+        /// </remarks>
+        private List<BasePreCondition> GuardsOf(Func<object, bool> match)
+        {
+            var guards = new List<BasePreCondition>();
+            return Walk(_root, match, guards) ? guards : null;
+        }
+
+        private static bool Walk(object node, Func<object, bool> match, List<BasePreCondition> guards)
+        {
+            if (node == null) return false;
+            if (match(node)) return true;
+
+            switch (node)
+            {
+                case AINode_Sequence sequence:
+                    return WalkChildren(sequence.Children, match, guards);
+                case AINode_Selector selector:
+                    return WalkChildren(selector.Children, match, guards);
+                case AINode_If gate:
+                {
+                    int depth = guards.Count;
+                    if (gate.Conditions != null) guards.AddRange(gate.Conditions);
+                    if (Walk(gate.Then, match, guards)) return true;
+
+                    // El Else corre con las condiciones en FALSO: arrastrarlas mentiría sobre el gateo.
+                    guards.RemoveRange(depth, guards.Count - depth);
+                    return Walk(gate.Else, match, guards);
+                }
+                case AINode_Once once:
+                    return Walk(once.Child, match, guards);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool WalkChildren(
+            List<AIDecisionNode> children, Func<object, bool> match, List<BasePreCondition> guards)
+        {
+            if (children == null) return false;
+            foreach (var child in children)
+                if (Walk(child, match, guards)) return true;
+            return false;
         }
 
         /// <summary>

@@ -163,7 +163,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.IsNotNull(mode, "Falta el SetWheelMode: sin él la fase 2 no canta dos números.");
             Assert.AreEqual(2, mode.NumbersPerTurn, "Pleno y color: dos números.");
-            Assert.IsTrue(mode.Rigged, "La rueda queda trucada: pegarle deja de moverla y de cobrar.");
+            // Trucada apaga el corrimiento y nada más: la Represalia no mira la fase, y
+            // CroupierWheelService cobra los 8 en todo golpe con la rueda trabada igual.
+            Assert.IsTrue(mode.Rigged,
+                "La rueda queda trucada: en fase 2 cerrar el turno dentro del sector cantado deja de " +
+                "correr el número, y el jugador se queda sin la única palanca sobre lo que cae.");
             Assert.AreEqual(2, mode.PhaseIndex);
         }
 
@@ -220,6 +224,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Fire_HasOneDefinitionPerPhase_AndTheDurationsDifferByTheRoundOffset()
         {
+            // La ficha cuenta rondas del JUGADOR (2 en fase 1, 3 en fase 2) y el asset autora rondas de
+            // hazard: no son el mismo número. HazardService.TickInstanceDurations descuenta una en cada
+            // OnTurnQueueBuilt — o sea en cada wrap de ronda — y el fuego nace en el turno del jefe, con
+            // el turno del jugador de esa ronda ya jugado (CNF-006 lo fuerza al frente de la cola). La
+            // ronda del encendido no le llega a cobrar nunca: DurationRounds = D deja D-1 cierres de
+            // turno que sí pegan. Ese es el corrimiento del nombre del test. Que queden 2 y no 1 es lo
+            // que hace que el bloque anterior siga ardiendo cuando cae el siguiente: el paño se gasta
+            // en vez de volver a foja cero cada turno.
+            const int IgnitionRound = 1;
+            const int SheetBurnRounds = 2;
+            const int SheetBurnRoundsPhase2 = 3;
+
             var ignite = Descendants(_root).OfType<AINode_IgniteDetonatedSectors>().Single();
 
             Assert.AreSame(_fire, ignite.Fire);
@@ -228,11 +244,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(ignite.BlastConsumesFlame,
                 "La explosión consume la llama: el peor caso de la costura tiene que seguir siendo 24.");
 
-            // "Un turno" = 2 rondas y "dos turnos" = 3: el fuego nace en el turno del jefe y el jugador
-            // juega primero, así que la ronda del encendido ya no tiene cierres de turno por delante.
-            Assert.AreEqual(2, CroupierAssetBuilder.FireDurationRounds);
-            Assert.AreEqual(3, CroupierAssetBuilder.FireDurationRoundsPhase2);
-            Assert.AreEqual(6, CroupierAssetBuilder.FireDamage);
+            Assert.AreEqual(SheetBurnRounds, CroupierAssetBuilder.FireDurationRounds - IgnitionRound,
+                "Fase 1 arde 2 rondas de jugador. Con una sola, salir del bloque deja de ser una " +
+                "decisión: alcanza con no volver.");
+            Assert.AreEqual(SheetBurnRoundsPhase2, CroupierAssetBuilder.FireDurationRoundsPhase2 - IgnitionRound,
+                "Fase 2 arde 3 rondas de jugador — una más que fase 1, con el mismo corrimiento.");
+            Assert.AreEqual(6, CroupierAssetBuilder.FireDamage, "6 por terminar el turno adentro.");
         }
 
         [Test]
@@ -250,7 +267,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
-                Assert.AreEqual(140, data.BaseHP);
+                Assert.AreEqual(350, data.BaseHP,
+                    "HP recalibrado por la simulación de 3000 peleas: 140 → 350. No tocar sin re-simular.");
                 Assert.AreEqual(20, data.BaseAttack);
                 Assert.AreEqual("combo.pair", data.WeaknessComboId,
                     "El id real del combo Par en el catálogo es combo.pair.");

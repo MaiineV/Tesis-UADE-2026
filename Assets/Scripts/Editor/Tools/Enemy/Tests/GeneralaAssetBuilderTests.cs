@@ -7,8 +7,10 @@ using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI;
+using Rollgeon.Combat.AI.Bosses.Generala;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.BossHand;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
@@ -49,16 +51,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Root_StartsByResolvingBothPendingTelegraphs()
+        public void Root_OpensTheTurnByDetonatingTheHand_TheOnlyThingSheLeavesPending()
         {
-            // Assert — el aviso de la mano y el del cubilete se cobran al abrir el turno.
+            // Assert — la mano de la ronda pasada es lo único que hay para cobrar al abrir el
+            // turno: desde que el cubilete es melee directo no queda un segundo aviso en cola.
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El primer hijo tiene que detonar la mano de la ronda pasada.");
 
-            var cupExecute = _root.Children[1] as AINode_AuxTelegraph;
-            Assert.IsNotNull(cupExecute, "El segundo hijo tiene que cobrar el cubilete pendiente.");
-            Assert.AreEqual(AINode_AuxTelegraph.TelegraphStep.Execute, cupExecute.Step);
-            Assert.AreEqual(GeneralaAssetBuilder.CupChannelId, cupExecute.ChannelId);
+            Assert.AreEqual(1, Descendants(_root).OfType<AINode_ExecuteTelegraph>().Count(),
+                "Un solo Execute: un segundo aviso pendiente serían dos golpes por una tirada.");
         }
 
         [Test]
@@ -124,12 +125,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var risky = _root.Children
                 .OfType<AINode_Selector>()
                 .Where(s => Descendants(s).Any(n =>
-                    n is AINode_SpawnReinforcements || n is AINode_SetHandReroll))
+                    n is AINode_SpawnReinforcements
+                    || n is AINode_SetHandReroll
+                    || n is AINode_GeneralaCupSlam))
                 .ToList();
 
             // Assert
-            Assert.AreEqual(2, risky.Count,
-                "La mesa y el setup de fase tienen que ir cada uno en su Selector de aislamiento.");
+            Assert.AreEqual(3, risky.Count,
+                "La mesa, el setup de fase y el cubilete tienen que ir cada uno en su Selector de " +
+                "aislamiento — el cubilete devuelve Failed con el jugador lejos, que es lo normal.");
             foreach (var selector in risky)
             {
                 Assert.IsTrue(selector.Children.Any(c => c is AINode_Wait),
@@ -192,8 +196,63 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El turno en que la mano solo se canta no matchea ninguna rama: hace falta el Wait.");
         }
 
+        // ======================================================================
+        // El cubilete
+        // ======================================================================
+
         [Test]
-        public void HandTable_NeverExceedsTheFloorThreeDamageCeiling()
+        public void CupSlam_HitsForEighteen_AtOneTileInManhattan()
+        {
+            // Act
+            var cup = FindCupSlam();
+
+            // Assert — el alcance es el mismo con el que el jugador le pega a ella (Base Attack:
+            // Range 1, Manhattan), así que la regla se lee de una: si le llegás, te llega.
+            Assert.AreEqual(18, GeneralaAssetBuilder.CupSlamDamage,
+                "La ficha del piso 3 pide melee 18 — el número vive en el builder, no en el nodo.");
+            Assert.AreEqual(GeneralaAssetBuilder.CupSlamDamage, cup.Damage);
+            Assert.AreEqual(1, cup.Range, "Range 1: solo cobra a quien esté pegado.");
+            Assert.AreEqual(DistanceMetric.Manhattan, cup.Metric,
+                "Chebyshev le sumaría las diagonales, desde donde el jugador no puede atacarla.");
+            Assert.AreEqual(AttackKind.BasicAttack, cup.Kind);
+        }
+
+        [Test]
+        public void CupSlam_FallsOnEveryRoll_WithoutARoundParityGate()
+        {
+            // Arrange
+            var branch = FindCupBranch();
+
+            // Assert — mientras fue un área avisada en rondas impares había una ronda franca para
+            // romperle dados gratis. Ahora el único gate es la distancia, y esa la elige el jugador.
+            Assert.AreEqual(1, Descendants(_root).OfType<AINode_GeneralaCupSlam>().Count(),
+                "Un solo cubilete en el árbol: dos nodos serían dos golpes por tirada.");
+            Assert.IsFalse(Descendants(branch).OfType<PcRoundNumber>().Any(),
+                "Nada del cubilete puede colgar del número de ronda.");
+            Assert.IsFalse(Descendants(branch).OfType<AINode_If>().Any(),
+                "Ni de una condición: el cubilete se auto-gatea por distancia adentro del nodo.");
+        }
+
+        [Test]
+        public void CupSlam_AnnouncesNothing_TheOnlyWarningIsTheDistance()
+        {
+            // Arrange
+            var branch = FindCupBranch();
+
+            // Assert — un aviso acá significaría que el cubilete volvió a ser un área que se marca
+            // un turno y se cobra al siguiente, o sea dos golpes por una sola tirada.
+            Assert.IsFalse(Descendants(branch).OfType<AINode_AuxTelegraph>().Any(),
+                "El cubilete no ocupa canal de aviso: cobra en el acto.");
+            Assert.IsFalse(Descendants(branch).OfType<AINode_TelegraphMark>().Any(),
+                "Ni marca área — el único aviso es la distancia, que el jugador controla entera.");
+        }
+
+        // ======================================================================
+        // Techo de daño
+        // ======================================================================
+
+        [Test]
+        public void Damage_NeverExceedsTheFloorThreeCeiling()
         {
             // Arrange — techo de daño por golpe del piso 3.
             const int floorThreeCeiling = 45;
@@ -203,59 +262,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.LessOrEqual(mark.Damage, floorThreeCeiling,
                     $"Un TelegraphMark ({mark.Shape}) pega {mark.Damage}, sobre el techo del piso 3.");
 
-            foreach (var aux in Descendants(_root).OfType<AINode_AuxTelegraph>())
-                Assert.LessOrEqual(aux.Damage, floorThreeCeiling);
-        }
-
-        // ======================================================================
-        // El cubilete
-        // ======================================================================
-
-        [Test]
-        public void CupToll_IsGatedOnOddRounds_ViaTheElseOfAMultipleOfTwo()
-        {
-            // Act
-            var gate = FindCupGate();
-
-            // Assert — PcRoundNumber sabe de múltiplos, no de paridad: "impar" es el Else.
-            var round = gate.Conditions.OfType<PcRoundNumber>().FirstOrDefault();
-            Assert.IsNotNull(round, "El gate del cubilete tiene que mirar el número de ronda.");
-            Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, round.Mode);
-            Assert.AreEqual(2, round.Value);
-
-            Assert.IsInstanceOf<AINode_Wait>(gate.Then,
-                "Ronda par ⇒ Wait real; con Then null el If devolvería Failed y abortaría el turno.");
-            Assert.IsTrue(Descendants(gate.Else).OfType<AINode_AuxTelegraph>().Any(),
-                "Ronda impar ⇒ baja el cubilete.");
-        }
-
-        [Test]
-        public void CupToll_MarksThreeByThreeAroundHerself_ForTwelve()
-        {
-            // Act
-            var mark = Descendants(FindCupGate().Else).OfType<AINode_AuxTelegraph>().First();
-
-            // Assert
-            Assert.AreEqual(AINode_AuxTelegraph.TelegraphStep.Mark, mark.Step);
-            Assert.AreEqual(ThreatShape.SquareAroundSelf, mark.Shape);
-            Assert.AreEqual(1, mark.Size, "Radio 1 ⇒ 3×3 alrededor suyo.");
-            Assert.AreEqual(GeneralaAssetBuilder.CupTollDamage, mark.Damage);
-            Assert.AreEqual(GeneralaAssetBuilder.CupChannelId, mark.ChannelId,
-                "Tiene que compartir canal con el Execute del inicio del turno.");
-        }
-
-        [Test]
-        public void CupToll_PaintsItsOverlayMilitaryBlue_NotTheGenericViolet()
-        {
-            // Act
-            var mark = Descendants(FindCupGate().Else).OfType<AINode_AuxTelegraph>().First();
-
-            // Assert — el 3×3 del cubilete convive en pantalla con el telegraph naranja de la mano:
-            // el canal secundario tiene que distinguirse, y el violeta default no dice nada del jefe.
-            Assert.AreEqual(GeneralaAssetBuilder.CupOverlayTint, mark.OverlayTint);
-            Assert.Greater(mark.OverlayTint.b, mark.OverlayTint.r, "El tinte del cubilete es azul.");
-            Assert.Greater(mark.OverlayTint.b, mark.OverlayTint.g, "El tinte del cubilete es azul.");
-            Assert.Greater(mark.OverlayTint.a, 0f, "Un tinte transparente pintaría quads invisibles.");
+            // El cubilete no se avisa, así que su daño es el que más caro sale sostener: entra sí
+            // o sí por estar parado al lado.
+            foreach (var cup in Descendants(_root).OfType<AINode_GeneralaCupSlam>())
+                Assert.LessOrEqual(cup.Damage, floorThreeCeiling,
+                    $"El cubilete pega {cup.Damage}, sobre el techo del piso 3.");
         }
 
         // ======================================================================
@@ -321,7 +332,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void PopulateDiceData_MakesFourHpObjectsThatDoNotAttack()
+        public void PopulateDiceData_MakesObjectsThatDoNotAttack_WithTheSpecdHp()
         {
             // Arrange
             var dice = ScriptableObject.CreateInstance<EnemyDataSO>();
@@ -333,6 +344,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 // Assert
                 Assert.AreEqual(GeneralaAssetBuilder.DiceEntityId, dice.EntityId);
                 Assert.AreEqual(GeneralaAssetBuilder.DiceHp, dice.BaseHP);
+                Assert.That(GeneralaAssetBuilder.DiceHp, Is.InRange(40, 50),
+                    "La ficha pide dados de 40-50 HP: menos y la mesa se desarma de cualquier roce.");
                 Assert.AreEqual(0, dice.BaseAttack, "Los dados no pegan: todo el daño entra por la mano.");
                 Assert.AreEqual(0, dice.MaxGoldDrop, "Romper un dado paga en categorías, no en oro.");
                 Assert.IsInstanceOf<AINode_Wait>(dice.AIRoot,
@@ -446,13 +459,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return table;
         }
 
-        private AINode_If FindCupGate()
+        private AINode_GeneralaCupSlam FindCupSlam()
         {
-            var gate = _root.Children.OfType<AINode_If>()
-                .FirstOrDefault(i => i.Conditions.OfType<PcRoundNumber>().Any()
-                                     && Descendants(i.Else).OfType<AINode_AuxTelegraph>().Any());
-            Assert.IsNotNull(gate, "No se encontró el gate del cubilete.");
-            return gate;
+            var cup = Descendants(_root).OfType<AINode_GeneralaCupSlam>().FirstOrDefault();
+            Assert.IsNotNull(cup, "No se encontró el cubilete en el árbol.");
+            return cup;
+        }
+
+        /// <summary>Hijo del Sequence raíz que cuelga del cubilete — su Selector de aislamiento.</summary>
+        private AIDecisionNode FindCupBranch()
+        {
+            var branch = _root.Children.FirstOrDefault(c =>
+                Descendants(c).Any(n => n is AINode_GeneralaCupSlam));
+            Assert.IsNotNull(branch, "No se encontró la rama del cubilete en el Sequence raíz.");
+            return branch;
         }
 
         private List<(PcBossHandCombo pc, AINode_TelegraphMark mark)> HandBranches()

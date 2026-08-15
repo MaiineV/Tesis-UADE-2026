@@ -68,7 +68,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string WeaknessComboId = "combo.pair";
         public const float WeaknessMultiplier = 1.5f;
 
-        public const int MaxHp = 140;
+        /// <summary>
+        /// Recalibrado por la simulación de 3000 peleas: con el golpe mediano real del jugador en 42,
+        /// 140 se caía en tres turnos y el ciclo de la ruleta no llegaba a cantar dos veces.
+        /// </summary>
+        public const int MaxHp = 350;
         public const int Attack = 20;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
@@ -80,22 +84,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Daño de cada sector en fase 2 — 24 para quien esté en la columna de costura.</summary>
         public const int SectorDamagePhase2 = 12;
 
-        /// <summary>Represalia de mesa: el precio de correr la rueda en un número impar.</summary>
+        /// <summary>
+        /// Represalia de mesa: el precio de la casilla de melee. Se cobra en todo golpe que le entre,
+        /// sin mirar el número ni la fase — es el único daño directo del jefe.
+        /// </summary>
         public const int RetaliationDamage = 8;
 
         /// <summary>Fuego de paño: lo que cuesta terminar el turno en el sector que acaba de caer.</summary>
         public const int FireDamage = 6;
 
         /// <summary>
-        /// "Dura 1 turno" = 2 rondas de hazard. El fuego nace en el turno del jefe y el jugador tiene
+        /// "Arde 2 rondas" = 3 rondas de hazard. El fuego nace en el turno del jefe y el jugador tiene
         /// el primer turno de cada ronda (CNF-006), así que la ronda en la que se enciende ya no tiene
         /// cierres de turno del jugador por delante: con 1 expiraría sin tickear nunca. Ver los remarks
         /// de <see cref="AINode_IgniteDetonatedSectors"/>.
         /// </summary>
-        public const int FireDurationRounds = 2;
+        /// <remarks>
+        /// Con esta duración el bloque anterior sigue ardiendo cuando cae el siguiente: el jefe deja de
+        /// devolver el paño limpio cada turno y el mapa útil se achica sostenidamente. Ese solapamiento
+        /// es el efecto buscado, no un residuo del redondeo de rondas.
+        /// </remarks>
+        public const int FireDurationRounds = 3;
 
-        /// <summary>"Dura 2 turnos" en fase 2 — mismo corrimiento de +1 ronda que en fase 1.</summary>
-        public const int FireDurationRoundsPhase2 = 3;
+        /// <summary>"Arde 3 rondas" en fase 2 — mismo corrimiento de +1 ronda que en fase 1.</summary>
+        public const int FireDurationRoundsPhase2 = 4;
 
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float Phase2HpThreshold = 0.5f;
@@ -322,9 +334,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.Description =
                 "\"Place your bets.\" He calls one number per turn, and that number is two things at " +
                 "once: the block of the table that falls next turn and the die he confiscates from " +
-                "your bag. Hitting him while the number hangs in the air spins the wheel one step " +
-                "further — and on odd numbers the house charges you 8 for the privilege. He never " +
-                "leaves the middle row.";
+                "your bag. Ending your turn inside the called block spins the wheel one step further " +
+                "— moving the axe means standing under it. Hitting him costs 8, always: the house " +
+                "charges for the melee tile. He never leaves the middle row.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
