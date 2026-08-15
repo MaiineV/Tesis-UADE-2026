@@ -334,9 +334,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
             data.Description =
-                "\"Place your bets.\" He calls one number per turn, and that number is two things at " +
-                "once: the block of the table that falls next turn and the die he confiscates from " +
-                "your bag. Ending your turn inside the called block spins the wheel one step further " +
+                "\"Place your bets.\" He calls one number per turn: the block of the table that falls " +
+                "next turn. Ending your turn inside the called block spins the wheel one step further " +
                 "— moving the axe means standing under it. Hitting him costs 8, always: the house " +
                 "charges for the melee tile. He never leaves the middle row.";
 
@@ -381,7 +380,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <para>
         /// <b>Cada paso que puede fallar va en <c>Selector[paso, Wait]</c>.</b> El Sequence corta en el
         /// primer <c>Failed</c>: sin el fallback, una sala sin bounds (marcado) o un servicio no
-        /// registrado (confiscación, fuego) le cancelaría al jefe todo lo que viene después en el
+        /// registrado (marcado, fuego) le cancelaría al jefe todo lo que viene después en el
         /// turno.
         /// </para>
         /// </remarks>
@@ -431,15 +430,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 3. Canta el número (o los dos) y abre el windup.
                     Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
 
-                    // 4. Confisca el dado de ese mismo número — el sector y el dado son el mismo dato.
-                    Guarded(new AINode_RotateBlock
-                    {
-                        Target = AINode_RotateBlock.BlockTarget.Dice,
-                        Count = 1,
-                        DirectedIndex = new AIReadCroupierWheelNumber { Slot = 0 },
-                    }),
+                    // El Croupier NO confisca el dado del número cantado. Lo hacía —el sector y el
+                    // dado eran el mismo dato, que como idea cerraba— pero robar un dado sin ninguna
+                    // presentación es indistinguible del bloqueo aleatorio del Sunken Grand, y el
+                    // jugador terminaba creyendo que peleaba contra el jefe viejo. Si alguna vez
+                    // vuelve, vuelve junto con su visual, no antes.
 
-                    // 5. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
+                    // 4. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
                     Guarded(new AINode_MarkSungSectors
                     {
                         SectorDamage = SectorDamage,

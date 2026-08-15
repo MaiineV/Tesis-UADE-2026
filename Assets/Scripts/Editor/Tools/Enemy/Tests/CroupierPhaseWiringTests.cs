@@ -89,16 +89,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Root_SingsBeforeConfiscatingAndMarking()
+        public void Root_SingsBeforeMarking()
         {
-            // El número tiene que existir antes de que alguien lo lea: la confiscación y el marcado
-            // salen del mismo dato.
+            // Arrange / Act — el número tiene que existir antes de que alguien lo lea.
             int spinIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_SpinWheel));
-            int blockIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RotateBlock));
             int markIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_MarkSungSectors));
 
+            // Assert
             Assert.Greater(spinIdx, -1);
-            Assert.Greater(blockIdx, spinIdx, "La confiscación lee el número cantado: va después de cantar.");
             Assert.Greater(markIdx, spinIdx, "El marcado lee el número cantado: va después de cantar.");
         }
 
@@ -110,7 +108,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var fallible = new[]
             {
                 typeof(AINode_SpinWheel),
-                typeof(AINode_RotateBlock),
                 typeof(AINode_MarkSungSectors),
                 typeof(AINode_IgniteDetonatedSectors),
                 typeof(AINode_If),
@@ -192,14 +189,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void Confiscation_IsDirectedByTheSungNumber_NotRandom()
+        public void Root_NeverBlocksADie()
         {
-            var block = Descendants(_root).OfType<AINode_RotateBlock>().Single();
+            // Arrange / Act
+            var blocks = Descendants(_root).OfType<AINode_RotateBlock>().ToList();
 
-            Assert.AreEqual(AINode_RotateBlock.BlockTarget.Dice, block.Target);
-            Assert.IsInstanceOf<AIReadCroupierWheelNumber>(block.DirectedIndex,
-                "El dado confiscado es el del número cantado: sin el reader volvería a sortear al azar, " +
-                "y el sector y el dado dejarían de ser el mismo dato.");
+            // Assert — robar un dado sin presentación es indistinguible del bloqueo aleatorio del
+            // Sunken Grand, y el jugador lee que pelea contra el jefe viejo. Si vuelve, vuelve con
+            // su visual: el dado viajando a la mesa y el slot con candado.
+            CollectionAssert.IsEmpty(blocks,
+                "El Croupier no confisca dados. Volver a agregarlo sin construir el visual reintroduce " +
+                "la confusión con el Sunken Grand.");
         }
 
         [Test]

@@ -248,8 +248,7 @@ cerrado.</p>
 <table class="rules">
   <thead><tr><th>Qué te hicieron</th><th>Cómo lo ves</th></tr></thead>
   <tbody>
-    <tr><th>Te confiscan o bloquean un dado</th><td>El dado viaja de tu bolsa a la mesa del jefe con un tween; el slot queda vacío con candado. Vuelve con el tween inverso.</td></tr>
-    <tr><th>Un combo está prohibido</th><td>Su fila en la tabla de combos se tacha en rojo con ✕. Intentar jugarlo sacude la fila y suena a rechazo.</td></tr>
+        <tr><th>Un combo está prohibido</th><td>Su fila en la tabla de combos se tacha en rojo con ✕. Intentar jugarlo sacude la fila y suena a rechazo.</td></tr>
     <tr><th>Un combo paga distinto (×2 · ×½)</th><td>Badge sobre la fila: verde si te favorece, rojo si no. Dura lo que dura la regla.</td></tr>
     <tr><th>Te corrieron un combo de lugar</th><td>La fila vieja tachada con flecha a la nueva, con la animación de pluma del Anotador. Queda tachada hasta revertirse.</td></tr>
     <tr><th>La debilidad del jefe</th><td>Icono del combo + ×1,5 junto a su barra de vida. Destello cuando la conectás.</td></tr>
@@ -260,7 +259,7 @@ cerrado.</p>
 <span class="eyebrow">Piso 1 · enseñar</span>
 <h2>El Croupier</h2>
 <span class="bid">boss.croupier · 120 HP · Attack 20</span>
-<p class="bline">«Hagan sus apuestas.» Un número por turno, y ese número decide dos cosas a la vez.</p>
+<p class="bline">«Hagan sus apuestas.» Un número por turno: el sector que cae, y el único lugar desde donde se le corre la rueda.</p>
 <div class="cols">
 <div class="cycle" data-cycle="croupier">
 <span class="ct">La sala</span>
@@ -515,7 +514,7 @@ cerrado.</p>
 <div class="cell void" title="fuera de la sala"></div>
 <div class="cell" title="piso"></div>
 </div>
-<figcaption><b class="t">Canta el 5</b>El número flota enorme sobre él. Cae el sector 5 y tu dado 5 sale de la bolsa.</figcaption>
+<figcaption><b class="t">Canta el 5</b>El número flota enorme sobre él: ese es el sector que cae el turno que viene.</figcaption>
 </figure>
 <figure class="step">
 <div class="board" role="img" aria-label="Detona · el paño arde">
@@ -1036,7 +1035,6 @@ cerrado.</p>
 <tr><th>Paño de 6 sectores</th><td class="tipo">Decal de piso</td><td>Numerales 1-6 pintados, permanentes. Sin esto el sector es azar puro.</td></tr>
 <tr><th>Columnas de mesa ×2</th><td class="tipo">Prop bloqueador</td><td>Mármol bajo, silueta clara desde cámara cenital.</td></tr>
 <tr><th>Número cantado</th><td class="tipo">Prop 3D sobre el jefe</td><td>Ya existe (<code>CroupierWheelSpinVisual</code>). Gira al corregirse, nunca salta.</td></tr>
-<tr><th>Dado confiscado</th><td class="tipo">UI + prop</td><td>Tween de la bolsa al paño; el slot queda con candado. Vuelve con el tween inverso.</td></tr>
 <tr><th>Canto</th><td class="tipo">Anim + SFX</td><td>Brazo en alto + campana de mesa.</td></tr>
 <tr><th>Represalia</th><td class="tipo">Anim + número</td><td>Manotazo seco + 8 flotante en rojo: cobro, no ataque.</td></tr>
 <tr><th>Fuego</th><td class="tipo">VFX hazard</td><td>Entrada: llama por el borde. Tick: chispa. Salida: humo corto — sin salida nadie sabe cuándo volvió a ser pisable.</td></tr>
