@@ -215,10 +215,10 @@ namespace Rollgeon.Chests
 
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
-                var pawn = visuals.SpawnProp(guid, _config.ChestPrefab, coord.Value);
+                var pawn = visuals.SpawnProp(guid, ChestVisuals.ResolvePrefab(_config, tierDef), coord.Value);
                 if (pawn != null)
                 {
-                    TintChest(pawn.gameObject, tierDef.BodyColor, _config.FittingsColor);
+                    ChestVisuals.Apply(pawn.gameObject, tierDef, _config.FittingsColor);
                     if (pawn.HealthBar != null)
                         pawn.HealthBar.Initialize(guid, tierDef.MaxHP, tierDef.MaxHP);
 
@@ -285,59 +285,6 @@ namespace Rollgeon.Chests
             }
             return set;
         }
-
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
-
-        // Tinta por slot de material ('Wood' → color del tier, 'Frame' → herrajes;
-        // en Chest_Prefab cada renderer mezcla ambos slots) con fallback al matching
-        // viejo por nombre de renderer ('Body'/'Fittings', PF_ChestPlaceholder). Vía
-        // MaterialPropertyBlock para no instanciar materiales.
-        private static void TintChest(GameObject go, Color bodyColor, Color fittingsColor)
-        {
-            var renderers = go.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null) return;
-            var mpb = new MaterialPropertyBlock();
-            foreach (var r in renderers)
-            {
-                if (r == null) continue;
-
-                var mats = r.sharedMaterials;
-                bool slotTinted = false;
-                for (int i = 0; i < mats.Length; i++)
-                {
-                    Color? slotTint = null;
-                    var matName = mats[i] != null ? mats[i].name : null;
-                    if (NameContains(matName, "Wood") || NameContains(matName, "Body"))
-                        slotTint = bodyColor;
-                    else if (NameContains(matName, "Frame") || NameContains(matName, "Fittings"))
-                        slotTint = fittingsColor;
-                    if (slotTint == null) continue;
-
-                    r.GetPropertyBlock(mpb, i);
-                    mpb.SetColor(BaseColorId, slotTint.Value);
-                    mpb.SetColor(ColorId, slotTint.Value);
-                    r.SetPropertyBlock(mpb, i);
-                    slotTinted = true;
-                }
-                if (slotTinted) continue;
-
-                Color? tint = null;
-                if (NameContains(r.gameObject.name, "Body"))
-                    tint = bodyColor;
-                else if (NameContains(r.gameObject.name, "Fittings"))
-                    tint = fittingsColor;
-                if (tint == null) continue;
-
-                r.GetPropertyBlock(mpb);
-                mpb.SetColor(BaseColorId, tint.Value);
-                mpb.SetColor(ColorId, tint.Value);
-                r.SetPropertyBlock(mpb);
-            }
-        }
-
-        private static bool NameContains(string name, string token)
-            => name != null && name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
 
         // -----------------------------------------------------------------
         // Resolución

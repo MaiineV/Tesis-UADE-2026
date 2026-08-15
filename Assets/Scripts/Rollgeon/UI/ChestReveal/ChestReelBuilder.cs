@@ -14,7 +14,6 @@ namespace Rollgeon.UI.ChestReveal
         public static IReadOnlyList<ChestReelCellData> BuildStrip(
             ChestReelCellData winner,
             IReadOnlyList<ItemSO> poolPreview,
-            ItemRarity tier,
             int totalCells,
             int winnerIndex,
             int goldFillerPerMille,
@@ -46,7 +45,7 @@ namespace Rollgeon.UI.ChestReveal
                 bool gold = pool.Count == 0 || rng.Next(1000) < goldFillerPerMille;
                 if (gold)
                 {
-                    strip.Add(ChestReelCellData.ForGold(rng.Next(goldMin, goldMax + 1), tier));
+                    strip.Add(ChestReelCellData.ForGold(rng.Next(goldMin, goldMax + 1)));
                     previousItem = null;
                     continue;
                 }

@@ -33,7 +33,7 @@ namespace Rollgeon.UI.ChestReveal.Tests
             int totalCells = 40, int winnerIndex = 36, int goldPerMille = 150, int seed = 42)
         {
             return ChestReelBuilder.BuildStrip(
-                winner, pool, ItemRarity.Rare, totalCells, winnerIndex,
+                winner, pool, totalCells, winnerIndex,
                 goldPerMille, goldFillerMin: 5, goldFillerMax: 20, new System.Random(seed));
         }
 
@@ -61,7 +61,7 @@ namespace Rollgeon.UI.ChestReveal.Tests
         public void BuildStrip_ShouldClampWinnerIndex_IntoRange()
         {
             // Arrange
-            var winner = ChestReelCellData.ForGold(10, ItemRarity.Common, isWinner: true);
+            var winner = ChestReelCellData.ForGold(10, isWinner: true);
 
             // Act
             var strip = Build(winner, new ItemSO[0], totalCells: 10, winnerIndex: 99);
@@ -93,7 +93,7 @@ namespace Rollgeon.UI.ChestReveal.Tests
         public void BuildStrip_ShouldDegradeToGoldFillers_WhenPoolIsEmpty()
         {
             // Arrange
-            var winner = ChestReelCellData.ForGold(50, ItemRarity.Legendary, isWinner: true);
+            var winner = ChestReelCellData.ForGold(50, isWinner: true);
 
             // Act
             var strip = Build(winner, new ItemSO[0], totalCells: 20, winnerIndex: 15);
@@ -107,6 +107,43 @@ namespace Rollgeon.UI.ChestReveal.Tests
                 Assert.LessOrEqual(strip[i].GoldAmount, 20);
             }
             Assert.AreEqual(50, strip[15].GoldAmount);
+        }
+
+        [Test]
+        public void CellRarity_ShouldComeFromContent_NeverFromChestTier()
+        {
+            // Arrange — pool con rarezas mezcladas; el "tier del cofre" no participa.
+            var common = NewItem("reel.common");
+            common.Rarity = ItemRarity.Common;
+            var rare = NewItem("reel.rare");
+            rare.Rarity = ItemRarity.Rare;
+            var legendary = NewItem("reel.legendary");
+            legendary.Rarity = ItemRarity.Legendary;
+            var winner = ChestReelCellData.ForItem(legendary, isWinner: true);
+
+            // Act
+            var strip = Build(winner, new[] { common, rare, legendary });
+
+            // Assert — cada celda refleja SU contenido: ítem = su rareza, oro = Common.
+            foreach (var cell in strip)
+            {
+                if (cell.IsGold)
+                    Assert.AreEqual(ItemRarity.Common, cell.Rarity, "celda de oro no es Common");
+                else
+                    Assert.AreEqual(cell.Item.Rarity, cell.Rarity, $"celda de '{cell.Item.ItemId}' no usa la rareza del ítem");
+            }
+        }
+
+        [Test]
+        public void ForGold_ShouldAlwaysBeCommonRarity()
+        {
+            // Arrange / Act
+            var filler = ChestReelCellData.ForGold(10);
+            var winner = ChestReelCellData.ForGold(500, isWinner: true);
+
+            // Assert — el monto no cambia la rareza visual del oro.
+            Assert.AreEqual(ItemRarity.Common, filler.Rarity);
+            Assert.AreEqual(ItemRarity.Common, winner.Rarity);
         }
 
         [Test]

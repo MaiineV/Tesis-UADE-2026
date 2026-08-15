@@ -88,8 +88,13 @@ archivos y cómo.
   de ramas de fix (la siguiente a `Fix#0006` es `Fix#0007`), NO el ID del
   bug.** Un fix para BUG-016 puede vivir en `Fix#0007` si es la séptima
   rama de fix. Se ramifican desde `develop`.
-- `sprint<NN>/<type>/<issue>-<name>` — ramas de feature, ej.
-  `sprint03/feature/0104-energy-reroll`.
+- `Feature#NNNN_PascalCaseName` — ramas de feature, ej.
+  `Feature#0048_ChestLootPools`. Igual que en fixes, **`NNNN` es un
+  contador secuencial de ramas de feature** (la siguiente a
+  `Feature#0047` es `Feature#0048`); mirar `git branch -a` para el
+  número más alto ocupado. Se ramifican desde `develop`.
+  (El formato viejo `sprint<NN>/<type>/<issue>-<name>` quedó deprecado;
+  las ramas históricas `sprint03/…` no se renombran.)
 - Worktrees aislados por tarea cuando hay múltiples agents corriendo en
   paralelo (ver orquestación del Sprint 03).
 
