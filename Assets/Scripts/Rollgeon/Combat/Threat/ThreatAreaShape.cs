@@ -4,6 +4,11 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>Forma del área telegráfica. Cada Boss usa una distinta (Sistemas prerequisito Bosses §1).</summary>
+    /// <remarks>
+    /// Los índices viajan serializados en los <c>.asset</c> de los jefes: las formas nuevas se
+    /// appendean al final. Reordenar o insertar en el medio le cambia la forma a jefes ya
+    /// autorados sin tocar ningún asset.
+    /// </remarks>
     public enum ThreatShape
     {
         /// <summary>Cuadrado (2·radio+1) centrado en el jugador. Boss 1 — cruz/área 3×3 (radio 1).</summary>
@@ -47,6 +52,14 @@ namespace Rollgeon.Combat.Threat
         /// sector — es el pasillo. Ver <see cref="ThreatAreaShape.ComputeRoomSector"/>.
         /// </summary>
         RoomSector,
+
+        /// <summary>
+        /// Toda la sala caminable MENOS el cuadrado (2·radio+1) centrado en el propio boss — La
+        /// Banca del Tahúr con el pozo en 5: cobra en todos lados salvo La Mesa, su 3×3. Es el
+        /// complemento de <see cref="SquareAroundSelf"/>, así que el centro también es la
+        /// coordenada del boss. Ver <see cref="ThreatAreaShape.ComputeAllExceptSquareAroundSelf"/>.
+        /// </summary>
+        AllExceptSquareAroundSelf,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -70,10 +83,12 @@ namespace Rollgeon.Combat.Threat
         /// Devuelve las casillas amenazadas. <paramref name="size"/> es el radio para
         /// <see cref="ThreatShape.SquareAroundPlayer"/>/<see cref="ThreatShape.SquareAroundSelf"/>
         /// (1 ⇒ 3×3) y el ancho (en casillas) de la franja para <see cref="ThreatShape.Row"/> /
-        /// <see cref="ThreatShape.Column"/> (1 ⇒ la línea del jugador; 3 ⇒ ±1). Ignorado para
-        /// <see cref="ThreatShape.HalfRoom"/>. <paramref name="center"/> es la coordenada del
-        /// jugador para todas las shapes salvo <see cref="ThreatShape.SquareAroundSelf"/>, donde
-        /// es la del boss — la resuelve el caller (ver <see cref="Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark"/>).
+        /// <see cref="ThreatShape.Column"/> (1 ⇒ la línea del jugador; 3 ⇒ ±1), y el radio del
+        /// hueco para <see cref="ThreatShape.AllExceptSquareAroundSelf"/> (1 ⇒ hueco 3×3).
+        /// Ignorado para <see cref="ThreatShape.HalfRoom"/>. <paramref name="center"/> es la
+        /// coordenada del jugador salvo en las shapes que devuelven <c>true</c> en
+        /// <see cref="AnchorsOnSelf"/>, donde es la del boss — la resuelve el caller (ver
+        /// <see cref="Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark"/>).
         /// </summary>
         public static HashSet<GridCoord> Compute(
             IGridManager grid, GridCoord center, ThreatShape shape, int size, HalfRoomAxis axis)
@@ -127,7 +142,57 @@ namespace Rollgeon.Combat.Threat
                     result.UnionWith(ComputeRoomSector(grid, size));
                     break;
                 }
+
+                case ThreatShape.AllExceptSquareAroundSelf:
+                {
+                    result.UnionWith(ComputeAllExceptSquareAroundSelf(grid, center, size));
+                    break;
+                }
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// <c>true</c> si la shape se ancla en la coordenada del propio boss en vez de la del
+        /// jugador.
+        /// </summary>
+        /// <remarks>
+        /// El caller resuelve el <c>center</c> antes de llamar a <see cref="Compute"/>, pero el
+        /// criterio es de la forma, no del nodo: vive acá para que agregar una shape anclada en el
+        /// boss no dependa de acordarse de tocar cada call site.
+        /// </remarks>
+        public static bool AnchorsOnSelf(ThreatShape shape) =>
+            shape == ThreatShape.SquareAroundSelf ||
+            shape == ThreatShape.AllExceptSquareAroundSelf;
+
+        /// <summary>
+        /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)
+        /// centrado en <paramref name="self"/> — La Banca del Tahúr: cobra en todos lados salvo
+        /// La Mesa, el 3×3 que el jefe arrastra consigo.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>El hueco se recorta solo.</b> No se proyecta un cuadrado para restarlo: se filtran
+        /// las casillas de la sala por distancia Chebyshev al jefe. Contra una pared el hueco
+        /// queda del tamaño que entre —en una esquina son 4 casillas en vez de 9— sin ningún caso
+        /// especial, y la casilla del propio jefe nunca queda amenazada ni con radio 0.
+        /// </para>
+        /// <para>
+        /// Los obstáculos no se pintan: <see cref="RoomTiles"/> ya devuelve solo casillas
+        /// caminables. Sala sin bounds reales (grafo vacío) ⇒ vacío, igual que el resto de las
+        /// shapes que necesitan enumerar la sala.
+        /// </para>
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeAllExceptSquareAroundSelf(
+            IGridManager grid, GridCoord self, int radius)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            int r = radius < 0 ? 0 : radius;
+            foreach (var c in RoomTiles(grid))
+                if (c.Chebyshev(self) > r) result.Add(c);
 
             return result;
         }

@@ -196,7 +196,11 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // La fase
         // ---------------------------------------------------------------------
 
-        public int RakeChipsPerRound => _rakeChipsPerRound;
+        public int RakeChipsPerRound
+        {
+            get => _rakeChipsPerRound;
+            set => _rakeChipsPerRound = Mathf.Max(0, value);
+        }
 
         public bool GraceOnNextSettle => _graceOnNextSettle;
 

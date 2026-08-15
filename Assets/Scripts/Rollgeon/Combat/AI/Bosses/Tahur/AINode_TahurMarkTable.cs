@@ -22,6 +22,13 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// (<see cref="TahurWagerService.TableOverlayGuid"/>), así que el cian de la mesa y el naranja
     /// del castigo coexisten sin pisarse.
     /// </para>
+    /// <para>
+    /// <b>Va en <see cref="ThreatOverlayState.Safe"/>.</b> El paño no es una amenaza que late: es
+    /// una zona segura declarada, y con La Banca encima (<see cref="AINode_TahurMarkBanca"/>) es
+    /// literalmente el hueco del telegraph invertido. El estado le da el damero quieto que pide la
+    /// ficha en vez del rayado pulsante del Castigo — dos amenazas del mismo jefe que sólo se
+    /// distinguían por matiz.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurMarkTable : AIActionNode
@@ -49,7 +56,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             wager.SetTable(tiles);
 
             ThreatTelegraphOverlay.ResolveOrCreate()
-                .Show(TahurWagerService.TableOverlayGuid, tiles, Tint);
+                .Show(TahurWagerService.TableOverlayGuid, tiles, ThreatOverlayState.Safe, Tint);
 
             return AIResult.Succeeded;
         }

@@ -16,13 +16,14 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// Va inmediatamente antes del nodo de confiscación y del de marcado en el Sequence raíz. Abre el
-    /// windup: desde que este nodo corre hasta que el sector detona, pegarle al jefe corre la rueda.
+    /// windup: desde que este nodo corre hasta que el sector detona, cerrar el turno dentro del sector
+    /// cantado corre la rueda.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpinWheel : AIActionNode
     {
-        [Tooltip("Daño de la Represalia de mesa: lo que cuesta pegarle con un número impar en el aire. " +
-                 "Con la rueda trucada (fase 2) no se cobra.")]
+        [Tooltip("Daño de la Represalia de mesa: lo que cuesta pegarle. Se cobra siempre — cualquier " +
+                 "número, cualquier fase, con o sin windup abierto. Es su único daño directo.")]
         [MinValue(0)]
         public int RetaliationDamage = 8;
 

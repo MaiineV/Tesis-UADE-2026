@@ -6,7 +6,10 @@ using Patterns;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dice;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
@@ -52,6 +55,10 @@ namespace Rollgeon.Combat.AI.Tests
             _playerGuid = Guid.NewGuid();
             _grid.Register(_bossGuid, new GridCoord(5, 3));
             _grid.Register(_playerGuid, new GridCoord(0, 0));
+
+            // El corrimiento sale del cierre de turno del jugador, y quién es el jugador lo dice este
+            // servicio.
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _playerGuid });
 
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
             _wheel.Bind(_bossGuid);
@@ -232,15 +239,52 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void StandingInTheCalledSector_PushesTheBlastOffYou()
+        {
+            // Arrange — el trato del jefe: mover el hacha es pararse bajo el hacha. El jugador cierra
+            // el turno dentro del bloque cantado, el número pasa al siguiente y el que cae ya no es
+            // el suyo.
+            MovePlayer(new GridCoord(0, 0)); // Sector 4.
+            _wheel.Sing(new List<int> { 4 });
+            Mark();
+
+            // Act
+            EndPlayerTurn();
+            Detonate();
+
+            // Assert
+            Assert.IsEmpty(_pipeline.Resolved, "El 4 pasó a 5: donde está parado ya no detona nada.");
+        }
+
+        [Test]
         public void NudgedNumber_DetonatesTheNewSector_NotTheOneItSang()
         {
             // Arrange — el error típico del jugador: correr la rueda sin mirar a dónde la manda. Si el
             // corrimiento no moviera el hacha, la palanca sería decorativa.
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
-            _wheel.Sing(new List<int> { 3 });
+            _wheel.Sing(new List<int> { 4 });
             Mark();
 
-            // Act — el jugador pega con el 3 en el aire: pasa a 4, que es justo donde está parado.
+            // Act — cierra el turno adentro (el 4 pasa a 5) y termina en el 5 antes de que caiga.
+            EndPlayerTurn();
+            MovePlayer(new GridCoord(4, 0)); // Sector 5, a donde mandó el hacha.
+            Detonate();
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "El sector 5 (el corrido) es el que detona.");
+            Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
+        }
+
+        [Test]
+        public void HittingTheBoss_DoesNotRedirectTheBlast()
+        {
+            // Arrange — la regresión que motivó el cambio: pegarle corría la rueda, así que el único
+            // ataque del jugador venía con un reposicionamiento del hacha de regalo.
+            MovePlayer(new GridCoord(0, 0)); // Sector 4.
+            _wheel.Sing(new List<int> { 4 });
+            Mark();
+
+            // Act
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = _playerGuid,
@@ -251,7 +295,7 @@ namespace Rollgeon.Combat.AI.Tests
             Detonate();
 
             // Assert
-            Assert.AreEqual(1, _pipeline.Resolved.Count, "El sector 4 (el corrido) es el que detona.");
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "El 4 sigue siendo el 4: le pega igual.");
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
         }
 
@@ -288,6 +332,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         private void MovePlayer(GridCoord coord) => _grid.Move(_playerGuid, coord);
 
+        private void EndPlayerTurn() => EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
+
         private sealed class SpyDamagePipeline : IDamagePipeline
         {
             public readonly List<DamageContext> Resolved = new List<DamageContext>();
@@ -299,6 +345,19 @@ namespace Rollgeon.Combat.AI.Tests
             }
 
             public DamageContext Preview(DamageContext ctx) => ctx;
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
     }
 }

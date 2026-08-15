@@ -5,6 +5,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Initiative;
+using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Grid;
@@ -16,8 +17,9 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
     /// Mantiene la fila de rodillos de La Bandida: la arma alineada en el primer turno, detecta los
-    /// rotos, los repone a los <see cref="RespawnDelayTurns"/> turnos del jefe en su ranura original
-    /// y rearma la cuenta del jackpot en el mismo paso en que devuelve un rodillo.
+    /// rotos, deja su casilla en llamas, los repone a los <see cref="RespawnDelayTurns"/> turnos del
+    /// jefe en su ranura original y rearma la cuenta del jackpot en el mismo paso en que devuelve un
+    /// rodillo.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -37,6 +39,14 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// <see cref="RespawnDelayTurns"/> = 2 el rodillo vuelve en el segundo turno del jefe posterior
     /// a la rotura; con 1 (Fase 2) vuelve en el primero.
     /// </para>
+    /// <para>
+    /// <b>El rodillo roto es el hook de muerte.</b> No hay evento de "objeto destruido" al que
+    /// colgarse: la rotura se descubre acá, comparando vidas, y por eso el fuego
+    /// (<see cref="OnBreakHazard"/>) se enciende en el mismo paso que vacía la ranura. La
+    /// consecuencia de diseño es el retardo: el jugador rompe el rodillo en SU turno y la casilla
+    /// prende recién en el turno del jefe, así que el turno de la rotura es gratis y el precio se
+    /// cobra desde el siguiente.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpawnReels : AIActionNode
@@ -53,8 +63,16 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         }
 
         [OdinSerialize]
-        [Tooltip("EnemyDataSO del rodillo (objeto de 3 HP que no actúa).")]
+        [Tooltip("EnemyDataSO del rodillo: el objeto de 60 HP que no actúa. A esa vida romper uno " +
+                 "cuesta casi un turno entero de daño, que es lo que vuelve la elección una decisión.")]
         public EnemyDataSO ReelData;
+
+        [OdinSerialize]
+        [Tooltip("Hazard que queda sobre la casilla del rodillo roto. Es el fuego de paño del " +
+                 "Croupier reusado tal cual (6 por terminar el turno adentro, 2 rondas): la sustancia " +
+                 "ya existe y duplicarla sería dos assets que se desincronizan. Vacío = romper un " +
+                 "rodillo deja piso limpio.")]
+        public HazardDefinitionSO OnBreakHazard;
 
         [Tooltip("Rodillos en la fila. 3 = el diseño de La Bandida (el del medio es el que se traba).")]
         [MinValue(1)]
@@ -116,8 +134,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         /// <summary>
         /// Tiles de la fila: <see cref="Count"/> casillas consecutivas centradas en la coordenada
         /// del jefe, un paso hacia el lado elegido. Que la fila arranque en el anillo del jefe es lo
-        /// que hace que el brazo (3×3 sobre él) cubra las casillas al lado del rodillo del medio.
-        /// Devuelve <c>null</c> si ningún lado tiene un solo tile válido.
+        /// que ata las dos mitades del jefe: pegarle a un rodillo obliga a pararse dentro del
+        /// alcance del brazo. Devuelve <c>null</c> si ningún lado tiene un solo tile válido.
         /// </summary>
         private List<GridCoord> BuildRow(IGridManager grid, Guid selfGuid)
         {
@@ -178,10 +196,12 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         // ======================================================================
 
         /// <summary>
-        /// Pasa a "roto" toda ranura cuyo rodillo ya no tenga vida. Misma fuente de verdad que el
-        /// alive-check de la AI de targeting: sin <see cref="Health"/> registrada o en 0 = muerto.
+        /// Pasa a "roto" toda ranura cuyo rodillo ya no tenga vida y prende su casilla. Misma fuente
+        /// de verdad que el alive-check de la AI de targeting: sin <see cref="Health"/> registrada o
+        /// en 0 = muerto. Un rodillo dañado pero vivo — que con 60 de vida es el estado normal —
+        /// conserva su ranura y no enciende nada.
         /// </summary>
-        private static void MarkBrokenReels(IBandidaJackpotService service, AttributesManager attrs)
+        private void MarkBrokenReels(IBandidaJackpotService service, AttributesManager attrs)
         {
             var slots = service.Slots;
             for (int i = 0; i < slots.Count; i++)
@@ -189,8 +209,30 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
                 if (!slots[i].IsAlive) continue;
 
                 var health = attrs.GetAttribute<Health>(slots[i].ReelGuid);
-                if (health == null || health.Value <= 0) service.DetachReel(i);
+                if (health != null && health.Value > 0) continue;
+
+                var coord = slots[i].Coord;
+                service.DetachReel(i);
+                IgniteBrokenSlot(coord);
             }
+        }
+
+        /// <summary>
+        /// Deja el fuego sobre la casilla que ocupaba el rodillo. Una instancia por rotura: dos
+        /// rodillos rotos son dos llamas independientes, cada una con su propia duración, en vez de
+        /// una que se pisa a sí misma.
+        /// </summary>
+        /// <remarks>
+        /// Usa el overload de tiles de <see cref="IHazardService"/> y no el de definición: la forma
+        /// autorada en el asset del fuego es la del Croupier (un sector de paño entero) y acá el
+        /// fuego es exactamente una casilla.
+        /// </remarks>
+        private void IgniteBrokenSlot(GridCoord coord)
+        {
+            if (OnBreakHazard == null) return;
+            if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null) return;
+
+            hazards.Activate(OnBreakHazard, new[] { coord });
         }
 
         /// <summary>

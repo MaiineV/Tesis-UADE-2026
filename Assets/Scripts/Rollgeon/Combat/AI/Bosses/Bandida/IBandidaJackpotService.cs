@@ -49,11 +49,12 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// campos <c>[NonSerialized]</c> de otro. Acá vive el estado; los nodos son drivers finos.
     /// </para>
     /// <para>
-    /// <b>La cancelación es un hook de daño, no un chequeo de HP.</b> Con el mínimo del jugador en
-    /// 6 contra rodillos de 3 de vida, el estado "dañado pero vivo" no existe nunca — una
-    /// PreCondition que compare vidas no lo vería jamás. El servicio se suscribe a
-    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y cancela al primer punto de daño que entra
-    /// en un rodillo.
+    /// <b>La cancelación es un hook de daño, no un chequeo de HP.</b> La ficha dice "se cancela
+    /// dañando cualquier rodillo", no rompiéndolo: con rodillos de 60 de vida contra un turno
+    /// mediano de 42, el caso normal es pegarle y que siga en pie, así que una PreCondition que
+    /// compare vidas dejaría al jugador sin la única palanca contra el jackpot hasta el segundo
+    /// golpe. El servicio se suscribe a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y cancela al
+    /// primer punto de daño que entra en un rodillo.
     /// </para>
     /// </remarks>
     public interface IBandidaJackpotService

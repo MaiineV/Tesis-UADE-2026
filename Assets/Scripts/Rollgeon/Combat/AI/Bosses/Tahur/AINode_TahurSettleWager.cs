@@ -24,6 +24,12 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// Fase 2 con el canto invertido, armar el canto ⇒ te leyó, liquida como el peor resultado.
     /// </para>
     /// <para>
+    /// <b>El rastrillo.</b> Antes de liquidar, el pozo sube <see cref="RakeChipsPerRound"/> ficha
+    /// por ronda desde la fase 1. Es la línea que le saca la salida al jugador que renuncia al
+    /// pozo: sin rastrillo el Castigo se quedaba en 26 mientras esquivara, con rastrillo llega a 45
+    /// solo — y con el pozo lleno entra La Banca (<see cref="AINode_TahurMarkBanca"/>).
+    /// </para>
+    /// <para>
     /// <b>Por qué no es un <c>AINode_TelegraphMark</c>.</b> La forma y el daño del Castigo se
     /// eligen en runtime (dependen de la distancia al canto y del pozo); los del TelegraphMark
     /// son campos fijos del inspector. El estado va al mismo <see cref="IThreatenedAreaService"/>,
@@ -54,6 +60,12 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         [Tooltip("Techo de fichas del pozo (la banca). Con la tabla de 5 entradas, 5.")]
         [MinValue(1)]
         public int MaxChips = 5;
+
+        [Tooltip("El rastrillo: fichas que el pozo sube por ronda, solo, desde la fase 1. Es lo que " +
+                 "convierte 'no jugar' en una cuenta regresiva — con 0 el pozo sólo se mueve cuando " +
+                 "el jugador falla y renunciar al pozo vuelve a ser una postura estable.")]
+        [MinValue(0)]
+        public int RakeChipsPerRound = 1;
 
         [Title("Cómo se mueven las fichas")]
         [Tooltip("Fichas que suma armar una mano peor (o ninguna).")]
@@ -107,8 +119,14 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             wager.PayoutPerChip = PayoutPerChip;
             wager.BeginBossTurn();
 
-            // El rastrillo corre solo, antes de liquidar: en fase 2 el pozo sube aunque el
-            // jugador clave la mano, y estancarse deja de ser posible.
+            // El rastrillo corre desde la fase 1 (antes lo encendía el volteo): mientras el pozo
+            // sólo se movía con los fallos del jugador, renunciar al pozo era una postura estable
+            // — el Castigo se quedaba en su escalón más barato y se esquivaba de a uno. Con el
+            // rastrillo el Castigo escala 26 → 45 solo y no jugar pasa a ser una cuenta regresiva.
+            // El volteo puede subirlo (ver AINode_TahurFlipCard); a partir de ahí el valor es suyo.
+            if (!wager.CallInverted) wager.RakeChipsPerRound = RakeChipsPerRound;
+
+            // Antes de liquidar: el Castigo que se marque esta ronda ya cuenta la ficha del rastrillo.
             if (wager.RakeChipsPerRound > 0) wager.AddChips(wager.RakeChipsPerRound);
 
             // El canto que hay pendiente se armó con las reglas de antes del volteo: la primera

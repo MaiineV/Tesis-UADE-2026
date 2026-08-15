@@ -47,8 +47,10 @@ namespace Rollgeon.Combat.AI.Tests
         public int VaultedGold { get; set; }
         public int ChipValueMultiplier { get; set; } = 1;
         public int DamageStepDown { get; set; }
+        public int DamageStepUp { get; set; }
         public int BribeCost { get; set; } = 35;
         public int BribeRounds { get; set; } = 3;
+        public int RakeRoundsPerStep { get; set; } = 3;
 
         public bool DamageTaken { get; set; }
         public int CollectTaxCalls { get; private set; }

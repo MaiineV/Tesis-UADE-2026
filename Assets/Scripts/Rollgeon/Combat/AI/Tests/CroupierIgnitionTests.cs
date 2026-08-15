@@ -60,8 +60,11 @@ namespace Rollgeon.Combat.AI.Tests
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
             _wheel.Bind(_bossGuid);
 
-            _fire = CreateFire("Fire P1", durationRounds: 2);
-            _firePhase2 = CreateFire("Fire P2", durationRounds: 3);
+            // 3 y 4 rondas de hazard = "arde 2 rondas" y "arde 3": el fuego nace en el turno del jefe y
+            // el jugador ya jugó esa ronda, así que la primera no le llega nunca. Ver los remarks de
+            // AINode_IgniteDetonatedSectors.
+            _fire = CreateFire("Fire P1", durationRounds: 3);
+            _firePhase2 = CreateFire("Fire P2", durationRounds: 4);
         }
 
         [TearDown]
@@ -120,7 +123,7 @@ namespace Rollgeon.Combat.AI.Tests
             var instances = new List<HazardInstanceInfo>(_hazard.ActiveInstances());
             Assert.AreEqual(1, instances.Count);
             Assert.AreSame(_firePhase2, instances[0].Definition);
-            Assert.AreEqual(3, instances[0].RemainingRounds);
+            Assert.AreEqual(4, instances[0].RemainingRounds, "Fase 2 arde 3 rondas para el jugador.");
         }
 
         [Test]
@@ -227,6 +230,59 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _pipeline.Resolved.Count);
         }
 
+        // =====================================================================
+        // "El fuego dura y se acumula"
+        // =====================================================================
+
+        [Test]
+        public void Phase1Fire_BillsTwoPlayerTurnEnds_ThenGoesOut()
+        {
+            // Arrange — "arde 2 rondas": quedarse cuesta 6 dos veces, y recién a la tercera el bloque
+            // vuelve a ser pisable. Con la duración vieja el fuego llegaba a cobrar una sola vez, así
+            // que salir del bloque nunca era una decisión: bastaba con no volver.
+            MovePlayer(new GridCoord(10, 0)); // Sector 6: esquiva la detonación, no se arma el skip.
+            Detonate(1);
+            Ignite();
+            MovePlayer(new GridCoord(0, 5)); // Sector 1: se mete en el bloque quemado.
+
+            // Act + Assert
+            NewRound(2);
+            EndTurn(_playerGuid);
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "Primera ronda de fuego.");
+
+            NewRound(3);
+            EndTurn(_playerGuid);
+            Assert.AreEqual(2, _pipeline.Resolved.Count, "Segunda ronda de fuego.");
+
+            NewRound(4);
+            EndTurn(_playerGuid);
+            Assert.AreEqual(2, _pipeline.Resolved.Count, "A la tercera el bloque ya se apagó.");
+        }
+
+        [Test]
+        public void Ignite_DoesNotPutOutThePreviousBlock()
+        {
+            // Arrange — encender el bloque nuevo no limpia el que todavía arde: el paño se gasta ronda
+            // a ronda en vez de volver a foja cero cada vez que cae un número.
+            MovePlayer(new GridCoord(10, 0)); // Sector 6: lejos de los dos que caen.
+            Detonate(1);
+            Ignite();
+
+            // Act — al turno siguiente cae otro bloque.
+            NewRound(2);
+            Detonate(4);
+            Ignite();
+
+            // Assert
+            Assert.AreEqual(2, new List<HazardInstanceInfo>(_hazard.ActiveInstances()).Count,
+                "El fuego del sector 1 tiene que seguir vivo cuando prende el del 4.");
+
+            MovePlayer(new GridCoord(0, 5)); // Sector 1: el bloque de la ronda pasada.
+            EndTurn(_playerGuid);
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "El bloque viejo sigue cobrando sus 6.");
+            Assert.AreEqual(FireDamage, _pipeline.Resolved[0].BaseDamage);
+        }
+
         [Test]
         public void SeamColumnInPhase2_BothFiresCoverIt()
         {
@@ -278,6 +334,13 @@ namespace Rollgeon.Combat.AI.Tests
         private void MovePlayer(GridCoord coord) => _grid.Move(_playerGuid, coord);
 
         private static void EndTurn(Guid entity) => EventManager.Trigger(EventName.OnTurnFinished, entity);
+
+        /// <summary>
+        /// Abre la ronda <paramref name="roundIndex"/>. Es el tick de duración de los hazards: el
+        /// <c>HazardService</c> descuenta rondas en <c>OnTurnQueueBuilt</c>, no en el cierre de turno.
+        /// </summary>
+        private static void NewRound(int roundIndex)
+            => EventManager.Trigger(EventName.OnTurnQueueBuilt, new List<Guid>(), roundIndex);
 
         private static HazardDefinitionSO CreateFire(string name, int durationRounds)
         {

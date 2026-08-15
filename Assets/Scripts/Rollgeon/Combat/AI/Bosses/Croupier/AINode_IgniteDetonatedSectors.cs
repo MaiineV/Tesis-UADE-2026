@@ -27,8 +27,14 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// en el turno del jefe y el jugador tiene el primer turno de cada ronda (CNF-006), así que la
     /// ronda en la que se enciende ya no tiene ningún cierre de turno del jugador por delante.
     /// <c>DurationRounds = 1</c> expira en el próximo <c>OnTurnQueueBuilt</c>, antes de que el jugador
-    /// vuelva a jugar: el fuego no llegaría a tickear nunca. "Dura 1 turno" (fase 1) se autora como
-    /// <c>DurationRounds = 2</c> y "dura 2" (fase 2) como <c>3</c>.
+    /// vuelva a jugar: el fuego no llegaría a tickear nunca. "Arde 2 rondas" (fase 1) se autora como
+    /// <c>DurationRounds = 3</c> y "arde 3" (fase 2) como <c>4</c>.
+    /// </para>
+    /// <para>
+    /// <b>Los fuegos se acumulan.</b> Cada sector detonado abre su propia instancia de hazard y este
+    /// nodo no apaga las anteriores: encender el bloque nuevo no limpia el que todavía arde. Es lo que
+    /// convierte al paño en un recurso que se gasta — con el fuego durando más de un turno del jugador,
+    /// el mapa útil se achica ronda a ronda en vez de volver a cero cada vez que cae un número.
     /// </para>
     /// <para>
     /// <b>La detonación consume la llama.</b> Si el jugador estaba adentro cuando el sector explotó, ya
@@ -42,12 +48,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_IgniteDetonatedSectors : AIActionNode
     {
-        [Tooltip("Fuego de paño de fase 1. Trigger = OnTurnEndInTile, Damage = 6, DurationRounds = 2 " +
-                 "(= 'un turno' del jugador; ver remarks del nodo).")]
+        [Tooltip("Fuego de paño de fase 1. Trigger = OnTurnEndInTile, Damage = 6, DurationRounds = 3 " +
+                 "(= 'arde 2 rondas' para el jugador; ver remarks del nodo).")]
         public HazardDefinitionSO Fire;
 
-        [Tooltip("Fuego de fase 2 — la misma llama con DurationRounds = 3 ('dos turnos'). Vacío = usa " +
-                 "la definición de fase 1 en las dos fases.")]
+        [Tooltip("Fuego de fase 2 — la misma llama con DurationRounds = 4 ('arde 3 rondas'). Vacío = " +
+                 "usa la definición de fase 1 en las dos fases.")]
         public HazardDefinitionSO FirePhase2;
 
         [Tooltip("Si el jugador se comió la detonación, el fuego de ese sector se saltea su primer tick " +

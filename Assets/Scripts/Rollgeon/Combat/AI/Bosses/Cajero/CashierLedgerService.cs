@@ -97,10 +97,31 @@ namespace Rollgeon.Combat.Cashier
         public int DamageStepDown => _bribeRoundsLeft > 0 ? 1 : 0;
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Derivado del índice de ronda absoluto, no acumulado con un contador propio: el
+        /// servicio se crea perezosamente en el primer tick del jefe y por lo tanto se pierde
+        /// los <c>OnTurnQueueBuilt</c> anteriores. Con un contador incremental esas rondas no
+        /// contarían nunca; con la división el rastrillo queda igual de calibrado se haya
+        /// creado el servicio en la ronda 0 o en la 4, y sobrevive un restore de save
+        /// (<c>TurnOrderService.RestoreState</c> re-dispara el evento con el índice real).
+        /// </remarks>
+        public int DamageStepUp
+        {
+            get
+            {
+                if (RakeRoundsPerStep <= 0 || _lastRoundIndex <= 0) return 0;
+                return _lastRoundIndex / RakeRoundsPerStep;
+            }
+        }
+
+        /// <inheritdoc />
         public int BribeCost { get; set; } = 35;
 
         /// <inheritdoc />
         public int BribeRounds { get; set; } = 3;
+
+        /// <inheritdoc />
+        public int RakeRoundsPerStep { get; set; } = 3;
 
         /// <inheritdoc />
         public bool ConsumeDamageTaken(Guid entityGuid)
@@ -138,8 +159,9 @@ namespace Rollgeon.Combat.Cashier
             if (!economy.Spend(BribeCost)) return false;
 
             // Se reinicia la ventana en vez de acumular: dos sobornos seguidos compran seis
-            // rondas de un escalón abajo, no tres rondas de dos escalones (la ficha da un solo
-            // escalón de alivio, y con dos el jefe rico dejaría de amenazar).
+            // rondas de un escalón abajo, no tres rondas de dos escalones. Con dos escalones de
+            // alivio el soborno anularía el rastrillo de golpe y volvería a hacerlo opcional —
+            // la ficha lo quiere como cuota que hay que renovar cada 3 rondas, no como un seguro.
             _bribeRoundsLeft = BribeRounds < 0 ? 0 : BribeRounds;
             return true;
         }

@@ -108,13 +108,24 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // La fase (el volteo de la carta)
         // -----------------------------------------------------------------
 
-        /// <summary>Fichas que el rastrillo suma por ronda, solo. 0 = sin rastrillo (fase 1).</summary>
-        int RakeChipsPerRound { get; }
+        /// <summary>
+        /// Fichas que el rastrillo suma por ronda, solo. Corre desde la fase 1 —lo escribe
+        /// <c>AINode_TahurSettleWager</c> en cada liquidación— y el volteo puede subirlo.
+        /// </summary>
+        /// <remarks>
+        /// Es lo que le pone reloj a "no jugar": sin rastrillo el pozo sólo se mueve cuando el
+        /// jugador falla, así que renunciar al pozo dejaba el Castigo clavado en su escalón más
+        /// barato y esquivable de a uno.
+        /// </remarks>
+        int RakeChipsPerRound { get; set; }
 
         /// <summary>La próxima liquidación es de gracia (el canto se armó con las reglas viejas).</summary>
         bool GraceOnNextSettle { get; }
 
-        /// <summary>Se voltea la carta: invierte el canto, enciende el rastrillo y levanta el piso del pozo.</summary>
+        /// <summary>
+        /// Se voltea la carta: invierte el canto, fija el rastrillo de fase 2 y levanta el piso
+        /// del pozo.
+        /// </summary>
         void FlipCard(int rakeChipsPerRound, int chipsFloor, bool graceNextSettle);
 
         /// <summary>Consume la gracia. <c>true</c> si esta liquidación era la de gracia.</summary>

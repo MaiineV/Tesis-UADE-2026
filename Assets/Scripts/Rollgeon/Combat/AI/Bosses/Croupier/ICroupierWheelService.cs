@@ -12,12 +12,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Por qué un servicio y no estado en un nodo.</b> El corrimiento y la Represalia entran por
-    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> — fuera del turno del jefe y fuera de cualquier
-    /// tick del árbol. Un <c>[NonSerialized]</c> en un nodo (el patrón de
-    /// <see cref="Decisions.AINode_Alternate"/>) alcanza cuando el estado lo lee un solo nodo; acá lo
-    /// comparten el que canta, el que marca, el que detona, el que enciende el fuego, el reader que
-    /// dirige la confiscación de dados y el hook de daño.
+    /// <b>Por qué un servicio y no estado en un nodo.</b> La Represalia entra por
+    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y el corrimiento por <c>OnTurnFinished</c> —
+    /// los dos fuera del turno del jefe y fuera de cualquier tick del árbol. Un <c>[NonSerialized]</c>
+    /// en un nodo (el patrón de <see cref="Decisions.AINode_Alternate"/>) alcanza cuando el estado lo
+    /// lee un solo nodo; acá lo comparten el que canta, el que marca, el que detona, el que enciende
+    /// el fuego, el reader que dirige la confiscación de dados y los dos hooks.
     /// </para>
     /// <para>
     /// <b>Ciclo de vida.</b> Global y lazy (<see cref="CroupierWheelService.ResolveOrCreate"/>, mismo
@@ -36,12 +36,16 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         int NumbersPerTurn { get; }
 
         /// <summary>
-        /// Rueda trucada: pegarle al jefe ya no corre la rueda <b>ni</b> cobra Represalia. Los dos
-        /// son el mismo evento, así que se apagan juntos — el 8 era el precio de la palanca.
+        /// Rueda trucada: terminar el turno dentro del sector cantado ya no corre la rueda. Es lo
+        /// único que apaga — la Represalia se cobra igual, porque no es el precio de la palanca sino
+        /// el de la casilla de melee, y esa casilla existe en las dos fases.
         /// </summary>
         bool Rigged { get; }
 
-        /// <summary>Daño de la Represalia de mesa. Lo publica el nodo que canta (dato de autoría).</summary>
+        /// <summary>
+        /// Daño de la Represalia de mesa: lo que cuesta pegarle, siempre. Lo publica el nodo que canta
+        /// (dato de autoría).
+        /// </summary>
         int RetaliationDamage { get; set; }
 
         /// <summary>
@@ -52,7 +56,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// <c>true</c> entre el momento en que canta y el momento en que detona: la ventana en la que
-        /// pegarle mueve la rueda.
+        /// cerrar el turno dentro del sector cantado mueve la rueda.
         /// </summary>
         bool WindupActive { get; }
 
@@ -71,8 +75,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Ata el servicio al jefe <paramref name="bossGuid"/>: a partir de acá el daño recibido por
-        /// ese guid corre la rueda y cobra Represalia. Idempotente; re-atar a otro guid reemplaza el
-        /// anterior (combate nuevo, instancia nueva).
+        /// ese guid cobra Represalia y el cierre de turno del jugador corre la rueda. Idempotente;
+        /// re-atar a otro guid reemplaza el anterior (combate nuevo, instancia nueva).
         /// </summary>
         void Bind(Guid bossGuid);
 
@@ -93,8 +97,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Cierra el windup: devuelve los slots que estaban en el aire (para detonarlos) y los
-        /// publica en <see cref="DetonatedSectors"/>. Después de esto pegarle al jefe ya no mueve
-        /// nada hasta que vuelva a cantar.
+        /// publica en <see cref="DetonatedSectors"/>. Después de esto cerrar el turno en cualquier
+        /// sector ya no mueve nada hasta que vuelva a cantar.
         /// </summary>
         IReadOnlyList<CroupierWheelSlot> ConsumeWindup();
 

@@ -11,7 +11,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// </summary>
     /// <remarks>
     /// Va dentro del <c>Once</c> del gate de fase, junto al HOLD. Solo cambia frecuencia — ningún
-    /// número de daño de la Fase 1 se mueve (jackpot sigue en 25, brazo en 9).
+    /// número de daño de la Fase 1 se mueve (jackpot sigue en 25, brazo en 12).
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetReelRespawnDelay : AIActionNode

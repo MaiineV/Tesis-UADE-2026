@@ -35,6 +35,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// casilla válida). Es un Failed benigno: en el árbol va en <c>Selector[DropChips, Wait]</c>,
     /// como el KeepDistance — suelto en el Sequence le abortaría el turno al jefe.
     /// </para>
+    /// <para>
+    /// <b>Corre todos los turnos, pero sólo paga en los de columna.</b> El jefe alterna marcar y
+    /// disparar, así que la mitad de los ticks encuentran el área vacía y salen por Failed sin
+    /// tocar el flag de daño. El golpe que el jugador metió en un turno de disparo se cobra en el
+    /// turno de columna siguiente: se pierde el timing, nunca la ficha.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierDropChips : AIActionNode
@@ -77,8 +83,10 @@ namespace Rollgeon.Combat.AI.Decisions
             if (grid == null) return AIResult.Failed;
             if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
+            // Se crea acá aunque todavía no vaya a soltar nada: es el nodo del Cajero que corre
+            // todos los turnos, y el reloj del rastrillo necesita al servicio escuchando rondas
+            // desde el principio, no recién cuando el jugador le pegue.
             var ledger = CashierLedgerService.ResolveOrCreate();
-            if (RequireDamageTaken && !ledger.ConsumeDamageTaken(context.SelfGuid)) return AIResult.Failed;
 
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
                 return AIResult.Failed;
@@ -89,8 +97,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
+            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo el
+            // jefe no marca nada, y consumirlo antes se comía el golpe que el jugador acababa de
+            // pagar con su turno — una de cada dos fichas desaparecía sin caer al piso.
             var column = threat.GetPendingTiles(context.SelfGuid);
             if (column == null || column.Count == 0) return AIResult.Failed;
+
+            if (RequireDamageTaken && !ledger.ConsumeDamageTaken(context.SelfGuid)) return AIResult.Failed;
 
             var used = new HashSet<GridCoord>();
             int dropped = 0;

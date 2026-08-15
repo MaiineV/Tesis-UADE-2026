@@ -7,18 +7,27 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
     /// "Se voltea la carta" — setup de Fase 2 del Tahúr (40% de HP). El cartel pasa de PIDE a LEE
-    /// (la mano cantada es ahora la que NO hay que armar), entra el rastrillo (+1 ficha por ronda,
-    /// sola) y el pozo deja de poder volver a 0. No cambia un solo número: cambia el puzzle.
+    /// (la mano cantada es ahora la que NO hay que armar) y el pozo deja de poder volver a 0. No
+    /// cambia un solo número: cambia el puzzle.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Pensado para <c>If(PcOwnerHpBelow 0.40) → Once(FlipCard)</c>, dentro del
     /// <c>Selector[gate, Wait]</c> de aislamiento — es un one-shot: aplicado dos veces no rompe
     /// nada, pero <c>Once</c> deja explícito que el volteo pasa una vez por pelea.
+    /// </para>
+    /// <para>
+    /// <b>El rastrillo ya venía corriendo.</b> Desde que empuja una ficha por ronda en fase 1
+    /// (<c>AINode_TahurSettleWager.RakeChipsPerRound</c>), el volteo no lo enciende: fija el ritmo
+    /// de fase 2 y a partir de acá el valor es suyo — la liquidación deja de pisarlo. Con
+    /// <see cref="RakeChipsPerRound"/> igual al de fase 1 el ritmo no cambia, que es el default.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurFlipCard : AIActionNode
     {
-        [Tooltip("Fichas que el rastrillo suma por ronda a partir del volteo.")]
+        [Tooltip("Ritmo del rastrillo a partir del volteo. El rastrillo ya corre en fase 1: acá se " +
+                 "puede subir, y desde el volteo la liquidación deja de pisar el valor.")]
         [MinValue(0)]
         public int RakeChipsPerRound = 1;
 

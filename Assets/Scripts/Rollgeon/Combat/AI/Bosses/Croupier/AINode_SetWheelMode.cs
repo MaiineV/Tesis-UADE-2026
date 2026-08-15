@@ -25,8 +25,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         [MinValue(1)]
         public int NumbersPerTurn = 2;
 
-        [Tooltip("Rueda trucada: pegarle ya no corre la rueda ni cobra Represalia. La fase abarata " +
-                 "pegarle; lo que te saca es la palanca.")]
+        [Tooltip("Rueda trucada: terminar el turno en el sector cantado ya no lo corre. La Represalia " +
+                 "se sigue cobrando — lo que la fase te saca es la palanca, no el precio de pegarle.")]
         public bool Rigged = true;
 
         [Tooltip("Índice de fase que leen los nodos con valores por fase (daño de sector, fuego).")]

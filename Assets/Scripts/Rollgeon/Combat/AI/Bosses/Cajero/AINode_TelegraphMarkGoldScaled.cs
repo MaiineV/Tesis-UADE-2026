@@ -25,10 +25,18 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </para>
     /// <para>
     /// <b>Tres <c>If(PcGoldCompare)</c> harían lo mismo… hasta el soborno.</b> El escalón efectivo
-    /// es <c>rank(oro) − DamageStepDown</c>, y con Ifs sueltos cada rama necesitaría además saber
-    /// si hay soborno activo (3 gates × 2 estados). Un nodo con la tabla adentro deja el árbol en
-    /// un solo hijo legible y la matemática en <see cref="CashierGoldTierTable"/>, testeable sin
-    /// grilla ni servicios.
+    /// es <c>clamp(rank(oro) + DamageStepUp) − DamageStepDown</c>: oro, más lo que sumó el
+    /// rastrillo por el paso de las rondas, menos lo que compró el soborno. Con Ifs sueltos cada
+    /// rama necesitaría además saber en qué ronda va y si hay soborno activo (3 gates × N × 2).
+    /// Un nodo con la tabla adentro deja el árbol en un solo hijo legible y la matemática en
+    /// <see cref="CashierGoldTierTable"/>, testeable sin grilla ni servicios.
+    /// </para>
+    /// <para>
+    /// <b>El rastrillo es lo que lo mantiene vivo con un jugador pobre.</b> Los umbrales están
+    /// calibrados para el oro que se lleva al piso 2 (~65-70), así que sin el reloj un jugador
+    /// que gasta todo antes de entrar dejaría al Cajero clavado en el escalón más barato la pelea
+    /// entera. <c>ApplyRakeStepUp = false</c> reproduce exactamente ese jefe inofensivo — sirve
+    /// para aislar la tabla en un test, no para autorar.
     /// </para>
     /// <para>
     /// <b>Sin economía registrada</b> asume 0 de oro (escalón más barato) en vez de fallar: el
@@ -55,12 +63,22 @@ namespace Rollgeon.Combat.AI.Decisions
                  "el escalón resuelto. Apagalo para probar la tabla cruda.")]
         public bool ApplyBribeStepDown = true;
 
+        [Tooltip("Si está activo, el rastrillo (ICashierLedgerService.DamageStepUp) sube el " +
+                 "escalón resuelto una vez cada N rondas, sin mirar el oro. Apagalo para probar " +
+                 "la tabla cruda.")]
+        public bool ApplyRakeStepUp = true;
+
         /// <summary>Último escalón resuelto (0-based por MinGold ascendente); -1 si nunca tickeó.
         /// Estado de debug por pelea — el árbol se clona por combate.</summary>
         [NonSerialized] public int LastRank = -1;
 
         /// <summary>Oro leído en el último tick — para el inspector de AI y logs.</summary>
         [NonSerialized] public int LastGold;
+
+        /// <summary>Escalones que puso el rastrillo en el último tick — separado de
+        /// <see cref="LastRank"/> para poder leer de un vistazo cuánto del daño viene del reloj
+        /// y cuánto del bolsillo del jugador.</summary>
+        [NonSerialized] public int LastStepUp;
 
         public override string NodeName => $"Telegraph Mark Gold-Scaled ({Shape}, {Tiers?.Count ?? 0} tiers)";
 
@@ -83,15 +101,20 @@ namespace Rollgeon.Combat.AI.Decisions
                                  "se asume oro 0 (escalón más barato).");
 
             int stepDown = 0;
-            if (ApplyBribeStepDown
+            int stepUp = 0;
+            if ((ApplyBribeStepDown || ApplyRakeStepUp)
                 && ServiceLocator.TryGetService<ICashierLedgerService>(out var ledger) && ledger != null)
-                stepDown = ledger.DamageStepDown;
+            {
+                if (ApplyBribeStepDown) stepDown = ledger.DamageStepDown;
+                if (ApplyRakeStepUp) stepUp = ledger.DamageStepUp;
+            }
 
-            var tier = CashierGoldTierTable.Resolve(Tiers, gold, stepDown, out int rank);
+            var tier = CashierGoldTierTable.Resolve(Tiers, gold, stepDown, stepUp, out int rank);
             if (tier == null) return AIResult.Failed;
 
             LastGold = gold;
             LastRank = rank;
+            LastStepUp = stepUp;
 
             return new AINode_TelegraphMark
             {

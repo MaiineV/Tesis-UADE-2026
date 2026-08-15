@@ -19,9 +19,9 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// <para>
     /// <b>Canta vs. corrimiento.</b> <see cref="ICroupierWheelService.NumbersChanged"/> es un solo canal
     /// para los dos, así que se clasifican por forma: si todos los números avanzaron exactamente +1
-    /// respecto del evento anterior, fue el corrimiento por golpe (un click corto); cualquier otra cosa
-    /// es un canto nuevo (giro largo con vueltas de floreo). Sin la distinción, pegarle al jefe daría el
-    /// mismo giro enorme que el canto y las dos cosas dejarían de diferenciarse.
+    /// respecto del evento anterior, fue el corrimiento (un click corto); cualquier otra cosa es un
+    /// canto nuevo (giro largo con vueltas de floreo). Sin la distinción, correr la rueda daría el mismo
+    /// giro enorme que el canto y las dos cosas dejarían de diferenciarse.
     /// </para>
     /// <para>
     /// <b>Nunca retrocede.</b> El objetivo siempre se busca hacia adelante: una rueda que vuelve atrás
@@ -62,7 +62,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         [Tooltip("Segundos que tarda el giro del canto.")]
         [SerializeField] private float _singDuration = 0.85f;
 
-        [Header("Corrimiento (golpe del jugador)")]
+        [Header("Corrimiento (el jugador cerró el turno en el sector)")]
         [Tooltip("Vueltas completas de más al correr la rueda. 0 = sólo el click de un sector.")]
         [SerializeField] private float _nudgeTurns;
 
@@ -237,7 +237,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// <c>true</c> si <paramref name="current"/> es <paramref name="previous"/> corrido un sector:
-        /// la firma del golpe del jugador, que mueve todos los slots +1 a la vez.
+        /// la firma del corrimiento. En fase 1 (el único momento en que la rueda se corre) hay un solo
+        /// número en el aire, así que "todos +1" y "el que se corrió" son lo mismo.
         /// </summary>
         private bool IsSingleStepFrom(List<int> previous, IReadOnlyList<int> current)
         {

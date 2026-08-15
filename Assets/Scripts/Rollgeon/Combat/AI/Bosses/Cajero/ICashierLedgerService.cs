@@ -3,10 +3,11 @@ using System;
 namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
-    /// Contabilidad del Cajero (piso 2): la caja donde secuestra el oro del arqueo, el soborno
-    /// que le baja un escalón, las fichas que sueltan sus golpes y el flag de "me pegaron".
-    /// Es el único estado del jefe que vive fuera del árbol de AI, porque tiene que sobrevivir
-    /// entre turnos y reaccionar a eventos del jugador (pisar una ficha, matar al jefe).
+    /// Contabilidad del Cajero (piso 2): la caja donde secuestra el oro del arqueo, el rastrillo
+    /// que le sube el escalón solo con el paso de las rondas, el soborno que se lo baja, las
+    /// fichas que sueltan sus golpes y el flag de "me pegaron". Es el único estado del jefe que
+    /// vive fuera del árbol de AI, porque tiene que sobrevivir entre turnos y reaccionar a
+    /// eventos del jugador (pisar una ficha, matar al jefe).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -36,11 +37,30 @@ namespace Rollgeon.Combat.Cashier
         /// <summary>Escalones de descuento activos por soborno (0 = sin descuento).</summary>
         int DamageStepDown { get; }
 
+        /// <summary>
+        /// El rastrillo: escalones que el jefe se subió solo por el paso de las rondas,
+        /// <b>sin mirar el oro del jugador</b>. Sube +1 cada <see cref="RakeRoundsPerStep"/>
+        /// rondas de combate y no baja nunca — sólo lo contrarresta el soborno.
+        /// </summary>
+        /// <remarks>
+        /// Es lo que convierte juntar fichas en mantenimiento obligatorio en vez de codicia
+        /// opcional: sin rastrillo, un jugador pobre deja al Cajero clavado en el escalón más
+        /// barato toda la pelea y el jefe deja de existir como amenaza.
+        /// </remarks>
+        int DamageStepUp { get; }
+
         /// <summary>Costo en oro de un soborno. Default = 35 (ficha).</summary>
         int BribeCost { get; set; }
 
         /// <summary>Rondas que dura el descuento de un soborno. Default = 3 (ficha).</summary>
         int BribeRounds { get; set; }
+
+        /// <summary>
+        /// Cada cuántas rondas el rastrillo suma un escalón. Default = 3 (ficha), que es la
+        /// misma ventana que compra un soborno: pagar cada 3 rondas te deja en cero, dejar de
+        /// pagar te hunde. Cero o negativo apaga el rastrillo.
+        /// </summary>
+        int RakeRoundsPerStep { get; set; }
 
         /// <summary>
         /// <c>true</c> (y limpia el flag) si <paramref name="entityGuid"/> recibió daño desde la
@@ -63,6 +83,11 @@ namespace Rollgeon.Combat.Cashier
         /// <see cref="DamageStepDown"/> = 1. Devuelve <c>false</c> si el jugador no puede pagar.
         /// Lo llama la acción del jugador — el jefe nunca se soborna solo.
         /// </summary>
+        /// <remarks>
+        /// Es la única palanca contra <see cref="DamageStepUp"/>, y por eso las dos ventanas
+        /// miden lo mismo (3 rondas): un soborno por ciclo de rastrillo mantiene el escalón
+        /// donde lo puso el oro, y dejar de pagar deja que el reloj gane terreno.
+        /// </remarks>
         bool TryBribe();
 
         /// <summary>

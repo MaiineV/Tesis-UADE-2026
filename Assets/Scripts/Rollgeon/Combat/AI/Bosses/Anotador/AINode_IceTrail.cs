@@ -48,13 +48,17 @@ namespace Rollgeon.Combat.AI.Decisions
     {
         [Tooltip("Definición del hielo. Debe tener Trigger = OnEnter, Damage = 0, " +
                  "ConsumeOnTrigger = true (la casilla se derrite al pisarla, así no hay cadenas de " +
-                 "stun) y DurationRounds = 2 (una ronda entera del jugador). Ver HazardDefinitionSO.")]
+                 "stun) y DurationRounds = 4. Ojo con ese último: la estela nace en el turno del " +
+                 "jefe, cuando el jugador ya jugó el suyo (CNF-006), y la duración se descuenta en " +
+                 "el wrap de ronda — DurationRounds = D deja D-1 rondas pisables, así que las 3 de " +
+                 "la ficha piden 4. Ver HazardDefinitionSO.")]
         public HazardDefinitionSO Hazard;
 
         [Tooltip("Tope de casillas congeladas por repliegue. El repliegue camina como máximo " +
-                 "MaxSteps del nodo de movimiento, así que 3 es tope y no recorte.")]
+                 "MaxSteps del nodo de movimiento: para que 4 sea tope y no recorte, ese MaxSteps " +
+                 "tiene que ser 4.")]
         [MinValue(1)]
-        public int MaxTiles = 3;
+        public int MaxTiles = 4;
 
         [Tooltip("Turnos de stun al pisar la estela. ApplyStun toma max(actual, nuevo): dos " +
                  "pisadas seguidas siguen siendo 1 turno.")]

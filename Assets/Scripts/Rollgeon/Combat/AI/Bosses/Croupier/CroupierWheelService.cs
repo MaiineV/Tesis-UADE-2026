@@ -3,26 +3,35 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Grid;
+using Rollgeon.Player;
 
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Implementación de <see cref="ICroupierWheelService"/>. Además del estado, es dueña del hook de
-    /// daño del jefe: el corrimiento de la rueda y la Represalia de mesa son <b>el mismo evento</b>
-    /// (pegarle con el número en el aire), así que viven juntos en un único suscriptor a
-    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>.
+    /// Implementación de <see cref="ICroupierWheelService"/>. Además del estado, es dueña de los dos
+    /// hooks del jefe que viven fuera del árbol de AI: la Represalia de mesa
+    /// (<c>TypedEvent&lt;DamageResolvedPayload&gt;</c>) y el corrimiento de la rueda
+    /// (<c>OnTurnFinished</c> + la casilla en la que el jugador cerró su turno).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Un corrimiento por número.</b> El candado es por slot y dura todo el windup: sin él, el
-    /// segundo golpe del turno movería la rueda dos veces y cobraría dos veces, y la lectura
-    /// "primero N+1, después decido" dejaría de ser verdad.
+    /// <b>Cobrar y correr son dos cosas separadas.</b> Los disparaba el mismo golpe, y eso hacía que
+    /// mover el número fuera un efecto secundario gratis del único ataque que el jugador tiene:
+    /// atacar era siempre, además, correr la rueda. Ahora la palanca se paga con el cuerpo (terminar
+    /// el turno dentro del sector cantado) y el 8 se paga por pegar. Ninguna de las dos cosas puede
+    /// hacerse "de paso" mientras se hace la otra.
     /// </para>
     /// <para>
-    /// <b>La paridad se lee antes del corrimiento.</b> Lo que el jugador ve cuando decide pegar es el
-    /// número en el aire, no el que va a quedar: si canta 3 y pegás, pagás los 8 y la rueda pasa a 4.
-    /// Cobrar por el número resultante haría que el precio depende de información que todavía no
-    /// existe cuando se toma la decisión.
+    /// <b>Mover el hacha es pararse bajo el hacha.</b> El corrimiento pide cerrar el turno
+    /// <i>adentro</i> del bloque que va a caer: el jugador que quiere redirigir el número tiene que
+    /// aceptar el riesgo de que no lo consiga (aturdido, empujado, o simplemente equivocado de
+    /// sector). Pedirlo desde afuera lo volvería un botón gratis.
+    /// </para>
+    /// <para>
+    /// <b>Un corrimiento por número.</b> El candado es por slot y dura todo el windup: sin él, un
+    /// jugador que cierre dos turnos dentro del mismo número lo movería dos veces, y la lectura
+    /// "primero N+1, después decido" dejaría de ser verdad.
     /// </para>
     /// <para>
     /// <b>El corrimiento mueve la marca.</b> Correr la rueda re-marca el área del slot en el sector
@@ -39,6 +48,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         private bool _hooked;
 
         private Action<DamageResolvedPayload> _onDamageResolved;
+        private EventManager.EventReceiver _onTurnFinishedHandler;
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
 
@@ -119,7 +129,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             if (_hooked && _bossGuid == bossGuid) return;
 
             // Combate nuevo (o instancia nueva del mismo jefe): el estado del anterior no puede
-            // sobrevivir, o el primer golpe de esta pelea correría una rueda que ya no existe.
+            // sobrevivir, o el primer cierre de turno de esta pelea correría una rueda que ya no existe.
             if (_hooked && _bossGuid != bossGuid) ClearWindup(notify: true);
 
             _bossGuid = bossGuid;
@@ -194,7 +204,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         // ======================================================================
-        // Hook de daño — corrimiento + Represalia
+        // Hooks fuera del árbol — Represalia (daño) y corrimiento (posición)
         // ======================================================================
 
         private void Hook()
@@ -202,39 +212,76 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             if (_hooked) return;
 
             if (_onDamageResolved == null) _onDamageResolved = OnDamageResolvedExternal;
+            if (_onTurnFinishedHandler == null) _onTurnFinishedHandler = OnTurnFinishedExternal;
+
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
+            EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             _hooked = true;
         }
 
         private void Unhook()
         {
-            if (!_hooked || _onDamageResolved == null) return;
+            if (!_hooked) return;
 
-            TypedEvent<DamageResolvedPayload>.Unsubscribe(_onDamageResolved);
+            if (_onDamageResolved != null) TypedEvent<DamageResolvedPayload>.Unsubscribe(_onDamageResolved);
+            if (_onTurnFinishedHandler != null)
+                EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+
             _hooked = false;
         }
 
+        /// <summary>
+        /// Pegarle cuesta 8. No mira el número, ni la fase, ni si hay windup abierto: es el precio de
+        /// la casilla de melee, y para pegarle hay que ocuparla.
+        /// </summary>
+        /// <remarks>
+        /// Se cobra por golpe y no por turno: cada impacto es una decisión aparte, y un jugador que
+        /// elige pegar tres veces está eligiendo pagar tres veces. El único cobro que no ocurre es el
+        /// del golpe que lo mata — un crupier muerto no manotea, y sin esa salvedad la pelea se puede
+        /// ganar y perder en el mismo intercambio.
+        /// </remarks>
         private void OnDamageResolvedExternal(DamageResolvedPayload payload)
         {
             if (_bossGuid == Guid.Empty || payload.TargetGuid != _bossGuid) return;
-            if (Rigged || !WindupActive) return;
 
-            // Un golpe que no llegó a la mesa no toca la palanca: sin daño ni escudo consumido no
-            // hubo golpe (un evento de 0 lo publica igual el pipeline).
+            // Un golpe que no llegó a la mesa no se cobra: sin daño ni escudo consumido no hubo golpe
+            // (un evento de 0 lo publica igual el pipeline).
             if (payload.FinalDamage <= 0 && payload.ShieldAbsorbed <= 0) return;
+            if (payload.WasLethal) return;
 
-            // La Represalia se cobra una vez por golpe, no una por número: con dos números en el aire
-            // la rueda está trucada de todos modos, pero si algún día no lo estuviera, un solo golpe no
-            // debería cobrar dos veces.
-            bool chargeRetaliation = false;
+            Retaliate(payload.SourceGuid);
+        }
+
+        // ======================================================================
+        // Hook de posición — el corrimiento de la rueda
+        // ======================================================================
+
+        /// <summary>
+        /// El jugador que cierra su turno dentro de un sector cantado lo corre un lugar. Mismo patrón
+        /// que <c>HazardService</c>: <c>OnTurnFinished</c> + la casilla que reporta el grid.
+        /// </summary>
+        /// <remarks>
+        /// Corre <b>sólo</b> el número en cuyo sector está parado. En fase 2 la rueda está trucada y
+        /// no corre ninguno, pero el criterio por slot es el que hace que la costura no mueva los dos
+        /// a la vez si alguna vez se destruca.
+        /// </remarks>
+        private void OnTurnFinishedExternal(params object[] args)
+        {
+            if (_bossGuid == Guid.Empty || !WindupActive) return;
+            if (Rigged) return;
+
+            if (args == null || args.Length == 0 || !(args[0] is Guid entityGuid)) return;
+            if (entityGuid == Guid.Empty || entityGuid != ResolvePlayerGuid()) return;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
+            if (!grid.TryGetPosition(entityGuid, out var coord)) return;
+
             bool moved = false;
-
             for (int i = 0; i < _slots.Count; i++)
             {
                 var slot = _slots[i];
                 if (slot.Nudged) continue;
-
-                if (slot.Sector % 2 != 0) chargeRetaliation = true;
+                if (!ThreatAreaShape.ComputeRoomSector(grid, slot.Sector).Contains(coord)) continue;
 
                 slot.Sector = Normalize(slot.Sector + 1);
                 slot.Nudged = true;
@@ -245,11 +292,17 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                     CroupierSectorTelegraph.Mark(_bossGuid, slot.Index, slot.Sector, slot.Damage, slot.Kind);
             }
 
-            if (!moved) return;
-
-            NumbersChanged?.Invoke(SungNumbers);
-            if (chargeRetaliation) Retaliate(payload.SourceGuid);
+            if (moved) NumbersChanged?.Invoke(SungNumbers);
         }
+
+        /// <summary>
+        /// Sólo el jugador corre la rueda. Mismo resolver que <c>DiceBlockService</c>: sin
+        /// <see cref="IPlayerService"/> registrado no hay contra quién comparar y no se corre nada.
+        /// </summary>
+        private static Guid ResolvePlayerGuid()
+            => ServiceLocator.TryGetService<IPlayerService>(out var player) && player != null
+                ? player.PlayerGuid
+                : Guid.Empty;
 
         private void Retaliate(Guid attackerGuid)
         {
