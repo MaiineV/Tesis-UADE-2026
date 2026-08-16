@@ -16,6 +16,11 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private Button _endTurnButton;
 
+        [Tooltip("Opcional — highlight de 'sin energía' (glow + dots por el contorno). " +
+                 "Si null, el botón no reacciona a la energía.")]
+        [SerializeField]
+        private EndTurnEnergyHighlight _energyHighlight;
+
         [Title("Events")]
         [SerializeField]
         private UnityEvent _onEndTurnPressed = new UnityEvent();
@@ -68,6 +73,8 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys) && _hotkeys != null)
                 _hotkeys.Subscribe(GameplayHotkey.EndTurn, OnHotkeyEndTurn);
 
+            if (_energyHighlight != null) _energyHighlight.Bind(playerGuid);
+
             _bound = true;
             _enabled = false;
             RefreshInteractable();
@@ -86,6 +93,8 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Unsubscribe(GameplayHotkey.EndTurn, OnHotkeyEndTurn);
                 _hotkeys = null;
             }
+
+            if (_energyHighlight != null) _energyHighlight.Unbind();
 
             _bound = false;
             _enabled = false;
