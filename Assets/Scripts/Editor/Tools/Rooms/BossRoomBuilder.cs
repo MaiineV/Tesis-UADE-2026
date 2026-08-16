@@ -26,8 +26,18 @@ namespace Rollgeon.EditorTools
     /// <see cref="BossRoomPlan.BaseRoomPath"/> con <c>LoadPrefabContents</c> y escribe el resultado con
     /// <c>SaveAsPrefabAsset</c> sobre el mismo path de salida — que preserva el GUID, así que las
     /// referencias de los <c>RoomSO</c> sobreviven al rebuild. Como nunca se edita el output existente
-    /// sino que se lo reescribe entero, no hay forma de duplicar props: re-correr el menú da byte a byte
-    /// la misma sala. El precio es el contrato del §"Limitaciones" de <c>docs/setup/boss-rooms.md</c>:
+    /// sino que se lo reescribe entero, dos corridas dan la misma sala: los props no se acumulan y el
+    /// grafo no arrastra estado de la corrida anterior.
+    /// </para>
+    /// <para>
+    /// <b>Idempotente no quiere decir byte a byte.</b> <c>SaveAsPrefabAsset</c> renumera los fileIDs
+    /// internos del prefab en cada escritura, así que un rebuild sin cambios reales igual aparece como
+    /// diff en git. Es ruido esperable, no evidencia de que algo cambió — para saber si la sala cambió
+    /// de verdad hay que mirar el contenido (blockers, spawns, <see cref="NavGraph"/>), no el tamaño
+    /// del diff.
+    /// </para>
+    /// <para>
+    /// El precio de reconstruir es el contrato del §"Limitaciones" de <c>docs/setup/boss-rooms.md</c>:
     /// lo que se edite a mano en una sala derivada se pierde en el próximo rebuild. La decoración
     /// compartida va en la sala <b>base</b>, que sí propaga.
     /// </para>
