@@ -75,10 +75,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
             threat.Mark(slotGuid, tiles, damage, kind);
             ThreatTelegraphOverlay.ResolveOrCreate().Show(slotGuid, tiles, SectorTint);
-
-            // El número, escrito sobre el bloque. Es la mitad que ata la rueda al piso: sin él, el
-            // jugador ve un sector encendido y un disco girando, y nada dice que son el mismo dato.
-            CroupierSectorNumberOverlay.ResolveOrCreate().Show(slotGuid, sector, tiles);
             return true;
         }
 
@@ -91,9 +87,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             // TryGet y no ResolveOrCreate: limpiar no debe ser la razón por la que nace un overlay.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
                 overlay.Clear(slotGuid);
-
-            if (ServiceLocator.TryGetService<CroupierSectorNumberOverlay>(out var numbers) && numbers != null)
-                numbers.Clear(slotGuid);
         }
     }
 }
