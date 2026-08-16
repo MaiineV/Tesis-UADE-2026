@@ -211,6 +211,42 @@ namespace Rollgeon.UI.Tests
             Assert.IsFalse(_flow.IsBreathing, "Sin slot seleccionado no hay chip que respire.");
         }
 
+        [Test]
+        public void should_enter_breath_state_on_late_update_when_slot_set_after_event()
+        {
+            // Arrange — el evento de selección dispara DENTRO del click, antes de que
+            // PlayerActionButtonsView setee SelectedSlot (orden real de HandleBehaviorClick).
+            WireSelectedChip();
+            AssignPrivate(_buttonsView, "_selectedSlot", null);
+            EventManager.Trigger(EventName.OnChainTargetSelectionStarted, System.Guid.NewGuid());
+            Assert.IsFalse(_flow.IsBreathing, "Precondición: sin slot todavía no respira.");
+
+            // Act — el slot aparece (fin del click) y el LateUpdate reintenta.
+            AssignPrivate(_buttonsView, "_selectedSlot", 0);
+            InvokeNonPublic(_flow, "LateUpdate");
+
+            // Assert
+            Assert.IsTrue(_flow.IsBreathing, "El retry diferido debe arrancar el breath al frame siguiente.");
+        }
+
+        [Test]
+        public void should_not_start_pending_breath_when_roll_already_started()
+        {
+            // Arrange — pending armado pero el roll arranca antes del retry.
+            WireSelectedChip();
+            AssignPrivate(_buttonsView, "_selectedSlot", null);
+            EventManager.Trigger(EventName.OnChainTargetSelectionStarted, System.Guid.NewGuid());
+            AssignPrivate(_buttonsView, "_selectedSlot", 0);
+            EventManager.Trigger(EventName.OnChainStarted, System.Guid.NewGuid());
+
+            // Act
+            InvokeNonPublic(_flow, "LateUpdate");
+
+            // Assert — el chip está volando al anchor: un breath tardío sería ruido.
+            Assert.IsFalse(_flow.IsBreathing, "Un pending que no llegó a respirar antes del roll debe morir.");
+            Assert.IsTrue(_flow.IsRolling);
+        }
+
         // ======================================================================
         // Helpers
         // ======================================================================

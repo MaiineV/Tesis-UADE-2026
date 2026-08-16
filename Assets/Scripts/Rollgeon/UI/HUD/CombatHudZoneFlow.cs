@@ -78,7 +78,11 @@ namespace Rollgeon.UI.HUD
 
         // Breath = la acción elegida espera un target (cancelable); el chip respira.
         // Punch = el target se confirmó; golpe corto y el chip queda estático.
+        // Pending: los eventos de selección disparan DENTRO del click del chip, antes
+        // de que PlayerActionButtonsView setee SelectedSlot — el LateUpdate reintenta
+        // resolver el botón al frame siguiente.
         private bool _breathing;
+        private bool _breathPending;
         private int? _breathSlot;
         private ActionButton _breathButton;
         private ActionButton _punchButton;
@@ -215,6 +219,9 @@ namespace Rollgeon.UI.HUD
             // El confirm de la fase 0 de un chain llega como OnChainStarted, sin evento
             // de selección propio: el punch cae sobre el chip ya reparenteado al anchor.
             if (wasBreathing) PunchActiveChip();
+            // Un pending que no llegó a respirar antes del roll ya no corresponde —
+            // sin esto el retry arrancaría un breath sobre el chip en pleno vuelo.
+            _breathPending = false;
         }
 
         private void HandleCombatTargetChanged(object[] args)
@@ -227,6 +234,14 @@ namespace Rollgeon.UI.HUD
 
         private void LateUpdate()
         {
+            // Retry del breath diferido: al frame siguiente del click el SelectedSlot
+            // ya está seteado y el botón se puede resolver.
+            if (_breathPending && !_breathing)
+            {
+                StartBreath();
+                if (_breathing) _breathPending = false;
+            }
+
             // El cancel pre-roll (click derecho / reselección de otro chip) no emite
             // ningún evento: si el slot seleccionado ya no es el que respiraba, el
             // estado cancelable murió.
@@ -238,7 +253,13 @@ namespace Rollgeon.UI.HUD
         {
             StopBreath();
             var button = ResolveBreathTarget();
-            if (button == null) return;
+            if (button == null)
+            {
+                // Evento en vuelo dentro del click del chip: SelectedSlot todavía no
+                // está seteado. El LateUpdate reintenta al frame siguiente.
+                _breathPending = true;
+                return;
+            }
 
             _breathing = true;
             _breathButton = button;
@@ -261,6 +282,7 @@ namespace Rollgeon.UI.HUD
         private void StopBreath()
         {
             _breathing = false;
+            _breathPending = false;
             _breathSlot = null;
             if (_breathTween.isAlive) _breathTween.Stop();
             if (_breathButton != null) _breathButton.SetExternalScaleMultiplier(1f);
