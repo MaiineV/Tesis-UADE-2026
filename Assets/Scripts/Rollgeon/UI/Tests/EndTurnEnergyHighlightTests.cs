@@ -40,11 +40,56 @@ namespace Rollgeon.UI.Tests
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
 
+        private RectTransform _follow;
+        private UnityEngine.UI.Image _glow;
+        private RectTransform _dotsContainer;
+
         private void EnterPlayerTurnWithZeroEnergy()
         {
             _highlight.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
             EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 0, 3);
+        }
+
+        /// <summary>
+        /// Cablea el botón a seguir + glow + contenedor de dots, todos en pose de
+        /// reposo (escala 1, posición 0). Bind captura los reposos.
+        /// </summary>
+        private void WireFollowTargets()
+        {
+            _follow = NewChildRect("Button");
+            var glowGo = new GameObject("Glow", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+            glowGo.transform.SetParent(_go.transform, worldPositionStays: false);
+            _glow = glowGo.GetComponent<UnityEngine.UI.Image>();
+            _dotsContainer = NewChildRect("Dots");
+
+            AssignPrivate("_followButton", _follow);
+            AssignPrivate("_glowImage", _glow);
+            AssignPrivate("_dotsContainer", _dotsContainer);
+        }
+
+        private RectTransform NewChildRect(string name)
+        {
+            var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+            rect.SetParent(_go.transform, worldPositionStays: false);
+            return rect;
+        }
+
+        private void AssignPrivate(string fieldName, object value)
+        {
+            var field = typeof(EndTurnEnergyHighlight).GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Campo privado '{fieldName}' no encontrado.");
+            field.SetValue(_highlight, value);
+        }
+
+        private static void InvokeNonPublic(object target, string methodName)
+        {
+            var method = target.GetType().GetMethod(methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, $"Método '{methodName}' no encontrado.");
+            method.Invoke(target, null);
         }
 
         [Test]
@@ -126,6 +171,55 @@ namespace Rollgeon.UI.Tests
 
             Assert.IsFalse(_highlight.IsHighlightActive,
                 "Fin de combate debe forzar el reposo.");
+        }
+
+        [Test]
+        public void HoverMovesButton_GlowAndDotsMirrorPose()
+        {
+            // Arrange
+            WireFollowTargets();
+            EnterPlayerTurnWithZeroEnergy();
+            Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
+
+            // Act — JuicyMenuButton agranda y corre el botón en hover; el espejo
+            // corre en LateUpdate.
+            _follow.localScale = new Vector3(1.15f, 1.15f, 1f);
+            _follow.anchoredPosition = new Vector2(-12f, 0f);
+            InvokeNonPublic(_highlight, "LateUpdate");
+
+            // Assert
+            Assert.AreEqual(1.15f, _glow.rectTransform.localScale.x, 1e-4f,
+                "El glow debe escalar junto al botón hovereado.");
+            Assert.AreEqual(-12f, _glow.rectTransform.anchoredPosition.x, 1e-3f,
+                "El glow debe acompañar el offset X del hover.");
+            Assert.AreEqual(1.15f, _dotsContainer.localScale.x, 1e-4f,
+                "Los dots deben escalar junto al botón hovereado.");
+            Assert.AreEqual(-12f, _dotsContainer.anchoredPosition.x, 1e-3f,
+                "Los dots deben acompañar el offset X del hover.");
+        }
+
+        [Test]
+        public void EnergyRecoveredMidHover_RestoresGlowAndDotsPose()
+        {
+            // Arrange — highlight activo y botón hovereado ya espejado.
+            WireFollowTargets();
+            EnterPlayerTurnWithZeroEnergy();
+            _follow.localScale = new Vector3(1.15f, 1.15f, 1f);
+            _follow.anchoredPosition = new Vector2(-12f, 0f);
+            InvokeNonPublic(_highlight, "LateUpdate");
+
+            // Act
+            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 2, 3);
+
+            // Assert
+            Assert.AreEqual(1f, _glow.rectTransform.localScale.x, 1e-4f,
+                "Al apagarse el highlight el glow vuelve a su escala de reposo.");
+            Assert.AreEqual(0f, _glow.rectTransform.anchoredPosition.x, 1e-3f,
+                "Al apagarse el highlight el glow vuelve a su posición de reposo.");
+            Assert.AreEqual(1f, _dotsContainer.localScale.x, 1e-4f,
+                "Al apagarse el highlight los dots vuelven a su escala de reposo.");
+            Assert.AreEqual(0f, _dotsContainer.anchoredPosition.x, 1e-3f,
+                "Al apagarse el highlight los dots vuelven a su posición de reposo.");
         }
 
         [Test]

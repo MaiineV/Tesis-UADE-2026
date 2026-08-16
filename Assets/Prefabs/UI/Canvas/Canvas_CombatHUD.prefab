@@ -4188,6 +4188,7 @@ MonoBehaviour:
   _glowImage: {fileID: 3995996507068732115}
   _dotsContainer: {fileID: 2252463302865013825}
   _dotTemplate: {fileID: 5736157957289358086}
+  _followButton: {fileID: 6692010189449124016}
   _dotCount: 8
   _lapSeconds: 3
   _glowAlphaMin: 0.25

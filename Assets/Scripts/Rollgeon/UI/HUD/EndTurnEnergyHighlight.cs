@@ -40,6 +40,10 @@ namespace Rollgeon.UI.HUD
                  "a la cantidad configurada.")]
         private Image _dotTemplate;
 
+        [SerializeField, Tooltip("RectTransform del botón juiceado. JuicyMenuButton lo escala y " +
+                 "desplaza en hover/press — glow y dots espejan esa pose para acompañarlo.")]
+        private RectTransform _followButton;
+
         [Title("Tuning")]
         [SerializeField, MinValue(1), Tooltip("Cantidad de dots recorriendo el contorno.")]
         private int _dotCount = 8;
@@ -80,12 +84,28 @@ namespace Rollgeon.UI.HUD
         private Tween _glowTween;
         private Tween _scaleTween;
 
+        private bool _followCaptured;
+        private Vector3 _followRestScale = Vector3.one;
+        private Vector2 _followRestPos;
+        private Vector3 _glowRestScale = Vector3.one;
+        private Vector2 _glowRestPos;
+        private Vector3 _dotsRestScale = Vector3.one;
+        private Vector2 _dotsRestPos;
+
         public bool IsHighlightActive => _active;
 
         private void Awake()
         {
             if (_scaleTarget != null) _restScale = _scaleTarget.localScale;
+            CaptureFollowRest();
             SetGlowAlpha(0f);
+        }
+
+        private void LateUpdate()
+        {
+            // Después de los Update de JuicyMenuButton, que escribe la escala y el
+            // offset del botón cada frame — así glow/dots lo siguen sin lag.
+            if (_active) MirrorButtonPose();
         }
 
         private void OnDisable()
@@ -107,6 +127,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnCombatEnd, HandleCombatEnd);
             _bound = true;
 
+            CaptureFollowRest();
             FetchInitialEnergy();
             Reevaluate();
         }
@@ -243,6 +264,7 @@ namespace Rollgeon.UI.HUD
             if (_dots != null)
                 foreach (var dot in _dots)
                     if (dot != null) dot.gameObject.SetActive(false);
+            RestoreFollowPose();
 
             if (_scaleTarget == null) return;
             if (instant || !Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion
@@ -292,6 +314,60 @@ namespace Rollgeon.UI.HUD
             var c = _glowImage.color;
             c.a = alpha;
             _glowImage.color = c;
+        }
+
+        // ---- Espejo del hover del botón -----------------------------------------
+
+        /// <summary>
+        /// Reposo del botón y de glow/dots. Se captura una sola vez y solo con el
+        /// botón quieto (Awake / Bind): capturar en el primer frame activo podría
+        /// pescar un hover a medias y correr el reposo para siempre.
+        /// </summary>
+        private void CaptureFollowRest()
+        {
+            if (_followCaptured || _followButton == null) return;
+            _followRestScale = _followButton.localScale;
+            _followRestPos = _followButton.anchoredPosition;
+            if (_glowImage != null)
+            {
+                _glowRestScale = _glowImage.rectTransform.localScale;
+                _glowRestPos = _glowImage.rectTransform.anchoredPosition;
+            }
+            if (_dotsContainer != null)
+            {
+                _dotsRestScale = _dotsContainer.localScale;
+                _dotsRestPos = _dotsContainer.anchoredPosition;
+            }
+            _followCaptured = true;
+        }
+
+        private void MirrorButtonPose()
+        {
+            if (!_followCaptured || _followButton == null) return;
+            float ratio = _followRestScale.x != 0f
+                ? _followButton.localScale.x / _followRestScale.x
+                : 1f;
+            Vector2 delta = _followButton.anchoredPosition - _followRestPos;
+            if (_glowImage != null)
+                ApplyPose(_glowImage.rectTransform, _glowRestScale, _glowRestPos, ratio, delta);
+            if (_dotsContainer != null)
+                ApplyPose(_dotsContainer, _dotsRestScale, _dotsRestPos, ratio, delta);
+        }
+
+        private void RestoreFollowPose()
+        {
+            if (!_followCaptured) return;
+            if (_glowImage != null)
+                ApplyPose(_glowImage.rectTransform, _glowRestScale, _glowRestPos, 1f, Vector2.zero);
+            if (_dotsContainer != null)
+                ApplyPose(_dotsContainer, _dotsRestScale, _dotsRestPos, 1f, Vector2.zero);
+        }
+
+        private static void ApplyPose(RectTransform target, Vector3 restScale, Vector2 restPos,
+            float scaleRatio, Vector2 posDelta)
+        {
+            target.localScale = restScale * scaleRatio;
+            target.anchoredPosition = restPos + posDelta;
         }
     }
 }
