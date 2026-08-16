@@ -24,6 +24,8 @@ namespace Rollgeon.EditorTools.Menu
     {
         private const string UiSheetPath = "Assets/Art/UI/UI-Sheet-sheet.png";
         private const string ComboRowPrefabPath = "Assets/Prefabs/UI/ComboRow.prefab";
+        private const string ClassContractRowPrefabPath = "Assets/Prefabs/UI/ClassSelectContractRow.prefab";
+        private const string ContractSettingsPath = "Assets/Rollgeon/Services/ContractSheetUiSettings.asset";
         private const string MainMenuScenePath = "Assets/Scenes/01_MainMenu.unity";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string OutlineMaterialPath = "Assets/Fonts/m6x11plus SDF - MenuOutline.mat";
@@ -43,12 +45,17 @@ namespace Rollgeon.EditorTools.Menu
         private const float PortraitFramePpu = 0.5f;
         private const float ContractFramePpu = 1f;
 
+        // Columna de descripción de la fila de contrato drawer-style (la fila base del
+        // drawer mide 508 px; con la columna queda en 756).
+        private const float ContractDescriptionWidth = 240f;
+
         [MenuItem("Rollgeon/Class Selection/Setup All")]
         public static void SetupAll()
         {
             AuthorSpriteBorders();
             UpsertLocalization();
             SetupComboRowPrefab();
+            SetupContractRowPrefab();
             RebuildScreenLayout();
         }
 
@@ -246,6 +253,20 @@ namespace Rollgeon.EditorTools.Menu
         }
 
         // ================================================================
+        // 5 - Prefab de fila de contrato drawer-style (con descripción)
+        // ================================================================
+
+        /// <summary>
+        /// Genera la variante de fila drawer-style con columna de descripción, reusando el
+        /// builder del drawer in-game. Requiere haber corrido antes los pasos 1-2 de
+        /// <c>Rollgeon/Contract Drawer</c> (settings + prefab del dado).
+        /// </summary>
+        [MenuItem("Rollgeon/Class Selection/5 - Setup Contract Row Prefab")]
+        public static void SetupContractRowPrefab()
+            => Rollgeon.EditorTools.HUD.ContractDrawerSetupTools.BuildRowPrefab(
+                ClassContractRowPrefabPath, ContractDescriptionWidth);
+
+        // ================================================================
         // 3 - Layout de la pantalla
         // ================================================================
 
@@ -294,7 +315,9 @@ namespace Rollgeon.EditorTools.Menu
             DestroyChildrenNotIn(leftPanel, "WarriorButton", "PicaroButton", "MagoButton");
 
             // -- Retrato central enmarcado --
-            var portraitFrame = EnsureRect(screenRect, "PortraitFrame", new Vector2(-405f, 10f), new Vector2(450f, 650f));
+            // -330 y no -405: rebalancea el hueco tras ensanchar el RightPanel para la
+            // fila drawer-style con descripción.
+            var portraitFrame = EnsureRect(screenRect, "PortraitFrame", new Vector2(-330f, 10f), new Vector2(450f, 650f));
             if (!portraitFrame.TryGetComponent<Image>(out var portraitFrameImage))
                 portraitFrameImage = portraitFrame.gameObject.AddComponent<Image>();
             SetSliced(portraitFrameImage, LoadSprite("UI-Sheet-sheet_1"), PortraitFramePpu);
@@ -318,8 +341,9 @@ namespace Rollgeon.EditorTools.Menu
             portraitImage.raycastTarget = false;
 
             // -- Panel derecho: Contrato --
-            // Más pegado a la derecha (feedback: quedaba muy al medio).
-            var rightPanel = EnsureRect(screenRect, "RightPanel", new Vector2(400f, 0f), new Vector2(600f, 900f));
+            // Más pegado a la derecha (feedback: quedaba muy al medio). Ensanchado a 820
+            // para la fila drawer-style (508) + columna de descripción (248).
+            var rightPanel = EnsureRect(screenRect, "RightPanel", new Vector2(510f, 0f), new Vector2(820f, 900f));
 
             var header = FindAnywhere(screenRect, "HeaderLabel");
             var headerLabel = EnsureTmpLabel(rightPanel, "HeaderLabel", header, "Contrato", 48f,
@@ -329,7 +353,10 @@ namespace Rollgeon.EditorTools.Menu
 
             // Panel del contrato: fill oscuro + MARCO sheet_7 9-sliced encima
             // (fillCenter off: solo el borde del sprite, el centro lo pone el fill).
-            var contractPanel = EnsureRect(rightPanel, "ContractPanel", new Vector2(0f, 45f), new Vector2(600f, 570f));
+            // 800 de ancho: fila de 756 + los 22 px de offset del RowsContainer por lado.
+            // Alto 640 = 9 combos de 60 px (el contrato del Warrior trae 9) + spacing +
+            // padding + offsets, con 8 px de aire. Un 10º combo pide agrandar el panel.
+            var contractPanel = EnsureRect(rightPanel, "ContractPanel", new Vector2(0f, 25f), new Vector2(800f, 640f));
             if (!contractPanel.TryGetComponent<Image>(out var panelImage))
                 panelImage = contractPanel.gameObject.AddComponent<Image>();
             panelImage.sprite = null;
@@ -378,12 +405,12 @@ namespace Rollgeon.EditorTools.Menu
 
             var footer = FindAnywhere(screenRect, "FooterLabel");
             var footerLabel = EnsureTmpLabel(rightPanel, "FooterLabel", footer, "Daño mínimo = dado más alto",
-                22f, new Vector2(0f, -270f), new Vector2(560f, 32f), font, outlineMat, FooterColor);
+                22f, new Vector2(0f, -320f), new Vector2(780f, 32f), font, outlineMat, FooterColor);
             LocalizationSetupTools.BindTMP(footerLabel, "UI", "class_select.min_damage");
 
             var passive = FindAnywhere(screenRect, "PassiveLabel");
             var passiveLabel = EnsureTmpLabel(rightPanel, "PassiveLabel", passive, string.Empty,
-                24f, new Vector2(0f, -330f), new Vector2(560f, 72f), font, outlineMat, TextColor);
+                24f, new Vector2(0f, -385f), new Vector2(780f, 72f), font, outlineMat, TextColor);
             passiveLabel.enableWordWrapping = true;
             passiveLabel.overflowMode = TextOverflowModes.Ellipsis;
 
@@ -409,11 +436,30 @@ namespace Rollgeon.EditorTools.Menu
                 contractView = contractPanel.gameObject.AddComponent<ContractDisplayView>();
 
             var rowPrefab = AssetDatabase.LoadAssetAtPath<ComboRowView>(ComboRowPrefabPath);
+
+            // Fila drawer-style con descripción + settings del arte de dados. Si faltan,
+            // la view cae sola al ComboRow legacy (que queda cableado como fallback).
+            var contractRowGo = AssetDatabase.LoadAssetAtPath<GameObject>(ClassContractRowPrefabPath);
+            var contractRowPrefab = contractRowGo != null
+                ? contractRowGo.GetComponent<Rollgeon.UI.HUD.Contract.ContractComboRowView>()
+                : null;
+            var contractSettings = AssetDatabase
+                .LoadAssetAtPath<Rollgeon.UI.HUD.Contract.ContractSheetUiSettingsSO>(ContractSettingsPath);
+            if (contractRowPrefab == null || contractSettings == null)
+            {
+                Debug.LogError("[ClassSelectionSetup] Falta el prefab de fila drawer-style o " +
+                               "ContractSheetUiSettings — correr 'Rollgeon/Contract Drawer/1 - Create " +
+                               "Settings', '2 - Create Die Prefab' y 'Rollgeon/Class Selection/5 - Setup " +
+                               "Contract Row Prefab'. La tabla cae al ComboRow legacy.");
+            }
+
             var cdSo = new SerializedObject(contractView);
             cdSo.FindProperty("_headerLabel").objectReferenceValue = headerLabel;
             cdSo.FindProperty("_rowsContainer").objectReferenceValue = rows;
             cdSo.FindProperty("_rowPrefab").objectReferenceValue = rowPrefab;
             cdSo.FindProperty("_footerLabel").objectReferenceValue = footerLabel;
+            cdSo.FindProperty("_contractRowPrefab").objectReferenceValue = contractRowPrefab;
+            cdSo.FindProperty("_uiSettings").objectReferenceValue = contractSettings;
             cdSo.ApplyModifiedProperties();
 
             // -- Confirmar + Atrás (estilo juicy) --
@@ -424,8 +470,9 @@ namespace Rollgeon.EditorTools.Menu
                 confirm = (RectTransform)go.transform;
             }
             confirm.SetParent(screenRect, worldPositionStays: false);
-            // Acompañan al RightPanel corrido a la derecha (mismo offset relativo).
-            Place(confirm, screenRect, new Vector2(285f, -480f), new Vector2(260f, 70f));
+            // Par centrado en pantalla: Atrás a la izquierda, Confirmar a la derecha,
+            // 40 px de gap entre ambos (mismo criterio que Build Selection).
+            Place(confirm, screenRect, new Vector2(120f, -480f), new Vector2(260f, 70f));
             EnsureButtonLabel(confirm, "Confirmar", font, outlineMat);
             LocalizationSetupTools.BindTMP(confirm.GetComponentInChildren<TMP_Text>(true), "UI", "screen.confirm");
 
@@ -436,7 +483,7 @@ namespace Rollgeon.EditorTools.Menu
                 back = (RectTransform)go.transform;
             }
             back.SetParent(screenRect, worldPositionStays: false);
-            Place(back, screenRect, new Vector2(565f, -480f), new Vector2(200f, 70f));
+            Place(back, screenRect, new Vector2(-150f, -480f), new Vector2(200f, 70f));
             EnsureButtonLabel(back, "Atrás", font, outlineMat);
             LocalizationSetupTools.BindTMP(back.GetComponentInChildren<TMP_Text>(true), "UI", "screen.back");
 

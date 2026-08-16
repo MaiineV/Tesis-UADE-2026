@@ -3,6 +3,7 @@ using Patterns;
 using Rollgeon.Meta;
 using Rollgeon.UI.Unlocks;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -34,7 +35,14 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar el Button de volver.")]
         [SerializeField] private Button _backButton;
 
+        [SerializeField]
+        [Tooltip("TMP opcional del título. Se setea por código (lane B) para poder " +
+                 "envolverlo en <wave> cuando el label tiene Text Animator.")]
+        private TextMeshProUGUI _titleLabel;
+
         private readonly List<UnlockEntryRowView> _rows = new List<UnlockEntryRowView>();
+        private bool _titleHasTextAnimator;
+        private bool _titleAnimatorChecked;
 
         public override string ScreenStringId => ScreenId;
 
@@ -57,6 +65,7 @@ namespace Rollgeon.UI.Screens
         private void Rebuild()
         {
             ClearRows();
+            RefreshTitle();
 
             if (_entriesContainer == null || _entryRowPrefab == null)
             {
@@ -83,6 +92,53 @@ namespace Rollgeon.UI.Screens
                         : Rollgeon.Localization.LocalizedContent.Hint(def.UnlockId, def.HintText),
                     locked: !unlocked);
                 _rows.Add(row);
+            }
+
+            PlayRowsEntrance();
+        }
+
+        // Lane B (code-set): el installer remueve el LocalizeStringEvent del título —
+        // el binding estático pisaría los tags de <wave> en cada refresh de locale.
+        private void RefreshTitle()
+        {
+            if (_titleLabel == null) return;
+
+            var text = Rollgeon.Localization.LocalizedContent.Ui("unlocks.title", "DESBLOQUEOS");
+
+            if (!_titleAnimatorChecked)
+            {
+                // Por nombre: el runtime no referencia el assembly de Febucci — el
+                // installer agrega el componente (mismo truco que ContractDisplayView).
+                _titleHasTextAnimator = _titleLabel.GetComponent("TextAnimator_TMP") != null;
+                _titleAnimatorChecked = true;
+            }
+            _titleLabel.text = _titleHasTextAnimator ? $"<wave>{text}</wave>" : text;
+        }
+
+        // Pop escalonado de las cards. Gated por isPlaying (los tests EditMode invocan
+        // Rebuild y PrimeTween no corre ahí) y por la preferencia de reduced motion.
+        private void PlayRowsEntrance()
+        {
+            if (!Application.isPlaying || Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+                return;
+
+            for (int i = 0; i < _rows.Count; i++)
+            {
+                var row = _rows[i];
+                if (row == null) continue;
+
+                float delay = i * 0.04f;
+                var rect = (RectTransform)row.transform;
+                rect.localScale = Vector3.one * 0.92f;
+                PrimeTween.Tween.Scale(rect, 1f, 0.18f, PrimeTween.Ease.OutBack,
+                    startDelay: delay, useUnscaledTime: true);
+
+                if (row.TryGetComponent<CanvasGroup>(out var group))
+                {
+                    group.alpha = 0f;
+                    PrimeTween.Tween.Alpha(group, 1f, 0.18f, PrimeTween.Ease.OutQuad,
+                        startDelay: delay, useUnscaledTime: true);
+                }
             }
         }
 
