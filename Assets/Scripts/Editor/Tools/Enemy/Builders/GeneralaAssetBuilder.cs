@@ -100,13 +100,27 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Arte -----------------------------------------------------------------------
         //
-        // La Generala es artillería, no un humanoide con galones: el arte huérfano de la
-        // torreta de tres cañones (RangedMachine) lee "batería militar" de una, y deja el
-        // cubilete como el único prop que hace falta explicar.
+        // El rig de dados y no la torreta (RangedMachine), que era el arte anterior: lo que
+        // decide es el animator. AnimCon_DiceBoss expone Attack_Melee, Attack_Range, Heal y
+        // — sobre todo — Roll, que es literalmente el cubilete y el reroll de fase 2; el de la
+        // torreta tiene un solo trigger Attack, así que las dos acciones que la definen no
+        // tenían animación posible. Y el jefe de los dados llevando el rig de dados se explica
+        // solo, cosa que una batería militar no hacía.
+        //
+        // DEUDA CONOCIDA — la paleta no se le aplica. DiceBoss_Model.fbx trae sus materiales
+        // embebidos (Enemy__Base, Enemy__Trim, Enemy__Top/Down/Left/Right/Back, Enemy__Red,
+        // Enemy__White.001) y encima sobre URP/Lit, no sobre Rollgeon/PaletteCelLit. Las cuatro
+        // keys de BuildRetints no matchean ninguno, así que cada build loguea cuatro warnings y
+        // la jefa sale con los colores crudos del FBX.
+        //
+        // Los warnings quedan a propósito: están diciendo la verdad. Silenciarlos escondería que
+        // hay una jefa sin su paleta. Arreglarlo de verdad es remapear los materiales del FBX a
+        // assets Mat_* del proyecto por externalObjects del importer — decisión de arte (qué
+        // superficie es cuál) sobre un FBX compartido, así que va con Maiine y no acá.
 
         public const string BossName = "Generala";
 
-        public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/RangedMachine_Animated.prefab";
+        public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/DiceBoss_Animated.prefab";
         public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Generala.prefab";
         public const string BossPortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0046.png";
 
@@ -167,6 +181,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // así que el retinte los clona: ver BossVisualWrapperBuilder.
         // Mat_White queda SIN retintar a propósito — es el galón/insignia y el blanco es
         // justo el contraste que necesita el navy.
+        //
+        // Todo esto describe el arte viejo (la torreta): con el rig de dados las keys ya no
+        // matchean. Ver la nota del diccionario Retints en BuildBossSpec.
 
         /// <summary>Casaca/chasis: azul navy militar (sale del <c>Mat_Brown</c> del cuerpo).</summary>
         public static readonly MaterialRetint NavyRetint = MaterialRetint.FromColors(
@@ -274,13 +291,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
 
-                // Box y no Capsule: la torreta es una caja ancha y baja, y un capsule sobre esos
-                // bounds deja el cursor picando aire en las esquinas de los cañones.
+                // Box y no Capsule: venía de la torreta, que era una caja ancha y baja donde el
+                // capsule dejaba el cursor picando aire en las esquinas. Con el rig de dados hay
+                // que volver a mirarlo — es un humanoide, pero con manos y dado que se salen de
+                // la silueta.
                 Collider = ColliderKind.Box,
 
                 AddHealthBar = true,
                 HealthBarOffset = fit.HealthBarOffset,
 
+                // OJO — estas keys son las del arte viejo y hoy NO matchean ninguna: el rig de
+                // dados no usa los Mat_* compartidos del proyecto, trae sus nueve materiales
+                // embebidos en DiceBoss_Model.fbx (Enemy__Base, Enemy__Trim, Enemy__Back,
+                // Enemy__Red, Enemy__White.001, Enemy__Top/Down/Left/Right) y sobre URP/Lit, que
+                // no tiene los canales de paleta que escribe el retinte. Se dejan como están a
+                // propósito: mapear a ojo qué material es la casaca y cuál el galón sería
+                // inventar, y el builder ya avisa por consola qué key quedó sin matchear.
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     { "Mat_Brown", NavyRetint },     // cuerpo

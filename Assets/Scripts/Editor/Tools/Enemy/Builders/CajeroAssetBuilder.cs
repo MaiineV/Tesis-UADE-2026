@@ -42,6 +42,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string EnemyAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset";
         public const string ChipHazardPath = "Assets/Rollgeon/Combat/Hazards/HZ_Cashier_Chip.asset";
 
+        /// <summary>Moneda que se ve en la casilla mientras la ficha está sin levantar.</summary>
+        private const string CoinModelPath = "Assets/Art/3D/Models/Items/coin.fbx";
+
+        /// <summary>Levanta la moneda del piso lo justo para que no z-fightee con el quad del overlay.</summary>
+        private const float CoinYOffset = 0.12f;
+
         /// <summary>
         /// Arte del jefe: figura alada con seis discos de fichas modelados en el propio mesh
         /// (<c>Coin_Chips_1..6</c>) más las alas, animada por <c>SteppedAnimation</c> a 8 FPS sobre
@@ -597,6 +603,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             chip.Size = 1;
             chip.OverlayTint = new Color(1f, 0.84f, 0.25f, 0.55f); // oro
             chip.SourceId = ChipHazardSourceId;
+
+            // La ficha es un pickup, no una amenaza: lo que tiene que verse es la moneda esperando en
+            // el piso, y el quad dorado solo la acompaña. Sin el prefab persistente, "hay una ficha
+            // acá" y "esta casilla está marcada" se ven exactamente igual.
+            var coin = AssetDatabase.LoadAssetAtPath<GameObject>(CoinModelPath);
+            if (coin == null)
+            {
+                Debug.LogWarning($"[CajeroAssetBuilder] No está la moneda en '{CoinModelPath}' — " +
+                                 "las fichas quedan como quad dorado y nada más.");
+            }
+            else
+            {
+                chip.PersistentVfxPrefab = coin;
+                chip.PersistentVfxYOffset = CoinYOffset;
+            }
 
             EditorUtility.SetDirty(chip);
             return chip;

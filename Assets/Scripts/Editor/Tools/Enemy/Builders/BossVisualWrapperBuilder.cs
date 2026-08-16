@@ -13,7 +13,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// Fundación compartida para "vestir" un jefe: toma un prefab/FBX de <b>arte</b> y escupe el
     /// prefab de <b>gameplay</b> que lo anida y le cuelga los componentes que el combate espera
     /// (<see cref="EntityPawn"/>, <see cref="PawnRegistryBinding"/>, <see cref="HitImpulseConsumer"/>,
-    /// <see cref="PawnMaterialFeedback"/>, collider y barra de vida world-space).
+    /// <see cref="PawnMaterialFeedback"/>, <see cref="AnimationFeedbackEvent"/> sobre el Animator,
+    /// collider y barra de vida world-space).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -134,7 +135,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                 WireGameplayComponents(root, artRenderers, propRenderers, healthBar, spec);
 
-                return SavePrefab(root, spec.OutputPrefabPath);
+                var saved = SavePrefab(root, spec.OutputPrefabPath);
+                if (saved == null) return null;
+
+                // El puente trabaja sobre el asset y no sobre el root en memoria: así la misma pasada
+                // idempotente sirve para el wrapper recién creado y para reparar uno que ya existía
+                // (que es como entró el del piso 1, con el componente puesto a mano).
+                return EnsureAnimationFeedbackBridge(spec.OutputPrefabPath) ?? saved;
             }
             finally
             {
@@ -682,6 +689,66 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                  "'_renderers' — ¿se renombró el campo? Queda el auto-populate " +
                                  "de runtime.");
             }
+        }
+
+        // ======================================================================
+        // Puente de Animation Events
+        // ======================================================================
+
+        /// <summary>
+        /// Cuelga un <see cref="AnimationFeedbackEvent"/> del GameObject del <c>Animator</c> del arte
+        /// si falta, y devuelve el prefab guardado.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Por qué lo hace la utility y no cada builder.</b> Unity despacha los Animation Events
+        /// <b>sólo</b> al GameObject que tiene el <c>Animator</c>: sin el componente ahí, cada clip que
+        /// llama <c>PushFeedbackEvent</c> tira "AnimationEvent has no receiver" y los steps de feedback
+        /// con <c>EndMode: OnEvent</c> nunca se destraban — el golpe se ve sin su impacto. Ningún prefab
+        /// de arte lo trae (el del piso 1 lo tiene puesto a mano sobre el wrapper), así que con seis
+        /// jefes un call site por builder son seis lugares donde olvidarse, y el síntoma no aparece
+        /// hasta el playtest.
+        /// </para>
+        /// <para>
+        /// Idempotente: si el componente ya está, no se toca ni se reescribe el prefab.
+        /// </para>
+        /// </remarks>
+        public static GameObject EnsureAnimationFeedbackBridge(string prefabPath)
+        {
+            // LoadPrefabContents tira si el path no existe, y el mensaje no dice qué builder lo pidió.
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+            {
+                Debug.LogError($"[BossVisualWrapperBuilder] No hay prefab en '{prefabPath}' — no se " +
+                               $"puede agregar el puente de Animation Events.");
+                return null;
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var animator = contents.GetComponentInChildren<Animator>(includeInactive: true);
+                if (animator == null)
+                {
+                    Debug.LogWarning($"[BossVisualWrapperBuilder] '{prefabPath}' no tiene Animator: no " +
+                                     $"hay dónde colgar el puente de Animation Events.");
+                }
+                else if (animator.GetComponent<AnimationFeedbackEvent>() == null)
+                {
+                    animator.gameObject.AddComponent<AnimationFeedbackEvent>();
+                    PrefabUtility.SaveAsPrefabAsset(contents, prefabPath, out bool saved);
+                    if (!saved)
+                    {
+                        Debug.LogError($"[BossVisualWrapperBuilder] Falló el guardado de " +
+                                       $"'{prefabPath}' al agregar el puente de Animation Events.");
+                    }
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         }
 
         // ======================================================================

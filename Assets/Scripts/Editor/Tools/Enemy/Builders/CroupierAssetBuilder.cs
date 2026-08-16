@@ -44,6 +44,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string FirePhase1Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire.asset";
         public const string FirePhase2Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire_Phase2.asset";
 
+        /// <summary>
+        /// Llama del paño. Vive acá y no en el builder de la Bandida porque el fuego es del Croupier
+        /// y ella lo reusa — un solo asset, un solo lugar donde cambiarlo.
+        /// </summary>
+        public const string FireVfxPrefabPath = "Assets/Prefabs/VFX/VFX_Fire.prefab";
+
+        /// <summary>Mesh de fuego que trajo el arte; es un MeshRenderer con luces, no un sistema de partículas.</summary>
+        private const string FireMeshPrefabPath = "Assets/Art/3D/Models/Items/Fire.prefab";
+
+        /// <summary>Segundos que dura el fogonazo de pisar una casilla encendida.</summary>
+        private const float FireBurstLifetime = 0.9f;
+
         /// <summary>Arte a vestir: el Healer ya viene con copa, moño, capa y bastón.</summary>
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/Healer_Animated.prefab";
 
@@ -185,8 +197,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         [MenuItem("Tools/Rollgeon/Bosses/Build Croupier")]
         public static void BuildCroupier()
         {
-            var fire = BuildFireDefinition(FirePhase1Path, FireDurationRounds, FirePhase1SourceId);
-            var firePhase2 = BuildFireDefinition(FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId);
+            var flame = BuildFireVfx();
+            var fire = BuildFireDefinition(FirePhase1Path, FireDurationRounds, FirePhase1SourceId, flame);
+            var firePhase2 = BuildFireDefinition(
+                FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId, flame);
 
             var visual = BuildVisualPrefab();
             var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
@@ -476,9 +490,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// nodo porque <see cref="IHazardService"/> toma la duración de la definición al activar:
         /// cambiarla desde el nodo pediría tocar el servicio, que es fundación compartida.
         /// </summary>
-        public static HazardDefinitionSO BuildFireDefinition(string path, int durationRounds, string sourceId)
+        /// <param name="flame">
+        /// Llama persistente y burst de pisada. <c>null</c> deja el fuego como estaba —sólo el quad
+        /// naranja—: el visual no es parte del contrato del hazard, así que un builder corrido sin el
+        /// prefab construido no rompe la pelea.
+        /// </param>
+        public static HazardDefinitionSO BuildFireDefinition(
+            string path, int durationRounds, string sourceId, GameObject flame = null)
         {
             var fire = LoadOrCreate<HazardDefinitionSO>(path);
+
+            if (flame != null)
+            {
+                // Las dos mitades del fuego: la llama dice "esta casilla está ardiendo" mientras dura,
+                // el burst dice "y te acaba de cobrar". Sin la primera, entre pisada y pisada el
+                // sector encendido se ve igual que uno apagado.
+                fire.PersistentVfxPrefab = flame;
+                fire.TriggerVfxPrefab = flame;
+                fire.TriggerVfxLifetime = FireBurstLifetime;
+            }
 
             fire.Trigger = HazardTriggerMode.OnTurnEndInTile;
             fire.Damage = FireDamage;
@@ -496,6 +526,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             EditorUtility.SetDirty(fire);
             return fire;
+        }
+
+        /// <summary>
+        /// Deja <see cref="FireVfxPrefabPath"/> listo clonando el mesh de fuego del arte.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Se clona en vez de referenciar <see cref="FireMeshPrefabPath"/> directo porque el hazard
+        /// instancia y destruye el objeto por casilla: apuntar al prefab del arte lo ataría a un uso
+        /// que no es el suyo, y cualquier ajuste de escala para la grilla se le volcaría encima.
+        /// </para>
+        /// <para>
+        /// A diferencia del burst de hielo, esto <b>no</b> es un ParticleSystem: es un mesh con luces.
+        /// Por eso no se retinta el <c>startColor</c> de nada — el color ya viene en <c>Mat_Fire</c>.
+        /// </para>
+        /// </remarks>
+        public static GameObject BuildFireVfx()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(FireVfxPrefabPath) == null)
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(FireMeshPrefabPath) == null)
+                {
+                    Debug.LogWarning($"[CroupierAssetBuilder] No está el mesh de fuego en " +
+                                     $"'{FireMeshPrefabPath}' — el paño queda ardiendo sin llama.");
+                    return null;
+                }
+
+                EnsureFolder(Path.GetDirectoryName(FireVfxPrefabPath));
+                if (!AssetDatabase.CopyAsset(FireMeshPrefabPath, FireVfxPrefabPath))
+                {
+                    Debug.LogError($"[CroupierAssetBuilder] Falló el clon de " +
+                                   $"'{FireMeshPrefabPath}' a '{FireVfxPrefabPath}'.");
+                    return null;
+                }
+                AssetDatabase.ImportAsset(FireVfxPrefabPath);
+            }
+
+            AssetDatabase.SaveAssets();
+            return AssetDatabase.LoadAssetAtPath<GameObject>(FireVfxPrefabPath);
         }
 
         // ======================================================================

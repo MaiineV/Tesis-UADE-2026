@@ -6,7 +6,6 @@ using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
-using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEditor;
@@ -378,66 +377,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Construye (o reconstruye) <c>PF_Boss_Tahur.prefab</c>. <c>null</c> si el arte no está.
         /// </summary>
+        /// <remarks>
+        /// El puente de Animation Events lo pone <see cref="BossVisualWrapperBuilder.BuildWrapper"/>:
+        /// <c>Anim_SunkedGrand_Attack_Melee</c> y <c>Anim_SunkedGrand_Attack_Range</c> llaman
+        /// <c>PushFeedbackEvent</c>, pero eso dejó de ser un caso del Tahúr — los seis jefes lo
+        /// necesitan y por eso vive en la utility compartida.
+        /// </remarks>
         public static GameObject BuildVisualPrefab()
-        {
-            if (BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec()) == null) return null;
-            return EnsureAnimationFeedbackBridge(VisualPrefabPath);
-        }
+            => BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
 
         /// <summary>
-        /// Cuelga un <see cref="AnimationFeedbackEvent"/> del GameObject del <c>Animator</c> del arte
-        /// si falta, y devuelve el prefab guardado.
+        /// Alias de <see cref="BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge"/>, que es donde
+        /// vive ahora la lógica.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Por qué no lo hace la utility compartida.</b> Es específico de este arte:
-        /// <c>Anim_SunkedGrand_Attack_Melee</c> y <c>Anim_SunkedGrand_Attack_Range</c> traen Animation
-        /// Events que llaman <c>PushFeedbackEvent</c>, y ese componente <b>no está en el prefab de
-        /// arte</b> — el wrapper del piso 1 lo agrega a mano como override. Sin él, cada ataque tira
-        /// "AnimationEvent has no receiver" y los steps de feedback con <c>OnEvent</c> nunca se
-        /// destraban: el golpe se ve sin su impacto.
-        /// </para>
-        /// <para>
-        /// Idempotente: si el componente ya está, no se toca ni se reescribe el prefab.
-        /// </para>
+        /// Queda como reenvío y no se borra porque <c>TahurVisualWiringTests</c> entra por acá: era el
+        /// único builder con el puente propio, y su fixture lo llama por nombre.
         /// </remarks>
         public static GameObject EnsureAnimationFeedbackBridge(string prefabPath)
-        {
-            // LoadPrefabContents tira si el path no existe, y el mensaje no dice qué builder lo pidió.
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
-            {
-                Debug.LogError($"[TahurAssetBuilder] No hay prefab en '{prefabPath}' — no se puede " +
-                               $"agregar el puente de Animation Events.");
-                return null;
-            }
-
-            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
-            try
-            {
-                var animator = contents.GetComponentInChildren<Animator>(includeInactive: true);
-                if (animator == null)
-                {
-                    Debug.LogWarning($"[TahurAssetBuilder] '{prefabPath}' no tiene Animator: no hay " +
-                                     $"dónde colgar el puente de Animation Events.");
-                }
-                else if (animator.GetComponent<AnimationFeedbackEvent>() == null)
-                {
-                    animator.gameObject.AddComponent<AnimationFeedbackEvent>();
-                    PrefabUtility.SaveAsPrefabAsset(contents, prefabPath, out bool saved);
-                    if (!saved)
-                    {
-                        Debug.LogError($"[TahurAssetBuilder] Falló el guardado de '{prefabPath}' al " +
-                                       $"agregar el puente de Animation Events.");
-                    }
-                }
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(contents);
-            }
-
-            return AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-        }
+            => BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge(prefabPath);
 
         // -----------------------------------------------------------------
         // Data
