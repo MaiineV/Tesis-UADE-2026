@@ -27,4 +27,6 @@ MonoBehaviour:
   TriggerVfxPrefab: {fileID: 1316803763528841526, guid: 8e46d1d4907fe0d4da37cb6e6df0f963, type: 3}
   TriggerVfxLifetime: 1.5
   TriggerVfxYOffset: 0.1
+  PersistentVfxPrefab: {fileID: 0}
+  PersistentVfxYOffset: 0.1
   SourceId: b7d4f2a6-3c81-4e59-9a02-5f6d8c1e7b43

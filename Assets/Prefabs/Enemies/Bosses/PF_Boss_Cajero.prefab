@@ -814,7 +814,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4029041739363568695, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3032102728816811506}
   m_SourcePrefab: {fileID: 100100000, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
 --- !u!137 &59237458034695989 stripped
 SkinnedMeshRenderer:
@@ -826,6 +829,23 @@ MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 2914206821590436010, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
   m_PrefabInstance: {fileID: 2805220588972010082}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1226154881001530965 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4029041739363568695, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
+  m_PrefabInstance: {fileID: 2805220588972010082}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3032102728816811506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1226154881001530965}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdfa99d5c10801520568b6147255f699, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.AnimationFeedbackEvent
 --- !u!23 &1599046805082793931 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 3521482699567467945, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
