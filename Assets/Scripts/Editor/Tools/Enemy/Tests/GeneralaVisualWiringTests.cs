@@ -93,14 +93,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spec = GeneralaAssetBuilder.BuildBossSpec(SampleBossFit(), null);
 
-            // Assert — el cuerpo es Mat_Brown en el arte; sin retinte la torreta sale marrón.
-            Assert.IsTrue(spec.Retints.ContainsKey("Mat_Brown"), "El cuerpo quedó sin retintar.");
-            var body = spec.Retints["Mat_Brown"].MidColor;
+            // Assert — el cuerpo es Enemy__Base, que DiceBoss_Model.fbx remapea a Mat_Blue.
+            Assert.IsTrue(spec.Retints.ContainsKey("Mat_Blue"), "El cuerpo quedó sin retintar.");
+            var body = spec.Retints["Mat_Blue"].MidColor;
             Assert.IsTrue(body.HasValue, "El navy va por colores directos, no por slot de paleta.");
             Assert.Greater(body.Value.b, body.Value.r, "El cuerpo tiene que quedar azul.");
             Assert.Greater(body.Value.b, body.Value.g, "El cuerpo tiene que quedar azul.");
 
-            var brass = spec.Retints["Mat_Gold"].MidColor;
+            // Enemy__Trim, el filo ornamental del dado, es la charretera de esta jefa.
+            var brass = spec.Retints["Mat_LightBlue"].MidColor;
             Assert.IsTrue(brass.HasValue);
             Assert.Greater(brass.Value.r, brass.Value.b, "Las charreteras tienen que quedar doradas.");
         }

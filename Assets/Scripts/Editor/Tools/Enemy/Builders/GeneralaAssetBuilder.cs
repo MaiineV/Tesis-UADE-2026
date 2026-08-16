@@ -107,22 +107,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // tenían animación posible. Y el jefe de los dados llevando el rig de dados se explica
         // solo, cosa que una batería militar no hacía.
         //
-        // DEUDA CONOCIDA — la paleta no se le aplica. DiceBoss_Model.fbx trae sus materiales
-        // embebidos (Enemy__Base, Enemy__Trim, Enemy__Top/Down/Left/Right/Back, Enemy__Red,
-        // Enemy__White.001) y encima sobre URP/Lit, no sobre Rollgeon/PaletteCelLit. Las cuatro
-        // keys de BuildRetints no matchean ninguno, así que cada build loguea cuatro warnings y
-        // la jefa sale con los colores crudos del FBX.
-        //
-        // Los warnings quedan a propósito: están diciendo la verdad. Silenciarlos escondería que
-        // hay una jefa sin su paleta. Arreglarlo de verdad es remapear los materiales del FBX a
-        // assets Mat_* del proyecto por externalObjects del importer — decisión de arte (qué
-        // superficie es cuál) sobre un FBX compartido, así que va con Maiine y no acá.
+        // La jefa estuvo un tiempo sin paleta: DiceBoss_Model.fbx traía sus nueve materiales
+        // embebidos (Enemy__Base, Enemy__Trim, …) sobre URP/Lit, que no tiene los canales que
+        // escribe el retinte, y ninguna key de BuildRetints matcheaba. Se arregló donde
+        // correspondía —el arte remapeó el FBX a los Mat_* compartidos por externalObjects del
+        // importer— y no acá silenciando los warnings.
 
         public const string BossName = "Generala";
 
         public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/DiceBoss_Animated.prefab";
         public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Generala.prefab";
-        public const string BossPortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0046.png";
+        /// <summary>Retrato del rig que viste (<c>DiceBoss_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string BossPortraitTexturePath = BossPortraitLibrary.GeneralaPath;
 
         /// <summary>El dado de la casa se viste con un dado 3D real — un humanoide no se lee como dado.</summary>
         public const string DiceArtPrefabPath = "Assets/Prefabs/Dice/DiceThrow3D_Die.prefab";
@@ -197,13 +193,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             new Color(0.83f, 0.66f, 0.20f),
             new Color(0.36f, 0.26f, 0.06f));
 
-        /// <summary>Cañones: gunmetal teñido de azul, para que los tres tubos no se fundan con la casaca.</summary>
-        public static readonly MaterialRetint SteelRetint = MaterialRetint.FromColors(
-            new Color(0.62f, 0.68f, 0.78f),
-            new Color(0.38f, 0.43f, 0.53f),
-            new Color(0.16f, 0.19f, 0.26f));
-
-        /// <summary>Bocas de cañón: el mismo acero dos tonos más abajo.</summary>
+        /// <summary>Dorso del dado: gunmetal teñido de azul, para que no se funda con la casaca.</summary>
         public static readonly MaterialRetint GunmetalRetint = MaterialRetint.FromColors(
             new Color(0.34f, 0.38f, 0.46f),
             new Color(0.20f, 0.23f, 0.30f),
@@ -225,7 +215,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var bossVisual = BuildBossVisual();
             var diceVisual = BuildDiceVisual();
 
-            var bossPortrait = SpriteImportUtility.EnsureSpriteImport(BossPortraitTexturePath);
+            // El dado de la casa conserva el símbolo del pack: es una pieza de la mesa, no un
+            // personaje, y compartir cara con la Generala los haría indistinguibles en la cola.
+            var bossPortrait = BossPortraitLibrary.Generala();
             var dicePortrait = SpriteImportUtility.EnsureSpriteImport(DicePortraitTexturePath);
 
             var dice = LoadOrCreate<EnemyDataSO>(DiceAssetPath);
@@ -300,19 +292,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 AddHealthBar = true,
                 HealthBarOffset = fit.HealthBarOffset,
 
-                // OJO — estas keys son las del arte viejo y hoy NO matchean ninguna: el rig de
-                // dados no usa los Mat_* compartidos del proyecto, trae sus nueve materiales
-                // embebidos en DiceBoss_Model.fbx (Enemy__Base, Enemy__Trim, Enemy__Back,
-                // Enemy__Red, Enemy__White.001, Enemy__Top/Down/Left/Right) y sobre URP/Lit, que
-                // no tiene los canales de paleta que escribe el retinte. Se dejan como están a
-                // propósito: mapear a ojo qué material es la casaca y cuál el galón sería
-                // inventar, y el builder ya avisa por consola qué key quedó sin matchear.
+                // Las keys son los Mat_* compartidos a los que DiceBoss_Model.fbx remapea sus
+                // materiales por externalObjects. Cuáles son cuál sale del nombre que el FBX le
+                // da a cada slot (Base, Trim, Back), no de mirarlos a ojo.
+                //
+                // Mat_Red (los puntos del dado) y Mat_White (el galón) quedan sin retintar: son
+                // los dos acentos que tienen que seguir leyendo como acento contra el navy.
                 Retints = new Dictionary<string, MaterialRetint>
                 {
-                    { "Mat_Brown", NavyRetint },     // cuerpo
-                    { "Mat_Gold", BrassRetint },     // charreteras
-                    { "Mat_Gray", SteelRetint },     // cañón principal
-                    { "Mat_DarkGray", GunmetalRetint }, // bocas
+                    { "Mat_Blue", NavyRetint },        // Enemy__Base + las cuatro caras
+                    { "Mat_LightBlue", BrassRetint },  // Enemy__Trim — el filo ornamental
+                    { "Mat_Black", GunmetalRetint },   // Enemy__Back
                 },
 
                 Props = props,
