@@ -11,6 +11,13 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// (número 1 → índice 0). Es lo que hace que el sector que cae y el dado que se confisca sean el
     /// mismo dato: <c>AINode_RotateBlock</c> con este reader en <c>DirectedIndex</c> confisca el dado
     /// del número cantado en vez de sortear uno.
+    /// <para>
+    /// <b>Hoy no lo usa nadie, y está huérfano a propósito.</b> Al Croupier se le sacó la
+    /// confiscación porque robar un dado sin ninguna presentación es indistinguible del bloqueo
+    /// aleatorio del Sunken Grand. Si vuelve —junto con su visual: el dado viajando a la mesa y el
+    /// slot con candado— esta es la pieza que hace que el dado robado sea el del número cantado.
+    /// No borrar en una limpieza de código muerto.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Devuelve <c>-1</c> si no hay número en el aire, que <c>AINode_RotateBlock</c> interpreta como
