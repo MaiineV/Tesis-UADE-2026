@@ -41,6 +41,21 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Viaje del chip activo hacia/desde el anchor. <= 0 aplica instantáneo.")]
         private float _chipMoveSeconds = 0.2f;
 
+        [Title("Breath / Punch — selección de target")]
+        [SerializeField, Tooltip("Escala pico del breath mientras la acción espera target " +
+                 "(estado cancelable). <= 1 desactiva la animación.")]
+        private float _breathScale = 1.05f;
+
+        [SerializeField, Tooltip("Medio ciclo del breath (ida). <= 0 desactiva la animación.")]
+        private float _breathHalfSeconds = 0.6f;
+
+        [SerializeField, Tooltip("Overshoot del punch al confirmar el target (0.12 = +12%). " +
+                 "<= 0 lo desactiva.")]
+        private float _punchStrength = 0.12f;
+
+        [SerializeField, Tooltip("Duración total del punch. <= 0 lo desactiva.")]
+        private float _punchSeconds = 0.25f;
+
         // ---- Runtime state ---------------------------------------------------
 
         private bool _rolling;
@@ -58,12 +73,25 @@ namespace Rollgeon.UI.HUD
         private EventManager.EventReceiver _onFlowStart;
         private EventManager.EventReceiver _onFlowEnd;
         private EventManager.EventReceiver _onFlowEndForced;
+        private EventManager.EventReceiver _onSelectionStart;
+        private EventManager.EventReceiver _onTargetChanged;
+
+        // Breath = la acción elegida espera un target (cancelable); el chip respira.
+        // Punch = el target se confirmó; golpe corto y el chip queda estático.
+        private bool _breathing;
+        private int? _breathSlot;
+        private ActionButton _breathButton;
+        private ActionButton _punchButton;
+        private Tween _breathTween;
+        private Tween _punchTween;
 
         // El confirm en modo Classic difiere este exit hasta que el outro de dados
         // termina (DiceOutroGate) — los chips no deben volver mientras los dados vuelan.
         private bool _exitDeferred;
 
         public bool IsRolling => _rolling;
+
+        public bool IsBreathing => _breathing;
 
         // ---- Lifecycle ---------------------------------------------------------
 
@@ -73,15 +101,20 @@ namespace Rollgeon.UI.HUD
             if (_chipsGroup == null && _buttonsView != null)
                 _chipsGroup = _buttonsView.GetComponent<CanvasGroup>();
 
-            _onFlowStart = _ => EnterRolling();
-            _onFlowEnd = _ => ExitRolling(force: false);
+            _onFlowStart = _ => HandleFlowStart();
+            _onFlowEnd = _ => { StopBreath(); StopPunch(); ExitRolling(force: false); };
             // Fin de combate / turno nuevo: restaurar SIEMPRE, aunque haya outro en el aire.
-            _onFlowEndForced = _ => ExitRolling(force: true);
+            _onFlowEndForced = _ => { StopBreath(); StopPunch(); ExitRolling(force: true); };
+            _onSelectionStart = _ => StartBreath();
+            _onTargetChanged = args => HandleCombatTargetChanged(args);
             EventManager.Subscribe(EventName.OnChainStarted, _onFlowStart);
             EventManager.Subscribe(EventName.OnDiceRolled, _onFlowStart);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onFlowEnd);
             EventManager.Subscribe(EventName.OnCombatEnd, _onFlowEndForced);
             EventManager.Subscribe(EventName.OnTurnStarted, _onFlowEndForced);
+            EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, _onSelectionStart);
+            EventManager.Subscribe(EventName.OnActionSelectionStarted, _onSelectionStart);
+            EventManager.Subscribe(EventName.OnCombatTargetChanged, _onTargetChanged);
             DiceOutroGate.Changed += HandleOutroGateChanged;
             Rollgeon.Feedback.BreakdownUiGate.Changed += HandleOutroGateChanged;
         }
@@ -108,6 +141,20 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnTurnStarted, _onFlowEndForced);
                 _onFlowEndForced = null;
             }
+            if (_onSelectionStart != null)
+            {
+                EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, _onSelectionStart);
+                EventManager.UnSubscribe(EventName.OnActionSelectionStarted, _onSelectionStart);
+                _onSelectionStart = null;
+            }
+            if (_onTargetChanged != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCombatTargetChanged, _onTargetChanged);
+                _onTargetChanged = null;
+            }
+
+            StopBreath();
+            StopPunch();
 
             // Cierre del HUD a mitad de un roll: snap-restore inmediato para no dejar
             // el chip huérfano bajo el anchor ni la zona apagada.
@@ -157,6 +204,108 @@ namespace Rollgeon.UI.HUD
             if (!_exitDeferred || DiceOutroGate.OutroPending
                 || Rollgeon.Feedback.BreakdownUiGate.Pending) return;
             ExitRolling(force: true);
+        }
+
+        // ---- Breath / Punch ----------------------------------------------------
+
+        private void HandleFlowStart()
+        {
+            bool wasBreathing = _breathing;
+            EnterRolling();
+            // El confirm de la fase 0 de un chain llega como OnChainStarted, sin evento
+            // de selección propio: el punch cae sobre el chip ya reparenteado al anchor.
+            if (wasBreathing) PunchActiveChip();
+        }
+
+        private void HandleCombatTargetChanged(object[] args)
+        {
+            if (!_breathing) return;
+            if (args == null || args.Length < 2 || args[1] is not System.Guid target) return;
+            if (target == System.Guid.Empty) StopBreath();
+            else PunchActiveChip();
+        }
+
+        private void LateUpdate()
+        {
+            // El cancel pre-roll (click derecho / reselección de otro chip) no emite
+            // ningún evento: si el slot seleccionado ya no es el que respiraba, el
+            // estado cancelable murió.
+            if (!_breathing || _rolling || _buttonsView == null) return;
+            if (_buttonsView.SelectedSlot != _breathSlot) StopBreath();
+        }
+
+        private void StartBreath()
+        {
+            StopBreath();
+            var button = ResolveBreathTarget();
+            if (button == null) return;
+
+            _breathing = true;
+            _breathButton = button;
+            _breathSlot = _buttonsView != null ? _buttonsView.SelectedSlot : null;
+
+            // Bajo reduced motion (o en EditMode) el estado breath existe igual — el
+            // punch y los cancels lo necesitan — pero sin animación.
+            if (DiceUiMotionPrefs.ReducedMotion || !Application.isPlaying
+                || _breathScale <= 1f || _breathHalfSeconds <= 0f) return;
+
+            _breathTween = Tween.Custom(1f, _breathScale, _breathHalfSeconds,
+                onValueChange: v =>
+                {
+                    if (_breathButton != null) _breathButton.SetExternalScaleMultiplier(v);
+                },
+                ease: Ease.InOutSine, cycles: -1, cycleMode: CycleMode.Yoyo,
+                useUnscaledTime: true);
+        }
+
+        private void StopBreath()
+        {
+            _breathing = false;
+            _breathSlot = null;
+            if (_breathTween.isAlive) _breathTween.Stop();
+            if (_breathButton != null) _breathButton.SetExternalScaleMultiplier(1f);
+            _breathButton = null;
+        }
+
+        private void StopPunch()
+        {
+            if (_punchTween.isAlive) _punchTween.Stop();
+            if (_punchButton != null) _punchButton.SetExternalScaleMultiplier(1f);
+            _punchButton = null;
+        }
+
+        private void PunchActiveChip()
+        {
+            // Tras el reparent el chip vivo es _activeChip — el botón cacheado del
+            // breath puede ser el mismo, pero re-resolver cubre el punch post-move.
+            var button = _rolling && _activeChip != null
+                ? _activeChip.GetComponent<ActionButton>()
+                : _breathButton;
+            if (button == null) button = _breathButton;
+            StopBreath();
+            StopPunch();
+            if (button == null) return;
+
+            if (DiceUiMotionPrefs.ReducedMotion || !Application.isPlaying
+                || _punchStrength <= 0f || _punchSeconds <= 0f) return;
+
+            _punchButton = button;
+            _punchTween = Tween.Custom(1f, 1f + _punchStrength, _punchSeconds * 0.5f,
+                onValueChange: v =>
+                {
+                    if (_punchButton != null) _punchButton.SetExternalScaleMultiplier(v);
+                },
+                ease: Ease.OutQuad, cycles: 2, cycleMode: CycleMode.Yoyo,
+                useUnscaledTime: true);
+        }
+
+        private ActionButton ResolveBreathTarget()
+        {
+            if (_rolling && _activeChip != null) return _activeChip.GetComponent<ActionButton>();
+            if (_buttonsView == null) return null;
+            int? slot = _buttonsView.SelectedSlot;
+            if (slot == null) return null;
+            return _buttonsView.GetButtonAt(slot.Value);
         }
 
         private void SetChipsVisible(bool visible, bool instant)

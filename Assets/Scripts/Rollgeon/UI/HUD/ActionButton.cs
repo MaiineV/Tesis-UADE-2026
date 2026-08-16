@@ -122,6 +122,12 @@ namespace Rollgeon.UI.HUD
         private Outline _outline;
         private Vector3 _baseScale;
 
+        // Escala del estado actual (1 o _selectedScale) y multiplicador externo
+        // (breath/punch del CombatHudZoneFlow) — ApplyScale los compone para que el
+        // state machine y los tweens externos no se pisen el localScale entre sí.
+        private float _stateScale = 1f;
+        private float _externalScaleMul = 1f;
+
         // Sprite de reposo del chip, capturado del prefab en Awake — el swap de
         // hover/selected/disabled vuelve siempre a este.
         private Sprite _normalSprite;
@@ -271,6 +277,22 @@ namespace Rollgeon.UI.HUD
 
         public bool IsAffordable => _affordable;
 
+        /// <summary>
+        /// Multiplicador de escala externo (breath/punch de <c>CombatHudZoneFlow</c>).
+        /// 1 = sin efecto. Tweenear <c>localScale</c> directo pelearía con
+        /// <see cref="ApplyVisual"/>, que reescribe la escala en cada cambio de estado.
+        /// </summary>
+        public void SetExternalScaleMultiplier(float value)
+        {
+            _externalScaleMul = value;
+            ApplyScale();
+        }
+
+        private void ApplyScale()
+        {
+            transform.localScale = _baseScale * _stateScale * _externalScaleMul;
+        }
+
         private void ApplyVisual()
         {
             if (_button == null) return;
@@ -287,7 +309,7 @@ namespace Rollgeon.UI.HUD
                 case ActionButtonState.Unaffordable:
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: true);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null)
                     {
                         _outline.effectColor = _unaffordableColor;
@@ -301,7 +323,7 @@ namespace Rollgeon.UI.HUD
                 case ActionButtonState.Locked:
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: false);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
@@ -316,21 +338,21 @@ namespace Rollgeon.UI.HUD
                         if (usedSprite != null) _image.sprite = usedSprite;
                         _image.color = _baseColor;
                     }
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Available:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: _hovered);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Selected:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: true);
-                    transform.localScale = _baseScale * _selectedScale;
+                    _stateScale = _selectedScale;
                     if (_outline != null)
                     {
                         _outline.effectColor = _glowColor;
@@ -338,6 +360,8 @@ namespace Rollgeon.UI.HUD
                     }
                     break;
             }
+
+            ApplyScale();
         }
 
         /// <summary>
