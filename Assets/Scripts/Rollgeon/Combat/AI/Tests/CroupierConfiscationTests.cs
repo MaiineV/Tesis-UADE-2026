@@ -172,6 +172,38 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void Node_LabelsThePadlockWithTheNumberThatWasSung_NotTheSlotIndex()
+        {
+            // Arrange — el reader devuelve base-0 para poder indexar la bolsa, pero lo que el jugador
+            // vio cantar es ese número más uno.
+            _wheel.Sing(new List<int> { 3 });
+            _wheel.ConsumeWindup();
+
+            // Act
+            BuildNode().Tick(Context());
+
+            // Assert
+            Assert.AreEqual("3", _blocks.LabelOf(2),
+                "Con el índice crudo el candado diría '2' para el 3 que salió en la ruleta, que es " +
+                "peor que no decir nada.");
+        }
+
+        [Test]
+        public void Node_LabelSurvivesTheModulo_SoTheSixStillSaysSix()
+        {
+            // Arrange — el 6 confisca el dado 0 por el módulo, pero la etiqueta dice QUIÉN se lo
+            // llevó, no cuál es: el candado ya marca cuál.
+            _wheel.Sing(new List<int> { 6 });
+            _wheel.ConsumeWindup();
+
+            // Act
+            BuildNode().Tick(Context());
+
+            // Assert
+            Assert.AreEqual("6", _blocks.LabelOf(0));
+        }
+
+        [Test]
         public void Node_ConfiscatesFreshEachTurn_SoTheBlockNeverAccumulates()
         {
             _wheel.Sing(new List<int> { 3 });

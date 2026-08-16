@@ -38,6 +38,14 @@ namespace Rollgeon.Combat.Cashier
         int DamageStepDown { get; }
 
         /// <summary>
+        /// Rondas que le quedan de vigencia al soborno (0 = no hay soborno activo). Es
+        /// <see cref="DamageStepDown"/> con la cuenta atrás visible: el descuento es binario, pero
+        /// el jugador necesita saber cuándo se le vence para decidir si vale la pena ir a buscar
+        /// otra ficha.
+        /// </summary>
+        int BribeRoundsLeft { get; }
+
+        /// <summary>
         /// El rastrillo: escalones que el jefe se subió solo por el paso de las rondas,
         /// <b>sin mirar el oro del jugador</b>. Sube +1 cada <see cref="RakeRoundsPerStep"/>
         /// rondas de combate y no baja nunca — sólo lo contrarresta el soborno.
@@ -84,9 +92,17 @@ namespace Rollgeon.Combat.Cashier
         /// Lo llama la acción del jugador — el jefe nunca se soborna solo.
         /// </summary>
         /// <remarks>
-        /// Es la única palanca contra <see cref="DamageStepUp"/>, y por eso las dos ventanas
-        /// miden lo mismo (3 rondas): un soborno por ciclo de rastrillo mantiene el escalón
-        /// donde lo puso el oro, y dejar de pagar deja que el reloj gane terreno.
+        /// <para>
+        /// Es una de las dos palancas contra <see cref="DamageStepUp"/>, y por eso las dos
+        /// ventanas miden lo mismo (3 rondas): un soborno por ciclo de rastrillo mantiene el
+        /// escalón donde lo puso el oro, y dejar de pagar deja que el reloj gane terreno.
+        /// </para>
+        /// <para>
+        /// <b>Hoy no hay acción del jugador que lo llame.</b> El soborno que sí ocurre en la pelea
+        /// es el de <see cref="RegisterChip"/> — pisar una ficha. Este camino queda como el
+        /// "pagar el precio de lista" por si alguna vez entra un botón: sin él, la única forma de
+        /// sobornar dependería de que el jefe haya soltado una ficha.
+        /// </para>
         /// </remarks>
         bool TryBribe();
 
@@ -97,9 +113,65 @@ namespace Rollgeon.Combat.Cashier
         /// <paramref name="ownerGuid"/> es quien la soltó: si es él el que la pisa (el jefe kitea
         /// sobre su propia columna), no se cobra.
         /// </summary>
+        /// <remarks>
+        /// <b>Levantar una ficha también soborna</b> — abre la misma ventana que
+        /// <see cref="TryBribe"/>, sin cobrar los <see cref="BribeCost"/>. Sin eso la ficha era
+        /// una trampa sin salida: lo único que el jefe suelta te paga en oro, y el oro es
+        /// exactamente lo que le sube el escalón. Con el soborno encima, ir a buscarla es la
+        /// decisión del turno y no una recompensa envenenada — las fichas caen a 2-3 casillas y
+        /// el camino puede obligarte a cruzar el mostrador, que cuesta el peaje.
+        /// </remarks>
         void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid);
 
         /// <summary>Valor de una ficha viva, o 0 si ese id no es una ficha del Cajero.</summary>
         int GetChipValue(Guid hazardInstanceId);
+
+        /// <summary>
+        /// Último escalón que el jefe resolvió al marcar, tal cual lo va a pegar. <c>null</c> antes
+        /// de la primera marca.
+        /// </summary>
+        CashierTierSnapshot? LastTier { get; }
+
+        /// <summary>
+        /// Lo llama <c>AINode_TelegraphMarkGoldScaled</c> con el escalón que acaba de resolver, para
+        /// que la lectura del HUD muestre el daño <b>real</b>.
+        /// </summary>
+        /// <remarks>
+        /// La UI podría recalcularlo con su propia copia de la tabla, y ahí es exactamente donde se
+        /// separaría del golpe: la tabla vive en el asset del jefe y el efectivo depende además del
+        /// rastrillo y del soborno. Una lectura que miente es peor que no tener lectura.
+        /// </remarks>
+        void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown);
+    }
+
+    /// <summary>
+    /// Foto del escalón con el que el Cajero marcó la última columna: qué va a pegar y de dónde sale
+    /// ese número. Inmutable — el servicio es dueño del estado mutable.
+    /// </summary>
+    public readonly struct CashierTierSnapshot
+    {
+        /// <summary>Índice del escalón efectivo en la tabla (0 = el más barato).</summary>
+        public readonly int Rank;
+
+        /// <summary>Daño de la columna con ese escalón.</summary>
+        public readonly int Damage;
+
+        /// <summary>Oro que tenía el jugador cuando se resolvió.</summary>
+        public readonly int Gold;
+
+        /// <summary>Escalones que sumó el rastrillo.</summary>
+        public readonly int StepUp;
+
+        /// <summary>Escalones que restó el soborno.</summary>
+        public readonly int StepDown;
+
+        public CashierTierSnapshot(int rank, int damage, int gold, int stepUp, int stepDown)
+        {
+            Rank = rank;
+            Damage = damage;
+            Gold = gold;
+            StepUp = stepUp;
+            StepDown = stepDown;
+        }
     }
 }

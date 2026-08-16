@@ -29,11 +29,12 @@ namespace Rollgeon.Dice.Tests
 
     internal sealed class StubDiceBlockService : IDiceBlockService
     {
-        private readonly HashSet<int> _blocked = new HashSet<int>();
-        public void Block(int index) => _blocked.Add(index);
+        private readonly Dictionary<int, string> _blocked = new Dictionary<int, string>();
+        public void Block(int index, string label = null) => _blocked[index] = label;
         public void Unblock(int index) => _blocked.Remove(index);
-        public bool IsBlocked(int index) => _blocked.Contains(index);
-        public IReadOnlyCollection<int> BlockedIndices => _blocked;
+        public bool IsBlocked(int index) => _blocked.ContainsKey(index);
+        public string LabelOf(int index) => _blocked.TryGetValue(index, out var l) ? l : null;
+        public IReadOnlyCollection<int> BlockedIndices => _blocked.Keys;
         public void Clear() => _blocked.Clear();
     }
 

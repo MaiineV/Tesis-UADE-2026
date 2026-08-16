@@ -41,6 +41,7 @@ namespace Rollgeon.Combat.Cashier
         private int _chipValueMultiplier = 1;
         private int _bribeRoundsLeft;
         private int _lastRoundIndex = -1;
+        private CashierTierSnapshot? _lastTier;
 
         private Action<DamageResolvedPayload> _onDamageResolved;
         private EventManager.EventReceiver _onEntityDestroyed;
@@ -95,6 +96,9 @@ namespace Rollgeon.Combat.Cashier
 
         /// <inheritdoc />
         public int DamageStepDown => _bribeRoundsLeft > 0 ? 1 : 0;
+
+        /// <inheritdoc />
+        public int BribeRoundsLeft => _bribeRoundsLeft;
 
         /// <inheritdoc />
         /// <remarks>
@@ -158,12 +162,26 @@ namespace Rollgeon.Combat.Cashier
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return false;
             if (!economy.Spend(BribeCost)) return false;
 
-            // Se reinicia la ventana en vez de acumular: dos sobornos seguidos compran seis
-            // rondas de un escalón abajo, no tres rondas de dos escalones. Con dos escalones de
-            // alivio el soborno anularía el rastrillo de golpe y volvería a hacerlo opcional —
-            // la ficha lo quiere como cuota que hay que renovar cada 3 rondas, no como un seguro.
-            _bribeRoundsLeft = BribeRounds < 0 ? 0 : BribeRounds;
+            ArmBribeWindow();
             return true;
+        }
+
+        /// <summary>
+        /// Abre (o reinicia) la ventana de soborno. Es el paso compartido por las dos formas de
+        /// sobornar — pagar el precio de lista (<see cref="TryBribe"/>) y devolverle una ficha
+        /// (<see cref="OnHazardTriggeredExternal"/>) — para que no puedan divergir en cuánto dura
+        /// ni en si acumulan.
+        /// </summary>
+        /// <remarks>
+        /// Se reinicia la ventana en vez de acumular: dos sobornos seguidos compran seis rondas de
+        /// un escalón abajo, no tres rondas de dos escalones. Con dos escalones de alivio el
+        /// soborno anularía el rastrillo de golpe y volvería a hacerlo opcional — la ficha lo
+        /// quiere como cuota que hay que renovar cada 3 rondas, no como un seguro. Vale igual para
+        /// el camino de las fichas, que si no bastaría con juntar tres seguidas para congelarlo.
+        /// </remarks>
+        private void ArmBribeWindow()
+        {
+            _bribeRoundsLeft = BribeRounds < 0 ? 0 : BribeRounds;
         }
 
         /// <inheritdoc />
@@ -176,6 +194,16 @@ namespace Rollgeon.Combat.Cashier
         /// <inheritdoc />
         public int GetChipValue(Guid hazardInstanceId)
             => _chips.TryGetValue(hazardInstanceId, out var chip) ? chip.Value : 0;
+
+        /// <inheritdoc />
+        public CashierTierSnapshot? LastTier => _lastTier;
+
+        /// <inheritdoc />
+        public void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown)
+        {
+            _lastTier = new CashierTierSnapshot(rank, damage, gold, stepUp, stepDown);
+            EventManager.Trigger(EventName.OnCashierTierChanged, rank, damage);
+        }
 
         // ======================================================================
         // Lifecycle
@@ -225,6 +253,7 @@ namespace Rollgeon.Combat.Cashier
             _chipValueMultiplier = 1;
             _bribeRoundsLeft = 0;
             _lastRoundIndex = -1;
+            _lastTier = null;
         }
 
         // ======================================================================
@@ -262,7 +291,37 @@ namespace Rollgeon.Combat.Cashier
 
             _chips.Remove(instanceId);
             PayPlayer(entityGuid, chip.Value);
+
+            // Devolverle una ficha lo soborna, gratis. Sin esto la ficha era una trampa sin salida:
+            // lo único que el jefe suelta paga en oro, y el oro es justo lo que le sube el escalón.
+            ArmBribeWindow();
+            AnnounceBribe(chip.Owner);
         }
+
+        /// <summary>
+        /// Avisa el soborno <b>sobre el jefe</b> y no sobre quien levantó la ficha: lo que cambió es
+        /// cuánto pega él. Sale como texto y no como número porque "−1 escalón" no es una cantidad
+        /// (ver <see cref="FloatingNumberFormat.ForText"/>), y va detrás del <c>+N G</c> de la ficha
+        /// — el stagger del spawner los separa, así que se leen como causa y efecto.
+        /// </summary>
+        private void AnnounceBribe(Guid bossGuid)
+        {
+            if (bossGuid == Guid.Empty) return;
+
+            EventManager.Trigger(
+                EventName.OnFloatingNumberRequested,
+                bossGuid,
+                FloatingNumberType.Status,
+                BribeAnnouncement,
+                Vector3.zero);
+        }
+
+        /// <summary>
+        /// Lo que dice el aviso del soborno. Literal como <c>ShieldBlocked</c>/<c>ShieldBroken</c>:
+        /// el nombre del escalón es de este jefe y no hay tabla de localización de combate que lo
+        /// cubra todavía.
+        /// </summary>
+        private const string BribeAnnouncement = "Soborno · -1 escalón";
 
         private void OnHazardExpiredExternal(params object[] args)
         {

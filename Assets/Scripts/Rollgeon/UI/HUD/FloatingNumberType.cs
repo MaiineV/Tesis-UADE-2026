@@ -12,6 +12,13 @@ namespace Rollgeon.UI.HUD
         Shield = 2,
         Gold = 3,
         Status = 4,
+
+        /// <summary>
+        /// Oro que <b>sale</b> del bolsillo del jugador (el arqueo del Cajero). Es su propio tipo y
+        /// no <see cref="Gold"/> con un valor negativo porque el formato de <see cref="Gold"/>
+        /// antepone <c>+</c> siempre: un cobro saldría como "+40 G" y se leería como una ganancia.
+        /// </summary>
+        GoldLost = 5,
     }
 
     /// <summary>

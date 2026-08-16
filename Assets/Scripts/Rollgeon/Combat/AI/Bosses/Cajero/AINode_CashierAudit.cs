@@ -115,9 +115,57 @@ namespace Rollgeon.Combat.AI.Decisions
             int collected = ledger.CollectTax(context.SelfGuid, TaxPercent);
             ledger.SetChipValueMultiplier(ChipValueMultiplierAfterAudit);
 
+            Announce(context, collected);
+
             int heal = Mathf.Min(collected, MaxHeal);
             if (heal > 0) ApplyHeal(attrs, context, heal);
         }
+
+        /// <summary>
+        /// Dice el trato completo: cuánto te sacó y que vuelve si lo vencés.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Sin esto la mitad más importante del kit del jefe era invisible.</b> Lo único que salía
+        /// en pantalla era el número de curación sobre el jefe, así que el arqueo se leía como "se
+        /// cura solo" — que fue literalmente la pregunta del playtest. El oro salía del bolsillo sin
+        /// un solo aviso.
+        /// </para>
+        /// <para>
+        /// <b>Dos avisos y no uno compuesto</b>, y sobre entidades distintas: el cobro va sobre el
+        /// jugador (es su oro) y la promesa de devolución sobre el jefe (es su caja). El stagger del
+        /// spawner los separa en el tiempo, así que se leen como una frase y no como un cartel.
+        /// </para>
+        /// <para>
+        /// <b>Con el jugador seco no se anuncia nada.</b> Un "-0 G" enseñaría una regla que en esa
+        /// pelea no se aplicó, y el jugador pobre ya tiene su propia lectura: el jefe no se curó.
+        /// </para>
+        /// </remarks>
+        private static void Announce(AIContext context, int collected)
+        {
+            if (collected <= 0) return;
+
+            EventManager.Trigger(
+                EventName.OnFloatingNumberRequested,
+                context.PlayerGuid,
+                FloatingNumberType.GoldLost,
+                (float)collected,
+                Vector3.zero);
+
+            EventManager.Trigger(
+                EventName.OnFloatingNumberRequested,
+                context.SelfGuid,
+                FloatingNumberType.Status,
+                VaultPromise,
+                Vector3.zero);
+        }
+
+        /// <summary>
+        /// Lo que convierte el arqueo en secuestro y no en robo. Literal como
+        /// <c>FloatingNumberFormat.ShieldBlocked</c>: todavía no hay tabla de localización que cubra
+        /// los mensajes de jefe.
+        /// </summary>
+        private const string VaultPromise = "Arqueo · vuelve si lo vencés";
 
         /// <remarks>
         /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar sobre el

@@ -333,5 +333,10 @@ namespace Patterns
         /// <summary>args: [Guid chestGuid]. El combate terminó con el cofre sin resolver —
         /// desapareció sin recompensa.</summary>
         OnChestExpired,
+
+        /// <summary>args: [int rank, int damage]. El Cajero resolvió el escalón con el que va a
+        /// pegar la columna de este turno. Lo consume la lectura del HUD, que muestra el daño real
+        /// en vez de recalcularlo con su propia copia de la tabla.</summary>
+        OnCashierTierChanged,
     }
 }

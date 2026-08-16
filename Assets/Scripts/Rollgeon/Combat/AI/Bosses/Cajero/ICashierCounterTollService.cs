@@ -38,6 +38,12 @@ namespace Rollgeon.Combat.Cashier
         bool IsArmed { get; }
 
         /// <summary>
+        /// Jefe que cobra el peaje, o <see cref="Guid.Empty"/> si no está armado. Lo necesita el
+        /// overlay: el lado que se pinta es el del jefe, y se resuelve con su coordenada viva.
+        /// </summary>
+        Guid BossGuid { get; }
+
+        /// <summary>
         /// Arma el peaje para esta pelea. Idempotente y pensado para re-llamarse todos los turnos
         /// del jefe: así el cobro se recupera solo de un reset de combate o de un restore de save,
         /// que dejarían el servicio en blanco a mitad de pelea.

@@ -285,9 +285,14 @@ namespace Rollgeon.UI.HUD
             if (!(args[0] is Guid target)) return;
 
             var type = args[1] is FloatingNumberType ft ? ft : FloatingNumberType.Heal;
-            float value = args[2] is float f ? f : (args[2] is int i ? i : 0f);
 
-            var style = FloatingNumberFormat.ForType(type, value);
+            // El slot del valor acepta texto además de número: hay avisos que no son una cantidad
+            // ("Soborno", "-1 escalón") y forzarlos a float los dejaría con el "+" del formato
+            // numérico. El tint/escala/motion los sigue poniendo el tipo — ver ForText.
+            var style = args[2] is string text
+                ? FloatingNumberFormat.ForText(type, text)
+                : FloatingNumberFormat.ForType(type, args[2] is float f ? f : (args[2] is int i ? i : 0f));
+
             var screenPos = ResolveScreenPos(target);
             SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
         }

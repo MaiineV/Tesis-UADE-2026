@@ -504,11 +504,18 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        // Casillas reales de la sala. Si el grafo está poblado, usamos sus nodos (maneja
-        // salas no rectangulares y orígenes arbitrarios). Si está vacío (stub "infinito"),
-        // no hay extensión que enumerar → vacío; las formas Row/Column/HalfRoom requieren
-        // una sala con bounds reales (siempre el caso en combate).
-        private static IEnumerable<GridCoord> RoomTiles(IGridManager grid)
+        /// <summary>
+        /// Casillas caminables reales de la sala. Si el grafo está poblado, usa sus nodos (maneja
+        /// salas no rectangulares y orígenes arbitrarios). Si está vacío (stub "infinito"), no hay
+        /// extensión que enumerar → vacío; las formas Row/Column/HalfRoom requieren una sala con
+        /// bounds reales (siempre el caso en combate).
+        /// </summary>
+        /// <remarks>
+        /// Pública porque no es sólo de las shapes: cualquier sistema que necesite "toda la sala
+        /// menos X" —el overlay del mostrador del Cajero, por ejemplo— tiene que enumerarla igual, y
+        /// duplicar el manejo del grafo vacío es exactamente donde divergen.
+        /// </remarks>
+        public static IEnumerable<GridCoord> RoomTiles(IGridManager grid)
         {
             var graph = grid.Graph;
             if (graph == null || graph.IsEmpty) yield break;

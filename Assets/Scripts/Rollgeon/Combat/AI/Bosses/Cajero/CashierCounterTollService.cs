@@ -72,6 +72,10 @@ namespace Rollgeon.Combat.Cashier
 
             var created = new CashierCounterTollService();
             ServiceLocator.AddService<ICashierCounterTollService>(created, ServiceScope.Global);
+
+            // El overlay nace con el peaje y no por su cuenta: es lo único que lo dibuja, y crearlo
+            // acá garantiza que exista exactamente cuando hay un peaje que anunciar.
+            CashierCounterTollOverlay.ResolveOrCreate();
             return created;
         }
 
@@ -87,6 +91,9 @@ namespace Rollgeon.Combat.Cashier
 
         /// <inheritdoc />
         public bool IsArmed => _bossGuid != Guid.Empty && _payerGuid != Guid.Empty && _tollDamage > 0;
+
+        /// <inheritdoc />
+        public Guid BossGuid => _bossGuid;
 
         /// <inheritdoc />
         public void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage)

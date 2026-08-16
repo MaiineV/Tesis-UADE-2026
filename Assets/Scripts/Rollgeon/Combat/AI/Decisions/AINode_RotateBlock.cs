@@ -229,7 +229,10 @@ namespace Rollgeon.Combat.AI.Decisions
             int raw = DirectedIndex.Read(context);
             if (raw < 0) return AIResult.Succeeded;
 
-            dice.Block(raw % bagSize);
+            // La etiqueta es el número de la mecánica, no el slot: el reader devuelve base-0 para
+            // poder indexar, pero lo que el jugador vio cantar es ese número más uno. Sin esto el
+            // candado diría "2" para el 3 que salió en la ruleta, que es peor que no decir nada.
+            dice.Block(raw % bagSize, (raw + 1).ToString());
             return AIResult.Succeeded;
         }
 

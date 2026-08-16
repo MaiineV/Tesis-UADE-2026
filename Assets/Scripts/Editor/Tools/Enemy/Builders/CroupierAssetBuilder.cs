@@ -9,8 +9,10 @@ using Rollgeon.Entities.Behaviors;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Builders
 {
@@ -68,6 +70,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Nombre del hijo de la ruleta. Lo busca <c>CroupierWheelSpinVisual</c> por fallback.</summary>
         public const string WheelChildName = CroupierWheelSpinVisual.DefaultWheelChildName;
+
+        /// <summary>Nombre del label del número cantado. Lo busca <c>CroupierWheelNumberView</c>.</summary>
+        public const string WheelNumberChildName = CroupierWheelNumberView.DefaultLabelChildName;
+
+        /// <summary>
+        /// Fuente del número. La pixel font del HUD y no la decorativa <c>Casino.ttf</c>: el número
+        /// tiene que leerse de un vistazo a la distancia de la cámara, y ahí una tipografía de
+        /// fantasía cuesta legibilidad justo en el dato del que cuelga toda la pelea.
+        /// </summary>
+        public const string WheelNumberFontPath = "Assets/Fonts/m6x11plus SDF.asset";
+
+        /// <summary>
+        /// Cuánto del disco ocupa el número, en diámetros. El label se autoescala a esta caja, así
+        /// que el tamaño sale del prop y no de un font size cableado — si arte cambia la ruleta por
+        /// una más grande, el número la sigue.
+        /// </summary>
+        public const float WheelNumberFillRatio = 0.62f;
 
         /// <summary>Retrato del rig que viste (<c>Healer_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
         public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
@@ -320,12 +339,126 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                      "— ¿se renombró el campo? Queda el fallback por nombre de hijo.");
                 }
 
+                EnsureWheelNumber(contents, wheel);
+
                 PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(contents);
             }
+        }
+
+        /// <summary>
+        /// Crea (idempotente) el label del número cantado en el centro de la ruleta y le cuelga el
+        /// <see cref="CroupierWheelNumberView"/> al root del wrapper.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>El label es hijo del root, no de la rueda.</b> Colgarlo de <c>Wheel</c> lo haría girar
+        /// con el disco y sería ilegible justo en el momento del canto, que es cuando importa. El
+        /// disco gira detrás; el número se queda quieto, como la ventana de resultado de una ruleta.
+        /// </para>
+        /// <para>
+        /// <b>La posición sale de los bounds del prop, no de un número cableado.</b> Se lee el centro
+        /// del disco de sus renderers y se lo pasa al espacio local del root. Así el label sigue a la
+        /// rueda si arte le cambia el tamaño, la escala o el offset de la malla — que es exactamente
+        /// el tipo de dato que en este builder ya vive como constante y hay que re-tunear a mano.
+        /// </para>
+        /// </remarks>
+        private static void EnsureWheelNumber(GameObject contents, Transform wheel)
+        {
+            if (!TryMeasure(wheel, out var hubWorld, out float diameter, out float depth))
+            {
+                Debug.LogWarning($"[CroupierAssetBuilder] '{WheelChildName}' no tiene renderers — no se " +
+                                 "puede ubicar el número cantado. El jefe queda con la rueda muda.");
+                return;
+            }
+
+            var label = FindOrCreateLabel(contents);
+            if (label == null) return;
+
+            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(WheelNumberFontPath);
+            if (font != null) label.font = font;
+            else
+                Debug.LogWarning($"[CroupierAssetBuilder] No está la fuente '{WheelNumberFontPath}' — " +
+                                 "el número sale con la fuente default de TMP.");
+
+            label.color = BrassLight;
+            label.alignment = TextAlignmentOptions.Center;
+            label.text = string.Empty;
+
+            // Autosize contra una caja derivada del disco en vez de un fontSize fijo: el tamaño en
+            // unidades de mundo de TMP depende de la fuente, así que cablearlo obliga a re-tunear con
+            // cada cambio de tipografía.
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 1f;
+            label.fontSizeMax = 300f;
+
+            float box = Mathf.Max(diameter * WheelNumberFillRatio, 0.01f);
+            label.rectTransform.sizeDelta = new Vector2(box, box);
+
+            // Al frente del disco (-Z local, que es hacia donde encara el jefe y por lo tanto hacia la
+            // cámara) más un margen: apoyado en el plano del disco haría z-fighting con él.
+            var hubLocal = contents.transform.InverseTransformPoint(hubWorld);
+            hubLocal.z -= depth * 0.5f + 0.05f;
+            label.rectTransform.localPosition = hubLocal;
+            label.rectTransform.localRotation = Quaternion.identity;
+            label.rectTransform.localScale = Vector3.one;
+
+            var view = contents.GetComponent<CroupierWheelNumberView>();
+            if (view == null) view = contents.AddComponent<CroupierWheelNumberView>();
+
+            var so = new SerializedObject(view);
+            var labelProp = so.FindProperty("_label");
+            if (labelProp != null)
+            {
+                labelProp.objectReferenceValue = label;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            else
+            {
+                Debug.LogWarning("[CroupierAssetBuilder] CroupierWheelNumberView no expone '_label' — " +
+                                 "¿se renombró el campo? Queda el fallback por nombre de hijo.");
+            }
+        }
+
+        /// <summary>Centro y tamaño del disco, de los bounds de sus renderers.</summary>
+        private static bool TryMeasure(Transform wheel, out Vector3 center, out float diameter, out float depth)
+        {
+            center = Vector3.zero;
+            diameter = 0f;
+            depth = 0f;
+
+            var renderers = wheel.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return false;
+
+            var bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+
+            center = bounds.center;
+            // El diámetro es el lado ancho de la cara del disco (X/Y); Z es el canto.
+            diameter = Mathf.Max(bounds.size.x, bounds.size.y);
+            depth = bounds.size.z;
+            return diameter > 0f;
+        }
+
+        private static TMP_Text FindOrCreateLabel(GameObject contents)
+        {
+            var existing = contents.transform.Find(WheelNumberChildName);
+            if (existing != null)
+            {
+                var found = existing.GetComponent<TMP_Text>();
+                if (found != null) return found;
+
+                // Un hijo con ese nombre pero sin TMP es basura de un build viejo (o un rename a
+                // mano): se reemplaza en vez de dejar dos objetos peleando por el mismo nombre.
+                Object.DestroyImmediate(existing.gameObject);
+            }
+
+            var go = new GameObject(WheelNumberChildName);
+            go.transform.SetParent(contents.transform, worldPositionStays: false);
+            return go.AddComponent<TextMeshPro>();
         }
 
         // ======================================================================

@@ -58,6 +58,11 @@ namespace Rollgeon.UI.HUD
                     // Motion.Arc: el oro "salta" en vez de subir derecho — lo distingue
                     // visualmente del resto de los floating numbers a simple vistazo.
                     return new FloatingNumberStyle($"+{rounded} G", FloatingNumberPalette.Gold, 0.9f, FloatingMotion.Arc);
+                case FloatingNumberType.GoldLost:
+                    // Mismo matiz y mismo salto que el oro que entra: es el mismo recurso, y lo que
+                    // distingue "te di" de "te saqué" es el signo. Se manda el valor en positivo y
+                    // el signo lo pone el formato, igual que hace ForDamage con el daño recibido.
+                    return new FloatingNumberStyle($"-{Mathf.Abs(rounded)} G", FloatingNumberPalette.Gold, 0.9f, FloatingMotion.Arc);
                 case FloatingNumberType.Shield:
                     return new FloatingNumberStyle($"+{rounded}", FloatingNumberPalette.Shield, 0.95f);
                 case FloatingNumberType.Status:
@@ -68,6 +73,23 @@ namespace Rollgeon.UI.HUD
                 default:
                     return ForDamage(rounded, incoming: false);
             }
+        }
+
+        /// <summary>
+        /// Texto literal con el look de <paramref name="type"/> — para lo que no es una cantidad:
+        /// "Soborno", "Escudo roto", el escalón que bajó. Hereda tint, escala y motion del tipo, así
+        /// que un mensaje de oro sigue saltando como el oro y uno de estado sigue subiendo derecho.
+        /// </summary>
+        /// <remarks>
+        /// Existe porque el canal legacy (<c>EventName.OnFloatingNumberRequested</c>) sólo transporta
+        /// un <c>float</c>, y hay avisos que no son un número: "−1 escalón" con el formato de
+        /// <see cref="FloatingNumberType.Status"/> saldría como <c>"+-1"</c>. El spawner acepta un
+        /// <c>string</c> en el slot del valor y cae acá.
+        /// </remarks>
+        public static FloatingNumberStyle ForText(FloatingNumberType type, string text)
+        {
+            var style = ForType(type, 0f);
+            return new FloatingNumberStyle(text, style.Tint, style.Scale, style.Motion);
         }
 
         /// <summary>Shield absorbió todo el hit — un "0" rojo/crema confunde (parece daño real).</summary>

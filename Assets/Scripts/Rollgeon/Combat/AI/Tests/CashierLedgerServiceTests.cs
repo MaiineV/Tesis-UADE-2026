@@ -283,6 +283,140 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(100, _economy.CurrentGold, "Un hazard ajeno (fuego, hielo) no paga oro.");
         }
 
+        // ---- La ficha soborna ---------------------------------------------
+        //
+        // Es la única forma de sobornar que existe en la pelea: TryBribe no lo llama ningún código
+        // de producción, así que sin esto el rastrillo sube para siempre sin contrapartida.
+
+        [Test]
+        public void Chip_PickedUpByThePlayer_AlsoBribesTheBoss_ForThreeRounds()
+        {
+            // Arrange
+            var chipId = Guid.NewGuid();
+            _ledger.RegisterChip(chipId, 8, _boss);
+
+            // Act
+            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
+
+            // Assert
+            Assert.AreEqual(1, _ledger.DamageStepDown, "Devolverle la ficha le baja un escalón.");
+            Assert.AreEqual(3, _ledger.BribeRoundsLeft);
+            Assert.AreEqual(108, _economy.CurrentGold, "…y el oro de la ficha se cobra igual: son dos cosas.");
+
+            FireRound(1);
+            FireRound(2);
+            Assert.AreEqual(1, _ledger.DamageStepDown, "Misma ventana que el soborno pago: 3 rondas.");
+            FireRound(3);
+            Assert.AreEqual(0, _ledger.DamageStepDown);
+        }
+
+        [Test]
+        public void Chip_BribeIsFree_NeverChargesTheBribeCost()
+        {
+            // Arrange — el soborno de lista cuesta 35; el de la ficha es el pago EN ficha.
+            var chipId = Guid.NewGuid();
+            _ledger.RegisterChip(chipId, 6, _boss);
+
+            // Act
+            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
+
+            // Assert
+            Assert.AreEqual(106, _economy.CurrentGold,
+                "Cobrarle además los 35 dejaría la ficha en pérdida neta y nadie la levantaría.");
+        }
+
+        [Test]
+        public void Chip_SteppedOnByItsOwner_DoesNotBribe()
+        {
+            // Arrange
+            var chipId = Guid.NewGuid();
+            _ledger.RegisterChip(chipId, 8, _boss);
+
+            // Act — el jefe kitea sobre su propia columna.
+            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _boss);
+
+            // Assert
+            Assert.AreEqual(0, _ledger.DamageStepDown, "El jefe no se soborna solo pisando sus fichas.");
+        }
+
+        [Test]
+        public void Chip_ExpiredWithoutPickup_DoesNotBribe()
+        {
+            // Arrange
+            var chipId = Guid.NewGuid();
+            _ledger.RegisterChip(chipId, 9, _boss);
+
+            // Act — rodó de vuelta a la caja antes de que nadie la pisara.
+            EventManager.Trigger(EventName.OnHazardExpired, chipId);
+            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
+
+            // Assert
+            Assert.AreEqual(0, _ledger.DamageStepDown, "Ignorar las fichas no soborna.");
+        }
+
+        [Test]
+        public void Chip_TwoInARow_RestartTheWindow_NeverStackTiers()
+        {
+            // Arrange — misma invariante que TryBribe_Twice: el alivio es 1 escalón, siempre.
+            var first = Guid.NewGuid();
+            var second = Guid.NewGuid();
+            _ledger.RegisterChip(first, 6, _boss);
+            _ledger.RegisterChip(second, 6, _boss);
+
+            // Act
+            EventManager.Trigger(EventName.OnHazardTriggered, first, _player);
+            FireRound(1);
+            FireRound(2);
+            EventManager.Trigger(EventName.OnHazardTriggered, second, _player);
+
+            // Assert
+            Assert.AreEqual(1, _ledger.DamageStepDown,
+                "Juntar fichas no apila escalones — si no, tres seguidas lo congelan.");
+            FireRound(3);
+            FireRound(4);
+            Assert.AreEqual(1, _ledger.DamageStepDown, "La ventana arrancó de nuevo con la segunda ficha.");
+            FireRound(5);
+            Assert.AreEqual(0, _ledger.DamageStepDown);
+        }
+
+        [Test]
+        public void Chip_Bribe_AnnouncesItselfOverTheBoss_AsText()
+        {
+            // Arrange — el aviso va sobre el jefe porque lo que cambió es cuánto pega ÉL.
+            var chipId = Guid.NewGuid();
+            _ledger.RegisterChip(chipId, 7, _boss);
+
+            var announcedOver = new List<Guid>();
+            var announcedText = new List<object>();
+            EventManager.EventReceiver capture = args =>
+            {
+                if (args == null || args.Length < 3) return;
+                if (!(args[1] is Rollgeon.UI.HUD.FloatingNumberType type)) return;
+                if (type != Rollgeon.UI.HUD.FloatingNumberType.Status) return;
+
+                announcedOver.Add((Guid)args[0]);
+                announcedText.Add(args[2]);
+            };
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, capture);
+
+            try
+            {
+                // Act
+                EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
+            }
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { _boss }, announcedOver,
+                "El soborno se anuncia sobre el jefe, no sobre quien levantó la ficha.");
+            Assert.AreEqual(1, announcedText.Count);
+            Assert.IsInstanceOf<string>(announcedText[0],
+                "'-1 escalón' no es una cantidad: viaja como texto o el formato le antepone un '+'.");
+        }
+
         [Test]
         public void SetChipValueMultiplier_ClampsToOne()
         {

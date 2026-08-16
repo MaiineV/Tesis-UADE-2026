@@ -84,6 +84,76 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(25, _ledger.VaultedGold, "El oro queda en la caja, no desaparece.");
         }
 
+        // ---- El anuncio --------------------------------------------------
+        //
+        // Sin esto, lo único que salía en pantalla era el número de curación sobre el jefe y el
+        // arqueo se leía como "se cura solo" — que fue literalmente la pregunta del playtest.
+
+        [Test]
+        public void Tick_AnnouncesTheGoldItTook_OnThePlayer()
+        {
+            // Arrange
+            GiveBossHealth(90);
+            _ledger.NextTaxAmount = 25;
+            var context = NewContext();
+
+            var captured = new System.Collections.Generic.List<(Guid target, Rollgeon.UI.HUD.FloatingNumberType type, object value)>();
+            EventManager.EventReceiver capture = args =>
+            {
+                if (args == null || args.Length < 3) return;
+                captured.Add(((Guid)args[0], (Rollgeon.UI.HUD.FloatingNumberType)args[1], args[2]));
+            };
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, capture);
+
+            try
+            {
+                // Act
+                NewNode().Tick(context);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
+            }
+
+            // Assert
+            var lost = captured.Find(c => c.type == Rollgeon.UI.HUD.FloatingNumberType.GoldLost);
+            Assert.AreEqual(context.PlayerGuid, lost.target,
+                "El cobro va sobre el jugador: es su oro el que sale del bolsillo.");
+            Assert.AreEqual(25f, lost.value,
+                "Se manda el monto en positivo — el signo lo pone el formato de GoldLost.");
+
+            var promise = captured.Find(c => c.type == Rollgeon.UI.HUD.FloatingNumberType.Status);
+            Assert.AreEqual(_boss, promise.target,
+                "La promesa de devolución va sobre el jefe: la caja es suya.");
+            Assert.IsInstanceOf<string>(promise.value,
+                "'vuelve si lo vencés' no es una cantidad — viaja como texto.");
+        }
+
+        [Test]
+        public void Tick_BrokePlayer_AnnouncesNothing()
+        {
+            // Arrange — un "-0 G" enseñaría una regla que en esa pelea no se aplicó.
+            GiveBossHealth(90);
+            _ledger.NextTaxAmount = 0;
+
+            int announcements = 0;
+            EventManager.EventReceiver count = _ => announcements++;
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, count);
+
+            try
+            {
+                // Act
+                NewNode().Tick(NewContext());
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, count);
+            }
+
+            // Assert
+            Assert.AreEqual(0, announcements);
+        }
+
         [Test]
         public void Tick_HealIsCappedAtMaxHeal()
         {
@@ -135,14 +205,32 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_EmitsFloatingHeal_ForLegibility()
         {
+            // Arrange — se afirma el heal en concreto y no "cuántos avisos salieron": el arqueo
+            // además anuncia el oro cobrado y la promesa de devolución, y contarlos a todos ataba
+            // este test a cuántos mensajes tiene el arqueo en vez de a que el heal se vea.
             GiveBossHealth(90);
             _ledger.NextTaxAmount = 20;
-            int floatingRequests = 0;
-            EventManager.Subscribe(EventName.OnFloatingNumberRequested, _ => floatingRequests++);
 
-            NewNode().Tick(NewContext());
+            int healRequests = 0;
+            EventManager.EventReceiver capture = args =>
+            {
+                if (args == null || args.Length < 3) return;
+                if (args[1] is Rollgeon.UI.HUD.FloatingNumberType.Heal) healRequests++;
+            };
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, capture);
 
-            Assert.AreEqual(1, floatingRequests,
+            try
+            {
+                // Act
+                NewNode().Tick(NewContext());
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
+            }
+
+            // Assert
+            Assert.AreEqual(1, healRequests,
                 "El único jefe que se cura tiene que mostrarlo en pantalla.");
         }
 

@@ -116,6 +116,12 @@ namespace Rollgeon.Combat.AI.Decisions
             LastRank = rank;
             LastStepUp = stepUp;
 
+            // Se publica el escalón resuelto para que la lectura del HUD muestre el daño REAL en vez
+            // de recalcularlo con su propia copia de la tabla. Duplicar la cuenta es donde la UI y el
+            // golpe se separan, y una lectura que miente es peor que no tener lectura.
+            if (ServiceLocator.TryGetService<ICashierLedgerService>(out var reportTo) && reportTo != null)
+                reportTo.ReportTier(rank, tier.Damage, gold, stepUp, stepDown);
+
             return new AINode_TelegraphMark
             {
                 Shape = Shape,

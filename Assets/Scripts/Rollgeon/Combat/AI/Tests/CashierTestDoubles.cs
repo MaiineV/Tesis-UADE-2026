@@ -47,6 +47,11 @@ namespace Rollgeon.Combat.AI.Tests
         public int VaultedGold { get; set; }
         public int ChipValueMultiplier { get; set; } = 1;
         public int DamageStepDown { get; set; }
+
+        // Derivado y no un campo suelto: los nodos leen DamageStepDown, así que el fake tenía que
+        // poder setear el escalón sin acordarse de mover también el contador de rondas.
+        public int BribeRoundsLeft => DamageStepDown > 0 ? BribeRounds : 0;
+
         public int DamageStepUp { get; set; }
         public int BribeCost { get; set; } = 35;
         public int BribeRounds { get; set; } = 3;
@@ -76,6 +81,16 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         public void SetChipValueMultiplier(int multiplier) => ChipValueMultiplier = multiplier < 1 ? 1 : multiplier;
+
+        public CashierTierSnapshot? LastTier { get; private set; }
+
+        public int ReportTierCalls { get; private set; }
+
+        public void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown)
+        {
+            ReportTierCalls++;
+            LastTier = new CashierTierSnapshot(rank, damage, gold, stepUp, stepDown);
+        }
 
         public bool TryBribe()
         {
