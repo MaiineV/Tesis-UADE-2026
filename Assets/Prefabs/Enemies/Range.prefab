@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5829488589153317901}
   - component: {fileID: 4704429559161829368}
   - component: {fileID: 3185662808439384997}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -142,7 +142,7 @@ GameObject:
   - component: {fileID: 359246625957061155}
   - component: {fileID: 2184189753161822484}
   - component: {fileID: 8196512217110713537}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: LifeBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -217,7 +217,7 @@ GameObject:
   - component: {fileID: 7284332183471359042}
   - component: {fileID: 120589294847175022}
   - component: {fileID: 9219857581865036727}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: HealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -356,7 +356,7 @@ GameObject:
   - component: {fileID: 4183384836845219069}
   - component: {fileID: 2489388480304768245}
   - component: {fileID: 4900675398012603257}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -477,7 +477,7 @@ GameObject:
   - component: {fileID: 6003521266538046207}
   - component: {fileID: 910962433721277479}
   - component: {fileID: 2088836042290403114}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: LifeFill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
