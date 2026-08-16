@@ -40,6 +40,10 @@ namespace Rollgeon.Dungeon.Components
         [Tooltip("4 slots (N/S/E/W). El DungeonManager instancia DoorPrefab si conecta, si no activa WallPlug.")]
         public List<DoorSlotRef> DoorSlots = new List<DoorSlotRef>();
 
+        [Tooltip("Variante visual de puerta que el DungeonManager instancia en runtime reemplazando " +
+                 "el DoorRoot del slot cuando el vecino de esa dirección es la boss room.")]
+        public GameObject BossDoorPrefab;
+
         [Header("Bounds")]
         [Tooltip("Bounding box local del prefab. Recalculado OnValidate desde Renderers children; consumido por el camera service para el clamp de pan y las shells del floor view.")]
         public Bounds LocalBounds = new Bounds(Vector3.zero, Vector3.one);

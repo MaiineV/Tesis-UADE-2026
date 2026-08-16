@@ -624,6 +624,12 @@ namespace Rollgeon.Dungeon
 
                 if (!connected) continue;
 
+                // Puerta hacia la boss room: swap del DoorRoot autorado por la variante
+                // BossDoorPrefab ANTES de resolver el controller, así el wiring de abajo
+                // y SyncDoorVisualStates operan sobre la puerta nueva sin cambios.
+                if (LeadsToBossRoom(instance, slot.Direction))
+                    TrySwapBossDoor(layout, slot);
+
                 var controller = slot.DoorRoot.GetComponentInChildren<DoorController>(includeInactive: true);
                 if (controller == null) continue;
 
@@ -672,6 +678,72 @@ namespace Rollgeon.Dungeon
             }
 
             SyncDoorVisualStates(instance);
+        }
+
+        /// <summary>
+        /// ¿El vecino conectado por <paramref name="dir"/> es la boss room? Excluye a la
+        /// boss room misma como origen — sus puertas internas no cambian de modelo.
+        /// </summary>
+        private bool LeadsToBossRoom(RoomInstance instance, DoorDirection dir)
+        {
+            if (instance.Template == null || instance.Template.Type == RoomType.Boss) return false;
+            if (!instance.Connections.TryGetValue(dir, out var neighborId)) return false;
+            return _instances.TryGetValue(neighborId, out var neighbor)
+                   && neighbor.Template != null
+                   && neighbor.Template.Type == RoomType.Boss;
+        }
+
+        /// <summary>
+        /// Reemplaza el DoorRoot autorado del slot por una instancia de
+        /// <see cref="RoomLayout.BossDoorPrefab"/> (misma pose y parent) y re-apunta las
+        /// referencias del slot (DoorRoot/Anchor/WallPlug) para que el resto del pipeline
+        /// (wiring, SyncDoorVisualStates, DoorTileQuery, spawn frente a puerta) opere sobre
+        /// la puerta nueva. No-op sin prefab; defensivo si el prefab no trae DoorController.
+        /// </summary>
+        private static void TrySwapBossDoor(RoomLayout layout, DoorSlotRef slot)
+        {
+            if (layout.BossDoorPrefab == null || slot.DoorRoot == null) return;
+
+            var original = slot.DoorRoot;
+            var swapped = UnityEngine.Object.Instantiate(
+                layout.BossDoorPrefab, original.transform.parent);
+            swapped.transform.localPosition = original.transform.localPosition;
+            swapped.transform.localRotation = original.transform.localRotation;
+            swapped.transform.localScale    = original.transform.localScale;
+            swapped.SetActive(true);
+
+            var swappedCtrl = swapped.GetComponentInChildren<DoorController>(includeInactive: true);
+            if (swappedCtrl == null)
+            {
+                Debug.LogWarning(
+                    $"[DungeonManager] BossDoorPrefab '{layout.BossDoorPrefab.name}' no tiene " +
+                    "DoorController — se conserva la puerta original.");
+                DestroyDoorRoot(swapped);
+                return;
+            }
+
+            slot.DoorRoot = swapped;
+            // Anchor = transform del controller en los prefabs reales (AutoPopulateDoorSlots);
+            // solo se re-apunta si vivía dentro del root reemplazado.
+            if (slot.Anchor != null && slot.Anchor.IsChildOf(original.transform))
+                slot.Anchor = swappedCtrl.transform;
+            if (slot.WallPlug != null && slot.WallPlug.transform.IsChildOf(original.transform))
+                slot.WallPlug = swappedCtrl.WallPlugRef;
+
+            // Unparent primero: lo saca ya mismo del GetComponentsInChildren del loop de
+            // huérfanos aunque el Destroy de play mode sea diferido.
+            original.transform.SetParent(null);
+            DestroyDoorRoot(original);
+        }
+
+        private static void DestroyDoorRoot(GameObject go)
+        {
+            // Destroy() está prohibido fuera de play mode — los tests EditMode
+            // pasan por acá (mismo patrón que ClearState).
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(go);
+            else
+                UnityEngine.Object.DestroyImmediate(go);
         }
 
         /// <summary>
