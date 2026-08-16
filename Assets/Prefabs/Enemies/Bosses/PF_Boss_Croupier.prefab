@@ -239,7 +239,7 @@ GameObject:
   - component: {fileID: 3529599487737059201}
   - component: {fileID: 2486633914082012267}
   - component: {fileID: 5952184631900956271}
-  - component: {fileID: 6487233385590241637}
+  - component: {fileID: 789101742177643704}
   m_Layer: 0
   m_Name: PF_Boss_Croupier
   m_TagString: Untagged
@@ -359,7 +359,7 @@ MonoBehaviour:
   - {fileID: 5170621170238885239}
   - {fileID: 6924518004550143542}
   - {fileID: 8111168606145143464}
---- !u!114 &6487233385590241637
+--- !u!114 &789101742177643704
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -331,7 +331,7 @@ GameObject:
   - component: {fileID: 8695389952046310344}
   - component: {fileID: 4409953096702335804}
   - component: {fileID: 7277380538863106750}
-  - component: {fileID: 844193818543137087}
+  - component: {fileID: 1595763422038944946}
   m_Layer: 0
   m_Name: PF_Boss_Anotador
   m_TagString: Untagged
@@ -449,7 +449,7 @@ MonoBehaviour:
   - {fileID: 5473070423887836337}
   - {fileID: 4055351157773060078}
   - {fileID: 8747288165210795531}
---- !u!114 &844193818543137087
+--- !u!114 &1595763422038944946
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -461,7 +461,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ef38bfe268539a459e6beea7344670e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::SteppedAnimation
-  AnimCon: {fileID: 5256009564443354530}
+  AnimCon: {fileID: 5553460997407669705}
   FPS: 8
 --- !u!1 &5763848553122227816
 GameObject:
@@ -723,7 +723,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5256009564443354530}
+      addedObject: {fileID: 5553460997407669705}
   m_SourcePrefab: {fileID: 100100000, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
 --- !u!23 &2073927372553188689 stripped
 MeshRenderer:
@@ -735,7 +735,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
   m_PrefabInstance: {fileID: 3004399829419402287}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &5256009564443354530
+--- !u!95 &5553460997407669705
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
