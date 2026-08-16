@@ -20872,9 +20872,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd9d267af7a0053459f32ae5bc21b27d, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 1
 --- !u!114 &983462008495742793
 MonoBehaviour:
   m_ObjectHideFlags: 0

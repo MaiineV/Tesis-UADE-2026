@@ -3227,14 +3227,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 280
       objectReference: {fileID: 0}
-    - target: {fileID: 7076222357715826726, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
+    - target: {fileID: 2571935840321668521, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: _diceZone
-      value: 
+      value:
       objectReference: {fileID: 7832882399325725898}
-    - target: {fileID: 7076222357715826726, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
-      propertyPath: _confirmButton
-      value: 
-      objectReference: {fileID: 193249934685763654}
     - target: {fileID: 8690785137551674980, guid: de34ff8084fc2ad4287b13444ca14d00, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 3

@@ -4169,7 +4169,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.EndTurnButtonView
   _endTurnButton: {fileID: 1865172872705718769}
   _energyHighlight: {fileID: 3956285797736042051}
+  _label: {fileID: 1936580519859037163}
+  _diceZone: {fileID: 0}
   _onEndTurnPressed:
+    m_PersistentCalls:
+      m_Calls: []
+  _onConfirmPressed:
+    m_PersistentCalls:
+      m_Calls: []
+  _onPassPressed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &3956285797736042051

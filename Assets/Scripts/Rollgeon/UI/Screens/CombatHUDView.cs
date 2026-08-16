@@ -167,11 +167,14 @@ namespace Rollgeon.UI.Screens
             return _rerollCount != null && _rerollCount.TryGetRollButtonRect(out rect);
         }
 
-        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        /// <summary>
+        /// RectTransform del botón que confirma — hoy es el mismo botón contextual de
+        /// turno (End Turn / Confirm / Pass). Anchor del overlay del tutorial.
+        /// </summary>
         public bool TryGetConfirmButtonRect(out RectTransform rect)
         {
             rect = null;
-            return _playerActionButtons != null && _playerActionButtons.TryGetConfirmRect(out rect);
+            return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
         }
 
         /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
@@ -203,6 +206,12 @@ namespace Rollgeon.UI.Screens
 
         /// <summary>Delegate que dispara "confirm" (generico, no solo attack).</summary>
         public Action OnConfirmRequested;
+
+        /// <summary>
+        /// Delegate que pasa la fase paga de un chain sin pagar (botón contextual en
+        /// modo Pass). A diferencia de End Turn, NO cierra el turno.
+        /// </summary>
+        public Action OnChainPassRequested;
 
         /// <summary>
         /// Delegate que dispara el primer roll de la accion seleccionada. El HUD
@@ -243,12 +252,17 @@ namespace Rollgeon.UI.Screens
 
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnConfirmPressed.AddListener(InvokeConfirmRequested);
                 _playerActionButtons.OnBehaviorSelected = InvokeBehaviorSelected;
             }
 
+            // Botón contextual: End Turn / Confirm / Pass salen del mismo Button y
+            // el view rutea el click según su modo.
             if (_endTurnButtonView != null)
+            {
                 _endTurnButtonView.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
+                _endTurnButtonView.OnConfirmPressed.AddListener(InvokeConfirmRequested);
+                _endTurnButtonView.OnPassPressed.AddListener(InvokePassRequested);
+            }
         }
 
         private void OnDestroy()
@@ -261,12 +275,15 @@ namespace Rollgeon.UI.Screens
 
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
                 _playerActionButtons.OnBehaviorSelected = null;
             }
 
             if (_endTurnButtonView != null)
+            {
                 _endTurnButtonView.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
+                _endTurnButtonView.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
+                _endTurnButtonView.OnPassPressed.RemoveListener(InvokePassRequested);
+            }
         }
 
         /// <inheritdoc/>
@@ -441,12 +458,16 @@ namespace Rollgeon.UI.Screens
         public void ShowChainRollPrompt(string phaseLabel)
         {
             if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
+            // El estado "fase paga pendiente" no viaja por el bus — el prompt y el
+            // modo Pass del botón contextual son la misma ventana.
+            if (_endTurnButtonView != null) _endTurnButtonView.SetChainPaidRollPending(true);
         }
 
         /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
         public void HideChainRollPrompt()
         {
             if (_chainRollPrompt != null) _chainRollPrompt.Hide();
+            if (_endTurnButtonView != null) _endTurnButtonView.SetChainPaidRollPending(false);
         }
 
         /// <summary>
@@ -546,6 +567,16 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnConfirmRequested.Invoke();
+        }
+
+        private void InvokePassRequested()
+        {
+            if (OnChainPassRequested == null)
+            {
+                Debug.LogWarning(LogPrefix + "OnChainPassRequested no cableado.", this);
+                return;
+            }
+            OnChainPassRequested.Invoke();
         }
 
         private void HandleDamageResolvedForFlash(DamageResolvedPayload payload)

@@ -9,13 +9,16 @@ using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tests
 {
+    /// <summary>
+    /// El view solo orquesta los 4 chips de behavior — el botón Confirm lo absorbió
+    /// el botón contextual de turno (ver <c>EndTurnButtonViewTests</c>, que hereda
+    /// aquella cobertura de gating).
+    /// </summary>
     [TestFixture]
     public class PlayerActionButtonsViewTests
     {
         private GameObject _go;
         private PlayerActionButtonsView _view;
-        private Button _confirm;
-        private DiceZoneView _diceZone;
         private Guid _playerGuid;
 
         [SetUp]
@@ -26,17 +29,7 @@ namespace Rollgeon.UI.Tests
             _go = new GameObject("PlayerActionButtons");
             _view = _go.AddComponent<PlayerActionButtonsView>();
 
-            _confirm = CreateRawButton("ConfirmBtn", _go);
-
-            AssignPrivate(_view, "_confirmButton", _confirm);
             AssignPrivate(_view, "_buttons", new ActionButton[4]);
-
-            // El gate del Confirm exige al menos un dado holdeado (AnyDieHeld) ademas
-            // de _rolled — sin holds confirmar no tiene sentido. Seteamos _heldStates
-            // directo: el Bind real de DiceZoneView pide slots cableados que no
-            // aportan nada a estos tests.
-            _diceZone = CreateDiceZoneWithHolds("DiceZone", _go, new[] { true });
-            AssignPrivate(_view, "_diceZone", _diceZone);
 
             InvokeAwake(_view);
         }
@@ -45,22 +38,21 @@ namespace Rollgeon.UI.Tests
         public void Teardown()
         {
             EventManager.ResetEventDictionary();
-            TypedEvent<ComboMatchedPayload>.Clear();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
 
-        [Test]
-        public void should_disable_confirm_when_bind_initially()
+        // El estado interno _isPlayerTurn es el observable de lifecycle que quedó
+        // tras mudarse el Confirm: refleja si los handlers del bus siguen vivos.
+        private bool IsPlayerTurn()
         {
-            // Arrange + Act
-            _view.Bind(_playerGuid);
-
-            // Assert
-            Assert.IsFalse(_confirm.interactable, "Confirm inicia disabled.");
+            var field = typeof(PlayerActionButtonsView).GetField("_isPlayerTurn",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, "Campo '_isPlayerTurn' no encontrado.");
+            return (bool)field.GetValue(_view);
         }
 
         [Test]
-        public void should_keep_confirm_disabled_when_player_turn_started_without_roll()
+        public void should_track_player_turn_when_turn_started()
         {
             // Arrange
             _view.Bind(_playerGuid);
@@ -69,11 +61,11 @@ namespace Rollgeon.UI.Tests
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
 
             // Assert
-            Assert.IsFalse(_confirm.interactable, "Confirm disabled en WaitingForAction.");
+            Assert.IsTrue(IsPlayerTurn(), "OnTurnStarted del player debe marcar el turno.");
         }
 
         [Test]
-        public void should_keep_confirm_disabled_when_other_entity_turn_starts()
+        public void should_ignore_turn_started_of_other_entity()
         {
             // Arrange
             _view.Bind(_playerGuid);
@@ -82,52 +74,7 @@ namespace Rollgeon.UI.Tests
             EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
 
             // Assert
-            Assert.IsFalse(_confirm.interactable);
-        }
-
-        [Test]
-        public void should_enable_confirm_when_player_dice_rolled()
-        {
-            // Arrange
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-
-            // Act
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-
-            // Assert
-            Assert.IsTrue(_confirm.interactable, "Confirm enabled tras OnDiceRolled.");
-        }
-
-        [Test]
-        public void should_keep_confirm_disabled_when_rolled_without_holds()
-        {
-            // Arrange — sin dados holdeados no hay combo posible; el Confirm debe
-            // quedar disabled aunque _isPlayerTurn y _rolled esten en true.
-            AssignPrivate(_diceZone, "_heldStates", new[] { false, false });
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-
-            // Act
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-
-            // Assert
-            Assert.IsFalse(_confirm.interactable,
-                "Confirm disabled tras OnDiceRolled si no hay dados holdeados.");
-        }
-
-        [Test]
-        public void should_disable_confirm_when_player_turn_finished()
-        {
-            // Arrange
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-
-            // Act
-            EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
-
-            // Assert
-            Assert.IsFalse(_confirm.interactable, "Confirm disabled tras TurnFinished.");
+            Assert.IsFalse(IsPlayerTurn(), "El turno de otra entidad no es el del player.");
         }
 
         [Test]
@@ -139,30 +86,9 @@ namespace Rollgeon.UI.Tests
             // Act
             _view.Unbind();
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
 
             // Assert
-            Assert.IsFalse(_confirm.interactable,
-                "Tras Unbind, los eventos no deben tener efecto.");
-        }
-
-        [Test]
-        public void should_subscribe_once_when_double_bind()
-        {
-            // Arrange + Act
-            _view.Bind(_playerGuid);
-            _view.Bind(_playerGuid);
-
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-
-            // Assert
-            Assert.IsTrue(_confirm.interactable, "Tras doble Bind, un solo handler activo.");
-
-            _view.Unbind();
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-            Assert.IsFalse(_confirm.interactable,
-                "Tras Unbind del doble Bind, no quedan handlers colgados.");
+            Assert.IsFalse(IsPlayerTurn(), "Tras Unbind, los eventos no deben tener efecto.");
         }
 
         [Test]
@@ -177,78 +103,9 @@ namespace Rollgeon.UI.Tests
             // Act
             onDisable.Invoke(_view, null);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
 
             // Assert
-            Assert.IsFalse(_confirm.interactable,
-                "OnDisable desuscribe; el evento no tiene efecto.");
-        }
-
-        [Test]
-        public void should_invoke_confirm_event_when_button_clicked()
-        {
-            // Arrange
-            bool fired = false;
-            _view.OnConfirmPressed.AddListener(() => fired = true);
-
-            // Act
-            _confirm.onClick.Invoke();
-
-            // Assert
-            Assert.IsTrue(fired, "OnConfirmPressed debe dispararse al clickear Confirm.");
-        }
-
-        [Test]
-        public void should_disable_confirm_when_roll_resolved_outside_chain()
-        {
-            // Arrange
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-            Assert.IsTrue(_confirm.interactable);
-
-            // Act
-            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
-
-            // Assert
-            Assert.IsFalse(_confirm.interactable, "Confirm disabled en WaitingForAction tras OnRollResolved.");
-        }
-
-        [Test]
-        public void should_keep_confirm_enabled_when_roll_resolved_during_chain()
-        {
-            // Regresion para bug del chain: OnRollResolved entre fases NO debe
-            // resetear el estado del confirm (el chain todavia corre).
-            // Arrange
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnChainStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-
-            // Act
-            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
-
-            // Assert
-            Assert.IsTrue(_confirm.interactable,
-                "Durante un chain, OnRollResolved entre fases no debe deshabilitar el confirm.");
-        }
-
-        [Test]
-        public void should_disable_confirm_when_chain_completed()
-        {
-            // Arrange
-            _view.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnChainStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
-            Assert.IsTrue(_confirm.interactable);
-
-            // Act
-            EventManager.Trigger(EventName.OnChainCompleted, _playerGuid, 2, 2, false);
-
-            // Assert
-            Assert.IsFalse(_confirm.interactable,
-                "Al completarse el chain, el confirm vuelve a disabled (WaitingForAction).");
+            Assert.IsFalse(IsPlayerTurn(), "OnDisable desuscribe; el evento no tiene efecto.");
         }
 
         [Test]
@@ -323,23 +180,6 @@ namespace Rollgeon.UI.Tests
         // ======================================================================
         // Helpers
         // ======================================================================
-
-        private static Button CreateRawButton(string name, GameObject parent)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent.transform, false);
-            return go.AddComponent<Button>();
-        }
-
-        private static DiceZoneView CreateDiceZoneWithHolds(string name, GameObject parent, bool[] holds)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent.transform, false);
-            var zone = go.AddComponent<DiceZoneView>();
-            // Sin Bind: solo necesitamos que GetHeldStates devuelva los holds simulados.
-            AssignPrivate(zone, "_heldStates", holds);
-            return zone;
-        }
 
         private static ActionButton CreateActionButton(string name, GameObject parent, HeroBehaviorSlot slot)
         {

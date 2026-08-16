@@ -26,6 +26,11 @@ namespace Rollgeon.UI.HUD
                  "específicos controlan interactabilidad; este componente solo maneja visibility.")]
         [SerializeField] private bool _forceButtonInteractable;
 
+        [Tooltip("Visible SOLO en exploración con un ActionRoll activo. Para el botón " +
+                 "Confirm: en combate lo reemplaza el botón contextual de turno " +
+                 "(EndTurnButtonView) y este GO debe quedar oculto.")]
+        [SerializeField] private bool _explorationOnly;
+
         private CanvasGroup _group;
         private Button _ownButton;
         private IActionRollService _actionRoll;
@@ -140,6 +145,15 @@ namespace Rollgeon.UI.HUD
                             && phase != null
                             && phase.CurrentBase == GamePhase.Combat;
             bool actionRollActive = _actionRoll != null && _actionRoll.IsActive;
+
+            // Confirm exploración-only: en combate el confirm vive en el botón
+            // contextual de turno — este GO solo aparece para los ActionRolls de
+            // exploración (heal con poción, forzar puerta), que no tienen End Turn.
+            if (_explorationOnly)
+            {
+                ApplyVisible(!inCombat && actionRollActive);
+                return;
+            }
 
             // CNF-007 — Combat: visible solo durante el flujo de dados (la zona de chips
             // y la de dados se alternan). Action roll activo (Heal/ForceDoor) también
