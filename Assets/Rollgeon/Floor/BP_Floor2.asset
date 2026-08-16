@@ -16,8 +16,6 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 11400000, guid: 0e41dbbb6ef999f43b2eec82405d1b7f, type: 2}
-    - {fileID: 11400000, guid: 35cb75b7d048b97439a5eee7bf3c8769, type: 2}
     - {fileID: 11400000, guid: a3b6df31f0c2c8d4fbc01cbde46eb3a5, type: 2}
     - {fileID: 11400000, guid: 217e0bd547af4374999f4b413511c792, type: 2}
     - {fileID: 11400000, guid: 71174d9940ce68d4981b353d28505d6b, type: 2}
@@ -34,7 +32,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 4
+      Data: 3
     - Name: 
       Entry: 7
       Data: 1|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
@@ -82,24 +80,6 @@ MonoBehaviour:
       Data: 1
     - Name: Enabled
       Entry: 5
-      Data: true
-    - Name: Room
-      Entry: 10
-      Data: 5
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 4|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
-    - Name: Boss
-      Entry: 10
-      Data: 6
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: Enabled
-      Entry: 5
       Data: false
     - Name: Room
       Entry: 6
@@ -114,10 +94,6 @@ MonoBehaviour:
       Entry: 8
       Data: 
   Entries:
-  - Boss: {fileID: 11400000, guid: 0e41dbbb6ef999f43b2eec82405d1b7f, type: 2}
-    Weight: 1
-    Enabled: 1
-    Room: {fileID: 11400000, guid: 35cb75b7d048b97439a5eee7bf3c8769, type: 2}
   - Boss: {fileID: 11400000, guid: a3b6df31f0c2c8d4fbc01cbde46eb3a5, type: 2}
     Weight: 1
     Enabled: 1

@@ -15,7 +15,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
     /// El brazo de La Bandida: 12 de daño melee directo a quien haya terminado su turno pegado a la
-    /// máquina. Sin marca y sin área. Ficha de diseño "La Bandida" (piso 2).
+    /// máquina. Sin marca y sin área. Ficha de diseño "La Bandida" (piso 1).
     /// </summary>
     /// <remarks>
     /// <para>

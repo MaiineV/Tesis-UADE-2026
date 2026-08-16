@@ -33,10 +33,11 @@ namespace Rollgeon.Dungeon.Tests
         // legacyBossId: el boss del wiring previo (manda si el layout no tiene pool). Con pool,
         // los TRES pisos lo SUPLANTAN por diseño: el viejo queda en el pool desactivado
         // (re-activable desde el Inspector), y los activos son los jefes nuevos.
-        // La Bandida ('boss.one_armed') vive en el piso 2 desde el documento de los seis refinados:
-        // cuatro blancos en un turno cruzan dos palancas a la vez, que no es lo que enseña el piso 1.
-        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier" })]
-        [TestCase(Floor2, "boss.security_boss", new[] { "boss.one_armed", "boss.cashier", "boss.scorekeeper" })]
+        // Dos activos por piso. Con uno solo la run se aprende de memoria: sabés qué te toca
+        // antes de bajar. La Bandida ('boss.one_armed') es del piso 1 — su vida, su oro y sus
+        // builders siempre lo dijeron; estuvo un tiempo en el pool del 2 por error.
+        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier", "boss.one_armed" })]
+        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier", "boss.scorekeeper" })]
         [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala", "boss.tahur" })]
         public void FloorBossRoom_ResolvesToExpectedBoss(
             string layoutPath, string legacyBossId, string[] expectedActiveWithPool)

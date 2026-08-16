@@ -52,11 +52,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string ReelEntityId = "obj.reel";
 
         /// <summary>
-        /// Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Va más bajo que sus
-        /// pares del piso porque los tres rodillos de <see cref="ReelHp"/> aportan el resto
-        /// del presupuesto — y como reaparecen, la palanca de duración es
-        /// <see cref="RespawnDelayPhase1"/>, no esta vida.
+        /// Piso 1: ~7 turnos con el golpe base del piso (13-27, mediana 20). Va por encima del
+        /// Croupier (120, ~6 turnos) porque su vida no es todo el presupuesto de la pelea: los
+        /// tres rodillos de <see cref="ReelHp"/> aportan el resto, y como reaparecen, la palanca
+        /// de duración real es <see cref="RespawnDelayPhase1"/> y no este número.
         /// </summary>
+        /// <remarks>
+        /// El número no cambió al corregirle el piso — estaba derivado contra una mediana de 24
+        /// que era del piso 2, y contra la del piso 1 da los mismos ~7 turnos por casualidad
+        /// aritmética (140/20 = 7). Lo que estaba mal era la cuenta escrita, no el balance.
+        /// </remarks>
         public const int BossHp = 140;
         public const int BossAttack = 20;
         public const int BossSpeed = 4;

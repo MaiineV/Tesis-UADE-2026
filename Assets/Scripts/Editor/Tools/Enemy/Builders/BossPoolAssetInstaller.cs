@@ -51,16 +51,22 @@ namespace Rollgeon.Editor.Tools
         {
             // En los tres pisos los jefes nuevos suplantan al viejo, que queda en el pool
             // desactivado (Enabled = off) para poder re-activarlo desde el Inspector.
-            // La Bandida va en el 2: cuatro blancos y un turno cruzan dos palancas a la vez,
-            // y su jackpot pega el 60% de la vida — el piso 1 enseña de a una.
+            //
+            // Dos jefes por piso, mitad y mitad. Un solo jefe por piso hace que la run se
+            // aprenda de memoria: sabés qué te toca antes de bajar. Con dos, el piso tiene una
+            // identidad —qué recurso te ataca— pero la pelea concreta no está decidida.
+            //
+            // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida (140),
+            // su oro (15-23) y sus builders siempre dijeron piso 1. Lo único que decía "piso 2"
+            // era este pool y el comentario del HP.
             var bp1 = BuildPool("BP_Floor1", new[]
             {
                 Entry(CroupierPath, 1f, true, CroupierRoom),
+                Entry(BandidaPath, 1f, true, BandidaRoom),
                 Entry(SunkenGrandPath, 1f, false),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
-                Entry(BandidaPath, 1f, true, BandidaRoom),
                 Entry(CajeroPath, 1f, true, CajeroRoom),
                 Entry(AnotadorPath, 1f, true, AnotadorRoom),
                 Entry(SecurityBossPath, 1f, false),
