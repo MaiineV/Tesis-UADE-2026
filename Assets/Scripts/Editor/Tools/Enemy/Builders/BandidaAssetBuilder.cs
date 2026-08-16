@@ -110,6 +110,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float Phase2HpThreshold = 0.5f;
         public const int Phase2Index = 2;
 
+        /// <summary>
+        /// Techo de energía que la fila le cobra al jugador por turno. Dimensionado contra el kit
+        /// del jugador, que no se toca: <c>EnergyMax</c> 4, <c>EnergyRegenBase</c> 2, y el reroll
+        /// extra a 1 de energía. Cobrar 1 le come el reroll pago; cobrar 2 le empata el regen y le
+        /// saca el margen sin dejarlo nunca en neto negativo, que sería un candado.
+        /// </summary>
+        public const int ReelTollCapPhase1 = 1;
+        public const int ReelTollCapPhase2 = 2;
+
         // ======================================================================
         // Contrato visual — arte, retinte y retratos.
         // ======================================================================
@@ -236,9 +245,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     new AINode_ExecuteTelegraph(),
                     IsolateFailure(BuildPhaseTwoGate()),
                     new AINode_TickJackpot(),
+
+                    // El peaje va DESPUÉS del tick y ANTES de la reposición: cobra por la fila que
+                    // el jugador dejó en pie durante su turno, no por los rodillos que la máquina
+                    // está por reponer en este mismo paso. Cobrar por un rodillo que todavía no
+                    // existe sería un peaje que el jugador no pudo evitar.
+                    IsolateFailure(BuildReelToll()),
+
                     IsolateFailure(BuildReelRow(reelData, reelFire)),
                     BuildActionPool(),
                 },
+            };
+        }
+
+        /// <summary>
+        /// El peaje de la fila, con su techo por fase. Es una rama persistente y no un
+        /// <c>AINode_Once</c>: el cobro pasa todos los turnos, lo que cambia con la fase es cuánto.
+        /// </summary>
+        /// <remarks>
+        /// Fase 1 cobra 1 y fase 2 cobra 2, contra un regen de <c>EnergyRegenBase</c> = 2. El techo
+        /// de fase 2 empata el regen a propósito: el jugador deja de acumular margen, pero nunca
+        /// entra en energía neta negativa. Ver los remarks de <see cref="AINode_BandidaReelToll"/>.
+        /// </remarks>
+        private static AINode_If BuildReelToll()
+        {
+            return new AINode_If
+            {
+                Conditions = new List<BasePreCondition>
+                {
+                    new PcOwnerHpBelow { Percent = Phase2HpThreshold },
+                },
+                Then = new AINode_BandidaReelToll { Cap = ReelTollCapPhase2 },
+                Else = new AINode_BandidaReelToll { Cap = ReelTollCapPhase1 },
             };
         }
 
