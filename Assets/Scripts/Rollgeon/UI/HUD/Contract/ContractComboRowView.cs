@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combos;
 using Rollgeon.Heroes;
 using Rollgeon.Localization;
@@ -10,20 +11,21 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD.Contract
 {
     /// <summary>
-    /// Una fila del contrato in-game: la mano de ejemplo, el nombre del combo, lo que paga
-    /// hoy, y la marca de la regla que el jefe le puso encima. Sin columna de explicación —
-    /// los dados resaltados ya dicen cómo se arma.
+    /// Una fila de contrato estilo drawer: la mano de ejemplo, el nombre del combo, lo que paga
+    /// hoy, y la marca de la regla que el jefe le puso encima. La columna de descripción es
+    /// opcional — el drawer in-game la deja sin cablear (los dados resaltados ya dicen cómo se
+    /// arma) y la variante de selección de clase la muestra.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Es una fila distinta a <see cref="ComboRowView"/> a propósito: aquella vive en la
-    /// selección de clase, con otro diseño y otra data (incluye descripción). Compartir un
-    /// solo componente ataba dos pantallas que van a evolucionar por separado; lo que sí se
-    /// reusa es <c>ComboRowView.ResolveBaseDamage</c>, que es la regla, no el layout.
+    /// Sigue siendo una fila distinta a <see cref="ComboRowView"/>: aquella es la tabla legacy de
+    /// solo texto. Desde el rework de selección de clase, esta fila se usa en ambas pantallas vía
+    /// prefabs distintos (<c>ContractComboRow</c> sin descripción, <c>ClassSelectContractRow</c>
+    /// con ella); la regla compartida sigue siendo <c>ComboRowView.ResolveBaseDamage</c>.
     /// </para>
     /// <para>
-    /// El daño que muestra es el EFECTIVO, no el de la hoja: mientras el Anotador tenga la
-    /// fila corrida, el número de la tabla tiene que ser el que va a cobrar el golpe.
+    /// El daño que muestra es el EFECTIVO, no el de la hoja: mientras el Anotador tenga la fila
+    /// corrida, el número de la tabla tiene que ser el que va a cobrar el golpe.
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Contract Combo Row View")]
@@ -34,6 +36,10 @@ namespace Rollgeon.UI.HUD.Contract
         [SerializeField, Required] private ContractDieView _diePrefab;
         [SerializeField, Required] private TextMeshProUGUI _nameLabel;
         [SerializeField, Required] private TextMeshProUGUI _damageLabel;
+
+        [SerializeField]
+        [Tooltip("TMP opcional de la descripción del combo. El drawer in-game lo deja null.")]
+        private TextMeshProUGUI _descriptionLabel;
 
         [Title("Reglas del jefe")]
         [SerializeField]
@@ -56,6 +62,9 @@ namespace Rollgeon.UI.HUD.Contract
 
         private readonly List<ContractDieView> _dice = new();
 
+        private BaseComboSO _combo;
+        private ContractSheet _sheet;
+
         // Los colores autorados en el prefab son el estado "sin regla"; se capturan en el
         // primer Bind porque después los pisamos al teñir y ya no hay a dónde volver.
         private Color _nameDefaultColor = Color.white;
@@ -67,7 +76,12 @@ namespace Rollgeon.UI.HUD.Contract
         /// tabla entera; sin vecinos, un corrimiento se lee como buff o nerf.
         /// </summary>
         public void Bind(BaseComboSO combo, ContractSheet sheet, ContractSheetUiSettingsSO settings)
-            => Bind(combo, settings, ContractRowStateResolver.ResolveSingle(combo, sheet));
+        {
+            // La hoja se guarda ACÁ y no en el overload de abajo: es el único camino que la
+            // recibe, y RefreshDamage la necesita para re-resolver el daño base.
+            _sheet = sheet;
+            Bind(combo, settings, ContractRowStateResolver.ResolveSingle(combo, sheet));
+        }
 
         /// <summary>
         /// Popula la fila con un estado ya resuelto sobre la tabla completa — es el camino
@@ -76,6 +90,7 @@ namespace Rollgeon.UI.HUD.Contract
         public void Bind(BaseComboSO combo, ContractSheetUiSettingsSO settings, ContractRowState state)
         {
             if (combo == null) return;
+            _combo = combo;
 
             CacheDefaultColors();
 
@@ -85,8 +100,35 @@ namespace Rollgeon.UI.HUD.Contract
             if (_damageLabel != null)
                 _damageLabel.text = state.EffectiveDamage.ToString();
 
+            if (_descriptionLabel != null)
+                _descriptionLabel.text = LocalizedContent.Description(combo.ComboId, combo.Description ?? string.Empty);
+
             ApplyRuleMark(state);
             BindDice(combo.ComboId, settings);
+        }
+
+        /// <summary>
+        /// Re-lee el daño efectivo (capa de modificadores del Boss 3 incluida) y repinta el
+        /// label. Lo invoca <see cref="ContractDisplayView"/> al recibir
+        /// <see cref="EventName.OnContractModifierChanged"/>.
+        /// </summary>
+        /// <remarks>
+        /// Refresca sólo el número y no la marca: la marca depende de la tabla entera (para poder
+        /// decir "paga como aquella" hace falta ver a los vecinos), y quien tiene la tabla es el
+        /// caller. Los que muestran badge —el drawer y la planilla— re-bindean la fila completa
+        /// ante el mismo evento, así que el badge no se queda viejo por este camino.
+        /// </remarks>
+        public void RefreshDamage()
+        {
+            if (_combo == null || _damageLabel == null) return;
+
+            int baseDmg = ComboRowView.ResolveBaseDamage(_combo, _sheet);
+            int effective = baseDmg;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.ContractMod.IContractModifierService>(out var mods)
+                && mods != null)
+                effective = mods.GetEffectiveBaseDamage(_combo.ComboId, baseDmg);
+
+            _damageLabel.text = effective.ToString();
         }
 
         private void CacheDefaultColors()

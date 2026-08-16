@@ -309,7 +309,9 @@ namespace Rollgeon.EditorTools.Menu
             }
             confirm.SetParent(screenRect, worldPositionStays: false);
             StripLayoutComponents(confirm.gameObject);
-            Place(confirm, screenRect, new Vector2(0f, -455f), new Vector2(280f, 70f));
+            // Par centrado en pantalla: Atrás a la izquierda, Confirmar a la derecha,
+            // 40 px de gap entre ambos (mismo criterio que Class Selection).
+            Place(confirm, screenRect, new Vector2(120f, -455f), new Vector2(280f, 70f));
             EnsureButtonLabel(confirm, "Confirmar", font, outlineMat);
             LocalizationSetupTools.BindTMP(confirm.GetComponentInChildren<TMP_Text>(true), "UI", "screen.confirm");
 
@@ -321,7 +323,7 @@ namespace Rollgeon.EditorTools.Menu
             }
             back.SetParent(screenRect, worldPositionStays: false);
             StripLayoutComponents(back.gameObject);
-            Place(back, screenRect, new Vector2(285f, -455f), new Vector2(200f, 70f));
+            Place(back, screenRect, new Vector2(-160f, -455f), new Vector2(200f, 70f));
             EnsureButtonLabel(back, "Atrás", font, outlineMat);
             LocalizationSetupTools.BindTMP(back.GetComponentInChildren<TMP_Text>(true), "UI", "screen.back");
 

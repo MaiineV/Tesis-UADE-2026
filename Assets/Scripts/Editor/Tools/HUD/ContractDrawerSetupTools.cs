@@ -16,8 +16,9 @@ namespace Rollgeon.EditorTools.HUD
     /// Idempotente — reejecutar actualiza sin duplicar.
     /// </summary>
     /// <remarks>
-    /// Es una tabla distinta a la de selección de clase (<c>ContractDisplayView</c>, que
-    /// vive en 01_MainMenu y no se toca acá): otro diseño, y sin la columna de explicación.
+    /// La pantalla de selección de clase (<c>ContractDisplayView</c>, 01_MainMenu) no se
+    /// toca acá, pero desde su rework comparte esta fila vía <see cref="BuildRowPrefab"/>:
+    /// su installer genera una variante con columna de descripción en otro prefab.
     /// </remarks>
     public static class ContractDrawerSetupTools
     {
@@ -217,7 +218,15 @@ namespace Rollgeon.EditorTools.HUD
         // ================================================================
 
         [MenuItem("Rollgeon/Contract Drawer/3 - Create Row Prefab")]
-        public static void CreateRowPrefab()
+        public static void CreateRowPrefab() => BuildRowPrefab(RowPrefabPath, descriptionWidth: 0f);
+
+        /// <summary>
+        /// Construye un prefab de fila de contrato en <paramref name="path"/>. Con
+        /// <paramref name="descriptionWidth"/> &gt; 0 agrega la columna de descripción a la
+        /// derecha de la caja de daño (variante de selección de clase); con 0 la fila queda
+        /// idéntica a la del drawer in-game.
+        /// </summary>
+        internal static void BuildRowPrefab(string path, float descriptionWidth)
         {
             var rowSprite = LoadSpriteOrError(UiSheetPath, RowSlice);
             var diceAreaSprite = LoadSpriteOrError(UiSheetPath, DiceAreaSlice);
@@ -232,10 +241,15 @@ namespace Rollgeon.EditorTools.HUD
             var dieView = diePrefab.GetComponent<ContractDieView>();
             var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
 
-            RebuildPrefab(RowPrefabPath, "ContractComboRow", root =>
+            bool withDescription = descriptionWidth > 0f;
+            var rowSize = withDescription
+                ? new Vector2(RowSize.x + 8f + descriptionWidth, RowSize.y)
+                : RowSize;
+
+            RebuildPrefab(path, System.IO.Path.GetFileNameWithoutExtension(path), root =>
             {
                 var rootRect = (RectTransform)root.transform;
-                rootRect.sizeDelta = RowSize;
+                rootRect.sizeDelta = rowSize;
 
                 var bg = Ensure<Image>(root);
                 bg.sprite = rowSprite;
@@ -283,6 +297,26 @@ namespace Rollgeon.EditorTools.HUD
                 Stretch(damageRect, 0f);
                 var damageLabel = EnsureLabel(damageRect.gameObject, font, 28f, TextAlignmentOptions.Center);
 
+                // -- Descripción (solo la variante de selección de clase) --
+                TextMeshProUGUI descriptionLabel = null;
+                if (withDescription)
+                {
+                    float descriptionX = DamageX + DamageBoxSize.x + 8f;
+                    var descriptionSize = new Vector2(descriptionWidth, 48f);
+                    var descriptionRect = EnsureChildRect(rootRect, "Description",
+                        new Vector2(descriptionX, 0f), descriptionSize);
+                    AnchorLeftMiddle(descriptionRect, new Vector2(descriptionX, 0f), descriptionSize);
+                    descriptionLabel = EnsureLabel(descriptionRect.gameObject, font, 17f,
+                        TextAlignmentOptions.MidlineLeft);
+                    descriptionLabel.enableAutoSizing = true;
+                    descriptionLabel.fontSizeMin = 13f;
+                    descriptionLabel.fontSizeMax = 17f;
+                    descriptionLabel.textWrappingMode = TextWrappingModes.Normal;
+                    descriptionLabel.overflowMode = TextOverflowModes.Ellipsis;
+                    // Tinta oscura: la fila (UI-sheet_9) es naranja y el gris del ComboRow
+                    // legacy no contrasta sobre ella.
+                    descriptionLabel.color = new Color32(0x3A, 0x2E, 0x24, 0xFF);
+                }
                 // -- Tachadura: cruza nombre + daño --
                 var strikeRect = EnsureChildRect(rootRect, "Strike", new Vector2(NameX, 0f), StrikeSize);
                 AnchorLeftMiddle(strikeRect, new Vector2(NameX, 0f), StrikeSize);
@@ -322,11 +356,12 @@ namespace Rollgeon.EditorTools.HUD
                 so.FindProperty("_strike").objectReferenceValue = strikeImage;
                 so.FindProperty("_badge").objectReferenceValue = badgeRect.gameObject;
                 so.FindProperty("_badgeLabel").objectReferenceValue = badgeLabel;
+                so.FindProperty("_descriptionLabel").objectReferenceValue = descriptionLabel;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var layout = Ensure<LayoutElement>(root);
-                layout.preferredWidth = RowSize.x;
-                layout.preferredHeight = RowSize.y;
+                layout.preferredWidth = rowSize.x;
+                layout.preferredHeight = rowSize.y;
             });
         }
 

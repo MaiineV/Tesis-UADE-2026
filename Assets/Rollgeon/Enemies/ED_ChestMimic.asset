@@ -1201,7 +1201,7 @@ MonoBehaviour:
   EntityId: ChestMimic01
   DisplayName: Mimic
   Description: 
-  Portrait: {fileID: 789460272, guid: 5a7f23fe35c7c8649854515601cc938d, type: 3}
+  Portrait: {fileID: -1790906141, guid: 5103e983e850dbc408e171ce0b6f9714, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 60
