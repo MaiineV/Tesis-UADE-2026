@@ -67,6 +67,24 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private DiceZoneView _diceZone;
 
+        [Title("Sprites")]
+        [Tooltip("Swap de sprites del botón por estado y contexto. Null = el modo solo " +
+                 "cambia el label.")]
+        [SerializeField]
+        private HudButtonSpriteSwap _buttonSprites;
+
+        [Tooltip("Arte del modo End Turn (FinishTurnButton: _1 normal, _2 hover, _0 disabled).")]
+        [SerializeField]
+        private ButtonSpriteSet _endTurnSprites;
+
+        [Tooltip("Arte del modo Confirm (Confirm2: _1 normal, _0 hover).")]
+        [SerializeField]
+        private ButtonSpriteSet _confirmSprites;
+
+        [Tooltip("Arte del modo Pass. Sin sheet propio por ahora — reusa FinishTurnButton.")]
+        [SerializeField]
+        private ButtonSpriteSet _passSprites;
+
         [Title("Events")]
         [SerializeField]
         private UnityEvent _onEndTurnPressed = new UnityEvent();
@@ -232,11 +250,12 @@ namespace Rollgeon.UI.HUD
             Refresh();
         }
 
-        /// <summary>Recalcula modo (label) e interactable a partir del estado vigente.</summary>
+        /// <summary>Recalcula modo (label + sprite) e interactable a partir del estado vigente.</summary>
         public void Refresh()
         {
             var mode = CurrentMode;
             ApplyModeLabel(mode);
+            ApplyModeSprites(mode);
             if (_endTurnButton != null)
                 _endTurnButton.interactable = _bound && ComputeInteractable(mode);
         }
@@ -277,6 +296,19 @@ namespace Rollgeon.UI.HUD
                 _ => KeyEndTurn,
             };
             _label.StringReference.SetReference(LocTable, key);
+        }
+
+        // Sin guard de modo repetido: Apply es idempotente (asignar el mismo sprite
+        // no ensucia la Image) y así el primer Refresh del Bind pinta el arte inicial.
+        private void ApplyModeSprites(TurnButtonMode mode)
+        {
+            if (_buttonSprites == null) return;
+            _buttonSprites.Apply(mode switch
+            {
+                TurnButtonMode.Confirm => _confirmSprites,
+                TurnButtonMode.Pass => _passSprites,
+                _ => _endTurnSprites,
+            });
         }
 
         private bool IsActionRollActive()

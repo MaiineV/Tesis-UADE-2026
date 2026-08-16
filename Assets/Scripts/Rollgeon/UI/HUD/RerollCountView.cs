@@ -14,8 +14,10 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Sub-view que muestra "{used}/{cap}" rerolls + un boton de roll cuyo label indica
-    /// el costo del proximo tiro ("Reroll  -1 [icono energia]" cuando se paga).
+    /// Sub-view que muestra "{used}/{cap}" rerolls + un boton de roll cuyo arte indica
+    /// el costo del proximo tiro (Roll2 gratis / CircleButton3 pago via
+    /// <see cref="HudButtonSpriteSwap"/>; el label de texto es opcional y quedo
+    /// desactivado en el prefab).
     /// Consume <see cref="IRerollBudgetService"/> via <see cref="Patterns.ServiceLocator"/>
     /// y escucha <see cref="EventName.OnDiceRolled"/> / <see cref="EventName.OnRollResolved"/>
     /// + el evento tipado <see cref="IRerollBudgetService.OnRerollStarted"/>.
@@ -76,6 +78,25 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Texto del boton para un reroll pago con energia. {ENERGY} se expande al " +
                  "icono del atlas. Fallback si la tabla UI no tiene la key.")]
         private string _rerollPaidText = "Reroll  -1 {ENERGY}";
+
+        [Title("Reroll Count — Button Sprites")]
+        [SerializeField]
+        [Tooltip("Swap de sprites del botón por estado y contexto. Null = sin swap " +
+                 "(el botón conserva el estilo de texto).")]
+        private HudButtonSpriteSwap _buttonSprites;
+
+        [SerializeField]
+        [Tooltip("Sprites del roll inicial y del reroll gratis (Roll2: _1 normal, _0 hover).")]
+        private ButtonSpriteSet _freeRollSprites;
+
+        [SerializeField]
+        [Tooltip("Sprites del reroll pago con energía (CircleButton3: _1 normal, _0 hover).")]
+        private ButtonSpriteSet _paidRollSprites;
+
+        [SerializeField, Tooltip("Velocidad del hundimiento/regreso del botón cuando no quedan " +
+                 "rerolls (sin free rolls ni energía) — mismo feel que la ficha usada de ActionButton. " +
+                 "Px de pantalla por segundo; <= 0 = instantáneo.")]
+        private float _sinkSpeed = 900f;
 
         [Title("Reroll Count — Events")]
         [SerializeField]
@@ -153,7 +174,13 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out _actionRoll)
                 && _actionRoll != null)
             {
-                _onActionRollPhase = _ => RefreshButtonInteractable();
+                // El cambio de phase también puede cambiar el contexto del sprite
+                // (entrar al ActionRoll convierte el botón en reroll pago).
+                _onActionRollPhase = _ =>
+                {
+                    RefreshButtonInteractable();
+                    RefreshButtonSprite();
+                };
                 _actionRoll.OnPhaseChanged += _onActionRollPhase;
             }
 
@@ -315,6 +342,9 @@ namespace Rollgeon.UI.HUD
             SetFallback();
             RefreshCostLabel();
             if (_buttonLabel != null) _buttonLabel.text = _firstRollText;
+            // Mismo reset explícito que el label: resuelto el roll el botón vuelve a
+            // "primer roll" — el query del budget viejo ya no describe el próximo tiro.
+            if (_buttonSprites != null) _buttonSprites.Apply(_freeRollSprites);
             if (_extraRollButton != null) _extraRollButton.interactable = false;
         }
 
@@ -355,13 +385,38 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Repinta todo lo que depende del idioma y del costo del proximo roll. Van juntos
-        /// porque las dos piezas (texto del boton y costo) leen el mismo
+        /// porque las piezas (texto del boton, costo y sprite contextual) leen el mismo
         /// <c>QueryExtraRoll</c> — separarlas invitaba a que una quedara desfasada.
         /// </summary>
         private void RefreshTexts()
         {
             RefreshCostLabel();
             RefreshButtonText();
+            RefreshButtonSprite();
+        }
+
+        /// <summary>
+        /// Elige el arte del botón por contexto: CircleButton3 cuando el próximo tiro
+        /// paga energía, Roll2 para el roll inicial y los rerolls gratis.
+        /// </summary>
+        private void RefreshButtonSprite()
+        {
+            if (_buttonSprites == null) return;
+            _buttonSprites.Apply(IsPaidRerollContext() ? _paidRollSprites : _freeRollSprites);
+        }
+
+        // Mismo criterio que RefreshButtonText/RefreshButtonInteractable: con un
+        // ActionRoll activo el botón SIEMPRE es reroll pago (RequestReroll cobra 1
+        // energía); fuera de eso decide el budget de la Generala.
+        private bool IsPaidRerollContext()
+        {
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+                return true;
+
+            if (_budget == null || IsFirstRollPending()) return false;
+            var query = _budget.QueryExtraRoll(_playerGuid);
+            return query.CostsEnergy && !query.IsFreeRoll;
         }
 
         private void RefreshCostLabel()
@@ -451,6 +506,78 @@ namespace Rollgeon.UI.HUD
         private static bool IsGrabRerollMode()
             => ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
                && t != null && t.Mode == Rollgeon.Dice.Throw.DiceThrowMode.TwoD;
+
+        // ==================================================================
+        // Sink "sin rerolls" — mismo lenguaje visual que la ficha usada de
+        // ActionButton: media ficha bajo el borde inferior = "no hay más".
+        // ==================================================================
+
+        private static readonly Vector3[] CornersScratch = new Vector3[4];
+        private Vector2 _homeAnchoredPos;
+        private bool _homeCaptured;
+        private bool _needsSinkRestore;
+
+        private void LateUpdate() => UpdateSink();
+
+        // Enforcement por frame calcado de ActionButton.UpdateUsedSink: converge el
+        // centro del botón al borde inferior de la pantalla mientras no haya rerolls
+        // y vuelve a la anchoredPosition de origen cuando el estado se levanta.
+        // Re-mide cada frame, así converge aunque otro sistema mueva el canvas.
+        private void UpdateSink()
+        {
+            if (_extraRollButton == null) return;
+            var rect = _extraRollButton.transform as RectTransform;
+            if (rect == null) return;
+
+            if (!_homeCaptured)
+            {
+                _homeAnchoredPos = rect.anchoredPosition;
+                _homeCaptured = true;
+            }
+
+            bool instant = !Application.isPlaying
+                           || DiceAnim.DiceUiMotionPrefs.ReducedMotion || _sinkSpeed <= 0f;
+            float step = instant ? float.MaxValue : _sinkSpeed * Time.unscaledDeltaTime;
+
+            if (_bound && IsOutOfRerolls())
+            {
+                _needsSinkRestore = true;
+                float centerY = CurrentButtonScreenCenterY(rect);
+                if (centerY <= 0f) return; // ya está en/bajo el borde
+                rect.position += Vector3.down * Mathf.Min(step, centerY);
+            }
+            else if (_needsSinkRestore)
+            {
+                rect.anchoredPosition = Vector2.MoveTowards(rect.anchoredPosition, _homeAnchoredPos, step);
+                if (rect.anchoredPosition == _homeAnchoredPos) _needsSinkRestore = false;
+            }
+        }
+
+        /// <summary>
+        /// "Sin rolls gratis ni energía" (o la acción no permite pagar) con el budget
+        /// todavía abierto: no existe próximo tiro para esta acción. El primer roll y
+        /// el estado sin budget (botón "Roll") no cuentan, y el flujo de ActionRoll
+        /// tampoco — ahí el gating es CanAffordReroll y el botón solo se apaga.
+        /// </summary>
+        private bool IsOutOfRerolls()
+        {
+            if (_budget == null) return false;
+            if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
+                && rs != null && rs.IsActive)
+                return false;
+            if (IsFirstRollPending()) return false;
+
+            string reason = _budget.QueryExtraRoll(_playerGuid).BlockedReason;
+            return reason == RerollBudgetService.BlockedReasonNoEnergy
+                   || reason == RerollBudgetService.BlockedReasonActionForbidsEnergyReroll;
+        }
+
+        /// <summary>Centro vertical del rect en pantalla (ScreenSpaceOverlay: world == píxeles).</summary>
+        private static float CurrentButtonScreenCenterY(RectTransform rect)
+        {
+            rect.GetWorldCorners(CornersScratch);
+            return (CornersScratch[0].y + CornersScratch[2].y) * 0.5f;
+        }
 
         private DiceZoneView ResolveDiceZone()
         {

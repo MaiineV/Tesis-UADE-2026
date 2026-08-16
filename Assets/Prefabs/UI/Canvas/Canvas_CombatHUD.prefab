@@ -4180,6 +4180,19 @@ MonoBehaviour:
   _energyHighlight: {fileID: 3956285797736042051}
   _label: {fileID: 1936580519859037163}
   _diceZone: {fileID: 0}
+  _buttonSprites: {fileID: 8351240976524183018}
+  _endTurnSprites:
+    _normal: {fileID: 685109224, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _hover: {fileID: -557252538, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _disabled: {fileID: 1097625568, guid: c564ad6354066634a94445f646d2349a, type: 3}
+  _confirmSprites:
+    _normal: {fileID: 792604654, guid: e232466b1f9cd2c4eb770bbb43c632a6, type: 3}
+    _hover: {fileID: 629283557, guid: e232466b1f9cd2c4eb770bbb43c632a6, type: 3}
+    _disabled: {fileID: 0}
+  _passSprites:
+    _normal: {fileID: 685109224, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _hover: {fileID: -557252538, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _disabled: {fileID: 1097625568, guid: c564ad6354066634a94445f646d2349a, type: 3}
   _onEndTurnPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -4444,7 +4457,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3357346559216716538
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4619,6 +4632,7 @@ GameObject:
   - component: {fileID: 5700422857057729017}
   - component: {fileID: 677206594680243342}
   - component: {fileID: 4881900252856252757}
+  - component: {fileID: 8351240976524183018}
   m_Layer: 0
   m_Name: EndTurnButton
   m_TagString: Untagged
@@ -4666,7 +4680,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -4676,9 +4690,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1901076895, guid: e6824752b0b549147a88aadb6f446909, type: 3}
-  m_Type: 1
-  m_PreserveAspect: 0
+  m_Sprite: {fileID: 685109224, guid: c564ad6354066634a94445f646d2349a, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -4768,11 +4782,29 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4f05ad139512bc41889536fb7388410, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Menu.JuicyMenuButton
   _label: {fileID: 4571265755163656498}
   _underline: {fileID: 3277676349486283675}
   _settings: {fileID: 11400000, guid: 10caaefb5bd514845b3a841d2dbeda59, type: 2}
+--- !u!114 &8351240976524183018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7118848753961195018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a637b3eb4804724a903d6beb6bb7b6f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.HudButtonSpriteSwap
+  _button: {fileID: 1865172872705718769}
+  _image: {fileID: 7858399937679744338}
+  _initialSet:
+    _normal: {fileID: 685109224, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _hover: {fileID: -557252538, guid: c564ad6354066634a94445f646d2349a, type: 3}
+    _disabled: {fileID: 1097625568, guid: c564ad6354066634a94445f646d2349a, type: 3}
 --- !u!1 &7298033599241545498
 GameObject:
   m_ObjectHideFlags: 0
@@ -5228,7 +5260,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3277676349486283675
 RectTransform:
   m_ObjectHideFlags: 0

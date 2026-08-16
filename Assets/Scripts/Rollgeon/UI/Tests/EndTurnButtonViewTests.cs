@@ -11,10 +11,17 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class EndTurnButtonViewTests
     {
+        private readonly System.Collections.Generic.List<UnityEngine.Object> _spriteCleanup =
+            new System.Collections.Generic.List<UnityEngine.Object>();
+
         private GameObject _go;
         private EndTurnButtonView _view;
         private Button _button;
         private Guid _playerGuid;
+        private Image _buttonImage;
+        private Sprite _endTurnSprite;
+        private Sprite _confirmSprite;
+        private Sprite _passSprite;
 
         [SetUp]
         public void Setup()
@@ -41,6 +48,9 @@ namespace Rollgeon.UI.Tests
             // fixtures que disparen el payload.
             TypedEvent<ComboMatchedPayload>.Clear();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
+            foreach (var o in _spriteCleanup)
+                if (o != null) UnityEngine.Object.DestroyImmediate(o);
+            _spriteCleanup.Clear();
         }
 
         [Test]
@@ -332,6 +342,104 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(TurnButtonMode.Confirm, _view.CurrentMode,
                 "Pagado el roll, el botón vuelve a Confirm para la tirada nueva.");
             Assert.IsTrue(_button.interactable);
+        }
+
+        // ==================================================================
+        // Sprite contextual por modo (FinishTurnButton / Confirm2)
+        // ==================================================================
+
+        [Test]
+        public void test_turn_button_paints_the_end_turn_sprite_on_bind()
+        {
+            // Arrange
+            WireModeSprites();
+
+            // Act
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+
+            // Assert
+            Assert.AreSame(_endTurnSprite, _buttonImage.sprite,
+                "En modo End Turn el botón usa el arte de FinishTurnButton.");
+        }
+
+        [Test]
+        public void test_turn_button_paints_the_confirm_sprite_while_a_dice_flow_is_active()
+        {
+            // Arrange
+            WireModeSprites();
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+
+            // Act
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+
+            // Assert
+            Assert.AreSame(_confirmSprite, _buttonImage.sprite,
+                "Con una tirada en curso el botón usa el arte de Confirm.");
+        }
+
+        [Test]
+        public void test_turn_button_paints_the_pass_sprite_while_a_paid_roll_is_pending()
+        {
+            // Arrange
+            WireModeSprites();
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+            EventManager.Trigger(EventName.OnChainStarted, _playerGuid);
+
+            // Act
+            _view.SetChainPaidRollPending(true);
+
+            // Assert
+            Assert.AreSame(_passSprite, _buttonImage.sprite,
+                "Con un roll pago pendiente el botón usa el arte de Pass.");
+        }
+
+        [Test]
+        public void test_turn_button_returns_to_the_end_turn_sprite_after_the_roll_resolves()
+        {
+            // Arrange
+            WireModeSprites();
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+            EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
+            Assume.That(_buttonImage.sprite, Is.SameAs(_confirmSprite),
+                "Precondición: modo Confirm con su arte.");
+
+            // Act
+            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
+
+            // Assert
+            Assert.AreSame(_endTurnSprite, _buttonImage.sprite,
+                "Resuelta la tirada fuera de chain, el botón vuelve al arte de End Turn.");
+        }
+
+        /// <summary>
+        /// Cablea el swap de sprites sobre el botón del SetUp. Solo lo usan los tests
+        /// de sprite — el resto del fixture no necesita Image ni sets.
+        /// </summary>
+        private void WireModeSprites()
+        {
+            _buttonImage = _button.gameObject.AddComponent<Image>();
+            var swap = _button.gameObject.AddComponent<HudButtonSpriteSwap>();
+
+            _endTurnSprite = MakeSprite();
+            _confirmSprite = MakeSprite();
+            _passSprite = MakeSprite();
+            AssignPrivate(_view, "_buttonSprites", swap);
+            AssignPrivate(_view, "_endTurnSprites", new ButtonSpriteSet(_endTurnSprite, null));
+            AssignPrivate(_view, "_confirmSprites", new ButtonSpriteSet(_confirmSprite, null));
+            AssignPrivate(_view, "_passSprites", new ButtonSpriteSet(_passSprite, null));
+        }
+
+        private Sprite MakeSprite()
+        {
+            var tex = new Texture2D(2, 2);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f));
+            _spriteCleanup.Add(tex);
+            _spriteCleanup.Add(sprite);
+            return sprite;
         }
 
         private static Button CreateButton(string name, GameObject parent)
