@@ -123,6 +123,9 @@ namespace Rollgeon.Editor.Tools
             yield return Spec.Anim(GeneralaRangeAnim, "Attack_Range");
             yield return Spec.Anim(GeneralaRollAnim, "Roll");
             yield return Spec.Anim(GeneralaCupSlamAnim, "Attack_Melee");
+            // 'Heal' no cura a nadie acá: es el gesto de brazos en alto, y era el único clip del
+            // DiceBoss que no usaba nadie. Reponer la mesa es lo más cerca de invocar que hace.
+            yield return Spec.Anim(GeneralaSummonAnim, "Heal");
             yield return Spec.Vfx(GeneralaImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(GeneralaRangeImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(GeneralaImpactFeel, MeleeImpactFeelPath);

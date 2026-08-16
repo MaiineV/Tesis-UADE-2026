@@ -62,23 +62,13 @@ namespace Rollgeon.Editor.Tools.Enemy
                 var prefabPath = AssetDatabase.GetAssetPath(data.VisualPrefab);
                 if (string.IsNullOrEmpty(prefabPath) || !visited.Add(prefabPath)) continue;
 
-                bool rigTeleports = Teleports(data.VisualPrefab);
-                bool forced = ForcedBlinkEntityIds.Contains(data.EntityId);
-                var style = rigTeleports || forced
-                    ? EntityPawn.LocomotionStyle.Blink
-                    : EntityPawn.LocomotionStyle.Walk;
-
-                // Sin clip de desvanecerse, un hold largo se lee como un tirón: el pawn se queda
-                // quieto y después aparece. Corto, se lee como un salto intencional.
-                float hold = rigTeleports ? ClipBlinkHold : SnapBlinkHold;
-
-                if (!ApplyTo(prefabPath, style, hold)) continue;
+                if (!ApplyTo(prefabPath, data.EntityId, out var style)) continue;
 
                 if (style == EntityPawn.LocomotionStyle.Blink)
                 {
                     blink++;
                     Debug.Log(LogPrefix + $"'{data.EntityId}' ({data.VisualPrefab.name}) → Blink: " +
-                              (rigTeleports
+                              (Teleports(data.VisualPrefab)
                                   ? "su clip de movimiento es un teletransporte."
                                   : "PARCHE — su rig no tiene ciclo de caminata (ver ForcedBlinkEntityIds)."));
                 }
@@ -116,6 +106,34 @@ namespace Rollgeon.Editor.Tools.Enemy
 
         /// <summary>Hold por tramo cuando no hay clip: apenas un beat, para que no parezca un tirón.</summary>
         public const float SnapBlinkHold = 0.05f;
+
+        /// <summary>
+        /// Resuelve y escribe el estilo de locomoción de un prefab. La consume
+        /// <c>BossVisualWrapperBuilder</c> al final de cada armado, porque
+        /// <c>SaveAsPrefabAsset</c> reescribe el <see cref="EntityPawn"/> entero y devuelve el flag
+        /// a Walk: sin este llamado, cada <c>Build &lt;Jefe&gt;</c> deja al jefe deslizándose hasta
+        /// que alguien se acuerde de correr el menú.
+        /// </summary>
+        /// <param name="entityId">
+        /// Para consultar <see cref="ForcedBlinkEntityIds"/>. Vacío ⇒ manda sólo el rig, que es lo
+        /// correcto para un prefab que todavía no tiene ficha.
+        /// </param>
+        /// <returns><c>true</c> si el prefab se reescribió.</returns>
+        public static bool ApplyTo(string prefabPath, string entityId,
+                                   out EntityPawn.LocomotionStyle style)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            bool rigTeleports = prefab != null && Teleports(prefab);
+            bool forced = !string.IsNullOrEmpty(entityId) && ForcedBlinkEntityIds.Contains(entityId);
+
+            style = rigTeleports || forced
+                ? EntityPawn.LocomotionStyle.Blink
+                : EntityPawn.LocomotionStyle.Walk;
+
+            // Sin clip de desvanecerse, un hold largo se lee como un tirón: el pawn se queda
+            // quieto y después aparece. Corto, se lee como un salto intencional.
+            return ApplyTo(prefabPath, style, rigTeleports ? ClipBlinkHold : SnapBlinkHold);
+        }
 
         private static bool ApplyTo(string prefabPath, EntityPawn.LocomotionStyle style, float hold)
         {

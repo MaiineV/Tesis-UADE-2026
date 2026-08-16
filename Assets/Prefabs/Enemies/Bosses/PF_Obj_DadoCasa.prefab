@@ -72,6 +72,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 4918288796926320973}
+  _locomotion: 0
+  _blinkOutSeconds: 0.14
+  _blinkInSeconds: 0.14
 --- !u!114 &6404477368633901810
 MonoBehaviour:
   m_ObjectHideFlags: 0

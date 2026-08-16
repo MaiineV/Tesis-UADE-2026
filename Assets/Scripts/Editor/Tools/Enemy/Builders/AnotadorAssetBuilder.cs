@@ -6,6 +6,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEditor;
@@ -388,8 +389,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1. Detona la marca del turno pasado.
-                    new AINode_ExecuteTelegraph(),
+                    // 1. Detona la marca del turno pasado. El rig del mímico sólo tiene 'Attack',
+                    //    así que melee y lápiz caen en el mismo clip — pero algo tiene que hacer.
+                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.AnotadorMeleeAnim },
 
                     // 2. Tacha: corre el combo más jugado al vecino de la hoja. Envuelto igual que
                     // el resto: devuelve Failed si IContractModifierService no está registrado, y
@@ -560,6 +562,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = ArtModelPath,
                 OutputPrefabPath = VisualPrefabPath,
+                EntityId = EntityId,
                 BossName = BossName,
                 ArtChildName = ArtChildName,
                 AddHealthBar = true,
@@ -715,7 +718,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
 
             AssetDatabase.SaveAssets();
-            return AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
+
+            // El puente de Animation Events se re-pide ACÁ y no alcanza con el de BuildWrapper: el
+            // FBX del mímico llega sin Animator, así que cuando la utility lo buscó todavía no
+            // existía (loguea "no tiene Animator: no hay dónde colgar el puente") y lo agregamos
+            // recién en EnsureAnimator, unas líneas arriba. Sin esto, cada clip que llama
+            // PushFeedbackEvent tira "AnimationEvent has no receiver".
+            return BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge(VisualPrefabPath)
+                   ?? AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
         }
 
         /// <summary>

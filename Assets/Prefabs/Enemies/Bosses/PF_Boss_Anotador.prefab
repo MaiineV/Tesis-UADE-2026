@@ -331,7 +331,7 @@ GameObject:
   - component: {fileID: 8695389952046310344}
   - component: {fileID: 4409953096702335804}
   - component: {fileID: 7277380538863106750}
-  - component: {fileID: 3685244928022979192}
+  - component: {fileID: 9169452954722848971}
   m_Layer: 0
   m_Name: PF_Boss_Anotador
   m_TagString: Untagged
@@ -392,6 +392,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 3882466528627436075}
+  _locomotion: 0
+  _blinkOutSeconds: 0.14
+  _blinkInSeconds: 0.14
 --- !u!114 &8695389952046310344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,7 +452,7 @@ MonoBehaviour:
   - {fileID: 5473070423887836337}
   - {fileID: 4055351157773060078}
   - {fileID: 8747288165210795531}
---- !u!114 &3685244928022979192
+--- !u!114 &9169452954722848971
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -461,7 +464,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ef38bfe268539a459e6beea7344670e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::SteppedAnimation
-  AnimCon: {fileID: 4615168712172257097}
+  AnimCon: {fileID: 905915447930390846}
   FPS: 8
 --- !u!1 &5763848553122227816
 GameObject:
@@ -723,7 +726,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4615168712172257097}
+      addedObject: {fileID: 905915447930390846}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1872130956370253567}
   m_SourcePrefab: {fileID: 100100000, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
 --- !u!23 &2073927372553188689 stripped
 MeshRenderer:
@@ -735,7 +741,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}
   m_PrefabInstance: {fileID: 3004399829419402287}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &4615168712172257097
+--- !u!95 &905915447930390846
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
@@ -757,6 +763,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1872130956370253567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2697845756513261950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdfa99d5c10801520568b6147255f699, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.AnimationFeedbackEvent
 --- !u!23 &3282065042198086993 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 305674670805901694, guid: fe8235a9f9044f94cb2d892404dd0997, type: 3}

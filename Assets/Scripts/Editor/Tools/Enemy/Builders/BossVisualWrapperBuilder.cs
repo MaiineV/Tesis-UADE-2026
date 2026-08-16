@@ -141,7 +141,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // El puente trabaja sobre el asset y no sobre el root en memoria: así la misma pasada
                 // idempotente sirve para el wrapper recién creado y para reparar uno que ya existía
                 // (que es como entró el del piso 1, con el componente puesto a mano).
-                return EnsureAnimationFeedbackBridge(spec.OutputPrefabPath) ?? saved;
+                var bridged = EnsureAnimationFeedbackBridge(spec.OutputPrefabPath) ?? saved;
+
+                // El EntityPawn se acaba de crear de cero, o sea con locomoción Walk. Para los rigs
+                // que se teletransportan eso es un jefe deslizándose por el piso mientras su clip
+                // dice que desapareció — y como no falla nada, el síntoma sobrevive hasta que
+                // alguien mira. Se re-deriva acá para que rebuildear un jefe no lo rompa.
+                EnemyLocomotionInstaller.ApplyTo(spec.OutputPrefabPath, spec.EntityId, out _);
+                return bridged;
             }
             finally
             {
@@ -838,6 +845,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Nombre del hijo que envuelve el arte.</summary>
         public string ArtChildName = "Art";
+
+        /// <summary>
+        /// <c>EntityId</c> de la ficha que va a vestir este prefab. Sólo lo usa el reparche de
+        /// locomoción (<c>EnemyLocomotionInstaller.ForcedBlinkEntityIds</c>): vacío ⇒ el estilo lo
+        /// decide el rig y nada más.
+        /// </summary>
+        public string EntityId;
 
         public bool AddHealthBar = true;
 

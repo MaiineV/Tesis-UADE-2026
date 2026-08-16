@@ -8,6 +8,7 @@ using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Dice.Throw;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.UI.HUD;
@@ -280,6 +281,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = BossArtPrefabPath,
                 OutputPrefabPath = BossVisualPrefabPath,
+                EntityId = BossEntityId,
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
 
@@ -769,7 +771,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Children = new List<AIDecisionNode>
                 {
                     // 1. La mano de la ronda pasada explota con la forma del combo que le salió.
-                    new AINode_ExecuteTelegraph(),
+                    //    Con Attack_Range: la forma cae lejos, y hasta acá explotaba sin que ella
+                    //    hiciera nada. Es el único de sus cuatro clips que estaba sin usar.
+                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim },
 
                     // 2. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
                     //    que cruza el umbral. En Selector[gate, Wait] para que un fallo del setup
@@ -783,6 +787,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         EnemyToSpawn = diceObject,
                         Count = HandSize,
                         RespawnDelayTurns = TableRefillTurns,
+                        SpawnFeedbackId = BossFeedbackIds.GeneralaSummonAnim,
                     }),
 
                     // 4. Tira los dados vivos y canta el combo (público un turno antes de detonar).

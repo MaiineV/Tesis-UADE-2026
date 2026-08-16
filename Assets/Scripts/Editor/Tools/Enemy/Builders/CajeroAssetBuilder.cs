@@ -8,6 +8,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEditor;
@@ -237,6 +238,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = ArtPrefabPath,
                 OutputPrefabPath = outputPath,
+                EntityId = EntityId,
                 BossName = "Cajero",
                 MaterialsFolder = materialsFolder,
                 HealthBarOffset = HealthBarOffset,
@@ -316,7 +318,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Children = new List<AIDecisionNode>
                 {
-                    new AINode_ExecuteTelegraph(),
+                    // La columna marcada la ronda pasada cobra ACÁ, y sin este id cobraba en
+                    // silencio: el jefe se quedaba en idle mientras aparecía el número. Es su
+                    // ataque principal — el que el jugador ve cinco veces por pelea.
+                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.CajeroShotAnim },
                     WrapFallible(BuildAuditGate()),
                     WrapFallible(BuildCounterToll()),
                     WrapFallible(BuildAttackCycle()),

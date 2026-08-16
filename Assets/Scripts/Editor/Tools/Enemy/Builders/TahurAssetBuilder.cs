@@ -6,6 +6,7 @@ using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEditor;
@@ -138,8 +139,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1 · Cobra: detona el Castigo marcado la ronda pasada.
-                    new AINode_ExecuteTelegraph(),
+                    // 1 · Cobra: detona el Castigo marcado la ronda pasada. El Castigo cae sobre
+                    //     tiles lejos suyo, así que el gesto es el de rango.
+                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.TahurRangeAnim },
 
                     // 2 · Se voltea la carta (40% de HP) — one-shot, antes de liquidar.
                     Isolate(new AINode_If
@@ -367,6 +369,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = ArtPrefabPath,
                 OutputPrefabPath = VisualPrefabPath,
+                EntityId = EntityId,
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
                 HealthBarOffset = new Vector3(0f, HealthBarHeight, 0f),

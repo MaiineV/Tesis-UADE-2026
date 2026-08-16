@@ -74,6 +74,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 1791261177067826185}
+  _locomotion: 0
+  _blinkOutSeconds: 0.14
+  _blinkInSeconds: 0.14
 --- !u!114 &5463468054438223586
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -773,7 +776,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 3993843167543059263, guid: bb76dd5e5e6a7234d81036f55c29a0da, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1873753594724601291}
+      addedObject: {fileID: 3156566400433943270}
   m_SourcePrefab: {fileID: 100100000, guid: bb76dd5e5e6a7234d81036f55c29a0da, type: 3}
 --- !u!137 &882915728353855182 stripped
 SkinnedMeshRenderer:
@@ -795,7 +798,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3993843167543059263, guid: bb76dd5e5e6a7234d81036f55c29a0da, type: 3}
   m_PrefabInstance: {fileID: 533420103241061157}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1873753594724601291
+--- !u!114 &3156566400433943270
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

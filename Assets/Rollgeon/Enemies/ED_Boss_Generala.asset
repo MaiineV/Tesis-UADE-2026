@@ -49,8 +49,8 @@ MonoBehaviour:
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.boss.generala.range
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
@@ -208,6 +208,9 @@ MonoBehaviour:
     - Name: RespawnDelayTurns
       Entry: 3
       Data: 4
+    - Name: SpawnFeedbackId
+      Entry: 1
+      Data: anim.boss.generala.summon
     - Name: 
       Entry: 8
       Data: 

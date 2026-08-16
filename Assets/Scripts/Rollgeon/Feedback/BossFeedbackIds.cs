@@ -64,6 +64,12 @@ namespace Rollgeon.Feedback
         public const string GeneralaRangeAnim       = "anim.boss.generala.range";
         public const string GeneralaRollAnim        = "anim.boss.generala.roll";
         public const string GeneralaCupSlamAnim     = "anim.boss.generala.cup_slam";
+
+        /// <summary>
+        /// Reponer la mesa de dados. Usa <c>Heal</c>, el gesto de brazos en alto del rig: era el
+        /// único clip del DiceBoss sin usar y es lo más parecido a "invocar" que tiene.
+        /// </summary>
+        public const string GeneralaSummonAnim      = "anim.boss.generala.summon";
         public const string GeneralaImpactVfx       = "vfx.boss.generala.impact";
         public const string GeneralaRangeImpactVfx  = "vfx.boss.generala.range_impact";
         public const string GeneralaImpactFeel      = "feel.boss.generala.impact";

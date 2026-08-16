@@ -251,6 +251,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = ArtPrefabPath,
                 OutputPrefabPath = VisualPrefabPath,
+                EntityId = EntityId,
                 BossName = "Croupier",
                 HealthBarOffset = HealthBarOffset,
                 Retints = new Dictionary<string, MaterialRetint>

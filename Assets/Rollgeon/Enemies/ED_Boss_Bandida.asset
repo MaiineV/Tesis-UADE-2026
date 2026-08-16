@@ -50,8 +50,8 @@ MonoBehaviour:
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.boss.bandida.range
     - Name: ImpactEventKey
       Entry: 1
       Data: hit

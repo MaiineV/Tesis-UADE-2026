@@ -4,6 +4,7 @@ using Rollgeon.Combat.AI.Bosses.Bandida;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
@@ -267,7 +268,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Children = new List<AIDecisionNode>
                 {
-                    new AINode_ExecuteTelegraph(),
+                    // La marca de la ronda pasada cobra acá, con el gesto de rango: cae sobre
+                    // tiles lejos de ella, no sobre quien tenga pegado.
+                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.BandidaRangeAnim },
                     IsolateFailure(BuildPhaseTwoGate()),
                     new AINode_TickJackpot(),
 
@@ -567,6 +570,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 ArtPrefabPath = BossArtPrefabPath,
                 OutputPrefabPath = outputPrefabPath,
+                EntityId = BossEntityId,
                 BossName = "Bandida",
                 MaterialsFolder = materialsFolder,
                 Collider = ColliderKind.Capsule,
