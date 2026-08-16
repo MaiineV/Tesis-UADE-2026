@@ -90,6 +90,98 @@ namespace Rollgeon.EditorTools.HUD
             }
         }
 
+        private const string CombatHudPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab";
+
+        /// <summary>
+        /// Setup del carrusel de turnos (activo a la izquierda + próximos):
+        /// deshabilita el HorizontalLayoutGroup del container (el layout pasa a
+        /// ser manual por código), agrega el CanvasGroup al TurnSlot.prefab y
+        /// remueve el "PastOverlay" de la iteración anterior (los que ya
+        /// actuaron ya no se muestran). Idempotente.
+        /// </summary>
+        [MenuItem("Rollgeon/Turn Queue/Setup Carousel")]
+        public static void SetupCarousel()
+        {
+            SetupCarouselSlotPrefab();
+            SetupCarouselContainer();
+        }
+
+        private static void SetupCarouselSlotPrefab()
+        {
+            var root = PrefabUtility.LoadPrefabContents(SlotPrefabPath);
+            try
+            {
+                var slot = root.GetComponentInChildren<TurnSlotView>(true);
+                if (slot == null)
+                {
+                    Debug.LogError("[TurnQueueSetup] TurnSlotView no encontrado en el prefab.");
+                    return;
+                }
+
+                var slotGo = slot.gameObject;
+                if (slotGo.GetComponent<CanvasGroup>() == null)
+                {
+                    slotGo.AddComponent<CanvasGroup>();
+                }
+
+                // Limpieza de la iteración anterior del carrusel (activo al centro
+                // con pasados a la izquierda): la capa gris ya no se usa.
+                var slotRect = (RectTransform)slot.transform;
+                var overlayRect = slotRect.Find("PastOverlay");
+                if (overlayRect != null)
+                {
+                    Object.DestroyImmediate(overlayRect.gameObject);
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, SlotPrefabPath);
+                Debug.Log("[TurnQueueSetup] TurnSlot.prefab: CanvasGroup ok, PastOverlay removido.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void SetupCarouselContainer()
+        {
+            var root = PrefabUtility.LoadPrefabContents(CombatHudPrefabPath);
+            try
+            {
+                var view = root.GetComponentInChildren<TurnQueueView>(true);
+                if (view == null)
+                {
+                    Debug.LogError("[TurnQueueSetup] TurnQueueView no encontrado en " + CombatHudPrefabPath);
+                    return;
+                }
+
+                // Deshabilitado (no removido) como rollback barato al layout viejo.
+                var layout = view.GetComponent<HorizontalLayoutGroup>();
+                if (layout != null && layout.enabled)
+                {
+                    layout.enabled = false;
+                }
+
+                // Tamaño del área de turnos + spacing/escala tuneados en playtest
+                // (15/08): el 400x100 original quedaba corto para la ventana de 5,
+                // los portraits muy pegados y el activo a 1.25 muy grande.
+                var rect = (RectTransform)view.transform;
+                rect.sizeDelta = new Vector2(450f, 120f);
+
+                var so = new SerializedObject(view);
+                so.FindProperty("_carousel.Spacing").floatValue = 24f;
+                so.FindProperty("_carousel.ActiveScale").floatValue = 0.7f;
+                so.FindProperty("_carousel.UpcomingScale").floatValue = 0.6f;
+                so.ApplyModifiedProperties();
+
+                PrefabUtility.SaveAsPrefabAsset(root, CombatHudPrefabPath);
+                Debug.Log("[TurnQueueSetup] Canvas_CombatHUD: layout manual, área 450x120, spacing 24, escalas 0.7/0.6.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         private static Sprite LoadSpriteOrError(string spriteName)
         {
             var sprite = AssetDatabase.LoadAllAssetRepresentationsAtPath(UiSheetPath)

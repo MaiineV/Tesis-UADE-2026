@@ -3,7 +3,67 @@ guid: 635dee872bf082841b8453626e2fe999
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Black
+    second: {fileID: 2100000, guid: 6d93331fa16eb554cb8e5d22047d8647, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Black1
+    second: {fileID: 2100000, guid: 6d93331fa16eb554cb8e5d22047d8647, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Bone
+    second: {fileID: 2100000, guid: 27d43947f42f5bc4b8ec5ca998a41552, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Brown
+    second: {fileID: 2100000, guid: f8e5c0ada7e5b884691ef5d0d86de6f3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Green1
+    second: {fileID: 2100000, guid: e14e62372ce83cc4296d02f37d861e52, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Heart
+    second: {fileID: 2100000, guid: f0415184659d3d54f89fe212c891d4fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__LightBrown
+    second: {fileID: 2100000, guid: 1af478be00e22b045b5b357543ecd299, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__LightBrown1
+    second: {fileID: 2100000, guid: 1af478be00e22b045b5b357543ecd299, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__LightGreen
+    second: {fileID: 2100000, guid: 3c241fcb8d55c9641b3399902bcdd5cb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__LightGreen1
+    second: {fileID: 2100000, guid: 3c241fcb8d55c9641b3399902bcdd5cb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__Red
+    second: {fileID: 2100000, guid: 32fe36c4195d3974484250e7e67bb49d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Enemy__White
+    second: {fileID: 2100000, guid: 0603a7d8f2a88de4abab48feacb6abe7, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

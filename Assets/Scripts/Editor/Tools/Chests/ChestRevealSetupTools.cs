@@ -25,6 +25,7 @@ namespace Rollgeon.EditorTools.Chests
         private const string CanvasPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_ChestReveal.prefab";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string BurstParticlePrefabPath = "Assets/Prefabs/UI/DiceThrowParticle.prefab";
+        private const string RaritySheetPath = "Assets/Art/UI/rarity.png";
 
         // Clips PLACEHOLDER (reusados de dados/breakdown) — reemplazar cuando haya
         // SFX propios del cofre. Nunca MMF_Sound (TECHNICAL.md §17).
@@ -39,7 +40,6 @@ namespace Rollgeon.EditorTools.Chests
         // Paleta (Rollgeon_Paleta_de_Color.md) — mismos grises del resto de la UI.
         private static readonly Color TextColor = new Color32(0xE7, 0xE3, 0xE2, 0xFF);
         private static readonly Color PanelColor = new Color32(0x1E, 0x22, 0x28, 0xF2);
-        private static readonly Color CellColor = new Color32(0x2A, 0x2F, 0x36, 0xFF);
         private static readonly Color DimColor = new Color(0f, 0f, 0f, 0.6f);
 
         [MenuItem("Rollgeon/Chests/Reveal/Setup All")]
@@ -80,9 +80,11 @@ namespace Rollgeon.EditorTools.Chests
                 rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 0.5f);
 
-                var bg = CreateImage(root.transform, "CellBg", CellColor, Vector2.zero, new Vector2(w, w));
-                var frame = CreateImage(root.transform, "RarityFrame", Color.white, Vector2.zero, new Vector2(w, w));
-                frame.type = Image.Type.Sliced;
+                // El fondo lleva el color de rareza en el sprite (rarity_0..3) — sin
+                // RarityFrame: Bind swapea el sprite del CellBg por celda.
+                var rarityBgs = LoadRaritySprites();
+                var bg = CreateImage(root.transform, "CellBg", Color.white, Vector2.zero, new Vector2(w, w));
+                bg.sprite = rarityBgs[0];
                 var icon = CreateImage(root.transform, "Icon", Color.white, Vector2.zero, new Vector2(w - 24f, w - 24f));
                 icon.preserveAspect = true;
                 var goldIcon = CreateImage(root.transform, "GoldIcon", new Color32(0xD9, 0xA4, 0x4E, 0xFF),
@@ -93,10 +95,13 @@ namespace Rollgeon.EditorTools.Chests
                 var view = root.AddComponent<ChestReelCellView>();
                 var so = new SerializedObject(view);
                 so.FindProperty("_cellBg").objectReferenceValue = bg;
-                so.FindProperty("_rarityFrame").objectReferenceValue = frame;
                 so.FindProperty("_icon").objectReferenceValue = icon;
                 so.FindProperty("_goldIcon").objectReferenceValue = goldIcon;
                 so.FindProperty("_goldAmountLabel").objectReferenceValue = goldLabel;
+                var bgArray = so.FindProperty("_rarityBackgrounds");
+                bgArray.arraySize = rarityBgs.Length;
+                for (int i = 0; i < rarityBgs.Length; i++)
+                    bgArray.GetArrayElementAtIndex(i).objectReferenceValue = rarityBgs[i];
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, CellPrefabPath);
@@ -321,6 +326,25 @@ namespace Rollgeon.EditorTools.Chests
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
             return rect;
+        }
+
+        // rarity_0..rarity_3 del sheet, en orden ItemRarity (Common..Legendary).
+        private static Sprite[] LoadRaritySprites()
+        {
+            var sprites = new Sprite[4];
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(RaritySheetPath))
+            {
+                if (asset is Sprite sprite && sprite.name.StartsWith("rarity_")
+                    && int.TryParse(sprite.name.Substring("rarity_".Length), out int index)
+                    && index >= 0 && index < sprites.Length)
+                    sprites[index] = sprite;
+            }
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                if (sprites[i] == null)
+                    Debug.LogWarning(LogPrefix + "Falta rarity_" + i + " en " + RaritySheetPath);
+            }
+            return sprites;
         }
 
         private static Image CreateImage(Transform parent, string name, Color color, Vector2 pos, Vector2 size)

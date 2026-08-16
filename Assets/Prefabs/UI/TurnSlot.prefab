@@ -103,6 +103,7 @@ GameObject:
   - component: {fileID: 7304061337924185874}
   - component: {fileID: 8451983739525973372}
   - component: {fileID: 5837973952308451172}
+  - component: {fileID: 2957525750047701098}
   m_Layer: 0
   m_Name: TurnSlot
   m_TagString: Untagged
@@ -194,6 +195,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!225 &2957525750047701098
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5155235442162265440}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &5762480809957781542
 GameObject:
   m_ObjectHideFlags: 0

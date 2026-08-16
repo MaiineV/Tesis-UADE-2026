@@ -30,6 +30,9 @@ MonoBehaviour:
   - Tier: 0
     MaxHP: 20
     BodyColor: {r: 0.6901961, g: 0.5372549, b: 0.40784314, a: 1}
+    ChestPrefabOverride: {fileID: 0}
+    BodyMaterialOverride: {fileID: 2100000, guid: b686d1ed60165f042a1d3ebd6a2ac6c0, type: 2}
+    FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
     MimicStatScale: 0.4
     MimicGoldMin: 8
     MimicGoldMax: 12
@@ -37,6 +40,9 @@ MonoBehaviour:
   - Tier: 1
     MaxHP: 30
     BodyColor: {r: 0.7019608, g: 0.22745098, b: 0.12156863, a: 1}
+    ChestPrefabOverride: {fileID: 0}
+    BodyMaterialOverride: {fileID: 2100000, guid: cd32b95fe4fe2644aa6ee4d9a12671f4, type: 2}
+    FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
     MimicStatScale: 0.55
     MimicGoldMin: 12
     MimicGoldMax: 18
@@ -44,6 +50,9 @@ MonoBehaviour:
   - Tier: 2
     MaxHP: 40
     BodyColor: {r: 0.36078432, g: 0.2901961, b: 0.47843137, a: 1}
+    ChestPrefabOverride: {fileID: 0}
+    BodyMaterialOverride: {fileID: 2100000, guid: 1d4646dd1b44dbb4ca4d9f08ae839091, type: 2}
+    FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
     MimicStatScale: 0.7
     MimicGoldMin: 18
     MimicGoldMax: 26
@@ -51,6 +60,9 @@ MonoBehaviour:
   - Tier: 3
     MaxHP: 55
     BodyColor: {r: 0.8509804, g: 0.6431373, b: 0.30588236, a: 1}
+    ChestPrefabOverride: {fileID: 0}
+    BodyMaterialOverride: {fileID: 0}
+    FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
     MimicStatScale: 0.85
     MimicGoldMin: 28
     MimicGoldMax: 40

@@ -57,8 +57,9 @@ namespace Rollgeon.Chests
         public int MimicClampHP = 1;
 
         [Title("Visual")]
-        [Tooltip("Prefab del cofre. Debe tener EntityPawn con WorldSpaceHealthBar; " +
-                 "renderers llamados 'Body' y 'Fittings' reciben el tint por tier.")]
+        [Tooltip("Prefab del cofre (todos los tiers, salvo tier con ChestPrefabOverride). " +
+                 "Debe tener EntityPawn con WorldSpaceHealthBar; los slots de material " +
+                 "'Wood'/'Frame' (fallback: renderers 'Body'/'Fittings') reciben el visual por tier.")]
         public GameObject ChestPrefab;
 
         [Tooltip("Color de herrajes/bisagras/cerradura, común a todos los tiers (#5F737A).")]
