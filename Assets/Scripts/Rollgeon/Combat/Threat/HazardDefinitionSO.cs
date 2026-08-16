@@ -101,6 +101,15 @@ namespace Rollgeon.Combat.Threat
                  "own lift off the floor so the burst reads as coming out of the marked tile.")]
         public float TriggerVfxYOffset = 0.1f;
 
+        [Tooltip("Optional VFX kept alive on every tile while the hazard lasts. The trigger burst " +
+                 "above is the payoff for stepping in; this is what says 'this tile is on fire " +
+                 "right now' between steps. Leave empty for the tinted quad alone.")]
+        public GameObject PersistentVfxPrefab;
+
+        [Tooltip("Height above the tile where the persistent VFX sits. Separate from the trigger " +
+                 "offset because a standing flame reads better lifted than a ground burst.")]
+        public float PersistentVfxYOffset = 0.1f;
+
         [Header("Identity")]
         [Tooltip("Stable unique id for this hazard source (GUID as string — see class remarks). " +
                  "Generate a fresh one per definition; never reuse another hazard's id.")]

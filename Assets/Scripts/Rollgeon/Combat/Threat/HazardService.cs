@@ -139,6 +139,7 @@ namespace Rollgeon.Combat.Threat
 
             EnsureMovementSubscription();
             ShowInstanceOverlay(instance);
+            SpawnPersistentVfx(instance);
             EventManager.Trigger(EventName.OnHazardActivated, instance.InstanceId);
             return instance.InstanceId;
         }
@@ -204,9 +205,12 @@ namespace Rollgeon.Combat.Threat
             // No OnHazardExpired here: same call as ComboBlockService.Clear, which deliberately
             // stays quiet on scope teardown so listeners don't run "the fire went out" reactions
             // while combat is already over.
-            foreach (var instanceId in _instances.Keys)
+            foreach (var pair in _instances)
             {
-                if (hasOverlay) overlay.Clear(instanceId);
+                if (hasOverlay) overlay.Clear(pair.Key);
+                // El VFX sí se apaga aunque el evento no se dispare: es un GameObject en escena y
+                // sobrevive al teardown por su cuenta.
+                ClearPersistentVfx(pair.Value);
             }
             _instances.Clear();
         }
@@ -214,8 +218,10 @@ namespace Rollgeon.Combat.Threat
         private void ExpireInstance(Guid instanceId)
         {
             if (instanceId == Guid.Empty) return;
-            if (!_instances.Remove(instanceId)) return;
+            if (!_instances.TryGetValue(instanceId, out var instance)) return;
+            _instances.Remove(instanceId);
 
+            ClearPersistentVfx(instance);
             ClearOverlay(instanceId);
             EventManager.Trigger(EventName.OnHazardExpired, instanceId);
         }
@@ -365,6 +371,70 @@ namespace Rollgeon.Combat.Threat
         /// owns the cleanup of what it spawned. Hazards never trigger outside play mode in the game.
         /// </para>
         /// </remarks>
+        /// <summary>
+        /// Enciende un VFX persistente en cada casilla de la instancia. Es lo que hace legible
+        /// "esta casilla te quema si te quedás" entre pisada y pisada: el burst es el cobro, esto
+        /// es el aviso. No-op sin <see cref="HazardDefinitionSO.PersistentVfxPrefab"/>.
+        /// </summary>
+        private static void SpawnPersistentVfx(HazardInstance instance)
+        {
+            var prefab = instance?.Definition?.PersistentVfxPrefab;
+            if (prefab == null) return;
+
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
+            {
+                Debug.LogWarning("[HazardService] IGridManager no registrado — el hazard vive igual, " +
+                                 "pero sin llama persistente (no hay con qué ubicar la tile).");
+                return;
+            }
+
+            foreach (var coord in instance.Tiles)
+            {
+                if (instance.PersistentVfx.ContainsKey(coord)) continue;
+
+                var world = grid.GridToWorld(coord)
+                            + Vector3.up * instance.Definition.PersistentVfxYOffset;
+                var go = Object.Instantiate(prefab, world, Quaternion.identity);
+                go.name = $"{prefab.name} (hazard {coord})";
+                instance.PersistentVfx[coord] = go;
+            }
+        }
+
+        /// <summary>
+        /// Apaga el VFX persistente de una casilla, o de todas con <paramref name="coord"/> en
+        /// <c>null</c>. Sin esto una instancia expirada deja la llama prendida para siempre.
+        /// </summary>
+        private static void ClearPersistentVfx(HazardInstance instance, GridCoord? coord = null)
+        {
+            if (instance == null || instance.PersistentVfx.Count == 0) return;
+
+            if (coord.HasValue)
+            {
+                if (instance.PersistentVfx.TryGetValue(coord.Value, out var one))
+                {
+                    DestroyVfx(one);
+                    instance.PersistentVfx.Remove(coord.Value);
+                }
+                return;
+            }
+
+            foreach (var go in instance.PersistentVfx.Values) DestroyVfx(go);
+            instance.PersistentVfx.Clear();
+        }
+
+        /// <summary>
+        /// Destruye el clon de VFX. <c>Object.Destroy</c> fuera de play mode es diferido y no llega a
+        /// aplicarse dentro de un test, así que ahí se usa la variante inmediata — la destrucción es
+        /// justamente lo que estos tests afirman.
+        /// </summary>
+        private static void DestroyVfx(GameObject go)
+        {
+            if (go == null) return;
+
+            if (Application.isPlaying) Object.Destroy(go);
+            else Object.DestroyImmediate(go);
+        }
+
         private static void SpawnTriggerVfx(HazardDefinitionSO definition, GridCoord coord)
         {
             var prefab = definition?.TriggerVfxPrefab;
@@ -397,6 +467,10 @@ namespace Rollgeon.Combat.Threat
 
             if (!instance.Definition.ConsumeOnTrigger) return;
             if (!instance.Tiles.Remove(coord)) return;
+
+            // La casilla gastada apaga su llama: si no, el hielo derretido y el sector consumido
+            // seguirían ardiendo sobre una casilla que ya no cobra.
+            ClearPersistentVfx(instance, coord);
 
             if (instance.Tiles.Count == 0)
             {
@@ -504,6 +578,13 @@ namespace Rollgeon.Combat.Threat
             public Guid InstanceId;
             public HazardDefinitionSO Definition;
             public HashSet<GridCoord> Tiles;
+
+            /// <summary>
+            /// Un VFX persistente por casilla, indexado por casilla para poder apagar sólo la que se
+            /// consume. Vacío cuando la definición no trae <c>PersistentVfxPrefab</c>.
+            /// </summary>
+            public readonly Dictionary<GridCoord, GameObject> PersistentVfx =
+                new Dictionary<GridCoord, GameObject>();
 
             /// <summary>Rounds left before expiry; <c>0</c> means "never expires".</summary>
             public int RemainingRounds;
