@@ -31,14 +31,21 @@ namespace Rollgeon.Dungeon.Tests
         private static readonly string[] AllFloors = { Floor1, Floor2, Floor3 };
 
         // legacyBossId: el boss del wiring previo (manda si el layout no tiene pool). Con pool,
-        // los TRES pisos lo SUPLANTAN por diseño: el viejo queda en el pool desactivado
-        // (re-activable desde el Inspector), y los activos son los jefes nuevos.
-        // Dos activos por piso. Con uno solo la run se aprende de memoria: sabés qué te toca
-        // antes de bajar. La Bandida ('boss.one_armed') es del piso 1 — su vida, su oro y sus
-        // builders siempre lo dijeron; estuvo un tiempo en el pool del 2 por error.
-        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier", "boss.one_armed" })]
-        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier", "boss.scorekeeper" })]
-        [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala", "boss.tahur" })]
+        // los TRES pisos lo acompañan con los jefes nuevos en vez de suplantarlo.
+        //
+        // Tres activos por piso, 80 / 10 / 10: el principal (el que está en pulido) se lleva la
+        // mayoría de las runs, y los otros dos —el nuevo secundario y el viejo del piso— son los
+        // slots de variedad. Con un solo jefe por piso la run se aprende de memoria: sabés qué te
+        // toca antes de bajar.
+        //
+        // La Bandida ('boss.one_armed') es del piso 1 — su vida, su oro y sus builders siempre lo
+        // dijeron; estuvo un tiempo en el pool del 2 por error.
+        [TestCase(Floor1, "boss.sunken_grand",
+            new[] { "boss.croupier", "boss.one_armed", "boss.sunken_grand" })]
+        [TestCase(Floor2, "boss.security_boss",
+            new[] { "boss.cashier", "boss.scorekeeper", "boss.security_boss" })]
+        [TestCase(Floor3, "boss.general_director",
+            new[] { "boss.la_generala", "boss.tahur", "boss.general_director" })]
         public void FloorBossRoom_ResolvesToExpectedBoss(
             string layoutPath, string legacyBossId, string[] expectedActiveWithPool)
         {
@@ -61,14 +68,38 @@ namespace Rollgeon.Dungeon.Tests
                 $"{layout.name} ({source}): los bosses ACTIVOS del piso no son los del diseño. " +
                 $"Resuelve a [{string.Join(", ", bossEntityIds)}].");
 
-            // El boss viejo suplantado no desaparece: queda en el pool, desactivado.
-            var allPoolIds = layout.BossPool.Entries
-                .Where(e => e?.Boss != null)
-                .Select(e => e.Boss.EntityId)
-                .ToList();
-            CollectionAssert.Contains(allPoolIds, legacyBossId,
-                $"{layout.name}: '{legacyBossId}' debería seguir en el pool (desactivado), " +
-                "para poder re-activarlo desde el Inspector.");
+            // El boss viejo del piso sigue en el pool y volvió a estar activo: es el tercer slot,
+            // el de variedad barata. Sacarlo dejaría el piso con dos peleas posibles nada más.
+            CollectionAssert.Contains(bossEntityIds, legacyBossId,
+                $"{layout.name}: '{legacyBossId}' tiene que poder salir — es el jefe viejo del piso.");
+        }
+
+        [TestCase(Floor1, "boss.croupier")]
+        [TestCase(Floor2, "boss.cashier")]
+        [TestCase(Floor3, "boss.la_generala")]
+        public void FloorPool_GivesTheMainBossTheBulkOfTheRuns(string layoutPath, string mainBossId)
+        {
+            // Arrange — el principal es el que está en pulido: la mayoría de las runs de playtest
+            // tienen que caer en él. Si los tres pesaran igual, dos de cada tres peleas serían de
+            // los jefes que NO estamos iterando.
+            var pool = LoadLayout(layoutPath).BossPool;
+            Assert.IsNotNull(pool, $"{layoutPath} no tiene BossPool asignado.");
+
+            // Act
+            float total = 0f;
+            float main = 0f;
+            foreach (var entry in pool.Entries)
+            {
+                if (!BossPoolSO.IsActive(entry)) continue;
+                total += entry.Weight;
+                if (entry.Boss.EntityId == mainBossId) main = entry.Weight;
+            }
+
+            // Assert
+            Assert.Greater(total, 0f, $"{pool.name}: ningún boss activo.");
+            Assert.AreEqual(0.8f, main / total, 0.001f,
+                $"{pool.name}: '{mainBossId}' debería llevarse el 80% del roll. " +
+                $"Pesos activos: [{string.Join(", ", pool.Entries.Where(BossPoolSO.IsActive).Select(e => $"{e.Boss.EntityId}={e.Weight}"))}].");
         }
 
         [Test]
@@ -130,10 +161,22 @@ namespace Rollgeon.Dungeon.Tests
             }
         }
 
+        /// <summary>
+        /// Los seis jefes nuevos: los únicos que tienen terreno autorado propio. Los viejos
+        /// (<c>sunken_grand</c>, <c>security_boss</c>, <c>general_director</c>) pelean en la sala
+        /// compartida del piso — su entry va sin <c>Room</c> a propósito.
+        /// </summary>
+        private static readonly HashSet<string> BossesWithOwnRoom = new HashSet<string>
+        {
+            "boss.croupier", "boss.one_armed",
+            "boss.cashier", "boss.scorekeeper",
+            "boss.la_generala", "boss.tahur",
+        };
+
         [TestCase(Floor1)]
         [TestCase(Floor2)]
         [TestCase(Floor3)]
-        public void EveryActiveBoss_HasItsOwnRoomWired(string layoutPath)
+        public void EveryNewBoss_HasItsOwnRoomWired(string layoutPath)
         {
             // Arrange — el cableado lo escribe 'Tools/Rollgeon/Bosses/Build Floor Pools' y las
             // salas 'Rollgeon/Bosses/Build Boss Rooms'. Olvidarse de re-correr uno de los dos deja
@@ -145,6 +188,17 @@ namespace Rollgeon.Dungeon.Tests
             foreach (var entry in layout.BossPool.Entries)
             {
                 if (!BossPoolSO.IsActive(entry)) continue;
+
+                // Sin Room = "sorteá una sala del piso", que es el camino legacy y es lo correcto
+                // para los jefes viejos: nunca tuvieron terreno propio. Exigírselo los dejaría
+                // fuera del pool o forzaría a inventarles una sala que nadie diseñó.
+                if (!BossesWithOwnRoom.Contains(entry.Boss.EntityId))
+                {
+                    Assert.IsNull(entry.Room,
+                        $"'{entry.Boss.EntityId}' es un jefe viejo y no debería tener Room propia: " +
+                        "pelea en la sala compartida del piso.");
+                    continue;
+                }
 
                 Assert.IsNotNull(entry.Room,
                     $"'{entry.Boss.EntityId}' está activo en '{layout.BossPool.name}' pero no tiene " +

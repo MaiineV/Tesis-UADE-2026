@@ -49,33 +49,39 @@ namespace Rollgeon.Editor.Tools
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
-            // En los tres pisos los jefes nuevos suplantan al viejo, que queda en el pool
-            // desactivado (Enabled = off) para poder re-activarlo desde el Inspector.
+            // Tres jefes por piso, 80 / 10 / 10 (los pesos son relativos, así que 8/1/1).
             //
-            // Dos jefes por piso, mitad y mitad. Un solo jefe por piso hace que la run se
-            // aprenda de memoria: sabés qué te toca antes de bajar. Con dos, el piso tiene una
-            // identidad —qué recurso te ataca— pero la pelea concreta no está decidida.
+            // El principal se lleva el 80% porque es el que está en pulido: la mayoría de las runs
+            // de playtest tienen que caer en el jefe cuya legibilidad estamos arreglando. Los otros
+            // dos slots son de variedad y valen lo mismo entre sí — el jefe nuevo secundario y el
+            // viejo del piso, que vuelve al pool después de haber estado desactivado.
             //
-            // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida (140),
-            // su oro (15-23) y sus builders siempre dijeron piso 1. Lo único que decía "piso 2"
-            // era este pool y el comentario del HP.
+            // Por qué el viejo al 10% y no al 20%: ya está estable y no necesita horas de prueba;
+            // subirle el peso se las saca al nuevo. Con 1 de cada 5 runs alcanza para que no se
+            // pudra y para que el piso no se aprenda de memoria.
+            //
+            // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida, su oro y
+            // sus builders siempre dijeron piso 1.
+            const float MainWeight = 8f;
+            const float VarietyWeight = 1f;
+
             var bp1 = BuildPool("BP_Floor1", new[]
             {
-                Entry(CroupierPath, 1f, true, CroupierRoom),
-                Entry(BandidaPath, 1f, true, BandidaRoom),
-                Entry(SunkenGrandPath, 1f, false),
+                Entry(CroupierPath, MainWeight, true, CroupierRoom),
+                Entry(BandidaPath, VarietyWeight, true, BandidaRoom),
+                Entry(SunkenGrandPath, VarietyWeight, true),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
-                Entry(CajeroPath, 1f, true, CajeroRoom),
-                Entry(AnotadorPath, 1f, true, AnotadorRoom),
-                Entry(SecurityBossPath, 1f, false),
+                Entry(CajeroPath, MainWeight, true, CajeroRoom),
+                Entry(AnotadorPath, VarietyWeight, true, AnotadorRoom),
+                Entry(SecurityBossPath, VarietyWeight, true),
             });
             var bp3 = BuildPool("BP_Floor3", new[]
             {
-                Entry(GeneralaPath, 1f, true, GeneralaRoom),
-                Entry(TahurPath, 1f, true, TahurRoom),
-                Entry(GeneralDirectorPath, 1f, false),
+                Entry(GeneralaPath, MainWeight, true, GeneralaRoom),
+                Entry(TahurPath, VarietyWeight, true, TahurRoom),
+                Entry(GeneralDirectorPath, VarietyWeight, true),
             });
 
             AssignToLayout(Floor1LayoutPath, bp1);
@@ -132,7 +138,9 @@ namespace Rollgeon.Editor.Tools
         /// <param name="roomSOPath">
         /// Sala propia del jefe. <c>null</c> o inexistente ⇒ la entry queda sin <c>Room</c> y la sala
         /// se sortea del pool del piso, que es el comportamiento previo al vínculo jefe→sala. Los
-        /// jefes viejos (Sunken Grand y compañía) van así a propósito: no tienen sala propia.
+        /// jefes viejos (Sunken Grand y compañía) van así a propósito: no tienen sala propia, y
+        /// ahora que volvieron al pool activo esa es su forma normal de spawnear — pelean en la
+        /// sala compartida del piso, sin terreno autorado.
         /// </param>
         private static WeightedBoss Entry(string path, float weight, bool enabled,
                                           string roomSOPath = null)
