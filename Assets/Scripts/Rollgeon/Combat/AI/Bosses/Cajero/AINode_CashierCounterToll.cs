@@ -28,6 +28,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// path no-coroutine un Running del ataque aborta lo que venga después, y el peaje no puede
     /// depender de que el jefe llegue a atacar.
     /// </para>
+    /// <para>
+    /// <b>Sin presentación a propósito.</b> El manotazo y el impacto del peaje los dispara
+    /// <see cref="CashierCounterTollService"/> en el momento del cobro. Acá no hay nada que mostrar:
+    /// armar es idempotente y corre todos los turnos, así que una animación en este tick sería un
+    /// golpe en pantalla en turnos donde nadie pagó — y faltaría en el único momento que importa,
+    /// que cae al cerrar el turno del jugador, fuera del árbol.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierCounterToll : AIActionNode

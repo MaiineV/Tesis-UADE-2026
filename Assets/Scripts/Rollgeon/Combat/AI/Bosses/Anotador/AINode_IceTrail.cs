@@ -42,6 +42,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// estela del turno pasado antes de publicar la nueva: dos estelas vivas superpondrían overlays y
     /// duplicarían las casillas congeladas de un boss que "deja una estela", en singular.
     /// </para>
+    /// <para>
+    /// <b>Sin presentación propia a propósito.</b> El hazard ya trae su <c>VFX_IceBurst</c>, así que
+    /// las casillas se ven al congelarse. Del lado del jefe no hay gesto que agregar: la estela es
+    /// consecuencia pasiva del repliegue —cae en el mismo tick, justo después de que se movió— y el
+    /// rig del Anotador (<c>ChestMimic</c>) sólo tiene <c>Attack</c> y <c>Awaken</c>. Reproducir
+    /// <c>Attack</c> acá haría leer un ataque que no existe y bloquearía el turno detrás de él.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_IceTrail : AIActionNode

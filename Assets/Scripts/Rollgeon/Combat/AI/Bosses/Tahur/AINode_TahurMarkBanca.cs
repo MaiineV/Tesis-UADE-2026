@@ -1,8 +1,12 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Feedback;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -69,7 +73,23 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         [MinValue(0)]
         public int TableRadius = 1;
 
+        [Title("Presentación")]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Override del gesto de barrer la mesa. Vacío = " + BossFeedbackIds.TahurBancaAnim + ".")]
+        public string AnimFeedbackIdOverride;
+
         public override string NodeName => $"Tahúr — La Banca ({Damage} en toda la sala menos La Mesa)";
+
+        /// <remarks>
+        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar
+        /// un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers, así que un default en
+        /// el campo llegaría en null y el barrido volvería a marcarse sin que el jefe se mueva.
+        /// </remarks>
+        private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
+            ? BossFeedbackIds.TahurBancaAnim
+            : AnimFeedbackIdOverride;
 
         public override AIResult Tick(AIContext context)
         {
@@ -114,6 +134,74 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <summary>
+        /// Camino de play mode: marca primero y <b>después</b> barre, reteniendo el turno hasta que
+        /// el gesto termina.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El orden importa: el rastrillo tiene que estar pintado mientras el jefe se levanta, o el
+        /// brazo barre una sala vacía y el gesto no explica de dónde salen los 45. Y como el nodo va
+        /// último en el turno, retener acá no le roba tiempo a nada — es el cierre.
+        /// </para>
+        /// <para>
+        /// <b>Sólo la animación, sin impacto.</b> La Banca no golpea este turno: los 45 caen en el
+        /// siguiente por el <c>AINode_ExecuteTelegraph</c>, que trae su propio windup y su propio
+        /// impacto. Meter VFX de golpe acá prometería un daño que todavía no existe.
+        /// </para>
+        /// </remarks>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            var result = Tick(context);
+            if (result != AIResult.Succeeded)
+            {
+                onResult?.Invoke(result);
+                yield break;
+            }
+
+            var beat = PlaySweep(context);
+            while (beat.MoveNext()) yield return beat.Current;
+
+            onResult?.Invoke(result);
+        }
+
+        /// <remarks>
+        /// El request se arma a mano en vez de reusar <c>EffPlaySequence</c>: el nodo no nace de un
+        /// effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
+        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
+        /// admite null).
+        /// </remarks>
+        private IEnumerator PlaySweep(AIContext context)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.FeedbackRef,
+                FeedbackRefId = AnimFeedbackId,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno no se
+            // retiene. Mismo degradado que EffPlaySequence.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
+        }
+
+        /// <summary>
         /// Fichas a partir de las cuales barre la mesa, sin poder quedar por encima del techo del
         /// pozo.
         /// </summary>
@@ -128,5 +216,19 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             if (wager == null) return threshold;
             return Mathf.Min(threshold, Mathf.Max(1, wager.MaxChips));
         }
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
     }
 }

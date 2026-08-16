@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 
 namespace Rollgeon.Combat.Cashier
@@ -169,8 +171,69 @@ namespace Rollgeon.Combat.Cashier
                 BaseDamage = _tollDamage,
                 Kind = TollKind,
             });
+
+            PlayTollFeedback(entityGuid);
         }
 
         private void OnScopeEndedExternal(params object[] args) => Disarm();
+
+        // ======================================================================
+        // Presentación
+        // ======================================================================
+
+        /// <summary>
+        /// Manotazo del Cajero + impacto sobre el que pagó, al cobrar. Sin esto los 10 salen como un
+        /// número flotante huérfano al cerrar el turno y el peaje se lee como daño aleatorio de la
+        /// sala en vez de como el precio de quedarse de su lado.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Va acá y no en <c>AINode_CashierCounterToll</c>.</b> El nodo sólo arma, y re-arma todos
+        /// los turnos: animarlo pondría un golpe en pantalla en turnos donde no se cobró nada y lo
+        /// dejaría mudo justo en el turno en que sí se cobra, que es al cerrar el del jugador —
+        /// después de que el árbol del jefe ya tickeó.
+        /// </para>
+        /// <para>
+        /// <b>No bloquea el turno.</b> El cobro cae en <c>OnTurnFinished</c>, fuera de toda coroutine
+        /// que pueda esperarlo (el gate de <c>TurnManager</c> hoy sólo lo miran <c>EffectData</c> y
+        /// <c>AINode_ExecuteTelegraph</c>), así que un <c>BeginFeedbackWait</c> acá subiría el depth
+        /// sin que nadie lo espere. Y aunque hubiera quién: un peaje pasivo que frena la pelea un
+        /// segundo cada vez que el jugador cierra su turno cerca del mostrador se vuelve un impuesto
+        /// al ritmo, no una lectura.
+        /// </para>
+        /// <para>
+        /// <b>Todos los steps arrancan juntos</b>, sin colgarse del Animation Event de impacto: el
+        /// daño ya cayó (el número flotante está en pantalla), así que el chispazo tiene que ir ahí y
+        /// no 0.4s después. Además la secuencia del turno del jefe arranca pisando
+        /// <c>FeedbackSequenceRuntime.Current</c>, y un step esperando <c>"hit"</c> en el bus viejo no
+        /// se destrabaría nunca — lo levantaría el watchdog, tarde y con warning.
+        /// </para>
+        /// </remarks>
+        private void PlayTollFeedback(Guid payerGuid)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) return;
+
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep>
+                {
+                    Step(BossFeedbackIds.CajeroMeleeAnim),
+                    Step(BossFeedbackIds.CajeroImpactVfx),
+                    Step(BossFeedbackIds.CajeroImpactFeel),
+                },
+                SourceGuid = _bossGuid,
+                TargetGuid = payerGuid,
+            }, null);
+        }
+
+        private static FeedbackSequenceStep Step(string feedbackId) => new FeedbackSequenceStep
+        {
+            Source = StepSource.FeedbackRef,
+            FeedbackRefId = feedbackId,
+            StartMode = StepStartMode.Immediate,
+            EndMode = StepEndMode.OnDuration,
+            BlockSequence = true,
+        };
     }
 }

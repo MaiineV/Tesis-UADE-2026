@@ -41,6 +41,14 @@ namespace Rollgeon.Combat.AI.Decisions
     /// tocar el flag de daño. El golpe que el jugador metió en un turno de disparo se cobra en el
     /// turno de columna siguiente: se pierde el timing, nunca la ficha.
     /// </para>
+    /// <para>
+    /// <b>Sin presentación propia a propósito.</b> El hazard-ficha ya spawnea su prop de moneda, así
+    /// que el momento está en pantalla; un VFX extra lo duplicaría. Y un gesto de "tirar" del jefe
+    /// sólo funcionaría reproducido <i>antes</i> de que la moneda aparezca, lo que obliga a partir el
+    /// nodo en elegir-casillas y activar: el <c>ConsumeDamageTaken</c> es destructivo y no se puede
+    /// pre-chequear, así que animar primero y descubrir después que no había nada que soltar deja al
+    /// jefe tirando fichas invisibles. Se decidió no pagar ese refactor por un gesto secundario.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierDropChips : AIActionNode

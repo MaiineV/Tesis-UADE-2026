@@ -1,8 +1,12 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Cashier;
+using Rollgeon.Feedback;
 using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -27,6 +31,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// la secuencia y dejaría la Fase 2 sin su feedback — el jefe se quedaría sin anunciar el
     /// cambio para siempre porque <c>Once</c> no latchea con Failed.
     /// </para>
+    /// <para>
+    /// <b>Sólo animación, sin impacto.</b> El arqueo es el anuncio de la Fase 2 y pasa una única vez
+    /// en la pelea: sin un gesto que lo ocupe, la mitad más importante del kit del jefe entra como
+    /// un número de curación que aparece solo. Pero no lleva VFX ni Feel de impacto — el jugador
+    /// pierde oro, no vida, y el chispazo de golpe le haría leer un daño que no existe.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierAudit : AIActionNode
@@ -43,12 +53,60 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(1)]
         public int ChipValueMultiplierAfterAudit = 2;
 
+        /// <summary>
+        /// Event key del Animation Event del clip del jefe. Ver
+        /// <c>AINode_CashierRangedShot.ImpactEventKey</c>: no es campo autorable para que un
+        /// <c>ED_Boss_*</c> ya serializado no lo deserialice vacío.
+        /// </summary>
+        private const string ImpactEventKey = "hit";
+
         public override string NodeName => $"Cashier Audit ({TaxPercent:P0} → heal ≤ {MaxHeal})";
 
+        /// <summary>
+        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): arquea en el acto, sin
+        /// gesto. Bloquear acá colgaría el runner de tests.
+        /// </summary>
         public override AIResult Tick(AIContext context)
         {
             if (context == null || context.SelfGuid == Guid.Empty) return AIResult.Failed;
 
+            Audit(context);
+            return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Camino de play mode: el jefe hace el gesto de manotear la caja y el oro cambia de manos en
+        /// el frame del golpe, con el turno retenido hasta que el clip termina.
+        /// </summary>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (context == null || context.SelfGuid == Guid.Empty)
+            {
+                onResult?.Invoke(AIResult.Failed);
+                yield break;
+            }
+
+            bool resolved = false;
+            Action resolveOnce = () =>
+            {
+                if (resolved) return;
+                resolved = true;
+                Audit(context);
+            };
+
+            var gesture = PlayAudit(context, resolveOnce);
+            while (gesture.MoveNext()) yield return gesture.Current;
+
+            // Red de seguridad: el arqueo es el pasaje a Fase 2 y corre una sola vez — si se perdiera
+            // por falta de presentación, el jefe se quedaría en Fase 1 el resto de la pelea.
+            resolveOnce();
+            onResult?.Invoke(AIResult.Succeeded);
+        }
+
+        // ---- pasos compartidos por los dos caminos -------------------------
+
+        private void Audit(AIContext context)
+        {
             var attrs = context.Attributes;
             if (attrs == null) ServiceLocator.TryGetService<AttributesManager>(out attrs);
 
@@ -59,8 +117,54 @@ namespace Rollgeon.Combat.AI.Decisions
 
             int heal = Mathf.Min(collected, MaxHeal);
             if (heal > 0) ApplyHeal(attrs, context, heal);
+        }
 
-            return AIResult.Succeeded;
+        /// <remarks>
+        /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar sobre el
+        /// jugador. El request se arma a mano porque el nodo no nace de un effect pass y no tiene
+        /// <c>EffectContext</c> que pasarle — mismo caso que <c>CombatDeathWatcher</c>.
+        /// </remarks>
+        private static IEnumerator PlayAudit(AIContext context, Action onImpact)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.FeedbackRef,
+                FeedbackRefId = BossFeedbackIds.CajeroMeleeAnim,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            bool impactFired = false;
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext())
+            {
+                if (!impactFired)
+                {
+                    var bus = FeedbackSequenceRuntime.Current;
+                    if (bus != null && bus.HasFired(ImpactEventKey))
+                    {
+                        impactFired = true;
+                        onImpact?.Invoke();
+                    }
+                }
+                yield return wait.Current;
+            }
         }
 
         private static void ApplyHeal(AttributesManager attrs, AIContext context, int heal)

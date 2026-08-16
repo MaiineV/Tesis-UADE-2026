@@ -1,11 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.BossHand;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -64,6 +67,18 @@ namespace Rollgeon.Combat.AI.Decisions
                  "Vacío = toda mano arma en el mismo turno en que se tira.")]
         public List<string> SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala };
 
+        /// <remarks>
+        /// Vacío cae al id canónico de La Generala, no a "sin animación": Odin no corre los
+        /// inicializadores de campo al deserializar, así que un default por asignación llegaría en
+        /// null desde los <c>ED_Boss_*.asset</c> ya autorados y la tirada quedaría muda hasta que
+        /// alguien re-corriera el builder.
+        /// </remarks>
+        [Tooltip("Feedback de la tirada. Vacío = la animación de tirar dados de La Generala.")]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        public string RollFeedbackId;
+
         public override string NodeName => $"Roll Hand ({MaxDice}d{DieFaces})";
 
         public override AIResult Tick(AIContext context)
@@ -98,6 +113,72 @@ namespace Rollgeon.Combat.AI.Decisions
             string comboId = detected.IsMatch ? detected.ComboId : BossDiceHand.NoCombo;
             hands.SetHand(context.SelfGuid, values, comboId, armed: !IsSlow(comboId));
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// La tirada, con el cubilete a la vista. La mano se resuelve primero y la animación va
+        /// después: los dados que caen ya son los definitivos, así que el jugador ve el mismo
+        /// resultado que va a leer en la mesa.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Tirar los dados es <b>la</b> acción de La Generala y hasta acá no se veía: el jugador veía
+        /// aparecer un combo en la UI sin que ella hiciera nada. El rig de dados existe justamente
+        /// por este beat — <c>Roll</c> es la única animación del proyecto que es literalmente esto.
+        /// </para>
+        /// <para>
+        /// El request se arma a mano porque el nodo no nace de un effect pass y no tiene
+        /// <c>EffectContext</c> — el mismo caso que documenta <c>FeedbackRequest.Context</c> como
+        /// nullable, y la misma forma que usan los nodos de jefe ya cableados.
+        /// </para>
+        /// </remarks>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            var result = Tick(context);
+            if (result != AIResult.Succeeded)
+            {
+                onResult?.Invoke(result);
+                yield break;
+            }
+
+            var beat = PlayRoll(context);
+            while (beat.MoveNext()) yield return beat.Current;
+
+            onResult?.Invoke(result);
+        }
+
+        private IEnumerator PlayRoll(AIContext context)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.FeedbackRef,
+                FeedbackRefId = string.IsNullOrEmpty(RollFeedbackId)
+                    ? BossFeedbackIds.GeneralaRollAnim
+                    : RollFeedbackId,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar: la anim corre igual pero el turno no se
+            // retiene. Mismo degradado que el resto de los nodos de jefe.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
         }
 
         // ======================================================================
@@ -209,5 +290,22 @@ namespace Rollgeon.Combat.AI.Decisions
 
             return alive < max ? alive : max;
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Los ids de feedback nunca se tipean a mano (§0): el dropdown los lee del propio
+        /// <see cref="FeedbackDBSO"/>, así un id renombrado se ve vacío en vez de fallar en silencio.
+        /// </summary>
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
     }
 }

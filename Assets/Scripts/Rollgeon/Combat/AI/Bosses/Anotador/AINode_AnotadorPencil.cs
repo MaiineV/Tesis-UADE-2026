@@ -1,5 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Entities.Visuals;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions.Concretes;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -37,6 +43,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <see cref="AINode_If"/> que lo cuelga). Un <c>Failed</c> por estar lejos es el caso mayoritario,
     /// así que en el árbol va dentro de un <c>Selector[…, Wait]</c> como el resto.
     /// </para>
+    /// <para>
+    /// <b>Sin telegraph no hay overlay que lo anuncie</b>, así que la única señal de que el lápiz
+    /// entró es la presentación: sin ella el jugador ve un 12 flotante salir de la nada y no puede
+    /// aprender que la casilla pegada se paga. Por eso el camino de play mode
+    /// (<see cref="TickCoroutine"/>) retiene el turno con la estocada y aterriza el daño en el frame
+    /// de impacto, mismo contrato que <see cref="AINode_ExecuteTelegraph"/>.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_AnotadorPencil : AIActionNode
@@ -56,23 +69,86 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Tipo de ataque del DamageContext.")]
         public AttackKind Kind = AttackKind.BasicAttack;
 
+        /// <summary>
+        /// Event key del Animation Event que marca el frame en que el lápiz entra. No es campo
+        /// autorable: el nodo es de un solo jefe y <c>Anim_ChestMimic_Attack</c> publica esta key y
+        /// ninguna otra. Un campo nuevo, además, nace vacío en los <c>ED_Boss_*</c> ya serializados
+        /// —Odin no corre field initializers al deserializar— y el golpe se quedaría mudo hasta que
+        /// alguien lo re-autorara a mano.
+        /// </summary>
+        private const string ImpactEventKey = "hit";
+
         public override string NodeName => $"Anotador — Lápiz ({Damage})";
 
+        /// <summary>
+        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra el lápiz en el acto,
+        /// sin presentación. No hay dónde esperar el Animation Event y bloquear acá colgaría el
+        /// runner de tests.
+        /// </summary>
         public override AIResult Tick(AIContext context)
         {
-            if (context?.Grid == null) return AIResult.Failed;
-            if (context.SelfGuid == Guid.Empty || context.PlayerGuid == Guid.Empty) return AIResult.Failed;
+            if (!CanStab(context)) return AIResult.Failed;
 
-            if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
+            Stab(context);
+            return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Camino de play mode: estocada + impacto sobre el jugador, con el daño aterrizado en el
+        /// frame del golpe y el turno retenido hasta que el clip termina.
+        /// </summary>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (!CanStab(context))
+            {
+                onResult?.Invoke(AIResult.Failed);
+                yield break;
+            }
+
+            FaceTarget(context);
+
+            bool resolved = false;
+            Action resolveOnce = () =>
+            {
+                if (resolved) return;
+                resolved = true;
+                Stab(context);
+            };
+
+            var swing = PlayStab(context, resolveOnce);
+            while (swing.MoveNext()) yield return swing.Current;
+
+            // Red de seguridad: sin feedback service, sin Animation Event o con el bus perdido, el
+            // lápiz igual cobra. La presentación puede faltar; el daño de la ficha no.
+            resolveOnce();
+            onResult?.Invoke(AIResult.Succeeded);
+        }
+
+        // ---- pasos compartidos por los dos caminos -------------------------
+
+        /// <remarks>
+        /// Incluye el chequeo del pipeline y del daño porque los dos son <c>Failed</c> en el
+        /// contrato original: separarlos dejaría al camino coroutine reproduciendo la estocada de un
+        /// golpe que nunca iba a cobrar.
+        /// </remarks>
+        private bool CanStab(AIContext context)
+        {
+            if (context?.Grid == null) return false;
+            if (context.SelfGuid == Guid.Empty || context.PlayerGuid == Guid.Empty) return false;
+
+            if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return false;
+            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
 
             int distance = Metric == DistanceMetric.Manhattan
                 ? selfCoord.Manhattan(playerCoord)
                 : selfCoord.Chebyshev(playerCoord);
-            if (distance > Mathf.Max(1, Range)) return AIResult.Failed;
+            if (distance > Mathf.Max(1, Range)) return false;
 
-            if (context.DamagePipeline == null || Damage <= 0) return AIResult.Failed;
+            return context.DamagePipeline != null && Damage > 0;
+        }
 
+        private void Stab(AIContext context)
+        {
             context.DamagePipeline.Resolve(new DamageContext
             {
                 SourceId = context.SelfGuid,
@@ -80,8 +156,95 @@ namespace Rollgeon.Combat.AI.Decisions
                 BaseDamage = Damage,
                 Kind = Kind,
             });
+        }
 
-            return AIResult.Succeeded;
+        /// <remarks>
+        /// Se arma el request de secuencia a mano en vez de reusar <c>EffPlaySequence</c>: el nodo no
+        /// nace de un effect pass y no tiene <c>EffectContext</c> que pasarle — el mismo caso que la
+        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
+        /// admite null.
+        /// </remarks>
+        private static IEnumerator PlayStab(AIContext context, Action onImpact)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var steps = new List<FeedbackSequenceStep>
+            {
+                new FeedbackSequenceStep
+                {
+                    Source = StepSource.FeedbackRef,
+                    FeedbackRefId = BossFeedbackIds.AnotadorPencilAnim,
+                    StartMode = StepStartMode.Immediate,
+                    EndMode = StepEndMode.OnDuration,
+                    BlockSequence = true,
+                },
+                ImpactStep(BossFeedbackIds.AnotadorImpactVfx),
+                ImpactStep(BossFeedbackIds.AnotadorImpactFeel),
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = steps,
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar — la estocada igual corre, pero el daño no
+            // queda sincronizado. Mismo degradado que EffPlaySequence.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            bool impactFired = false;
+
+            // El bus es latched, así que pollear HasFired por frame alcanza para enganchar el
+            // Animation Event sin suscribirse a nada. El wait canónico trae su propio timeout y el
+            // force-reset del depth.
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext())
+            {
+                if (!impactFired)
+                {
+                    var bus = FeedbackSequenceRuntime.Current;
+                    if (bus != null && bus.HasFired(ImpactEventKey))
+                    {
+                        impactFired = true;
+                        onImpact?.Invoke();
+                    }
+                }
+                yield return wait.Current;
+            }
+        }
+
+        /// <summary>
+        /// VFX y Feel del impacto arrancan en el frame del golpe y bloquean la secuencia, igual que
+        /// los steps de impacto del ataque del Warrior (<c>CH_Warrior</c>). Es lo que ata el
+        /// chispazo al lápiz en vez de al inicio del clip.
+        /// </summary>
+        private static FeedbackSequenceStep ImpactStep(string feedbackId) => new FeedbackSequenceStep
+        {
+            Source = StepSource.FeedbackRef,
+            FeedbackRefId = feedbackId,
+            StartMode = StepStartMode.OnEvent,
+            StartOnEventKey = ImpactEventKey,
+            EndMode = StepEndMode.OnDuration,
+            BlockSequence = true,
+        };
+
+        /// <summary>
+        /// Gira al jefe hacia el jugador antes de la estocada: el lápiz sale después del repliegue
+        /// del turno anterior, así que sin esto apuñala mirando hacia donde huyó. No-op sin capa
+        /// visual (EditMode).
+        /// </summary>
+        private static void FaceTarget(AIContext context)
+        {
+            if (!ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
+            if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
+            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+            pawn.FaceCoord(from, to);
         }
     }
 }
