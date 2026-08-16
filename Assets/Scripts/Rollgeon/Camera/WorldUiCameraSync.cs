@@ -63,10 +63,13 @@ namespace Rollgeon.GameCamera
             if (_rt != null && _rt.width == width && _rt.height == height) return;
 
             ReleaseRenderTexture();
-            // Sin depth: acá solo se dibujan canvases world-space, no hay geometría
-            // que ordenar por z. Alpha obligatorio — el composite deja ver el pixel
-            // art debajo.
-            _rt = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32)
+            // Depth 24 obligatorio: el render graph de URP rechaza un output RT sin
+            // depth buffer ("output Render Texture must have a depth buffer") y el
+            // frame sale negro opaco. Alpha obligatorio — el composite deja ver el
+            // pixel art debajo. OJO: la cámara además necesita el renderer dedicado
+            // WorldUI_Renderer (sin FullScreenPass): los renderer features corren en
+            // TODAS las cámaras del renderer y el post de pixelado escribe alpha=1.
+            _rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
             {
                 name = "WorldUI_RT",
                 filterMode = FilterMode.Bilinear
