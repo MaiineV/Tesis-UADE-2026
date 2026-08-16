@@ -1,0 +1,76 @@
+namespace Rollgeon.Feedback
+{
+    /// <summary>
+    /// Ids de feedback de los seis jefes de casino. Viven en runtime —y no en el instalador que los
+    /// autora— porque los que los consumen son los nodos de IA, que no pueden ver el assembly de
+    /// Editor.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Una sola fuente.</b> <c>BossFeedbackInstaller</c> escribe las entradas del
+    /// <c>FeedbackDB</c> leyendo de acá, así que un id sólo puede estar mal en un lugar. Cambiar el
+    /// string sin re-correr <c>Tools → Rollgeon → Bosses → Build Boss Feedback</c> deja la entrada
+    /// vieja huérfana en el asset y el nodo pidiendo una que no existe — que degrada con un warning,
+    /// no cuelga, pero tampoco se ve.
+    /// </para>
+    /// <para>
+    /// Convención heredada de las 27 entradas hechas a mano: <c>&lt;canal&gt;.&lt;actor&gt;.&lt;acción&gt;</c>,
+    /// con <c>anim.</c> / <c>vfx.</c> / <c>feel.</c> / <c>sfx.</c> de prefijo.
+    /// </para>
+    /// <para>
+    /// <b>Sin <c>sfx.</c> todavía</b>: el proyecto no tiene un solo clip de jefe — los 23 wavs son de
+    /// dados y del breakdown de UI. Cuando existan, van acá con el mismo patrón.
+    /// </para>
+    /// </remarks>
+    public static class BossFeedbackIds
+    {
+        // ---- El Croupier ----
+        public const string CroupierMeleeAnim  = "anim.boss.croupier.melee";
+        public const string CroupierCantoAnim  = "anim.boss.croupier.canto";
+        public const string CroupierImpactVfx  = "vfx.boss.croupier.impact";
+        public const string CroupierImpactFeel = "feel.boss.croupier.impact";
+
+        // ---- La Bandida ----
+        public const string BandidaMeleeAnim       = "anim.boss.bandida.melee";
+        public const string BandidaRangeAnim       = "anim.boss.bandida.range";
+        public const string BandidaArmAnim         = "anim.boss.bandida.arm";
+        public const string BandidaImpactVfx       = "vfx.boss.bandida.impact";
+        public const string BandidaRangeImpactVfx  = "vfx.boss.bandida.range_impact";
+        public const string BandidaImpactFeel      = "feel.boss.bandida.impact";
+        public const string BandidaRangeImpactFeel = "feel.boss.bandida.range_impact";
+
+        // ---- El Cajero ----
+        public const string CajeroMeleeAnim      = "anim.boss.cajero.melee";
+        public const string CajeroShotAnim       = "anim.boss.cajero.shot";
+        public const string CajeroImpactVfx      = "vfx.boss.cajero.impact";
+        public const string CajeroShotImpactVfx  = "vfx.boss.cajero.shot_impact";
+        public const string CajeroImpactFeel     = "feel.boss.cajero.impact";
+        public const string CajeroShotImpactFeel = "feel.boss.cajero.shot_impact";
+
+        // ---- El Anotador ----
+        public const string AnotadorMeleeAnim  = "anim.boss.anotador.melee";
+        public const string AnotadorPencilAnim = "anim.boss.anotador.pencil";
+        public const string AnotadorImpactVfx  = "vfx.boss.anotador.impact";
+        public const string AnotadorImpactFeel = "feel.boss.anotador.impact";
+
+        // ---- La Generala ----
+        public const string GeneralaMeleeAnim       = "anim.boss.generala.melee";
+        public const string GeneralaRangeAnim       = "anim.boss.generala.range";
+        public const string GeneralaRollAnim        = "anim.boss.generala.roll";
+        public const string GeneralaCupSlamAnim     = "anim.boss.generala.cup_slam";
+        public const string GeneralaImpactVfx       = "vfx.boss.generala.impact";
+        public const string GeneralaRangeImpactVfx  = "vfx.boss.generala.range_impact";
+        public const string GeneralaImpactFeel      = "feel.boss.generala.impact";
+        public const string GeneralaRangeImpactFeel = "feel.boss.generala.range_impact";
+
+        // ---- El Tahúr ----
+        public const string TahurMeleeAnim       = "anim.boss.tahur.melee";
+        public const string TahurRangeAnim       = "anim.boss.tahur.range";
+        public const string TahurPokeAnim        = "anim.boss.tahur.poke";
+        public const string TahurBancaAnim       = "anim.boss.tahur.banca";
+        public const string TahurImpactVfx       = "vfx.boss.tahur.impact";
+        public const string TahurRangeImpactVfx  = "vfx.boss.tahur.range_impact";
+        public const string TahurImpactFeel      = "feel.boss.tahur.impact";
+        public const string TahurRangeImpactFeel = "feel.boss.tahur.range_impact";
+    }
+}
