@@ -129,6 +129,34 @@ namespace Rollgeon.Dungeon.Tests
             }
         }
 
+        [TestCase(Floor1)]
+        [TestCase(Floor2)]
+        [TestCase(Floor3)]
+        public void EveryActiveBoss_HasItsOwnRoomWired(string layoutPath)
+        {
+            // Arrange — el cableado lo escribe 'Tools/Rollgeon/Bosses/Build Floor Pools' y las
+            // salas 'Rollgeon/Bosses/Build Boss Rooms'. Olvidarse de re-correr uno de los dos deja
+            // al jefe peleando en una sala cualquiera del piso, que no falla en ningún lado.
+            var layout = LoadLayout(layoutPath);
+            Assert.IsNotNull(layout.BossPool, $"'{layout.name}' no tiene BossPool asignado.");
+
+            // Act / Assert
+            foreach (var entry in layout.BossPool.Entries)
+            {
+                if (!BossPoolSO.IsActive(entry)) continue;
+
+                Assert.IsNotNull(entry.Room,
+                    $"'{entry.Boss.EntityId}' está activo en '{layout.BossPool.name}' pero no tiene " +
+                    "Room: el piso le va a sortear una sala cualquiera, con los obstáculos de otro " +
+                    "jefe. Correr 'Rollgeon → Bosses → Build Boss Rooms' y después " +
+                    "'Tools → Rollgeon → Bosses → Build Floor Pools'.");
+                Assert.AreEqual(RoomType.Boss, entry.Room.Type,
+                    $"La sala de '{entry.Boss.EntityId}' no es de tipo Boss.");
+                Assert.IsNotNull(entry.Room.RoomPrefab,
+                    $"La sala de '{entry.Boss.EntityId}' no tiene RoomPrefab.");
+            }
+        }
+
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------

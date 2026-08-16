@@ -153,7 +153,7 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // 2. Primer spawn de la sala.
-            var plan = BuildSpawnPlan(room, layout, rng);
+            var plan = BuildSpawnPlan(room, layout, rng, instance.Boss);
             int spawnIndex = 0;
             foreach (var planned in plan)
             {
@@ -186,7 +186,8 @@ namespace Rollgeon.Combat.Handoff
         // Internals
         // -----------------------------------------------------------------
 
-        private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
+        private List<PlannedSpawn> BuildSpawnPlan(
+            RoomSO room, RoomLayout layout, System.Random rng, EnemyDataSO rolledBoss)
         {
             int floor = CurrentFloorNumber;
 
@@ -203,7 +204,7 @@ namespace Rollgeon.Combat.Handoff
             // se resuelve acá por código — no vaciando data que el resto del wiring usa.
             if (room.Type == RoomType.Boss)
             {
-                var boss = ResolveBossForFloor(rng);
+                var boss = ResolveBossForFloor(rng, rolledBoss);
                 if (boss != null)
                 {
                     return new List<PlannedSpawn>
@@ -301,12 +302,17 @@ namespace Rollgeon.Combat.Handoff
         }
 
         /// <summary>
-        /// Boss de la sala: primero el override one-shot de la dev console, después el
-        /// <see cref="BossPoolSO"/> del piso actual. <c>null</c> en cualquier eslabón
-        /// (sin override, sin progresión, piso sin pool, pool sin entries) ⇒ el caller
-        /// sigue con el path de spawn de siempre, sin ruido en consola.
+        /// Boss de la sala, por precedencia: el override one-shot de la dev console, después el
+        /// que roleó la generación del piso, y por último el <see cref="BossPoolSO"/> del piso
+        /// actual. <c>null</c> en todos los eslabones (sin override, sin boss rolado, sin
+        /// progresión, piso sin pool, pool sin entries) ⇒ el caller sigue con el path de spawn
+        /// de siempre, sin ruido en consola.
         /// </summary>
-        private EnemyDataSO ResolveBossForFloor(System.Random rng)
+        /// <param name="rolledBoss">
+        /// El de <c>RoomInstance.Boss</c>: lo decidió la generación junto con la sala, así que
+        /// re-rolear acá daría un boss que no se corresponde con la sala instanciada.
+        /// </param>
+        private EnemyDataSO ResolveBossForFloor(System.Random rng, EnemyDataSO rolledBoss)
         {
             if (ServiceLocator.TryGetService<IBossSelectionOverride>(out var bossOverride)
                 && bossOverride != null
@@ -315,6 +321,8 @@ namespace Rollgeon.Combat.Handoff
             {
                 return forcedBoss;
             }
+
+            if (rolledBoss != null) return rolledBoss;
 
             var progression = _floorProgression;
             if (progression == null)

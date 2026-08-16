@@ -19,6 +19,12 @@ namespace Rollgeon.Entities.Bosses
     /// de tuning (rolear menos/nada) y <see cref="Enabled"/> la de contenido (el boss no
     /// está listo / está fuera del build). Cualquiera de las dos lo saca del roll.
     /// </para>
+    /// <para>
+    /// <b>La sala cuelga del boss, no al revés.</b> El piso se piensa como "te tocó A, B o
+    /// C", así que el roll del boss manda y <see cref="Room"/> viene con él. Dos entries
+    /// pueden apuntar a la misma sala sin duplicar el asset — que es lo que no se podía si
+    /// la sala nombrara a su boss.
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class WeightedBoss
@@ -35,5 +41,9 @@ namespace Rollgeon.Entities.Bosses
         [Tooltip("Off = la entry queda fuera del roll sin tocar su peso " +
                  "(deshabilitar por contenido: boss no listo / fuera del build).")]
         public bool Enabled = true;
+
+        [Tooltip("Sala donde se pelea este boss. Vacío = la sala se sortea del pool de salas " +
+                 "del piso, como antes.")]
+        public Dungeon.RoomSO Room;
     }
 }

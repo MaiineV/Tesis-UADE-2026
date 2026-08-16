@@ -9,3 +9,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Rollgeon.Meta.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Feedback.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Combat.Handoff.Tests")]
+// FloorTopologyPlanner.AssignBosses: el vínculo jefe→sala se testea sobre el paso solo,
+// sin tener que armar un piso entero para cada caso.
+[assembly: InternalsVisibleTo("Rollgeon.Dungeon.Tests")]

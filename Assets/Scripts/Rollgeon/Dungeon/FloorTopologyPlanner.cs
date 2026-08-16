@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Entities;
 using Rollgeon.Meta;
 using UnityEngine;
 
@@ -30,6 +31,13 @@ namespace Rollgeon.Dungeon
             public IReadOnlyList<Vector2Int> Cells { get; set; }
             public IReadOnlyDictionary<Vector2Int, RoomSO> Assignments { get; set; }
             public IReadOnlyDictionary<Vector2Int, RoomType> Types { get; set; }
+
+            /// <summary>
+            /// Boss rolado por celda de boss. Se decide acá, en la generación, para que un mismo
+            /// seed dé el mismo boss aunque se recargue: el piso se reconstruye del seed y el
+            /// resume no persiste topología.
+            /// </summary>
+            public IReadOnlyDictionary<Vector2Int, EnemyDataSO> BossByCell { get; set; }
             public IReadOnlyDictionary<RoomType, int> ResolvedCounts { get; set; }
             public IReadOnlyList<string> Warnings { get; set; }
         }
@@ -49,6 +57,11 @@ namespace Rollgeon.Dungeon
             var cells = GenerateTopology(targetCount, rng);
             var assignments = AssignTemplates(cells, layout, resolved, rng, warnings);
 
+            // El boss se rolea acá, en la generación, y su sala pisa la que eligió
+            // AssignTemplates. Va DESPUÉS de asignar (necesita saber qué celdas son de boss) y
+            // ANTES de computar `types` (que se lee de los templates ya definitivos).
+            var bossByCell = AssignBosses(layout, seed, assignments, warnings);
+
             // Map paralelo de tipo por cell, usando el template asignado o
             // un fallback al tipo del slot esperado cuando el template es null.
             var types = new Dictionary<Vector2Int, RoomType>(cells.Count);
@@ -67,9 +80,60 @@ namespace Rollgeon.Dungeon
                 Cells = cells,
                 Assignments = assignments,
                 Types = types,
+                BossByCell = bossByCell,
                 ResolvedCounts = resolved,
                 Warnings = warnings,
             };
+        }
+
+        /// <summary>
+        /// Rolea el boss de cada celda de tipo Boss y, si esa entry declara sala, la impone
+        /// sobre el template que había elegido <see cref="AssignTemplates"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>RNG propio por celda.</b> Se usa <see cref="BossSeed.Derive"/> en vez del rng del
+        /// planner justamente para no consumirle draws: un mismo seed sigue produciendo el mismo
+        /// piso que antes de que existiera este paso.
+        /// </para>
+        /// <para>
+        /// <b>Entry sin sala ⇒ no se toca nada.</b> El piso que no tenga el vínculo cableado se
+        /// queda con la sala del pool, que es el comportamiento de siempre.
+        /// </para>
+        /// </remarks>
+        internal static Dictionary<Vector2Int, EnemyDataSO> AssignBosses(
+            FloorLayoutSO layout, int seed,
+            Dictionary<Vector2Int, RoomSO> assignments,
+            List<string> warnings)
+        {
+            var result = new Dictionary<Vector2Int, EnemyDataSO>();
+            var pool = layout != null ? layout.BossPool : null;
+            if (pool == null) return result;
+
+            // Las celdas se juntan antes de tocar `assignments`: imponer la sala del boss lo
+            // muta, y mutarlo durante el foreach es undefined en Mono.
+            var bossCells = new List<Vector2Int>();
+            foreach (var pair in assignments)
+            {
+                if (pair.Value != null && pair.Value.Type == RoomType.Boss) bossCells.Add(pair.Key);
+            }
+
+            foreach (var cell in bossCells)
+            {
+                var entry = pool.RollEntry(new System.Random(BossSeed.Derive(seed, cell)));
+                if (entry?.Boss == null)
+                {
+                    // Una sala de boss sin boss deja la run sin cierre posible, y el síntoma
+                    // (sala vacía al final del piso) no apunta al pool por sí solo.
+                    warnings.Add($"Boss: la celda {cell} quedó sin boss — revisá '{pool.name}'.");
+                    continue;
+                }
+
+                result[cell] = entry.Boss;
+                if (entry.Room != null) assignments[cell] = entry.Room;
+            }
+
+            return result;
         }
 
         // -----------------------------------------------------------------

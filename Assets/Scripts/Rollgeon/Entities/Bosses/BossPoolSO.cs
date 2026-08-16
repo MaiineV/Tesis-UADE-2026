@@ -42,7 +42,15 @@ namespace Rollgeon.Entities.Bosses
         /// boss autorado — el caller (resolver) cae a su path de spawn normal.
         /// </summary>
         /// <param name="rng">RNG inyectable para determinismo por sala y tests.</param>
-        public EnemyDataSO Roll(System.Random rng)
+        public EnemyDataSO Roll(System.Random rng) => RollEntry(rng)?.Boss;
+
+        /// <summary>
+        /// Igual que <see cref="Roll"/> pero devuelve la entry entera, para los callers que
+        /// además necesitan su <see cref="WeightedBoss.Room"/>. Lo usa la generación del piso:
+        /// el boss se rolea ahí y la sala sale de la misma entry, así no hay dos sorteos que
+        /// puedan desincronizarse.
+        /// </summary>
+        public WeightedBoss RollEntry(System.Random rng)
         {
             if (Entries == null || Entries.Count == 0) return null;
 
@@ -51,12 +59,12 @@ namespace Rollgeon.Entities.Bosses
 
             // Invariante ≥1: el piso necesita un boss aunque el autorado haya quedado
             // todo apagado. Preferimos un boss "mal configurado" a una sala vacía.
-            var fallback = FirstAuthoredBoss();
+            var fallback = FirstAuthoredEntry();
             if (fallback != null)
             {
                 Debug.LogWarning(
                     $"[BossPoolSO] '{name}': no active bosses, first entry will be used as fallback " +
-                    $"('{fallback.EntityId}'). Revisá Weight/Enabled de las entries.");
+                    $"('{fallback.Boss.EntityId}'). Revisá Weight/Enabled de las entries.");
             }
             return fallback;
         }
@@ -88,7 +96,7 @@ namespace Rollgeon.Entities.Bosses
             return true;
         }
 
-        private EnemyDataSO TryRollActive(System.Random rng)
+        private WeightedBoss TryRollActive(System.Random rng)
         {
             float total = 0f;
             for (int i = 0; i < Entries.Count; i++)
@@ -106,22 +114,22 @@ namespace Rollgeon.Entities.Bosses
             {
                 if (!IsActive(Entries[i])) continue;
                 cursor += Entries[i].Weight;
-                if (pick <= cursor) return Entries[i].Boss;
+                if (pick <= cursor) return Entries[i];
             }
 
             // Floating point drift — fallback a la última activa.
             for (int i = Entries.Count - 1; i >= 0; i--)
             {
-                if (IsActive(Entries[i])) return Entries[i].Boss;
+                if (IsActive(Entries[i])) return Entries[i];
             }
             return null;
         }
 
-        private EnemyDataSO FirstAuthoredBoss()
+        private WeightedBoss FirstAuthoredEntry()
         {
             for (int i = 0; i < Entries.Count; i++)
             {
-                if (Entries[i]?.Boss != null) return Entries[i].Boss;
+                if (Entries[i]?.Boss != null) return Entries[i];
             }
             return null;
         }
