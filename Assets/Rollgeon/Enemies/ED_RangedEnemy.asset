@@ -832,6 +832,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1076,6 +1079,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1127,6 +1133,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1178,6 +1187,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1698,6 +1710,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1942,6 +1957,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1993,6 +2011,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -2044,6 +2065,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -2158,7 +2182,7 @@ MonoBehaviour:
   EntityId: RangedEnemy01
   DisplayName: RangedEnemy
   Description: Goblin con ataque a distancia, dispara con una ballesta.
-  Portrait: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
+  Portrait: {fileID: -172214914, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0.14
   BaseHP: 40

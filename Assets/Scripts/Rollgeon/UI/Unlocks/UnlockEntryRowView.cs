@@ -22,10 +22,20 @@ namespace Rollgeon.UI.Unlocks
         [Tooltip("Icono de candado mostrado cuando el elemento está bloqueado. Opcional.")]
         [SerializeField] private GameObject _lockIcon;
 
+        [Tooltip("Color del nombre desbloqueado (claro sobre la card).")]
+        [SerializeField] private Color _unlockedNameColor = Color.white;
+
+        [Tooltip("Color del '???' bloqueado — oscuro, la card naranja no banca texto claro enmascarado.")]
+        [SerializeField] private Color _lockedNameColor = Color.black;
+
         /// <summary>Puebla la fila. Con <paramref name="locked"/> el nombre se enmascara y el cuerpo muestra la pista.</summary>
         public void Bind(string displayName, string body, bool locked)
         {
-            if (_nameLabel != null) _nameLabel.text = locked ? "???" : displayName;
+            if (_nameLabel != null)
+            {
+                _nameLabel.text = locked ? "???" : displayName;
+                _nameLabel.color = locked ? _lockedNameColor : _unlockedNameColor;
+            }
             if (_bodyLabel != null) _bodyLabel.text = body ?? string.Empty;
             if (_lockIcon != null) _lockIcon.SetActive(locked);
         }

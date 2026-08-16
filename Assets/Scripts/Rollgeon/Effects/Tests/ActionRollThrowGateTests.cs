@@ -51,11 +51,17 @@ namespace Rollgeon.Effects.Tests
         private DiceBagSO _bag;
         private Guid _player;
         private int _diceRolledEvents;
+        private bool _savedKeepSelected;
 
         [SetUp]
         public void SetUp()
         {
             ServiceLocator.Clear();
+
+            // Los asserts asumen el modo invertido default; la pref persiste en
+            // PlayerPrefs del editor, así que se fuerza y restaura.
+            _savedKeepSelected = RerollSelectionPrefs.KeepSelected;
+            RerollSelectionPrefs.KeepSelected = false;
 
             _roller = new GateFakeRoller();
             // El throw service resuelve IDiceRoller del locator (como en producción,
@@ -84,6 +90,7 @@ namespace Rollgeon.Effects.Tests
         [TearDown]
         public void TearDown()
         {
+            RerollSelectionPrefs.KeepSelected = _savedKeepSelected;
             EventManager.UnSubscribe(EventName.OnDiceRolled, CountDiceRolled);
             _service.Dispose();
             if (_bag != null) Object.DestroyImmediate(_bag);

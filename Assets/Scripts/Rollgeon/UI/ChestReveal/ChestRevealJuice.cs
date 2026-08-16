@@ -259,14 +259,15 @@ namespace Rollgeon.UI.ChestReveal
         {
             if (!Motion || _settings == null) return;
 
-            var frame = winner != null ? winner.FrameGraphic : null;
-            if (frame != null && !_framePulse.isAlive && _settings.IdlePulseColorLerp > 0f)
+            var bg = winner != null ? winner.BackgroundGraphic : null;
+            if (bg != null && !_framePulse.isAlive && _settings.IdlePulseColorLerp > 0f)
             {
-                // Rest = color de rareza que Bind ya aplicó; se restaura en el cierre.
-                _pulsedFrame = frame;
-                _pulsedFrameRest = frame.color;
-                _framePulse = Tween.Color(frame,
-                    Color.Lerp(_pulsedFrameRest, Color.white, _settings.IdlePulseColorLerp),
+                // El pulse OSCURECE el tinte (rest = blanco): el color de rareza vive
+                // en el sprite del fondo, aclarar hacia blanco sería invisible.
+                _pulsedFrame = bg;
+                _pulsedFrameRest = bg.color;
+                _framePulse = Tween.Color(bg,
+                    Color.Lerp(_pulsedFrameRest, Color.black, _settings.IdlePulseColorLerp),
                     _settings.IdlePulsePeriod * 0.5f, Ease.InOutSine,
                     cycles: -1, CycleMode.Yoyo, useUnscaledTime: true);
             }

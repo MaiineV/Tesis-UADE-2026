@@ -724,6 +724,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -974,6 +977,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1025,6 +1031,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1076,6 +1085,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1351,6 +1363,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1595,6 +1610,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1646,6 +1664,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1697,6 +1718,9 @@ MonoBehaviour:
     - Name: InlineBehaviorValueTarget
       Entry: 3
       Data: 1
+    - Name: InlineEffects
+      Entry: 6
+      Data: 
     - Name: StartMode
       Entry: 3
       Data: 0
@@ -1823,7 +1847,7 @@ MonoBehaviour:
   EntityId: healerEnemy
   DisplayName: Healer
   Description: 
-  Portrait: {fileID: 1966469057, guid: a2a466c1be56fb84584dafa752e02bef, type: 3}
+  Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: combo.double_pair
   WeaknessMultiplierOverride: 0
   BaseHP: 50

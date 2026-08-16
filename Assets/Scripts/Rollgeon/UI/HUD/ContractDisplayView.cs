@@ -54,9 +54,22 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Footer opcional (ej. 'Dano minimo = dado mas alto'). Se deja en null si no aplica.")]
         private TextMeshProUGUI _footerLabel;
 
+        [Title("Contract Display — Drawer-style rows (opcional)")]
+        [SerializeField]
+        [Tooltip("Prefab de fila estilo drawer (mano de ejemplo + nombre + daño + descripción). " +
+                 "Cableado junto con _uiSettings reemplaza a _rowPrefab; en null se cae a la " +
+                 "tabla legacy de ComboRow.")]
+        private Contract.ContractComboRowView _contractRowPrefab;
+
+        [SerializeField]
+        [Tooltip("Arte de dados y manos de ejemplo — requerido por el prefab estilo drawer.")]
+        private Contract.ContractSheetUiSettingsSO _uiSettings;
+
         // Filas instanciadas en el último Bind — usadas para refrescar los valores efectivos
         // cuando el Boss 3 cambia la capa de modificadores del Contrato (§4).
         private readonly List<ComboRowView> _rows = new List<ComboRowView>();
+        private readonly List<Contract.ContractComboRowView> _contractRows =
+            new List<Contract.ContractComboRowView>();
         private bool _subscribed;
         private bool _headerHasTextAnimator;
         private bool _headerAnimatorChecked;
@@ -98,7 +111,10 @@ namespace Rollgeon.UI.HUD
                 _headerLabel.text = _headerHasTextAnimator ? $"<wave>{text}</wave>" : text;
             }
 
-            if (_rowPrefab == null)
+            // Con prefab drawer-style + settings cableados (rework de selección de clase)
+            // se instancian filas ContractComboRowView; si no, la tabla legacy de ComboRow.
+            bool useDrawerRows = _contractRowPrefab != null && _uiSettings != null;
+            if (!useDrawerRows && _rowPrefab == null)
             {
                 Debug.LogWarning(LogPrefix + "_rowPrefab no esta cableado — no se renderean rows.", this);
                 return;
@@ -135,11 +151,20 @@ namespace Rollgeon.UI.HUD
                     continue;
                 }
 
-                var row = Instantiate(_rowPrefab, _rowsContainer);
                 // El sheet viaja como override: en selección de clase todavía no
                 // hay CurrentHero y sin esto la fila mostraría el daño de catálogo.
-                row.Bind(combo, sheet);
-                _rows.Add(row);
+                if (useDrawerRows)
+                {
+                    var row = Instantiate(_contractRowPrefab, _rowsContainer);
+                    row.Bind(combo, sheet, _uiSettings);
+                    _contractRows.Add(row);
+                }
+                else
+                {
+                    var row = Instantiate(_rowPrefab, _rowsContainer);
+                    row.Bind(combo, sheet);
+                    _rows.Add(row);
+                }
             }
 
             // Boss 3 (§4): refrescar los valores cuando cambie la capa de modificadores.
@@ -154,6 +179,8 @@ namespace Rollgeon.UI.HUD
         {
             for (int i = 0; i < _rows.Count; i++)
                 _rows[i]?.RefreshDamage();
+            for (int i = 0; i < _contractRows.Count; i++)
+                _contractRows[i]?.RefreshDamage();
         }
 
         private void OnDisable()
@@ -171,6 +198,7 @@ namespace Rollgeon.UI.HUD
         public void Clear()
         {
             _rows.Clear();
+            _contractRows.Clear();
             if (_rowsContainer == null) return;
             for (int i = _rowsContainer.childCount - 1; i >= 0; i--)
             {

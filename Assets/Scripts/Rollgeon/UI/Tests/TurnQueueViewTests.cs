@@ -11,9 +11,11 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Verifica que <see cref="TurnQueueView"/> responde a <c>OnTurnQueueBuilt</c>,
-    /// <c>OnTurnStarted</c> y <c>OnEntityDestroyed</c>, y que el rebuild limpia los
-    /// slots previos. Plan §3.10.
+    /// Verifica que <see cref="TurnQueueView"/> arma la ventana del carrusel
+    /// (5 slots por posición de display: activo + 4 próximos) a partir de
+    /// <c>OnTurnQueueBuilt</c>, rota con <c>OnTurnStarted</c> y refleja
+    /// <c>OnEntityDestroyed</c>. En EditMode las poses aplican por snap
+    /// (sin tweens) — asserts deterministas.
     /// </summary>
     [TestFixture]
     public class TurnQueueViewTests
@@ -29,13 +31,14 @@ namespace Rollgeon.UI.Tests
             _go = new GameObject("TurnQueue");
             _view = _go.AddComponent<TurnQueueView>();
 
-            var containerGO = new GameObject("Container");
+            var containerGO = new GameObject("Container", typeof(RectTransform));
             containerGO.transform.SetParent(_go.transform, false);
             _container = containerGO.transform;
 
             // Prefab "a mano" — un GO con TurnSlotView en una subescena, no instanciable
-            // como asset pero instanciable en runtime con Instantiate().
-            var prefabGO = new GameObject("TurnSlotPrefab");
+            // como asset pero instanciable en runtime con Instantiate(). RectTransform
+            // requerido: el carrusel posiciona/escala los slots a mano.
+            var prefabGO = new GameObject("TurnSlotPrefab", typeof(RectTransform));
             prefabGO.SetActive(false); // evita que el instance "raiz" cuente en el parent
             _prefab = prefabGO.AddComponent<TurnSlotView>();
 
@@ -76,6 +79,13 @@ namespace Rollgeon.UI.Tests
             return sprite;
         }
 
+        private static List<Guid> MakeGuids(int count)
+        {
+            var guids = new List<Guid>(count);
+            for (int i = 0; i < count; i++) guids.Add(Guid.NewGuid());
+            return guids;
+        }
+
         /// <summary>Fake con sprites fijos por guid; sin lazy player.</summary>
         private sealed class FakePortraitResolver : IEntityPortraitResolver
         {
@@ -88,61 +98,122 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void OnTurnQueueBuilt_InstantiatesOneSlotPerGuid()
+        public void OnTurnQueueBuilt_NonEmptyOrder_CreatesWindowOfFiveSlots()
         {
+            // Arrange
             _view.Bind(Guid.NewGuid());
-            var guids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+            var guids = MakeGuids(3);
 
+            // Act
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
 
-            Assert.AreEqual(3, _container.childCount,
-                "Debe instanciarse un slot por guid en la lista.");
+            // Assert — la ventana es fija (2 pasados + activo + 2 próximos),
+            // independiente de la cantidad de participantes.
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount,
+                "La ventana del carrusel siempre instancia 5 slots.");
         }
 
         [Test]
-        public void OnTurnQueueBuilt_Rebuild_ClearsPreviousSlots()
+        public void OnTurnQueueBuilt_Rebuild_ReplacesPreviousWindow()
         {
+            // Arrange
             _view.Bind(Guid.NewGuid());
-            var first = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+            var first = MakeGuids(3);
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)first, 0);
-            Assert.AreEqual(3, _container.childCount);
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount);
 
-            // Destroy() es async — en EditMode los objects persisten hasta el siguiente frame.
-            // Por eso usamos DestroyImmediate a traves del fallback en ClearSlots (Application.isPlaying = false).
-            var second = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            // Act — set distinto: rebuild completo de la ventana.
+            var second = MakeGuids(2);
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)second, 1);
 
-            Assert.AreEqual(2, _container.childCount,
-                "Un rebuild con menos guids debe dejar exactamente N hijos.");
+            // Assert — sigue habiendo exactamente 5 hijos (sin leak) y los guids
+            // viejos ya no están en pantalla.
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount,
+                "Un rebuild no debe acumular slots viejos.");
+            Assert.IsNull(_view.FindSlot(first[0]),
+                "Los guids del round anterior no deben seguir visibles.");
+            Assert.IsNotNull(_view.FindSlot(second[0]));
         }
 
         [Test]
-        public void OnTurnStarted_HighlightsCorrectSlot()
+        public void OnTurnQueueBuilt_SameSequence_KeepsSlotInstances()
         {
+            // Arrange — el wrap de round re-dispara el evento con la misma secuencia;
+            // la vista no debe destruir/recrear slots (el loop quedaría con un pop).
             _view.Bind(Guid.NewGuid());
-            var guids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+            var guids = MakeGuids(4);
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
+            var firstChild = _container.GetChild(0).gameObject;
+
+            // Act — mismo contenido, round siguiente.
+            EventManager.Trigger(EventName.OnTurnQueueBuilt,
+                (IReadOnlyList<Guid>)new List<Guid>(guids), 1);
+
+            // Assert
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount);
+            Assert.AreSame(firstChild, _container.GetChild(0).gameObject,
+                "Con la misma secuencia las instancias de slot deben sobrevivir.");
+        }
+
+        [Test]
+        public void OnTurnStarted_MovesActorToLeftmostSlot()
+        {
+            // Arrange — N=5: cada guid aparece una sola vez en la ventana.
+            _view.Bind(Guid.NewGuid());
+            var guids = MakeGuids(5);
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
 
+            // Act
             EventManager.Trigger(EventName.OnTurnStarted, guids[1]);
 
+            // Assert — en EditMode el shift es snap: el actor del turno queda a la
+            // izquierda de todos los demás slots.
             var slot = _view.FindSlot(guids[1]);
             Assert.IsNotNull(slot);
-            // No hay "IsActive" publico en TurnSlotView — verificamos que el slot existe
-            // y el flujo corrio sin exceptions. Smoke coverage.
             Assert.AreEqual(guids[1], slot.SlotGuid);
+            float activeX = slot.Rect.anchoredPosition.x;
+            for (int i = 0; i < _container.childCount; i++)
+            {
+                var child = (RectTransform)_container.GetChild(i);
+                if (child == slot.Rect) continue;
+                Assert.Less(activeX, child.anchoredPosition.x,
+                    "El actor con el turno debe ser el slot de más a la izquierda.");
+            }
         }
 
         [Test]
-        public void OnEntityDestroyed_MarksSlotDestroyed()
+        public void OnTurnStarted_ThreeParticipants_AdvancesWithoutExceptions()
         {
+            // Arrange — con N=3 la ventana repite actores; el avance no debe romper.
             _view.Bind(Guid.NewGuid());
-            var guids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var guids = MakeGuids(3);
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
 
+            // Act + Assert — un round completo, incluido el wrap.
+            Assert.DoesNotThrow(() =>
+            {
+                EventManager.Trigger(EventName.OnTurnStarted, guids[0]);
+                EventManager.Trigger(EventName.OnTurnStarted, guids[1]);
+                EventManager.Trigger(EventName.OnTurnStarted, guids[2]);
+                EventManager.Trigger(EventName.OnTurnStarted, guids[0]);
+            });
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount);
+        }
+
+        [Test]
+        public void OnEntityDestroyed_MarksVisibleSlotDestroyed()
+        {
+            // Arrange
+            _view.Bind(Guid.NewGuid());
+            var guids = MakeGuids(2);
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
+
+            // Act
             EventManager.Trigger(EventName.OnEntityDestroyed, guids[0], Guid.Empty);
 
+            // Assert — el guid destruido sigue visible (marcado) hasta el próximo build.
             var slot = _view.FindSlot(guids[0]);
-            Assert.IsNotNull(slot, "El slot debe seguir en el mapping post-destroyed.");
+            Assert.IsNotNull(slot, "El slot debe seguir en la ventana post-destroyed.");
         }
 
         [Test]
@@ -192,23 +263,26 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange
             AddPortraitImageToPrefab();
-            var guids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var guids = MakeGuids(2);
 
             // Act + Assert
             _view.Bind(Guid.NewGuid());
             Assert.DoesNotThrow(() => _view.RebuildQueue(guids));
-            Assert.AreEqual(2, _container.childCount);
+            Assert.AreEqual(TurnQueueCarouselLayout.WindowSize, _container.childCount);
         }
 
         [Test]
         public void Unbind_StopsReactingToBuildEvents()
         {
+            // Arrange
             _view.Bind(Guid.NewGuid());
             _view.Unbind();
 
-            var guids = new List<Guid> { Guid.NewGuid() };
+            // Act
+            var guids = MakeGuids(1);
             EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
 
+            // Assert
             Assert.AreEqual(0, _container.childCount,
                 "Tras Unbind no se deben procesar nuevos eventos de queue built.");
         }
