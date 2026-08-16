@@ -221,6 +221,37 @@ MonoBehaviour:
       Data: true
     - Name: Percent
       Entry: 4
+      Data: 0.7
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 22|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 24|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Percent
+      Entry: 4
       Data: 0.5
     - Name: 
       Entry: 8
@@ -233,7 +264,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 22|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaReelToll, Rollgeon
+      Data: 25|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaReelToll, Rollgeon
     - Name: Cap
       Entry: 3
       Data: 2
@@ -242,7 +273,7 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 23|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaReelToll, Rollgeon
+      Data: 26|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaReelToll, Rollgeon
     - Name: Cap
       Entry: 3
       Data: 1
@@ -252,52 +283,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
+    - Name: Else
       Entry: 7
-      Data: 24|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
-    - Name: Children
-      Entry: 7
-      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 2
-    - Name: 
-      Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Bosses.Bandida.AINode_SpawnReels, Rollgeon
-    - Name: ReelData
-      Entry: 10
-      Data: 0
-    - Name: OnBreakHazard
-      Entry: 10
-      Data: 1
-    - Name: Count
-      Entry: 3
-      Data: 3
-    - Name: RespawnDelayTurns
-      Entry: 3
-      Data: 2
-    - Name: CountdownOnRespawn
-      Entry: 3
-      Data: 2
-    - Name: Direction
-      Entry: 3
-      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -325,23 +316,72 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 31|Rollgeon.Combat.AI.Bosses.Bandida.AINode_SpawnReels, Rollgeon
+    - Name: ReelData
+      Entry: 10
+      Data: 0
+    - Name: OnBreakHazard
+      Entry: 10
+      Data: 1
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: RespawnDelayTurns
+      Entry: 3
+      Data: 2
+    - Name: CountdownOnRespawn
+      Entry: 3
+      Data: 2
+    - Name: Direction
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 32|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 36|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 33|Rollgeon.PreConditions.Concretes.PcJackpotCountdown, Rollgeon
+      Data: 37|Rollgeon.PreConditions.Concretes.PcJackpotCountdown, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -365,17 +405,17 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 35|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 39|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 0
@@ -402,7 +442,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Bosses.Bandida.AINode_ResetJackpotCountdown, Rollgeon
+      Data: 41|Rollgeon.Combat.AI.Bosses.Bandida.AINode_ResetJackpotCountdown, Rollgeon
     - Name: Value
       Entry: 3
       Data: 2
@@ -426,20 +466,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 39|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 40|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
+      Data: 44|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -460,7 +500,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 41|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaArm, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Bosses.Bandida.AINode_BandidaArm, Rollgeon
     - Name: Damage
       Entry: 3
       Data: 12
@@ -496,7 +536,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 46|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -525,7 +565,7 @@ MonoBehaviour:
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: combo.ladder
   WeaknessMultiplierOverride: 1.5
-  BaseHP: 140
+  BaseHP: 120
   BaseAttack: 20
   BaseHealStrength: 0
   BaseSpeed: 4

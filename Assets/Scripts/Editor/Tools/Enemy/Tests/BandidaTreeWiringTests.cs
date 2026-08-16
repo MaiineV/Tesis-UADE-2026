@@ -162,6 +162,50 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(statMod.EmitPhaseChangedEvent);
         }
 
+        /// <summary>
+        /// El peaje no cobra desde el turno 1: es el primer piso, y los primeros turnos tienen que
+        /// enseñar que la fila se rompe antes de cobrarle al jugador por no haberla roto.
+        /// </summary>
+        [Test]
+        public void ReelToll_StaysOff_UntilTheBossDropsBelowItsThreshold()
+        {
+            var tolls = Descendants(_root).OfType<AINode_BandidaReelToll>().ToList();
+            Assert.IsNotEmpty(tolls, "El peaje no está en el árbol.");
+
+            // El gate que lo enciende: el único If con el umbral del peaje.
+            var gate = Descendants(_root).OfType<AINode_If>()
+                .FirstOrDefault(n => n.Conditions.OfType<PcOwnerHpBelow>()
+                    .Any(c => Mathf.Approximately(c.Percent, BandidaAssetBuilder.ReelTollHpThreshold)));
+
+            Assert.IsNotNull(gate,
+                $"El peaje tiene que estar detrás de un PcOwnerHpBelow al " +
+                $"{BandidaAssetBuilder.ReelTollHpThreshold:P0}; si cuelga suelto del root cobra " +
+                "desde el primer turno.");
+
+            CollectionAssert.IsEmpty(Descendants(gate.Else).OfType<AINode_BandidaReelToll>(),
+                "Con el jefe por encima del umbral no se cobra nada.");
+            CollectionAssert.IsNotEmpty(Descendants(gate.Then).OfType<AINode_BandidaReelToll>());
+        }
+
+        /// <summary>
+        /// El techo sube en fase 2, pero nunca por encima del regen del jugador.
+        /// </summary>
+        [Test]
+        public void ReelToll_HardensInPhaseTwo_WithoutOutpacingThePlayersRegen()
+        {
+            var caps = Descendants(_root).OfType<AINode_BandidaReelToll>()
+                .Select(t => t.Cap).OrderBy(c => c).ToList();
+
+            CollectionAssert.AreEqual(
+                new[] { BandidaAssetBuilder.ReelTollCapPhase1, BandidaAssetBuilder.ReelTollCapPhase2 },
+                caps);
+
+            // EnergyRegenBase del jugador. Un techo mayor lo deja en energía neta negativa para
+            // siempre, que deja de ser una palanca y pasa a ser un candado.
+            Assert.LessOrEqual(BandidaAssetBuilder.ReelTollCapPhase2, 2,
+                "El peaje no puede superar el regen del jugador.");
+        }
+
         [Test]
         public void PhaseTwo_HoldsTheMiddleReel_AndDropsRespawnToOneTurn()
         {
@@ -348,9 +392,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 BandidaAssetBuilder.PopulateEnemyData(boss, _reelData, null);
 
                 Assert.AreEqual("boss.one_armed", boss.EntityId);
-                Assert.AreEqual(140, boss.BaseHP,
-                    "Piso 2: ~7 turnos con el golpe base del piso (mediana 24). Va más bajo que " +
-                    "sus pares porque los rodillos aportan el resto del presupuesto.");
+                Assert.AreEqual(BandidaAssetBuilder.BossHp, boss.BaseHP);
+                Assert.AreEqual(120, BandidaAssetBuilder.BossHp,
+                    "Piso 1: la misma vida que el Croupier, ~6 turnos con la mediana del piso (20). " +
+                    "Su vida no es el presupuesto de la pelea — los rodillos aportan el resto, y la " +
+                    "palanca de duración real es el delay de reposición.");
                 Assert.AreEqual(20, boss.BaseAttack);
                 Assert.AreEqual("combo.ladder", boss.WeaknessComboId,
                     "Debilidad: la mano que no alinea (escalera).");

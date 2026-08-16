@@ -52,17 +52,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string ReelEntityId = "obj.reel";
 
         /// <summary>
-        /// Piso 1: ~7 turnos con el golpe base del piso (13-27, mediana 20). Va por encima del
-        /// Croupier (120, ~6 turnos) porque su vida no es todo el presupuesto de la pelea: los
-        /// tres rodillos de <see cref="ReelHp"/> aportan el resto, y como reaparecen, la palanca
-        /// de duración real es <see cref="RespawnDelayPhase1"/> y no este número.
+        /// Piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20). La misma vida que el
+        /// Croupier, porque son las dos caras del mismo piso y ninguna tiene por qué durar más.
         /// </summary>
         /// <remarks>
-        /// El número no cambió al corregirle el piso — estaba derivado contra una mediana de 24
-        /// que era del piso 2, y contra la del piso 1 da los mismos ~7 turnos por casualidad
-        /// aritmética (140/20 = 7). Lo que estaba mal era la cuenta escrita, no el balance.
+        /// <b>Su vida no es el presupuesto de la pelea.</b> Los tres rodillos de
+        /// <see cref="ReelHp"/> aportan el resto, y como reaparecen, la palanca de duración real
+        /// es <see cref="RespawnDelayPhase1"/> — no este número. Por eso bajarla de 140 a 120 no
+        /// le saca dificultad: le saca los dos turnos de relleno que tenía de más contra su par
+        /// de piso, y deja que lo que alargue la pelea sea la fila, que es lo que el jugador
+        /// puede contestar.
         /// </remarks>
-        public const int BossHp = 140;
+        public const int BossHp = 120;
         public const int BossAttack = 20;
         public const int BossSpeed = 4;
         public const int BossEnergy = 3;
@@ -114,6 +115,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const float Phase2HpThreshold = 0.5f;
         public const int Phase2Index = 2;
+
+        /// <summary>
+        /// A partir de qué vida del jefe la fila empieza a cobrar peaje.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>No desde el turno 1.</b> Es el primer piso: los primeros turnos tienen que enseñar
+        /// que la fila se rompe, no cobrarle al jugador antes de que entienda por qué. El peaje
+        /// llega cuando ya vio el ciclo y decidió ignorarlo.
+        /// </para>
+        /// <para>
+        /// <b>70% y no 50%.</b> Al 50% caería exactamente sobre <see cref="Phase2HpThreshold"/> y
+        /// la pelea tendría un solo salto con tres cosas encima (traba el rodillo del medio,
+        /// acelera la reposición y arranca el peaje). Al 70% la pelea gana un tercer beat propio:
+        /// apertura → aparece el peaje → fase 2 lo endurece. Con 120 de vida y ~6 turnos, el 50%
+        /// además dejaría el peaje corriendo apenas 3 turnos, que casi no se registra.
+        /// </para>
+        /// </remarks>
+        public const float ReelTollHpThreshold = 0.7f;
 
         /// <summary>
         /// Techo de energía que la fila le cobra al jugador por turno. Dimensionado contra el kit
@@ -255,6 +275,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // el jugador dejó en pie durante su turno, no por los rodillos que la máquina
                     // está por reponer en este mismo paso. Cobrar por un rodillo que todavía no
                     // existe sería un peaje que el jugador no pudo evitar.
+                    //
+                    // Arranca recién bajo ReelTollHpThreshold: los primeros turnos enseñan la fila.
                     IsolateFailure(BuildReelToll()),
 
                     IsolateFailure(BuildReelRow(reelData, reelFire)),
@@ -264,13 +286,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El peaje de la fila, con su techo por fase. Es una rama persistente y no un
-        /// <c>AINode_Once</c>: el cobro pasa todos los turnos, lo que cambia con la fase es cuánto.
+        /// El peaje de la fila: dos gates anidados, uno que lo enciende y otro que lo endurece.
         /// </summary>
         /// <remarks>
-        /// Fase 1 cobra 1 y fase 2 cobra 2, contra un regen de <c>EnergyRegenBase</c> = 2. El techo
-        /// de fase 2 empata el regen a propósito: el jugador deja de acumular margen, pero nunca
-        /// entra en energía neta negativa. Ver los remarks de <see cref="AINode_BandidaReelToll"/>.
+        /// <para>
+        /// Ramas persistentes y no <c>AINode_Once</c>: el cobro pasa todos los turnos, lo que
+        /// cambia con la vida del jefe es si cobra y cuánto.
+        /// </para>
+        /// <para>
+        /// Por encima de <see cref="ReelTollHpThreshold"/> no cobra nada — los primeros turnos
+        /// enseñan la fila. Debajo cobra <see cref="ReelTollCapPhase1"/>, y debajo de
+        /// <see cref="Phase2HpThreshold"/> pasa a <see cref="ReelTollCapPhase2"/>, que empata el
+        /// <c>EnergyRegenBase</c> del jugador (2): le saca el margen sin dejarlo nunca en energía
+        /// neta negativa. Ver los remarks de <see cref="AINode_BandidaReelToll"/>.
+        /// </para>
         /// </remarks>
         private static AINode_If BuildReelToll()
         {
@@ -278,10 +307,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Conditions = new List<BasePreCondition>
                 {
-                    new PcOwnerHpBelow { Percent = Phase2HpThreshold },
+                    new PcOwnerHpBelow { Percent = ReelTollHpThreshold },
                 },
-                Then = new AINode_BandidaReelToll { Cap = ReelTollCapPhase2 },
-                Else = new AINode_BandidaReelToll { Cap = ReelTollCapPhase1 },
+                Then = new AINode_If
+                {
+                    Conditions = new List<BasePreCondition>
+                    {
+                        new PcOwnerHpBelow { Percent = Phase2HpThreshold },
+                    },
+                    Then = new AINode_BandidaReelToll { Cap = ReelTollCapPhase2 },
+                    Else = new AINode_BandidaReelToll { Cap = ReelTollCapPhase1 },
+                },
+                Else = new AINode_Wait(),
             };
         }
 
