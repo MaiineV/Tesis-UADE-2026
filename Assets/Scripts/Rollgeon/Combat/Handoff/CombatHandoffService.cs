@@ -896,23 +896,6 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnConfirmRequested = () => DoConfirm();
 
-            hud.OnChainPassRequested = () =>
-            {
-                if (_activeChain == null) return;
-
-                if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
-                    _chainSelectionController.CancelSelection();
-
-                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
-                    chainBudget.EndBudget();
-
-                var chainResolved = _lastFaces ?? Array.Empty<int>();
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
-
-                Debug.Log($"[CombatHandoff] Chain pass at phase {_chainPhaseIndex}");
-                FinishChain(hud, playerGuid, true);
-            };
-
             hud.OnEnergyRerollRequested = () => TryEnergyReroll(hud, playerGuid);
 
             // CNF-008 (grab-to-reroll): en modos manuales el reroll también se inicia

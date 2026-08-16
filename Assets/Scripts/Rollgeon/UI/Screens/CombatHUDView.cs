@@ -95,10 +95,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private PassiveBadgeView _passiveBadge;
 
-        [Tooltip("Opcional — muestra la fase actual de un EffChain.")]
-        [SerializeField]
-        private ChainPhaseIndicatorView _chainPhaseIndicator;
-
         [Tooltip("Opcional — slots de items activos clickables (ej. poción de healing). " +
                  "Si null, no hay UI de items activos en el combate.")]
         [SerializeField]
@@ -207,9 +203,6 @@ namespace Rollgeon.UI.Screens
 
         /// <summary>Delegate que dispara "confirm" (generico, no solo attack).</summary>
         public Action OnConfirmRequested;
-
-        /// <summary>Delegate que dispara "chain pass" (saltear fases restantes del chain).</summary>
-        public Action OnChainPassRequested;
 
         /// <summary>
         /// Delegate que dispara el primer roll de la accion seleccionada. El HUD
@@ -377,7 +370,6 @@ namespace Rollgeon.UI.Screens
             // Canvas_PlayerStatus, que se ve también en exploración. Bindearlo lo haría
             // reaparecer (su Refresh hace SetActive(true)) encima del reemplazo. El
             // componente y su GameObject quedan, desactivados, como rollback.
-            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
             _subViewsBound = true;
@@ -400,7 +392,6 @@ namespace Rollgeon.UI.Screens
             // Unbind sigue siendo seguro e idempotente: cubre el caso de haber quedado
             // bindeado por una versión anterior de la escena.
             if (_passiveBadge != null) _passiveBadge.Unbind();
-            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             _subViewsBound = false;
         }
@@ -555,16 +546,6 @@ namespace Rollgeon.UI.Screens
                 return;
             }
             OnConfirmRequested.Invoke();
-        }
-
-        public void InvokeChainPassRequested()
-        {
-            if (OnChainPassRequested == null)
-            {
-                Debug.LogWarning(LogPrefix + "OnChainPassRequested no cableado.", this);
-                return;
-            }
-            OnChainPassRequested.Invoke();
         }
 
         private void HandleDamageResolvedForFlash(DamageResolvedPayload payload)
