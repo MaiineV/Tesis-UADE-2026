@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Grid;
 using UnityEditor;
@@ -75,6 +76,12 @@ namespace Rollgeon.EditorTools
         // Salas base
         // ======================================================================
 
+        /// <summary>
+        /// <c>RoomSO</c> de boss compartido, del que los seis derivados copian <c>ShellIcon</c>,
+        /// <c>GridSize</c> y <c>EnemyPool</c> para no divergir del resto del wiring.
+        /// </summary>
+        private const string SharedBossRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss01.asset";
+
         private const string FloorOneBaseRoom = "Assets/Prefabs/Rooms/FloorOne/Boss_Room01.prefab";
         private const string FloorTwoBaseRoom = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_FloorTwo01.prefab";
         private const string FloorThreeBaseRoom = "Assets/Prefabs/Rooms/FloorThree/Boss_Room_FloorThree.prefab";
@@ -113,6 +120,7 @@ namespace Rollgeon.EditorTools
                 Floor = 1,
                 BaseRoomPath = FloorOneBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorOne/Boss_Room_Croupier.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Croupier.asset",
                 PropPrefabPath = BarrelProp,
                 BossPlanCell = new Vector2Int(5, 5),
                 // Las dos costuras del paño, recalculadas sobre 11×11: los sectores pasan a ser
@@ -133,6 +141,7 @@ namespace Rollgeon.EditorTools
                 Floor = 2,
                 BaseRoomPath = FloorTwoBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_Bandida.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Bandida.asset",
                 PropPrefabPath = SlotMachineProp,
                 // Contra la pared izquierda: es una máquina atornillada, no camina.
                 BossPlanCell = new Vector2Int(0, 5),
@@ -152,6 +161,7 @@ namespace Rollgeon.EditorTools
                 Floor = 2,
                 BaseRoomPath = FloorTwoBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_Cajero.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Cajero.asset",
                 PropPrefabPath = TableProp,
                 // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
                 BossPlanCell = new Vector2Int(5, 2),
@@ -172,6 +182,7 @@ namespace Rollgeon.EditorTools
                 Floor = 2,
                 BaseRoomPath = FloorTwoBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_Anotador.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Anotador.asset",
                 PropPrefabPath = TableProp,
                 BossPlanCell = new Vector2Int(5, 5),
                 // Cuatro escritorios de 2×1 que dejan libre el corredor central — el camino corto que
@@ -191,6 +202,7 @@ namespace Rollgeon.EditorTools
                 Floor = 3,
                 BaseRoomPath = FloorThreeBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorThree/Boss_Room_Generala.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Generala.asset",
                 PropPrefabPath = null,
                 BossPlanCell = new Vector2Int(5, 5),
                 // Vacío a propósito: sus cinco dados son el terreno, y son móviles. Un obstáculo fijo
@@ -204,6 +216,7 @@ namespace Rollgeon.EditorTools
                 Floor = 3,
                 BaseRoomPath = FloorThreeBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorThree/Boss_Room_Tahur.prefab",
+                OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Tahur.asset",
                 PropPrefabPath = BarrelProp,
                 BossPlanCell = new Vector2Int(5, 5),
                 // Cuatro columnas que encarecen el eje vertical, justo donde el Castigo y La Mesa
@@ -537,10 +550,56 @@ namespace Rollgeon.EditorTools
             // Sobre un path existente reescribe el contenido preservando el GUID: por eso no se borra
             // el asset viejo primero — eso sí rompería las referencias de los RoomSO.
             var saved = PrefabUtility.SaveAsPrefabAsset(contents, plan.OutputRoomPath, out bool success);
-            if (success && saved != null) return true;
+            if (!success || saved == null)
+            {
+                failures.Add($"{plan.BossName}: falló el guardado de '{plan.OutputRoomPath}'.");
+                return false;
+            }
 
-            failures.Add($"{plan.BossName}: falló el guardado de '{plan.OutputRoomPath}'.");
-            return false;
+            return SaveRoomSO(plan, saved, failures);
+        }
+
+        /// <summary>
+        /// Crea o actualiza el <c>RoomSO</c> que envuelve al prefab de la sala. Es lo que referencia el
+        /// <c>WeightedBoss</c> del pool, así que se edita in-place cuando ya existe en vez de borrarlo y
+        /// recrearlo — un GUID nuevo dejaría el campo <c>Room</c> del pool en null sin avisar.
+        /// </summary>
+        /// <remarks>
+        /// El <c>ShellIcon</c> sale de la sala de boss compartida a propósito: si cada jefe trajera el
+        /// suyo, el minimapa revelaría cuál te tocó antes de entrar. Que se vea o no es una decisión de
+        /// diseño aparte; el default es no cambiar lo que hay.
+        /// </remarks>
+        private static bool SaveRoomSO(BossRoomPlan plan, GameObject roomPrefab, List<string> failures)
+        {
+            if (string.IsNullOrEmpty(plan.OutputRoomSOPath)) return true;
+
+            EnsureFolder(Path.GetDirectoryName(plan.OutputRoomSOPath));
+
+            var template = AssetDatabase.LoadAssetAtPath<RoomSO>(SharedBossRoomSOPath);
+            if (template == null)
+            {
+                failures.Add($"{plan.BossName}: no existe '{SharedBossRoomSOPath}' para copiarle el " +
+                             "ShellIcon y el EnemyPool.");
+                return false;
+            }
+
+            var so = AssetDatabase.LoadAssetAtPath<RoomSO>(plan.OutputRoomSOPath);
+            bool isNew = so == null;
+            if (isNew) so = ScriptableObject.CreateInstance<RoomSO>();
+
+            so.RoomId = $"CombatBoss{plan.BossName}";
+            so.DisplayName = $"Boss · {plan.BossName}";
+            so.Type = RoomType.Boss;
+            so.RoomPrefab = roomPrefab;
+            so.GridSize = template.GridSize;
+            so.ShellIcon = template.ShellIcon;
+            so.EnemyPool = template.EnemyPool;
+            so.ForcePossibleSetups = false;
+
+            if (isNew) AssetDatabase.CreateAsset(so, plan.OutputRoomSOPath);
+            else EditorUtility.SetDirty(so);
+
+            return true;
         }
 
         // ======================================================================
@@ -705,6 +764,12 @@ namespace Rollgeon.EditorTools
 
         /// <summary>Sala propia del jefe. Se reescribe sobre este path, que preserva el GUID.</summary>
         public string OutputRoomPath;
+
+        /// <summary>
+        /// <c>RoomSO</c> que envuelve al prefab. Es lo que el <c>WeightedBoss</c> del pool referencia,
+        /// así que su GUID también tiene que sobrevivir a los rebuilds.
+        /// </summary>
+        public string OutputRoomSOPath;
 
         /// <summary>Prop que se instancia en cada celda bloqueada. <c>null</c> = plano sin blockers.</summary>
         public string PropPrefabPath;

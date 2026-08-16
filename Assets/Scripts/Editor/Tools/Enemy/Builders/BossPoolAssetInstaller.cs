@@ -37,6 +37,15 @@ namespace Rollgeon.Editor.Tools
         private const string GeneralaPath = "Assets/Rollgeon/Enemies/ED_Boss_Generala.asset";
         private const string TahurPath = "Assets/Rollgeon/Enemies/ED_Boss_Tahur.asset";
 
+        // Salas propias, las genera 'Rollgeon → Bosses → Build Boss Rooms'. Los jefes viejos no
+        // tienen: se quedan con la sala compartida del piso.
+        private const string CroupierRoom = "Assets/Rollgeon/Rooms/Room_Boss_Croupier.asset";
+        private const string BandidaRoom = "Assets/Rollgeon/Rooms/Room_Boss_Bandida.asset";
+        private const string CajeroRoom = "Assets/Rollgeon/Rooms/Room_Boss_Cajero.asset";
+        private const string AnotadorRoom = "Assets/Rollgeon/Rooms/Room_Boss_Anotador.asset";
+        private const string GeneralaRoom = "Assets/Rollgeon/Rooms/Room_Boss_Generala.asset";
+        private const string TahurRoom = "Assets/Rollgeon/Rooms/Room_Boss_Tahur.asset";
+
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
@@ -46,20 +55,20 @@ namespace Rollgeon.Editor.Tools
             // y su jackpot pega el 60% de la vida — el piso 1 enseña de a una.
             var bp1 = BuildPool("BP_Floor1", new[]
             {
-                Entry(CroupierPath, 1f, true),
+                Entry(CroupierPath, 1f, true, CroupierRoom),
                 Entry(SunkenGrandPath, 1f, false),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
-                Entry(BandidaPath, 1f, true),
-                Entry(CajeroPath, 1f, true),
-                Entry(AnotadorPath, 1f, true),
+                Entry(BandidaPath, 1f, true, BandidaRoom),
+                Entry(CajeroPath, 1f, true, CajeroRoom),
+                Entry(AnotadorPath, 1f, true, AnotadorRoom),
                 Entry(SecurityBossPath, 1f, false),
             });
             var bp3 = BuildPool("BP_Floor3", new[]
             {
-                Entry(GeneralaPath, 1f, true),
-                Entry(TahurPath, 1f, true),
+                Entry(GeneralaPath, 1f, true, GeneralaRoom),
+                Entry(TahurPath, 1f, true, TahurRoom),
                 Entry(GeneralDirectorPath, 1f, false),
             });
 
@@ -114,7 +123,13 @@ namespace Rollgeon.Editor.Tools
             return true;
         }
 
-        private static WeightedBoss Entry(string path, float weight, bool enabled)
+        /// <param name="roomSOPath">
+        /// Sala propia del jefe. <c>null</c> o inexistente ⇒ la entry queda sin <c>Room</c> y la sala
+        /// se sortea del pool del piso, que es el comportamiento previo al vínculo jefe→sala. Los
+        /// jefes viejos (Sunken Grand y compañía) van así a propósito: no tienen sala propia.
+        /// </param>
+        private static WeightedBoss Entry(string path, float weight, bool enabled,
+                                          string roomSOPath = null)
         {
             var boss = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(path);
             if (boss == null)
@@ -123,7 +138,20 @@ namespace Rollgeon.Editor.Tools
                                  "Correr el builder de ese boss y re-correr este instalador.");
                 return null;
             }
-            return new WeightedBoss { Boss = boss, Weight = weight, Enabled = enabled };
+
+            RoomSO room = null;
+            if (!string.IsNullOrEmpty(roomSOPath))
+            {
+                room = AssetDatabase.LoadAssetAtPath<RoomSO>(roomSOPath);
+                if (room == null)
+                {
+                    Debug.LogWarning(LogPrefix + $"Falta la sala '{roomSOPath}' para '{boss.EntityId}' " +
+                                     "— la entry queda sin Room y el piso le va a sortear una sala " +
+                                     "cualquiera. Correr 'Rollgeon → Bosses → Build Boss Rooms'.");
+                }
+            }
+
+            return new WeightedBoss { Boss = boss, Weight = weight, Enabled = enabled, Room = room };
         }
 
         private static BossPoolSO BuildPool(string assetName, IEnumerable<WeightedBoss> entries)
