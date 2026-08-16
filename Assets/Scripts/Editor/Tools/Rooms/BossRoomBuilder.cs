@@ -131,16 +131,17 @@ namespace Rollgeon.EditorTools
                 BaseRoomPath = FloorOneBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorOne/Boss_Room_Croupier.prefab",
                 OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Croupier.asset",
-                PropPrefabPath = BarrelProp,
+                PropPrefabPath = null,
                 BossPlanCell = new Vector2Int(5, 5),
-                // Las dos costuras del paño, recalculadas sobre 11×11: los sectores pasan a ser
-                // 4×5 los de los costados y 3×5 los del medio (x 0-3 | 4-6 | 7-10). Parten el
-                // pasillo central en tres tramos, así que cruzar de tramo obliga a pisar sector.
-                BlockerPlanCells = new[]
-                {
-                    new Vector2Int(3, 5),
-                    new Vector2Int(7, 5),
-                },
+                // Sin blockers propios. Las dos columnas de las costuras del paño caían en (-2,0) y
+                // (2,0) de la sala: a dos casillas del jefe, en el medio exacto del mapa. En pantalla
+                // no se leían como el borde de un sector sino como dos barriles sueltos plantados al
+                // lado de la ruleta, tapando la fila por la que se lo encara de frente.
+                // Dónde empieza y termina cada sector ya lo dice CroupierSectorTelegraph pintando el
+                // piso, que es información que aparece cuando importa (el turno en que se canta el
+                // número) en vez de estar siempre puesta. Igual necesita prefab propio: el grafo
+                // horneado tiene que decir que esta sala no lleva los blockers del resto.
+                BlockerPlanCells = new Vector2Int[0],
             },
             new BossRoomPlan
             {
@@ -179,25 +180,35 @@ namespace Rollgeon.EditorTools
                 PropPrefabPath = TableProp,
                 // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
                 BossPlanCell = new Vector2Int(5, 2),
-                // El mostrador, con las dos aberturas en x=2 y x=8. Va en la fila 5, la única que
-                // cruza la sala entera sin tocar recorte ni mueble: si el mostrador tuviera un hueco
-                // de fábrica, elegir puerta dejaría de ser la decisión del turno.
+                // El mostrador, en la fila 5 — la única que cruza la sala entera sin tocar recorte ni
+                // mueble — con un vano de dos casillas en el medio (plano x=5-6 ⇒ sala x=0-1) además
+                // de las aberturas viejas de x=2 y x=8.
                 //
-                // Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) NO llevan mesa: son los tiles-frente de
-                // las puertas Oeste y Este, y con mesa encima la sala quedaba sellada por los dos
-                // lados. Los dos vanos que quedan no abaratan cruzar: la fila del mostrador es
-                // neutral para el peaje (CashierCounterTollService.IsSameSide devuelve false parado
-                // en ella), así que pasar por la puerta cuesta el mismo turno de exposición que
-                // pasar por una abertura, y encima obliga a caminar hasta la pared.
+                // Por qué el vano del medio. Sin él la sala se jugaba sellada: la abertura Este
+                // (sala (3,0)) es un bolsillo sin salida —el mueble de la sala base tapa la columna
+                // x=3-4 del lado del jefe—, y la mesa que iba en (0,0) horneaba el peor caso posible,
+                // dejando la casilla caminable pero cortándole las cuatro aristas: una isla que el
+                // pathfinding no puede pisar. Quedaba una sola manera real de cruzar por el centro
+                // (sala (-3,0)); el resto era caminar hasta una pared. Dos casillas y no una porque
+                // con una el vano mide exactamente un tile entre dos mesas y ni se lee como paso ni
+                // perdona un error de camino.
+                //
+                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: quedan cinco mesas
+                // y CashierCounterTollService cobra por el lado en el que cerrás el turno, no por
+                // dónde cruzaste. Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) NO llevan mesa: son los
+                // tiles-frente de las puertas Oeste y Este, y con mesa encima la sala quedaba sellada
+                // por los dos lados. Ninguno de los vanos abarata cruzar: la fila del mostrador es
+                // neutral para el peaje (IsSameSide devuelve false parado en ella), así que asomarse
+                // nunca cobra y comprometerse con un lado siempre cuesta lo mismo.
                 BlockerPlanCells = new[]
                 {
                     new Vector2Int(1, 5),
-                    new Vector2Int(3, 5), new Vector2Int(4, 5), new Vector2Int(5, 5),
-                    new Vector2Int(6, 5), new Vector2Int(7, 5),
+                    new Vector2Int(3, 5), new Vector2Int(4, 5),
+                    new Vector2Int(7, 5),
                     new Vector2Int(9, 5),
                 },
                 // La mesa viene autorada a 1.508 de ancho: a una casilla de paso, cada una se comía
-                // media casilla de sus vecinas y las dos aberturas quedaban en ~0.5 visibles. El
+                // media casilla de sus vecinas y las aberturas quedaban en ~0.5 visibles. El
                 // mostrador se leía continuo de punta a punta y elegir puerta —la decisión del turno—
                 // no existía en pantalla. Se corrige SÓLO X: uniforme le bajaba también la altura y
                 // el prop se caía de la banda de walk clearance (dejaba de bloquear).
@@ -828,8 +839,8 @@ namespace Rollgeon.EditorTools
         /// </summary>
         /// <remarks>
         /// Nació con el mostrador del Cajero: <c>Tablev02</c> viene autorada a 1.508 × 1 × 1.805, así
-        /// que nueve mesas puestas a una casilla de paso se pisan entre sí y las dos aberturas del
-        /// plano (que son de una casilla) quedaban tapadas por el voladizo de las vecinas — el
+        /// que las mesas puestas a una casilla de paso se pisan entre sí y las aberturas del plano
+        /// (la más angosta es de una casilla) quedaban tapadas por el voladizo de las vecinas — el
         /// mostrador se veía continuo de punta a punta y "elegir puerta", que es la decisión del
         /// turno, no existía en pantalla.
         /// <para>
