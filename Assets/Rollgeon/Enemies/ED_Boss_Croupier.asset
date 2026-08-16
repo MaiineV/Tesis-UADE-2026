@@ -45,7 +45,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 5
+      Data: 6
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Bosses.Croupier.AINode_DetonateSungSectors, Rollgeon
@@ -236,22 +236,37 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 22|Rollgeon.Combat.AI.Bosses.Croupier.AINode_MarkSungSectors, Rollgeon
-    - Name: SectorDamage
+      Data: 22|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+    - Name: Target
       Entry: 3
-      Data: 20
-    - Name: SectorDamagePhase2
-      Entry: 3
-      Data: 12
-    - Name: Kind
+      Data: 0
+    - Name: Count
       Entry: 3
       Data: 1
+    - Name: DirectedIndex
+      Entry: 7
+      Data: 23|Rollgeon.Combat.AI.Bosses.Croupier.AIReadCroupierWheelNumber, Rollgeon
+    - Name: Source
+      Entry: 3
+      Data: 1
+    - Name: Slot
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: BlockVfxId
+      Entry: 1
+      Data: vfx.boss.croupier.confisca
+    - Name: BlockFeelId
+      Entry: 1
+      Data: feel.boss.croupier.confisca
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
-      Data: 23|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 24|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -266,17 +281,57 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 26|Rollgeon.Combat.AI.Bosses.Croupier.AINode_IgniteDetonatedSectors,
+      Data: 27|Rollgeon.Combat.AI.Bosses.Croupier.AINode_MarkSungSectors, Rollgeon
+    - Name: SectorDamage
+      Entry: 3
+      Data: 20
+    - Name: SectorDamagePhase2
+      Entry: 3
+      Data: 12
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 28|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 31|Rollgeon.Combat.AI.Bosses.Croupier.AINode_IgniteDetonatedSectors,
         Rollgeon
     - Name: Fire
       Entry: 10
@@ -292,7 +347,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 

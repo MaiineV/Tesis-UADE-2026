@@ -239,7 +239,7 @@ GameObject:
   - component: {fileID: 3529599487737059201}
   - component: {fileID: 2486633914082012267}
   - component: {fileID: 5952184631900956271}
-  - component: {fileID: 1176256801865552233}
+  - component: {fileID: 7059205044590506028}
   m_Layer: 0
   m_Name: PF_Boss_Croupier
   m_TagString: Untagged
@@ -359,7 +359,7 @@ MonoBehaviour:
   - {fileID: 5170621170238885239}
   - {fileID: 6924518004550143542}
   - {fileID: 8111168606145143464}
---- !u!114 &1176256801865552233
+--- !u!114 &7059205044590506028
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -710,7 +710,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7299804447967837579, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1038721878051634782}
+      addedObject: {fileID: 803594729906005808}
   m_SourcePrefab: {fileID: 100100000, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
 --- !u!137 &1564592436959804221 stripped
 SkinnedMeshRenderer:
@@ -752,7 +752,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7299804447967837579, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
   m_PrefabInstance: {fileID: 1006947776020186960}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1038721878051634782
+--- !u!114 &803594729906005808
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
