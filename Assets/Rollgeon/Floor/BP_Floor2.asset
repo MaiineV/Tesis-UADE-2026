@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 1
     - Name: Enabled
       Entry: 5
-      Data: true
+      Data: false
     - Name: Room
       Entry: 10
       Data: 3
@@ -100,7 +100,7 @@ MonoBehaviour:
     Room: {fileID: 11400000, guid: 217e0bd547af4374999f4b413511c792, type: 2}
   - Boss: {fileID: 11400000, guid: 71174d9940ce68d4981b353d28505d6b, type: 2}
     Weight: 1
-    Enabled: 1
+    Enabled: 0
     Room: {fileID: 11400000, guid: ac5197ebfee581f468f58365d96c0917, type: 2}
   - Boss: {fileID: 11400000, guid: ebf73f9c5131eb94cbcb06d6f9b90529, type: 2}
     Weight: 1

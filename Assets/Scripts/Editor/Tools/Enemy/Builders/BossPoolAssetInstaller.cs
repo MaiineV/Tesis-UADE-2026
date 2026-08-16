@@ -49,41 +49,44 @@ namespace Rollgeon.Editor.Tools
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
-            // Dos jefes activos por piso, 90 / 10 (los pesos son relativos, así que 9/1).
+            // UN jefe activo por piso: Croupier, Cajero y Generala. Los otros cinco quedan en el
+            // pool con Enabled = off, que es 0% de chance de salir.
             //
-            // El principal se lleva el 90% porque es el que está en pulido: la mayoría de las runs
-            // de playtest tienen que caer en el jefe cuya legibilidad estamos arreglando. El
-            // secundario es el slot de variedad — con un solo jefe por piso la run se aprende de
-            // memoria: sabés qué te toca antes de bajar.
+            // Por qué uno solo y no una rotación. Tres jefes terminados se pueden mirar de punta a
+            // punta: animación que matchea el ataque, sala, UI, diálogo. Seis a medias no — y un
+            // jefe a medias saliendo 1 de cada 10 peleas es exactamente el bug que no se encuentra,
+            // porque hay que jugar diez runs para verlo una vez. El costo es que la run se aprende
+            // de memoria; se paga a gusto hasta que los otros tres estén al mismo nivel.
             //
-            // Los tres viejos (Sunken Grand, Security Boss, General Director) quedan en el pool
-            // DESACTIVADOS, y no por deuda de diseño: 'Rollgeon → Enemies → Audit Rigs' los mostró
-            // sin rig — cero skinned meshes, cero animaciones. Son arte estático. Un jefe congelado
-            // saliendo 1 de cada 10 peleas se ve peor que un piso con dos jefes, así que vuelven
-            // recién cuando tengan animaciones. La entry queda para poder re-activarlos de una.
+            // Los tres viejos (Sunken Grand, Security Boss, General Director) están apagados por
+            // otro motivo: 'Rollgeon → Enemies → Audit Rigs' los mostró sin rig — cero skinned
+            // meshes, cero animaciones. Son arte estático.
+            //
+            // Los tres nuevos en banco (Bandida, Anotador, Tahúr) conservan peso y sala: re-activar
+            // es poner Enabled = on en la entry, sin volver a cablear nada.
             //
             // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida, su oro y
             // sus builders siempre dijeron piso 1.
             const float MainWeight = 9f;
-            const float VarietyWeight = 1f;
+            const float BenchedWeight = 1f;
 
             var bp1 = BuildPool("BP_Floor1", new[]
             {
                 Entry(CroupierPath, MainWeight, true, CroupierRoom),
-                Entry(BandidaPath, VarietyWeight, true, BandidaRoom),
-                Entry(SunkenGrandPath, VarietyWeight, false),
+                Entry(BandidaPath, BenchedWeight, false, BandidaRoom),
+                Entry(SunkenGrandPath, BenchedWeight, false),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
                 Entry(CajeroPath, MainWeight, true, CajeroRoom),
-                Entry(AnotadorPath, VarietyWeight, true, AnotadorRoom),
-                Entry(SecurityBossPath, VarietyWeight, false),
+                Entry(AnotadorPath, BenchedWeight, false, AnotadorRoom),
+                Entry(SecurityBossPath, BenchedWeight, false),
             });
             var bp3 = BuildPool("BP_Floor3", new[]
             {
                 Entry(GeneralaPath, MainWeight, true, GeneralaRoom),
-                Entry(TahurPath, VarietyWeight, true, TahurRoom),
-                Entry(GeneralDirectorPath, VarietyWeight, false),
+                Entry(TahurPath, BenchedWeight, false, TahurRoom),
+                Entry(GeneralDirectorPath, BenchedWeight, false),
             });
 
             AssignToLayout(Floor1LayoutPath, bp1);

@@ -31,21 +31,18 @@ namespace Rollgeon.Dungeon.Tests
         private static readonly string[] AllFloors = { Floor1, Floor2, Floor3 };
 
         // legacyBossId: el boss del wiring previo (manda si el layout no tiene pool). Con pool,
-        // los TRES pisos lo SUPLANTAN: el viejo queda en el pool desactivado y los activos son los
-        // jefes nuevos.
+        // los TRES pisos lo SUPLANTAN: el viejo queda en el pool desactivado y el activo es el
+        // jefe nuevo del piso.
         //
-        // Dos activos por piso, 90 / 10: el principal (el que está en pulido) se lleva la mayoría
-        // de las runs y el secundario es el slot de variedad. Con un solo jefe por piso la run se
-        // aprende de memoria: sabés qué te toca antes de bajar.
-        //
-        // Los viejos están apagados porque no tienen rig — cero skinned meshes, cero animaciones
-        // (ver 'Rollgeon → Enemies → Audit Rigs'). Vuelven cuando tengan animaciones.
+        // UN activo por piso: Croupier, Cajero y Generala son los tres terminados. Los otros cinco
+        // están en el pool con Enabled = off. Un jefe a medias saliendo 1 de cada 10 peleas es el
+        // bug que no se encuentra — hay que jugar diez runs para verlo una vez.
         //
         // La Bandida ('boss.one_armed') es del piso 1 — su vida, su oro y sus builders siempre lo
         // dijeron; estuvo un tiempo en el pool del 2 por error.
-        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier", "boss.one_armed" })]
-        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier", "boss.scorekeeper" })]
-        [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala", "boss.tahur" })]
+        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier" })]
+        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier" })]
+        [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala" })]
         public void FloorBossRoom_ResolvesToExpectedBoss(
             string layoutPath, string legacyBossId, string[] expectedActiveWithPool)
         {
@@ -83,11 +80,11 @@ namespace Rollgeon.Dungeon.Tests
         [TestCase(Floor1, "boss.croupier")]
         [TestCase(Floor2, "boss.cashier")]
         [TestCase(Floor3, "boss.la_generala")]
-        public void FloorPool_GivesTheMainBossNineOutOfTenRuns(string layoutPath, string mainBossId)
+        public void FloorPool_GivesTheMainBossEveryRun(string layoutPath, string mainBossId)
         {
-            // Arrange — el principal es el que está en pulido: la mayoría de las runs de playtest
-            // tienen que caer en él. Si los tres pesaran igual, dos de cada tres peleas serían de
-            // los jefes que NO estamos iterando.
+            // Arrange — mientras haya tres jefes terminados y cinco a medias, el piso tiene que
+            // dar SIEMPRE el terminado. Un secundario al 10% no se testea: sale una vez cada diez
+            // runs, que es la frecuencia justa para que un bug suyo llegue a la entrega.
             var pool = LoadLayout(layoutPath).BossPool;
             Assert.IsNotNull(pool, $"{layoutPath} no tiene BossPool asignado.");
 
@@ -103,9 +100,36 @@ namespace Rollgeon.Dungeon.Tests
 
             // Assert
             Assert.Greater(total, 0f, $"{pool.name}: ningún boss activo.");
-            Assert.AreEqual(0.9f, main / total, 0.001f,
-                $"{pool.name}: '{mainBossId}' debería llevarse el 90% del roll. " +
+            Assert.AreEqual(1f, main / total, 0.001f,
+                $"{pool.name}: '{mainBossId}' debería llevarse el 100% del roll. " +
                 $"Pesos activos: [{string.Join(", ", pool.Entries.Where(BossPoolSO.IsActive).Select(e => $"{e.Boss.EntityId}={e.Weight}"))}].");
+        }
+
+        /// <summary>
+        /// Los tres nuevos que quedaron en banco siguen en el pool, con sala. Re-activarlos tiene
+        /// que ser poner <c>Enabled = on</c> y nada más.
+        /// </summary>
+        [TestCase(Floor1, "boss.one_armed")]
+        [TestCase(Floor2, "boss.scorekeeper")]
+        [TestCase(Floor3, "boss.tahur")]
+        public void TheBenchedBosses_StayInThePoolWithTheirRoom(string layoutPath, string benchedId)
+        {
+            // Arrange
+            var pool = LoadLayout(layoutPath).BossPool;
+            Assert.IsNotNull(pool, $"{layoutPath} no tiene BossPool asignado.");
+
+            // Act
+            var entry = pool.Entries.FirstOrDefault(e => e?.Boss != null && e.Boss.EntityId == benchedId);
+
+            // Assert — borrar la entry en vez de apagarla es lo que convierte "vuelve cuando esté
+            // listo" en "hay que rearmarlo desde cero".
+            Assert.IsNotNull(entry, $"{pool.name}: '{benchedId}' desapareció del pool en vez de " +
+                                    "quedar desactivado.");
+            Assert.IsFalse(BossPoolSO.IsActive(entry),
+                $"{pool.name}: '{benchedId}' está activo. Sólo salen los tres terminados.");
+            Assert.IsNotNull(entry.Room,
+                $"{pool.name}: '{benchedId}' perdió su sala mientras estaba en banco — " +
+                "re-activarlo lo dejaría peleando en una sala cualquiera del piso.");
         }
 
         [Test]
@@ -190,10 +214,11 @@ namespace Rollgeon.Dungeon.Tests
             var layout = LoadLayout(layoutPath);
             Assert.IsNotNull(layout.BossPool, $"'{layout.name}' no tiene BossPool asignado.");
 
-            // Act / Assert
+            // Act / Assert — se recorren TODAS las entries, no sólo las activas: los jefes en
+            // banco tienen que conservar su cableado, o "re-activar" deja de ser un toggle.
             foreach (var entry in layout.BossPool.Entries)
             {
-                if (!BossPoolSO.IsActive(entry)) continue;
+                if (entry?.Boss == null) continue;
 
                 // Sin Room = "sorteá una sala del piso", que es el camino legacy y es lo correcto
                 // para los jefes viejos: nunca tuvieron terreno propio. Exigírselo los dejaría
@@ -207,9 +232,9 @@ namespace Rollgeon.Dungeon.Tests
                 }
 
                 Assert.IsNotNull(entry.Room,
-                    $"'{entry.Boss.EntityId}' está activo en '{layout.BossPool.name}' pero no tiene " +
-                    "Room: el piso le va a sortear una sala cualquiera, con los obstáculos de otro " +
-                    "jefe. Correr 'Rollgeon → Bosses → Build Boss Rooms' y después " +
+                    $"'{entry.Boss.EntityId}' está en '{layout.BossPool.name}' sin Room: el piso le " +
+                    "va a sortear una sala cualquiera, con los obstáculos de otro jefe. Correr " +
+                    "'Rollgeon → Bosses → Build Boss Rooms' y después " +
                     "'Tools → Rollgeon → Bosses → Build Floor Pools'.");
                 Assert.AreEqual(RoomType.Boss, entry.Room.Type,
                     $"La sala de '{entry.Boss.EntityId}' no es de tipo Boss.");
