@@ -59,18 +59,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void EveryPrefab_MovesTheWayItsRigAnimates()
+        public void EveryRigWithATeleportClip_Blinks()
         {
-            // Arrange / Act / Assert — una sola regla para todo el bestiario, en las dos direcciones:
-            // clip de teletransporte ⇒ Blink, y sin clip de teletransporte ⇒ Walk.
+            // Arrange / Act / Assert — la regla base: si el clip de movimiento es un TP, el cuerpo
+            // tiene que saltar. Los parches de ForcedBlinkEntityIds pueden agregar más Blinks, así
+            // que acá se afirma una sola dirección; la otra la cubre la lista de abajo.
             foreach (var prefab in VisualPrefabs())
             {
-                var expected = Teleports(prefab)
-                    ? EntityPawn.LocomotionStyle.Blink
-                    : EntityPawn.LocomotionStyle.Walk;
+                if (!Teleports(prefab)) continue;
 
-                Assert.AreEqual(expected, StyleOf(prefab),
-                    $"'{prefab.name}': el rig y la locomoción no coinciden. " +
+                Assert.AreEqual(EntityPawn.LocomotionStyle.Blink, StyleOf(prefab),
+                    $"'{prefab.name}': su clip de movimiento es un teletransporte pero se desliza. " +
                     "Correr 'Rollgeon → Enemies → Apply Teleport Locomotion'.");
             }
         }
@@ -85,8 +84,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
             // Assert — Croupier y Tahúr entran porque visten el rig del Healer y del Sunked Grand.
+            // El Cajero entra por parche: kitea todos los turnos y su rig no tiene ciclo de
+            // caminata (ver EnemyLocomotionInstaller.ForcedBlinkEntityIds).
             CollectionAssert.AreEquivalent(
-                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "SunkedGrand", "Healer" },
+                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "PF_Boss_Cajero", "SunkedGrand", "Healer" },
                 blinking,
                 "Cambió quién se teletransporta. Si es a propósito, actualizá esta lista; si no, " +
                 "alguien reconstruyó un prefab y se llevó puesto el flag.");

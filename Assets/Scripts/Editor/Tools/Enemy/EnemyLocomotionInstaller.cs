@@ -29,6 +29,24 @@ namespace Rollgeon.Editor.Tools.Enemy
         /// <summary>Marca en el nombre del clip que delata un rig de teletransporte.</summary>
         public const string TeleportClipMarker = "Teleport";
 
+        /// <summary>
+        /// Fichas que van en Blink <b>aunque su rig no tenga clip de teletransporte</b>. Es un
+        /// parche hasta que haya arte, no una decisión de diseño.
+        /// </summary>
+        /// <remarks>
+        /// El Cajero se repliega todos los turnos (<c>AINode_KeepDistance</c>: su disparo a rango
+        /// existe justo porque kitea) pero <c>AnimCon_GeneralDirector</c> sólo declara Idle y Attack
+        /// — no hay ciclo de caminata. Con el lerp de siempre se desliza por el piso en pose de
+        /// idle, que es el peor de los dos males. El salto seco al menos se lee como intencional.
+        /// <para>
+        /// Cuando arte entregue el ciclo de caminata, se saca de acá y vuelve a Walk solo.
+        /// </para>
+        /// </remarks>
+        public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>
+        {
+            "boss.cashier",
+        };
+
         [MenuItem("Rollgeon/Enemies/Apply Teleport Locomotion")]
         public static void Apply()
         {
@@ -44,17 +62,25 @@ namespace Rollgeon.Editor.Tools.Enemy
                 var prefabPath = AssetDatabase.GetAssetPath(data.VisualPrefab);
                 if (string.IsNullOrEmpty(prefabPath) || !visited.Add(prefabPath)) continue;
 
-                var style = Teleports(data.VisualPrefab)
+                bool rigTeleports = Teleports(data.VisualPrefab);
+                bool forced = ForcedBlinkEntityIds.Contains(data.EntityId);
+                var style = rigTeleports || forced
                     ? EntityPawn.LocomotionStyle.Blink
                     : EntityPawn.LocomotionStyle.Walk;
 
-                if (!ApplyTo(prefabPath, style)) continue;
+                // Sin clip de desvanecerse, un hold largo se lee como un tirón: el pawn se queda
+                // quieto y después aparece. Corto, se lee como un salto intencional.
+                float hold = rigTeleports ? ClipBlinkHold : SnapBlinkHold;
+
+                if (!ApplyTo(prefabPath, style, hold)) continue;
 
                 if (style == EntityPawn.LocomotionStyle.Blink)
                 {
                     blink++;
-                    Debug.Log(LogPrefix + $"'{data.EntityId}' ({data.VisualPrefab.name}) → Blink: su " +
-                              "clip de movimiento es un teletransporte.");
+                    Debug.Log(LogPrefix + $"'{data.EntityId}' ({data.VisualPrefab.name}) → Blink: " +
+                              (rigTeleports
+                                  ? "su clip de movimiento es un teletransporte."
+                                  : "PARCHE — su rig no tiene ciclo de caminata (ver ForcedBlinkEntityIds)."));
                 }
                 else walk++;
             }
@@ -85,7 +111,13 @@ namespace Rollgeon.Editor.Tools.Enemy
             return animator != null && HasTeleportClip(animator.runtimeAnimatorController);
         }
 
-        private static bool ApplyTo(string prefabPath, EntityPawn.LocomotionStyle style)
+        /// <summary>Hold por tramo cuando el rig SÍ tiene clip de desvanecerse — le da tiempo a correr.</summary>
+        public const float ClipBlinkHold = 0.14f;
+
+        /// <summary>Hold por tramo cuando no hay clip: apenas un beat, para que no parezca un tirón.</summary>
+        public const float SnapBlinkHold = 0.05f;
+
+        private static bool ApplyTo(string prefabPath, EntityPawn.LocomotionStyle style, float hold)
         {
             var contents = PrefabUtility.LoadPrefabContents(prefabPath);
             if (contents == null) return false;
@@ -103,11 +135,25 @@ namespace Rollgeon.Editor.Tools.Enemy
                     return false;
                 }
 
+                var outProp = so.FindProperty("_blinkOutSeconds");
+                var inProp = so.FindProperty("_blinkInSeconds");
+
+                bool styleChanged = prop.enumValueIndex != (int)style;
+                bool holdChanged = style == EntityPawn.LocomotionStyle.Blink
+                                   && outProp != null && inProp != null
+                                   && (!Mathf.Approximately(outProp.floatValue, hold)
+                                       || !Mathf.Approximately(inProp.floatValue, hold));
+
                 // Sin cambio no se reescribe: SaveAsPrefabAsset renumera fileIDs internos y ensuciaría
                 // el diff de todos los prefabs en cada corrida.
-                if (prop.enumValueIndex == (int)style) return false;
+                if (!styleChanged && !holdChanged) return false;
 
                 prop.enumValueIndex = (int)style;
+                if (style == EntityPawn.LocomotionStyle.Blink)
+                {
+                    if (outProp != null) outProp.floatValue = hold;
+                    if (inProp != null) inProp.floatValue = hold;
+                }
                 so.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
                 return true;

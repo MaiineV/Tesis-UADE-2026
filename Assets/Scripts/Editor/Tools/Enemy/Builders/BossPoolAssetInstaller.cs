@@ -49,39 +49,41 @@ namespace Rollgeon.Editor.Tools
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
-            // Tres jefes por piso, 80 / 10 / 10 (los pesos son relativos, así que 8/1/1).
+            // Dos jefes activos por piso, 90 / 10 (los pesos son relativos, así que 9/1).
             //
-            // El principal se lleva el 80% porque es el que está en pulido: la mayoría de las runs
-            // de playtest tienen que caer en el jefe cuya legibilidad estamos arreglando. Los otros
-            // dos slots son de variedad y valen lo mismo entre sí — el jefe nuevo secundario y el
-            // viejo del piso, que vuelve al pool después de haber estado desactivado.
+            // El principal se lleva el 90% porque es el que está en pulido: la mayoría de las runs
+            // de playtest tienen que caer en el jefe cuya legibilidad estamos arreglando. El
+            // secundario es el slot de variedad — con un solo jefe por piso la run se aprende de
+            // memoria: sabés qué te toca antes de bajar.
             //
-            // Por qué el viejo al 10% y no al 20%: ya está estable y no necesita horas de prueba;
-            // subirle el peso se las saca al nuevo. Con 1 de cada 5 runs alcanza para que no se
-            // pudra y para que el piso no se aprenda de memoria.
+            // Los tres viejos (Sunken Grand, Security Boss, General Director) quedan en el pool
+            // DESACTIVADOS, y no por deuda de diseño: 'Rollgeon → Enemies → Audit Rigs' los mostró
+            // sin rig — cero skinned meshes, cero animaciones. Son arte estático. Un jefe congelado
+            // saliendo 1 de cada 10 peleas se ve peor que un piso con dos jefes, así que vuelven
+            // recién cuando tengan animaciones. La entry queda para poder re-activarlos de una.
             //
             // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida, su oro y
             // sus builders siempre dijeron piso 1.
-            const float MainWeight = 8f;
+            const float MainWeight = 9f;
             const float VarietyWeight = 1f;
 
             var bp1 = BuildPool("BP_Floor1", new[]
             {
                 Entry(CroupierPath, MainWeight, true, CroupierRoom),
                 Entry(BandidaPath, VarietyWeight, true, BandidaRoom),
-                Entry(SunkenGrandPath, VarietyWeight, true),
+                Entry(SunkenGrandPath, VarietyWeight, false),
             });
             var bp2 = BuildPool("BP_Floor2", new[]
             {
                 Entry(CajeroPath, MainWeight, true, CajeroRoom),
                 Entry(AnotadorPath, VarietyWeight, true, AnotadorRoom),
-                Entry(SecurityBossPath, VarietyWeight, true),
+                Entry(SecurityBossPath, VarietyWeight, false),
             });
             var bp3 = BuildPool("BP_Floor3", new[]
             {
                 Entry(GeneralaPath, MainWeight, true, GeneralaRoom),
                 Entry(TahurPath, VarietyWeight, true, TahurRoom),
-                Entry(GeneralDirectorPath, VarietyWeight, true),
+                Entry(GeneralDirectorPath, VarietyWeight, false),
             });
 
             AssignToLayout(Floor1LayoutPath, bp1);

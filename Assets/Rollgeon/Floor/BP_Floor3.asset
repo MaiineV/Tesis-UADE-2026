@@ -41,7 +41,7 @@ MonoBehaviour:
       Data: 0
     - Name: Weight
       Entry: 4
-      Data: 8
+      Data: 9
     - Name: Enabled
       Entry: 5
       Data: true
@@ -80,7 +80,7 @@ MonoBehaviour:
       Data: 1
     - Name: Enabled
       Entry: 5
-      Data: true
+      Data: false
     - Name: Room
       Entry: 6
       Data: 
@@ -95,7 +95,7 @@ MonoBehaviour:
       Data: 
   Entries:
   - Boss: {fileID: 11400000, guid: 7029e4b6980247249b9eb5459f48482b, type: 2}
-    Weight: 8
+    Weight: 9
     Enabled: 1
     Room: {fileID: 11400000, guid: 2fa58ced178f4ea48a9033469ce40e58, type: 2}
   - Boss: {fileID: 11400000, guid: 91f3436edd635ee42b65fb577ec47873, type: 2}
@@ -104,5 +104,5 @@ MonoBehaviour:
     Room: {fileID: 11400000, guid: b93b98d6593acb441965af5fc7aeca1b, type: 2}
   - Boss: {fileID: 11400000, guid: b18c68bb8f79bb24e8e0cf5703ce62d7, type: 2}
     Weight: 1
-    Enabled: 1
+    Enabled: 0
     Room: {fileID: 0}

@@ -31,21 +31,21 @@ namespace Rollgeon.Dungeon.Tests
         private static readonly string[] AllFloors = { Floor1, Floor2, Floor3 };
 
         // legacyBossId: el boss del wiring previo (manda si el layout no tiene pool). Con pool,
-        // los TRES pisos lo acompañan con los jefes nuevos en vez de suplantarlo.
+        // los TRES pisos lo SUPLANTAN: el viejo queda en el pool desactivado y los activos son los
+        // jefes nuevos.
         //
-        // Tres activos por piso, 80 / 10 / 10: el principal (el que está en pulido) se lleva la
-        // mayoría de las runs, y los otros dos —el nuevo secundario y el viejo del piso— son los
-        // slots de variedad. Con un solo jefe por piso la run se aprende de memoria: sabés qué te
-        // toca antes de bajar.
+        // Dos activos por piso, 90 / 10: el principal (el que está en pulido) se lleva la mayoría
+        // de las runs y el secundario es el slot de variedad. Con un solo jefe por piso la run se
+        // aprende de memoria: sabés qué te toca antes de bajar.
+        //
+        // Los viejos están apagados porque no tienen rig — cero skinned meshes, cero animaciones
+        // (ver 'Rollgeon → Enemies → Audit Rigs'). Vuelven cuando tengan animaciones.
         //
         // La Bandida ('boss.one_armed') es del piso 1 — su vida, su oro y sus builders siempre lo
         // dijeron; estuvo un tiempo en el pool del 2 por error.
-        [TestCase(Floor1, "boss.sunken_grand",
-            new[] { "boss.croupier", "boss.one_armed", "boss.sunken_grand" })]
-        [TestCase(Floor2, "boss.security_boss",
-            new[] { "boss.cashier", "boss.scorekeeper", "boss.security_boss" })]
-        [TestCase(Floor3, "boss.general_director",
-            new[] { "boss.la_generala", "boss.tahur", "boss.general_director" })]
+        [TestCase(Floor1, "boss.sunken_grand", new[] { "boss.croupier", "boss.one_armed" })]
+        [TestCase(Floor2, "boss.security_boss", new[] { "boss.cashier", "boss.scorekeeper" })]
+        [TestCase(Floor3, "boss.general_director", new[] { "boss.la_generala", "boss.tahur" })]
         public void FloorBossRoom_ResolvesToExpectedBoss(
             string layoutPath, string legacyBossId, string[] expectedActiveWithPool)
         {
@@ -68,16 +68,22 @@ namespace Rollgeon.Dungeon.Tests
                 $"{layout.name} ({source}): los bosses ACTIVOS del piso no son los del diseño. " +
                 $"Resuelve a [{string.Join(", ", bossEntityIds)}].");
 
-            // El boss viejo del piso sigue en el pool y volvió a estar activo: es el tercer slot,
-            // el de variedad barata. Sacarlo dejaría el piso con dos peleas posibles nada más.
-            CollectionAssert.Contains(bossEntityIds, legacyBossId,
-                $"{layout.name}: '{legacyBossId}' tiene que poder salir — es el jefe viejo del piso.");
+            // El viejo no desaparece: queda en el pool, desactivado, listo para re-activarlo de una
+            // cuando tenga rig.
+            var allPoolIds = layout.BossPool.Entries
+                .Where(e => e?.Boss != null)
+                .Select(e => e.Boss.EntityId)
+                .ToList();
+            CollectionAssert.Contains(allPoolIds, legacyBossId,
+                $"{layout.name}: '{legacyBossId}' debería seguir en el pool (desactivado).");
+            CollectionAssert.DoesNotContain(bossEntityIds, legacyBossId,
+                $"{layout.name}: '{legacyBossId}' no tiene rig — un jefe congelado no puede salir.");
         }
 
         [TestCase(Floor1, "boss.croupier")]
         [TestCase(Floor2, "boss.cashier")]
         [TestCase(Floor3, "boss.la_generala")]
-        public void FloorPool_GivesTheMainBossTheBulkOfTheRuns(string layoutPath, string mainBossId)
+        public void FloorPool_GivesTheMainBossNineOutOfTenRuns(string layoutPath, string mainBossId)
         {
             // Arrange — el principal es el que está en pulido: la mayoría de las runs de playtest
             // tienen que caer en él. Si los tres pesaran igual, dos de cada tres peleas serían de
@@ -97,8 +103,8 @@ namespace Rollgeon.Dungeon.Tests
 
             // Assert
             Assert.Greater(total, 0f, $"{pool.name}: ningún boss activo.");
-            Assert.AreEqual(0.8f, main / total, 0.001f,
-                $"{pool.name}: '{mainBossId}' debería llevarse el 80% del roll. " +
+            Assert.AreEqual(0.9f, main / total, 0.001f,
+                $"{pool.name}: '{mainBossId}' debería llevarse el 90% del roll. " +
                 $"Pesos activos: [{string.Join(", ", pool.Entries.Where(BossPoolSO.IsActive).Select(e => $"{e.Boss.EntityId}={e.Weight}"))}].");
         }
 
