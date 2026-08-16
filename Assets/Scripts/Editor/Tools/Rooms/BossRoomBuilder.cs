@@ -158,10 +158,14 @@ namespace Rollgeon.EditorTools
                 // Tres bancos de tragamonedas que abren las calles verticales. El cuarto —arriba a
                 // la derecha— no se autora: ahí la sala base ya tiene su mueble de 2×3, que bloquea
                 // igual. Autorar encima sería un prop duplicado sobre una celda que ya no es piso.
+                // El banco de abajo va en x=3-4 y no en x=4-5 como el de arriba: (5,8) del plano cae
+                // en la sala (0,-3), que es la casilla de spawn del jugador — el jugador aparecía
+                // dentro de una tragamonedas. Corrido una casilla, la calle vertical sigue abierta y
+                // el spawn queda libre.
                 BlockerPlanCells = new[]
                 {
                     new Vector2Int(4, 2), new Vector2Int(5, 2),
-                    new Vector2Int(4, 8), new Vector2Int(5, 8),
+                    new Vector2Int(3, 8), new Vector2Int(4, 8),
                     new Vector2Int(8, 8), new Vector2Int(9, 8),
                 },
             },
@@ -178,13 +182,26 @@ namespace Rollgeon.EditorTools
                 // El mostrador, con las dos aberturas en x=2 y x=8. Va en la fila 5, la única que
                 // cruza la sala entera sin tocar recorte ni mueble: si el mostrador tuviera un hueco
                 // de fábrica, elegir puerta dejaría de ser la decisión del turno.
+                //
+                // Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) NO llevan mesa: son los tiles-frente de
+                // las puertas Oeste y Este, y con mesa encima la sala quedaba sellada por los dos
+                // lados. Los dos vanos que quedan no abaratan cruzar: la fila del mostrador es
+                // neutral para el peaje (CashierCounterTollService.IsSameSide devuelve false parado
+                // en ella), así que pasar por la puerta cuesta el mismo turno de exposición que
+                // pasar por una abertura, y encima obliga a caminar hasta la pared.
                 BlockerPlanCells = new[]
                 {
-                    new Vector2Int(0, 5), new Vector2Int(1, 5),
+                    new Vector2Int(1, 5),
                     new Vector2Int(3, 5), new Vector2Int(4, 5), new Vector2Int(5, 5),
                     new Vector2Int(6, 5), new Vector2Int(7, 5),
-                    new Vector2Int(9, 5), new Vector2Int(10, 5),
+                    new Vector2Int(9, 5),
                 },
+                // La mesa viene autorada a 1.508 de ancho: a una casilla de paso, cada una se comía
+                // media casilla de sus vecinas y las dos aberturas quedaban en ~0.5 visibles. El
+                // mostrador se leía continuo de punta a punta y elegir puerta —la decisión del turno—
+                // no existía en pantalla. Se corrige SÓLO X: uniforme le bajaba también la altura y
+                // el prop se caía de la banda de walk clearance (dejaba de bloquear).
+                PropScaleAxes = new Vector3(1f / 1.5082955f, 1f, 1f),
             },
             new BossRoomPlan
             {
@@ -262,8 +279,12 @@ namespace Rollgeon.EditorTools
 
             if (failures.Count > 0)
             {
-                Debug.LogError(LogPrefix + $"{failures.Count} problema(s) de autoría:\n• " +
-                               string.Join("\n• ", failures));
+                // Uno por línea y no un solo error con saltos: la consola de Unity muestra sólo la
+                // primera línea en la lista, así que un bloque multi-línea obliga a clickear el error
+                // para ver qué falló — y por la misma razón se pierde entero si alguien lee el log
+                // desde afuera del editor.
+                Debug.LogError(LogPrefix + $"{failures.Count} problema(s) de autoría:");
+                foreach (var failure in failures) Debug.LogError(LogPrefix + "• " + failure);
             }
         }
 
@@ -474,8 +495,13 @@ namespace Rollgeon.EditorTools
                 CellCenter(layout, cell, BlockerLayer), Quaternion.Euler(plan.PropEuler));
 
             // Multiplicar y no asignar: la escala autorada del prop es parte de su arte (la mesa viene
-            // a 1.5 × 1.8), y PropScale es la palanca de tuning encima de eso.
-            instance.transform.localScale *= plan.PropScale;
+            // a 1.5 × 1.8), y PropScale es la palanca de tuning encima de eso. PropScaleAxes corrige
+            // el eje que desborda la casilla sin tocar los otros — ver sus remarks.
+            var scale = instance.transform.localScale * plan.PropScale;
+            instance.transform.localScale = new Vector3(
+                scale.x * plan.PropScaleAxes.x,
+                scale.y * plan.PropScaleAxes.y,
+                scale.z * plan.PropScaleAxes.z);
 
             var marker = instance.GetComponent<TileMarker>();
             if (marker == null) marker = instance.AddComponent<TileMarker>();
@@ -795,5 +821,24 @@ namespace Rollgeon.EditorTools
 
         /// <summary>Factor sobre la escala autorada del prop. Palanca de encuadre visual.</summary>
         public float PropScale = 1f;
+
+        /// <summary>
+        /// Factor <b>por eje</b> sobre la escala autorada, encima de <see cref="PropScale"/>. Sirve
+        /// para props cuyo arte no es cuadrado y desbordan la casilla en un solo eje.
+        /// </summary>
+        /// <remarks>
+        /// Nació con el mostrador del Cajero: <c>Tablev02</c> viene autorada a 1.508 × 1 × 1.805, así
+        /// que nueve mesas puestas a una casilla de paso se pisan entre sí y las dos aberturas del
+        /// plano (que son de una casilla) quedaban tapadas por el voladizo de las vecinas — el
+        /// mostrador se veía continuo de punta a punta y "elegir puerta", que es la decisión del
+        /// turno, no existía en pantalla.
+        /// <para>
+        /// Por qué no alcanzaba <see cref="PropScale"/>: es uniforme, así que llevar el ancho a una
+        /// casilla también bajaba la altura un 34% y el prop se caía de la banda de walk clearance
+        /// del bake — el mostrador dejaba de bloquear. Corregir sólo el eje que desborda deja la
+        /// altura (y el bloqueo) intactas.
+        /// </para>
+        /// </remarks>
+        public Vector3 PropScaleAxes = Vector3.one;
     }
 }
