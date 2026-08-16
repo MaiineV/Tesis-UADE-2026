@@ -38,8 +38,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         /// <summary>Nombre con el que el builder parentea el label al wrapper.</summary>
         public const string DefaultLabelChildName = "WheelNumber";
 
-        /// <summary>Separador entre los dos números de fase 2.</summary>
-        public const string DefaultSeparator = " · ";
+        /// <summary>
+        /// Separador entre los dos números de fase 2. Barra y no interpunto: la pixel font del HUD
+        /// (<c>m6x11plus</c>) no tiene <c>·</c> (U+00B7) en su atlas, y un glifo que falta sale como
+        /// cuadradito — justo en el dato del que cuelga toda la pelea.
+        /// </summary>
+        public const string DefaultSeparator = " / ";
 
         [Header("Rig")]
         [Tooltip("Label del número. Si queda vacío se busca un hijo llamado \"WheelNumber\".")]

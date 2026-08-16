@@ -108,18 +108,25 @@ namespace Rollgeon.UI.HUD
         /// el más barato, se lee como "ninguno". Las tres causas van entre paréntesis y sólo aparecen
         /// las que están activas: con rastrillo 0 y sin soborno, la línea es sólo el oro — que es el
         /// 90% de la pelea y no necesita tres cifras para decir una cosa.
+        /// <para>
+        /// <b>Sólo caracteres del atlas de <c>m6x11plus</c>.</b> La pixel font del HUD no tiene
+        /// <c>·</c> (U+00B7) ni <c>⟳</c> (U+27F3), y un glifo que falta sale como cuadradito: los
+        /// separadores son dos puntos y comas, y las rondas se escriben con la palabra.
+        /// </para>
         /// </remarks>
         public static string Format(CashierTierSnapshot tier, int bribeRoundsLeft)
         {
             var sb = new StringBuilder();
-            sb.Append("Escalón ").Append(tier.Rank + 1).Append(" · pega ").Append(tier.Damage);
+            sb.Append("Escalón ").Append(tier.Rank + 1).Append(": pega ").Append(tier.Damage);
             sb.Append("   (oro ").Append(tier.Gold);
 
-            if (tier.StepUp > 0) sb.Append(" · rastrillo +").Append(tier.StepUp);
+            if (tier.StepUp > 0) sb.Append(", rastrillo +").Append(tier.StepUp);
             if (tier.StepDown > 0)
             {
-                sb.Append(" · soborno -").Append(tier.StepDown);
-                if (bribeRoundsLeft > 0) sb.Append(" (").Append(bribeRoundsLeft).Append("⟳)");
+                sb.Append(", soborno -").Append(tier.StepDown);
+                if (bribeRoundsLeft > 0)
+                    sb.Append(" por ").Append(bribeRoundsLeft)
+                      .Append(bribeRoundsLeft == 1 ? " ronda" : " rondas");
             }
 
             sb.Append(')');

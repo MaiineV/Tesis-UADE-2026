@@ -321,7 +321,11 @@ namespace Rollgeon.Combat.Cashier
         /// el nombre del escalón es de este jefe y no hay tabla de localización de combate que lo
         /// cubra todavía.
         /// </summary>
-        private const string BribeAnnouncement = "Soborno · -1 escalón";
+        /// <remarks>
+        /// Sólo caracteres que están en el atlas de <c>m6x11plus</c>: la pixel font del HUD no tiene
+        /// <c>·</c> (U+00B7) ni <c>é</c> (U+00E9), y un glifo que falta sale como cuadradito.
+        /// </remarks>
+        private const string BribeAnnouncement = "Soborno: -1 escalón";
 
         private void OnHazardExpiredExternal(params object[] args)
         {

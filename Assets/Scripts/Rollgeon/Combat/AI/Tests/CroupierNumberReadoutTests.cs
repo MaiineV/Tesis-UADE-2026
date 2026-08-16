@@ -106,7 +106,7 @@ namespace Rollgeon.Combat.AI.Tests
             string text = CroupierWheelNumberView.Format(sung, CroupierWheelNumberView.DefaultSeparator);
 
             // Assert
-            Assert.AreEqual("3 · 5", text);
+            Assert.AreEqual("3 / 5", text);
         }
 
         // =====================================================================

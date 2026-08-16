@@ -165,7 +165,11 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <c>FloatingNumberFormat.ShieldBlocked</c>: todavía no hay tabla de localización que cubra
         /// los mensajes de jefe.
         /// </summary>
-        private const string VaultPromise = "Arqueo · vuelve si lo vencés";
+        /// <remarks>
+        /// "matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c>
+        /// (U+00E9) ni <c>·</c> (U+00B7) en su atlas, y un glifo que falta sale como cuadradito.
+        /// </remarks>
+        private const string VaultPromise = "Arqueo: vuelve si lo matas";
 
         /// <remarks>
         /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar sobre el

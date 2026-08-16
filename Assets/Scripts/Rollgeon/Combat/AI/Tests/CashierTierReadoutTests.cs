@@ -123,7 +123,7 @@ namespace Rollgeon.Combat.AI.Tests
             string line = CashierTierReadoutView.Format(tier, bribeRoundsLeft: 0);
 
             // Assert — el escalón va 1-based: "escalón 0" se lee como "ninguno", no como el barato.
-            Assert.AreEqual("Escalón 2 · pega 28   (oro 65)", line);
+            Assert.AreEqual("Escalón 2: pega 28   (oro 65)", line);
         }
 
         [Test]
@@ -137,7 +137,7 @@ namespace Rollgeon.Combat.AI.Tests
             string line = CashierTierReadoutView.Format(tier, bribeRoundsLeft: 0);
 
             // Assert
-            Assert.AreEqual("Escalón 3 · pega 35   (oro 65 · rastrillo +1)", line);
+            Assert.AreEqual("Escalón 3: pega 35   (oro 65, rastrillo +1)", line);
         }
 
         [Test]
@@ -151,7 +151,7 @@ namespace Rollgeon.Combat.AI.Tests
             string line = CashierTierReadoutView.Format(tier, bribeRoundsLeft: 2);
 
             // Assert
-            Assert.AreEqual("Escalón 2 · pega 28   (oro 71 · rastrillo +1 · soborno -1 (2⟳))", line);
+            Assert.AreEqual("Escalón 2: pega 28   (oro 71, rastrillo +1, soborno -1 por 2 rondas)", line);
         }
 
         [Test]
@@ -194,7 +194,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             // Assert
             StringAssert.Contains("soborno -1", after);
-            StringAssert.Contains("3⟳", after);
+            StringAssert.Contains("por 3 rondas", after);
             StringAssert.Contains("pega 28", after);
         }
     }
