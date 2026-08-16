@@ -30,6 +30,12 @@ namespace Rollgeon.Feedback
         public const string CroupierImpactVfx  = "vfx.boss.croupier.impact";
         public const string CroupierImpactFeel = "feel.boss.croupier.impact";
 
+        // La confiscación del dado del número que cayó. Van sobre el JUGADOR, no sobre el jefe: el
+        // gesto es del paño llevándose el dado, igual que la detonación, y no hay animación de
+        // Croupier que lo acompañe.
+        public const string CroupierConfiscaVfx  = "vfx.boss.croupier.confisca";
+        public const string CroupierConfiscaFeel = "feel.boss.croupier.confisca";
+
         // ---- La Bandida ----
         public const string BandidaMeleeAnim       = "anim.boss.bandida.melee";
         public const string BandidaRangeAnim       = "anim.boss.bandida.range";

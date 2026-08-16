@@ -9,6 +9,7 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions.Concretes;
 using UnityEngine;
 
@@ -188,18 +189,63 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // Números de la ficha
         // =====================================================================
 
+        /// <summary>
+        /// La confiscación es del <b>número que cayó</b>, no de un dado al azar. Ese es todo el
+        /// motivo por el que puede existir: un sorteo silencioso es indistinguible del bloqueo del
+        /// Sunken Grand, y el jugador termina creyendo que pelea contra el jefe viejo.
+        /// </summary>
         [Test]
-        public void Root_NeverBlocksADie()
+        public void Confiscation_TakesTheNumberThatFell_NotARandomDie()
         {
-            // Arrange / Act
-            var blocks = Descendants(_root).OfType<AINode_RotateBlock>().ToList();
+            var block = Descendants(_root).OfType<AINode_RotateBlock>().Single();
 
-            // Assert — robar un dado sin presentación es indistinguible del bloqueo aleatorio del
-            // Sunken Grand, y el jugador lee que pelea contra el jefe viejo. Si vuelve, vuelve con
-            // su visual: el dado viajando a la mesa y el slot con candado.
-            CollectionAssert.IsEmpty(blocks,
-                "El Croupier no confisca dados. Volver a agregarlo sin construir el visual reintroduce " +
-                "la confusión con el Sunken Grand.");
+            Assert.AreEqual(AINode_RotateBlock.BlockTarget.Dice, block.Target);
+
+            var reader = block.DirectedIndex as AIReadCroupierWheelNumber;
+            Assert.IsNotNull(reader,
+                "Sin el reader de la ruleta el nodo cae al sorteo al azar, que es exactamente la " +
+                "versión que se había sacado por leerse como el Sunken Grand.");
+
+            Assert.AreEqual(AIReadCroupierWheelNumber.NumberSource.Detonated, reader.Source,
+                "Detonated y no Sung: el dado se lo lleva el número que YA resolvió. Leer Sung acá " +
+                "devuelve el número siguiente sin fallar — la peor forma de estar mal.");
+        }
+
+        /// <summary>
+        /// La otra mitad de la condición para que vuelva: que se vea. Los ids vacíos dejan el nodo
+        /// mudo (es un nodo compartido con los jefes viejos, ahí vacío = silencio a propósito).
+        /// </summary>
+        [Test]
+        public void Confiscation_IsPresented()
+        {
+            var block = Descendants(_root).OfType<AINode_RotateBlock>().Single();
+
+            Assert.AreEqual(BossFeedbackIds.CroupierConfiscaVfx, block.BlockVfxId);
+            Assert.AreEqual(BossFeedbackIds.CroupierConfiscaFeel, block.BlockFeelId);
+        }
+
+        /// <summary>
+        /// El orden que hace que el reader tenga algo que leer.
+        /// </summary>
+        /// <remarks>
+        /// <c>AINode_IgniteDetonatedSectors</c> consume la lista con <c>ClearDetonated()</c>. Si la
+        /// confiscación quedara después, el reader leería una lista vacía, devolvería <c>-1</c> y el
+        /// nodo no bloquearía nada — sin error, sin warning, sin nada en pantalla. Este test es el
+        /// que atrapa ese reordenamiento.
+        /// </remarks>
+        [Test]
+        public void Confiscation_RunsBeforeTheIgnitionConsumesTheDetonatedSectors()
+        {
+            var order = Descendants(_root);
+
+            int block = order.FindIndex(n => n is AINode_RotateBlock);
+            int ignite = order.FindIndex(n => n is AINode_IgniteDetonatedSectors);
+
+            Assert.Greater(block, -1, "No hay confiscación en el árbol.");
+            Assert.Greater(ignite, -1, "No hay ignición en el árbol.");
+            Assert.Less(block, ignite,
+                "La confiscación tiene que correr antes de la ignición: la ignición consume " +
+                "DetonatedSectors y dejaría al reader leyendo una lista vacía.");
         }
 
         [Test]

@@ -89,6 +89,11 @@ namespace Rollgeon.Editor.Tools
             yield return Spec.Vfx(CroupierImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Feel(CroupierImpactFeel, MeleeImpactFeelPath);
 
+            // La confiscación reusa el impacto a distancia: el dado no lo agarra una mano, se lo
+            // lleva el paño desde lejos, y ranged es el único de los dos que lee como "algo viajó".
+            yield return Spec.Vfx(CroupierConfiscaVfx, RangedImpactVfxPath);
+            yield return Spec.Feel(CroupierConfiscaFeel, RangedImpactFeelPath);
+
             // Bandida — MechaBoss_Animated. El brazo de la tragamonedas se lee como melee.
             yield return Spec.Anim(BandidaMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(BandidaRangeAnim, "Attack_Range");

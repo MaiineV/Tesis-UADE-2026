@@ -6,6 +6,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEditor;
@@ -444,13 +445,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 3. Canta el número (o los dos) y abre el windup.
                     Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
 
-                    // El Croupier NO confisca el dado del número cantado. Lo hacía —el sector y el
-                    // dado eran el mismo dato, que como idea cerraba— pero robar un dado sin ninguna
-                    // presentación es indistinguible del bloqueo aleatorio del Sunken Grand, y el
-                    // jugador terminaba creyendo que peleaba contra el jefe viejo. Si alguna vez
-                    // vuelve, vuelve junto con su visual, no antes.
+                    // 4. Confisca el dado del número que ACABA DE CAER. Se había sacado por leerse
+                    //    como el bloqueo al azar del Sunken Grand; vuelve con la presentación que
+                    //    faltaba y, sobre todo, con el número a la vista un turno antes: el jugador
+                    //    ve el sector marcado en el turno N y sabe que en el N+1 pierde ese dado.
+                    //
+                    //    Detonated y no Sung: el número que se lleva el dado es el que resolvió,
+                    //    no el que se acaba de cantar. Y va ACÁ, antes de la ignición — que
+                    //    consume DetonatedSectors con ClearDetonated() y dejaría al reader leyendo
+                    //    una lista vacía. Hay un test que fija ese orden.
+                    Guarded(new AINode_RotateBlock
+                    {
+                        Target = AINode_RotateBlock.BlockTarget.Dice,
+                        DirectedIndex = new AIReadCroupierWheelNumber
+                        {
+                            Source = AIReadCroupierWheelNumber.NumberSource.Detonated,
+                            Slot = 0,
+                        },
+                        BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
+                        BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+                    }),
 
-                    // 4. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
+                    // 5. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
                     Guarded(new AINode_MarkSungSectors
                     {
                         SectorDamage = SectorDamage,
