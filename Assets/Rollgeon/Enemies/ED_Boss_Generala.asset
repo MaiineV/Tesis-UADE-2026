@@ -253,6 +253,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: RollFeedbackId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -281,6 +284,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: AnimFeedbackIdOverride
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -762,7 +768,7 @@ MonoBehaviour:
     she loses Poker \u2014 and you open a hole in a room made of her own dice. Walking
     up to the table is not free: every roll brings the cup down on whoever is standing
     next to her."
-  Portrait: {fileID: 21300000, guid: 980279cbd96bcc54eab0e27b49240104, type: 3}
+  Portrait: {fileID: -1548411135, guid: 2ea80cde72873384bac9f8c1ad22fc73, type: 3}
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
   BaseHP: 240

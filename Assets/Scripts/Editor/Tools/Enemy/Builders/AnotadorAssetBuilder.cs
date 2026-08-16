@@ -97,8 +97,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Parámetro del controller que separa "cofre inocente" de "planilla viva".</summary>
         public const string AwakenParameter = "Awaken";
 
-        /// <summary>Set de 6 dados = la planilla de generala que este jefe lleva.</summary>
-        public const string PortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0044.png";
+        /// <summary>Retrato del rig que viste (<c>ChestMimic</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string PortraitTexturePath = BossPortraitLibrary.AnotadorPath;
 
         public const string BossName = "Anotador";
         public const string ArtChildName = "Art";
@@ -644,7 +644,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             EditorUtility.SetDirty(ice);
 
             var visualPrefab = BuildVisualPrefab();
-            var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
+            var portrait = BossPortraitLibrary.Anotador();
 
             var boss = LoadOrCreate<EnemyDataSO>(EnemyAssetPath);
             PopulateEnemyData(boss, ice, visualPrefab, portrait);

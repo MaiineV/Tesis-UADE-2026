@@ -68,8 +68,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Nombre del hijo de la ruleta. Lo busca <c>CroupierWheelSpinVisual</c> por fallback.</summary>
         public const string WheelChildName = CroupierWheelSpinVisual.DefaultWheelChildName;
 
-        /// <summary>Retrato: hombre de smoking fumando. Ver <see cref="SpriteImportUtility"/>.</summary>
-        public const string PortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0050.png";
+        /// <summary>Retrato del rig que viste (<c>Healer_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
 
         // ======================================================================
         // Ficha de diseño — todos los números del jefe, en un solo lugar
@@ -203,7 +203,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId, flame);
 
             var visual = BuildVisualPrefab();
-            var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
+            var portrait = BossPortraitLibrary.Croupier();
 
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
             PopulateEnemyData(boss, fire, firePhase2, visual, portrait);

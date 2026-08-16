@@ -125,8 +125,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Bandida.prefab";
 
-        /// <summary>Tragamonedas con 7s y palanca — el símbolo de la máquina, no de un humanoide.</summary>
-        public const string BossPortraitPath = "Assets/Art/2D/Symbols/Sprites/Casino_004D.png";
+        /// <summary>Retrato del rig que viste (<c>MechaBoss_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string BossPortraitPath = BossPortraitLibrary.BandidaPath;
 
         /// <summary>
         /// Arte del rodillo: una tragamonedas real. Sin <c>Animator</c> ni rig — quieto es como el
@@ -586,9 +586,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var bossVisual = BuildBossVisual();
             var reelVisual = BuildReelVisual();
 
-            // Los símbolos de casino están importados como Default: sin este paso
-            // LoadAssetAtPath<Sprite> devuelve null y el Portrait quedaría vacío en silencio.
-            var bossPortrait = SpriteImportUtility.EnsureSpriteImport(BossPortraitPath);
+            // El rodillo se queda con el símbolo de cerezas: es un objeto de la sala, no un
+            // personaje, y darle cara de jefe lo haría leer como un segundo enemigo con turno
+            // propio. Los símbolos entran al repo como textura Default, de ahí el EnsureSpriteImport.
+            var bossPortrait = BossPortraitLibrary.Bandida();
             var reelPortrait = SpriteImportUtility.EnsureSpriteImport(ReelPortraitPath);
 
             var reelFire = LoadReelFire();

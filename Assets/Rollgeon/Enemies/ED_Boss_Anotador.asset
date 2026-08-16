@@ -619,7 +619,7 @@ MonoBehaviour:
   DisplayName: El Anotador
   Description: "El que lleva la planilla. No juega contra vos: te corrige el puntaje
     mientras tir\xE1s, y nunca a tu favor."
-  Portrait: {fileID: 21300000, guid: a8d8cc5409ce3714a9fabab61573909a, type: 3}
+  Portrait: {fileID: -1790906141, guid: 5103e983e850dbc408e171ce0b6f9714, type: 3}
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
   BaseHP: 170

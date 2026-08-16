@@ -321,10 +321,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Portrait_IsTheCardFanSymbol()
+        public void Portrait_IsTheFaceOfTheRigHeWears()
         {
-            Assert.AreEqual("Assets/Art/2D/Symbols/Sprites/Casino_0054.png",
-                TahurAssetBuilder.PortraitTexturePath);
+            Assert.AreEqual(BossPortraitLibrary.SheetPath, TahurAssetBuilder.PortraitTexturePath,
+                "El retrato sigue al rig: el Tahúr viste SunkedGrand_Animated, cuyo retrato vive " +
+                "en la hoja compartida de personajes.");
         }
 
         [Test]

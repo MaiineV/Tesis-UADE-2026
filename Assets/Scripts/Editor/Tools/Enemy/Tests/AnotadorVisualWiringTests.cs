@@ -325,11 +325,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Portrait_PointsAtACasinoSymbol()
+        public void Portrait_IsTheFaceOfTheRigHeWears()
         {
+            Assert.AreEqual(BossPortraitLibrary.AnotadorPath, AnotadorAssetBuilder.PortraitTexturePath,
+                "El retrato sigue al rig: el Anotador viste ChestMimic, así que en la cola de " +
+                "turnos tiene que aparecer el mímico y no un símbolo genérico del pack de casino.");
             Assert.IsTrue(AnotadorAssetBuilder.PortraitTexturePath.EndsWith(".png"));
-            Assert.IsTrue(AnotadorAssetBuilder.PortraitTexturePath.StartsWith("Assets/Art/2D/Symbols/"),
-                "Los retratos de jefes salen del set de símbolos de casino.");
         }
 
         [Test]

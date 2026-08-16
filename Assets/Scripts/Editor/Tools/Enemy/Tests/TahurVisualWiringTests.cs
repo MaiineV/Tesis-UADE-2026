@@ -232,13 +232,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Portrait_ResolvesToASprite()
         {
-            // Act — el pack de símbolos entró como textura Default; el helper flipea el importer.
-            var portrait = SpriteImportUtility.EnsureSpriteImport(TahurAssetBuilder.PortraitTexturePath);
+            // Act — la hoja de personajes está sliceada en Multiple, así que el retrato es un
+            // sub-sprite con nombre y no la textura entera.
+            var portrait = BossPortraitLibrary.Tahur();
 
             // Assert
             Assert.IsNotNull(portrait,
-                $"'{TahurAssetBuilder.PortraitTexturePath}' no resolvió a Sprite: el campo Portrait " +
-                "del SO quedaría en null y la cola de turnos caería al visual default.");
+                $"No se resolvió '{BossPortraitLibrary.TahurSpriteName}' en " +
+                $"'{BossPortraitLibrary.SheetPath}': el campo Portrait del SO quedaría en null y la " +
+                "cola de turnos caería al visual default.");
         }
 
         // ======================================================================

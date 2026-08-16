@@ -56,8 +56,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Tahur.prefab";
 
-        /// <summary>Abanico de cartas del pack de símbolos — el retrato de la cola de turnos.</summary>
-        public const string PortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0054.png";
+        /// <summary>Retrato del rig que viste (<c>SunkedGrand_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
 
         public const string BossName = "Tahur";
         public const string MaterialsFolder = "Assets/Rollgeon/Enemies/Materials/Tahur";
@@ -468,7 +468,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                  $"desde '{ArtPrefabPath}' — el asset conserva su VisualPrefab actual.");
             }
 
-            var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
+            var portrait = BossPortraitLibrary.Tahur();
             if (portrait == null)
             {
                 Debug.LogWarning($"[TahurAssetBuilder] '{PortraitTexturePath}' no resolvió a Sprite " +

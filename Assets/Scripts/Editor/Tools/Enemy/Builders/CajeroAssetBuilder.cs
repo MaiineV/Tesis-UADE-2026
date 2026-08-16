@@ -63,8 +63,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string ChipsBoxPropName = "ChipsBox";
 
-        /// <summary>Retrato del jefe: la mano recibiendo monedas del pack de símbolos.</summary>
-        public const string PortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0070.png";
+        /// <summary>Retrato del rig que viste (<c>GeneralDirector_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
 
         /// <summary>
         /// Prefab que usaba el jefe mientras no tenía arte propio. Se sigue conociendo para poder
@@ -545,12 +545,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Retrato del jefe, forzando el import a Sprite: el pack de símbolos entra al repo como
-        /// textura Default y un campo <c>Sprite</c> no puede referenciarla.
+        /// Retrato del jefe. Sigue siendo un método y no una constante porque el sub-sprite hay que
+        /// resolverlo contra el AssetDatabase, y <c>BuildContractCard</c> lo pide por separado.
         /// </summary>
         public static Sprite EnsurePortrait()
         {
-            var portrait = SpriteImportUtility.EnsureSpriteImport(PortraitTexturePath);
+            var portrait = BossPortraitLibrary.Cajero();
             if (portrait == null)
             {
                 Debug.LogWarning($"[CajeroAssetBuilder] No se resolvió el retrato en " +

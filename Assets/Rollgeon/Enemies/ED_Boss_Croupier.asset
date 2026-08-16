@@ -49,6 +49,12 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Bosses.Croupier.AINode_DetonateSungSectors, Rollgeon
+    - Name: ImpactVfxId
+      Entry: 1
+      Data: vfx.boss.croupier.impact
+    - Name: ImpactFeelId
+      Entry: 1
+      Data: feel.boss.croupier.impact
     - Name: 
       Entry: 8
       Data: 
@@ -194,6 +200,12 @@ MonoBehaviour:
     - Name: AvoidRepeatingLastNumber
       Entry: 5
       Data: true
+    - Name: CantoFeedbackId
+      Entry: 1
+      Data: anim.boss.croupier.canto
+    - Name: CantoEventKey
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -309,7 +321,7 @@ MonoBehaviour:
     wheel one step further \u2014 moving the axe means standing under it. Hitting
     him costs 8, always: the house charges for the melee tile. He never leaves the
     middle row."
-  Portrait: {fileID: 21300000, guid: 41f4667a57452d24aaea9813a6b290b6, type: 3}
+  Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: combo.pair
   WeaknessMultiplierOverride: 1.5
   BaseHP: 120
