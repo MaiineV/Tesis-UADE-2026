@@ -29,6 +29,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// depender de que el jefe llegue a atacar.
     /// </para>
     /// <para>
+    /// <b><see cref="ChargesEveryNRounds"/> en un asset viejo llega en 0.</b> Odin no corre los
+    /// inicializadores de campo al deserializar, así que un <c>ED_Boss_Cajero.asset</c> autorado
+    /// antes de que el campo existiera lo trae en 0. <c>Arm</c> clampea a 1 ⇒ cobra todas las
+    /// rondas, que es el comportamiento viejo: degradar hacia lo que ya funcionaba y no hacia un
+    /// peaje apagado. Re-correr el builder lo pone en su valor.
+    /// </para>
+    /// <para>
     /// <b>Sin presentación a propósito.</b> El manotazo y el impacto del peaje los dispara
     /// <see cref="CashierCounterTollService"/> en el momento del cobro. Acá no hay nada que mostrar:
     /// armar es idempotente y corre todos los turnos, así que una animación en este tick sería un
@@ -47,7 +54,14 @@ namespace Rollgeon.Combat.AI.Decisions
                  "mostrador parte la sala en Y > 0 (su lado) e Y < 0 (el tuyo).")]
         public int CounterRow;
 
-        public override string NodeName => $"Cajero — Peaje del mostrador ({Damage} en fila {CounterRow})";
+        [Tooltip("Cada cuántas rondas cobra. 1 = todas. 2 = la par cobra y la impar es franca, que " +
+                 "es la ventana para acercarse a pegarle: su melee exige distancia 1 y distancia 1 " +
+                 "es de su lado.")]
+        [MinValue(1)]
+        public int ChargesEveryNRounds = 2;
+
+        public override string NodeName =>
+            $"Cajero — Peaje del mostrador ({Damage} en fila {CounterRow}, 1 de cada {ChargesEveryNRounds} rondas)";
 
         public override AIResult Tick(AIContext context)
         {
@@ -56,7 +70,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (Damage <= 0) return AIResult.Failed;
 
             CashierCounterTollService.ResolveOrCreate()
-                .Arm(context.SelfGuid, context.PlayerGuid, CounterRow, Damage);
+                .Arm(context.SelfGuid, context.PlayerGuid, CounterRow, Damage, ChargesEveryNRounds);
 
             return AIResult.Succeeded;
         }

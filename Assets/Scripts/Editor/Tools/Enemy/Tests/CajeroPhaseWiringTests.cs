@@ -536,12 +536,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var chips = FindNode<AINode_CashierDropChips>();
 
-            Assert.AreEqual(1, chips.Count, "Una ficha por golpe.");
+            Assert.AreEqual(CajeroAssetBuilder.ChipCount, chips.Count, "Dos fichas cuando le pegaron.");
+            Assert.AreEqual(CajeroAssetBuilder.ChipMinCount, chips.MinCount,
+                "Y una garantizada cuando no: sin piso, la ficha pedía turno de columna Y golpe " +
+                "recibido Y casilla libre, y en el playtest se vio una sola moneda en toda la pelea.");
             Assert.AreEqual(6, chips.MinValue);
             Assert.AreEqual(9, chips.MaxValue);
             Assert.AreEqual(2, chips.MinDistanceFromPlayer, "A 2-3 casillas: agarrarla cuesta el movimiento.");
             Assert.AreEqual(3, chips.MaxDistanceFromPlayer);
-            Assert.IsTrue(chips.RequireDamageTaken, "El jefe te paga por lastimarlo, no gratis.");
+            Assert.IsTrue(chips.RequireDamageTaken,
+                "El bonus por lastimarlo sigue: el piso lo complementa, no lo reemplaza.");
+            Assert.Greater(chips.Count, chips.MinCount,
+                "Pegarle tiene que pagar más que no pegarle, o el personaje deja de leerse.");
+        }
+
+        [Test]
+        public void CounterToll_LeavesAFreeRound_SoTheBossCanBeApproached()
+        {
+            var toll = FindNode<AINode_CashierCounterToll>();
+
+            // Cobrando todas las rondas el peaje deja de ser el precio de una posición: pegarle exige
+            // distancia 1, y distancia 1 está de su lado, así que acercarse costaba 20 por ronda para
+            // siempre — con el disparo castigándote por quedarte lejos, la tenaza no tenía salida.
+            Assert.AreEqual(CajeroAssetBuilder.CounterTollEveryNRounds, toll.ChargesEveryNRounds);
+            Assert.GreaterOrEqual(toll.ChargesEveryNRounds, 2,
+                "Sin ronda franca la respuesta correcta a este jefe es no entrar nunca a su lado.");
+            Assert.AreEqual(CajeroAssetBuilder.CounterTollDamage, toll.Damage);
+            Assert.AreEqual(CajeroAssetBuilder.CounterRow, toll.CounterRow);
         }
 
         [Test]
@@ -552,10 +573,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // con el turno del jugador de esa ronda ya jugado (CNF-006): DurationRounds = D deja D-1
             // turnos pisables. Con 1 la moneda aparecía y expiraba sin que el jugador pudiera nunca
             // levantarla.
-            Assert.GreaterOrEqual(CajeroAssetBuilder.ChipDurationRounds - 1, 1,
+            Assert.GreaterOrEqual(CajeroAssetBuilder.ChipDurationRounds - 1, 2,
                 $"Con DurationRounds = {CajeroAssetBuilder.ChipDurationRounds} la ficha vive " +
-                $"{CajeroAssetBuilder.ChipDurationRounds - 1} turnos pisables del jugador: la moneda " +
-                "cae al piso y se va antes de que él pueda agarrarla.");
+                $"{CajeroAssetBuilder.ChipDurationRounds - 1} turnos pisables del jugador. Hacen falta " +
+                "dos: la ficha cae DENTRO de la columna marcada, así que el primer turno para " +
+                "levantarla es el mismo en el que pararse ahí cobra el golpe. Con uno solo, agarrarla " +
+                "exigía que el único paso disponible fuera exactamente ése.");
         }
 
         [Test]

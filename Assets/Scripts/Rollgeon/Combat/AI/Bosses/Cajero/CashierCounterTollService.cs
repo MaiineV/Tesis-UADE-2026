@@ -46,6 +46,7 @@ namespace Rollgeon.Combat.Cashier
         private Guid _payerGuid;
         private int _counterRow;
         private int _tollDamage;
+        private int _chargesEveryNRounds = 1;
 
         private EventManager.EventReceiver _onTurnFinished;
         private EventManager.EventReceiver _onScopeEnded;
@@ -93,10 +94,17 @@ namespace Rollgeon.Combat.Cashier
         public bool IsArmed => _bossGuid != Guid.Empty && _payerGuid != Guid.Empty && _tollDamage > 0;
 
         /// <inheritdoc />
+        public int ChargesEveryNRounds => _chargesEveryNRounds;
+
+        /// <inheritdoc />
+        public bool ChargesThisRound => IsArmed && IsChargingRound();
+
+        /// <inheritdoc />
         public Guid BossGuid => _bossGuid;
 
         /// <inheritdoc />
-        public void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage)
+        public void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage,
+                        int chargesEveryNRounds = 1)
         {
             if (bossGuid == Guid.Empty || payerGuid == Guid.Empty || tollDamage <= 0)
             {
@@ -108,6 +116,7 @@ namespace Rollgeon.Combat.Cashier
             _payerGuid = payerGuid;
             _counterRow = counterRow;
             _tollDamage = tollDamage;
+            _chargesEveryNRounds = chargesEveryNRounds < 1 ? 1 : chargesEveryNRounds;
         }
 
         /// <inheritdoc />
@@ -117,6 +126,38 @@ namespace Rollgeon.Combat.Cashier
             _payerGuid = Guid.Empty;
             _counterRow = 0;
             _tollDamage = 0;
+            _chargesEveryNRounds = 1;
+        }
+
+        /// <summary>
+        /// Si la ronda en curso es de las que cobran. Se lee de
+        /// <see cref="TurnOrderService.RoundIndex"/> en el momento del cobro y no de un contador
+        /// propio: el resume mid-combate restaura el <c>RoundIndex</c> por su cuenta, y un contador
+        /// local quedaría desfasado justo después de cargar una partida.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006), así que su ronda
+        /// N tiene índice N-1 — la misma conversión que documenta
+        /// <c>ForcedRerollCapabilityService</c>. Con cadencia 2 eso deja la ronda 1 franca, que es
+        /// la que el peaje ya regalaba de todos modos por la ventana ciega del primer turno: la
+        /// intermitencia no agrega un caso raro al arranque.
+        /// </para>
+        /// <para>
+        /// Sin <see cref="TurnOrderService"/> registrado cobra, no perdona. Es el mismo criterio
+        /// permisivo de <c>PcRoundNumber</c> ("no sabemos la ronda ⇒ no vetamos") y falla del lado
+        /// del comportamiento viejo: un peaje que se apaga solo porque falta un servicio se
+        /// diagnostica mucho peor que uno que cobra siempre.
+        /// </para>
+        /// </remarks>
+        private bool IsChargingRound()
+        {
+            if (_chargesEveryNRounds <= 1) return true;
+            if (!ServiceLocator.TryGetService<TurnOrderService>(out var turnOrder) || turnOrder == null)
+                return true;
+
+            int round = turnOrder.RoundIndex + 1;
+            return round % _chargesEveryNRounds == 0;
         }
 
         /// <summary>
@@ -163,6 +204,11 @@ namespace Rollgeon.Combat.Cashier
             if (!IsArmed) return;
             if (args == null || args.Length == 0) return;
             if (!(args[0] is Guid entityGuid) || entityGuid != _payerGuid) return;
+
+            // La ronda franca se chequea ANTES de la geometría: es la ronda en la que el jugador
+            // tiene permitido plantarse del lado de él, así que estar ahí no es información que el
+            // peaje necesite mirar.
+            if (!IsChargingRound()) return;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
             if (!grid.TryGetPosition(_bossGuid, out var bossCoord)) return;

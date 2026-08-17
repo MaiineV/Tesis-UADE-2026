@@ -295,6 +295,9 @@ MonoBehaviour:
     - Name: CounterRow
       Entry: 3
       Data: 0
+    - Name: ChargesEveryNRounds
+      Entry: 3
+      Data: 2
     - Name: 
       Entry: 8
       Data: 
@@ -518,6 +521,9 @@ MonoBehaviour:
       Entry: 10
       Data: 1
     - Name: Count
+      Entry: 3
+      Data: 2
+    - Name: MinCount
       Entry: 3
       Data: 1
     - Name: MinValue

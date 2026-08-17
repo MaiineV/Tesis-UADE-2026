@@ -100,12 +100,42 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const int ChipMinValue = 6;
         public const int ChipMaxValue = 9;
-        // 2 = "la ficha sobrevive un turno del jugador", no dos. La duración se descuenta en el
-        // OnTurnQueueBuilt de la ronda siguiente y la ficha nace en el turno del jefe, con el jugador
-        // ya jugado (CNF-006): con 1 se moría en ese wrap, antes de que él pudiera volver a pisarla,
-        // y la moneda aparecía y desaparecía sin ser levantable nunca. Mismo off-by-one que el fuego
-        // del Croupier documenta en AINode_IgniteDetonatedSectors.
-        public const int ChipDurationRounds = 2;
+
+        /// <summary>
+        /// Rondas que vive la ficha en el piso. Vale <c>D - 1</c> turnos del jugador.
+        /// </summary>
+        /// <remarks>
+        /// La duración se descuenta en el <c>OnTurnQueueBuilt</c> de la ronda siguiente y la ficha
+        /// nace en el turno del jefe, con el jugador ya jugado (CNF-006): con 1 se moría en ese wrap,
+        /// antes de que él pudiera volver a pisarla, y la moneda aparecía y desaparecía sin ser
+        /// levantable nunca. Mismo off-by-one que el fuego del Croupier documenta en
+        /// <c>AINode_IgniteDetonatedSectors</c>.
+        /// <para>
+        /// Subido de 2 a 3 — de un turno del jugador a dos. Con uno solo, agarrarla exigía que el
+        /// único paso disponible fuera exactamente ése, y la ficha cae <b>dentro de la columna
+        /// marcada</b>: el turno para levantarla es el mismo en el que pararse ahí cobra
+        /// <see cref="RichTierDamage"/>. Con dos, entrar a buscarla puede esperar a que la columna
+        /// haya detonado. Y es lo que permite ver más de una moneda a la vez, que era el síntoma:
+        /// con 2 la vieja expiraba antes de que naciera la siguiente.
+        /// </para>
+        /// </remarks>
+        public const int ChipDurationRounds = 3;
+
+        /// <summary>Fichas por turno de columna cuando le pegaron. Ver <see cref="ChipMinCount"/>.</summary>
+        public const int ChipCount = 2;
+
+        /// <summary>
+        /// Fichas por turno de columna cuando <b>no</b> le pegaron.
+        /// </summary>
+        /// <remarks>
+        /// El jefe alterna marcar y disparar, así que un turno de columna cae cada dos turnos suyos:
+        /// esto es "una moneda cada dos turnos" garantizada. Antes la ficha pedía turno de columna
+        /// <i>y</i> golpe recibido en la ventana justa <i>y</i> casilla libre en la banda, y en el
+        /// playtest se vio una sola moneda en toda la pelea. Pegarle sigue pagando —sube a
+        /// <see cref="ChipCount"/>—; lo que dejó de ser es la única forma de ver plata en el piso.
+        /// </remarks>
+        public const int ChipMinCount = 1;
+
         public const int ChipMinDistance = 2;
         public const int ChipMaxDistance = 3;
 
@@ -164,6 +194,27 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </para>
         /// </remarks>
         public const int CounterTollDamage = 20;
+
+        /// <summary>
+        /// Cada cuántas rondas cobra el peaje. 2 = la par cobra, la impar es franca.
+        /// </summary>
+        /// <remarks>
+        /// Cobrando todas las rondas, el peaje deja de ser el precio de una posición y pasa a ser un
+        /// impuesto por intentar: pegarle al Cajero exige distancia 1, y distancia 1 está de su
+        /// lado, así que acercarse costaba <see cref="CounterTollDamage"/> por ronda para siempre y
+        /// la respuesta correcta era no acercarse nunca — con el <see cref="ShotDamage">disparo</see>
+        /// castigándote por eso mismo, la tenaza no tenía salida.
+        /// <para>
+        /// 2 y no 3: con la franca cada tres rondas el jugador entra, pega una vez y ya está pagando
+        /// dos veces para salir. Con 2, una ida y vuelta cabe entera en la ventana.
+        /// </para>
+        /// <para>
+        /// Paridad par, igual que <c>GeneralaAssetBuilder.FrostParityDivisor</c> y que la columna del
+        /// Anotador: dos jefes ya enseñan "las pares muerden", y un tercero con otra cadencia sería
+        /// una regla más que aprender sin ganar nada.
+        /// </para>
+        /// </remarks>
+        public const int CounterTollEveryNRounds = 2;
 
         /// <summary>
         /// Fila del mostrador en coordenadas de la sala. Autorada acá porque el jefe no tiene forma
@@ -630,6 +681,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             Damage = CounterTollDamage,
             CounterRow = CajeroAssetBuilder.CounterRow,
+            ChargesEveryNRounds = CounterTollEveryNRounds,
         };
 
         public static AINode_CashierRangedShot BuildRangedShot() => new AINode_CashierRangedShot
@@ -644,7 +696,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             new AINode_CashierDropChips
             {
                 Chip = chip,
-                Count = 1,
+                Count = ChipCount,
+                MinCount = ChipMinCount,
                 MinValue = ChipMinValue,
                 MaxValue = ChipMaxValue,
                 MinDistanceFromPlayer = ChipMinDistance,

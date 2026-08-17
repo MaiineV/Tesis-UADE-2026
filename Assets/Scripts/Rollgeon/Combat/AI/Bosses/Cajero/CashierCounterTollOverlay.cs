@@ -28,6 +28,14 @@ namespace Rollgeon.Combat.Cashier
     /// pagás: <see cref="CashierCounterTollService.IsSameSide"/> devuelve <c>false</c> con
     /// <c>side == 0</c>. Pintarla convertiría el único lugar seguro de la sala en zona de peligro.
     /// </para>
+    /// <para>
+    /// <b>En la ronda franca desaparece.</b> El peaje cobra una ronda de cada
+    /// <see cref="ICashierCounterTollService.ChargesEveryNRounds"/>, y el overlay se apaga entero en
+    /// la que no cobra en vez de atenuarse: "verde = cuesta, sin verde = pasá" se lee de un vistazo
+    /// y no pide comparar dos tonos del mismo color. Se repinta en
+    /// <see cref="EventName.OnTurnQueueBuilt"/>, que es el evento del wrap de ronda, así que el
+    /// cambio cae exactamente cuando la regla cambia.
+    /// </para>
     /// </remarks>
     public sealed class CashierCounterTollOverlay : IDisposable
     {
@@ -134,7 +142,11 @@ namespace Rollgeon.Combat.Cashier
             tiles = null;
 
             if (!ServiceLocator.TryGetService<ICashierCounterTollService>(out var toll) || toll == null) return false;
-            if (!toll.IsArmed) return false;
+
+            // ChargesThisRound y no IsArmed: el peaje cobra una ronda de cada dos, y en la franca no
+            // se pinta nada. Es lo único que le dice al jugador cuándo puede cruzar — un lado verde
+            // que a veces no cobra le enseña a desconfiar del overlay, que es peor que no tenerlo.
+            if (!toll.ChargesThisRound) return false;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
 

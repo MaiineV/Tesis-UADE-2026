@@ -25,6 +25,17 @@ namespace Rollgeon.Combat.Cashier
     /// de su sala queda desarmado y es inerte, y el <c>OnCombatEnd</c> lo desarma solo: un peaje
     /// que sobreviva a la pelea cobraría en la sala siguiente sin mostrador a la vista.
     /// </para>
+    /// <para>
+    /// <b>Cobra una ronda de cada <see cref="ChargesEveryNRounds"/>.</b> Cobrando todas, el peaje
+    /// dejaba de ser el precio de una posición: pegarle al Cajero exige distancia 1 y distancia 1
+    /// es de su lado, así que acercarse costaba 20 por ronda para siempre y la respuesta correcta
+    /// era no acercarse nunca. Con la ronda franca intercalada, el jugador tiene una ventana para
+    /// entrar, pegar y volver — y quedarse en la ronda que cobra sigue siendo la decisión que el
+    /// peaje quiere cobrar. Misma regla que el hielo de La Generala
+    /// (<c>GeneralaAssetBuilder.FrostParityDivisor</c>) y que la columna del Anotador: dos jefes ya
+    /// enseñaban "las pares muerden", y un tercero con otra cadencia sería una regla más que
+    /// aprender por nada.
+    /// </para>
     /// </remarks>
     public interface ICashierCounterTollService
     {
@@ -36,6 +47,19 @@ namespace Rollgeon.Combat.Cashier
 
         /// <summary><c>true</c> cuando hay jefe, pagador y daño — o sea, cuando el peaje puede cobrar.</summary>
         bool IsArmed { get; }
+
+        /// <summary>
+        /// Cada cuántas rondas cobra el peaje. 1 = todas. 2 = la ronda par cobra y la impar es
+        /// franca. 0 se trata como 1.
+        /// </summary>
+        int ChargesEveryNRounds { get; }
+
+        /// <summary>
+        /// <c>true</c> si el peaje está armado <b>y</b> esta ronda es de las que cobran. Lo mira el
+        /// overlay: en la ronda franca no pinta nada, que es la única forma que tiene el jugador de
+        /// saber que puede cruzar sin pagar.
+        /// </summary>
+        bool ChargesThisRound { get; }
 
         /// <summary>
         /// Jefe que cobra el peaje, o <see cref="Guid.Empty"/> si no está armado. Lo necesita el
@@ -53,7 +77,12 @@ namespace Rollgeon.Combat.Cashier
         /// cobraría peaje también, que no es lo que dice la ficha.</param>
         /// <param name="counterRow">Fila del mostrador, en coordenadas de la sala.</param>
         /// <param name="tollDamage">Daño por terminar el turno de su lado. Ficha: 10.</param>
-        void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage);
+        /// <param name="chargesEveryNRounds">
+        /// Cadencia del cobro. Default 1 (todas las rondas) para que un caller que no le importe la
+        /// intermitencia no tenga que pensarla; el jefe pasa 2.
+        /// </param>
+        void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage,
+                 int chargesEveryNRounds = 1);
 
         /// <summary>Apaga el peaje. Lo llama el fin de combate; el jefe nunca lo apaga por su cuenta.</summary>
         void Disarm();

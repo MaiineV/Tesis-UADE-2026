@@ -83,6 +83,20 @@ namespace Rollgeon.Combat.AI.Tests
 
         private void Arm() => _toll.Arm(_boss, _player, CounterRow, TollDamage);
 
+        /// <summary>Arma con la cadencia de la ficha: cobra una ronda de cada dos.</summary>
+        private void ArmIntermittent() => _toll.Arm(_boss, _player, CounterRow, TollDamage, 2);
+
+        /// <summary>
+        /// Deja el combate en la ronda <paramref name="round"/> (1-based, como la ve el jugador):
+        /// <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006).
+        /// </summary>
+        private void PutPlayerInRound(int round)
+        {
+            var turnOrder = new TurnOrderService();
+            turnOrder.RestoreState(new[] { _player, _boss }, cursor: 0, roundIndex: round - 1);
+            ServiceLocator.AddService<TurnOrderService>(turnOrder);
+        }
+
         // =====================================================================
         // Qué se pinta
         // =====================================================================
@@ -98,6 +112,38 @@ namespace Rollgeon.Combat.AI.Tests
 
             // Assert
             Assert.IsFalse(resolved);
+        }
+
+        [Test]
+        public void Side_OnTheFreeRound_PaintsNothing()
+        {
+            // Arrange — el peaje cobra una ronda de cada dos; la impar es franca.
+            ArmIntermittent();
+            PutPlayerInRound(1);
+
+            // Act
+            bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out _);
+
+            // Assert — se apaga entero en vez de atenuarse: "verde = cuesta, sin verde = pasá" se
+            // lee de un vistazo. Un lado pintado que a veces no cobra le enseña al jugador a
+            // desconfiar del overlay, que es peor que no tenerlo.
+            Assert.IsFalse(resolved,
+                "En la ronda franca cruzar es gratis, y el overlay es lo único que lo dice.");
+        }
+
+        [Test]
+        public void Side_OnTheChargingRound_PaintsItAgain()
+        {
+            // Arrange — la franca no es un descuento permanente.
+            ArmIntermittent();
+            PutPlayerInRound(2);
+
+            // Act
+            bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out var tiles);
+
+            // Assert
+            Assert.IsTrue(resolved);
+            CollectionAssert.IsNotEmpty(tiles);
         }
 
         [Test]

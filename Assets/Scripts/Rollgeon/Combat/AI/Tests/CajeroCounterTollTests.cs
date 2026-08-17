@@ -35,6 +35,9 @@ namespace Rollgeon.Combat.AI.Tests
         // constante porque vive en el assembly de Editor y este fixture es de runtime.
         private const int TollDamage = 20;
 
+        /// <summary>Cadencia de la ficha (<c>CajeroAssetBuilder.CounterTollEveryNRounds</c>).</summary>
+        private const int EveryNRounds = 2;
+
         /// <summary>Del lado de arriba del mostrador — el lado del jefe.</summary>
         private static readonly GridCoord BossCoord = new GridCoord(0, 2);
 
@@ -84,13 +87,31 @@ namespace Rollgeon.Combat.AI.Tests
 
         private void Arm() => _toll.Arm(_boss, _player, CounterRow, TollDamage);
 
+        /// <summary>Arma con la cadencia de la ficha (<c>CounterTollEveryNRounds</c> = 2).</summary>
+        private void ArmIntermittent() => _toll.Arm(_boss, _player, CounterRow, TollDamage, EveryNRounds);
+
         private void EndTurnOf(Guid entityGuid) =>
             EventManager.Trigger(EventName.OnTurnFinished, entityGuid);
+
+        /// <summary>
+        /// Deja el combate en la ronda <paramref name="round"/> (1-based, como la ve el jugador).
+        /// <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006), así que su ronda N
+        /// tiene índice N-1.
+        /// </summary>
+        private void PutPlayerInRound(int round)
+        {
+            var turnOrder = new TurnOrderService();
+            turnOrder.RestoreState(new[] { _player, _boss }, cursor: 0, roundIndex: round - 1);
+            ServiceLocator.AddService<TurnOrderService>(turnOrder);
+        }
+
+        private void StandOnHisSide() => _grid.Register(_player, new GridCoord(0, 1));
 
         private static AINode_CashierCounterToll NewNode() => new AINode_CashierCounterToll
         {
             Damage = TollDamage,
             CounterRow = CounterRow,
+            ChargesEveryNRounds = EveryNRounds,
         };
 
         private AIContext NewContext() => new AIContext
@@ -264,6 +285,140 @@ namespace Rollgeon.Combat.AI.Tests
                 "Sigue armado: el peaje se saltea el cobro, no se apaga por un servicio ausente.");
         }
 
+        // ---- La ronda franca ---------------------------------------------
+        //
+        // Cobrando todas las rondas el peaje deja de ser el precio de una posición y pasa a ser un
+        // impuesto por intentar: pegarle al Cajero exige distancia 1, y distancia 1 está de su lado.
+        // La ronda intercalada es la ventana para entrar, pegar y volver.
+
+        [Test]
+        public void test_toll_onAChargingRound_charges()
+        {
+            // Arrange — ronda 2: par, cobra.
+            ArmIntermittent();
+            PutPlayerInRound(2);
+            StandOnHisSide();
+
+            // Act
+            EndTurnOf(_player);
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count);
+            Assert.AreEqual(TollDamage, _pipeline.Resolved[0].BaseDamage);
+        }
+
+        [Test]
+        public void test_toll_onTheFreeRound_chargesNothing()
+        {
+            // Arrange — ronda 1: impar, franca.
+            ArmIntermittent();
+            PutPlayerInRound(1);
+            StandOnHisSide();
+
+            // Act
+            EndTurnOf(_player);
+
+            // Assert
+            Assert.IsEmpty(_pipeline.Resolved,
+                "La ronda franca es la ventana para acercarse: sin ella, la respuesta correcta a " +
+                "este jefe es no entrar nunca a su lado.");
+            Assert.IsTrue(_toll.IsArmed,
+                "Franca no es desarmado — la ronda que viene vuelve a cobrar.");
+        }
+
+        [Test]
+        public void test_toll_theFreeRoundIsNotADiscount_itAlternates()
+        {
+            // Arrange — se queda plantado de su lado tres rondas seguidas.
+            ArmIntermittent();
+            StandOnHisSide();
+
+            // Act
+            for (int round = 1; round <= 4; round++)
+            {
+                PutPlayerInRound(round);
+                EndTurnOf(_player);
+            }
+
+            // Assert — rondas 2 y 4 cobran; 1 y 3 no.
+            Assert.AreEqual(2, _pipeline.Resolved.Count,
+                "Una de cada dos: quedarse plantado sigue costando, sólo la mitad de seguido.");
+        }
+
+        [Test]
+        public void test_toll_chargesThisRound_tracksTheCadence_forTheOverlay()
+        {
+            // Arrange
+            ArmIntermittent();
+
+            // Act + Assert — es lo único que le dice al jugador cuándo puede cruzar.
+            PutPlayerInRound(1);
+            Assert.IsFalse(_toll.ChargesThisRound, "Ronda impar: el overlay no pinta nada.");
+
+            PutPlayerInRound(2);
+            Assert.IsTrue(_toll.ChargesThisRound, "Ronda par: el lado del jefe se pinta.");
+        }
+
+        [Test]
+        public void test_toll_disarmed_neverChargesThisRound()
+        {
+            // Arrange — ronda que cobraría, pero el peaje no está armado.
+            PutPlayerInRound(2);
+
+            // Assert
+            Assert.IsFalse(_toll.ChargesThisRound,
+                "Sin armar no hay mostrador, y el overlay no tiene lado que pintar.");
+        }
+
+        [Test]
+        public void test_toll_withoutTurnOrderService_chargesEveryRound()
+        {
+            // Arrange — sin la cola de turnos no hay ronda que leer.
+            ArmIntermittent();
+            StandOnHisSide();
+
+            // Act
+            EndTurnOf(_player);
+
+            // Assert — permisivo, igual que PcRoundNumber: un peaje que se apaga porque falta un
+            // servicio se diagnostica mucho peor que uno que cobra siempre.
+            Assert.AreEqual(1, _pipeline.Resolved.Count,
+                "Sin ronda conocida cobra: degrada al comportamiento viejo, no a mudo.");
+        }
+
+        [Test]
+        public void test_toll_armedWithCadenceOne_chargesEveryRound()
+        {
+            // Arrange — cadencia 1 es el default de Arm: "sin intermitencia".
+            Arm();
+            StandOnHisSide();
+
+            // Act
+            for (int round = 1; round <= 3; round++)
+            {
+                PutPlayerInRound(round);
+                EndTurnOf(_player);
+            }
+
+            // Assert
+            Assert.AreEqual(3, _pipeline.Resolved.Count);
+            Assert.AreEqual(1, _toll.ChargesEveryNRounds);
+        }
+
+        [Test]
+        public void test_toll_disarm_resetsTheCadence()
+        {
+            // Arrange — el servicio es Global y sobrevive a la pelea; una cadencia pegada haría que
+            // el próximo jefe que lo arme sin pedirla heredara la intermitencia del Cajero.
+            ArmIntermittent();
+
+            // Act
+            _toll.Disarm();
+
+            // Assert
+            Assert.AreEqual(1, _toll.ChargesEveryNRounds);
+        }
+
         // ---- La regla del lado --------------------------------------------
 
         [TestCase(2, -2, false, TestName = "test_sameSide_acrossTheCounter_isFalse")]
@@ -293,6 +448,36 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(_toll.IsArmed);
             Assert.AreEqual(TollDamage, _toll.TollDamage);
             Assert.AreEqual(CounterRow, _toll.CounterRow);
+        }
+
+        [Test]
+        public void test_tollNode_armsTheCadence_soTheFreeRoundComesFromTheSheet()
+        {
+            // Arrange — la intermitencia se autora en el árbol, no la decide el servicio.
+            var node = NewNode();
+
+            // Act
+            node.Tick(NewContext());
+
+            // Assert
+            Assert.AreEqual(EveryNRounds, _toll.ChargesEveryNRounds,
+                "Sin esto el peaje vuelve a cobrar todas las rondas y acercarse deja de ser posible.");
+        }
+
+        [Test]
+        public void test_tollNode_fromAnAssetAuthoredBeforeTheField_chargesEveryRound()
+        {
+            // Arrange — Odin no corre los inicializadores de campo al deserializar, así que un
+            // ED_Boss_Cajero.asset viejo trae ChargesEveryNRounds en 0.
+            var node = NewNode();
+            node.ChargesEveryNRounds = 0;
+
+            // Act
+            node.Tick(NewContext());
+
+            // Assert — degrada al comportamiento viejo, no a un peaje apagado.
+            Assert.AreEqual(1, _toll.ChargesEveryNRounds);
+            Assert.IsTrue(_toll.IsArmed);
         }
 
         [Test]

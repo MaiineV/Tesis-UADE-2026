@@ -196,14 +196,70 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _ledger.RegisteredChips);
         }
 
+        // ---- El piso garantizado -------------------------------------------
+        //
+        // Con RequireDamageTaken como única puerta la ficha pedía tres cosas a la vez: turno de
+        // columna (uno de cada dos), golpe recibido en la ventana justa, y casilla libre en la banda.
+        // En el playtest se vio UNA moneda en toda la pelea.
+
+        [Test]
+        public void Tick_WithoutDamageTaken_StillDropsTheGuaranteedFloor()
+        {
+            MarkColumn();
+            _ledger.DamageTaken = false;
+            var node = NewNode();
+            node.Count = 2;
+            node.MinCount = 1;
+
+            var result = node.Tick(NewContext());
+
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(1, LiveChips().Count,
+                "La columna siempre deja algo en el piso: es lo que hace que se vean monedas.");
+        }
+
+        [Test]
+        public void Tick_WithDamageTaken_DropsTheFullCount_SoHittingHimStillPays()
+        {
+            MarkColumn();
+            var node = NewNode();
+            node.Count = 2;
+            node.MinCount = 1;
+
+            node.Tick(NewContext());
+
+            Assert.AreEqual(2, LiveChips().Count,
+                "Pegarle sigue pagando — sube de MinCount a Count. El personaje no cambia.");
+        }
+
+        [Test]
+        public void Tick_TheFloorStillConsumesTheDamageFlag_SoNoHitIsPaidTwice()
+        {
+            // El flag es destructivo y no se puede pre-chequear. Dejarlo puesto haría que el próximo
+            // turno de columna cobrara otra vez un golpe ya pagado.
+            MarkColumn();
+            var node = NewNode();
+            node.Count = 2;
+            node.MinCount = 1;
+            var context = NewContext();
+
+            node.Tick(context);        // Le pegaron: 2 fichas y consume el flag.
+            MarkColumn();
+            node.Tick(context);        // Sin golpe nuevo: cae al piso.
+
+            Assert.AreEqual(3, _ledger.RegisteredChips,
+                "2 del turno con golpe + 1 del piso, no 2 + 2.");
+        }
+
         // ---- Failed benignos ----------------------------------------------
 
         [Test]
-        public void Tick_WithoutDamageTaken_ReturnsFailed_AndDropsNothing()
+        public void Tick_WithoutDamageTaken_AndNoFloor_ReturnsFailed_AndDropsNothing()
         {
             MarkColumn();
             _ledger.DamageTaken = false;
 
+            // MinCount = 0 (default del nodo): sin piso, sin golpe, no hay ficha.
             Assert.AreEqual(AIResult.Failed, NewNode().Tick(NewContext()));
             Assert.IsEmpty(LiveChips());
         }

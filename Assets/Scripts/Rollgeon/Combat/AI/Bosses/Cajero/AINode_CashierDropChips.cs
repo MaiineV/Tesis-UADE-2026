@@ -10,11 +10,12 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Suelta": si al Cajero le pegaron desde su turno anterior, tira <see cref="Count"/> ficha(s)
-    /// de <see cref="MinValue"/>-<see cref="MaxValue"/> de oro <b>dentro de la columna que acaba de
+    /// "Suelta": en cada turno de columna el Cajero tira fichas de
+    /// <see cref="MinValue"/>-<see cref="MaxValue"/> de oro <b>dentro de la columna que acaba de
     /// marcar</b>, a <see cref="MinDistanceFromPlayer"/>-<see cref="MaxDistanceFromPlayer"/> casillas
-    /// del jugador. La ficha dura lo que su <see cref="HazardDefinitionSO.DurationRounds"/>: se
-    /// agarra ya o rueda de vuelta a la caja.
+    /// del jugador: <see cref="Count"/> si le pegaron desde su turno anterior,
+    /// <see cref="MinCount"/> si no. La ficha dura lo que su
+    /// <see cref="HazardDefinitionSO.DurationRounds"/>: se agarra ya o rueda de vuelta a la caja.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -39,9 +40,19 @@ namespace Rollgeon.Combat.AI.Decisions
     /// va a caer el hacha — eso es el diseño, no un bug.
     /// </para>
     /// <para>
-    /// <b>Devuelve Failed cuando no hay nada que soltar</b> (no le pegaron, no hay columna, no hay
-    /// casilla válida). Es un Failed benigno: en el árbol va en <c>Selector[DropChips, Wait]</c>,
-    /// como el KeepDistance — suelto en el Sequence le abortaría el turno al jefe.
+    /// <b>El piso de <see cref="MinCount"/> existe porque el bonus solo casi nunca caía.</b> Con
+    /// <c>RequireDamageTaken</c> como única puerta, la ficha pedía tres cosas a la vez: turno de
+    /// columna (uno de cada dos), golpe recibido en la ventana justa, y una casilla libre en la banda
+    /// de distancia. En el playtest el jugador vio <b>una</b> moneda en toda la pelea. Con el piso, la
+    /// columna siempre deja algo en el piso y pegarle sigue pagando: sube de
+    /// <see cref="MinCount"/> a <see cref="Count"/>. El personaje no cambia — te suelta plata cuando
+    /// lo lastimás—, deja de ser la única forma de ver una moneda.
+    /// </para>
+    /// <para>
+    /// <b>Devuelve Failed cuando no hay nada que soltar</b> (no hay columna, no hay casilla válida,
+    /// o no le pegaron y <see cref="MinCount"/> es 0). Es un Failed benigno: en el árbol va en
+    /// <c>Selector[DropChips, Wait]</c>, como el KeepDistance — suelto en el Sequence le abortaría el
+    /// turno al jefe.
     /// </para>
     /// <para>
     /// <b>Corre todos los turnos, pero sólo paga en los de columna.</b> El jefe alterna marcar y
@@ -65,9 +76,15 @@ namespace Rollgeon.Combat.AI.Decisions
                  "= dura un turno del jugador; con 1 la moneda expira antes de que él pueda pisarla).")]
         public HazardDefinitionSO Chip;
 
-        [Tooltip("Fichas a soltar por turno. Ficha del jefe: 1 por golpe recibido.")]
+        [Tooltip("Fichas a soltar en un turno de columna en el que el jefe recibió daño.")]
         [MinValue(1)]
         public int Count = 1;
+
+        [Tooltip("Fichas mínimas por turno de columna, incluso si no le pegaron. El jefe alterna " +
+                 "marcar y disparar, así que esto es una ficha cada dos turnos suyos. 0 = sólo " +
+                 "suelta cuando le pegan.")]
+        [MinValue(0)]
+        public int MinCount;
 
         [Tooltip("Valor mínimo en oro de una ficha (antes del multiplicador post-arqueo).")]
         [MinValue(0)]
@@ -89,7 +106,8 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Si está activo, sólo suelta ficha en turnos en que el jefe recibió daño.")]
         public bool RequireDamageTaken = true;
 
-        public override string NodeName => $"Cashier Drop Chips ({Count} × {MinValue}-{MaxValue}g)";
+        public override string NodeName =>
+            $"Cashier Drop Chips ({MinCount}→{Count} × {MinValue}-{MaxValue}g)";
 
         public override AIResult Tick(AIContext context)
         {
@@ -120,13 +138,17 @@ namespace Rollgeon.Combat.AI.Decisions
             var column = threat.GetPendingTiles(context.SelfGuid);
             if (column == null || column.Count == 0) return AIResult.Failed;
 
-            if (RequireDamageTaken && !ledger.ConsumeDamageTaken(context.SelfGuid)) return AIResult.Failed;
+            // El flag se consume igual cuando hay piso: es destructivo y no se puede pre-chequear, y
+            // dejarlo puesto haría que el próximo turno de columna cobrara un golpe que ya se pagó.
+            bool paid = !RequireDamageTaken || ledger.ConsumeDamageTaken(context.SelfGuid);
+            int toDrop = paid ? Count : MinCount;
+            if (toDrop <= 0) return AIResult.Failed;
 
             var used = new HashSet<GridCoord>();
             int dropped = 0;
             var rng = context.Rng ?? new System.Random();
 
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < toDrop; i++)
             {
                 if (!TryPickTile(grid, column, playerCoord, used, rng, out var coord)) break;
                 used.Add(coord);
