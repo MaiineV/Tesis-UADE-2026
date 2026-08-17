@@ -10,7 +10,7 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// El peaje del mostrador: 10 por terminar el turno del mismo lado que el Cajero. Ficha de
+    /// El peaje del mostrador: 20 por terminar el turno del mismo lado que el Cajero. Ficha de
     /// diseño "El Cajero" (piso 2), §El peaje.
     /// </summary>
     /// <remarks>
@@ -31,7 +31,9 @@ namespace Rollgeon.Combat.AI.Tests
     public class CajeroCounterTollTests
     {
         private const int CounterRow = 0;
-        private const int TollDamage = 10;
+        // El número de la ficha (CajeroAssetBuilder.CounterTollDamage). No se referencia la
+        // constante porque vive en el assembly de Editor y este fixture es de runtime.
+        private const int TollDamage = 20;
 
         /// <summary>Del lado de arriba del mostrador — el lado del jefe.</summary>
         private static readonly GridCoord BossCoord = new GridCoord(0, 2);

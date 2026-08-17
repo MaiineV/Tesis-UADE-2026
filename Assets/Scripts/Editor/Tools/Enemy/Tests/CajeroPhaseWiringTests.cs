@@ -10,6 +10,7 @@ using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.EditorTools;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.PreConditions.Concretes;
 using UnityEngine;
 
@@ -56,14 +57,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_HasTheStepsOfTheSheet()
         {
-            Assert.AreEqual(6, _root.Children.Count,
-                "Detona → arqueo → arma el peaje → ataca (marca o dispara) → suelta → se corre.");
+            Assert.AreEqual(7, _root.Children.Count,
+                "Detona → arqueo → Comisiones → arma el peaje → ataca (marca o dispara) → suelta → se corre.");
             Assert.IsNotNull(FindNode<AINode_TelegraphMarkGoldScaled>(), "Falta la columna que engorda.");
             Assert.IsNotNull(FindNode<AINode_CashierRangedShot>(), "Falta el disparo de los turnos sin columna.");
             Assert.IsNotNull(FindNode<AINode_CashierCounterToll>(), "Falta el peaje del mostrador.");
             Assert.IsNotNull(FindNode<AINode_CashierDropChips>(), "Faltan las fichas.");
             Assert.IsNotNull(FindNode<AINode_KeepDistance>(), "Falta el repliegue al otro lado del mostrador.");
             Assert.IsNotNull(FindNode<AINode_CashierAudit>(), "Falta el arqueo de caja.");
+            Assert.IsNotNull(FindNode<AINode_SpawnReinforcements>(), "Faltan las Comisiones del 50%.");
         }
 
         [Test]
@@ -88,7 +90,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void AuditGate_TriggersAtFiftyPercentHp()
         {
-            var gate = FindGateAtPercent(0.5f);
+            var gate = FindGateAtPercent<AINode_CashierAudit>(0.5f);
 
             Assert.IsNotNull(gate, "No hay gate de HP al 50% — el arqueo nunca dispararía.");
             Assert.IsNotNull(gate.Else, "El gate necesita Else (un If sin rama devuelve Failed y aborta el turno).");
@@ -98,7 +100,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void AuditGate_RunsBeforeTheAttack()
         {
-            int gateIdx = IndexOfGateAtPercent(0.5f);
+            int gateIdx = IndexOfGateAtPercent<AINode_CashierAudit>(0.5f);
             int attackIdx = _root.Children.FindIndex(c =>
                 Descendants(c).Any(n => n is AINode_TelegraphMarkGoldScaled));
 
@@ -111,7 +113,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void AuditGate_IsLatchedOnce_AndThenAnnouncesPhaseTwo()
         {
-            var gate = FindGateAtPercent(0.5f);
+            var gate = FindGateAtPercent<AINode_CashierAudit>(0.5f);
             var once = gate.Then as AINode_Once;
 
             Assert.IsNotNull(once, "El arqueo es un one-shot: sin Once se cobraría el 40% todos los turnos.");
@@ -128,14 +130,227 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Once_WrapsOnlyTheAudit_SoChipsAndColumnKeepRunning()
+        public void Once_WrapsOnlyThePhaseGates_SoChipsAndColumnKeepRunning()
         {
             var latches = Descendants(_root).OfType<AINode_Once>().ToList();
 
-            Assert.AreEqual(1, latches.Count, "El único one-shot del jefe es el arqueo.");
-            Assert.IsNotEmpty(Descendants(latches[0]).OfType<AINode_CashierAudit>().ToList());
-            Assert.IsEmpty(Descendants(latches[0]).OfType<AINode_CashierDropChips>().ToList(),
-                "Las fichas se sueltan todos los turnos en que le peguen — un Once las latchearía.");
+            Assert.AreEqual(2, latches.Count,
+                "Los one-shots del jefe son dos y sólo dos: el arqueo y las Comisiones.");
+            Assert.AreEqual(1, latches.Count(l => Descendants(l).OfType<AINode_CashierAudit>().Any()),
+                "Falta el Once del arqueo.");
+            Assert.AreEqual(1, latches.Count(l => Descendants(l).OfType<AINode_SpawnReinforcements>().Any()),
+                "Falta el Once de las Comisiones.");
+
+            foreach (var latch in latches)
+            {
+                Assert.IsEmpty(Descendants(latch).OfType<AINode_CashierDropChips>().ToList(),
+                    "Las fichas se sueltan todos los turnos en que le peguen — un Once las latchearía.");
+                Assert.IsEmpty(Descendants(latch).OfType<AINode_TelegraphMarkGoldScaled>().ToList(),
+                    "La columna se marca todos los turnos pares — un Once la apagaría después del primero.");
+            }
+        }
+
+        // ---- Las Comisiones -----------------------------------------------
+
+        [Test]
+        public void CritterGate_SpawnsTwoOfThemAtFiftyPercentHp()
+        {
+            var gate = FindGateAtPercent<AINode_SpawnReinforcements>(0.5f);
+
+            Assert.IsNotNull(gate, "No hay gate de HP al 50% para las Comisiones.");
+            Assert.IsInstanceOf<AINode_Wait>(gate.Else,
+                "El gate necesita Else: un If sin rama devuelve Failed y aborta el turno.");
+
+            var spawn = FindNode<AINode_SpawnReinforcements>();
+            Assert.AreEqual(2, spawn.Count, "Dos bichos, los que pidió el diseño.");
+            Assert.AreEqual(CajeroAssetBuilder.CritterCount, spawn.Count,
+                "El nodo tiene que salir cableado desde la constante de la ficha, no de su default.");
+        }
+
+        /// <summary>
+        /// Sin <see cref="AINode_Once"/> el nodo se auto-gatea y repone la oleada cada vez que la
+        /// matan (así lo usa La Generala para su mesa de dados). Acá eso sería una pelea que no
+        /// termina: el jefe se cura hasta 30 en el arqueo del mismo umbral.
+        /// </summary>
+        [Test]
+        public void CritterGate_IsLatchedOnce_SoTheWaveNeverRespawns()
+        {
+            var gate = FindGateAtPercent<AINode_SpawnReinforcements>(0.5f);
+            var once = gate.Then as AINode_Once;
+
+            Assert.IsNotNull(once, "Sin Once las Comisiones se repondrían para siempre.");
+            Assert.IsInstanceOf<AINode_SpawnReinforcements>(once.Child,
+                "El Once envuelve el spawn y nada más.");
+        }
+
+        /// <summary>
+        /// Comparten umbral con el arqueo a propósito —cruzar la mitad es UN momento de la pelea—
+        /// pero no comparten latch: <c>AINode_SpawnReinforcements</c> devuelve Failed cuando la sala
+        /// no tiene tiles de borde libres, y un Failed adentro del Sequence del arqueo impediría que
+        /// su <c>Once</c> latcheara. El turno siguiente el arqueo volvería a cobrar el 40% del oro y
+        /// a curar hasta 30.
+        /// </summary>
+        [Test]
+        public void CritterGate_HasItsOwnLatch_SoAFailedSpawnCannotRechargeTheAudit()
+        {
+            var auditLatch = FindGateAtPercent<AINode_CashierAudit>(0.5f).Then as AINode_Once;
+            var critterLatch = FindGateAtPercent<AINode_SpawnReinforcements>(0.5f).Then as AINode_Once;
+
+            Assert.IsNotNull(auditLatch);
+            Assert.IsNotNull(critterLatch);
+            Assert.AreNotSame(auditLatch, critterLatch, "Son dos gates y dos latches, no uno.");
+            Assert.IsEmpty(Descendants(auditLatch).OfType<AINode_SpawnReinforcements>().ToList(),
+                "El spawn no puede colgar del Once del arqueo: su Failed dejaría el arqueo sin latchear.");
+        }
+
+        [Test]
+        public void CritterGate_RunsBeforeTheAttack_LikeEveryOtherPhaseGate()
+        {
+            int gateIdx = IndexOfGateAtPercent<AINode_SpawnReinforcements>(0.5f);
+            int attackIdx = _root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_TelegraphMarkGoldScaled));
+
+            Assert.Greater(gateIdx, -1);
+            Assert.Greater(attackIdx, gateIdx,
+                "Las fases van antes del ataque: en el path no-coroutine un Running del ataque " +
+                "aborta la secuencia y las Comisiones no saldrían nunca.");
+        }
+
+        [Test]
+        public void CritterGate_AnimatesTheSummon_SoTheyDoNotAppearOutOfNowhere()
+        {
+            var spawn = FindNode<AINode_SpawnReinforcements>();
+
+            Assert.AreEqual(BossFeedbackIds.CajeroMeleeAnim, spawn.SpawnFeedbackId,
+                "Es el trigger 'Attack', el único no-idle de AnimCon_GeneralDirector. Sin gesto, " +
+                "dos bichos se materializan con el jefe quieto y no se leen como cosa suya.");
+        }
+
+        [Test]
+        public void CritterGate_TakesTheEnemyDataHandedToTheBuilder()
+        {
+            var critter = ScriptableObject.CreateInstance<EnemyDataSO>();
+            critter.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                var root = CajeroAssetBuilder.BuildAIRoot(chip: null, critter: critter);
+                var spawn = Descendants(root).OfType<AINode_SpawnReinforcements>().First();
+
+                Assert.AreSame(critter, spawn.EnemyToSpawn,
+                    "El MenuItem crea el ED_Min_Comision y lo inyecta acá; en null el nodo devuelve " +
+                    "Failed todos los turnos y no sale nada.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(critter);
+            }
+        }
+
+        // ---- La ficha de la Comisión ---------------------------------------
+
+        [Test]
+        public void CritterData_IsSmallWeakAndWorthNoGold()
+        {
+            var critter = ScriptableObject.CreateInstance<EnemyDataSO>();
+            critter.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CajeroAssetBuilder.PopulateCritterData(critter);
+
+                Assert.AreEqual("minion.cajero_comision", critter.EntityId);
+                Assert.AreEqual("Comisión", critter.DisplayName);
+                Assert.AreEqual(18, critter.BaseHP,
+                    "Muere de un golpe de la mediana del piso 2 (24): sacárselos de encima cuesta " +
+                    "un golpe cada uno, y ese es todo el precio.");
+                Assert.Less(critter.BaseHP, CajeroAssetBuilder.BaseHP / 4,
+                    "Es un bicho, no un segundo jefe.");
+                Assert.AreEqual(6, critter.BaseAttack, "Mordisco flojo: los dos juntos pegan 12.");
+                Assert.Less(2 * critter.BaseAttack, CajeroAssetBuilder.CounterTollDamage + 1,
+                    "Los dos juntos no pueden pegar más que el peaje: son un impuesto por dejarlos " +
+                    "vivos, no la amenaza principal.");
+                Assert.AreEqual(1, critter.BaseAttackRange, "Muerden pegados.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(critter);
+            }
+        }
+
+        /// <summary>
+        /// El daño de la columna del Cajero escala con el oro que el jugador lleva encima (ver
+        /// <c>BuildGoldTiers</c>): una Comisión que pague al morir le sube el escalón al jefe, o sea
+        /// que matarlas haría la pelea <b>más</b> difícil.
+        /// </summary>
+        [Test]
+        public void CritterData_DropsNoGold_BecauseGoldIsWhatFeedsHisColumn()
+        {
+            var critter = ScriptableObject.CreateInstance<EnemyDataSO>();
+            critter.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CajeroAssetBuilder.PopulateCritterData(critter);
+
+                Assert.AreEqual(0, critter.MinGoldDrop);
+                Assert.AreEqual(0, critter.MaxGoldDrop);
+            }
+            finally
+            {
+                Object.DestroyImmediate(critter);
+            }
+        }
+
+        /// <summary>
+        /// Sin árbol propio el spawn cae al <c>BasicEnemyAI</c>, que le pega al jugador desde
+        /// cualquier distancia y sin moverse: un impuesto inesquivable en vez de un bicho que se
+        /// puede kitear o matar antes de que llegue.
+        /// </summary>
+        [Test]
+        public void CritterAI_BitesFirstAndFliesAfter_SoArrivingDoesNotEatItsAttack()
+        {
+            var root = CajeroAssetBuilder.BuildCritterAIRoot();
+
+            Assert.IsNotNull(root, "La Comisión necesita árbol propio: sin él cae al BasicEnemyAI.");
+            Assert.AreEqual(2, root.Children.Count, "Muerde y vuela, nada más.");
+
+            int biteIdx = root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_CashierRangedShot));
+            int moveIdx = root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_Move));
+
+            Assert.Greater(biteIdx, -1, "Falta el mordisco.");
+            Assert.Greater(moveIdx, biteIdx,
+                "AINode_Move devuelve Running cuando se mueve, y un Running corta el Sequence: con " +
+                "el orden invertido, el turno en que llega al jugador se le comería el mordisco.");
+        }
+
+        [Test]
+        public void CritterAI_BiteIsMelee_NotTheBossRangedShot()
+        {
+            var bite = Descendants(CajeroAssetBuilder.BuildCritterAIRoot())
+                .OfType<AINode_CashierRangedShot>().First();
+
+            Assert.AreEqual(1, bite.Range,
+                "Range 1 es lo que convierte el disparo del jefe en un mordisco. Con más, la " +
+                "Comisión pega sin acercarse y deja de poder esquivarse caminando.");
+            Assert.AreEqual(6, bite.Damage);
+            Assert.AreEqual(CajeroAssetBuilder.CritterDamage, bite.Damage,
+                "Cableado desde la constante de la ficha, no del default de 12 del nodo.");
+        }
+
+        [Test]
+        public void CritterAI_EveryStepIsIsolated_SoABenignFailedDoesNotEatItsTurn()
+        {
+            var root = CajeroAssetBuilder.BuildCritterAIRoot();
+
+            // El mordisco falla con el jugador lejos y el vuelo falla cuando ya está pegada: los dos
+            // Failed son normales y ninguno tiene que abortar el turno del bicho.
+            foreach (var child in root.Children)
+            {
+                var selector = child as AINode_Selector;
+                Assert.IsNotNull(selector, "Cada paso de la Comisión va en Selector[acción, Wait].");
+                Assert.IsTrue(selector.Children.Any(c => c is AINode_Wait),
+                    "El Selector sin Wait de fallback devuelve Failed igual.");
+            }
         }
 
         // ---- Aislamiento de fallos ---------------------------------------
@@ -219,14 +434,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ---- El peaje -----------------------------------------------------
 
         [Test]
-        public void Toll_ChargesTheSheetTen()
+        public void Toll_ChargesTheSheetTwenty()
         {
             var toll = FindNode<AINode_CashierCounterToll>();
 
             Assert.AreEqual(CajeroAssetBuilder.CounterTollDamage, toll.Damage,
                 "El nodo tiene que salir cableado desde la constante de la ficha, no de su default.");
-            Assert.AreEqual(10, toll.Damage,
-                "Sin peaje, elegir abertura no cuesta nada y el mostrador es decorado.");
+            Assert.AreEqual(20, toll.Damage,
+                "Sin peaje, elegir abertura no cuesta nada y el mostrador es decorado. A 10 el " +
+                "peaje salía más barato que replegarse y convenía comerlo; a 20 quedarse del lado " +
+                "de él vuelve a ser una decisión.");
+            Assert.Less(toll.Damage, 35,
+                "El peaje es el precio de una posición, no su ataque: tiene que quedar por debajo " +
+                "del techo de daño por golpe del piso 2.");
         }
 
         /// <summary>
@@ -438,7 +658,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 var second = data.AIRoot as AINode_Sequence;
 
                 Assert.IsNotNull(second);
-                Assert.AreEqual(6, second.Children.Count, "Re-ejecutar el builder no acumula hijos.");
+                Assert.AreEqual(7, second.Children.Count, "Re-ejecutar el builder no acumula hijos.");
                 Assert.AreNotSame(first, second,
                     "Cada build es un árbol nuevo: nodos compartidos arrastrarían estado runtime.");
             }
@@ -486,16 +706,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return null;
         }
 
-        private AINode_If FindGateAtPercent(float percent)
+        /// <summary>
+        /// El gate de HP del hijo raíz que además contiene un <typeparamref name="T"/> en su
+        /// subárbol. El tipo es lo que desambigua: el arqueo y las Comisiones comparten umbral
+        /// (50%) a propósito —cruzar la mitad es UN momento de la pelea— así que buscar sólo por
+        /// porcentaje devolvería el primero de los dos y los tests del otro pasarían por accidente.
+        /// </summary>
+        private AINode_If FindGateAtPercent<T>(float percent) where T : class
         {
             return _root.Children.Select(Unwrap).FirstOrDefault(g =>
-                g?.Conditions != null && g.Conditions.OfType<PcOwnerHpBelow>()
-                    .Any(p => Mathf.Abs(p.Percent - percent) < PercentTolerance));
+                g != null
+                && g.Conditions != null
+                && g.Conditions.OfType<PcOwnerHpBelow>()
+                    .Any(p => Mathf.Abs(p.Percent - percent) < PercentTolerance)
+                && Descendants(g).OfType<T>().Any());
         }
 
-        private int IndexOfGateAtPercent(float percent)
+        private int IndexOfGateAtPercent<T>(float percent) where T : class
         {
-            var gate = FindGateAtPercent(percent);
+            var gate = FindGateAtPercent<T>(percent);
             if (gate == null) return -1;
             return _root.Children.FindIndex(c => ReferenceEquals(Unwrap(c), gate));
         }

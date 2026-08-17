@@ -31,21 +31,21 @@ namespace Rollgeon.Editor.Tools.Enemy
 
         /// <summary>
         /// Fichas que van en Blink <b>aunque su rig no tenga clip de teletransporte</b>. Es un
-        /// parche hasta que haya arte, no una decisión de diseño.
+        /// parche hasta que haya arte, no una decisión de diseño. Hoy está vacía.
         /// </summary>
         /// <remarks>
-        /// El Cajero se repliega todos los turnos (<c>AINode_KeepDistance</c>: su disparo a rango
-        /// existe justo porque kitea) pero <c>AnimCon_GeneralDirector</c> sólo declara Idle y Attack
-        /// — no hay ciclo de caminata. Con el lerp de siempre se desliza por el piso en pose de
-        /// idle, que es el peor de los dos males. El salto seco al menos se lee como intencional.
+        /// <b>El Cajero salió de acá.</b> Estuvo forzado a Blink porque se repliega todos los turnos
+        /// (<c>AINode_KeepDistance</c>) y <c>AnimCon_GeneralDirector</c> sólo declara Idle y Attack:
+        /// sin ciclo de caminata, el lerp lo deslizaba por el piso en pose de idle. El tradeoff sigue
+        /// intacto —el rig no ganó el clip— pero el deslizamiento dejó de ser un defecto: el Cajero es
+        /// una figura alada y planear en pose quieta <b>es</b> lo que tiene que verse. Teletransportarse
+        /// era además el gesto del Crupier, y dos jefes con el mismo truco se confunden.
         /// <para>
-        /// Cuando arte entregue el ciclo de caminata, se saca de acá y vuelve a Walk solo.
+        /// La lista se deja en pie (vacía) porque la regla que resuelve es real: el próximo rig sin
+        /// caminata que además no deba planear entra acá y no en una rama nueva.
         /// </para>
         /// </remarks>
-        public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>
-        {
-            "boss.cashier",
-        };
+        public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>();
 
         [MenuItem("Rollgeon/Enemies/Apply Teleport Locomotion")]
         public static void Apply()

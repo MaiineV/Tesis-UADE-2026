@@ -148,7 +148,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Peaje del mostrador: lo que cuesta terminar el turno del lado de él. Es el precio de la
         /// abertura — sin peaje, elegir puerta no cuesta nada y el mostrador es decorado.
         /// </summary>
-        public const int CounterTollDamage = 10;
+        /// <remarks>
+        /// Subido de 10 a 20. Con 10 el peaje era barato de pagar: cruzar y quedarse costaba menos
+        /// que un turno perdido replegándose, así que el mostrador dejaba de ser una decisión y
+        /// pasaba a ser un impuesto que convenía comer. A 20 —dos tercios de un golpe suyo del
+        /// escalón medio— quedarse del lado de él tiene que valer la pena de verdad.
+        /// <para>
+        /// Sigue por debajo del techo de daño por golpe del piso 2 (<see cref="RichTierDamage"/> =
+        /// 35) a propósito: el peaje es el precio de una posición, no su ataque.
+        /// </para>
+        /// </remarks>
+        public const int CounterTollDamage = 20;
 
         /// <summary>
         /// Fila del mostrador en coordenadas de la sala. Autorada acá porque el jefe no tiene forma
@@ -168,6 +178,121 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Id estable del hazard-ficha: el servicio de hazards keyea por él. Hex válido —
         /// un SourceId que no parsea a Guid loguea error cada vez que se lee.</summary>
         public const string ChipHazardSourceId = "3c0a7d18-9f42-4a6b-9c3e-5b1ca5e70001";
+
+        // ---- Las Comisiones ----------------------------------------------
+
+        /// <summary>
+        /// Ficha de la Comisión: el bicho volador que el Cajero suelta al cruzar el 50%.
+        /// </summary>
+        /// <remarks>
+        /// Va en <c>ED_Min_</c> y no en <c>ED_Obj_</c> porque muerde. Los otros dos acompañantes
+        /// autorados por un builder de jefe (<c>ED_Obj_DadoCasa</c>, <c>ED_Obj_Rodillo</c>) son
+        /// terreno con vida: Attack 0, no actúan. Esta sí, y meterla en la misma familia haría que
+        /// "obj." dejara de querer decir nada.
+        /// </remarks>
+        public const string CritterAssetPath = "Assets/Rollgeon/Enemies/ED_Min_Comision.asset";
+
+        public const string CritterVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Min_Comision.prefab";
+
+        public const string CritterEntityId = "minion.cajero_comision";
+        public const string CritterDisplayName = "Comisión";
+
+        /// <summary>Nombre corto para la carpeta y el prefijo de sus materiales clonados.</summary>
+        public const string CritterName = "Comision";
+
+        /// <summary>Dos, y una sola vez. Ver <see cref="BuildCritterGate"/>.</summary>
+        public const int CritterCount = 2;
+
+        /// <summary>
+        /// Mismo umbral que el arqueo: el 50% es <b>un</b> momento de la pelea, no dos. Cruzarlo te
+        /// cobra el 40% del oro y te deja dos bichos encima en el mismo turno.
+        /// </summary>
+        public const float CritterHpThreshold = AuditHpThreshold;
+
+        /// <summary>
+        /// Muere de un golpe de la mediana del piso 2 (24) y sobrevive a uno flojo. Es la medida de
+        /// lo que cuesta sacárselos de encima: un golpe cada uno, dos golpes que no fueron al jefe.
+        /// </summary>
+        public const int CritterHp = 18;
+
+        /// <summary>
+        /// Mordisco. Los dos juntos pegan 12 por turno — menos que el peaje, y a propósito: la
+        /// Comisión es un impuesto por dejarlos vivos, no un segundo jefe. Suben el costo de
+        /// quedarse quieto pegándole al Cajero justo cuando el arqueo lo acaba de curar.
+        /// </summary>
+        public const int CritterDamage = 6;
+
+        /// <summary>Vuela: va antes que el jefe (4) en la cola, así el turno en que aparecen ya presionan.</summary>
+        public const int CritterSpeed = 5;
+
+        /// <summary>Alcance de vuelo por turno. Tres cubre media sala — perseguir es lo único que hace.</summary>
+        public const int CritterMoveSteps = 3;
+
+        // ---- Vestuario de la Comisión ------------------------------------
+
+        /// <summary>
+        /// Escala del arte dentro de su wrapper. El rig mide ~2 de alto (es el del jefe); a 0.45
+        /// queda en ~0.9, que es "bicho" al lado de un Cajero de cuerpo entero y sigue leyéndose en
+        /// qué casilla está.
+        /// </summary>
+        public const float CritterArtScale = 0.45f;
+
+        /// <summary>
+        /// Altura a la que flota el arte sobre su casilla. <b>Es el único recurso que hay</b>: la
+        /// única elevación de pawn del proyecto (<c>EntityPawn.PawnYOffset</c>) es un <c>const</c>
+        /// privado de 0.1 compartido por héroe y enemigos, así que levantarlo de ahí levantaría a
+        /// todo el bestiario. Se levanta el hijo <c>Art</c> del wrapper, que es lo que ya hacen
+        /// <c>GeneralaAssetBuilder.ApplyArtFit</c> y el lift del rodillo de la Bandida.
+        /// <para>
+        /// 0.7 ≈ tres cuartos de su propio alto: suficiente para que se vea aire abajo desde la
+        /// cámara iso sin que quede fuera del encuadre de su casilla.
+        /// </para>
+        /// </summary>
+        public const float CritterHoverHeight = 0.7f;
+
+        /// <summary>Aire entre la punta del bicho y su barra de vida.</summary>
+        private const float CritterBarClearance = 0.35f;
+
+        /// <summary>
+        /// La barra está autorada en unidades de mundo para un jefe de 2 de alto: sobre un bicho de
+        /// 0.9 tapa la entidad entera. Mismo encogimiento que el dado de la Generala.
+        /// </summary>
+        private const float CritterBarScale = 0.4f;
+
+        /// <summary>Nombre del hijo que envuelve el arte — el default de <see cref="BossWrapperSpec"/>.</summary>
+        private const string ArtChildName = "Art";
+
+        /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
+        private const string HealthBarChildName = "Canvas";
+
+        // Plata y no oro. La Comisión viste el MISMO rig que el jefe (es el único alado del
+        // proyecto), así que sin un corte de color fuerte el jugador ve tres Cajeros de tamaños
+        // distintos. Los discos en plata dicen "cambio chico" de un vistazo y el cuerpo se va a un
+        // verde más apagado que el del jefe: misma especie, rango menor.
+        private static readonly MaterialRetint CritterChipShineRetint = MaterialRetint.FromColors(
+            new Color(0.97f, 0.98f, 1.00f),
+            new Color(0.82f, 0.85f, 0.90f),
+            new Color(0.55f, 0.58f, 0.64f));
+
+        private static readonly MaterialRetint CritterChipFaceRetint = MaterialRetint.FromColors(
+            new Color(0.88f, 0.90f, 0.94f),
+            new Color(0.70f, 0.73f, 0.79f),
+            new Color(0.40f, 0.43f, 0.49f));
+
+        private static readonly MaterialRetint CritterChipEdgeRetint = MaterialRetint.FromColors(
+            new Color(0.68f, 0.71f, 0.77f),
+            new Color(0.48f, 0.51f, 0.57f),
+            new Color(0.24f, 0.26f, 0.31f));
+
+        private static readonly MaterialRetint CritterBodyRetint = MaterialRetint.FromColors(
+            new Color(0.13f, 0.32f, 0.22f),
+            new Color(0.07f, 0.20f, 0.14f),
+            new Color(0.03f, 0.09f, 0.07f));
+
+        private static readonly MaterialRetint CritterWingRetint = MaterialRetint.FromColors(
+            new Color(0.88f, 0.89f, 0.92f),
+            new Color(0.63f, 0.65f, 0.70f),
+            new Color(0.31f, 0.33f, 0.38f));
 
         // ---- Vestuario ---------------------------------------------------
 
@@ -283,10 +408,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// Árbol del Cajero. Sequence raíz de 6 hijos:
+        /// Árbol del Cajero. Sequence raíz de 7 hijos:
         /// <list type="number">
         /// <item><c>ExecuteTelegraph</c> — detona la columna del turno pasado.</item>
         /// <item>Gate del arqueo (50% HP) → <c>Once → Sequence[Audit, ApplyStatModifier]</c>.</item>
+        /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
         /// <item>El peaje del mostrador, que cobra al cerrar el turno del jugador.</item>
         /// <item>El ciclo de ataque: <c>Alternate[columna, disparo]</c>.</item>
         /// <item>Fichas, dentro de la columna recién marcada.</item>
@@ -311,8 +437,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// que arma el cobro del cierre de turno del jugador, y un Running del ataque lo dejaría
         /// sin armar justo en los turnos en que el jefe sí actuó.
         /// </para>
+        /// <para>
+        /// <b>Las Comisiones tienen su propio gate y su propio <c>Once</c></b> aunque compartan
+        /// umbral con el arqueo. Colgarlas del Sequence de adentro del arqueo habría dejado los dos
+        /// efectos atados a un solo latch, y <c>AINode_SpawnReinforcements</c> devuelve Failed
+        /// cuando la sala no tiene tiles de borde libres: ese Failed cortaría el Sequence, el
+        /// <c>Once</c> no latchearía (sólo latchea con Succeeded) y el turno siguiente el arqueo se
+        /// cobraría de nuevo — 40% del oro y hasta 30 de cura, dos veces.
+        /// </para>
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(HazardDefinitionSO chip = null)
+        public static AINode_Sequence BuildAIRoot(
+            HazardDefinitionSO chip = null, EnemyDataSO critter = null)
         {
             return new AINode_Sequence
             {
@@ -323,6 +458,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // ataque principal — el que el jugador ve cinco veces por pelea.
                     new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.CajeroShotAnim },
                     WrapFallible(BuildAuditGate()),
+                    WrapFallible(BuildCritterGate(critter)),
                     WrapFallible(BuildCounterToll()),
                     WrapFallible(BuildAttackCycle()),
                     WrapFallible(BuildChipDrop(chip)),
@@ -397,6 +533,53 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             Else = new AINode_Wait(),
         };
 
+        /// <summary>
+        /// Gate de las Comisiones: al cruzar el 50% suelta <see cref="CritterCount"/> bichos
+        /// voladores, una sola vez en toda la pelea.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b><see cref="AINode_Once"/> y no el auto-gateo del nodo.</b> El
+        /// <c>AINode_SpawnReinforcements</c> sabe reponer oleadas solo (así lo usa La Generala para
+        /// su mesa de dados), y esa es exactamente la lectura que no queremos acá: el Cajero ya se
+        /// cura hasta 30 en el arqueo del mismo umbral, y sumarle refuerzos infinitos convierte el
+        /// tramo final en una pelea que no termina. Dos bichos, una vez, y el que los mata se los
+        /// saca de encima para siempre.
+        /// </para>
+        /// <para>
+        /// <b>El gesto de invocar es <see cref="BossFeedbackIds.CajeroMeleeAnim"/></b>, o sea el
+        /// trigger <c>Attack</c> — el único no-idle que declara <c>AnimCon_GeneralDirector</c>. No es
+        /// una animación de invocar y no la hay; la alternativa era dejarlo vacío y que dos bichos se
+        /// materialicen mientras el jefe está quieto, que es el síntoma que documenta el propio
+        /// <c>AINode_SpawnReinforcements</c> ("aparecían de la nada"). Un manotazo al aire en el
+        /// frame en que aparecen los ata a él. Es el mismo criterio con el que La Generala repone la
+        /// mesa usando su clip de <c>Heal</c>, y con el que este mismo id ya cubre el peaje y el
+        /// arqueo del Cajero.
+        /// </para>
+        /// </remarks>
+        public static AINode_If BuildCritterGate(EnemyDataSO critter = null) => new AINode_If
+        {
+            TargetSelector = new TargetSelector_Self(),
+            Conditions = new List<BasePreCondition>
+            {
+                new PcOwnerHpBelow { Percent = CritterHpThreshold },
+            },
+            Then = new AINode_Once
+            {
+                Child = new AINode_SpawnReinforcements
+                {
+                    EnemyToSpawn = critter,
+                    Count = CritterCount,
+
+                    // Inerte bajo el Once: el nodo no vuelve a tickear después del primer
+                    // Succeeded. Va en 0 igual, para que no diga algo que no pasa.
+                    RespawnDelayTurns = 0,
+                    SpawnFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
+                },
+            },
+            Else = new AINode_Wait(),
+        };
+
         public static AINode_TelegraphMarkGoldScaled BuildColumn() => new AINode_TelegraphMarkGoldScaled
         {
             Shape = ThreatShape.Column,
@@ -466,7 +649,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             EnemyDataSO data,
             GameObject visualPrefab = null,
             HazardDefinitionSO chip = null,
-            Sprite portrait = null)
+            Sprite portrait = null,
+            EnemyDataSO critter = null)
         {
             if (data == null) return;
 
@@ -493,8 +677,105 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (visualPrefab != null) data.VisualPrefab = visualPrefab;
             if (portrait != null) data.Portrait = portrait;
 
-            data.AIRoot = BuildAIRoot(chip);
+            data.AIRoot = BuildAIRoot(chip, critter);
         }
+
+        // ---- La Comisión (ficha propia) -----------------------------------
+
+        /// <summary>
+        /// Escribe la ficha de la Comisión sobre <paramref name="data"/>. Puro: no toca
+        /// AssetDatabase, no marca dirty.
+        /// </summary>
+        /// <remarks>
+        /// Mismos cuidados que <see cref="PopulateEnemyData"/>: visual y retrato sólo se asignan si
+        /// no son null, así un rebuild que sólo refresca números no deja al bicho sin cuerpo.
+        /// </remarks>
+        public static void PopulateCritterData(
+            EnemyDataSO data, GameObject visualPrefab = null, Sprite portrait = null)
+        {
+            if (data == null) return;
+
+            data.EntityId = CritterEntityId;
+            data.DisplayName = CritterDisplayName;
+            data.Description =
+                "Lo que el Cajero manda a cobrar cuando ya no le alcanza el mostrador. Vuela, " +
+                "muerde poco y no se va sola.";
+
+            data.BaseHP = CritterHp;
+
+            // Su daño real sale del nodo del árbol, no de este stat (el árbol autorado saltea el
+            // BasicEnemyAI). Se escribe igual y con el mismo número porque es lo que leen el
+            // tooltip y los TargetSelector_ByAttribute: dejarlo en 0 la marcaría como support.
+            data.BaseAttack = CritterDamage;
+            data.BaseSpeed = CritterSpeed;
+            data.MaxEnergy = 1;
+            data.BaseHealStrength = 0;
+            data.BaseAttackRange = 1;
+
+            data.WeaknessComboId = string.Empty;
+            data.WeaknessMultiplierOverride = 0f;
+
+            // Cero oro, y no por tacañería: el daño de la columna del Cajero ESCALA con el oro que
+            // el jugador lleva encima (ver BuildGoldTiers). Un bicho que paga al morir le subiría el
+            // escalón al jefe — matarlos haría la pelea más difícil, que es exactamente al revés de
+            // lo que el jugador va a leer.
+            data.MinGoldDrop = 0;
+            data.MaxGoldDrop = 0;
+
+            if (visualPrefab != null) data.VisualPrefab = visualPrefab;
+            if (portrait != null) data.Portrait = portrait;
+
+            data.AIRoot = BuildCritterAIRoot();
+        }
+
+        /// <summary>
+        /// Árbol de la Comisión: si está pegada muerde, y si no vuela hacia el jugador.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Muerde primero y se mueve después</b>, no al revés. <see cref="AINode_Move"/> devuelve
+        /// Running cuando efectivamente se mueve, y un Running corta el Sequence: con el orden
+        /// invertido, el turno en que llega al jugador se le comería el mordisco. Con este orden el
+        /// bicho que ya está pegado muerde (y el Move sale por Failed benigno, "ya estoy en la
+        /// banda"), y el que está lejos falla el mordisco y vuela.
+        /// </para>
+        /// <para>
+        /// <b>El mordisco es <see cref="AINode_CashierRangedShot"/> con <c>Range = 1</c></b>, o sea
+        /// el disparo del Cajero a quemarropa. No es un rodeo: el nodo es "tantos de daño directo a
+        /// distancia ≤ Range, auto-gateado por rango", y con 1 eso <b>es</b> un melee. El camino
+        /// alternativo —<c>AINode_Behavior → EnemyActionBehavior → EffDealDamage</c>— no sirve acá
+        /// por lo que el propio nodo documenta: el daño base de <c>EffDealDamage</c> es un campo
+        /// privado sin setter, así que un builder no puede autorarlo y el mordisco quedaría clavado
+        /// en el default de 10. Y sin árbol propio el bicho caería al <c>BasicEnemyAI</c>, que pega
+        /// al jugador <b>desde cualquier distancia</b>: un impuesto inesquivable en vez de un bicho.
+        /// </para>
+        /// </remarks>
+        public static AINode_Sequence BuildCritterAIRoot() => new AINode_Sequence
+        {
+            Children = new List<AIDecisionNode>
+            {
+                WrapFallible(BuildCritterBite()),
+                WrapFallible(BuildCritterApproach()),
+            },
+        };
+
+        public static AINode_CashierRangedShot BuildCritterBite() => new AINode_CashierRangedShot
+        {
+            Damage = CritterDamage,
+            Range = 1,
+            Metric = DistanceMetric.Manhattan,
+            Kind = AttackKind.BasicAttack,
+        };
+
+        public static AINode_Move BuildCritterApproach() => new AINode_Move
+        {
+            MaxSteps = new AIConstantInt { Value = CritterMoveSteps },
+            DesiredRange = new AIConstantInt { Value = 1 },
+
+            // Sin kite: la Comisión no tiene nada que hacer lejos. Si ya está pegada, el nodo sale
+            // por Failed y el Selector lo absorbe.
+            Retreat = false,
+        };
 
         // ---- MenuItem ----------------------------------------------------
 
@@ -502,14 +783,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static void BuildCajeroAsset()
         {
             var chip = EnsureChipHazard();
+            var portrait = EnsurePortrait();
+
+            // La Comisión primero: la ficha del jefe la referencia desde su árbol, y un
+            // AINode_SpawnReinforcements con EnemyToSpawn en null devuelve Failed siempre.
+            var critter = LoadOrCreate<EnemyDataSO>(CritterAssetPath);
+            PopulateCritterData(critter, EnsureCritterVisualPrefab(), portrait);
+            EditorUtility.SetDirty(critter);
+
             var data = LoadOrCreate<EnemyDataSO>(EnemyAssetPath);
 
             var wrapper = EnsureVisualPrefab();
-            var portrait = EnsurePortrait();
             var placeholder = AssetDatabase.LoadAssetAtPath<GameObject>(PlaceholderVisualPrefabPath);
 
             var visual = ResolveVisualPrefab(data.VisualPrefab, wrapper, placeholder);
-            PopulateEnemyData(data, visual, chip, portrait);
+            PopulateEnemyData(data, visual, chip, portrait, critter);
 
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssets();
@@ -520,7 +808,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"disparo {ShotDamage} a ≤{ShotRange}, fichas {ChipMinValue}-{ChipMaxValue}g, " +
                       $"peaje {CounterTollDamage} en la fila {CounterRow}, " +
                       $"arqueo al {AuditHpThreshold:P0}; visual: {NameOf(visual)}, " +
-                      $"retrato: {NameOf(portrait)}).");
+                      $"retrato: {NameOf(portrait)}) + {CritterCount} × '{CritterEntityId}' " +
+                      $"({CritterHp} HP, mordisco {CritterDamage}) al {CritterHpThreshold:P0} en " +
+                      $"'{CritterAssetPath}'.");
             Selection.activeObject = data;
         }
 
@@ -550,9 +840,181 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
+        /// Ficha de armado del wrapper de la Comisión. Pura, por el mismo motivo que
+        /// <see cref="BuildWrapperSpec"/>.
+        /// </summary>
+        /// <remarks>
+        /// <b>Viste el mismo arte que el jefe</b> (<see cref="ArtPrefabPath"/>) porque
+        /// <c>GeneralDirector_Animated</c> es <b>el único rig alado del proyecto</b> — no hay ningún
+        /// otro modelo con alas, ni siquiera un murciélago o una moneda flotante. Lo que las separa
+        /// es el tamaño (<see cref="CritterArtScale"/>), la altura de vuelo
+        /// (<see cref="CritterHoverHeight"/>) y la paleta de plata.
+        /// <para>
+        /// Sin props: la caja de fichas es el mostrador del jefe, y colgársela a un bicho de 0.9 lo
+        /// convertiría en un Cajero chiquito con la misma silueta.
+        /// </para>
+        /// </remarks>
+        public static BossWrapperSpec BuildCritterWrapperSpec(
+            string outputPath = CritterVisualPrefabPath, string materialsFolder = null)
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = ArtPrefabPath,
+                OutputPrefabPath = outputPath,
+                EntityId = CritterEntityId,
+                BossName = CritterName,
+                MaterialsFolder = materialsFolder,
+
+                // Box y no el Capsule default: ApplyCritterFit reescribe el collider contra los
+                // bounds del arte ya encogido y flotando, y un Box es lo que se puede recentrar con
+                // center/size sin recalcular radios ni ejes.
+                Collider = ColliderKind.Box,
+
+                // La barra final la reposiciona ApplyCritterFit contra los bounds reales; esto es
+                // sólo el valor con el que nace el wrapper.
+                HealthBarOffset = new Vector3(0f, CritterHoverHeight + CritterBarClearance, 0f),
+
+                Retints = new Dictionary<string, MaterialRetint>
+                {
+                    { ChipShineMaterial, CritterChipShineRetint },
+                    { ChipFaceMaterial, CritterChipFaceRetint },
+                    { ChipEdgeMaterial, CritterChipEdgeRetint },
+                    { BodyMaterial, CritterBodyRetint },
+                    { WingMaterial, CritterWingRetint },
+                },
+            };
+        }
+
+        /// <summary>
+        /// Construye (o reconstruye) el wrapper de la Comisión y lo devuelve, ya encogido y flotando.
+        /// <c>null</c> + warning si el arte falta.
+        /// </summary>
+        public static GameObject EnsureCritterVisualPrefab()
+        {
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildCritterWrapperSpec());
+            if (wrapper == null)
+            {
+                Debug.LogWarning($"[CajeroAssetBuilder] No se pudo construir el wrapper de la " +
+                                 $"Comisión en '{CritterVisualPrefabPath}' — se deja el VisualPrefab " +
+                                 "que ya tenga la ficha.");
+                return null;
+            }
+
+            ApplyCritterFit(CritterVisualPrefabPath);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
+        }
+
+        /// <summary>
+        /// Segunda pasada sobre el wrapper ya guardado: encoge el arte, lo despega del piso y
+        /// reacomoda collider y barra alrededor de donde quedó.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Es una pasada aparte y no un campo del spec por lo mismo que en
+        /// <c>GeneralaAssetBuilder.ApplyArtFit</c>: <see cref="BossVisualWrapperBuilder"/> fija el
+        /// arte en identidad a propósito y dimensiona el collider asumiendo eso. Reescribir sobre el
+        /// mismo path conserva el GUID, así que la ficha que ya apunta al wrapper sobrevive.
+        /// </para>
+        /// <para>
+        /// El collider hay que reescribirlo sí o sí: el wrapper lo dimensionó alrededor del arte a
+        /// escala 1 y apoyado, y después de encogerlo a 0.45 y subirlo 0.7 quedaría envolviendo aire
+        /// — el cursor picaría el piso y no al bicho.
+        /// </para>
+        /// </remarks>
+        private static void ApplyCritterFit(string prefabPath)
+        {
+            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (contents == null)
+            {
+                Debug.LogWarning($"[CajeroAssetBuilder] No se pudo abrir '{prefabPath}' para dejar " +
+                                 "la Comisión flotando.");
+                return;
+            }
+
+            try
+            {
+                var art = contents.transform.Find(ArtChildName);
+                if (art == null)
+                {
+                    Debug.LogWarning($"[CajeroAssetBuilder] '{prefabPath}' no tiene hijo " +
+                                     $"'{ArtChildName}' — la Comisión queda del tamaño del jefe y " +
+                                     "apoyada en el piso.");
+                    return;
+                }
+
+                // Los bounds se miden con el arte en identidad, que es como lo dejó el wrapper.
+                art.localScale = Vector3.one;
+                art.localPosition = Vector3.zero;
+                bool measured = TryMeasureRenderers(art, out var raw);
+
+                art.localScale = Vector3.one * CritterArtScale;
+
+                // El lift lleva la BASE del arte a CritterHoverHeight, no su pivot: el rig está
+                // autorado con el pivot en los pies, pero eso es una convención del arte y no algo
+                // que este builder pueda asumir de un prefab que alguien reexporte.
+                float baseY = measured ? raw.min.y * CritterArtScale : 0f;
+                art.localPosition = new Vector3(0f, CritterHoverHeight - baseY, 0f);
+
+                if (measured)
+                {
+                    var flying = new Bounds(
+                        raw.center * CritterArtScale + new Vector3(0f, art.localPosition.y, 0f),
+                        raw.size * CritterArtScale);
+
+                    var box = contents.GetComponent<BoxCollider>();
+                    if (box != null)
+                    {
+                        box.center = flying.center;
+                        box.size = flying.size;
+                    }
+
+                    var bar = contents.transform.Find(HealthBarChildName);
+                    if (bar != null)
+                    {
+                        bar.localPosition = new Vector3(0f, flying.max.y + CritterBarClearance, 0f);
+                        bar.localScale = Vector3.one * CritterBarScale;
+                    }
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+
+        /// <summary>
+        /// Bounds locales de los Mesh/SkinnedMesh renderers colgados de <paramref name="art"/>, con
+        /// el transform en identidad. <c>false</c> si el arte no reporta volumen usable.
+        /// </summary>
+        private static bool TryMeasureRenderers(Transform art, out Bounds bounds)
+        {
+            bounds = default;
+            bool any = false;
+
+            foreach (var renderer in art.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
+
+                if (any) bounds.Encapsulate(renderer.bounds);
+                else { bounds = renderer.bounds; any = true; }
+            }
+
+            return any && bounds.size.y > Mathf.Epsilon;
+        }
+
+        /// <summary>
         /// Retrato del jefe. Sigue siendo un método y no una constante porque el sub-sprite hay que
         /// resolverlo contra el AssetDatabase, y <c>BuildContractCard</c> lo pide por separado.
         /// </summary>
+        /// <remarks>
+        /// La Comisión comparte este mismo retrato. <c>BossPortraitLibrary</c> tiene la regla
+        /// explícita —"el retrato sigue al rig, no al nombre"— y las dos visten
+        /// <c>GeneralDirector_Animated</c>: mostrar otra cara en la cola de turnos sería mentir sobre
+        /// lo que el jugador tiene enfrente. El día que la Comisión tenga arte propio, se le hace su
+        /// entrada en la library y se corta acá.
+        /// </remarks>
         public static Sprite EnsurePortrait()
         {
             var portrait = BossPortraitLibrary.Cajero();

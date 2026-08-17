@@ -84,10 +84,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
             // Assert — Croupier y Tahúr entran porque visten el rig del Healer y del Sunked Grand.
-            // El Cajero entra por parche: kitea todos los turnos y su rig no tiene ciclo de
-            // caminata (ver EnemyLocomotionInstaller.ForcedBlinkEntityIds).
+            // El Cajero YA NO: su rig sigue sin ciclo de caminata, así que se desliza, pero es una
+            // figura alada y planear es justo lo que tiene que leerse. Además el salto seco era el
+            // gesto del Crupier, y dos jefes con el mismo truco se confunden.
             CollectionAssert.AreEquivalent(
-                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "PF_Boss_Cajero", "SunkedGrand", "Healer" },
+                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "SunkedGrand", "Healer" },
                 blinking,
                 "Cambió quién se teletransporta. Si es a propósito, actualizá esta lista; si no, " +
                 "alguien reconstruyó un prefab y se llevó puesto el flag.");
