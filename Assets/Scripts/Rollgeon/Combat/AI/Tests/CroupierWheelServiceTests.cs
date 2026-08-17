@@ -56,7 +56,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             _bossGuid = Guid.NewGuid();
             _playerGuid = Guid.NewGuid();
-            _grid.Register(_bossGuid, new GridCoord(5, 3));  // El pasillo: nunca cae.
+            _grid.Register(_bossGuid, new GridCoord(5, 3));  // La costura: cae con el 2 y con el 5.
             _grid.Register(_playerGuid, new GridCoord(0, 0)); // Sector 4.
 
             // El corrimiento sólo lo dispara el jugador, y quién es el jugador lo dice este servicio.

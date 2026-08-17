@@ -6,6 +6,8 @@ using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
+using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
@@ -111,6 +113,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 typeof(AINode_SpinWheel),
                 typeof(AINode_MarkSungSectors),
                 typeof(AINode_IgniteDetonatedSectors),
+                typeof(AINode_Move),
                 typeof(AINode_If),
             };
 
@@ -170,19 +173,81 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // =====================================================================
-        // Nunca se mueve
+        // Se reacomoda
         // =====================================================================
 
         [Test]
-        public void Tree_HasNoMovementAndNoMeleeAtAll()
+        public void Tree_HasNoMeleeAndNoRangedBehavior()
         {
             var all = Descendants(_root);
 
-            Assert.IsEmpty(all.OfType<AINode_Move>(), "El Croupier no se mueve de la fila del medio.");
-            Assert.IsEmpty(all.OfType<AINode_KeepDistance>(), "Tampoco kitea: se queda parado toda la pelea.");
             Assert.IsEmpty(all.OfType<AINode_Behavior>(),
                 "No tiene melee ni rango. Su único daño directo es la Represalia, y esa entra por el hook " +
                 "de daño de la rueda, no por el árbol.");
+        }
+
+        /// <summary>
+        /// La regresión del reporte "el crupier no se mueve": el árbol no tenía un solo nodo de
+        /// movimiento y el jefe era una estatua.
+        /// </summary>
+        [Test]
+        public void Tree_Repositions_ClosingInAndBackingOff()
+        {
+            var move = Descendants(_root).OfType<AINode_Move>().SingleOrDefault();
+
+            Assert.IsNotNull(move, "Sin nodo de movimiento el jefe se queda clavado toda la pelea.");
+            Assert.IsInstanceOf<TargetSelector_AlwaysPlayer>(move.TargetSelector,
+                "Se reacomoda respecto del jugador, no de otra cosa.");
+            Assert.IsTrue(move.Retreat,
+                "Sin Retreat sólo cierra distancia: el reporte pedía las dos mitades, que se acerque " +
+                "y que se aleje.");
+            Assert.IsFalse(move.StopAdjacent,
+                "StopAdjacent es el fallback legacy de rango 1 y pisaría la banda si DesiredRange " +
+                "quedara en null.");
+
+            Assert.AreEqual(CroupierAssetBuilder.DesiredRange, ReadInt(move.DesiredRange),
+                "La banda que sostiene con el jugador sale de la ficha.");
+            Assert.AreEqual(CroupierAssetBuilder.MoveSteps, ReadInt(move.MaxSteps));
+        }
+
+        /// <summary>
+        /// El movimiento va <b>último</b> y aislado. Es el único paso del turno que puede devolver
+        /// <c>Running</c> (espera el blink), y un <c>Running</c> aborta el Sequence en el path
+        /// no-coroutine: con cualquier cosa detrás, el jefe perdería el resto del turno. El
+        /// <c>Selector[paso, Wait]</c> es el mismo idiom que documenta <c>SunkenGrandPhaseWiringTests</c>.
+        /// </summary>
+        [Test]
+        public void Reposition_IsTheLastStep_AndIsIsolated()
+        {
+            int moveIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_Move));
+
+            Assert.Greater(moveIdx, -1, "No hay reacomodo en el árbol.");
+            Assert.AreEqual(_root.Children.Count - 1, moveIdx,
+                "El reacomodo tiene que ser el último paso del turno.");
+
+            var wrapper = _root.Children[moveIdx] as AINode_Selector;
+            Assert.IsNotNull(wrapper, "El reacomodo tiene que ir envuelto en Selector[paso, Wait].");
+            Assert.IsTrue(wrapper.Children.Any(c => c is AINode_Wait),
+                "AINode_Move devuelve Failed en el caso benigno 'ya estoy en la banda': sin el Wait de " +
+                "fallback el paso propagaría ese Failed.");
+        }
+
+        /// <summary>
+        /// El reacomodo va después de encender el paño: el fuego se prende sobre el sector que
+        /// detonó, que no depende de dónde termine parado el jefe, pero el orden fija que ningún paso
+        /// de mesa quede detrás del <c>Running</c> del blink.
+        /// </summary>
+        [Test]
+        public void Reposition_RunsAfterEveryTableStep()
+        {
+            var order = Descendants(_root);
+
+            int move = order.FindIndex(n => n is AINode_Move);
+            int ignite = order.FindIndex(n => n is AINode_IgniteDetonatedSectors);
+            int mark = order.FindIndex(n => n is AINode_MarkSungSectors);
+
+            Assert.Greater(move, ignite, "El reacomodo va después de la ignición.");
+            Assert.Greater(move, mark, "El reacomodo va después del marcado.");
         }
 
         // =====================================================================
@@ -334,6 +399,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
         // Helpers
         // =====================================================================
+
+        private static int ReadInt(AIIntReader reader)
+        {
+            var constant = reader as AIConstantInt;
+            Assert.IsNotNull(constant, "Se esperaba un AIConstantInt (valor literal del inspector).");
+            return constant.Value;
+        }
 
         /// <summary>Gate de fase por su umbral de HP, venga suelto o envuelto en el Selector de aislamiento.</summary>
         private AINode_If FindGateAtPercent(float percent)

@@ -234,7 +234,10 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(RoomWidth, row.Count, "La fila del jugador, entera.");
             Assert.AreEqual(RoomHeight, column.Count, "La columna del jugador, entera.");
             Assert.AreEqual(6 * RoomHeight, half.Count, "Mitad izquierda: columnas 0..5.");
-            Assert.AreEqual(12, sector.Count, "Los bloques del paño siguen midiendo 4×3.");
+            // 4×4 y no el 4×3 de antes: las bandas en Y pasaron a partirse con la misma regla que
+            // las de X, así que la fila del medio dejó de quedar afuera de todo bloque. Era la fila
+            // del Croupier — 11 casillas donde no se prendía fuego nunca y el jugador acampaba.
+            Assert.AreEqual(16, sector.Count, "Los bloques del paño miden 4×4.");
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Assert
             var area = Pending(slot: 0);
             Assert.AreEqual(SectorDamage, area.Damage);
-            Assert.AreEqual(12, area.Tiles.Count, "El sector es de 4×3.");
+            Assert.AreEqual(16, area.Tiles.Count, "El sector es de 4×4.");
         }
 
         [Test]
@@ -162,15 +162,53 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void Detonate_PlayerInTheCorridor_TakesNothing()
+        public void Detonate_PlayerOnTheMiddleRow_TakesTheHit()
         {
-            // Arrange — el pasillo no cae nunca: es la promesa estructural del jefe.
+            // Arrange — la regresión del exploit: la fila del medio era "el pasillo" y no pertenecía a
+            // ningún sector, así que el jugador se paraba al costado del jefe y no lo alcanzaba nunca
+            // nada. Hoy es costura — la comparten el bloque de arriba y el de abajo de su columna.
             MovePlayer(new GridCoord(4, 3));
             _wheel.Sing(new List<int> { 2 });
             Mark();
 
             // Act
             Assert.AreEqual(AIResult.Succeeded, Detonate());
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "Ninguna casilla caminable es segura para siempre.");
+            Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
+        }
+
+        [Test]
+        public void Detonate_MiddleRow_AlsoFallsWithTheBlockBelowIt()
+        {
+            // Arrange — la otra mitad de la costura: la misma casilla cae con el 2 (arriba) y con el 5
+            // (abajo). Es lo que la vuelve el peor lugar del paño en vez del mejor.
+            MovePlayer(new GridCoord(4, 3));
+            _wheel.Sing(new List<int> { 5 });
+            Mark();
+
+            // Act
+            Detonate();
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count);
+            Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
+        }
+
+        [Test]
+        public void Detonate_ApproachingFromAboveOrBelow_IsNormalRisk()
+        {
+            // Arrange — el contrapeso de subirle el riesgo a la fila del medio: llegar al melee por
+            // arriba o por abajo sigue costando lo mismo que cualquier otra casilla, así que el
+            // jugador conserva un camino de riesgo normal hasta el jefe. Acá canta el bloque de
+            // abajo y el jugador está en el de arriba, pegado al jefe.
+            MovePlayer(new GridCoord(5, 4));
+            _wheel.Sing(new List<int> { 5 });
+            Mark();
+
+            // Act
+            Detonate();
 
             // Assert
             Assert.IsEmpty(_pipeline.Resolved);

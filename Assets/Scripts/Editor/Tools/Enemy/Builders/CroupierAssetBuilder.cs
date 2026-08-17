@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
+using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities;
@@ -33,8 +35,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </para>
     /// <para>
     /// <b>El arte es el del Healer</b> (<c>Healer_Animated</c>): mago con sombrero de copa, moño, capa
-    /// y bastón — literalmente un crupier con otro tinte. Se reusa en vez de pedir arte nuevo porque el
-    /// jefe no se mueve nunca y su lectura la lleva el paño, no la silueta.
+    /// y bastón — literalmente un crupier con otro tinte. Se reusa en vez de pedir arte nuevo porque su
+    /// lectura la lleva el paño, no la silueta. Su desplazamiento es
+    /// <c>LocomotionStyle.Blink</c> —el clip del rig es un teleport— y está bien así: el crupier no
+    /// camina, reaparece del otro lado de la mesa.
     /// </para>
     /// </remarks>
     public static class CroupierAssetBuilder
@@ -147,6 +151,24 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float Phase2HpThreshold = 0.5f;
 
         public const int Phase2NumbersPerTurn = 2;
+
+        /// <summary>
+        /// Distancia Manhattan que el crupier trata de sostener con el jugador.
+        /// </summary>
+        /// <remarks>
+        /// 2 y no 1: su único daño directo es la Represalia, que es <i>el precio de la casilla de
+        /// melee</i>. Si se plantara pegado al jugador estaría regalando esa casilla, y si kiteara a
+        /// 4 como el Cajero —que sí tiene un disparo con ese alcance— sería infinito, porque su daño
+        /// no depende de dónde esté parado. A 2 el jugador siempre puede cerrar con un paso, y ese
+        /// paso es lo que cuesta llegar a la mesa.
+        /// </remarks>
+        public const int DesiredRange = 2;
+
+        /// <summary>
+        /// Casillas que se corre por turno. Menos que el presupuesto de movimiento del jugador a
+        /// propósito: el reposicionamiento tiene que ser un peaje, no una persecución que no termina.
+        /// </summary>
+        public const int MoveSteps = 2;
 
         /// <summary>Rojo de brasa — se tiene que leer distinto del naranja del telegraph.</summary>
         public static readonly Color FireOverlayTint = new Color(0.85f, 0.10f, 0.05f, 0.60f);
@@ -486,7 +508,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 "\"Place your bets.\" He calls one number per turn: the block of the table that falls " +
                 "next turn. Ending your turn inside the called block spins the wheel one step further " +
                 "— moving the axe means standing under it. Hitting him costs 8, always: the house " +
-                "charges for the melee tile. He never leaves the middle row.";
+                "charges for the melee tile. The six blocks cover the whole table — no tile sits out " +
+                "the fight — and the middle row is the seam, where two of them overlap. He drifts to " +
+                "keep the table between you and him.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
@@ -517,7 +541,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Árbol del Croupier. Sequence raíz de seis pasos, sin un solo nodo que lo mueva de casilla.
+        /// Árbol del Croupier. Sequence raíz de siete pasos: seis de mesa y el reacomodo, último.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -525,6 +549,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <c>ExecuteTelegraph</c>). El gate de fase va <b>antes</b> del marcado, que es el "ataque" de
         /// este jefe: en el path no-coroutine un <c>Running</c> aborta el Sequence, y una fase ubicada
         /// después del ataque no tickearía nunca en tests ni en simulación.
+        /// </para>
+        /// <para>
+        /// <b>Se mueve, y se mueve último.</b> Era una estatua: el jugador reportaba que no se acerca
+        /// ni se aleja. Ahora sostiene una banda de <see cref="DesiredRange"/> con
+        /// <c>AINode_Move + Retreat</c> —el nodo cubre las dos mitades del reclamo: cierra cuando está
+        /// lejos y se corre cuando lo tienen encima—. Va al final porque es el único paso que devuelve
+        /// <c>Running</c> (espera el blink), y con algo detrás ese Running se comería el resto del turno.
         /// </para>
         /// <para>
         /// <b>Cada paso que puede fallar va en <c>Selector[paso, Wait]</c>.</b> El Sequence corta en el
@@ -614,6 +645,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Fire = fire,
                         FirePhase2 = firePhase2,
                         BlastConsumesFlame = true,
+                    }),
+
+                    // 7. Se reacomoda. ÚLTIMO y aislado: es el único paso que puede devolver
+                    //    Running (espera el visual del blink), y un Running aborta el Sequence en
+                    //    el path no-coroutine. Desde acá no hay nada que abortar.
+                    Guarded(new AINode_Move
+                    {
+                        MaxSteps = new AIConstantInt { Value = MoveSteps },
+                        TargetSelector = new TargetSelector_AlwaysPlayer(),
+                        DesiredRange = new AIConstantInt { Value = DesiredRange },
+                        Retreat = true,
+                        StopAdjacent = false,
                     }),
                 },
             };

@@ -48,8 +48,9 @@ namespace Rollgeon.Combat.Threat
         /// Uno de los seis sectores del paño del Croupier (3 columnas × 2 filas de bloques),
         /// numerados 1-2-3 arriba y 4-5-6 abajo. Ni el jugador ni el boss son el centro: el
         /// sector se elige por índice, que en <see cref="ThreatAreaShape.Compute"/> viaja en el
-        /// parámetro <c>size</c> (1..6). La fila central de la sala nunca pertenece a ningún
-        /// sector — es el pasillo. Ver <see cref="ThreatAreaShape.ComputeRoomSector"/>.
+        /// parámetro <c>size</c> (1..6). Los seis bloques <b>cubren la sala entera</b>: ninguna
+        /// casilla caminable queda fuera de la numeración. Ver
+        /// <see cref="ThreatAreaShape.ComputeRoomSector"/>.
         /// </summary>
         RoomSector,
 
@@ -202,24 +203,32 @@ namespace Rollgeon.Combat.Threat
 
         /// <summary>
         /// Casillas del sector <paramref name="sector"/> (1..6) del paño del Croupier: 1-2-3 la
-        /// fila de bloques de arriba (izquierda → derecha), 4-5-6 la de abajo. En la sala canónica
-        /// de 11×7 cada sector mide 4×3.
+        /// fila de bloques de arriba (izquierda → derecha), 4-5-6 la de abajo. Cada sector es el
+        /// cruce de una banda de columnas (1 de 3) con una banda de filas (1 de 2), y las bandas
+        /// de los dos ejes salen de la misma regla (<see cref="Band"/>).
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>El pasillo no cae nunca.</b> La fila central de la sala (<c>(minY+maxY)/2</c>) queda
-        /// fuera de los seis sectores por construcción: los bloques de arriba arrancan en
-        /// <c>mid+1</c> y los de abajo terminan en <c>mid-1</c>. Es la invariante que sostiene el
-        /// diseño del jefe — se queda parado ahí y llegar a pegarle nunca cuesta posición.
+        /// <b>Los seis bloques cubren la sala entera.</b> Es la invariante que sostiene la pelea:
+        /// una casilla que no pertenece a ningún sector no se prende fuego <i>nunca</i>, y pararse
+        /// ahí vuelve gratis todo el jefe. La versión anterior dejaba la fila central afuera a
+        /// propósito —"el pasillo"— y el jugador se quedaba parado en ella los ocho turnos: era un
+        /// santuario permanente de once casillas justo al lado del jefe, no un pasillo.
         /// </para>
         /// <para>
-        /// <b>Columna de costura.</b> El ancho de banda es <c>ceil(ancho/3)</c> y la banda derecha
-        /// se ancla al borde derecho (<c>maxX-ancho+1 .. maxX</c>) en vez de continuar a la banda
-        /// del medio. Con un ancho que no es múltiplo de 3 —11, el caso real— eso deja las bandas
-        /// en 0-3 / 4-7 / 7-10: la columna 7 pertenece a la vez al bloque del medio y al de la
-        /// derecha. Es la única franja donde dos números cantados pegan los dos (24 en fase 2), y
-        /// es determinístico, no un artefacto del redondeo: el solapamiento siempre cae en la
-        /// costura derecha.
+        /// <b>Costuras, no huecos.</b> Cada banda mide <c>ceil(extensión/bandas)</c> y la última se
+        /// ancla al borde lejano, así que cuando la extensión no es múltiplo exacto las bandas se
+        /// <i>solapan</i> en una franja en vez de dejar un hueco. En la sala real (11×11, x e y de
+        /// -5 a 5) eso da columnas -5..-2 / -1..2 / 2..5 y filas -5..0 / 0..5: la columna 2 y la
+        /// fila 0 pertenecen cada una a dos bloques. Son las únicas franjas donde los dos números
+        /// de fase 2 pueden pegar los dos (12+12 = 24, el mismo techo de siempre — sólo se cantan
+        /// dos números, por más que la casilla pertenezca a cuatro bloques).
+        /// </para>
+        /// <para>
+        /// Que la fila de costura sea justo la del jefe es deliberado: la casilla que antes era la
+        /// más segura del paño ahora es la que cae con el doble de frecuencia, mientras que
+        /// acercarse por arriba o por abajo sigue costando lo mismo que cualquier otra casilla. El
+        /// jugador conserva un camino de riesgo normal hasta el melee; lo que pierde es el campamento.
         /// </para>
         /// <para>
         /// Salas sin bounds reales (grafo vacío) o índices fuera de 1..6 devuelven vacío, igual que
@@ -235,28 +244,13 @@ namespace Rollgeon.Combat.Threat
             var tiles = new List<GridCoord>(RoomTiles(grid));
             if (tiles.Count == 0) return result;
 
-            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
-            foreach (var c in tiles)
-            {
-                if (c.X < minX) minX = c.X;
-                if (c.X > maxX) maxX = c.X;
-                if (c.Y < minY) minY = c.Y;
-                if (c.Y > maxY) maxY = c.Y;
-            }
+            RoomBounds(tiles, out int minX, out int maxX, out int minY, out int maxY);
 
-            int width = maxX - minX + 1;
-            int bandWidth = (width + 2) / 3; // ceil(width/3)
-            int column = (sector - 1) % 3;   // 0 = izquierda, 1 = medio, 2 = derecha
-            bool upperRow = sector <= 3;
+            int column = (sector - 1) % RoomSectorColumns;                 // 0 izq, 1 medio, 2 der
+            int row = sector <= RoomSectorColumns ? 1 : 0;                 // 1 arriba, 0 abajo
 
-            int loX = column < 2 ? minX + column * bandWidth : maxX - bandWidth + 1;
-            int hiX = column < 2 ? loX + bandWidth - 1 : maxX;
-            if (loX < minX) loX = minX;
-            if (hiX > maxX) hiX = maxX;
-
-            int midY = (minY + maxY) / 2;
-            int loY = upperRow ? midY + 1 : minY;
-            int hiY = upperRow ? maxY : midY - 1;
+            Band(minX, maxX, column, RoomSectorColumns, out int loX, out int hiX);
+            Band(minY, maxY, row, RoomSectorRows, out int loY, out int hiY);
 
             foreach (var c in tiles)
             {
@@ -269,16 +263,18 @@ namespace Rollgeon.Combat.Threat
         }
 
         /// <summary>
-        /// Fila central de la sala — el pasillo que ningún sector cubre. Devuelve vacío si la sala
-        /// no tiene bounds reales.
+        /// Fila (o filas) de costura: las casillas que pertenecen a la vez a un bloque de arriba y
+        /// a uno de abajo. Vacío si la altura de la sala es par —ahí las dos bandas encajan justas—
+        /// o si la sala no tiene bounds reales.
         /// </summary>
         /// <remarks>
-        /// Expuesto porque el pasillo es una lectura de diseño en sí misma (once casillas seguras
-        /// por construcción): lo consumen los tests de invariante y cualquier feedback que quiera
-        /// pintarlo. Se calcula del mismo <c>midY</c> que <see cref="ComputeRoomSector"/> para que
-        /// las dos definiciones no puedan divergir.
+        /// Expuesto porque la costura es una lectura de diseño en sí misma (la franja que cae con
+        /// el doble de frecuencia, y donde vivía el viejo pasillo seguro): lo consumen los tests de
+        /// invariante y cualquier feedback que quiera pintarla. Sale de las mismas
+        /// <see cref="Band"/> que <see cref="ComputeRoomSector"/> para que las dos definiciones no
+        /// puedan divergir.
         /// </remarks>
-        public static HashSet<GridCoord> ComputeCorridorRow(IGridManager grid)
+        public static HashSet<GridCoord> ComputeSeamRow(IGridManager grid)
         {
             var result = new HashSet<GridCoord>();
             if (grid == null) return result;
@@ -286,18 +282,65 @@ namespace Rollgeon.Combat.Threat
             var tiles = new List<GridCoord>(RoomTiles(grid));
             if (tiles.Count == 0) return result;
 
-            int minY = int.MaxValue, maxY = int.MinValue;
+            RoomBounds(tiles, out _, out _, out int minY, out int maxY);
+
+            Band(minY, maxY, 0, RoomSectorRows, out int lowerLo, out int lowerHi);
+            Band(minY, maxY, 1, RoomSectorRows, out int upperLo, out int upperHi);
+
+            int lo = System.Math.Max(lowerLo, upperLo);
+            int hi = System.Math.Min(lowerHi, upperHi);
+
+            foreach (var c in tiles)
+                if (c.Y >= lo && c.Y <= hi) result.Add(c);
+
+            return result;
+        }
+
+        /// <summary>Bandas de columnas del paño: 1-2-3 / 4-5-6 son tres columnas de bloques.</summary>
+        public const int RoomSectorColumns = 3;
+
+        /// <summary>Bandas de filas del paño: los de arriba y los de abajo.</summary>
+        public const int RoomSectorRows = 2;
+
+        /// <summary>
+        /// Banda <paramref name="index"/> de <paramref name="count"/> sobre <c>[min,max]</c>.
+        /// </summary>
+        /// <remarks>
+        /// Tamaño <c>ceil(extensión/count)</c> y la última banda anclada al borde lejano. Con una
+        /// extensión que no divide justo, eso hace que las bandas se solapen en una costura en vez
+        /// de dejar un hueco: la unión de las <paramref name="count"/> bandas es siempre
+        /// <c>[min,max]</c> completo, que es la invariante de la que cuelga el jefe.
+        /// </remarks>
+        private static void Band(int min, int max, int index, int count, out int lo, out int hi)
+        {
+            int extent = max - min + 1;
+            int size = (extent + count - 1) / count; // ceil(extent/count)
+
+            bool last = index >= count - 1;
+            lo = last ? max - size + 1 : min + index * size;
+            hi = last ? max : lo + size - 1;
+
+            // Clamp de las dos puntas: en salas más chicas que la cantidad de bandas el ancla del
+            // borde lejano puede caerse afuera, y una banda vacía sería otra vez un hueco.
+            if (lo < min) lo = min;
+            if (lo > max) lo = max;
+            if (hi > max) hi = max;
+            if (hi < min) hi = min;
+        }
+
+        private static void RoomBounds(
+            List<GridCoord> tiles, out int minX, out int maxX, out int minY, out int maxY)
+        {
+            minX = int.MaxValue; maxX = int.MinValue;
+            minY = int.MaxValue; maxY = int.MinValue;
+
             foreach (var c in tiles)
             {
+                if (c.X < minX) minX = c.X;
+                if (c.X > maxX) maxX = c.X;
                 if (c.Y < minY) minY = c.Y;
                 if (c.Y > maxY) maxY = c.Y;
             }
-
-            int midY = (minY + maxY) / 2;
-            foreach (var c in tiles)
-                if (c.Y == midY) result.Add(c);
-
-            return result;
         }
 
         /// <summary>
