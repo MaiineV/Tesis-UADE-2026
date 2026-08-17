@@ -1,5 +1,7 @@
 using System;
+using Patterns;
 using PrimeTween;
+using Rollgeon.Audio;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -40,6 +42,13 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, MinValue(0f), Tooltip("Velocidad del hundimiento/regreso (px de pantalla por segundo).")]
         private float _sinkSpeed = 900f;
+
+        [SerializeField, Optional, Tooltip("SFX genérico de rechazo al tocar el chip " +
+                 "deshabilitado. Null = mudo.")]
+        private AudioClip _rejectClip;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Volumen del SFX de rechazo.")]
+        private float _rejectVolume = 0.9f;
 
         /// <summary>Pointer down sobre el chip deshabilitado — el view resuelve y
         /// muestra el motivo. Delegate plano (mismo patrón que ActionButton).</summary>
@@ -171,10 +180,27 @@ namespace Rollgeon.UI.HUD
         private void PlayRejectShake()
         {
             if (_rejectShake.isAlive) return;
+
+            // Antes del gate de ReducedMotion: el sonido es feedback, no movimiento.
+            PlayRejectSfx();
+
             if (!Application.isPlaying || DiceUiMotionPrefs.ReducedMotion) return;
             _rejectShake = Tween.ShakeLocalPosition(transform,
                 strength: new Vector3(6f, 0f, 0f), duration: 0.28f, frequency: 22f,
                 useUnscaledTime: true);
+        }
+
+        // Con ReducedMotion el shake nunca vive y su guard no debounce-a: rate limit
+        // propio para que el mashing no ametralle el clip.
+        private float _lastRejectSfxAt = float.NegativeInfinity;
+
+        private void PlayRejectSfx()
+        {
+            if (!Application.isPlaying || _rejectClip == null) return;
+            if (Time.unscaledTime - _lastRejectSfxAt < 0.15f) return;
+            _lastRejectSfxAt = Time.unscaledTime;
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx2D(_rejectClip, _rejectVolume);
         }
     }
 }

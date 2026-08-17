@@ -1,5 +1,7 @@
 using System;
+using Patterns;
 using PrimeTween;
+using Rollgeon.Audio;
 using Rollgeon.Heroes;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -103,6 +105,13 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, Tooltip("Frecuencia del shake de rechazo (Hz).")]
         private float _rejectShakeFrequency = 22f;
+
+        [SerializeField, Optional, Tooltip("SFX genérico de rechazo — suena en todo press " +
+                 "bloqueado, sin importar el motivo. Null = mudo.")]
+        private AudioClip _rejectClip;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Volumen del SFX de rechazo.")]
+        private float _rejectVolume = 0.9f;
 
 
         [Title("Activación")]
@@ -535,6 +544,10 @@ namespace Rollgeon.UI.HUD
 
             if (notifyEnergy) OnRejected?.Invoke();
 
+            // Antes del gate de ReducedMotion: el sonido es feedback, no movimiento.
+            // El guard de arriba lo debounce-a contra el mashing igual que al shake.
+            PlayRejectSfx();
+
             if (!Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
 
             // Shake* de PrimeTween restaura el valor inicial al completar, asi que no
@@ -545,6 +558,19 @@ namespace Rollgeon.UI.HUD
                 duration: _rejectShakeDuration,
                 frequency: _rejectShakeFrequency,
                 useUnscaledTime: true);
+        }
+
+        // Con ReducedMotion el shake nunca vive, así que el guard de arriba no
+        // debounce-a: rate limit propio para que el mashing no ametralle el clip.
+        private float _lastRejectSfxAt = float.NegativeInfinity;
+
+        private void PlayRejectSfx()
+        {
+            if (!Application.isPlaying || _rejectClip == null) return;
+            if (Time.unscaledTime - _lastRejectSfxAt < 0.15f) return;
+            _lastRejectSfxAt = Time.unscaledTime;
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx2D(_rejectClip, _rejectVolume);
         }
     }
 }
