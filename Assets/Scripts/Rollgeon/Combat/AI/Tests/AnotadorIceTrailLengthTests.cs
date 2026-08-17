@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Patterns;
-using Rollgeon.Combat.AI.Bosses.Anotador;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.Status;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
@@ -31,7 +31,7 @@ namespace Rollgeon.Combat.AI.Tests
 
         private StubMovementService _movement;
         private FakeHazardService _hazards;
-        private AnotadorIceStunBinder _binder;
+        private IceStunBinder _binder;
         private HazardDefinitionSO _ice;
 
         private Guid _boss;
@@ -49,7 +49,7 @@ namespace Rollgeon.Combat.AI.Tests
             _hazards = new FakeHazardService();
             ServiceLocator.AddService<IHazardService>(_hazards);
 
-            _binder = new AnotadorIceStunBinder();
+            _binder = new IceStunBinder();
             _binder.Register();
 
             _ice = ScriptableObject.CreateInstance<HazardDefinitionSO>();

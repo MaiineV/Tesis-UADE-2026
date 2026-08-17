@@ -70,6 +70,14 @@ namespace Rollgeon.Feedback
         /// único clip del DiceBoss sin usar y es lo más parecido a "invocar" que tiene.
         /// </summary>
         public const string GeneralaSummonAnim      = "anim.boss.generala.summon";
+
+        /// <summary>
+        /// La escarcha de la mesa (<c>AINode_GeneralaFrostRing</c>). Reusa <c>Attack_Range</c>: el
+        /// hielo cae en un anillo lejos de sus manos, y es el único gesto del rig que empuja algo
+        /// hacia afuera. Los cuatro triggers del DiceBoss ya están tomados, así que compartir es la
+        /// única opción hasta que arte le autore un clip propio.
+        /// </summary>
+        public const string GeneralaFrostAnim       = "anim.boss.generala.frost";
         public const string GeneralaImpactVfx       = "vfx.boss.generala.impact";
         public const string GeneralaRangeImpactVfx  = "vfx.boss.generala.range_impact";
         public const string GeneralaImpactFeel      = "feel.boss.generala.impact";

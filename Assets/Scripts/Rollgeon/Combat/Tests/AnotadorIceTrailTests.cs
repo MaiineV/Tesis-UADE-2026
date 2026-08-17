@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.AI.Bosses.Anotador;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Status;
@@ -19,7 +18,7 @@ namespace Rollgeon.Combat.Tests
 {
     /// <summary>
     /// Estela helada de El Anotador (piso 2): <see cref="AINode_IceTrail"/> +
-    /// <see cref="AnotadorIceStunBinder"/> corriendo sobre el <see cref="HazardService"/> real
+    /// <see cref="IceStunBinder"/> corriendo sobre el <see cref="HazardService"/> real
     /// (mismo harness de grid + movement stub que <see cref="HazardServiceTests"/>).
     /// </summary>
     /// <remarks>
@@ -36,7 +35,7 @@ namespace Rollgeon.Combat.Tests
         private SpyDamagePipeline _pipeline;
         private HazardService _hazard;
         private StunService _stun;
-        private AnotadorIceStunBinder _binder;
+        private IceStunBinder _binder;
         private HazardDefinitionSO _ice;
 
         private Guid _playerGuid;
@@ -82,7 +81,7 @@ namespace Rollgeon.Combat.Tests
             _stun = new StunService();
             _stun.Register();
 
-            _binder = new AnotadorIceStunBinder();
+            _binder = new IceStunBinder();
             _binder.Register();
 
             _ice = CreateIceDefinition();

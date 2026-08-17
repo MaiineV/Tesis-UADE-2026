@@ -259,7 +259,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "El Hazard tiene que ser una HazardDefinitionSO con Trigger=OnEnter, Damage=0, " +
                 "ConsumeOnTrigger=true y DurationRounds=2 (una ronda entera del jugador: con 1 " +
                 "la estela expira en el wrap de ronda, antes de que el jugador vuelva a moverse). " +
-                "El stun NO lo aplica el hazard: lo aplica AnotadorIceStunBinder escuchando " +
+                "El stun NO lo aplica el hazard: lo aplica IceStunBinder escuchando " +
                 "OnHazardTriggered, y solo para las instancias que este nodo publicó.\n\n" +
                 "Sin repliegue este turno devuelve Succeeded (no-op transparente): un Failed acá " +
                 "abortaría el Sequence del turno y el boss perdería su marca de fila.",
@@ -378,6 +378,26 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "Se auto-gatea con RequireCleanRound: el poke y el Castigo nunca resuelven la misma " +
                 "ronda porque 12 + 45 rompe el techo de 45 por golpe del piso 3. El árbol lo gatea " +
                 "además con PcTahurCleanRound + PcTargetInRange 1.",
+
+            [typeof(Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaFrostRing)] =
+                "Generala — Escarcha: congela el ANILLO de casillas a Radius exactas (Chebyshev) de " +
+                "ella. Cruzarlo cuesta StunTurns turno(s); quedarse adentro o afuera no cuesta nada, " +
+                "y quien ya estaba parado en una casilla del anillo cuando se forma tampoco paga " +
+                "(el hazard es OnEnter).\n\n" +
+                "El hueco central es a propósito: es desde donde el jugador le rompe los cinco " +
+                "dados. Con Radius=1 el anillo tapaba justo esas casillas y desarmarle la mesa " +
+                "dejaba de ser posible.\n\n" +
+                "Daño 0 en la definición del hazard: el techo del piso 3 ya lo llenan la mano " +
+                "detonada (45) y el cubilete (18). El hielo cobra el TURNO — quien se congela come " +
+                "la mano de la ronda siguiente sin poder esquivarla, y ese golpe ya está " +
+                "presupuestado.\n\n" +
+                "El Hazard tiene que ser una HazardDefinitionSO con Trigger=OnEnter, Damage=0, " +
+                "ConsumeOnTrigger=true y DurationRounds=2 (= 'dura 1 turno': la duración se " +
+                "descuenta en el wrap de ronda y el anillo nace con el turno del jugador de esa " +
+                "ronda ya jugado). El stun lo aplica IceStunBinder, no el hazard, y nunca al dueño " +
+                "del anillo — el reposicionamiento corre después y la hace cruzar su propio hielo.\n\n" +
+                "Devuelve Failed sin hazard / sin IHazardService / sin anillo posible ⇒ va SIEMPRE " +
+                "en Selector[Escarcha, Wait].",
         };
 
         /// <summary>

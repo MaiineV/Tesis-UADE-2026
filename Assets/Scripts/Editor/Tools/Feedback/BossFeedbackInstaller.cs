@@ -126,6 +126,9 @@ namespace Rollgeon.Editor.Tools
             // 'Heal' no cura a nadie acá: es el gesto de brazos en alto, y era el único clip del
             // DiceBoss que no usaba nadie. Reponer la mesa es lo más cerca de invocar que hace.
             yield return Spec.Anim(GeneralaSummonAnim, "Heal");
+            // La escarcha comparte 'Attack_Range' con la mano: los cuatro triggers del DiceBoss ya
+            // están tomados y el anillo de hielo cae lejos, que es lo que ese clip empuja.
+            yield return Spec.Anim(GeneralaFrostAnim, "Attack_Range");
             yield return Spec.Vfx(GeneralaImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(GeneralaRangeImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(GeneralaImpactFeel, MeleeImpactFeelPath);

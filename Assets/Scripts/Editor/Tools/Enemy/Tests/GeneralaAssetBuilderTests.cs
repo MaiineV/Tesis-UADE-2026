@@ -9,6 +9,7 @@ using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Bosses.Generala;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.BossHand;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
@@ -31,19 +32,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     public class GeneralaAssetBuilderTests
     {
         private EnemyDataSO _dice;
+        private HazardDefinitionSO _frost;
         private AINode_Sequence _root;
 
         [SetUp]
         public void SetUp()
         {
             _dice = ScriptableObject.CreateInstance<EnemyDataSO>();
-            _root = GeneralaAssetBuilder.BuildAIRoot(_dice);
+            _frost = ScriptableObject.CreateInstance<HazardDefinitionSO>();
+            _root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
         }
 
         [TearDown]
         public void TearDown()
         {
             if (_dice != null) UnityEngine.Object.DestroyImmediate(_dice);
+            if (_frost != null) UnityEngine.Object.DestroyImmediate(_frost);
         }
 
         // ======================================================================
@@ -118,22 +122,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El spawn de la mesa no puede ir dentro de un Once — rompe la reposición.");
         }
 
+        /// <summary>Los nodos del árbol que devuelven Failed en su caso benigno.</summary>
+        private static readonly Type[] RiskyNodeTypes =
+        {
+            typeof(AINode_SpawnReinforcements),      // sin tiles de borde libres
+            typeof(AINode_SetHandReroll),            // el gate de fase, sin ComboLog ni registry
+            typeof(AINode_GeneralaCupSlam),          // con el jugador lejos — media pelea
+            typeof(AINode_GeneralaFrostRing),        // en ronda impar, y sin IHazardService
+            typeof(AINode_RotateBlock),              // sin IContractModifierService ni IComboLogService
+            typeof(AINode_Move),                     // "ya estoy en la banda", la mayoría de sus turnos
+        };
+
         [Test]
         public void RiskyNodes_AreIsolatedInSelectorsWithAWaitFallback()
         {
             // Arrange — un Failed suelto en el Sequence raíz le cancela al jefe el resto del turno.
             var risky = _root.Children
                 .OfType<AINode_Selector>()
-                .Where(s => Descendants(s).Any(n =>
-                    n is AINode_SpawnReinforcements
-                    || n is AINode_SetHandReroll
-                    || n is AINode_GeneralaCupSlam))
+                .Where(s => Descendants(s).Any(n => RiskyNodeTypes.Contains(n.GetType())))
                 .ToList();
 
-            // Assert
-            Assert.AreEqual(3, risky.Count,
-                "La mesa, el setup de fase y el cubilete tienen que ir cada uno en su Selector de " +
-                "aislamiento — el cubilete devuelve Failed con el jugador lejos, que es lo normal.");
+            // Assert — uno por nodo riesgoso: si dos compartieran Selector, el Failed del primero
+            // saltearía al segundo en vez de aislarlo.
+            Assert.AreEqual(RiskyNodeTypes.Length, risky.Count,
+                "Cada nodo que puede devolver Failed va en su propio Selector de aislamiento: la " +
+                "mesa, el setup de fase, el cubilete, la escarcha, la regla de la mano repetida y " +
+                "el reposicionamiento.");
             foreach (var selector in risky)
             {
                 Assert.IsTrue(selector.Children.Any(c => c is AINode_Wait),
@@ -245,6 +259,162 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El cubilete no ocupa canal de aviso: cobra en el acto.");
             Assert.IsFalse(Descendants(branch).OfType<AINode_TelegraphMark>().Any(),
                 "Ni marca área — el único aviso es la distancia, que el jugador controla entera.");
+        }
+
+        // ======================================================================
+        // La escarcha
+        // ======================================================================
+
+        [Test]
+        public void Frost_FreezesTheRingAroundTheTable_LeavingTheAdjacentTilesFree()
+        {
+            // Act
+            var frost = Descendants(_root).OfType<AINode_GeneralaFrostRing>().FirstOrDefault();
+
+            // Assert — radio 2 = el BORDE del 5×5. Las cuatro casillas pegadas a ella quedan
+            // libres, que son desde donde el jugador le rompe los dados: con radio 1 el anillo las
+            // tapaba y desarmarle la mesa dejaba de ser posible.
+            Assert.IsNotNull(frost, "La Generala no congela nada.");
+            Assert.AreEqual(GeneralaAssetBuilder.FrostRingRadius, frost.Radius);
+            Assert.AreEqual(2, GeneralaAssetBuilder.FrostRingRadius,
+                "El anillo tiene que dejar libre el anillo de distancia 1.");
+            Assert.AreSame(_frost, frost.Hazard, "El anillo tiene que usar SU definición de hielo.");
+            Assert.AreEqual(1, frost.StunTurns, "La ficha pide 1 turno de congelamiento.");
+            Assert.IsTrue(frost.ReplacePreviousRing,
+                "Dos anillos vivos duplicarían overlays y dejarían medio mapa helado.");
+        }
+
+        [Test]
+        public void Frost_FallsOnEvenRoundsOnly_SoThereIsARoundToBreakDice()
+        {
+            // Arrange
+            var gate = _root.Children
+                .OfType<AINode_Selector>()
+                .SelectMany(s => s.Children.OfType<AINode_If>())
+                .FirstOrDefault(i => Descendants(i).OfType<AINode_GeneralaFrostRing>().Any());
+
+            // Assert
+            Assert.IsNotNull(gate, "La escarcha tiene que colgar de un gate de paridad de ronda.");
+
+            var parity = gate.Conditions.OfType<PcRoundNumber>().FirstOrDefault();
+            Assert.IsNotNull(parity, "Sin gate de ronda el hielo se repone antes de derretirse.");
+            Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
+            Assert.AreEqual(GeneralaAssetBuilder.FrostParityDivisor, parity.Value,
+                "Rondas pares: la impar es la ventana franca para entrar a la mesa.");
+        }
+
+        [Test]
+        public void Frost_PaysInTurnsAndNotInHp_BecauseTheFloorCeilingIsAlreadyFull()
+        {
+            // Arrange — su turno ya puede sumar la mano detonada (45) + el cubilete (18) = 63,
+            // contra un techo de 45 por golpe y ≤65 anunciado. No queda presupuesto para un
+            // tercer golpe: la escarcha cobra el turno, no HP.
+            var definition = ScriptableObject.CreateInstance<HazardDefinitionSO>();
+            try
+            {
+                // Act
+                GeneralaAssetBuilder.ConfigureFrostHazard(definition);
+
+                // Assert
+                Assert.AreEqual(0, definition.Damage, "El hielo no puede cobrar HP: el techo ya está lleno.");
+                Assert.AreEqual(HazardTriggerMode.OnEnter, definition.Trigger,
+                    "Cobra al CRUZARLO — quedarse adentro o afuera del anillo no cuesta nada.");
+                Assert.IsTrue(definition.ConsumeOnTrigger,
+                    "La casilla pisada se derrite: sin eso el mismo anillo encadena stuns.");
+                Assert.AreEqual(2, definition.DurationRounds,
+                    "'Dura 1 turno' se autora como 2: la duración se descuenta en el wrap de ronda " +
+                    "y la escarcha nace con el turno del jugador de esa ronda ya jugado.");
+                Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardSourceId, definition.SourceId,
+                    "Dos hazards con el mismo source id se pisan el estado.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void Frost_UsesItsOwnDefinition_AndDoesNotRetuneTheAnotadorsTrail()
+        {
+            // Assert — la estela del piso 2 dura 3 rondas pisables a propósito (tapar corredores);
+            // la escarcha dura 1. Compartir asset obligaría a elegir, y el jefe del piso 2 no es
+            // de este trabajo.
+            Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardAssetPath,
+                GeneralaAssetBuilder.FrostHazardAssetPath,
+                "La Generala tiene que tener su propio HazardDefinitionSO.");
+            Assert.AreNotEqual(AnotadorAssetBuilder.TrailDurationRounds,
+                GeneralaAssetBuilder.FrostDurationRounds,
+                "Si las dos duraciones coincidieran, el asset propio no tendría razón de existir.");
+        }
+
+        // ======================================================================
+        // La regla de la mano repetida
+        // ======================================================================
+
+        [Test]
+        public void RepeatBan_ForbidsExactlyTheLastComboScored()
+        {
+            // Act
+            var ban = Descendants(_root).OfType<AINode_RotateBlock>().FirstOrDefault();
+
+            // Assert — modo Combo: ClearAll + ForbidCombo sobre los últimos N del ComboLog. Con
+            // N = 1 es literalmente "no repitas la mano de la ronda pasada".
+            Assert.IsNotNull(ban, "Falta la regla de la mano repetida.");
+            Assert.AreEqual(AINode_RotateBlock.BlockTarget.Combo, ban.Target,
+                "Modo Dice bloquearía dados de la build — eso es del jefe del piso 1.");
+            Assert.AreEqual(1, ban.Count, "Uno solo: el último. Dos serían dos manos prohibidas.");
+            Assert.AreEqual(GeneralaAssetBuilder.RepeatBanWindow, ban.Count);
+        }
+
+        [Test]
+        public void RepeatBan_IsPromulgatedAtTheEndOfHerTurn_SoThePlayerSeesItBeforeRolling()
+        {
+            // Arrange
+            int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
+            int banIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RotateBlock));
+
+            // Assert — el jefe computa al cerrar su turno y el jugador lo lee al abrir el suyo: la
+            // fila sale tachada en el Contrato ANTES de que comprometa los dados.
+            Assert.Greater(banIdx, -1, "No se encontró la regla en el Sequence raíz.");
+            Assert.Greater(banIdx, rollIdx, "La regla se promulga al cierre del turno, no al abrirlo.");
+        }
+
+        // ======================================================================
+        // El reposicionamiento
+        // ======================================================================
+
+        [Test]
+        public void Reposition_ClosesInAndBacksOff_KeepingAThreeTileBand()
+        {
+            // Act
+            var move = Descendants(_root).OfType<AINode_Move>().FirstOrDefault();
+
+            // Assert — el pedido es que se acerque Y se aleje. AINode_KeepDistance sólo sabe
+            // alejarse; AINode_Move con Retreat cubre las dos mitades con un solo nodo.
+            Assert.IsNotNull(move, "La Generala no se mueve: sin este nodo es una estatua.");
+            Assert.IsTrue(move.Retreat, "Sin Retreat sólo se acercaría — nunca se despegaría.");
+            Assert.IsInstanceOf<AIConstantInt>(move.DesiredRange);
+            Assert.AreEqual(GeneralaAssetBuilder.RepositionRange, ((AIConstantInt)move.DesiredRange).Value);
+            Assert.AreEqual(GeneralaAssetBuilder.RepositionSteps, ((AIConstantInt)move.MaxSteps).Value);
+
+            Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.CupSlamRange,
+                "Su banda tiene que quedar FUERA del alcance del cubilete: si se pegara sola, el " +
+                "peaje de acercarse dejaría de elegirlo el jugador.");
+        }
+
+        [Test]
+        public void Reposition_GoesLast_SoTheCupAndTheFrostResolveFromWhereSheRolled()
+        {
+            // Assert — moverse antes le cambiaría el centro al anillo y la distancia al cubilete
+            // respecto de lo que el jugador vio cuando decidió dónde pararse.
+            var last = _root.Children.Last();
+            Assert.IsTrue(Descendants(last).OfType<AINode_Move>().Any(),
+                "El reposicionamiento tiene que ser el último hijo del Sequence raíz.");
+
+            Assert.AreEqual(1, Descendants(_root).OfType<AINode_Move>().Count(),
+                "Un solo nodo de movimiento: dos serían dos desplazamientos por turno.");
+            Assert.IsFalse(Descendants(_root).OfType<AINode_KeepDistance>().Any(),
+                "KeepDistance sólo kitea — convivir con Move duplicaría la lógica de distancia.");
         }
 
         // ======================================================================

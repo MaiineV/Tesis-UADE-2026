@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.AI.Bosses.Anotador;
+using Rollgeon.Combat.Status;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
@@ -23,7 +23,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// porque nunca camina por donde caminó el boss.
     /// </para>
     /// <para>
-    /// <b>De dónde salen las casillas.</b> De <see cref="AnotadorIceStunBinder"/>, que graba el
+    /// <b>De dónde salen las casillas.</b> De <see cref="IceStunBinder"/>, que graba el
     /// path real que publicó <c>IMovementService.OnEntityMoved</c>. No se reconstruye con
     /// <c>FindPath</c>: después de moverse la ocupancia cambió y el camino recalculado podría no
     /// ser el que caminó, congelando casillas mentirosas.
@@ -89,7 +89,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            var binder = AnotadorIceStunBinder.ResolveOrCreate();
+            var binder = IceStunBinder.ResolveOrCreate();
             if (binder == null) return AIResult.Failed;
 
             // Sin repliegue este turno ⇒ no-op transparente (ver remarks: un Failed acá le come
@@ -109,7 +109,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (ReplacePreviousTrail && _liveTrailId != Guid.Empty)
             {
                 hazards.Deactivate(_liveTrailId);
-                binder.ForgetTrail(_liveTrailId);
+                binder.ForgetIce(_liveTrailId);
                 _liveTrailId = Guid.Empty;
             }
 
@@ -118,7 +118,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // Trackear DESPUÉS de activar: el binder necesita el id para reconocer sus propios
             // triggers y saber a quién no stunear (el dueño de la estela).
-            binder.TrackTrail(instanceId, Hazard, context.SelfGuid, StunTurns);
+            binder.TrackIce(instanceId, Hazard, context.SelfGuid, StunTurns);
             _liveTrailId = instanceId;
             return AIResult.Succeeded;
         }

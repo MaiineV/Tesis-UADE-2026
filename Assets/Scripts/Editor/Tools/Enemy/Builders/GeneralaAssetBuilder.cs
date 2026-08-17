@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Combat.AI.Bosses.Generala;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.AI.Readers;
+using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
@@ -47,8 +49,24 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossAssetPath = EnemiesFolder + "/ED_Boss_Generala.asset";
         public const string DiceAssetPath = EnemiesFolder + "/ED_Obj_DadoCasa.asset";
 
+        /// <summary>
+        /// La escarcha de la mesa. <b>Asset propio y no el <c>IceTrailHazardDefinition</c> del
+        /// Anotador</b>: aquél está autorado en <c>DurationRounds = 4</c> (3 rondas pisables) porque
+        /// su diseño es tapar corredores durante varias rondas, y acá la ficha pide <b>1 turno</b>.
+        /// Retunearlo le cambiaría la pelea al jefe del piso 2, que no es de este trabajo.
+        /// </summary>
+        public const string FrostHazardAssetPath =
+            "Assets/Rollgeon/Combat/Hazards/GeneralaFrostHazardDefinition.asset";
+
         public const string BossEntityId = "boss.la_generala";
         public const string DiceEntityId = "obj.dado_casa";
+
+        /// <summary>
+        /// SourceId fijo (no <c>Guid.NewGuid()</c>) para que reconstruir el asset no le cambie la
+        /// identidad al hazard — mismo criterio que <c>AnotadorAssetBuilder.IceHazardSourceId</c>,
+        /// y obviamente distinto del suyo: dos hazards con el mismo source id se pisarían.
+        /// </summary>
+        public const string FrostHazardSourceId = "3f1c9a52-84d7-4b60-9e13-2ac6f5d80b74";
 
         // ---- Números de la ficha ------------------------------------------------------
 
@@ -92,6 +110,83 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// distancia, y esa la elige el jugador.
         /// </summary>
         public const int CupSlamDamage = 18;
+
+        /// <summary>
+        /// Alcance del cubilete, en Manhattan. 1 = las cuatro casillas desde las que el jugador
+        /// puede pegarle a ella o a un dado pegado a ella: la regla queda simétrica y se aprende en
+        /// un turno. Vive como constante porque el reposicionamiento tiene que quedar por fuera
+        /// (ver <see cref="RepositionRange"/>) y dos literales sueltos podrían desfasarse.
+        /// </summary>
+        public const int CupSlamRange = 1;
+
+        // ---- La escarcha ----------------------------------------------------------------
+
+        /// <summary>
+        /// Distancia Chebyshev exacta del anillo de hielo. 2 = el borde del 5×5 que la rodea: las
+        /// casillas pegadas a ella quedan libres, que son desde donde el jugador le rompe los dados.
+        /// Con 1 el anillo tapaba justamente esas cuatro y desarmarle la mesa dejaba de ser posible.
+        /// </summary>
+        public const int FrostRingRadius = 2;
+
+        public const int FrostStunTurns = 1;
+
+        /// <summary>
+        /// Vida del anillo en el SO del hazard. La ficha pide <b>1 turno</b> y acá va <b>2</b>:
+        /// <c>HazardService</c> descuenta una vez por wrap de ronda y la escarcha nace en el turno
+        /// del jefe, con el turno del jugador de esa ronda ya jugado (CNF-006). <c>DurationRounds =
+        /// D</c> vale <c>D - 1</c> rondas pisables. Mismo corrimiento de +1 que
+        /// <c>AnotadorAssetBuilder.TrailDurationRounds</c> y <c>CroupierAssetBuilder</c>.
+        /// </summary>
+        public const int FrostDurationRounds = 2;
+
+        /// <summary>
+        /// Paridad del anillo: cae en rondas pares. La ronda impar es la ventana franca para entrar
+        /// a la mesa y romper dados — sin ella el hielo se repone antes de derretirse y la jugada
+        /// que le borra categorías queda muerta.
+        /// </summary>
+        public const int FrostParityDivisor = 2;
+
+        /// <summary>Celeste del hielo, el mismo de la estela del Anotador: el hielo se lee igual en todo el juego.</summary>
+        public static readonly Color FrostOverlayTint = new Color(0.35f, 0.8f, 1f, 0.55f);
+
+        /// <summary>
+        /// Burst de la pisada. Es el <c>VFX_IceBurst</c> que autora el builder del Anotador: el
+        /// hielo es el mismo efecto en los dos pisos y clonarle un prefab propio sería un asset más
+        /// para mantener sin nada distinto adentro. La ruta se repite acá —en vez de leer la
+        /// constante del otro builder— para no acoplar dos builders que se editan por separado; si
+        /// el Anotador nunca se construyó, el prefab no existe, el campo queda en null y el anillo
+        /// se ve igual con su quad celeste.
+        /// </summary>
+        public const string FrostVfxPrefabPath = "Assets/Prefabs/VFX/VFX_IceBurst.prefab";
+
+        /// <summary>Vida del burst. 1.5s le sobra al glow, que emite 0.5s (mismo valor que la estela).</summary>
+        public const float FrostBurstLifetime = 1.5f;
+
+        // ---- El reposicionamiento -------------------------------------------------------
+
+        /// <summary>
+        /// Distancia Manhattan que intenta mantener. 3 y no 1: pegada le regalaría un cubilete por
+        /// turno sin que el jugador lo elija, y lejos la sacaría de la sala útil. A 3 el jugador
+        /// sigue eligiendo si paga el peaje de acercarse, pero deja de poder plantarse en una
+        /// esquina a mirarla.
+        /// </summary>
+        public const int RepositionRange = 3;
+
+        /// <summary>
+        /// Pasos por turno del reposicionamiento. 2 sobre los 4 de su <c>BaseSpeed</c>: corrige la
+        /// distancia sin poder cruzarle la sala de punta a punta en un turno, que la volvería
+        /// imposible de despegar.
+        /// </summary>
+        public const int RepositionSteps = 2;
+
+        // ---- La regla de la mano repetida ------------------------------------------------
+
+        /// <summary>
+        /// Combos prohibidos por turno. 1 = "el último que anotaste", que es exactamente la regla:
+        /// no podés repetir la mano de la ronda pasada. La ventana es deslizante — al turno
+        /// siguiente se descarta y se prohíbe la nueva última.
+        /// </summary>
+        public const int RepeatBanWindow = 1;
 
         public const float Phase2HpThreshold = 0.5f;
         public const float WeaknessMultiplier = 1.5f;
@@ -225,16 +320,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             PopulateDiceData(dice, diceVisual, dicePortrait);
             EditorUtility.SetDirty(dice);
 
+            var frost = LoadOrCreate<HazardDefinitionSO>(FrostHazardAssetPath);
+            ConfigureFrostHazard(frost, AssetDatabase.LoadAssetAtPath<GameObject>(FrostVfxPrefabPath));
+            EditorUtility.SetDirty(frost);
+
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, dice, bossVisual, bossPortrait);
+            PopulateEnemyData(boss, dice, bossVisual, bossPortrait, frost);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + '{DiceAssetPath}' " +
-                      $"({HandSize} × {DiceHp} HP), con wrappers '{BossVisualPrefabPath}' y " +
-                      $"'{DiceVisualPrefabPath}'. Re-ejecutable sin duplicar nada.");
+                      $"({HandSize} × {DiceHp} HP) + '{FrostHazardAssetPath}', con wrappers " +
+                      $"'{BossVisualPrefabPath}' y '{DiceVisualPrefabPath}'. " +
+                      "Re-ejecutable sin duplicar nada.");
         }
 
         // ======================================================================
@@ -677,7 +777,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             EnemyDataSO boss,
             EnemyDataSO diceObject,
             GameObject visualPrefab,
-            Sprite portrait = null)
+            Sprite portrait = null,
+            HazardDefinitionSO frostHazard = null)
         {
             if (boss == null) return;
 
@@ -712,7 +813,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sale del mismo campo (BaseEntitySO.Portrait → IEntityPortraitResolver).
             if (portrait != null) boss.Portrait = portrait;
 
-            boss.AIRoot = BuildAIRoot(diceObject);
+            boss.AIRoot = BuildAIRoot(diceObject, frostHazard);
+        }
+
+        /// <summary>
+        /// Configura la definición de la escarcha. Área dinámica: <see cref="HazardDefinitionSO.Shape"/>
+        /// se ignora (las casillas del anillo las pasa el nodo), el daño es 0 —el hielo cobra en
+        /// turnos, no en HP: el techo del piso 3 ya está lleno con la mano y el cubilete— y la
+        /// casilla pisada se derrite, que es lo que impide encadenar stuns.
+        /// </summary>
+        /// <param name="triggerVfx">
+        /// Burst opcional. Con <c>null</c> el anillo queda con el quad celeste solo: el visual no es
+        /// parte del contrato del hazard, así que un builder corrido sin el prefab no rompe la pelea.
+        /// </param>
+        public static void ConfigureFrostHazard(HazardDefinitionSO definition, GameObject triggerVfx = null)
+        {
+            if (definition == null) return;
+
+            definition.Trigger = HazardTriggerMode.OnEnter;
+            definition.Damage = 0;
+            definition.Kind = AttackKind.Environmental;
+            definition.ConsumeOnTrigger = true;
+            definition.DurationRounds = FrostDurationRounds;
+            definition.OverlayTint = FrostOverlayTint;
+            definition.SourceId = FrostHazardSourceId;
+            definition.TriggerVfxLifetime = FrostBurstLifetime;
+
+            if (triggerVfx != null) definition.TriggerVfxPrefab = triggerVfx;
         }
 
         /// <summary>
@@ -761,10 +888,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Árbol de decisión del jefe. Orden del turno: cobra el aviso pendiente, corre el gate de
-        /// fase, repone la mesa, tira la mano —bajando el cubilete sobre quien esté pegado— y marca
-        /// el área del combo que le salió.
+        /// fase, repone la mesa, tira la mano —bajando el cubilete sobre quien esté pegado—, marca
+        /// el área del combo que le salió, congela el anillo de la mesa, tacha la mano que el
+        /// jugador acaba de anotar, y recién ahí se reacomoda.
         /// </summary>
-        public static AINode_Sequence BuildAIRoot(EnemyDataSO diceObject)
+        /// <param name="frostHazard">
+        /// Definición de la escarcha (<see cref="ConfigureFrostHazard"/>). Puede ser null en tests
+        /// que no miren el hielo: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
+        /// </param>
+        public static AINode_Sequence BuildAIRoot(EnemyDataSO diceObject, HazardDefinitionSO frostHazard = null)
         {
             return new AINode_Sequence
             {
@@ -807,6 +939,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 6. La tabla combo → telegraph. Es data: cambiar cuánto pega una mano es
                     //    editar el TelegraphMark de su rama, no tocar código.
                     BuildHandTelegraphTable(),
+
+                    // 7. La escarcha, en rondas pares: el anillo de la mesa se congela y cruzarlo
+                    //    cuesta el turno. Cero daño — el techo del piso ya está lleno con la mano
+                    //    (45) y el cubilete (18); lo que cobra el hielo es la ronda que perdés.
+                    Isolate(BuildFrostGate(frostHazard)),
+
+                    // 8. La regla de la casa: la mano que el jugador acaba de anotar queda
+                    //    prohibida (daño 0) para la ronda que viene. Se computa al cerrar SU turno
+                    //    para que el jugador la vea tachada en el Contrato al empezar el suyo, es
+                    //    decir antes de comprometer los dados.
+                    Isolate(BuildRepeatBan()),
+
+                    // 9. Y recién ahí se mueve. Último a propósito: el cubilete y la escarcha se
+                    //    resuelven desde donde estaba parada cuando tiró, no desde donde terminó.
+                    Isolate(BuildReposition()),
                 },
             };
         }
@@ -934,9 +1081,118 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return new AINode_GeneralaCupSlam
             {
                 Damage = CupSlamDamage,
-                Range = 1,
+                Range = CupSlamRange,
                 Metric = DistanceMetric.Manhattan,
                 Kind = AttackKind.BasicAttack,
+            };
+        }
+
+        /// <summary>
+        /// La escarcha, colgada de la paridad de ronda: cae en las pares y deja la impar franca.
+        /// </summary>
+        /// <remarks>
+        /// La ronda franca no es tuning, es lo que mantiene viva la jugada del jefe. Sus cinco dados
+        /// se rompen desde las casillas pegadas a ella, y el anillo tapa el único camino hasta ahí:
+        /// si se repusiera todos los turnos, el hielo nuevo caería antes de que se derrita el
+        /// anterior y desarmarle la mesa pasaría de "caro" a "imposible".
+        /// </remarks>
+        public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
+        {
+            return new AINode_If
+            {
+                Conditions = new List<BasePreCondition>
+                {
+                    new PcRoundNumber
+                    {
+                        Mode = PcRoundNumber.CompareMode.Multiple,
+                        Value = FrostParityDivisor,
+                    },
+                },
+                Then = BuildFrostRing(frostHazard),
+                // Sin Else: en ronda impar el If devuelve Failed y lo absorbe el Selector de Isolate.
+            };
+        }
+
+        public static AINode_GeneralaFrostRing BuildFrostRing(HazardDefinitionSO frostHazard)
+        {
+            return new AINode_GeneralaFrostRing
+            {
+                Hazard = frostHazard,
+                Radius = FrostRingRadius,
+                StunTurns = FrostStunTurns,
+                ReplacePreviousRing = true,
+            };
+        }
+
+        /// <summary>
+        /// "No repitas la mano." Prohíbe el último combo del <c>IComboLogService</c> vía
+        /// <c>IContractModifierService</c>: armarlo otra vez paga 0 y la fila sale tachada en el
+        /// Contrato.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Se reusa <see cref="AINode_RotateBlock"/> en modo Combo en vez de escribir un nodo nuevo:
+        /// ese nodo ya es exactamente esto —<c>ClearAll</c> + <c>ForbidCombo</c> sobre los últimos N
+        /// del log, con ventana deslizante— y lo estrenó el Jefe de Seguridad del piso 1 con
+        /// <c>Count = 1</c>/<c>2</c> por fase. La única diferencia con aquél es de quién es el
+        /// árbol.
+        /// </para>
+        /// <para>
+        /// <b>La UI ya está.</b> <c>ContractRowStateResolver</c> lee <c>IsForbidden</c> y devuelve
+        /// <c>ContractRowMark.Forbidden</c>; <c>ContractComboRowView</c> lo pinta tachado con el
+        /// badge y el 0. No hace falta código de UI nuevo — hace falta que el ban se promulgue
+        /// antes de que el jugador tire, y por eso este nodo va al cierre del turno del jefe.
+        /// </para>
+        /// <para>
+        /// Sin presentación (<c>BlockVfxId</c>/<c>BlockFeelId</c> vacíos): el modo Combo del nodo no
+        /// presenta nada por diseño —lo que se ve es la fila tachada en el Contrato, no un VFX sobre
+        /// el jugador— y el rig de dados no tiene un quinto gesto libre.
+        /// </para>
+        /// </remarks>
+        public static AINode_RotateBlock BuildRepeatBan()
+        {
+            return new AINode_RotateBlock
+            {
+                Target = AINode_RotateBlock.BlockTarget.Combo,
+                Count = RepeatBanWindow,
+            };
+        }
+
+        /// <summary>
+        /// El reposicionamiento. <see cref="AINode_Move"/> con <c>Retreat</c> y no
+        /// <see cref="AINode_KeepDistance"/>: el pedido es que se acerque <b>y</b> se aleje, y
+        /// KeepDistance sólo sabe alejarse (nunca acorta). Un solo nodo cubre las dos mitades
+        /// porque Move puntúa por <c>|distancia - DesiredRange|</c>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Por qué no persigue.</b> Su daño grande viaja por telegraphs avisados una ronda antes
+        /// y se esquiva caminando: un jefe que cierra a melee convierte esa esquiva en una carrera
+        /// que no puede ganar. Y su golpe de cerca (el cubilete) está autorado como <i>peaje</i> —
+        /// "si le llegás, te llega"—, así que si ella misma se pega, el jugador deja de elegir
+        /// pagarlo. La banda de <see cref="RepositionRange"/> deja las dos reglas intactas.
+        /// </para>
+        /// <para>
+        /// <b>Por qué tampoco kitea.</b> Al revés de un ranged, ella <i>es</i> la mesa: alejarse
+        /// siempre arrastraría la pelea a un rincón y dejaría a los cinco dados —que son terreno
+        /// fijo— cada vez más lejos de ella. Retrocede sólo cuando la tienen encima.
+        /// </para>
+        /// <para>
+        /// Va último en el Sequence y aislado: <see cref="AINode_Move"/> devuelve <c>Failed</c> en
+        /// el caso benigno "ya estoy en la banda", que es la mayoría de sus turnos, y suelto en el
+        /// Sequence raíz ese Failed no rompería nada por ir último — pero el idiom es el mismo para
+        /// todos y no depende del orden, que es justo lo que lo hace seguro de mover.
+        /// </para>
+        /// </remarks>
+        public static AINode_Move BuildReposition()
+        {
+            return new AINode_Move
+            {
+                MaxSteps = new AIConstantInt { Value = RepositionSteps },
+                TargetSelector = new TargetSelector_AlwaysPlayer(),
+                DesiredRange = new AIConstantInt { Value = RepositionRange },
+                Retreat = true,
+                StopAdjacent = false, // legacy, ignorado: manda DesiredRange.
             };
         }
 
