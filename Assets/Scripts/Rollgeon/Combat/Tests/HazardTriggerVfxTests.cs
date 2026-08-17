@@ -5,8 +5,11 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dice;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
 using Rollgeon.Movement;
+using Rollgeon.Player;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
@@ -58,6 +61,11 @@ namespace Rollgeon.Combat.Tests
 
             _walkerGuid = Guid.NewGuid();
             _grid.Register(_walkerGuid, new GridCoord(4, 4));
+
+            // El que camina es el jugador: los hazards son PlayerOnly por default, así que sin un
+            // IPlayerService que lo nombre el filtro corta el disparo y no habría VFX que mirar.
+            // Que sea el jugador es lo correcto acá — este suite mide el visual, no a quién le cobra.
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _walkerGuid });
 
             // Registrado antes del service: la suscripción a OnEntityMoved se resuelve en el primer
             // Activate con tiles.
@@ -268,6 +276,19 @@ namespace Rollgeon.Combat.Tests
 
             public void RaiseMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
                 => OnEntityMoved?.Invoke(entity, from, to, path);
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
     }
 }

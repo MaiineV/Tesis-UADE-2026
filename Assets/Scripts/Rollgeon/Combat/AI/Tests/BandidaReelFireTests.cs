@@ -9,8 +9,11 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dice;
 using Rollgeon.Entities;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
@@ -92,6 +95,10 @@ namespace Rollgeon.Combat.AI.Tests
             // Atornillada a la pared de arriba: la fila cae alineada en la línea de abajo (y = 5).
             _grid.Register(_boss, new GridCoord(5, 6));
             _grid.Register(_player, new GridCoord(1, 1));
+
+            // El fuego del carrete roto reusa la definición del Croupier, que es PlayerOnly: sin
+            // IPlayerService el filtro es fail-closed y no le cobra ni al jugador.
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _player });
             _attributes.Register(_boss, NewStats(140));
             _turnOrder.RestoreState(new[] { _player, _boss }, cursor: 1, roundIndex: 0);
 
@@ -457,6 +464,19 @@ namespace Rollgeon.Combat.AI.Tests
             }
 
             public DamageContext Preview(DamageContext ctx) => ctx;
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
     }
 }

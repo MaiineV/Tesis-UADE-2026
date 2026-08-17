@@ -6,7 +6,10 @@ using Patterns;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dice;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
 using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
@@ -56,6 +59,10 @@ namespace Rollgeon.Combat.AI.Tests
             _playerGuid = Guid.NewGuid();
             _grid.Register(_bossGuid, new GridCoord(5, 3));
             _grid.Register(_playerGuid, new GridCoord(0, 0)); // Sector 4.
+
+            // El fuego es PlayerOnly, así que el service tiene que poder nombrar al jugador para
+            // cobrarle: sin IPlayerService el filtro es fail-closed y no cobra a nadie.
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _playerGuid });
 
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
             _wheel.Bind(_bossGuid);
@@ -367,6 +374,19 @@ namespace Rollgeon.Combat.AI.Tests
             }
 
             public DamageContext Preview(DamageContext ctx) => ctx;
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
     }
 }

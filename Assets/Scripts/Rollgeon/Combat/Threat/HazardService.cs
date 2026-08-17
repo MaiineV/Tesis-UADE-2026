@@ -54,6 +54,9 @@ namespace Rollgeon.Combat.Threat
         // unsubscribe time could hand us the new instance and leak the old subscription forever.
         private IMovementService _movementSubscribedTo;
 
+        /// <summary>Latch for <see cref="WarnMissingPlayerServiceOnce"/>; see its remarks.</summary>
+        private bool _warnedMissingPlayerService;
+
         /// <summary>Junto al resto de servicios de combate (ver <c>ThreatenedAreaService.Priority</c> = 80).</summary>
         public int Priority => 80;
 
@@ -455,6 +458,43 @@ namespace Rollgeon.Combat.Threat
                 Object.Destroy(instance, definition.TriggerVfxLifetime);
         }
 
+        /// <summary>
+        /// Whether <paramref name="entityGuid"/> is someone this hazard is allowed to bill. Guards
+        /// damage, the trigger event <i>and</i> tile consumption in one place, because all three are
+        /// "the hazard went off for this entity" — a boss that set off its own ice without paying
+        /// would still be burning the trap for the player.
+        /// </summary>
+        /// <remarks>
+        /// <b>Fail-closed on a missing <see cref="IPlayerService"/>.</b> A <c>PlayerOnly</c> hazard
+        /// that cannot name the player bills nobody rather than falling back to billing everyone:
+        /// the fallback is exactly the bug this filter exists to kill, and it would land on the boss.
+        /// </remarks>
+        private bool ShouldBill(HazardInstance instance, Guid entityGuid)
+        {
+            if (instance.Definition.Affects == HazardAffects.Everyone) return true;
+
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null)
+            {
+                WarnMissingPlayerServiceOnce();
+                return false;
+            }
+
+            return entityGuid == playerService.PlayerGuid;
+        }
+
+        /// <summary>
+        /// One warning per service instance, not per trigger: the miss recurs on every turn end of
+        /// every entity, and a per-call log would bury the console under the same line.
+        /// </summary>
+        private void WarnMissingPlayerServiceOnce()
+        {
+            if (_warnedMissingPlayerService) return;
+            _warnedMissingPlayerService = true;
+
+            Debug.LogWarning("[HazardService] IPlayerService no registrado — los hazards PlayerOnly " +
+                             "no cobran a nadie. Revisá el orden de registro en ServiceBootstrap.");
+        }
+
         private void TriggerInstance(HazardInstance instance, Guid entityGuid, GridCoord coord)
         {
             ApplyHazardDamage(instance, entityGuid);
@@ -514,6 +554,7 @@ namespace Rollgeon.Combat.Threat
                 if (instance.Definition == null) continue;
                 if (instance.Definition.Trigger != HazardTriggerMode.OnTurnEndInTile) continue;
                 if (!instance.Tiles.Contains(coord)) continue;
+                if (!ShouldBill(instance, entityGuid)) continue;
 
                 if (instance.SkipNextTick)
                 {
@@ -541,6 +582,7 @@ namespace Rollgeon.Combat.Threat
                     if (instance.Definition == null) continue;
                     if (instance.Definition.Trigger != HazardTriggerMode.OnEnter) continue;
                     if (!instance.Tiles.Contains(coord)) continue;
+                    if (!ShouldBill(instance, entity)) continue;
 
                     TriggerInstance(instance, entity, coord);
                 }

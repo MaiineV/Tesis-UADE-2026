@@ -535,6 +535,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (definition == null) return;
 
             definition.Trigger = HazardTriggerMode.OnEnter;
+            // El Anotador deja la estela caminando, así que pisa su propio hielo por definición: sin
+            // esto se congelaría solo y además gastaría las casillas antes de que el jugador llegue.
+            definition.Affects = HazardAffects.PlayerOnly;
             definition.Damage = 0;
             definition.Kind = AttackKind.Environmental;
             definition.ConsumeOnTrigger = true;

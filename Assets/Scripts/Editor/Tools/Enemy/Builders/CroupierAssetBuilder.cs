@@ -704,6 +704,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
 
             fire.Trigger = HazardTriggerMode.OnTurnEndInTile;
+            // Explícito y no por default: el Croupier enciende sus propios sectores y su fila es
+            // costura de dos bloques, así que arde bajo sus pies todos los turnos. Es el jefe al que
+            // un rebuild silencioso le costaría la vida.
+            fire.Affects = HazardAffects.PlayerOnly;
             fire.Damage = FireDamage;
             fire.Kind = AttackKind.Environmental;
             fire.DurationRounds = durationRounds;

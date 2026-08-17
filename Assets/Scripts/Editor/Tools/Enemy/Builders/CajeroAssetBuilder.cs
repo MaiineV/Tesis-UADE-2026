@@ -1062,6 +1062,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var chip = LoadOrCreate<HazardDefinitionSO>(ChipHazardPath);
 
             chip.Trigger = HazardTriggerMode.OnEnter;
+            // La ficha es un pickup del jugador: si la levantara un refuerzo al caminarle encima, se
+            // consumiría la casilla y el jugador se quedaría sin nada que juntar.
+            chip.Affects = HazardAffects.PlayerOnly;
             chip.ConsumeOnTrigger = true;
             chip.Damage = 0;
             chip.Kind = AttackKind.Environmental;

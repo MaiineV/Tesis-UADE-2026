@@ -831,6 +831,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (definition == null) return;
 
             definition.Trigger = HazardTriggerMode.OnEnter;
+            // El anillo nace alrededor de la Generala, así que ella queda rodeada de su propio hielo:
+            // sin esto se congela al primer paso y le abre las casillas al jugador de regalo.
+            definition.Affects = HazardAffects.PlayerOnly;
             definition.Damage = 0;
             definition.Kind = AttackKind.Environmental;
             definition.ConsumeOnTrigger = true;

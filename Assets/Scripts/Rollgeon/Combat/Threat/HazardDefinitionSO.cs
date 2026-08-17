@@ -71,6 +71,11 @@ namespace Rollgeon.Combat.Threat
                  "need a dynamic area — activate them with the tiles overload of IHazardService.")]
         public HazardTriggerMode Trigger = HazardTriggerMode.CycleTelegraph;
 
+        [Tooltip("Who pays this hazard. PlayerOnly = solo el jugador, así un jefe que cubre el " +
+                 "paño con su propio fuego no se quema al terminar el turno adentro. Everyone = " +
+                 "cualquier entidad que pise o cierre turno en una casilla, jugador incluido.")]
+        public HazardAffects Affects = HazardAffects.PlayerOnly;
+
         [Tooltip("Rounds the hazard survives once activated. 0 = never expires on its own (the " +
                  "historical rain behavior). Counted on round wrap, so a value of 1 means \"gone " +
                  "at the start of the next round\".")]

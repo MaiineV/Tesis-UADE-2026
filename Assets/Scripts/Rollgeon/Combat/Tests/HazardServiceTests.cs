@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Pipelines;
@@ -10,6 +11,7 @@ using Rollgeon.Heroes;
 using Rollgeon.Movement;
 using Rollgeon.Player;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.Tests
 {
@@ -558,6 +560,121 @@ namespace Rollgeon.Combat.Tests
         }
 
         // ======================================================================
+        // Affects — a quién le cobra el hazard
+        //
+        // Regresión del Croupier quemándose con su propio fuego: los sectores que él enciende
+        // incluyen su propia fila, cerraba el turno adentro y el hazard le cobraba 6 por turno.
+        // ======================================================================
+
+        [Test]
+        public void OnTurnEndInTile_PlayerOnly_BossEndingTurnInTheFire_PaysNothing()
+        {
+            // Arrange — el jefe parado sobre su propio sector encendido.
+            var boss = Guid.NewGuid();
+            _grid.Register(boss, new GridCoord(2, 2));
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6);
+            _hazard.Activate(def, new[] { new GridCoord(2, 2) });
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, boss);
+
+            // Assert
+            CollectionAssert.IsEmpty(_pipeline.Resolved, "El jefe no debería quemarse con su propio fuego.");
+            CollectionAssert.IsEmpty(_triggeredEvents,
+                "Tampoco debería publicar el evento: es el hook del que cuelga el stun del hielo.");
+        }
+
+        [Test]
+        public void OnTurnEndInTile_PlayerOnly_PlayerInTheSameFire_StillPays()
+        {
+            // Arrange — el mismo fuego cubriendo dos casillas: el jefe en una, el jugador en la otra.
+            // Dos entidades no pueden compartir casilla, así que el contraste es "misma instancia de
+            // fuego", no "misma tile".
+            var boss = Guid.NewGuid();
+            _grid.Register(boss, new GridCoord(2, 2));
+            _grid.Move(_playerGuid, new GridCoord(2, 3));
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6);
+            _hazard.Activate(def, new[] { new GridCoord(2, 2), new GridCoord(2, 3) });
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, boss);
+            EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "El filtro no debería tocar el camino del jugador.");
+            Assert.AreEqual(_playerGuid, _pipeline.Resolved[0].TargetId);
+            Assert.AreEqual(6, _pipeline.Resolved[0].BaseDamage);
+        }
+
+        [Test]
+        public void OnEnter_PlayerOnly_BossWalkingItsOwnIce_DoesNotTriggerNorConsumeTheTile()
+        {
+            // Arrange — el Anotador deja la estela caminando, así que pisa su propio hielo siempre.
+            var boss = Guid.NewGuid();
+            _grid.Register(boss, new GridCoord(4, 4));
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 0, consumeOnTrigger: true);
+            _hazard.Activate(def, new[] { new GridCoord(3, 4) });
+
+            // Act — el jefe cruza la casilla…
+            _movement.RaiseMoved(boss, new GridCoord(4, 4), new GridCoord(3, 4), Path(
+                new GridCoord(4, 4), new GridCoord(3, 4)));
+
+            // Assert — …y la deja intacta para el jugador.
+            CollectionAssert.IsEmpty(_triggeredEvents, "El hielo del jefe no debería dispararle al jefe.");
+            Assert.IsTrue(_hazard.TryGetHazardAt(new GridCoord(3, 4), out _),
+                "Un disparo que no ocurrió no debería consumir la casilla — si no, el jefe le gasta " +
+                "la trampa al jugador con solo caminarla.");
+
+            // Act — ahora sí el jugador.
+            _movement.RaiseMoved(_playerGuid, new GridCoord(4, 4), new GridCoord(3, 4), Path(
+                new GridCoord(4, 4), new GridCoord(3, 4)));
+
+            // Assert
+            Assert.AreEqual(1, _triggeredEvents.Count, "La casilla intacta debería cobrarle al jugador.");
+            Assert.AreEqual(_playerGuid, _triggeredEvents[0].Value);
+        }
+
+        [Test]
+        public void OnTurnEndInTile_AffectsEveryone_BillsTheBossToo()
+        {
+            // Arrange — el opt-in explícito: el campo tiene que poder abrirse, no ser decorativo.
+            var boss = Guid.NewGuid();
+            _grid.Register(boss, new GridCoord(2, 2));
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6,
+                affects: HazardAffects.Everyone);
+            _hazard.Activate(def, new[] { new GridCoord(2, 2) });
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, boss);
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "Everyone debería cobrarle a cualquiera.");
+            Assert.AreEqual(boss, _pipeline.Resolved[0].TargetId);
+        }
+
+        [Test]
+        public void OnTurnEndInTile_PlayerOnlyWithoutPlayerService_BillsNobody()
+        {
+            // Arrange — fail-closed: sin poder nombrar al jugador, cobrarle a todos sería justamente
+            // el bug que este filtro mata, y caería sobre el jefe.
+            var boss = Guid.NewGuid();
+            _grid.Register(boss, new GridCoord(2, 2));
+            _grid.Move(_playerGuid, new GridCoord(2, 3));
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6);
+            _hazard.Activate(def, new[] { new GridCoord(2, 2), new GridCoord(2, 3) });
+
+            ServiceLocator.RemoveService<IPlayerService>();
+            LogAssert.Expect(LogType.Warning, new Regex("IPlayerService no registrado"));
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, boss);
+            EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
+
+            // Assert
+            CollectionAssert.IsEmpty(_pipeline.Resolved, "Sin IPlayerService un hazard PlayerOnly no cobra a nadie.");
+        }
+
+        // ======================================================================
         // Helpers
         // ======================================================================
 
@@ -575,7 +692,8 @@ namespace Rollgeon.Combat.Tests
             int damage,
             AttackKind kind = AttackKind.Environmental,
             int durationRounds = 0,
-            bool consumeOnTrigger = false)
+            bool consumeOnTrigger = false,
+            HazardAffects affects = HazardAffects.PlayerOnly)
         {
             var def = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             def.hideFlags = HideFlags.HideAndDontSave;
@@ -584,6 +702,7 @@ namespace Rollgeon.Combat.Tests
             def.Kind = kind;
             def.DurationRounds = durationRounds;
             def.ConsumeOnTrigger = consumeOnTrigger;
+            def.Affects = affects;
             def.SourceId = Guid.NewGuid().ToString();
             return def;
         }

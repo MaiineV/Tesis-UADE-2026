@@ -15,15 +15,19 @@ namespace Rollgeon.Combat.Threat
         CycleTelegraph,
 
         /// <summary>
-        /// Damages whoever <b>ends their turn</b> standing on one of the hazard's tiles (fire).
-        /// Requires a dynamic area — see the tiles overload of <see cref="IHazardService.Activate"/>.
+        /// Damages whoever <b>ends their turn</b> standing on one of the hazard's tiles (fire) —
+        /// "whoever" narrowed by <see cref="HazardDefinitionSO.Affects"/>, the player alone by
+        /// default. Requires a dynamic area — see the tiles overload of
+        /// <see cref="IHazardService.Activate"/>.
         /// </summary>
         OnTurnEndInTile,
 
         /// <summary>
-        /// Fires the moment an entity <b>steps onto</b> one of the hazard's tiles (ice), scanning
-        /// the whole movement path rather than just the destination, so you can't dash across a
-        /// trap for free. Requires a dynamic area.
+        /// Fires the moment an eligible entity <b>steps onto</b> one of the hazard's tiles (ice),
+        /// scanning the whole movement path rather than just the destination, so you can't dash
+        /// across a trap for free. Eligibility is <see cref="HazardDefinitionSO.Affects"/>: by
+        /// default a boss can walk its own ice without setting it off (or consuming it). Requires
+        /// a dynamic area.
         /// </summary>
         OnEnter,
     }
