@@ -11,6 +11,8 @@ using UnityEditor.SceneManagement;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.UI;
+using ContractDrawerTools = Rollgeon.EditorTools.HUD.ContractDrawerSetupTools;
+using ContractTextKeys = Rollgeon.UI.HUD.Contract.ContractTextKeys;
 
 namespace Rollgeon.EditorTools.Menu
 {
@@ -48,6 +50,10 @@ namespace Rollgeon.EditorTools.Menu
         // Columna de descripción de la fila de contrato drawer-style (la fila base del
         // drawer mide 508 px; con la columna queda en 756).
         private const float ContractDescriptionWidth = 240f;
+
+        // Alto de la fila de headers de columna — 44 y no menos porque "Daño base" se
+        // parte en dos líneas sobre su columna de 66 px, igual que en el drawer in-game.
+        private const float ContractHeaderHeight = 44f;
 
         [MenuItem("Rollgeon/Class Selection/Setup All")]
         public static void SetupAll()
@@ -128,6 +134,10 @@ namespace Rollgeon.EditorTools.Menu
                 "Daño mínimo = dado más alto", "Minimum damage = highest die");
             LocalizationSetupTools.UpsertEntry("UI", "class_select.locked_tooltip",
                 "Próximamente", "Coming soon");
+            // Las otras tres columnas reusan contract.header.* del drawer in-game; la de
+            // descripción solo existe en esta tabla.
+            LocalizationSetupTools.UpsertEntry("UI", ContractTextKeys.HeaderDescription,
+                "Descripción", "Description");
             LocalizationSetupTools.UpsertEntry("Content", "passive.warrior.low_hp_rage.name",
                 "Furia del Guerrero", "Warrior's Fury");
             // "30 o menos": las tablas vivas ya decían 30 (el "3" de acá era una versión
@@ -346,17 +356,20 @@ namespace Rollgeon.EditorTools.Menu
             var rightPanel = EnsureRect(screenRect, "RightPanel", new Vector2(510f, 0f), new Vector2(820f, 900f));
 
             var header = FindAnywhere(screenRect, "HeaderLabel");
+            // 412 y no 385: el ContractPanel creció hacia arriba para alojar la fila de
+            // headers de columna y empuja el título contra el borde del RightPanel.
             var headerLabel = EnsureTmpLabel(rightPanel, "HeaderLabel", header, "Contrato", 48f,
-                new Vector2(0f, 385f), new Vector2(320f, 64f), font, outlineMat, TextColor);
+                new Vector2(0f, 412f), new Vector2(320f, 64f), font, outlineMat, TextColor);
             if (headerLabel.GetComponent<TextAnimator_TMP>() == null)
                 headerLabel.gameObject.AddComponent<TextAnimator_TMP>();
 
             // Panel del contrato: fill oscuro + MARCO sheet_7 9-sliced encima
             // (fillCenter off: solo el borde del sprite, el centro lo pone el fill).
             // 800 de ancho: fila de 756 + los 22 px de offset del RowsContainer por lado.
-            // Alto 640 = 9 combos de 60 px (el contrato del Warrior trae 9) + spacing +
-            // padding + offsets, con 8 px de aire. Un 10º combo pide agrandar el panel.
-            var contractPanel = EnsureRect(rightPanel, "ContractPanel", new Vector2(0f, 25f), new Vector2(800f, 640f));
+            // Alto 680 = fila de headers de columna (44 + aire) + 9 combos de 60 px (el
+            // contrato del Warrior trae 9) + spacing + padding + offsets, con 8 px de
+            // aire. Un 10º combo pide agrandar el panel.
+            var contractPanel = EnsureRect(rightPanel, "ContractPanel", new Vector2(0f, 35f), new Vector2(800f, 680f));
             if (!contractPanel.TryGetComponent<Image>(out var panelImage))
                 panelImage = contractPanel.gameObject.AddComponent<Image>();
             panelImage.sprite = null;
@@ -392,7 +405,8 @@ namespace Rollgeon.EditorTools.Menu
             rows.anchorMax = Vector2.one;
             rows.pivot = new Vector2(0.5f, 0.5f);
             rows.offsetMin = new Vector2(22f, 22f);
-            rows.offsetMax = new Vector2(-22f, -22f);
+            // -62 arriba: 12 de marco + 44 de fila de headers + 6 de aire.
+            rows.offsetMax = new Vector2(-22f, -62f);
             if (!rows.TryGetComponent<VerticalLayoutGroup>(out var vlg))
                 vlg = rows.gameObject.AddComponent<VerticalLayoutGroup>();
             vlg.padding = new RectOffset(0, 0, 8, 8);
@@ -403,14 +417,20 @@ namespace Rollgeon.EditorTools.Menu
             vlg.childForceExpandWidth = false;
             vlg.childForceExpandHeight = false;
 
+            // -- Headers de columna, alineados con las columnas de la fila drawer-style --
+            // Viven en el panel (no en RowsContainer): ContractDisplayView.Clear() destruye
+            // todos los hijos del container en cada Bind y se llevaría la fila puesta.
+            EnsureContractColumnHeaders(contractPanel, font, outlineMat);
+            panelFrame.SetAsLastSibling();
+
             var footer = FindAnywhere(screenRect, "FooterLabel");
             var footerLabel = EnsureTmpLabel(rightPanel, "FooterLabel", footer, "Daño mínimo = dado más alto",
-                22f, new Vector2(0f, -320f), new Vector2(780f, 32f), font, outlineMat, FooterColor);
+                22f, new Vector2(0f, -330f), new Vector2(780f, 32f), font, outlineMat, FooterColor);
             LocalizationSetupTools.BindTMP(footerLabel, "UI", "class_select.min_damage");
 
             var passive = FindAnywhere(screenRect, "PassiveLabel");
             var passiveLabel = EnsureTmpLabel(rightPanel, "PassiveLabel", passive, string.Empty,
-                24f, new Vector2(0f, -385f), new Vector2(780f, 72f), font, outlineMat, TextColor);
+                24f, new Vector2(0f, -398f), new Vector2(780f, 72f), font, outlineMat, TextColor);
             passiveLabel.enableWordWrapping = true;
             passiveLabel.overflowMode = TextOverflowModes.Ellipsis;
 
@@ -732,6 +752,69 @@ namespace Rollgeon.EditorTools.Menu
             if (sprite == null)
                 Debug.LogError($"[ClassSelectionSetup] Slice '{spriteName}' no encontrado en {UiSheetPath}.");
             return sprite;
+        }
+
+        // ================================================================
+        // Headers de columna de la tabla de contrato
+        // ================================================================
+
+        /// <summary>
+        /// Fila "ColumnHeaders" colgada del tope del ContractPanel, con un label por
+        /// columna de la fila drawer-style. La geometría (x/ancho de cada columna) viene
+        /// de <see cref="ContractDrawerTools"/> para que un retune del row prefab no
+        /// desalinee los headers.
+        /// </summary>
+        private static void EnsureContractColumnHeaders(RectTransform contractPanel,
+            TMP_FontAsset font, Material outlineMat)
+        {
+            float rowWidth = ContractDrawerTools.RowWidthWithDescription(ContractDescriptionWidth);
+            var headerRow = EnsureRect(contractPanel, "ColumnHeaders", Vector2.zero,
+                new Vector2(rowWidth, ContractHeaderHeight));
+            headerRow.anchorMin = headerRow.anchorMax = new Vector2(0.5f, 1f);
+            headerRow.pivot = new Vector2(0.5f, 1f);
+            // -12: justo debajo del borde del marco sheet_7 (slice de 12 px).
+            headerRow.anchoredPosition = new Vector2(0f, -12f);
+
+            EnsureColumnHeaderLabel(headerRow, "ExampleHeader",
+                ContractDrawerTools.ColumnExampleX, ContractDrawerTools.ColumnExampleWidth,
+                "Ejemplo", ContractTextKeys.HeaderExample, font, outlineMat, 20f);
+            EnsureColumnHeaderLabel(headerRow, "NameHeader",
+                ContractDrawerTools.ColumnNameX, ContractDrawerTools.ColumnNameWidth,
+                "Combo", ContractTextKeys.HeaderName, font, outlineMat, 20f);
+            var damageHeader = EnsureColumnHeaderLabel(headerRow, "DamageHeader",
+                ContractDrawerTools.ColumnDamageX, ContractDrawerTools.ColumnDamageWidth,
+                "Daño base", ContractTextKeys.HeaderDamage, font, outlineMat, 16f);
+            // "Daño base" no entra de una línea en 66 px: se parte en dos, como el drawer.
+            damageHeader.textWrappingMode = TextWrappingModes.Normal;
+            EnsureColumnHeaderLabel(headerRow, "DescriptionHeader",
+                ContractDrawerTools.ColumnDescriptionX, ContractDescriptionWidth,
+                "Descripción", ContractTextKeys.HeaderDescription, font, outlineMat, 20f);
+
+            DestroyChildrenNotIn(headerRow, "ExampleHeader", "NameHeader", "DamageHeader",
+                "DescriptionHeader");
+        }
+
+        private static TMP_Text EnsureColumnHeaderLabel(RectTransform headerRow, string name,
+            float x, float width, string fallbackText, string key, TMP_FontAsset font,
+            Material outlineMat, float fontSize)
+        {
+            var rect = EnsureRect(headerRow, name, Vector2.zero, new Vector2(width, ContractHeaderHeight));
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(x, 0f);
+
+            var tmp = rect.GetComponent<TMP_Text>();
+            if (tmp == null) tmp = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            tmp.text = fallbackText;
+            tmp.fontSize = fontSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = TextColor;
+            if (font != null) tmp.font = font;
+            if (outlineMat != null) tmp.fontSharedMaterial = outlineMat;
+            tmp.raycastTarget = false;
+            LocalizationSetupTools.BindTMP(tmp, "UI", key);
+            EditorUtility.SetDirty(tmp);
+            return tmp;
         }
 
         private static void SetSliced(Image image, Sprite sprite, float ppuMultiplier)

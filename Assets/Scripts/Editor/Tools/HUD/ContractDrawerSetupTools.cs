@@ -66,6 +66,18 @@ namespace Rollgeon.EditorTools.HUD
         private static readonly float NameX = RowPadding + DiceAreaSize.x + RowPadding;
         private static readonly float DamageX = NameX + NameWidth + 6f;
 
+        // Geometría de columnas compartida con el installer de selección de clase: sus
+        // headers de tabla se alinean contra las columnas de la fila que se construye acá.
+        internal static float ColumnExampleX => DiceAreaX;
+        internal static float ColumnExampleWidth => DiceAreaSize.x;
+        internal static float ColumnNameX => NameX;
+        internal static float ColumnNameWidth => NameWidth;
+        internal static float ColumnDamageX => DamageX;
+        internal static float ColumnDamageWidth => DamageBoxSize.x;
+        internal static float ColumnDescriptionX => DamageX + DamageBoxSize.x + 8f;
+        internal static float RowWidthWithDescription(float descriptionWidth)
+            => RowSize.x + 8f + descriptionWidth;
+
         // 44 y no 32: "Daño base" entra en dos líneas sobre una columna de 66 px.
         private const float HeaderHeight = 44f;
         private const float PanelPadding = 12f;

@@ -13,5 +13,8 @@ namespace Rollgeon.UI.HUD.Contract
 
         /// <summary>Columna del daño base.</summary>
         public const string HeaderDamage = "contract.header.damage";
+
+        /// <summary>Columna de la descripción (solo la tabla de selección de clase).</summary>
+        public const string HeaderDescription = "contract.header.description";
     }
 }

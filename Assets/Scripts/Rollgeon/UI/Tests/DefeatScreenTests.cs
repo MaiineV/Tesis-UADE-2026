@@ -17,6 +17,8 @@ namespace Rollgeon.UI.Tests
     /// <item><description><see cref="OnPushed_WiresReturnButton"/> — button click does not throw.</description></item>
     /// <item><description><see cref="OnPopped_RemovesButtonListener"/> — button click after pop has no side effects.</description></item>
     /// <item><description><see cref="OnPushed_SetsTitleText"/> — title label set to "Defeat".</description></item>
+    /// <item><description><see cref="ReturnToMenuClick_Twice_LoadsMainMenuOnlyOnce"/> — double-click guard.</description></item>
+    /// <item><description><see cref="ReturnToMenuClick_WithCurtainWired_LoadsMainMenuViaTransition"/> — curtain path.</description></item>
     /// <item><description><see cref="OnDestroy_UnsubscribesFromEvent"/> — event after destroy does not push.</description></item>
     /// </list>
     /// </summary>
@@ -142,6 +144,37 @@ namespace Rollgeon.UI.Tests
 
             Assert.AreEqual("Defeat", _titleLabel.text,
                 "Title label must be set to 'Defeat' on push.");
+        }
+
+        [Test]
+        public void ReturnToMenuClick_Twice_LoadsMainMenuOnlyOnce()
+        {
+            // Arrange
+            InvokePushed(null);
+
+            // Act — segundo click mientras "se va" al menú (telón cerrándose).
+            _returnToMenuButton.onClick.Invoke();
+            _returnToMenuButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, _screen.LoadMainMenuCalls,
+                "Un doble click en Return to Menu no debe disparar dos cargas del menú.");
+        }
+
+        [Test]
+        public void ReturnToMenuClick_WithCurtainWired_LoadsMainMenuViaTransition()
+        {
+            // Arrange — fuera de Play Mode el telón cierra instantáneo → callback sincrónico.
+            var transition = _screenGO.AddComponent<CurtainCloseTransition>();
+            AssignPrivate(_screen, "_curtainClose", transition);
+            InvokePushed(null);
+
+            // Act
+            _returnToMenuButton.onClick.Invoke();
+
+            // Assert
+            Assert.AreEqual(1, _screen.LoadMainMenuCalls,
+                "Con telón cableado, LoadMainMenu debe llegar vía el callback de la transición.");
         }
 
         [Test]
