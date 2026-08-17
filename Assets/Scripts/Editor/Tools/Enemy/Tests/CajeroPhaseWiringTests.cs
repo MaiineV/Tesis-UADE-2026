@@ -304,6 +304,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// cualquier distancia y sin moverse: un impuesto inesquivable en vez de un bicho que se
         /// puede kitear o matar antes de que llegue.
         /// </summary>
+        /// <summary>
+        /// El refuerzo del Cajero es el ranged común del juego, no la Comisión. La Comisión mordía a
+        /// distancia 1 con la malla del GeneralDirector —la misma que usa el ranged común—, así que en
+        /// pantalla se leía como el enemigo ranged andando mal, no como un bicho distinto.
+        /// </summary>
+        /// <remarks>
+        /// Las funciones que autoran la Comisión siguen vivas y con tests (parkeada, no borrada), así
+        /// que sin este test nada impide que el árbol del jefe vuelva a apuntarle sin que se note.
+        /// </remarks>
+        [Test]
+        public void Reinforcements_AreTheGameGenericRangedEnemy_NotTheComision()
+        {
+            Assert.AreEqual("Assets/Rollgeon/Enemies/ED_RangedEnemy.asset",
+                CajeroAssetBuilder.ReinforcementAssetPath,
+                "El refuerzo tiene que ser el ranged común: mismo look y mismo kit que el resto.");
+            Assert.AreNotEqual(CajeroAssetBuilder.CritterAssetPath,
+                CajeroAssetBuilder.ReinforcementAssetPath,
+                "Si el refuerzo vuelve a ser la Comisión, vuelve el melee disfrazado de ranged.");
+        }
+
         [Test]
         public void CritterAI_BitesFirstAndFliesAfter_SoArrivingDoesNotEatItsAttack()
         {

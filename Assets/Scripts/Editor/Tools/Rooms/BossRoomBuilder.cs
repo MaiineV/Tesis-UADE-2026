@@ -212,6 +212,10 @@ namespace Rollgeon.EditorTools
                     new Vector2Int(7, 5),
                     new Vector2Int(9, 5),
                 },
+                // La mesa de pool del noreste se va sólo de esta sala. Vive en las tres salas base, así
+                // que borrarla allá se la saca a todos los jefes del piso; acá es una decisión de la
+                // sala del Cajero. Libera además sus casillas, que la base tenía bloqueadas.
+                RemoveBaseObjectNames = new[] { "Poolv04" },
                 // La mesa viene autorada a 1.508 de ancho: a una casilla de paso, cada una se comía
                 // media casilla de sus vecinas y las aberturas quedaban en ~0.5 visibles. El
                 // mostrador se leía continuo de punta a punta y elegir puerta —la decisión del turno—
@@ -368,6 +372,11 @@ namespace Rollgeon.EditorTools
                     return false;
                 }
 
+                // Antes del horneado: los muebles de la base bloquean, así que sacar uno tiene que
+                // reflejarse en el grafo. Después del bake el prop desaparecería de la pantalla pero
+                // sus casillas seguirían sin ser caminables — el peor de los dos mundos.
+                RemoveBaseObjects(contents, plan);
+
                 // El grafo de la sala base, antes de tocar nada: es lo que dice qué celdas del plano
                 // ya vienen ocupadas por los muebles propios de la sala.
                 var baseGraph = NavGraphBaker.Bake(contents, layout.BakeSettings);
@@ -474,6 +483,38 @@ namespace Rollgeon.EditorTools
         /// corrida arranca de la sala base, así que el grupo no debería estar — si está, es que alguien
         /// apuntó el output a una sala ya derivada.
         /// </summary>
+        /// <summary>
+        /// Borra los muebles de <see cref="BossRoomPlan.RemoveBaseObjectNames"/> de la copia de la sala
+        /// base. Corre antes del horneado, así las casillas que ocupaban salen caminables.
+        /// </summary>
+        /// <remarks>
+        /// Un nombre que no aparece es un warning y no un fallo: el plano describe la sala que se
+        /// quiere, y que el mueble ya no esté en la base es exactamente el estado buscado. Pero se
+        /// avisa igual — un nombre mal escrito se ve idéntico a un mueble ya borrado, y en silencio
+        /// dejaría el plano diciendo que saca algo que nunca sacó.
+        /// </remarks>
+        private static void RemoveBaseObjects(GameObject roomRoot, BossRoomPlan plan)
+        {
+            if (plan.RemoveBaseObjectNames == null) return;
+
+            foreach (var name in plan.RemoveBaseObjectNames)
+            {
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var target = roomRoot.transform.Find(name);
+                if (target == null)
+                {
+                    Debug.LogWarning(LogPrefix + $"{plan.BossName}: no hay ningún hijo '{name}' en " +
+                                     $"'{plan.BaseRoomPath}' — nada que borrar. ¿Cambió de nombre?");
+                    continue;
+                }
+
+                Object.DestroyImmediate(target.gameObject);
+                Debug.Log(LogPrefix + $"{plan.BossName}: borrado '{name}' de la sala base " +
+                                      "(sus casillas quedan caminables).");
+            }
+        }
+
         private static Transform ResetBlockerGroup(GameObject roomRoot)
         {
             var existing = roomRoot.transform.Find(BlockerGroupName);
@@ -831,6 +872,24 @@ namespace Rollgeon.EditorTools
 
         /// <summary>Celdas bloqueadas, en coordenadas del plano.</summary>
         public Vector2Int[] BlockerPlanCells = new Vector2Int[0];
+
+        /// <summary>
+        /// Muebles de la sala base a borrar en <b>esta</b> sala, por nombre de hijo directo de la raíz.
+        /// Vacío = la sala base se respeta tal cual.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Es una palanca de sala, no de encuadre visual: los muebles de la base <b>bloquean</b> (ver
+        /// el warning de celda ya-bloqueada en <see cref="Build"/>), así que borrar uno también libera
+        /// las casillas que ocupaba. Se aplica antes del horneado para que el grafo salga con esas
+        /// casillas caminables en vez de quedar mintiendo.
+        /// </para>
+        /// <para>
+        /// Existe para poder sacar un mueble de una sola sala sin tocar la base, que es compartida:
+        /// la mesa de pool vive en las tres bases y editarla ahí se la saca a todos los jefes del piso.
+        /// </para>
+        /// </remarks>
+        public string[] RemoveBaseObjectNames = new string[0];
 
         /// <summary>Rotación world del prop. Palanca de encuadre visual: no cambia qué se bloquea.</summary>
         public Vector3 PropEuler = Vector3.zero;

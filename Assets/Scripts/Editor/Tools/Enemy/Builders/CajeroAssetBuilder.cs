@@ -197,6 +197,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const string CritterAssetPath = "Assets/Rollgeon/Enemies/ED_Min_Comision.asset";
 
+        /// <summary>
+        /// Lo que el Cajero invoca de verdad: el enemigo ranged común del juego.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// La Comisión mordía a distancia 1 —<c>AINode_CashierRangedShot</c> con <c>Range = 1</c>—
+        /// mientras usaba la malla del GeneralDirector, la misma que el ranged común. O sea: parecía
+        /// un personaje a distancia y se comportaba como un melee. En pantalla eso no se lee como "un
+        /// bicho distinto", se lee como el enemigo ranged andando mal.
+        /// </para>
+        /// <para>
+        /// Se resuelve invocando directamente <c>ED_RangedEnemy</c> en vez de retunear la Comisión:
+        /// look y kit quedan iguales al resto de los ranged por construcción, sin autorar nada nuevo
+        /// ni un árbol paralelo que después divergiría. <b>Cambia los números:</b> el ranged común
+        /// tiene 40 HP y 10 de ataque contra los 18/6 de la Comisión, así que los dos refuerzos
+        /// pegan y aguantan bastante más. Es deliberado, no un descuido de balance.
+        /// </para>
+        /// <para>
+        /// <b>La Comisión queda parkeada, no borrada.</b> Su asset, su prefab, sus materiales y las
+        /// funciones que la autoran (<see cref="PopulateCritterData"/>, <see cref="BuildCritterAIRoot"/>)
+        /// siguen acá y con tests: si vuelve, vuelve entera. Lo único que cambió es a quién referencia
+        /// el árbol del jefe.
+        /// </para>
+        /// </remarks>
+        public const string ReinforcementAssetPath = "Assets/Rollgeon/Enemies/ED_RangedEnemy.asset";
+
         public const string CritterVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Min_Comision.prefab";
 
         public const string CritterEntityId = "minion.cajero_comision";
@@ -792,11 +818,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var chip = EnsureChipHazard();
             var portrait = EnsurePortrait();
 
-            // La Comisión primero: la ficha del jefe la referencia desde su árbol, y un
-            // AINode_SpawnReinforcements con EnemyToSpawn en null devuelve Failed siempre.
-            var critter = LoadOrCreate<EnemyDataSO>(CritterAssetPath);
-            PopulateCritterData(critter, EnsureCritterVisualPrefab(), portrait);
-            EditorUtility.SetDirty(critter);
+            // El refuerzo es el ranged común del juego (ver ReinforcementAssetPath). Load y no
+            // LoadOrCreate: ED_RangedEnemy es un asset compartido que ya existe, y crearlo o
+            // populariarlo desde acá le pisaría los stats a todos los encuentros normales del juego.
+            var critter = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(ReinforcementAssetPath);
+            if (critter == null)
+            {
+                // AINode_SpawnReinforcements con EnemyToSpawn en null devuelve Failed siempre, así que
+                // el gate del 50% quedaría mudo en vez de romper: vale avisar fuerte.
+                Debug.LogError($"[CajeroAssetBuilder] No está el enemigo ranged en " +
+                               $"'{ReinforcementAssetPath}' — el Cajero va a quedar sin refuerzos.");
+                return;
+            }
 
             var data = LoadOrCreate<EnemyDataSO>(EnemyAssetPath);
 
@@ -815,9 +848,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"disparo {ShotDamage} a ≤{ShotRange}, fichas {ChipMinValue}-{ChipMaxValue}g, " +
                       $"peaje {CounterTollDamage} en la fila {CounterRow}, " +
                       $"arqueo al {AuditHpThreshold:P0}; visual: {NameOf(visual)}, " +
-                      $"retrato: {NameOf(portrait)}) + {CritterCount} × '{CritterEntityId}' " +
-                      $"({CritterHp} HP, mordisco {CritterDamage}) al {CritterHpThreshold:P0} en " +
-                      $"'{CritterAssetPath}'.");
+                      $"retrato: {NameOf(portrait)}) + {CritterCount} × '{NameOf(critter)}' " +
+                      $"(el ranged común: {critter.BaseHP} HP, ataque {critter.BaseAttack}) al " +
+                      $"{CritterHpThreshold:P0}.");
             Selection.activeObject = data;
         }
 
