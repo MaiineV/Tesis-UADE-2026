@@ -1,13 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Entities.Portraits;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -94,6 +97,13 @@ namespace Rollgeon.Combat.Rooms
                  "Pattern = OffsetsFromSelf. Ignorado por el resto de los patrones.")]
         public List<GridCoord> Coords = new List<GridCoord>();
 
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Gesto del jefe al colocar o reponer objetos, sólo en los ticks que ponen algo de " +
+                 "verdad. Vacío = sin animación.")]
+        public string SpawnFeedbackId;
+
         /// <summary>Anillos que <see cref="Placement.RingAroundSelf"/> llega a abrir antes de rendirse.
         /// Más lejos que esto el objeto ya no lee como "del jefe" y conviene otro patrón.</summary>
         private const int MaxRingRadius = 4;
@@ -103,6 +113,13 @@ namespace Rollgeon.Combat.Rooms
         // Mismo patrón que AINode_SpawnReinforcements: una pelea nueva arranca con _slots en null
         // ⇒ las ranuras se re-resuelven contra la sala nueva.
         [NonSerialized] private List<Slot> _slots;
+
+        /// <summary>
+        /// Si el último <see cref="Tick"/> colocó algún objeto. El nodo devuelve
+        /// <see cref="AIResult.Succeeded"/> también en los ticks de espera, así que sin esto el gesto
+        /// de reponer correría todos los turnos con la mesa entera en pie.
+        /// </summary>
+        [NonSerialized] private bool _spawnedThisTick;
 
         private sealed class Slot
         {
@@ -140,6 +157,7 @@ namespace Rollgeon.Combat.Rooms
 
         public override AIResult Tick(AIContext context)
         {
+            _spawnedThisTick = false;
             if (context == null || Definition == null) return AIResult.Failed;
 
             var grid = context.Grid;
@@ -228,8 +246,92 @@ namespace Rollgeon.Combat.Rooms
                 if (!IsPlaceable(grid, slot.Coord)) continue;
 
                 slot.ObjectGuid = Spawn(context, grid, slot.Coord);
+                _spawnedThisTick = true;
             }
         }
+
+        // ======================================================================
+        // Presentación
+        // ======================================================================
+
+        /// <remarks>
+        /// <para>
+        /// Los objetos aparecían de la nada: cinco dados se materializaban mientras la jefa seguía en
+        /// idle, y nada decía que los había puesto ella. Con el gesto, poner y reponer la mesa se lee
+        /// como una acción suya. Mismo criterio —y mismo problema— que documenta
+        /// <c>AINode_SpawnReinforcements</c>.
+        /// </para>
+        /// <para>
+        /// Sólo en los ticks que colocan algo: el nodo también devuelve <c>Succeeded</c> mientras
+        /// espera (mesa en pie, reloj de reposición corriendo), y animar esos turnos sería el jefe
+        /// invocando al aire.
+        /// </para>
+        /// </remarks>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            var result = Tick(context);
+            if (result != AIResult.Succeeded || !_spawnedThisTick || string.IsNullOrEmpty(SpawnFeedbackId))
+            {
+                onResult?.Invoke(result);
+                yield break;
+            }
+
+            var beat = PlaySpawn(context);
+            while (beat.MoveNext()) yield return beat.Current;
+
+            onResult?.Invoke(result);
+        }
+
+        /// <remarks>
+        /// Request armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de un effect
+        /// pass, así que no tiene <c>EffectContext</c> que pasarle — mismo caso que el resto de los
+        /// nodos de jefe.
+        /// </remarks>
+        private IEnumerator PlaySpawn(AIContext context)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.FeedbackRef,
+                FeedbackRefId = SpawnFeedbackId,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno no se
+            // retiene. Mismo degradado que EffPlaySequence.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
+        }
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
 
         // ======================================================================
         // Spawn

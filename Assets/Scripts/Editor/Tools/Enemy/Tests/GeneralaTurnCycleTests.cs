@@ -9,6 +9,7 @@ using Rollgeon.Combat.BossHand;
 using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.ContractMod;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Status;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
@@ -63,7 +64,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private ComboCatalogSO _catalog;
         private readonly List<ScriptableObject> _created = new List<ScriptableObject>();
         private SpyDamagePipeline _pipeline;
-        private EnemyDataSO _dice;
+        private RoomObjectDefinitionSO _dice;
         private HazardDefinitionSO _frost;
         private Guid _boss;
         private Guid _player;
@@ -116,7 +117,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             _pipeline = new SpyDamagePipeline();
 
-            _dice = ScriptableObject.CreateInstance<EnemyDataSO>();
+            _dice = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
             _created.Add(_dice);
 
             _boss = Guid.NewGuid();
@@ -307,7 +308,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Turn_OnAnEvenRound_FreezesTheRingAroundTheTable_AndLeavesTheAdjacentTilesFree()
+        public void Turn_OnAnEvenRound_FreezesTheWholeTable_CenterIncluded()
         {
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
@@ -315,27 +316,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             root.Tick(NewContext(roundIndex: 2));
 
-            // Assert — el borde del 5×5 queda helado…
-            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(7, 3), out var ring),
+            // Assert — el 5×5 entero queda helado, su casilla y la mesa incluidas.
+            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(7, 3), out var frost),
                 "La casilla a distancia 2 de la mesa tiene que quedar helada.");
             Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(3, 5), out _),
-                "La esquina del anillo también: es Chebyshev 2, no Manhattan.");
+                "La esquina también: es Chebyshev 2, no Manhattan.");
+            Assert.IsTrue(_hazards.TryGetHazardAt(GluedTile, out _),
+                "La casilla pegada a ella es donde vive su mesa de dados, y se congela con todo lo demás.");
+            Assert.IsTrue(_hazards.TryGetHazardAt(TableTile, out _),
+                "Su propia casilla incluida: no se congela por ser la dueña del área, no por estar afuera.");
 
-            // …y el hueco central NO, que es desde donde se le rompen los dados.
-            Assert.IsFalse(_hazards.TryGetHazardAt(GluedTile, out _),
-                "La casilla pegada a ella tiene que quedar libre o la mesa sería inalcanzable.");
-            Assert.IsFalse(_hazards.TryGetHazardAt(TableTile, out _),
-                "Ella no se para sobre su propio hielo.");
-
-            Assert.AreEqual(16, ring.Tiles.Count,
-                "El anillo Chebyshev de radio 2 son 16 casillas — la sala 11×7 las contiene todas.");
+            Assert.AreEqual(25, frost.Tiles.Count,
+                "El 5×5 macizo son 25 casillas — la sala 11×7 las contiene todas. Como anillo eran 16 " +
+                "y el centro no hacía nada, que en pantalla se leía como un cuadrado dibujado de adorno.");
         }
 
         [Test]
         public void Turn_OnAnOddRound_LeavesTheTableClear_SoThereIsAWindowToBreakDice()
         {
-            // Arrange — la ronda impar es la ventana franca: sin ella el hielo se repone antes de
-            // derretirse y desarmarle la mesa pasa de caro a imposible.
+            // Arrange — la ronda impar es la ventana franca, y con la escarcha maciza es LA mecánica:
+            // el área tapa la mesa entera, así que la impar es la única en la que se puede entrar. Y
+            // como OnEnter no cobra a quien ya estaba adentro, entrar ahí te deja rompiendo dados
+            // hasta que decidas salir.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
             // Act
@@ -350,7 +352,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_TheFrostCostsATurnAndNotHp_SoTheFloorCeilingHolds()
         {
-            // Arrange — el jugador pegado: cobra el cubilete y queda dentro del hueco del anillo.
+            // Arrange — el jugador pegado: cobra el cubilete y la escarcha le cae encima sin stunearlo,
+            // porque OnEnter se dispara al pisar y él ya estaba adentro.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
             // Act
@@ -375,7 +378,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             // Assert
             Assert.AreEqual(1, _hazards.ActiveInstances().Count(),
-                "Un solo anillo vivo: dos superpuestos dejarían medio mapa helado.");
+                "Una sola escarcha viva: dos superpuestas dejarían medio mapa helado.");
         }
 
         // ======================================================================

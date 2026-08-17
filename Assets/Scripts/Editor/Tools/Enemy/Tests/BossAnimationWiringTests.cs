@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Feedback;
@@ -169,14 +170,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void TheGeneralaRefillsHerTable_WithAGesture()
         {
-            // Arrange — los cinco dados aparecían de la nada en el borde de la sala con ella
-            // parada en idle: se leía como un evento de la sala y no como algo que hizo el jefe.
+            // Arrange — los cinco dados aparecían de la nada con ella parada en idle: se leía como un
+            // evento de la sala y no como algo que hizo el jefe. Es además el único uso que tiene esa
+            // animación del rig de dados (ver BossFeedbackInstaller), así que el gesto tuvo que
+            // sobrevivir la migración de la mesa a AINode_SpawnRoomObjects.
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
             // Act
             var spawn = Descendants(GeneralaAssetBuilder.BuildAIRoot(null))
-                .OfType<AINode_SpawnReinforcements>()
+                .OfType<AINode_SpawnRoomObjects>()
                 .FirstOrDefault();
 
             // Assert

@@ -12,8 +12,10 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.BossHand;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
+using Rollgeon.Feedback;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
@@ -31,14 +33,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     [TestFixture]
     public class GeneralaAssetBuilderTests
     {
-        private EnemyDataSO _dice;
+        private RoomObjectDefinitionSO _dice;
         private HazardDefinitionSO _frost;
         private AINode_Sequence _root;
 
         [SetUp]
         public void SetUp()
         {
-            _dice = ScriptableObject.CreateInstance<EnemyDataSO>();
+            _dice = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
             _frost = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             _root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
         }
@@ -83,7 +85,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             // Arrange — la mano se arma con los dados vivos, así que la mesa se repone antes.
             int spawnIdx = _root.Children.FindIndex(c =>
-                Descendants(c).Any(n => n is AINode_SpawnReinforcements));
+                Descendants(c).Any(n => n is AINode_SpawnRoomObjects));
             int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
 
             // Assert
@@ -96,25 +98,88 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Table_SpawnsFiveDice_AndRefillsEveryFourTurns()
+        public void Table_SpawnsFiveDice_FromTheRoomObjectDefinition()
         {
             // Act
-            var spawn = Descendants(_root).OfType<AINode_SpawnReinforcements>().FirstOrDefault();
+            var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().FirstOrDefault();
 
             // Assert
             Assert.IsNotNull(spawn);
-            Assert.AreSame(_dice, spawn.EnemyToSpawn, "La mesa tiene que spawnear los dados de la casa.");
+            Assert.AreSame(_dice, spawn.Definition, "La mesa tiene que spawnear los dados de la casa.");
             Assert.AreEqual(GeneralaAssetBuilder.HandSize, spawn.Count);
-            Assert.AreEqual(GeneralaAssetBuilder.TableRefillTurns, spawn.RespawnDelayTurns);
+            CollectionAssert.IsEmpty(Descendants(_root).OfType<AINode_SpawnReinforcements>().ToList(),
+                "Sus dados dejaron de ser refuerzos: como EnemyDataSO arrastraban retrato de enemigo, " +
+                "barra de enemigo y un slot en la cola de turnos — nada de eso lo pide el diseño.");
+        }
+
+        [Test]
+        public void Table_SitsInTheRingAroundHer_NotAgainstTheWalls()
+        {
+            // Act
+            var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
+
+            // Assert — es lo que hace que sus tres reglas hablen del mismo lugar: el cubilete cubre
+            // las casillas desde las que le rompés los dados, la escarcha cae encima de la misma mesa,
+            // y el hueco de un dado roto es por donde llegarle. AINode_SpawnReinforcements los ponía
+            // en PickEdgeSpawnTiles —el perímetro de la sala, separados 3— y ninguna se tocaba.
+            Assert.AreEqual(AINode_SpawnRoomObjects.Placement.RingAroundSelf, spawn.Pattern,
+                "Cinco cajas contra las paredes no son una mesa.");
+        }
+
+        [Test]
+        public void DiceDefinition_CarriesTheTableNumbers_AndStaysOutOfTheTurnQueue()
+        {
+            // Arrange — la reposición y el HP viven en la definición, no en el nodo.
+            var table = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
+            table.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                // Act
+                GeneralaAssetBuilder.PopulateDiceDefinition(table, null);
+
+                // Assert
+                Assert.AreEqual(GeneralaAssetBuilder.DiceRoomObjectId, table.Id);
+                Assert.AreEqual(GeneralaAssetBuilder.DiceHp, table.Hp,
+                    "Romper un dado tiene que costar un golpe entero.");
+                Assert.IsTrue(table.Blocks, "Sus dados SON las paredes de la sala.");
+
+                // Cada ranura vacía corre su propio reloj y el dado vuelve a SU casilla. Como oleada
+                // de refuerzos había que romper los cinco para que volviera alguno.
+                Assert.IsTrue(table.Respawns);
+                Assert.AreEqual(GeneralaAssetBuilder.TableRefillTurns, table.RespawnDelayTurns);
+
+                Assert.IsTrue(table.HideFromTurnQueue,
+                    "Como EnemyDataSO los cinco dados ocupaban cinco slots seguidos de iniciativa " +
+                    "con retrato propio para tickear un Wait. La mesa es mobiliario.");
+                Assert.IsNull(table.OnDeathHazard,
+                    "Romper un dado tiene que ser puro premio: algo en su casilla lo volvería una " +
+                    "decisión con costo, y romperlos es la jugada que la pelea quiere premiar.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(table);
+            }
+        }
+
+        [Test]
+        public void Table_KeepsHerRefillGesture()
+        {
+            // Act
+            var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
+
+            // Assert — sin el gesto los dados aparecen de la nada mientras ella sigue en idle. Es
+            // además el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
+            Assert.AreEqual(BossFeedbackIds.GeneralaSummonAnim, spawn.SpawnFeedbackId);
         }
 
         [Test]
         public void Table_IsNotWrappedInOnce_SoTheHandComesBack()
         {
-            // Arrange — AINode_SpawnReinforcements se auto-gatea y necesita tickear cada turno;
-            // envuelto en Once quedaría latcheado y la mesa nunca se repondría.
+            // Arrange — AINode_SpawnRoomObjects se auto-gatea y necesita tickear cada turno para
+            // correr los relojes de reposición; envuelto en Once queda latcheado tras el primer
+            // spawn y ningún dado vuelve nunca.
             var owner = _root.Children.FirstOrDefault(c =>
-                Descendants(c).Any(n => n is AINode_SpawnReinforcements));
+                Descendants(c).Any(n => n is AINode_SpawnRoomObjects));
 
             // Assert
             Assert.IsNotNull(owner);
@@ -125,7 +190,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Los nodos del árbol que devuelven Failed en su caso benigno.</summary>
         private static readonly Type[] RiskyNodeTypes =
         {
-            typeof(AINode_SpawnReinforcements),      // sin tiles de borde libres
+            typeof(AINode_SpawnRoomObjects),         // sin casillas válidas para el anillo
             typeof(AINode_SetHandReroll),            // el gate de fase, sin ComboLog ni registry
             typeof(AINode_GeneralaCupSlam),          // con el jugador lejos — media pelea
             typeof(AINode_GeneralaFrostRing),        // en ronda impar, y sin IHazardService

@@ -14,18 +14,21 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Generala
 {
     /// <summary>
-    /// La escarcha de la mesa: La Generala congela el anillo de casillas que está a
-    /// <see cref="Radius"/> exactas de ella. Cruzarlo cuesta el turno
-    /// (<see cref="IStunService"/>, vía <see cref="IceStunBinder"/>); quedarse adentro o afuera no
-    /// cuesta nada.
+    /// La escarcha de la mesa: La Generala congela el cuadrado de <see cref="Radius"/> a la redonda
+    /// (<see cref="Solid"/>) o sólo su borde. Entrar cuesta el turno (<see cref="IStunService"/>, vía
+    /// <see cref="IceStunBinder"/>); ya estar adentro cuando cae, no.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Anillo y no área maciza.</b> El hueco central —las casillas a distancia &lt;
-    /// <see cref="Radius"/>— es justamente desde donde el jugador le rompe los dados, y llenarlo de
-    /// hielo mataría la única jugada que le borra categorías a la mano. Lo que cobra la escarcha es
-    /// <i>cruzar</i>: entrar a la mesa y salir de ella. La distancia sigue siendo la variable que
-    /// elige el jugador, igual que con el cubilete.
+    /// <b>Área maciza.</b> Fue un anillo de una casilla de grosor y en pantalla se leía como un bug:
+    /// un cuadrado dibujado cuyo centro no hacía nada. Y el motivo autorado del hueco —"desde ahí el
+    /// jugador le rompe los dados"— nunca se cumplió: los dados caían en el perímetro de la sala,
+    /// no pegados a ella. Ahora la mesa sí está en el anillo pegado a ella, y congelarla entera es
+    /// lo que la vuelve una decisión: <b><see cref="HazardTriggerMode.OnEnter"/> no dispara sobre
+    /// quien ya estaba adentro</b>, así que la ronda franca —la impar, ver el gate de paridad de su
+    /// árbol— es para meterte a la mesa, y desde adentro le pegás a ella y a sus dados sin pagar
+    /// nada. Salir cuesta el turno. La distancia sigue siendo la variable que elige el jugador,
+    /// pero ahora también elige <i>cuándo</i>.
     /// </para>
     /// <para>
     /// <b>Cero daño, a propósito.</b> El techo de daño por turno del piso 3 es 45 (65 con aviso), y
@@ -36,15 +39,23 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
     /// (<c>Damage = 0</c> en la definición del hazard).
     /// </para>
     /// <para>
-    /// <b>Ella no se congela.</b> El anillo se publica con ella como dueña y el binder ignora los
+    /// <b>Ella no se congela.</b> El área se publica con ella como dueña y el binder ignora los
     /// triggers del dueño: el nodo de reposicionamiento corre después en su turno y la haría cruzar
-    /// su propio hielo. El anillo queda donde estaba la mesa cuando lo puso — la escarcha es del
-    /// piso, no de ella.
+    /// su propio hielo. Con <see cref="Solid"/> eso pasó de conveniente a necesario — su propia
+    /// casilla queda adentro. El área queda donde estaba la mesa cuando la puso: la escarcha es del
+    /// piso, no de ella. Sus dados tampoco se congelan, por la razón de siempre: los hazards son
+    /// <c>HazardAffects.PlayerOnly</c>.
     /// </para>
     /// <para>
-    /// <b>Un anillo vivo por vez.</b> Con <see cref="ReplacePreviousRing"/> el anillo nuevo apaga el
-    /// anterior antes de publicarse: dos anillos superpuestos duplicarían overlays y dejarían medio
-    /// mapa helado, que es lo contrario de una regla que se lee de un vistazo.
+    /// <b>Un área viva por vez.</b> Con <see cref="ReplacePreviousRing"/> la nueva apaga la anterior
+    /// antes de publicarse: dos superpuestas duplicarían overlays y dejarían medio mapa helado, que
+    /// es lo contrario de una regla que se lee de un vistazo.
+    /// </para>
+    /// <para>
+    /// <b><see cref="Solid"/> en un asset viejo llega en false.</b> Odin no corre los inicializadores
+    /// de campo al deserializar, así que un <c>ED_Boss_Generala.asset</c> autorado antes del campo
+    /// vuelve al anillo hueco. Es el comportamiento viejo, no un error nuevo; re-correr el builder lo
+    /// pone en su valor.
     /// </para>
     /// <para>
     /// <b>Devuelve <c>Failed</c> cuando no hay anillo posible</b> (sala sin bounds, hazard sin
@@ -61,10 +72,13 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                  "que 'dura 1 turno' se autora como 2). Ver HazardDefinitionSO.")]
         public HazardDefinitionSO Hazard;
 
-        [Tooltip("Distancia Chebyshev EXACTA a la que cae el anillo. 2 = el borde del 5×5 que la " +
-                 "rodea; las casillas pegadas a ella quedan libres para poder romperle los dados.")]
+        [Tooltip("Alcance Chebyshev de la escarcha. 2 = el 5×5 que la rodea, que es su mesa.")]
         [MinValue(1)]
         public int Radius = 2;
+
+        [Tooltip("True = congela el cuadrado entero hasta Radius (área, su casilla incluida). " +
+                 "False = sólo el borde exacto, dejando el centro libre.")]
+        public bool Solid = true;
 
         [Tooltip("Turnos de stun al pisar el anillo. ApplyStun toma max(actual, nuevo): dos " +
                  "pisadas seguidas siguen siendo 1 turno.")]
@@ -84,7 +98,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         /// <summary>Anillo vivo publicado por este nodo. Por pelea: el árbol se clona al spawn.</summary>
         [NonSerialized] private Guid _liveRingId;
 
-        public override string NodeName => $"Generala — Escarcha (anillo r{Radius})";
+        public override string NodeName =>
+            $"Generala — Escarcha ({(Solid ? "área" : "anillo")} r{Radius})";
 
         /// <remarks>
         /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar un
@@ -114,8 +129,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
 
             if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
 
-            var ring = ComputeRing(grid, selfCoord, Radius);
-            if (ring.Count == 0) return AIResult.Failed;
+            var frozen = Compute(grid, selfCoord, Radius, Solid);
+            if (frozen.Count == 0) return AIResult.Failed;
 
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null)
             {
@@ -134,7 +149,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                 _liveRingId = Guid.Empty;
             }
 
-            var instanceId = hazards.Activate(Hazard, ring);
+            var instanceId = hazards.Activate(Hazard, frozen);
             if (instanceId == Guid.Empty) return AIResult.Failed;
 
             // Trackear DESPUÉS de activar: el binder necesita el id para reconocer sus propios
@@ -163,30 +178,45 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
 
         /// <summary>
         /// Casillas a distancia Chebyshev <b>exactamente</b> <paramref name="radius"/> de
-        /// <paramref name="center"/>, caminables y dentro de la sala. Pura y estática: es la forma
-        /// del ataque y se testea sin montar servicios.
+        /// <paramref name="center"/>, caminables y dentro de la sala: el borde hueco. Pura y estática.
         /// </summary>
         /// <remarks>
         /// No vive en <c>ThreatAreaShape</c> porque no es una <c>ThreatShape</c>: no se marca ni se
         /// telegrafía, se publica como área de hazard. El día que un segundo jefe quiera un anillo
         /// avisado, ahí sí conviene subirla.
         /// </remarks>
-        public static List<GridCoord> ComputeRing(IGridManager grid, GridCoord center, int radius)
+        public static List<GridCoord> ComputeRing(IGridManager grid, GridCoord center, int radius) =>
+            Compute(grid, center, radius, solid: false);
+
+        /// <summary>
+        /// Casillas a distancia Chebyshev <b>hasta</b> <paramref name="radius"/> de
+        /// <paramref name="center"/>, la del centro incluida: el cuadrado macizo.
+        /// </summary>
+        public static List<GridCoord> ComputeArea(IGridManager grid, GridCoord center, int radius) =>
+            Compute(grid, center, radius, solid: true);
+
+        /// <summary>
+        /// La forma, en un solo lugar. <paramref name="solid"/> es lo único que cambia: <c>==</c>
+        /// contra <c>&lt;=</c> en la comparación de distancia. Dos loops separados terminarían
+        /// divergiendo en el filtro de sala, que es la mitad que importa.
+        /// </summary>
+        private static List<GridCoord> Compute(IGridManager grid, GridCoord center, int radius, bool solid)
         {
-            var ring = new List<GridCoord>();
-            if (grid == null) return ring;
+            var tiles = new List<GridCoord>();
+            if (grid == null) return tiles;
 
             int r = radius < 1 ? 1 : radius;
             for (int dx = -r; dx <= r; dx++)
             for (int dy = -r; dy <= r; dy++)
             {
-                if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != r) continue;
+                int chebyshev = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy));
+                if (solid ? chebyshev > r : chebyshev != r) continue;
 
                 var coord = new GridCoord(center.X + dx, center.Y + dy);
-                if (grid.InBounds(coord) && grid.IsWalkable(coord)) ring.Add(coord);
+                if (grid.InBounds(coord) && grid.IsWalkable(coord)) tiles.Add(coord);
             }
 
-            return ring;
+            return tiles;
         }
 
         /// <remarks>

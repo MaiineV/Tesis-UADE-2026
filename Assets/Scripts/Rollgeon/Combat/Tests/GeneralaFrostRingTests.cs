@@ -24,10 +24,11 @@ namespace Rollgeon.Combat.Tests
     /// <see cref="AnotadorIceTrailTests"/>.
     /// </summary>
     /// <remarks>
-    /// Lo que protegen: que el anillo sea el <b>borde</b> del 5×5 y no el cuadrado macizo (el hueco
-    /// central es desde donde el jugador le rompe los dados), que cruzarlo cueste 1 turno y 0 HP, que
-    /// ella no se congele con su propio hielo —el reposicionamiento corre después y la hace cruzarlo—
-    /// y que dos escarchas no se apilen.
+    /// Lo que protegen: que la escarcha sea el <b>cuadrado macizo</b> de 5×5 y no un borde hueco (que
+    /// se leía como un cuadrado dibujado cuyo centro no hacía nada), que <c>OnEnter</c> no cobre a
+    /// quien ya estaba adentro —de ahí que entrar en la ronda franca te deje pegándole gratis—, que
+    /// cruzarla cueste 1 turno y 0 HP, que ella no se congele con su propio hielo (el reposicionamiento
+    /// corre después y la haría cruzarlo, y ahora su casilla está adentro) y que dos no se apilen.
     /// </remarks>
     [TestFixture]
     public class GeneralaFrostRingTests
@@ -35,7 +36,10 @@ namespace Rollgeon.Combat.Tests
         /// <summary>La mesa, con espacio de sobra para que el anillo entre entero.</summary>
         private static readonly GridCoord TableTile = new GridCoord(5, 5);
 
-        /// <summary>Chebyshev 1: pegado a ella. Es el hueco que el anillo NO congela.</summary>
+        /// <summary>
+        /// Chebyshev 1: pegado a ella, donde vive su mesa de dados. Con la escarcha maciza también se
+        /// congela — era el hueco del anillo viejo.
+        /// </summary>
         private static readonly GridCoord GluedTile = new GridCoord(6, 5);
 
         /// <summary>Chebyshev 2: una casilla del anillo, sobre el eje.</summary>
@@ -123,8 +127,25 @@ namespace Rollgeon.Combat.Tests
         }
 
         // ======================================================================
-        // La forma: el borde, no el cuadrado
+        // La forma
         // ======================================================================
+
+        [Test]
+        public void ComputeArea_ReturnsTheWholeSquare_UpToTheRadius()
+        {
+            // Act
+            var area = AINode_GeneralaFrostRing.ComputeArea(_grid, TableTile, 2);
+
+            // Assert — 25 casillas: el 5×5 macizo, centro incluido.
+            Assert.AreEqual(25, area.Count);
+            foreach (var coord in area)
+                Assert.LessOrEqual(coord.Chebyshev(TableTile), 2, $"{coord} se fue del cuadrado.");
+
+            CollectionAssert.Contains(area, TableTile, "El centro entra: ella no se congela por dueña.");
+            CollectionAssert.Contains(area, GluedTile, "Y la mesa pegada a ella también.");
+            CollectionAssert.Contains(area, RingTile);
+            CollectionAssert.DoesNotContain(area, OutsideTile, "Chebyshev 3 queda afuera.");
+        }
 
         [Test]
         public void ComputeRing_ReturnsOnlyTilesAtExactlyTheChebyshevRadius()
@@ -169,18 +190,54 @@ namespace Rollgeon.Combat.Tests
         // ======================================================================
 
         [Test]
-        public void Tick_FreezesTheRing_AndLeavesTheTableReachable()
+        public void Tick_FreezesTheWholeTable_CenterIncluded()
         {
             // Act
             var result = NewFrostNode().Tick(BossContext());
 
-            // Assert
+            // Assert — 25 casillas: el 5×5 entero. Como anillo eran 16 y el centro quedaba sin
+            // efecto, que en pantalla se leía como un cuadrado dibujado que no hacía nada.
             Assert.AreEqual(AIResult.Succeeded, result);
-            Assert.IsTrue(_hazard.TryGetHazardAt(RingTile, out var info), "El anillo tiene que quedar helado.");
+            Assert.IsTrue(_hazard.TryGetHazardAt(RingTile, out var info));
+            Assert.AreEqual(25, info.Tiles.Count);
+            Assert.IsTrue(_hazard.TryGetHazardAt(GluedTile, out _),
+                "La casilla pegada a ella es donde vive su mesa, y ahora también se congela.");
+            Assert.IsTrue(_hazard.TryGetHazardAt(TableTile, out _),
+                "Su propia casilla incluida — no se congela por ser la dueña, no por estar afuera.");
+        }
+
+        [Test]
+        public void Tick_WithSolidOff_StillFreezesOnlyTheBorder()
+        {
+            // Arrange — la forma vieja sigue disponible: un asset autorado antes del campo la trae en
+            // false (Odin no corre los inicializadores) y no puede empezar a congelar de más.
+            var node = NewFrostNode();
+            node.Solid = false;
+
+            // Act
+            node.Tick(BossContext());
+
+            // Assert
+            Assert.IsTrue(_hazard.TryGetHazardAt(RingTile, out var info));
             Assert.AreEqual(16, info.Tiles.Count);
-            Assert.IsFalse(_hazard.TryGetHazardAt(GluedTile, out _),
-                "El hueco central queda libre o desarmarle la mesa sería imposible.");
             Assert.IsFalse(_hazard.TryGetHazardAt(TableTile, out _));
+        }
+
+        [Test]
+        public void PlayerAlreadyInsideWhenItFalls_IsNotFrozen_SoTheFreeRoundBuysHimTheTable()
+        {
+            // Arrange — entró en la ronda impar y está parado en la mesa cuando cae la escarcha.
+            _grid.Register(_playerGuid, GluedTile);
+
+            // Act
+            NewFrostNode().Tick(BossContext());
+
+            // Assert — es la mecánica entera: OnEnter se dispara al PISAR, no por estar. Entrar en la
+            // franca te deja pegándole a ella y a sus dados sin pagar nada hasta que decidas salir.
+            Assert.AreEqual(0, _stun.GetStunTurns(_playerGuid),
+                "Publicar el área no stunea a quien ya estaba adentro.");
+            Assert.IsTrue(_hazard.TryGetHazardAt(GluedTile, out _),
+                "La casilla queda helada igual: la paga cuando salga y vuelva a entrar.");
         }
 
         [Test]

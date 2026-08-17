@@ -7,7 +7,11 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dice;
+using Rollgeon.Entities;
 using Rollgeon.Grid;
+using Rollgeon.Heroes;
+using Rollgeon.Player;
 using Sirenix.Serialization;
 using UnityEngine;
 
@@ -429,6 +433,98 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.IsTrue(node.TryGetSlot(0, out _, out var backGuid));
             Assert.AreNotEqual(Guid.Empty, backGuid,
                 "Con la casilla libre repone al turno siguiente: la espera no acumuló deuda extra.");
+        }
+
+        // --- El contrato con la mano de La Generala -----------------------------------
+
+        [Test]
+        public void Tick_SpawnedObjects_CountAsAlliesOfTheirOwner()
+        {
+            // Arrange — es lo único que la migración de la mesa de La Generala puede romper en
+            // silencio: AINode_RollHand con SizeSource = AliveAllies resuelve el tamaño de su mano
+            // por IEntityQueryService, que itera AttributesManager.EnumerateEntries() y trata como
+            // aliado a toda entidad registrada que no sea el player. Si los objetos de sala dejaran
+            // de registrarse ahí, la jefa tiraría cero dados y su ataque desaparecería sin que
+            // ninguna excepción lo delate.
+            _grid.LoadRoom(NavGraph.Rect(7, 7));
+            _grid.Register(_boss, new GridCoord(3, 3));
+            _definition.HideFromTurnQueue = true;
+
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService());
+
+            var node = new AINode_SpawnRoomObjects
+            {
+                Definition = _definition,
+                Count = 5,
+                Pattern = AINode_SpawnRoomObjects.Placement.RingAroundSelf,
+            };
+
+            // Act
+            Assert.AreEqual(AIResult.Succeeded, node.Tick(NewContext()));
+
+            // Assert
+            var allies = new List<Guid>();
+            foreach (var ally in new EntityQueryService().GetAllAlliesOf(_boss))
+            {
+                var hp = _attributes.GetAttribute<Health>(ally.Guid);
+                if (hp != null && hp.Value > 0) allies.Add(ally.Guid);
+            }
+
+            Assert.AreEqual(5, allies.Count,
+                "Los cinco objetos tienen que contar como aliados vivos del jefe aunque estén fuera " +
+                "de la cola de turnos: HideFromTurnQueue les saca el slot, no el registro.");
+        }
+
+        [Test]
+        public void Tick_BrokenObject_StopsCountingAsAnAlly_Immediately()
+        {
+            // Arrange — y la cuenta tiene que bajar en el turno del jugador, no en el del jefe: la
+            // mano se arma con los dados vivos EN EL MOMENTO de tirar.
+            _grid.LoadRoom(NavGraph.Rect(7, 7));
+            _grid.Register(_boss, new GridCoord(3, 3));
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            ServiceLocator.AddService<IPlayerService>(new StubPlayerService());
+
+            var node = new AINode_SpawnRoomObjects
+            {
+                Definition = _definition,
+                Count = 5,
+                Pattern = AINode_SpawnRoomObjects.Placement.RingAroundSelf,
+            };
+            node.Tick(NewContext());
+            Assert.IsTrue(node.TryGetSlot(0, out _, out var victim));
+
+            // Act — el jugador le rompe uno; el árbol del jefe todavía no volvió a tickear.
+            Break(victim);
+
+            // Assert
+            int alive = 0;
+            foreach (var ally in new EntityQueryService().GetAllAlliesOf(_boss))
+            {
+                var hp = _attributes.GetAttribute<Health>(ally.Guid);
+                if (hp != null && hp.Value > 0) alive++;
+            }
+
+            Assert.AreEqual(4, alive,
+                "Romper un dado le tiene que borrar una categoría ya, sin esperar su turno.");
+        }
+
+        /// <summary>
+        /// Sólo existe para que <see cref="EntityQueryService"/> pueda clasificar facciones: sin
+        /// player conocido devuelve listas vacías. Convención del repo — cada fixture declara el suyo.
+        /// </summary>
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
         }
 
         // --- Patrones ----------------------------------------------------------------

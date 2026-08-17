@@ -6,6 +6,7 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Dice.Throw;
@@ -35,6 +36,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// consecuencias.
     /// </para>
     /// <para>
+    /// <b>La mesa es el anillo pegado a ella</b> (<see cref="DiceDefinitionPath"/>,
+    /// <c>AINode_SpawnRoomObjects</c> con <c>RingAroundSelf</c>). No es un detalle de spawn: es lo
+    /// que hace que las tres reglas suyas hablen del mismo lugar. Su alcance de cubilete cubre las
+    /// casillas desde las que le rompés los dados, el anillo de escarcha cae encima de la misma
+    /// mesa, y el hueco que abre un dado roto es literalmente por dónde llegarle. Hasta la
+    /// migración los dados caían en el perímetro de la sala —cinco cajas contra las paredes— y
+    /// ninguna de las tres se tocaba con las otras.
+    /// </para>
+    /// <para>
     /// <b>El cubilete.</b> Cada vez que tira, baja la copa sobre quien esté pegado:
     /// <see cref="CupSlamDamage"/> de daño melee directo, sin aviso previo
     /// (<see cref="AINode_GeneralaCupSlam"/>). Es el precio de romper de cerca — el resto de su daño
@@ -47,6 +57,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         private const string EnemiesFolder = "Assets/Rollgeon/Enemies";
         public const string BossAssetPath = EnemiesFolder + "/ED_Boss_Generala.asset";
+
+        /// <summary>
+        /// La mesa, como <see cref="RoomObjectDefinitionSO"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Hermano de la carpeta de hazards a propósito: el propio SO se describe como "the sibling
+        /// of <c>HazardDefinitionSO</c> for the other half of room state — a hazard owns tiles that
+        /// <i>hurt</i>, this owns tiles that are <i>taken</i>".
+        /// </para>
+        /// <para>
+        /// <b>Reemplazó a <see cref="DiceAssetPath"/> en el árbol.</b> Los dados viajaban como
+        /// <c>EnemyDataSO</c> por <c>AINode_SpawnReinforcements</c>, y ese nodo los ponía en
+        /// <c>PickEdgeSpawnTiles</c>: el <b>perímetro de la sala</b>, separados 3 casillas. O sea que
+        /// "los cinco dados de su mesa" eran cinco cajas contra las paredes, sin relación visible con
+        /// ella — y el hueco del anillo de escarcha se justificaba diciendo que las casillas pegadas a
+        /// ella son "desde donde el jugador le rompe los dados", que no pasaba. Encima reponía la
+        /// oleada entera de una sola vez, recién cuando los cinco estuvieran rotos.
+        /// </para>
+        /// </remarks>
+        public const string DiceDefinitionPath =
+            "Assets/Rollgeon/Combat/RoomObjects/RO_Generala_Dado.asset";
+
+        /// <summary>
+        /// El dado como enemigo. <b>Parkeado, no borrado</b> — el árbol ya no lo apunta (ver
+        /// <see cref="DiceDefinitionPath"/>) pero el asset, <see cref="PopulateDiceData"/> y sus tests
+        /// siguen acá: si hace falta un dado que actúe, vuelve entero.
+        /// </summary>
         public const string DiceAssetPath = EnemiesFolder + "/ED_Obj_DadoCasa.asset";
 
         /// <summary>
@@ -60,6 +98,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string BossEntityId = "boss.la_generala";
         public const string DiceEntityId = "obj.dado_casa";
+
+        /// <summary>Id de la definición de la mesa. Formato <c>roomobj.&lt;jefe&gt;.&lt;pieza&gt;</c>.</summary>
+        public const string DiceRoomObjectId = "roomobj.generala.dado";
 
         /// <summary>
         /// SourceId fijo (no <c>Guid.NewGuid()</c>) para que reconstruir el asset no le cambie la
@@ -122,11 +163,24 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- La escarcha ----------------------------------------------------------------
 
         /// <summary>
-        /// Distancia Chebyshev exacta del anillo de hielo. 2 = el borde del 5×5 que la rodea: las
-        /// casillas pegadas a ella quedan libres, que son desde donde el jugador le rompe los dados.
-        /// Con 1 el anillo tapaba justamente esas cuatro y desarmarle la mesa dejaba de ser posible.
+        /// Alcance Chebyshev de la escarcha. 2 = el 5×5 que la rodea, que es exactamente su mesa: el
+        /// anillo de dados vive a distancia 1 y ella en el centro.
         /// </summary>
         public const int FrostRingRadius = 2;
+
+        /// <summary>
+        /// La escarcha es un <b>área maciza</b>, no un anillo de una casilla de grosor.
+        /// </summary>
+        /// <remarks>
+        /// Como anillo se leía en pantalla como un bug: un cuadrado dibujado cuyo centro no hacía
+        /// nada. Y el motivo autorado del hueco —"desde ahí el jugador le rompe los dados"— nunca se
+        /// cumplió, porque los dados caían en el perímetro de la sala. Con la mesa ya en el anillo
+        /// pegado a ella, congelarla entera es lo que la vuelve una decisión: <c>OnEnter</c> no
+        /// dispara sobre quien ya estaba adentro, así que la ronda impar (ver
+        /// <see cref="FrostParityDivisor"/>) es para meterte, adentro le pegás a ella y a sus dados
+        /// gratis, y salir cuesta el turno.
+        /// </remarks>
+        public const bool FrostIsSolid = true;
 
         public const int FrostStunTurns = 1;
 
@@ -140,10 +194,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int FrostDurationRounds = 2;
 
         /// <summary>
-        /// Paridad del anillo: cae en rondas pares. La ronda impar es la ventana franca para entrar
-        /// a la mesa y romper dados — sin ella el hielo se repone antes de derretirse y la jugada
-        /// que le borra categorías queda muerta.
+        /// Paridad de la escarcha: cae en rondas pares. La ronda impar es la ventana franca para
+        /// entrar a la mesa y romper dados — sin ella el hielo se repone antes de derretirse y la
+        /// jugada que le borra categorías queda muerta.
         /// </summary>
+        /// <remarks>
+        /// Con la escarcha maciza (<see cref="FrostIsSolid"/>) esta paridad pasó de deseable a ser la
+        /// mecánica: el área tapa la mesa entera, así que la ronda impar es <b>la única</b> en la que
+        /// se puede entrar. Y como <c>OnEnter</c> no dispara sobre quien ya estaba adentro, entrar en
+        /// la impar te deja pegándole gratis hasta que decidas salir.
+        /// </remarks>
         public const int FrostParityDivisor = 2;
 
         /// <summary>Celeste del hielo, el mismo de la estela del Anotador: el hielo se lee igual en todo el juego.</summary>
@@ -316,25 +376,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var bossPortrait = BossPortraitLibrary.Generala();
             var dicePortrait = SpriteImportUtility.EnsureSpriteImport(DicePortraitTexturePath);
 
+            // El dado como enemigo se sigue autorando aunque el árbol ya no lo apunte: está parkeado,
+            // no borrado (ver DiceAssetPath).
             var dice = LoadOrCreate<EnemyDataSO>(DiceAssetPath);
             PopulateDiceData(dice, diceVisual, dicePortrait);
             EditorUtility.SetDirty(dice);
+
+            var table = LoadOrCreate<RoomObjectDefinitionSO>(DiceDefinitionPath);
+            PopulateDiceDefinition(table, diceVisual);
+            EditorUtility.SetDirty(table);
 
             var frost = LoadOrCreate<HazardDefinitionSO>(FrostHazardAssetPath);
             ConfigureFrostHazard(frost, AssetDatabase.LoadAssetAtPath<GameObject>(FrostVfxPrefabPath));
             EditorUtility.SetDirty(frost);
 
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, dice, bossVisual, bossPortrait, frost);
+            PopulateEnemyData(boss, table, bossVisual, bossPortrait, frost);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + '{DiceAssetPath}' " +
-                      $"({HandSize} × {DiceHp} HP) + '{FrostHazardAssetPath}', con wrappers " +
-                      $"'{BossVisualPrefabPath}' y '{DiceVisualPrefabPath}'. " +
-                      "Re-ejecutable sin duplicar nada.");
+            Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + su mesa en " +
+                      $"'{DiceDefinitionPath}' ({HandSize} × {DiceHp} HP en el anillo pegado a ella, " +
+                      $"reponiendo cada ranura a los {TableRefillTurns} turnos) + " +
+                      $"'{FrostHazardAssetPath}', con wrappers '{BossVisualPrefabPath}' y " +
+                      $"'{DiceVisualPrefabPath}'. Re-ejecutable sin duplicar nada.");
         }
 
         // ======================================================================
@@ -770,12 +837,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Escribe identidad, stats, recompensa y árbol de La Generala sobre
-        /// <paramref name="boss"/>. <paramref name="diceObject"/> es el <see cref="EnemyDataSO"/> de
-        /// los dados de la mesa (puede ser null en tests que no miren el spawn).
+        /// <paramref name="boss"/>. <paramref name="diceTable"/> es la
+        /// <see cref="RoomObjectDefinitionSO"/> de su mesa (puede ser null en tests que no miren el
+        /// spawn).
         /// </summary>
         public static void PopulateEnemyData(
             EnemyDataSO boss,
-            EnemyDataSO diceObject,
+            RoomObjectDefinitionSO diceTable,
             GameObject visualPrefab,
             Sprite portrait = null,
             HazardDefinitionSO frostHazard = null)
@@ -813,7 +881,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sale del mismo campo (BaseEntitySO.Portrait → IEntityPortraitResolver).
             if (portrait != null) boss.Portrait = portrait;
 
-            boss.AIRoot = BuildAIRoot(diceObject, frostHazard);
+            boss.AIRoot = BuildAIRoot(diceTable, frostHazard);
         }
 
         /// <summary>
@@ -885,6 +953,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             dice.AIRoot = new AINode_Wait();
         }
 
+        /// <summary>
+        /// Escribe la definición de la mesa: cinco dados de <see cref="DiceHp"/> HP que bloquean su
+        /// casilla, vuelven a la MISMA ranura a los <see cref="TableRefillTurns"/> turnos y no ocupan
+        /// slot en la cola de turnos.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b><c>HideFromTurnQueue</c>.</b> Como <c>EnemyDataSO</c> los dados entraban a la iniciativa:
+        /// cinco slots seguidos con retrato propio que sólo tickeaban un <c>AINode_Wait</c>. Es
+        /// exactamente lo que el doc de <see cref="RoomObjectDefinitionSO"/> llama "what being an enemy
+        /// happens to drag along" — la mesa es mobiliario y tiene que leerse como mobiliario.
+        /// </para>
+        /// <para>
+        /// <b>Sin <c>OnDeathHazard</c>.</b> Un dado roto abre camino y le borra una categoría; dejar
+        /// algo en su casilla convertiría romperlo en una decisión con costo, y romperlos es
+        /// justamente la jugada que la pelea quiere premiar.
+        /// </para>
+        /// </remarks>
+        public static void PopulateDiceDefinition(RoomObjectDefinitionSO table, GameObject visualPrefab)
+        {
+            if (table == null) return;
+
+            table.Id = DiceRoomObjectId;
+            table.DisplayName = "Dado de la Casa";
+            table.Hp = DiceHp;
+            table.Blocks = true;
+            table.HideFromTurnQueue = true;
+            table.RespawnDelayTurns = TableRefillTurns;
+            table.OnDeathHazard = null;
+
+            if (visualPrefab != null) table.VisualPrefab = visualPrefab;
+        }
+
         // ======================================================================
         // Árbol
         // ======================================================================
@@ -895,11 +996,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// el área del combo que le salió, congela el anillo de la mesa, tacha la mano que el
         /// jugador acaba de anotar, y recién ahí se reacomoda.
         /// </summary>
+        /// <param name="diceTable">
+        /// Definición de la mesa (<see cref="PopulateDiceDefinition"/>). Null en tests que no miren la
+        /// mesa: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
+        /// </param>
         /// <param name="frostHazard">
         /// Definición de la escarcha (<see cref="ConfigureFrostHazard"/>). Puede ser null en tests
         /// que no miren el hielo: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
         /// </param>
-        public static AINode_Sequence BuildAIRoot(EnemyDataSO diceObject, HazardDefinitionSO frostHazard = null)
+        public static AINode_Sequence BuildAIRoot(RoomObjectDefinitionSO diceTable,
+                                                  HazardDefinitionSO frostHazard = null)
         {
             return new AINode_Sequence
             {
@@ -915,13 +1021,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    (sin ComboLog, sin registry) no le cancele el turno.
                     Isolate(BuildPhaseTwoGate()),
 
-                    // 3. La mesa: cinco dados, reposición completa cada TableRefillTurns turnos.
-                    //    Sin Once — el nodo se auto-gatea y necesita tickear para reponer.
-                    Isolate(new AINode_SpawnReinforcements
+                    // 3. La mesa: cinco dados en el anillo pegado a ella, cada ranura reponiéndose
+                    //    sola a los TableRefillTurns turnos. Sin Once — el nodo se auto-gatea y
+                    //    necesita tickear para correr los relojes de reposición.
+                    //
+                    //    RingAroundSelf y no el borde de la sala: llena de adentro hacia afuera, así
+                    //    que los cinco caen en cinco de las ocho casillas pegadas a ella. Eso ES la
+                    //    mesa — su alcance de melee cubre las mismas casillas desde las que el
+                    //    jugador se los rompe, el anillo de escarcha cae justo encima, y romper uno
+                    //    abre el hueco por donde llegarle. Con AINode_SpawnReinforcements caían en el
+                    //    perímetro de la sala separados 3, o sea cinco cajas contra las paredes sin
+                    //    relación con nada de eso.
+                    //
+                    //    Las ranuras se resuelven una vez y se recuerdan: la mesa no la sigue cuando
+                    //    se reacomoda, igual que la escarcha se queda donde la puso.
+                    Isolate(new AINode_SpawnRoomObjects
                     {
-                        EnemyToSpawn = diceObject,
+                        Definition = diceTable,
                         Count = HandSize,
-                        RespawnDelayTurns = TableRefillTurns,
+                        Pattern = AINode_SpawnRoomObjects.Placement.RingAroundSelf,
                         SpawnFeedbackId = BossFeedbackIds.GeneralaSummonAnim,
                     }),
 
@@ -1122,6 +1240,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Hazard = frostHazard,
                 Radius = FrostRingRadius,
+                Solid = FrostIsSolid,
                 StunTurns = FrostStunTurns,
                 ReplacePreviousRing = true,
             };

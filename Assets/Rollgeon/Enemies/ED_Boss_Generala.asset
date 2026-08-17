@@ -16,7 +16,7 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 11400000, guid: 70acfc1205534d2439aa0515d6219fe0, type: 2}
+    - {fileID: 11400000, guid: 6f12a6e90ddc6024d9397cdaabf28223, type: 2}
     - {fileID: 11400000, guid: 94ef097aa99fc544c8ec09256ca43134, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
@@ -199,16 +199,32 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 18|Rollgeon.Combat.AI.Decisions.AINode_SpawnReinforcements, Rollgeon
-    - Name: EnemyToSpawn
+      Data: 18|Rollgeon.Combat.Rooms.AINode_SpawnRoomObjects, Rollgeon
+    - Name: Definition
       Entry: 10
       Data: 0
     - Name: Count
       Entry: 3
       Data: 5
-    - Name: RespawnDelayTurns
+    - Name: Pattern
       Entry: 3
-      Data: 4
+      Data: 1
+    - Name: Side
+      Entry: 3
+      Data: 0
+    - Name: Coords
+      Entry: 7
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Grid.GridCoord, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: SpawnFeedbackId
       Entry: 1
       Data: anim.boss.generala.summon
@@ -217,7 +233,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 19|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 20|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -232,7 +248,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 20|Rollgeon.Combat.AI.Decisions.AINode_RollHand, Rollgeon
+      Data: 21|Rollgeon.Combat.AI.Decisions.AINode_RollHand, Rollgeon
     - Name: SizeSource
       Entry: 3
       Data: 0
@@ -244,7 +260,7 @@ MonoBehaviour:
       Data: 6
     - Name: SlowCombos
       Entry: 7
-      Data: 21|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+      Data: 22|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
@@ -265,17 +281,17 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 22|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 23|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 23|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaCupSlam, Rollgeon
+      Data: 25|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaCupSlam, Rollgeon
     - Name: Damage
       Entry: 3
       Data: 18
@@ -296,7 +312,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 26|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -311,30 +327,30 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 26|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 27|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 7
     - Name: 
       Entry: 7
-      Data: 28|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 29|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 30|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 31|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -358,7 +374,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 5
@@ -391,20 +407,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 33|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 35|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -428,7 +444,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 0
@@ -461,20 +477,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 37|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 38|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 38|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 39|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -498,7 +514,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 39|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 5
@@ -531,20 +547,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 41|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 42|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 42|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 43|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -568,7 +584,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 43|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -601,20 +617,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 45|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 46|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 46|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 47|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -638,7 +654,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 47|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -671,20 +687,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 49|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 50|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 50|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+      Data: 51|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -708,7 +724,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 51|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 52|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -741,7 +757,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 52|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 53|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -756,30 +772,30 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 53|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 54|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 54|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 55|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 55|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 56|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 6
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 56|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 57|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 57|Rollgeon.PreConditions.Concretes.PcRoundNumber, Rollgeon
+      Data: 58|Rollgeon.PreConditions.Concretes.PcRoundNumber, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -800,13 +816,16 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 58|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaFrostRing, Rollgeon
+      Data: 59|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaFrostRing, Rollgeon
     - Name: Hazard
       Entry: 10
       Data: 1
     - Name: Radius
       Entry: 3
       Data: 2
+    - Name: Solid
+      Entry: 5
+      Data: true
     - Name: StunTurns
       Entry: 3
       Data: 1
@@ -827,7 +846,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 59|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 60|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -842,17 +861,17 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 60|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 61|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 61|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 62|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 62|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 63|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 1
@@ -873,7 +892,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 63|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 64|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -888,20 +907,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 64|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 65|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: Children
       Entry: 7
-      Data: 65|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 66|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 67|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
     - Name: MaxSteps
       Entry: 7
-      Data: 67|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 68|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 2
@@ -910,13 +929,13 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 68|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+      Data: 69|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 69|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 70|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -934,7 +953,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 70|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 71|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
