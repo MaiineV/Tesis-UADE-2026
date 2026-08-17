@@ -47,8 +47,9 @@ namespace Rollgeon.Combat.AI.Decisions
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMarkGoldScaled : AIActionNode
     {
-        [Tooltip("Forma del área. El Cajero usa Column (franja vertical centrada en el jugador).")]
-        public ThreatShape Shape = ThreatShape.Column;
+        [Tooltip("Forma del área. El Cajero usa ColumnAroundSelf (franja vertical centrada en el " +
+                 "propio jefe, así la recta sale de él y no persigue al jugador).")]
+        public ThreatShape Shape = ThreatShape.ColumnAroundSelf;
 
         [Tooltip("Escalones por oro: desde qué oro aplica cada uno, con su ancho y su daño. " +
                  "El más barato debería arrancar en MinGold = 0.")]

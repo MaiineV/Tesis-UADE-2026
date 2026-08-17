@@ -182,12 +182,19 @@ namespace Rollgeon.Combat.Tests
         {
             // Arrange + Act + Assert — el caller que resuelve el centro decide por acá; una shape
             // nueva anclada en el boss tiene que sumarse al helper, no a cada nodo.
-            Assert.IsTrue(ThreatAreaShape.AnchorsOnSelf(ThreatShape.SquareAroundSelf));
-            Assert.IsTrue(ThreatAreaShape.AnchorsOnSelf(ThreatShape.AllExceptSquareAroundSelf));
+            var selfCentered = new[]
+            {
+                ThreatShape.SquareAroundSelf,
+                ThreatShape.AllExceptSquareAroundSelf,
+                ThreatShape.ColumnAroundSelf,
+            };
+
+            foreach (var shape in selfCentered)
+                Assert.IsTrue(ThreatAreaShape.AnchorsOnSelf(shape), $"{shape} se centra en el jefe.");
 
             foreach (ThreatShape shape in Enum.GetValues(typeof(ThreatShape)))
             {
-                if (shape == ThreatShape.SquareAroundSelf || shape == ThreatShape.AllExceptSquareAroundSelf) continue;
+                if (Array.IndexOf(selfCentered, shape) >= 0) continue;
                 Assert.IsFalse(ThreatAreaShape.AnchorsOnSelf(shape), $"{shape} se centra en el jugador.");
             }
         }

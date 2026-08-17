@@ -61,6 +61,18 @@ namespace Rollgeon.Combat.Threat
         /// coordenada del boss. Ver <see cref="ThreatAreaShape.ComputeAllExceptSquareAroundSelf"/>.
         /// </summary>
         AllExceptSquareAroundSelf,
+
+        /// <summary>
+        /// Franja vertical centrada en el propio boss — la columna del Cajero. Misma matemática que
+        /// <see cref="Column"/>, pero el centro es la coordenada del boss.
+        /// </summary>
+        /// <remarks>
+        /// No es sólo de dónde sale el visual: cambia la lectura de la pelea. Anclada en el jugador
+        /// la columna lo persigue y se esquiva con un paso al costado; anclada en el jefe es una
+        /// franja fija que él ocupa, así que el jugador elige acercarse por otra columna en vez de
+        /// bailar. La presión sigue viniendo del disparo, que es lo que castiga quedarse lejos.
+        /// </remarks>
+        ColumnAroundSelf,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -120,7 +132,10 @@ namespace Rollgeon.Combat.Threat
                     break;
                 }
 
+                // Misma cuenta para las dos: lo único que cambia es quién es `center`, y eso lo
+                // resolvió el caller vía AnchorsOnSelf antes de llegar acá.
                 case ThreatShape.Column:
+                case ThreatShape.ColumnAroundSelf:
                 {
                     int half = HalfBand(size);
                     foreach (var c in RoomTiles(grid))
@@ -165,7 +180,8 @@ namespace Rollgeon.Combat.Threat
         /// </remarks>
         public static bool AnchorsOnSelf(ThreatShape shape) =>
             shape == ThreatShape.SquareAroundSelf ||
-            shape == ThreatShape.AllExceptSquareAroundSelf;
+            shape == ThreatShape.AllExceptSquareAroundSelf ||
+            shape == ThreatShape.ColumnAroundSelf;
 
         /// <summary>
         /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)

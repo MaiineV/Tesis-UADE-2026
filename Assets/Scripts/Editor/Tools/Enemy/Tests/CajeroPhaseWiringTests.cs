@@ -398,7 +398,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var column = FindNode<AINode_TelegraphMarkGoldScaled>();
 
-            Assert.AreEqual(ThreatShape.Column, column.Shape, "Es una columna, no una fila.");
+            Assert.AreEqual(ThreatShape.ColumnAroundSelf, column.Shape,
+                "Es una columna, no una fila — y anclada en el jefe: centrada en el jugador la recta " +
+                "lo perseguía y se esquivaba con un paso al costado.");
+            Assert.IsTrue(ThreatAreaShape.AnchorsOnSelf(column.Shape),
+                "Si la shape deja de anclarse en el jefe, la recta vuelve a salir del jugador.");
             Assert.IsTrue(column.ApplyBribeStepDown, "El soborno tiene que poder bajarle un escalón.");
             Assert.AreEqual(3, column.Tiers.Count, "Tres escalones: pobre, medio y rico.");
 
@@ -518,6 +522,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(2, chips.MinDistanceFromPlayer, "A 2-3 casillas: agarrarla cuesta el movimiento.");
             Assert.AreEqual(3, chips.MaxDistanceFromPlayer);
             Assert.IsTrue(chips.RequireDamageTaken, "El jefe te paga por lastimarlo, no gratis.");
+        }
+
+        [Test]
+        public void ChipHazard_LastsLongEnoughForThePlayerToStepOnIt()
+        {
+            // El guard que le faltaba al Cajero y sí tienen el Anotador, el Croupier y la Generala.
+            // La duración se descuenta una vez por wrap de ronda y la ficha nace en el turno del jefe,
+            // con el turno del jugador de esa ronda ya jugado (CNF-006): DurationRounds = D deja D-1
+            // turnos pisables. Con 1 la moneda aparecía y expiraba sin que el jugador pudiera nunca
+            // levantarla.
+            Assert.GreaterOrEqual(CajeroAssetBuilder.ChipDurationRounds - 1, 1,
+                $"Con DurationRounds = {CajeroAssetBuilder.ChipDurationRounds} la ficha vive " +
+                $"{CajeroAssetBuilder.ChipDurationRounds - 1} turnos pisables del jugador: la moneda " +
+                "cae al piso y se va antes de que él pueda agarrarla.");
         }
 
         [Test]

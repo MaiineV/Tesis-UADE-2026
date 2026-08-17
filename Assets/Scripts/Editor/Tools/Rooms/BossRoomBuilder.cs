@@ -181,7 +181,7 @@ namespace Rollgeon.EditorTools
                 // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
                 BossPlanCell = new Vector2Int(5, 2),
                 // El mostrador, en la fila 5 — la única que cruza la sala entera sin tocar recorte ni
-                // mueble — con un vano de dos casillas en el medio (plano x=5-6 ⇒ sala x=0-1) además
+                // mueble — con un vano de tres casillas en el medio (plano x=4-6 ⇒ sala x=-1..1) además
                 // de las aberturas viejas de x=2 y x=8.
                 //
                 // Por qué el vano del medio. Sin él la sala se jugaba sellada: la abertura Este
@@ -193,17 +193,22 @@ namespace Rollgeon.EditorTools
                 // con una el vano mide exactamente un tile entre dos mesas y ni se lee como paso ni
                 // perdona un error de camino.
                 //
-                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: quedan cinco mesas
+                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: quedan cuatro mesas
                 // y CashierCounterTollService cobra por el lado en el que cerrás el turno, no por
                 // dónde cruzaste. Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) NO llevan mesa: son los
                 // tiles-frente de las puertas Oeste y Este, y con mesa encima la sala quedaba sellada
                 // por los dos lados. Ninguno de los vanos abarata cruzar: la fila del mostrador es
                 // neutral para el peaje (IsSameSide devuelve false parado en ella), así que asomarse
                 // nunca cobra y comprometerse con un lado siempre cuesta lo mismo.
+                //
+                // El vano del medio mide tres casillas, no dos: la mesa de plano x=4 (sala x=-1) salió
+                // por playtest — pegada al vano lo dejaba angosto de un lado y el paso seguía sin
+                // leerse. Quedan cuatro mesas y el mostrador sigue partiendo la sala, que es lo único
+                // que el peaje necesita.
                 BlockerPlanCells = new[]
                 {
                     new Vector2Int(1, 5),
-                    new Vector2Int(3, 5), new Vector2Int(4, 5),
+                    new Vector2Int(3, 5),
                     new Vector2Int(7, 5),
                     new Vector2Int(9, 5),
                 },

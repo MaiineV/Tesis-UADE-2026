@@ -21,9 +21,17 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <b>La ficha es un hazard, no un pickup nuevo.</b> No existen pickups por tile, pero
     /// <c>IHazardService</c> ya sabe hacer exactamente esto: un hazard con
     /// <c>Trigger = OnEnter</c>, <c>Damage = 0</c>, <c>ConsumeOnTrigger = true</c> y
-    /// <c>DurationRounds = 1</c> se dispara cuando el jugador pisa la casilla (escaneando todo el
+    /// <c>DurationRounds = 2</c> se dispara cuando el jugador pisa la casilla (escaneando todo el
     /// path, no sólo el destino), se consume y expira solo. El pago lo hace
     /// <c>CashierLedgerService</c> escuchando <c>OnHazardTriggered</c>. Cero sistemas nuevos.
+    /// </para>
+    /// <para>
+    /// <b>La duración pide un turno más de lo que dice la ficha.</b> <c>DurationRounds</c> se
+    /// descuenta en el <c>OnTurnQueueBuilt</c> de la ronda siguiente, y la ficha nace en el turno del
+    /// jefe con el turno del jugador de esa ronda ya jugado (CNF-006). Con <c>1</c> la moneda moría en
+    /// ese wrap, antes de que el jugador pudiera volver a pisarla: aparecía en el piso y se iba sin
+    /// ser levantable nunca. "Dura un turno del jugador" se autora como <c>2</c>. Es el mismo
+    /// off-by-one que documenta <c>AINode_IgniteDetonatedSectors</c> para el fuego del Croupier.
     /// </para>
     /// <para>
     /// <b>Va después del nodo de marca</b> en el Sequence: lee el área pendiente de
@@ -53,7 +61,8 @@ namespace Rollgeon.Combat.AI.Decisions
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierDropChips : AIActionNode
     {
-        [Tooltip("Definición del hazard-ficha (OnEnter, Damage 0, ConsumeOnTrigger, DurationRounds 1).")]
+        [Tooltip("Definición del hazard-ficha (OnEnter, Damage 0, ConsumeOnTrigger, DurationRounds 2 " +
+                 "= dura un turno del jugador; con 1 la moneda expira antes de que él pueda pisarla).")]
         public HazardDefinitionSO Chip;
 
         [Tooltip("Fichas a soltar por turno. Ficha del jefe: 1 por golpe recibido.")]

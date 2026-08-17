@@ -100,7 +100,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const int ChipMinValue = 6;
         public const int ChipMaxValue = 9;
-        public const int ChipDurationRounds = 1;
+        // 2 = "la ficha sobrevive un turno del jugador", no dos. La duración se descuenta en el
+        // OnTurnQueueBuilt de la ronda siguiente y la ficha nace en el turno del jefe, con el jugador
+        // ya jugado (CNF-006): con 1 se moría en ese wrap, antes de que él pudiera volver a pisarla,
+        // y la moneda aparecía y desaparecía sin ser levantable nunca. Mismo off-by-one que el fuego
+        // del Croupier documenta en AINode_IgniteDetonatedSectors.
+        public const int ChipDurationRounds = 2;
         public const int ChipMinDistance = 2;
         public const int ChipMaxDistance = 3;
 
@@ -582,7 +587,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public static AINode_TelegraphMarkGoldScaled BuildColumn() => new AINode_TelegraphMarkGoldScaled
         {
-            Shape = ThreatShape.Column,
+            // Anclada en el jefe, no en el jugador: la columna sale de él y se lee como su línea de
+            // cobro. Centrada en el jugador lo perseguía y se esquivaba con un paso al costado.
+            Shape = ThreatShape.ColumnAroundSelf,
             Kind = AttackKind.BasicAttack,
             ApplyBribeStepDown = true,
             ApplyRakeStepUp = true,

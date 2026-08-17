@@ -348,7 +348,7 @@ MonoBehaviour:
       Data: 37|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMarkGoldScaled, Rollgeon
     - Name: Shape
       Entry: 3
-      Data: 2
+      Data: 9
     - Name: Tiers
       Entry: 7
       Data: 38|System.Collections.Generic.List`1[[Rollgeon.Combat.Cashier.CashierGoldTier,
