@@ -9,6 +9,8 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Feedback;
 using Rollgeon.Grid;
@@ -64,6 +66,12 @@ namespace Rollgeon.Combat.Rooms
 
             /// <summary>Casillas libres al azar de toda la sala.</summary>
             ScatteredFree = 4,
+
+            /// <summary>La casilla interior frente a cada puerta de la sala, y lo que sobra de
+            /// <see cref="Count"/> al anillo de <see cref="RingAroundSelf"/>. La forma de la mesa
+            /// repartida entre las cuatro salidas: cruzarla bajo persecución paga un precio,
+            /// pagarle el filo al jefe paga otro.</summary>
+            DoorFronts = 5,
         }
 
         /// <summary>Lado del jefe donde se alinea la fila de <see cref="Placement.RowNextToSelf"/>.</summary>
@@ -448,6 +456,7 @@ namespace Rollgeon.Combat.Rooms
                 case Placement.RowNextToSelf: return RowSlots(context, grid);
                 case Placement.RingAroundSelf: return RingSlots(context, grid);
                 case Placement.ScatteredFree: return ScatteredSlots(context, grid);
+                case Placement.DoorFronts: return DoorFrontSlots(context, grid);
                 default: return null;
             }
         }
@@ -524,19 +533,25 @@ namespace Rollgeon.Combat.Rooms
 
         /// <summary>
         /// Anillos concéntricos alrededor del jefe, de adentro hacia afuera, hasta juntar
-        /// <see cref="Count"/>. Abrirse en radio en vez de caer a casillas sueltas de la sala es lo
-        /// que mantiene los objetos leyendo como suyos.
+        /// <paramref name="budget"/> (default <see cref="Count"/>). Abrirse en radio en vez de caer a
+        /// casillas sueltas de la sala es lo que mantiene los objetos leyendo como suyos.
         /// </summary>
-        private List<GridCoord> RingSlots(AIContext context, IGridManager grid)
+        /// <remarks>
+        /// El parámetro es lo que le permite a <see cref="Placement.DoorFronts"/> pedirle sólo el
+        /// remanente tras repartir en las puertas, sin tocar <see cref="Count"/> — es data de autoría
+        /// serializada, mutarla acá correría el patrón entero.
+        /// </remarks>
+        private List<GridCoord> RingSlots(AIContext context, IGridManager grid, int? budget = null)
         {
+            int cap = budget ?? Count;
             if (!grid.TryGetPosition(context.SelfGuid, out var self)) return null;
 
-            var result = new List<GridCoord>(Count);
-            for (int radius = 1; radius <= MaxRingRadius && result.Count < Count; radius++)
+            var result = new List<GridCoord>(cap);
+            for (int radius = 1; radius <= MaxRingRadius && result.Count < cap; radius++)
             {
                 foreach (var c in Ring(self, radius))
                 {
-                    if (result.Count >= Count) break;
+                    if (result.Count >= cap) break;
                     if (!IsPlaceable(grid, c) || result.Contains(c)) continue;
                     result.Add(c);
                 }
@@ -554,6 +569,94 @@ namespace Rollgeon.Combat.Rooms
                     yield return new GridCoord(center.X + dx, center.Y + dy);
                 }
             }
+        }
+
+        /// <summary>
+        /// Frente de cada puerta autorada de la sala (orden de <see cref="RoomLayout.DoorSlots"/>),
+        /// y el remanente de <see cref="Count"/> repartido en anillo alrededor del jefe.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Las cuatro tiles frente a puerta son la razón de ser del patrón: el jugador que quiere
+        /// romper esos dados tiene que cruzar la sala perseguido, en vez de plantarse junto al jefe.
+        /// El que sobra (el quinto dado con <c>Count = 5</c> en una sala de 4 puertas) va al anillo
+        /// de <see cref="RingAroundSelf"/> — ese es el que le cuesta el cubilete al jugador, porque
+        /// para llegar tiene que pagarle el melee a la jefa.
+        /// </para>
+        /// <para>
+        /// Caer al anillo completo también es lo que hace que <c>Count</c> mayor a la cantidad de
+        /// puertas degrade lindo en vez de tirar dados al piso: sin puertas resueltas (sala sin
+        /// <c>RoomLayout</c>, o directamente sin <see cref="IDungeonService"/> — el caso de los
+        /// fixtures de EditMode) el remanente es <see cref="Count"/> entero, o sea el mismo resultado
+        /// que pedir <see cref="Placement.RingAroundSelf"/> directamente.
+        /// </para>
+        /// </remarks>
+        private List<GridCoord> DoorFrontSlots(AIContext context, IGridManager grid)
+            => BuildDoorFrontSlots(ResolveDoorFrontCoords(grid), context, grid);
+
+        /// <summary>
+        /// Casillas interiores frente a los slots de <see cref="RoomLayout.DoorSlots"/> — TODOS los
+        /// autorados, sin filtrar por estado. <see cref="DoorTileQuery.GetOpenDoorFrontTiles"/>
+        /// no sirve acá: en un jefe la sala está <c>Uncleared</c> durante la pelea, ninguna puerta
+        /// está <c>Open</c> (entrada/salida en <c>LockedCombat</c>, las perpendiculares <c>Tapiada</c>)
+        /// y esa query devolvería vacío siempre. <c>DungeonManager.ConfigureDoorSlots</c> ya
+        /// fuerza-activa cada <c>DoorRoot</c> antes del chequeo de conexión, así que los cuatro
+        /// anchors están resueltos igual.
+        /// </summary>
+        private static IEnumerable<GridCoord> ResolveDoorFrontCoords(IGridManager grid)
+        {
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null)
+                yield break;
+
+            var prefab = dungeon.CurrentRoomInstance?.SpawnedPrefab;
+            if (prefab == null) yield break;
+
+            var layout = prefab.GetComponent<RoomLayout>();
+            if (layout == null || layout.DoorSlots == null) yield break;
+
+            foreach (var slot in layout.DoorSlots)
+            {
+                if (slot?.Anchor == null) continue;
+
+                // Misma resolución que DoorTileQuery / PlayerRoomTransitioner.ResolveSpawnCoord: un
+                // paso hacia adentro desde el anchor cae en la primera celda interior.
+                yield return grid.WorldToGrid(slot.Anchor.position) + slot.Direction.InwardOffset();
+            }
+        }
+
+        /// <summary>
+        /// Seam testeable en EditMode del merge de <see cref="Placement.DoorFronts"/>: leer el
+        /// <see cref="RoomLayout"/> necesita un prefab de sala instanciado, pero el orden/presupuesto/
+        /// dedupe de acá no depende del engine y es la parte que puede romperse en silencio.
+        /// </summary>
+        internal List<GridCoord> BuildDoorFrontSlots(
+            IEnumerable<GridCoord> doorFronts, AIContext context, IGridManager grid)
+        {
+            var fromDoors = PlaceableSubset(doorFronts, grid);
+
+            var result = new List<GridCoord>(Count);
+            foreach (var c in fromDoors)
+            {
+                if (result.Count >= Count) break;
+                result.Add(c);
+            }
+
+            int remaining = Count - result.Count;
+            if (remaining > 0)
+            {
+                var ring = RingSlots(context, grid, remaining);
+                if (ring != null)
+                {
+                    foreach (var c in ring)
+                    {
+                        if (result.Count >= Count) break;
+                        if (result.Contains(c)) continue;
+                        result.Add(c);
+                    }
+                }
+            }
+
+            return result;
         }
 
         private List<GridCoord> ScatteredSlots(AIContext context, IGridManager grid)

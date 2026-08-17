@@ -113,17 +113,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Table_SitsInTheRingAroundHer_NotAgainstTheWalls()
+        public void Table_SpreadsAcrossTheDoorFronts_NotRingedAroundHer()
         {
             // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
 
-            // Assert — es lo que hace que sus tres reglas hablen del mismo lugar: el cubilete cubre
-            // las casillas desde las que le rompés los dados, la escarcha cae encima de la misma mesa,
-            // y el hueco de un dado roto es por donde llegarle. AINode_SpawnReinforcements los ponía
-            // en PickEdgeSpawnTiles —el perímetro de la sala, separados 3— y ninguna se tocaba.
-            Assert.AreEqual(AINode_SpawnRoomObjects.Placement.RingAroundSelf, spawn.Pattern,
-                "Cinco cajas contra las paredes no son una mesa.");
+            // Assert — es lo que reparte la mesa en dos precios distintos: cuatro dados en los
+            // marcos de puerta cuestan caminar bajo persecución, y el quinto —pegado a ella— cuesta
+            // el cubilete. Con RingAroundSelf los cinco caían pegados a ella y las puertas no
+            // costaban nada; con AINode_SpawnReinforcements caían en PickEdgeSpawnTiles —el
+            // perímetro de la sala, separados 3— y ninguna se tocaba.
+            Assert.AreEqual(AINode_SpawnRoomObjects.Placement.DoorFronts, spawn.Pattern,
+                "La mesa tiene que repartirse por la sala, no apilarse pegada a ella.");
         }
 
         [Test]
@@ -266,10 +267,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 GeneralaAssetBuilder.PokerDamage, size: 2);
             AssertHandBranch(Rollgeon.Combos.ComboId.FullHouse, ThreatShape.ScatteredSquares,
                 GeneralaAssetBuilder.FullHouseDamage, size: 3, count: 2);
-            AssertHandBranch(Rollgeon.Combos.ComboId.Straight, ThreatShape.Row,
-                GeneralaAssetBuilder.LadderDamage, size: 3);
-            AssertHandBranch(Rollgeon.Combos.ComboId.Par, ThreatShape.Row,
-                GeneralaAssetBuilder.PairDamage, size: 1);
+            AssertHandBranch(Rollgeon.Combos.ComboId.Straight, ThreatShape.DirectionalBand,
+                GeneralaAssetBuilder.LadderDamage, size: 1, depth: 4);
+            AssertHandBranch(Rollgeon.Combos.ComboId.Par, ThreatShape.DirectionalBand,
+                GeneralaAssetBuilder.PairDamage, size: 1, depth: 3);
         }
 
         [Test]
@@ -281,6 +282,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             // Assert
             Assert.IsNotNull(bust.mark, "Falta la rama de bust: fallar del todo también pega.");
+            Assert.AreEqual(ThreatShape.DirectionalBand, bust.mark.Shape,
+                "El bust también sale de ella, no de una fila centrada en el jugador.");
+            Assert.AreEqual(0, bust.mark.Size,
+                "Size = 0 en DirectionalBand es una línea de 1 sola casilla: el bust es el slash más flaco.");
+            Assert.AreEqual(3, bust.mark.Depth,
+                "Depth explícito: con Shape = Row este campo no se leía, y sin escribirlo acá " +
+                "queda en el default de 2 en vez de la profundidad autorada.");
             Assert.AreEqual(GeneralaAssetBuilder.BustDamage, bust.mark.Damage);
             Assert.Less(GeneralaAssetBuilder.BustDamage, GeneralaAssetBuilder.PairDamage,
                 "El bust tiene que doler menos que un Par.");
@@ -312,15 +320,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void CupSlam_HitsForEighteen_AtOneTileInManhattan()
+        public void CupSlam_HitsForTwelve_AtOneTileInManhattan()
         {
             // Act
             var cup = FindCupSlam();
 
             // Assert — el alcance es el mismo con el que el jugador le pega a ella (Base Attack:
             // Range 1, Manhattan), así que la regla se lee de una: si le llegás, te llega.
-            Assert.AreEqual(18, GeneralaAssetBuilder.CupSlamDamage,
-                "La ficha del piso 3 pide melee 18 — el número vive en el builder, no en el nodo.");
+            Assert.AreEqual(12, GeneralaAssetBuilder.CupSlamDamage,
+                "Bajó de 18 a 12: ahora persigue (ver RepositionRange), así que llega más seguido " +
+                "y el peaje por golpe tiene que bajar — el número vive en el builder, no en el nodo.");
             Assert.AreEqual(GeneralaAssetBuilder.CupSlamDamage, cup.Damage);
             Assert.AreEqual(1, cup.Range, "Range 1: solo cobra a quien esté pegado.");
             Assert.AreEqual(DistanceMetric.Manhattan, cup.Metric,
@@ -403,7 +412,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_PaysInTurnsAndNotInHp_BecauseTheFloorCeilingIsAlreadyFull()
         {
-            // Arrange — su turno ya puede sumar la mano detonada (45) + el cubilete (18) = 63,
+            // Arrange — su turno ya puede sumar la mano detonada (45) + el cubilete (12) = 57,
             // contra un techo de 45 por golpe y ≤65 anunciado. No queda presupuesto para un
             // tercer golpe: la escarcha cobra el turno, no HP.
             var definition = ScriptableObject.CreateInstance<HazardDefinitionSO>();
@@ -481,19 +490,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Reposition_ClosesInAndBacksOff_KeepingAThreeTileBand()
+        public void Reposition_ChasesWithATwoTileLeash()
         {
             // Act
             var move = Descendants(_root).OfType<AINode_Move>().FirstOrDefault();
 
-            // Assert — el pedido es que se acerque Y se aleje. AINode_KeepDistance sólo sabe
-            // alejarse; AINode_Move con Retreat cubre las dos mitades con un solo nodo.
+            // Assert — el pedido es que la persiga sin plantarse nunca en melee. AINode_Move con
+            // Retreat = false cierra distancia hasta DesiredRange y devuelve Failed (se queda
+            // quieta) cuando ya está más cerca: eso es la correa.
             Assert.IsNotNull(move, "La Generala no se mueve: sin este nodo es una estatua.");
-            Assert.IsTrue(move.Retreat, "Sin Retreat sólo se acercaría — nunca se despegaría.");
+            Assert.IsFalse(move.Retreat,
+                "Retreat = true la haría huir otra vez — con la correa ella persigue, y quedarse " +
+                "fuera del alcance del cubilete es lo que mantiene ese golpe como una elección del " +
+                "jugador y no un impuesto que ella cobra sola.");
             Assert.IsInstanceOf<AIConstantInt>(move.DesiredRange);
             Assert.AreEqual(GeneralaAssetBuilder.RepositionRange, ((AIConstantInt)move.DesiredRange).Value);
             Assert.AreEqual(GeneralaAssetBuilder.RepositionSteps, ((AIConstantInt)move.MaxSteps).Value);
+        }
 
+        [Test]
+        public void RepositionRange_StaysStrictlyOutsideCupSlamRange_SoSheNeverParksInMelee()
+        {
+            // Assert — el invariante del que depende toda la correa: si alguna vez coincidieran,
+            // perseguir hasta el borde de la correa la dejaría pegada al jugador y el cubilete
+            // dejaría de ser una elección para pasar a ser un impuesto por turno.
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.CupSlamRange,
                 "Su banda tiene que quedar FUERA del alcance del cubilete: si se pegara sola, el " +
                 "peaje de acercarse dejaría de elegirlo el jugador.");
@@ -754,7 +774,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return result;
         }
 
-        private void AssertHandBranch(string comboId, ThreatShape shape, int damage, int size, int count = -1)
+        private void AssertHandBranch(
+            string comboId, ThreatShape shape, int damage, int size, int count = -1, int depth = -1)
         {
             var branch = HandBranches().FirstOrDefault(b =>
                 b.pc.Match == PcBossHandCombo.HandMatch.Combo &&
@@ -766,6 +787,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(size, branch.mark.Size, $"Size equivocado para '{comboId}'.");
             if (count >= 0)
                 Assert.AreEqual(count, branch.mark.Count, $"Cantidad de cuadrados equivocada para '{comboId}'.");
+            if (depth >= 0)
+                Assert.AreEqual(depth, branch.mark.Depth,
+                    $"Depth equivocada para '{comboId}': con Shape = Row el campo no se leía, y " +
+                    "copiarlo tal cual a DirectionalBand deja un slash de 6 casillas en vez de la " +
+                    "profundidad autorada.");
         }
 
         /// <summary>Tree-walker por reflexión (mismo helper que SunkenGrandPhaseWiringTests).</summary>

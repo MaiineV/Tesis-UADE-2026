@@ -36,13 +36,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// consecuencias.
     /// </para>
     /// <para>
-    /// <b>La mesa es el anillo pegado a ella</b> (<see cref="DiceDefinitionPath"/>,
-    /// <c>AINode_SpawnRoomObjects</c> con <c>RingAroundSelf</c>). No es un detalle de spawn: es lo
-    /// que hace que las tres reglas suyas hablen del mismo lugar. Su alcance de cubilete cubre las
-    /// casillas desde las que le rompés los dados, el anillo de escarcha cae encima de la misma
-    /// mesa, y el hueco que abre un dado roto es literalmente por dónde llegarle. Hasta la
-    /// migración los dados caían en el perímetro de la sala —cinco cajas contra las paredes— y
-    /// ninguna de las tres se tocaba con las otras.
+    /// <b>La mesa se separó de ella</b> (<see cref="DiceDefinitionPath"/>, <c>AINode_SpawnRoomObjects</c>
+    /// con <c>DoorFronts</c>): cuatro dados en los marcos de puerta de la sala y el quinto pegado a
+    /// ella. Ya no es un detalle de spawn: es lo que hace que ignorar la mesa y pegarle a ella
+    /// directo, romperle el dado caro de al lado (cubilete de por medio), o caminar hasta un marco
+    /// mientras ella persigue con su correa (<see cref="RepositionRange"/>) sean tres jugadas con
+    /// tres precios distintos, no una sola mesa uniforme. Hasta la migración los cinco caían todos
+    /// en el anillo pegado a ella —o, antes de eso, en el perímetro de la sala— y ninguna pagaba
+    /// distinto de las otras.
     /// </para>
     /// <para>
     /// <b>El cubilete.</b> Cada vez que tira, baja la copa sobre quien esté pegado:
@@ -183,7 +184,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// (<see cref="AINode_GeneralaCupSlam"/>), no un área avisada: el único aviso es la
         /// distancia, y esa la elige el jugador.
         /// </summary>
-        public const int CupSlamDamage = 18;
+        /// <remarks>
+        /// Bajó de 18 a 12 porque ahora ella persigue (<see cref="RepositionRange"/> = 2): te
+        /// alcanza más seguido que cuando huía, así que el peaje por golpe tiene que bajar para
+        /// que el turno siga entrando en el techo del piso. Y no bajó a 8 —lo mínimo que se
+        /// sentiría "gratis"— porque el dado que queda parqueado a su lado tiene que seguir
+        /// costando algo real: 12 es el punto en el que romperlo de cerca sigue siendo una
+        /// decisión y no un descuento. Techo por turno con esto: 45 (mano grande) + 12 = 57,
+        /// contra los 63 de antes.
+        /// </remarks>
+        public const int CupSlamDamage = 12;
 
         /// <summary>
         /// Alcance del cubilete, en Manhattan. 1 = las cuatro casillas desde las que el jugador
@@ -196,8 +206,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- La escarcha ----------------------------------------------------------------
 
         /// <summary>
-        /// Alcance Chebyshev de la escarcha. 2 = el 5×5 que la rodea, que es exactamente su mesa: el
-        /// anillo de dados vive a distancia 1 y ella en el centro.
+        /// Alcance Chebyshev de la escarcha. 2 = el 5×5 que la rodea. Con la mesa repartida en
+        /// <c>DoorFronts</c> ya no tapa los cinco dados —cuatro viven en los marcos de puerta,
+        /// lejos de acá— sino al quinto, el que queda pegado a ella, y su cubilete: es el candado
+        /// del dado caro, no de la mesa entera.
         /// </summary>
         public const int FrostRingRadius = 2;
 
@@ -207,11 +219,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <remarks>
         /// Como anillo se leía en pantalla como un bug: un cuadrado dibujado cuyo centro no hacía
         /// nada. Y el motivo autorado del hueco —"desde ahí el jugador le rompe los dados"— nunca se
-        /// cumplió, porque los dados caían en el perímetro de la sala. Con la mesa ya en el anillo
-        /// pegado a ella, congelarla entera es lo que la vuelve una decisión: <c>OnEnter</c> no
-        /// dispara sobre quien ya estaba adentro, así que la ronda impar (ver
-        /// <see cref="FrostParityDivisor"/>) es para meterte, adentro le pegás a ella y a sus dados
-        /// gratis, y salir cuesta el turno.
+        /// cumplió, porque los dados caían en el perímetro de la sala. Con el dado caro y su
+        /// cubilete adentro del radio, congelarlo entero es lo que vuelve el candado una decisión:
+        /// <c>OnEnter</c> no dispara sobre quien ya estaba adentro, así que la ronda impar (ver
+        /// <see cref="FrostParityDivisor"/>) es para meterte, adentro le pegás a ella y a su dado de
+        /// al lado gratis, y salir cuesta el turno.
         /// </remarks>
         public const bool FrostIsSolid = true;
 
@@ -233,9 +245,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// Con la escarcha maciza (<see cref="FrostIsSolid"/>) esta paridad pasó de deseable a ser la
-        /// mecánica: el área tapa la mesa entera, así que la ronda impar es <b>la única</b> en la que
-        /// se puede entrar. Y como <c>OnEnter</c> no dispara sobre quien ya estaba adentro, entrar en
-        /// la impar te deja pegándole gratis hasta que decidas salir.
+        /// mecánica: el área tapa el dado caro y su cubilete enteros, así que la ronda impar es
+        /// <b>la única</b> en la que se puede entrar a buscarlo. Y como <c>OnEnter</c> no dispara
+        /// sobre quien ya estaba adentro, entrar en la impar te deja pegándole gratis hasta que
+        /// decidas salir.
         /// </remarks>
         public const int FrostParityDivisor = 2;
 
@@ -258,12 +271,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- El reposicionamiento -------------------------------------------------------
 
         /// <summary>
-        /// Distancia Manhattan que intenta mantener. 3 y no 1: pegada le regalaría un cubilete por
-        /// turno sin que el jugador lo elija, y lejos la sacaría de la sala útil. A 3 el jugador
-        /// sigue eligiendo si paga el peaje de acercarse, pero deja de poder plantarse en una
-        /// esquina a mirarla.
+        /// Distancia Manhattan que intenta mantener. 2 y no 1: pegada le regalaría un cubilete por
+        /// turno sin que el jugador lo elija. Es la correa de la persecución — se acerca hasta acá
+        /// y no más, así que romperle el cubilete de cerca sigue siendo algo que el jugador elige
+        /// pagar y no algo que ella le fuerza. Sigue estrictamente por encima de
+        /// <see cref="CupSlamRange"/>: si algún día coincidieran, se pegaría sola en cada turno.
         /// </summary>
-        public const int RepositionRange = 3;
+        public const int RepositionRange = 2;
 
         /// <summary>
         /// Pasos por turno del reposicionamiento. 2 sobre los 4 de su <c>BaseSpeed</c>: corrige la
@@ -1059,25 +1073,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    (sin ComboLog, sin registry) no le cancele el turno.
                     Isolate(BuildPhaseTwoGate()),
 
-                    // 3. La mesa: cinco dados en el anillo pegado a ella, cada ranura reponiéndose
-                    //    sola a los TableRefillTurns turnos. Sin Once — el nodo se auto-gatea y
-                    //    necesita tickear para correr los relojes de reposición.
+                    // 3. La mesa: cinco dados repartidos por la sala, cada ranura reponiéndose sola
+                    //    a los TableRefillTurns turnos. Sin Once — el nodo se auto-gatea y necesita
+                    //    tickear para correr los relojes de reposición.
                     //
-                    //    RingAroundSelf y no el borde de la sala: llena de adentro hacia afuera, así
-                    //    que los cinco caen en cinco de las ocho casillas pegadas a ella. Eso ES la
-                    //    mesa — su alcance de melee cubre las mismas casillas desde las que el
-                    //    jugador se los rompe, el anillo de escarcha cae justo encima, y romper uno
-                    //    abre el hueco por donde llegarle. Con AINode_SpawnReinforcements caían en el
-                    //    perímetro de la sala separados 3, o sea cinco cajas contra las paredes sin
-                    //    relación con nada de eso.
+                    //    DoorFronts y no el anillo pegado a ella: llena primero los marcos de puerta
+                    //    y manda el sobrante al anillo, así que Count = HandSize (5) en una sala de
+                    //    cuatro puertas cae 4 en los marcos + 1 al lado suyo — y se autoajusta si la
+                    //    sala tuviera otro número de marcos. Eso reparte el precio: los cuatro dados
+                    //    de puerta cuestan CAMINAR bajo persecución (ella los sigue con la correa de
+                    //    RepositionRange), y el quinto —el que queda pegado a ella— cuesta el
+                    //    cubilete. Dos peajes distintos por la misma jugada, y el jugador elige cuál
+                    //    paga. Con RingAroundSelf los cinco caían pegados a ella y las cuatro puertas
+                    //    no costaban nada; con AINode_SpawnReinforcements caían en el perímetro de la
+                    //    sala separados 3, cinco cajas contra las paredes sin relación con nada de
+                    //    esto. La mano sigue en 5 dados, así que Combo_Generala (que pide los cinco)
+                    //    sigue siendo alcanzable.
                     //
                     //    Las ranuras se resuelven una vez y se recuerdan: la mesa no la sigue cuando
-                    //    se reacomoda, igual que la escarcha se queda donde la puso.
+                    //    se reacomoda, igual que la escarcha se queda donde la puso. El anillo de
+                    //    escarcha (radio 2, ver FrostRingRadius) ahora tapa el quinto dado y su
+                    //    cubilete en vez de la mesa entera — es el candado del dado caro, no de los
+                    //    cinco.
                     Isolate(new AINode_SpawnRoomObjects
                     {
                         Definition = diceTable,
                         Count = HandSize,
-                        Pattern = AINode_SpawnRoomObjects.Placement.RingAroundSelf,
+                        Pattern = AINode_SpawnRoomObjects.Placement.DoorFronts,
                         SpawnFeedbackId = BossFeedbackIds.GeneralaSummonAnim,
                     }),
 
@@ -1123,6 +1145,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <i>cantada</i> (Generala recién tirada): ninguna rama matchea porque todas piden la mano
         /// armada, y el turno tiene que seguir igual.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Straight, Par y el bust pasaron de <c>Row</c> a <c>DirectionalBand</c>.</b> El slash
+        /// sale de ELLA, no de una línea centrada en el jugador — y tres cosas cambian de
+        /// significado al mover el Shape, fáciles de romper si se copia el <c>Size</c> tal cual:
+        /// </para>
+        /// <para>
+        /// <b><c>Size</c> no significa lo mismo en las dos shapes.</b> En <c>Row</c> es el ANCHO
+        /// TOTAL de la franja (1 ⇒ nada más que la línea del jugador). En <c>DirectionalBand</c> es
+        /// el MEDIO ancho (1 ⇒ banda de 3 casillas; 0 ⇒ una línea de 1 sola). Copiar el número de
+        /// una shape a la otra la triplicaría de ancho en silencio.
+        /// </para>
+        /// <para>
+        /// <b><c>Row</c> se centra en el jugador y siempre lo contiene; la banda se centra en
+        /// ELLA.</b> Un jugador desplazado del eje por más que <c>Size</c> simplemente no queda
+        /// marcado. Eso es correcto para un telegraph que se avisa una ronda antes —esquivarlo es
+        /// un paso al costado— pero es un cambio real de dificultad, no un reskin visual.
+        /// </para>
+        /// <para>
+        /// <b><c>Depth</c> hay que escribirlo explícito.</b> <c>ED_Boss_Generala.asset</c> ya tiene
+        /// <c>Depth = 2</c> serializado en estos nodos de una corrida vieja: cambiar sólo el
+        /// <c>Shape</c> dejaría un stub de 6 casillas. La sala mide 11×11 y ella tira desde el
+        /// centro, así que <c>Depth = 4</c> llega a 4 de las 5 casillas hasta la pared (referencia:
+        /// el slash del Sunken Grand usa <c>Size = 1, Depth = 3</c> en
+        /// <c>ED_Boss_Sunken_Grand.asset:567</c>, sala más chica).
+        /// </para>
+        /// </remarks>
         private static AINode_Selector BuildHandTelegraphTable()
         {
             return new AINode_Selector
@@ -1159,16 +1208,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                     HandBranch(Rollgeon.Combos.ComboId.Straight, new AINode_TelegraphMark
                     {
-                        Shape = ThreatShape.Row,
-                        Size = 3,
+                        Shape = ThreatShape.DirectionalBand,
+                        Size = 1,
+                        Depth = 4,
                         Damage = LadderDamage,
                         Kind = AttackKind.BasicAttack,
                     }),
 
                     HandBranch(Rollgeon.Combos.ComboId.Par, new AINode_TelegraphMark
                     {
-                        Shape = ThreatShape.Row,
+                        Shape = ThreatShape.DirectionalBand,
                         Size = 1,
+                        Depth = 3,
                         Damage = PairDamage,
                         Kind = AttackKind.BasicAttack,
                     }),
@@ -1176,8 +1227,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // El bust: fallar del todo duele menos que un par.
                     BustBranch(new AINode_TelegraphMark
                     {
-                        Shape = ThreatShape.Row,
-                        Size = 1,
+                        Shape = ThreatShape.DirectionalBand,
+                        Size = 0,
+                        Depth = 3,
                         Damage = BustDamage,
                         Kind = AttackKind.BasicAttack,
                     }),
@@ -1319,23 +1371,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El reposicionamiento. <see cref="AINode_Move"/> con <c>Retreat</c> y no
-        /// <see cref="AINode_KeepDistance"/>: el pedido es que se acerque <b>y</b> se aleje, y
-        /// KeepDistance sólo sabe alejarse (nunca acorta). Un solo nodo cubre las dos mitades
-        /// porque Move puntúa por <c>|distancia - DesiredRange|</c>.
+        /// El reposicionamiento. <see cref="AINode_Move"/> con <c>Retreat = false</c> y
+        /// <c>DesiredRange = 2</c>: cierra distancia hasta la correa y devuelve <c>Failed</c> (se
+        /// queda quieta) cuando ya está más cerca — eso es lo que la hace perseguir sin plantarse
+        /// nunca en melee.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Por qué no persigue.</b> Su daño grande viaja por telegraphs avisados una ronda antes
-        /// y se esquiva caminando: un jefe que cierra a melee convierte esa esquiva en una carrera
-        /// que no puede ganar. Y su golpe de cerca (el cubilete) está autorado como <i>peaje</i> —
-        /// "si le llegás, te llega"—, así que si ella misma se pega, el jugador deja de elegir
-        /// pagarlo. La banda de <see cref="RepositionRange"/> deja las dos reglas intactas.
+        /// <b>Por qué ahora persigue.</b> Ella ya no huye: se acerca hasta
+        /// <see cref="RepositionRange"/> y frena ahí, nunca cierra a melee por su cuenta — así el
+        /// cubilete sigue siendo la elección del jugador y no un impuesto que ella le cobra sola.
+        /// Ese es el punto entero de la correa.
         /// </para>
         /// <para>
-        /// <b>Por qué tampoco kitea.</b> Al revés de un ranged, ella <i>es</i> la mesa: alejarse
-        /// siempre arrastraría la pelea a un rincón y dejaría a los cinco dados —que son terreno
-        /// fijo— cada vez más lejos de ella. Retrocede sólo cuando la tienen encima.
+        /// <b>La amenaza de la persecución no es su puño: es el camino.</b> Al seguir al jugador
+        /// bloquea el paso hacia los dados de las puertas (ver <see cref="AINode_SpawnRoomObjects"/>
+        /// en <see cref="BuildAIRoot"/>), y su slash (<see cref="ThreatShape.DirectionalBand"/>)
+        /// sale de ELLA — así que estar cerca suyo es estar delante de la banda cuando detona.
         /// </para>
         /// <para>
         /// Va último en el Sequence y aislado: <see cref="AINode_Move"/> devuelve <c>Failed</c> en
@@ -1351,7 +1403,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 MaxSteps = new AIConstantInt { Value = RepositionSteps },
                 TargetSelector = new TargetSelector_AlwaysPlayer(),
                 DesiredRange = new AIConstantInt { Value = RepositionRange },
-                Retreat = true,
+                Retreat = false,
                 StopAdjacent = false, // legacy, ignorado: manda DesiredRange.
             };
         }
