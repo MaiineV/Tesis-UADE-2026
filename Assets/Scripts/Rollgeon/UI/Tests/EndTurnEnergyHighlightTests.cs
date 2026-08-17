@@ -42,7 +42,6 @@ namespace Rollgeon.UI.Tests
 
         private RectTransform _follow;
         private UnityEngine.UI.Image _glow;
-        private RectTransform _dotsContainer;
 
         private void EnterPlayerTurnWithZeroEnergy()
         {
@@ -52,8 +51,8 @@ namespace Rollgeon.UI.Tests
         }
 
         /// <summary>
-        /// Cablea el botón a seguir + glow + contenedor de dots, todos en pose de
-        /// reposo (escala 1, posición 0). Bind captura los reposos.
+        /// Cablea el botón a seguir + glow, ambos en pose de reposo (escala 1,
+        /// posición 0). Bind captura los reposos.
         /// </summary>
         private void WireFollowTargets()
         {
@@ -62,11 +61,9 @@ namespace Rollgeon.UI.Tests
                 typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
             glowGo.transform.SetParent(_go.transform, worldPositionStays: false);
             _glow = glowGo.GetComponent<UnityEngine.UI.Image>();
-            _dotsContainer = NewChildRect("Dots");
 
             AssignPrivate("_followButton", _follow);
             AssignPrivate("_glowImage", _glow);
-            AssignPrivate("_dotsContainer", _dotsContainer);
         }
 
         private RectTransform NewChildRect(string name)
@@ -174,7 +171,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void HoverMovesButton_GlowAndDotsMirrorPose()
+        public void HoverMovesButton_GlowMirrorsPose()
         {
             // Arrange
             WireFollowTargets();
@@ -192,14 +189,10 @@ namespace Rollgeon.UI.Tests
                 "El glow debe escalar junto al botón hovereado.");
             Assert.AreEqual(-12f, _glow.rectTransform.anchoredPosition.x, 1e-3f,
                 "El glow debe acompañar el offset X del hover.");
-            Assert.AreEqual(1.15f, _dotsContainer.localScale.x, 1e-4f,
-                "Los dots deben escalar junto al botón hovereado.");
-            Assert.AreEqual(-12f, _dotsContainer.anchoredPosition.x, 1e-3f,
-                "Los dots deben acompañar el offset X del hover.");
         }
 
         [Test]
-        public void EnergyRecoveredMidHover_RestoresGlowAndDotsPose()
+        public void EnergyRecoveredMidHover_RestoresGlowPose()
         {
             // Arrange — highlight activo y botón hovereado ya espejado.
             WireFollowTargets();
@@ -216,10 +209,6 @@ namespace Rollgeon.UI.Tests
                 "Al apagarse el highlight el glow vuelve a su escala de reposo.");
             Assert.AreEqual(0f, _glow.rectTransform.anchoredPosition.x, 1e-3f,
                 "Al apagarse el highlight el glow vuelve a su posición de reposo.");
-            Assert.AreEqual(1f, _dotsContainer.localScale.x, 1e-4f,
-                "Al apagarse el highlight los dots vuelven a su escala de reposo.");
-            Assert.AreEqual(0f, _dotsContainer.anchoredPosition.x, 1e-3f,
-                "Al apagarse el highlight los dots vuelven a su posición de reposo.");
         }
 
         [Test]

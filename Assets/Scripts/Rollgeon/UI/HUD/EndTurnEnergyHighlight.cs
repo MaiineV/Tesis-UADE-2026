@@ -10,60 +10,47 @@ namespace Rollgeon.UI.HUD
 {
     /// <summary>
     /// Aviso de "sin energía" sobre el botón End Turn: cuando el jugador queda en 0
-    /// durante su turno, el botón hace glow pulsante, un scale-up leve sostenido y un
-    /// trazo de dots recorriendo su contorno con espaciado uniforme. Al recuperar
-    /// energía — o al terminar el turno / combate — todo vuelve al reposo.
+    /// durante su turno, el botón respira — glow radial con pulso de alpha y scale
+    /// yoyo del root, ambos con el mismo período. Al recuperar energía — o al
+    /// terminar el turno / combate — todo vuelve al reposo.
     /// </summary>
     /// <remarks>
     /// Escala el ROOT del view y no el botón: <see cref="UiButtonJuice"/> (MMF) ya
     /// anima la escala del botón hijo y ambos efectos se pisarían. El gating por
     /// turno/tirada replica el de <see cref="EndTurnButtonView"/> — con un roll en el
-    /// aire el botón está deshabilitado y resaltarlo sería mentirle al jugador. Los
-    /// colores de glow y dots salen de la autoría de sus Images; acá solo se maneja
-    /// el alpha del glow y la posición/visibilidad de los dots.
+    /// aire el botón está deshabilitado y resaltarlo sería mentirle al jugador. El
+    /// color del glow sale de la autoría de su Image; acá solo se maneja el alpha.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/End Turn Energy Highlight")]
     public sealed class EndTurnEnergyHighlight : MonoBehaviour
     {
         [Title("Wiring")]
-        [SerializeField, Tooltip("RectTransform que recibe el scale-up sostenido. Debe ser el " +
+        [SerializeField, Tooltip("RectTransform que recibe el scale yoyo del breath. Debe ser el " +
                  "root EndTurnButtonView — UiButtonJuice ya tweenea la escala del botón hijo.")]
         private RectTransform _scaleTarget;
 
-        [SerializeField, Tooltip("Image del glow detrás del botón. Arranca invisible (alpha 0).")]
+        [SerializeField, Tooltip("Image del glow radial detrás del botón. Arranca invisible (alpha 0).")]
         private Image _glowImage;
 
-        [SerializeField, Tooltip("Contenedor de los dots — mismo rect que el botón.")]
-        private RectTransform _dotsContainer;
-
-        [SerializeField, Tooltip("Template de dot (Image hija, inactiva). Se clona hasta llegar " +
-                 "a la cantidad configurada.")]
-        private Image _dotTemplate;
-
         [SerializeField, Tooltip("RectTransform del botón juiceado. JuicyMenuButton lo escala y " +
-                 "desplaza en hover/press — glow y dots espejan esa pose para acompañarlo.")]
+                 "desplaza en hover/press — el glow espeja esa pose para acompañarlo.")]
         private RectTransform _followButton;
 
         [Title("Tuning")]
-        [SerializeField, MinValue(1), Tooltip("Cantidad de dots recorriendo el contorno.")]
-        private int _dotCount = 8;
-
-        [SerializeField, MinValue(0.1f), Tooltip("Segundos por vuelta completa al contorno.")]
-        private float _lapSeconds = 3f;
-
         [SerializeField, Range(0f, 1f), Tooltip("Alpha mínimo del pulso del glow.")]
         private float _glowAlphaMin = 0.25f;
 
         [SerializeField, Range(0f, 1f), Tooltip("Alpha máximo del pulso del glow.")]
         private float _glowAlphaMax = 0.6f;
 
-        [SerializeField, MinValue(0.05f), Tooltip("Medio ciclo del pulso del glow (ida).")]
-        private float _glowPulseSeconds = 0.6f;
-
-        [SerializeField, Range(1f, 1.3f), Tooltip("Escala sostenida del root mientras no hay energía.")]
+        [SerializeField, Range(1f, 1.3f), Tooltip("Pico del scale yoyo del root durante el breath.")]
         private float _activeScale = 1.08f;
 
-        [SerializeField, MinValue(0f), Tooltip("Duración del ease de entrada/salida del scale-up.")]
+        [SerializeField, MinValue(0.05f), Tooltip("Medio ciclo del breath (ida). Comparten período " +
+                 "el pulso de alpha del glow y el scale yoyo, así respiran juntos.")]
+        private float _breathSeconds = 0.8f;
+
+        [SerializeField, MinValue(0f), Tooltip("Duración del ease de vuelta al reposo al apagarse.")]
         private float _scaleSeconds = 0.25f;
 
         [ShowInInspector, ReadOnly]
@@ -79,8 +66,6 @@ namespace Rollgeon.UI.HUD
         private bool _active;
 
         private Vector3 _restScale = Vector3.one;
-        private Image[] _dots;
-        private Tween _dotsTween;
         private Tween _glowTween;
         private Tween _scaleTween;
 
@@ -89,8 +74,6 @@ namespace Rollgeon.UI.HUD
         private Vector2 _followRestPos;
         private Vector3 _glowRestScale = Vector3.one;
         private Vector2 _glowRestPos;
-        private Vector3 _dotsRestScale = Vector3.one;
-        private Vector2 _dotsRestPos;
 
         public bool IsHighlightActive => _active;
 
@@ -104,7 +87,7 @@ namespace Rollgeon.UI.HUD
         private void LateUpdate()
         {
             // Después de los Update de JuicyMenuButton, que escribe la escala y el
-            // offset del botón cada frame — así glow/dots lo siguen sin lag.
+            // offset del botón cada frame — así el glow lo sigue sin lag.
             if (_active) MirrorButtonPose();
         }
 
@@ -235,35 +218,28 @@ namespace Rollgeon.UI.HUD
             }
 
             SetGlowAlpha(_glowAlphaMin);
-            _glowTween = Tween.Custom(_glowAlphaMin, _glowAlphaMax, _glowPulseSeconds,
+            _glowTween = Tween.Custom(_glowAlphaMin, _glowAlphaMax, _breathSeconds,
                 onValueChange: SetGlowAlpha,
                 ease: Ease.InOutSine, cycles: -1, cycleMode: CycleMode.Yoyo,
                 useUnscaledTime: true);
 
             if (_scaleTarget != null)
-                _scaleTween = Tween.Scale(_scaleTarget, _restScale * _activeScale, _scaleSeconds,
+            {
+                // Rebase al reposo por si el ease de salida quedó a mitad de camino:
+                // el yoyo respira desde el valor actual y arrancar corrido lo sesga.
+                _scaleTarget.localScale = _restScale;
+                _scaleTween = Tween.Scale(_scaleTarget, _restScale * _activeScale, _breathSeconds,
+                    Ease.InOutSine, cycles: -1, cycleMode: CycleMode.Yoyo,
                     useUnscaledTime: true);
-
-            EnsureDots();
-            if (_dots == null) return;
-            foreach (var dot in _dots)
-                if (dot != null) dot.gameObject.SetActive(true);
-            LayoutDots(0f);
-            _dotsTween = Tween.Custom(0f, 1f, _lapSeconds,
-                onValueChange: LayoutDots,
-                ease: Ease.Linear, cycles: -1, useUnscaledTime: true);
+            }
         }
 
         private void Deactivate(bool instant)
         {
-            if (_dotsTween.isAlive) _dotsTween.Stop();
             if (_glowTween.isAlive) _glowTween.Stop();
             if (_scaleTween.isAlive) _scaleTween.Stop();
 
             SetGlowAlpha(0f);
-            if (_dots != null)
-                foreach (var dot in _dots)
-                    if (dot != null) dot.gameObject.SetActive(false);
             RestoreFollowPose();
 
             if (_scaleTarget == null) return;
@@ -274,38 +250,6 @@ namespace Rollgeon.UI.HUD
                 return;
             }
             _scaleTween = Tween.Scale(_scaleTarget, _restScale, _scaleSeconds, useUnscaledTime: true);
-        }
-
-        private void EnsureDots()
-        {
-            if (_dots != null || _dotTemplate == null || _dotsContainer == null) return;
-            _dots = new Image[_dotCount];
-            _dots[0] = _dotTemplate;
-            for (int i = 1; i < _dotCount; i++)
-                _dots[i] = Instantiate(_dotTemplate, _dotsContainer);
-
-            // Anclados al centro: PointOnPerimeter devuelve posiciones locales
-            // relativas al centro del contenedor.
-            foreach (var dot in _dots)
-            {
-                if (dot == null) continue;
-                var rt = dot.rectTransform;
-                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-                rt.pivot = new Vector2(0.5f, 0.5f);
-            }
-        }
-
-        private void LayoutDots(float phase)
-        {
-            if (_dots == null || _dotsContainer == null) return;
-            Vector2 size = _dotsContainer.rect.size;
-            for (int i = 0; i < _dots.Length; i++)
-            {
-                var dot = _dots[i];
-                if (dot == null) continue;
-                dot.rectTransform.anchoredPosition =
-                    RectPerimeterMath.PointOnPerimeter(size, phase + i / (float)_dots.Length);
-            }
         }
 
         private void SetGlowAlpha(float alpha)
@@ -319,7 +263,7 @@ namespace Rollgeon.UI.HUD
         // ---- Espejo del hover del botón -----------------------------------------
 
         /// <summary>
-        /// Reposo del botón y de glow/dots. Se captura una sola vez y solo con el
+        /// Reposo del botón y del glow. Se captura una sola vez y solo con el
         /// botón quieto (Awake / Bind): capturar en el primer frame activo podría
         /// pescar un hover a medias y correr el reposo para siempre.
         /// </summary>
@@ -333,11 +277,6 @@ namespace Rollgeon.UI.HUD
                 _glowRestScale = _glowImage.rectTransform.localScale;
                 _glowRestPos = _glowImage.rectTransform.anchoredPosition;
             }
-            if (_dotsContainer != null)
-            {
-                _dotsRestScale = _dotsContainer.localScale;
-                _dotsRestPos = _dotsContainer.anchoredPosition;
-            }
             _followCaptured = true;
         }
 
@@ -350,8 +289,6 @@ namespace Rollgeon.UI.HUD
             Vector2 delta = _followButton.anchoredPosition - _followRestPos;
             if (_glowImage != null)
                 ApplyPose(_glowImage.rectTransform, _glowRestScale, _glowRestPos, ratio, delta);
-            if (_dotsContainer != null)
-                ApplyPose(_dotsContainer, _dotsRestScale, _dotsRestPos, ratio, delta);
         }
 
         private void RestoreFollowPose()
@@ -359,8 +296,6 @@ namespace Rollgeon.UI.HUD
             if (!_followCaptured) return;
             if (_glowImage != null)
                 ApplyPose(_glowImage.rectTransform, _glowRestScale, _glowRestPos, 1f, Vector2.zero);
-            if (_dotsContainer != null)
-                ApplyPose(_dotsContainer, _dotsRestScale, _dotsRestPos, 1f, Vector2.zero);
         }
 
         private static void ApplyPose(RectTransform target, Vector3 restScale, Vector2 restPos,
