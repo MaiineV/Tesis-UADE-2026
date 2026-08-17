@@ -179,7 +179,31 @@ namespace Rollgeon.Combat.Rooms
 
             CollectBroken(context, grid);
             RefillSlots(context, grid);
+            PublishArmor(context);
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Le pasa el estado de las ranuras a <see cref="RoomObjectArmorService"/> cuando la definición
+        /// otorga armadura. Sólo publica guids: quién está roto lo decide el servicio al consultar, no
+        /// acá.
+        /// </summary>
+        /// <remarks>
+        /// Ese reparto es a propósito. Este nodo tickea en el turno del jefe, así que congelar la cuenta
+        /// acá haría que romper un objeto en el turno del jugador no bajara la reducción hasta el turno
+        /// siguiente — y el golpe de después seguiría reducido, que se lee como que el juego no registró
+        /// el impacto.
+        /// </remarks>
+        private void PublishArmor(AIContext context)
+        {
+            if (!Definition.GrantsOwnerArmor) return;
+            if (context.SelfGuid == Guid.Empty) return;
+
+            var guids = new Guid[_slots.Count];
+            for (int i = 0; i < _slots.Count; i++) guids[i] = _slots[i].ObjectGuid;
+
+            RoomObjectArmorService.ResolveOrCreate()
+                .Publish(context.SelfGuid, guids, Definition.OwnerDamageReductionPerObject);
         }
 
         // ======================================================================

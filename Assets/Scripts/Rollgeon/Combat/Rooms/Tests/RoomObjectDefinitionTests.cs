@@ -6,6 +6,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Initiative;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Dice;
 using Rollgeon.Entities;
@@ -433,6 +434,48 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.IsTrue(node.TryGetSlot(0, out _, out var backGuid));
             Assert.AreNotEqual(Guid.Empty, backGuid,
                 "Con la casilla libre repone al turno siguiente: la espera no acumuló deuda extra.");
+        }
+
+        // --- La armadura del dueño -----------------------------------------------------
+
+        [Test]
+        public void Tick_WithArmorAuthored_PublishesTheSlotsToTheArmorService()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            _definition.OwnerDamageReductionPerObject = 0.2f;
+            var node = ExplicitNode(new GridCoord(1, 1), new GridCoord(2, 1), new GridCoord(3, 1));
+
+            // Act
+            node.Tick(NewContext());
+
+            // Assert
+            Assert.IsTrue(ServiceLocator.TryGetService<IIncomingDamageMultiplierProvider>(out var provider)
+                          && provider != null,
+                "El nodo tiene que dejar el servicio registrado — sin él la reducción no existe.");
+            Assert.IsTrue(provider.TryGetMultiplier(_boss, out float multiplier));
+            Assert.AreEqual(0.4f, multiplier, 0.001f, "Tres objetos × 0.2 = 60% de reducción.");
+
+            (provider as IDisposable)?.Dispose();
+        }
+
+        [Test]
+        public void Tick_WithoutArmorAuthored_PublishesNothing()
+        {
+            // Arrange — el default de la definición es 0: un objeto es terreno hasta que alguien diga
+            // lo contrario, así que los rodillos de La Bandida no empiezan a blindarla de golpe.
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            Assert.IsFalse(_definition.GrantsOwnerArmor);
+            var node = ExplicitNode(new GridCoord(1, 1), new GridCoord(2, 1));
+
+            // Act
+            node.Tick(NewContext());
+
+            // Assert
+            Assert.IsFalse(ServiceLocator.TryGetService<IIncomingDamageMultiplierProvider>(out _),
+                "Sin armadura autorada el nodo no debe ni crear el servicio.");
         }
 
         // --- El contrato con la mano de La Generala -----------------------------------

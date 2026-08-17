@@ -90,9 +90,8 @@ namespace Rollgeon.Combat.Pipelines
             }
             ctx.WeaknessMultiplier = weakMult;
 
-            // ── 3. Incoming multiplier (placeholder — stat not yet defined) ───
-            // float inMult = _attributes.GetAttributeModifiedValue<IncomingDamageMultiplier, float>(ctx.TargetId);
-            // damage = Mathf.RoundToInt(damage * inMult);
+            // ── 3. Incoming multiplier ────────────────────────────────────────
+            damage = ApplyIncomingMultiplier(ctx, damage);
 
             EventManager.Trigger(EventName.OnDamageIncoming,
                 ctx.SourceId, ctx.TargetId, damage);
@@ -191,6 +190,7 @@ namespace Rollgeon.Combat.Pipelines
                 ShieldAbsorbed = ctx.ShieldAbsorbed,
                 BlockedByShield = ctx.BlockedByShield,
                 ShieldBroken = shieldBroken,
+                IncomingMultiplier = ctx.IncomingMultiplier,
             });
 
             DamageDebugLogger.LogApplication(ctx, shieldBefore, hpBefore, hpAfter);
@@ -221,6 +221,10 @@ namespace Rollgeon.Combat.Pipelines
                 if (weakMult > 1f) damage = Mathf.RoundToInt(damage * weakMult);
             }
             ctx.WeaknessMultiplier = weakMult;
+
+            // Stage 3 — incoming multiplier. Va también acá o el preview miente: el jugador vería
+            // "30" en el desglose y la barra del jefe bajaría 9.
+            damage = ApplyIncomingMultiplier(ctx, damage);
 
             // Stage 4 — shield absorption (computar, NO escribir Shield ni disparar eventos).
             int absorbed = ComputeShieldAbsorbed(ReadShield(ctx.TargetId), damage);
@@ -259,6 +263,44 @@ namespace Rollgeon.Combat.Pipelines
             }
 
             return log.LastCombo == comboId;
+        }
+
+        /// <summary>
+        /// Stage 3: aplica el multiplicador entrante de <see cref="IIncomingDamageMultiplierProvider"/>
+        /// y deja el factor usado en <see cref="DamageContext.IncomingMultiplier"/>. Sin provider
+        /// registrado devuelve <paramref name="damage"/> tal cual.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Piso de 1.</b> Con una reducción del 70% un golpe de 3 daría 1 al redondear, pero uno de
+        /// 1 daría 0 — y un golpe que muestra 0 se lee como un bug, no como una armadura. El piso sólo
+        /// aplica si el daño que entró al stage era positivo: no inventa daño donde no había.
+        /// </para>
+        /// <para>
+        /// Compartido entre <see cref="Resolve"/> y <see cref="Preview"/>: es el único lugar donde vive
+        /// la cuenta, así que el desglose que el jugador ve y el número que le baja al jefe no pueden
+        /// desfasarse.
+        /// </para>
+        /// </remarks>
+        private static int ApplyIncomingMultiplier(DamageContext ctx, int damage)
+        {
+            ctx.IncomingMultiplier = 1f;
+            if (damage <= 0) return damage;
+
+            if (!ServiceLocator.TryGetService<IIncomingDamageMultiplierProvider>(out var provider)
+                || provider == null)
+            {
+                return damage;
+            }
+
+            if (!provider.TryGetMultiplier(ctx.TargetId, out float multiplier)) return damage;
+            if (multiplier < 0f) multiplier = 0f;
+            if (Mathf.Approximately(multiplier, 1f)) return damage;
+
+            ctx.IncomingMultiplier = multiplier;
+
+            int reduced = Mathf.RoundToInt(damage * multiplier);
+            return reduced < 1 ? 1 : reduced;
         }
 
         private int ReadShield(Guid targetId)

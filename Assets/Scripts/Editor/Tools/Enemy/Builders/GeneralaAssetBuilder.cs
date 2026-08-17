@@ -132,6 +132,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Turnos del boss que tarda en reponer la mesa entera.</summary>
         public const int TableRefillTurns = 4;
 
+        /// <summary>
+        /// Reducción de daño con la mesa entera en pie. Baja
+        /// <see cref="TableArmorPerDie"/> por cada dado roto, y <b>no vuelve</b> cuando se repone.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Es lo que le pone número a la mesa. Sus dados ya hacían dos cosas —bloquear el paso y
+        /// borrarle una categoría de la mano— pero ninguna se ve en pantalla, así que romperlos parecía
+        /// una pérdida de turnos. Con esto el primer golpe hace ~9 en vez de ~30 y sube visiblemente
+        /// cada vez que rompés uno: la mesa deja de ser decorado y pasa a ser la razón por la que le
+        /// pegás poco.
+        /// </para>
+        /// <para>
+        /// <b>El progreso es permanente.</b> El dado repuesto vuelve a bloquear y a darle la categoría,
+        /// pero su 14% ya no vuelve. Con la reducción reponiéndose, la mesa sería una noria —limpiás
+        /// cinco dados, se reponen, volvés a empezar— y los ~8 golpes que cuesta desarmarla no
+        /// comprarían nada estable. Ver <c>RoomObjectArmorService</c>.
+        /// </para>
+        /// <para>
+        /// <b><see cref="DiceHp"/> queda en 45.</b> A ~30 de golpe medio del piso 3, cada dado cuesta
+        /// golpe y medio: desarmarle la mesa es una inversión de unos 8 turnos que el resto de la pelea
+        /// paga. Si el playtest dice que es demasiado, el número lo decide diseño.
+        /// </para>
+        /// </remarks>
+        public const float TableArmorMax = 0.7f;
+
+        /// <summary>
+        /// Lo que descuenta cada dado en pie: <see cref="TableArmorMax"/> repartido entre los
+        /// <see cref="HandSize"/>. Sale de la división y no de un literal para que no puedan desfasarse
+        /// — un builder que autore 0.15 con cinco dados daría 75% y nadie lo notaría.
+        /// </summary>
+        public const float TableArmorPerDie = TableArmorMax / HandSize;
+
         public const int BustDamage = 18;
         public const int PairDamage = 25;
         public const int LadderDamage = 45;
@@ -970,6 +1003,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// algo en su casilla convertiría romperlo en una decisión con costo, y romperlos es
         /// justamente la jugada que la pelea quiere premiar.
         /// </para>
+        /// <para>
+        /// <b>Y le blinda el daño</b> (<see cref="TableArmorPerDie"/>): es la tercera cosa que hace la
+        /// mesa y la única que el jugador puede ver. Ver <see cref="TableArmorMax"/>.
+        /// </para>
         /// </remarks>
         public static void PopulateDiceDefinition(RoomObjectDefinitionSO table, GameObject visualPrefab)
         {
@@ -982,6 +1019,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             table.HideFromTurnQueue = true;
             table.RespawnDelayTurns = TableRefillTurns;
             table.OnDeathHazard = null;
+            table.OwnerDamageReductionPerObject = TableArmorPerDie;
 
             if (visualPrefab != null) table.VisualPrefab = visualPrefab;
         }

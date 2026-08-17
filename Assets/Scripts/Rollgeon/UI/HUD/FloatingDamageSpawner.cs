@@ -268,6 +268,16 @@ namespace Rollgeon.UI.HUD
                 SpawnOrDefer(broken.Text, broken.Tint, screenPos, broken.Scale, broken.Motion);
             }
 
+            // El stage 3 recortó el golpe (la mesa de La Generala en pie): el porcentaje va antes del
+            // número, mismo riel que "Escudo roto". Sin esto un golpe de 30 que hace 9 no tiene
+            // explicación en pantalla y el jugador aprende "mis golpes no sirven" en vez de "rompé los
+            // dados". El rango y no != 1: el payload es un struct y uno armado a mano trae 0.
+            if (payload.IncomingMultiplier > 0f && payload.IncomingMultiplier < 1f)
+            {
+                var reduced = FloatingNumberFormat.DamageReduced(payload.IncomingMultiplier);
+                SpawnOrDefer(reduced.Text, reduced.Tint, screenPos, reduced.Scale, reduced.Motion);
+            }
+
             var style = FloatingNumberFormat.ForDamage(payload.FinalDamage, incoming, payload.WeaknessHit);
             SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
         }

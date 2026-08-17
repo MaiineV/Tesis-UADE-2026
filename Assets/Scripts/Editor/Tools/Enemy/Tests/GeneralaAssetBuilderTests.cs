@@ -162,6 +162,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void DiceDefinition_ArmorsHer_AndTheFiveSharesAddUpToTheSheet()
+        {
+            // Arrange
+            var table = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
+            table.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                // Act
+                GeneralaAssetBuilder.PopulateDiceDefinition(table, null);
+
+                // Assert — es lo único que la mesa hace y el jugador puede ver: sus otros dos efectos
+                // (bloquear el paso, borrarle una categoría) no aparecen en pantalla, así que romper
+                // dados parecía una pérdida de turnos.
+                Assert.IsTrue(table.GrantsOwnerArmor);
+                Assert.AreEqual(GeneralaAssetBuilder.TableArmorPerDie,
+                    table.OwnerDamageReductionPerObject, 0.0001f);
+
+                Assert.AreEqual(GeneralaAssetBuilder.TableArmorMax,
+                    GeneralaAssetBuilder.TableArmorPerDie * GeneralaAssetBuilder.HandSize, 0.0001f,
+                    "Los cinco dados juntos tienen que dar la reducción de la ficha. Un literal " +
+                    "suelto (0.15 con cinco dados = 75%) se desfasaría sin que nadie lo note.");
+
+                Assert.Less(GeneralaAssetBuilder.TableArmorMax, 1f,
+                    "Una reducción del 100% no es una mecánica dura, es una pelea que no termina.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(table);
+            }
+        }
+
+        [Test]
         public void Table_KeepsHerRefillGesture()
         {
             // Act

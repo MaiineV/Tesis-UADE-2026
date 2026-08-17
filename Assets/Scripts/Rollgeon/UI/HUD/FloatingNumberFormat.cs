@@ -99,5 +99,32 @@ namespace Rollgeon.UI.HUD
         /// <summary>Shield llegó a 0 en este hit y queda daño residual — se spawnea antes del número.</summary>
         public static FloatingNumberStyle ShieldBroken() =>
             new FloatingNumberStyle("Escudo roto", FloatingNumberPalette.Shield, 0.9f);
+
+        /// <summary>
+        /// El stage 3 del pipeline recortó el golpe: se spawnea <b>antes</b> del número, igual que
+        /// <see cref="ShieldBroken"/>, y el número que sigue ya es el reducido.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Sin esto, la mesa de La Generala en pie es un golpe de 30 que hace 9 sin explicación en
+        /// pantalla: el jugador no aprende "rompé los dados", aprende "mis golpes no sirven". El
+        /// porcentaje es lo único que conecta la mesa con la barra del jefe.
+        /// </para>
+        /// <para>
+        /// Va por acá y no por un badge en <c>BossBarView</c> a propósito: el badge de debilidad se
+        /// cablea a mano prefab por prefab (<c>docs/setup/boss-weakness-badge.md</c>), y la
+        /// legibilidad de una mecánica no puede depender de un paso manual de setup.
+        /// </para>
+        /// <para>
+        /// Tint de <see cref="FloatingNumberPalette.Shield"/>: es lo mismo que ya significa "algo
+        /// frenó este golpe", y darle un color propio agregaría una convención nueva para la misma
+        /// idea.
+        /// </para>
+        /// </remarks>
+        public static FloatingNumberStyle DamageReduced(float incomingMultiplier)
+        {
+            int percent = Mathf.RoundToInt((1f - incomingMultiplier) * 100f);
+            return new FloatingNumberStyle($"-{percent}%", FloatingNumberPalette.Shield, 0.9f);
+        }
     }
 }

@@ -75,6 +75,20 @@ namespace Rollgeon.Combat.Rooms
                  "reel leaving fire behind. Empty = breaking it leaves clean floor.")]
         public HazardDefinitionSO OnDeathHazard;
 
+        [Header("Owner armor")]
+        [Tooltip("Fraction of incoming damage each one of these still standing takes off its OWNER. " +
+                 "0 = no armor, which is the default: an object is terrain until someone says " +
+                 "otherwise. Five of these at 0.14 make the boss take 70% less until you break them, " +
+                 "and a broken one gives its share back for good. See RoomObjectArmorService.")]
+        [Range(0f, 1f)]
+        public float OwnerDamageReductionPerObject;
+
+        /// <summary>
+        /// <c>true</c> when this definition's objects protect their owner at all — the flag the spawn
+        /// node checks before publishing slot state to <c>RoomObjectArmorService</c>.
+        /// </summary>
+        public bool GrantsOwnerArmor => OwnerDamageReductionPerObject > 0f;
+
         /// <summary>
         /// <see cref="DisplayName"/>, falling back to the asset name when it was never authored, so
         /// UI and logs always have something to print instead of an empty string.

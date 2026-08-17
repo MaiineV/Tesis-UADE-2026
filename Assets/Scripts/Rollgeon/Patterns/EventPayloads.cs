@@ -36,6 +36,18 @@ namespace Patterns
         /// este hit y quedó en 0 después. Útil para spawnear un "Broken Shield" además
         /// del número de daño residual.</summary>
         public bool ShieldBroken;
+
+        /// <summary>
+        /// Multiplicador de daño entrante aplicado en el stage 3 (<c>IIncomingDamageMultiplierProvider</c>):
+        /// la mesa de La Generala en pie le descuenta el golpe. <c>1</c> = nada lo modificó.
+        /// </summary>
+        /// <remarks>
+        /// Es un struct, así que un payload armado a mano lo trae en <c>0</c>. Los consumidores tratan
+        /// "hubo reducción" como <c>&gt; 0 &amp;&amp; &lt; 1</c> y no como <c>!= 1</c>: el pisa
+        /// <c>0</c> sería "-100%", y una reducción total no existe (el pipeline clampea el daño a un
+        /// mínimo de 1).
+        /// </remarks>
+        public float IncomingMultiplier;
     }
 
     /// <summary>
