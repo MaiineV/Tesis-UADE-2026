@@ -458,16 +458,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ---- El peaje -----------------------------------------------------
 
         [Test]
-        public void Toll_ChargesTheSheetTwenty()
+        public void Toll_ChargesTheSheetTwelve()
         {
             var toll = FindNode<AINode_CashierCounterToll>();
 
             Assert.AreEqual(CajeroAssetBuilder.CounterTollDamage, toll.Damage,
                 "El nodo tiene que salir cableado desde la constante de la ficha, no de su default.");
-            Assert.AreEqual(20, toll.Damage,
-                "Sin peaje, elegir abertura no cuesta nada y el mostrador es decorado. A 10 el " +
-                "peaje salía más barato que replegarse y convenía comerlo; a 20 quedarse del lado " +
-                "de él vuelve a ser una decisión.");
+            Assert.AreEqual(12, toll.Damage,
+                "El peaje ahora cobra todas las rondas (ver CounterTollEveryNRounds), así que lo que " +
+                "tiene que valer la pena no es el número por golpe sino el viaje redondo: 12 por " +
+                "ronda son 24 por dos cierres de turno de su lado, más caro que los 20 que costaba " +
+                "el viaje redondo bajo la cadencia intermitente vieja.");
             Assert.Less(toll.Damage, 35,
                 "El peaje es el precio de una posición, no su ataque: tiene que quedar por debajo " +
                 "del techo de daño por golpe del piso 2.");
@@ -551,16 +552,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void CounterToll_LeavesAFreeRound_SoTheBossCanBeApproached()
+        public void CounterToll_ChargesEveryRound_BecauseTheNeutralRowIsTheRealReleaseValve()
         {
             var toll = FindNode<AINode_CashierCounterToll>();
 
-            // Cobrando todas las rondas el peaje deja de ser el precio de una posición: pegarle exige
-            // distancia 1, y distancia 1 está de su lado, así que acercarse costaba 20 por ronda para
-            // siempre — con el disparo castigándote por quedarte lejos, la tenaza no tenía salida.
+            // La ronda franca ya no hace falta porque nunca fue la válvula de escape real: la
+            // válvula es que la fila del mostrador es neutral (CashierCounterTollService.IsSameSide
+            // devuelve false con side == 0), así que pegar y retroceder al hueco no cuesta nunca
+            // nada. Cobrar todas las rondas vuelve al peaje constante y legible en vez de
+            // intermitente.
             Assert.AreEqual(CajeroAssetBuilder.CounterTollEveryNRounds, toll.ChargesEveryNRounds);
-            Assert.GreaterOrEqual(toll.ChargesEveryNRounds, 2,
-                "Sin ronda franca la respuesta correcta a este jefe es no entrar nunca a su lado.");
+            Assert.AreEqual(1, toll.ChargesEveryNRounds,
+                "Cobra todas las rondas: la válvula de escape es la fila neutral del mostrador, no " +
+                "una ronda franca.");
             Assert.AreEqual(CajeroAssetBuilder.CounterTollDamage, toll.Damage);
             Assert.AreEqual(CajeroAssetBuilder.CounterRow, toll.CounterRow);
         }

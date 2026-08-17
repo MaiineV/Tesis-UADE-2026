@@ -184,37 +184,52 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// abertura — sin peaje, elegir puerta no cuesta nada y el mostrador es decorado.
         /// </summary>
         /// <remarks>
-        /// Subido de 10 a 20. Con 10 el peaje era barato de pagar: cruzar y quedarse costaba menos
-        /// que un turno perdido replegándose, así que el mostrador dejaba de ser una decisión y
-        /// pasaba a ser un impuesto que convenía comer. A 20 —dos tercios de un golpe suyo del
-        /// escalón medio— quedarse del lado de él tiene que valer la pena de verdad.
+        /// Bajado de 20 a 12 al pasar el peaje a cobrar todas las rondas (ver
+        /// <see cref="CounterTollEveryNRounds"/>). Con la cadencia vieja, 20 cada dos rondas
+        /// promediaba 10 de daño por ronda y un viaje redondo completo —dos cierres de turno del
+        /// lado de él— salía 20 en total. A 12 por ronda el promedio sube a 12 y ese mismo viaje
+        /// redondo sale 24: más caro, no más barato. Lo que tiene que valer la pena no es el número
+        /// por golpe sino ese viaje redondo, y 24 alcanza de sobra.
         /// <para>
         /// Sigue por debajo del techo de daño por golpe del piso 2 (<see cref="RichTierDamage"/> =
         /// 35) a propósito: el peaje es el precio de una posición, no su ataque.
         /// </para>
         /// </remarks>
-        public const int CounterTollDamage = 20;
+        public const int CounterTollDamage = 12;
 
         /// <summary>
-        /// Cada cuántas rondas cobra el peaje. 2 = la par cobra, la impar es franca.
+        /// Cada cuántas rondas cobra el peaje. 1 = cobra todas las rondas.
         /// </summary>
         /// <remarks>
-        /// Cobrando todas las rondas, el peaje deja de ser el precio de una posición y pasa a ser un
-        /// impuesto por intentar: pegarle al Cajero exige distancia 1, y distancia 1 está de su
-        /// lado, así que acercarse costaba <see cref="CounterTollDamage"/> por ronda para siempre y
-        /// la respuesta correcta era no acercarse nunca — con el <see cref="ShotDamage">disparo</see>
-        /// castigándote por eso mismo, la tenaza no tenía salida.
+        /// Antes valía 2 (la par cobra, la impar es franca) para dejar una ronda de escape: la
+        /// lectura era que sin ella, pegarle al Cajero —que exige distancia 1, y distancia 1 está
+        /// de su lado— costaba <see cref="CounterTollDamage"/> por ronda para siempre, y con el
+        /// <see cref="ShotDamage">disparo</see> castigando quedarse lejos la tenaza no tenía salida.
         /// <para>
-        /// 2 y no 3: con la franca cada tres rondas el jugador entra, pega una vez y ya está pagando
-        /// dos veces para salir. Con 2, una ida y vuelta cabe entera en la ventana.
+        /// Esa lectura tenía un agujero: la ronda franca nunca fue la válvula de escape real. La
+        /// válvula es que la fila del mostrador es neutral —
+        /// <c>CashierCounterTollService.IsSameSide</c> devuelve <c>false</c> cuando
+        /// <c>side == 0</c>—, así que pararse en una abertura no cuesta nunca nada: se pega y se
+        /// retrocede al hueco sin pagar un peso. La ronda franca sólo compensaba que esa regla es
+        /// invisible: el mostrador hoy son cuatro mesas sueltas repartidas en once celdas y ya no se
+        /// lee como mostrador, así que nadie descubre la fila neutral.
         /// </para>
         /// <para>
-        /// Paridad par, igual que <c>GeneralaAssetBuilder.FrostParityDivisor</c> y que la columna del
-        /// Anotador: dos jefes ya enseñan "las pares muerden", y un tercero con otra cadencia sería
-        /// una regla más que aprender sin ganar nada.
+        /// Con eso identificado, el peaje pasa a cobrar todas las rondas y <see
+        /// cref="CounterTollDamage"/> baja de 20 a 12: constante y legible, y el overlay verde deja
+        /// de titilar prendido/apagado, que era su propia fuente de confusión. La legibilidad del
+        /// mostrador en sí —volver a poner las mesas en <c>BossRoomBuilder.BlockerPlanCells</c> para
+        /// que se lea como una fila sola y no como cuatro props sueltos— queda pendiente y aparte:
+        /// no se toca en este cambio.
+        /// </para>
+        /// <para>
+        /// Sigue siendo un campo cableado desde la ficha y no un <c>1</c> hardcodeado en el nodo:
+        /// el mecanismo de cadencia queda intacto —<c>AINode_CashierCounterToll.Arm</c> clampea a un
+        /// mínimo de 1— así que la frecuencia se puede volver a bajar más adelante sin escribir
+        /// código nuevo.
         /// </para>
         /// </remarks>
-        public const int CounterTollEveryNRounds = 2;
+        public const int CounterTollEveryNRounds = 1;
 
         /// <summary>
         /// Fila del mostrador en coordenadas de la sala. Autorada acá porque el jefe no tiene forma
