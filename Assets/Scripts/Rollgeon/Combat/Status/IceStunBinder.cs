@@ -282,6 +282,12 @@ namespace Rollgeon.Combat.Status
             if (!(args[1] is Guid entityGuid) || entityGuid == Guid.Empty) return;
 
             if (!TryResolveIce(instanceId, out var ice)) return;
+
+            // Con la data de hoy esta rama no se ejecuta: todos los hielos son PlayerOnly, así que
+            // HazardService ya filtró al dueño y OnHazardTriggered nunca llega con su guid. No es
+            // código muerto igual — es el único freno si alguien autora un hielo con
+            // HazardAffects.Everyone, donde el jefe sí vuelve a ser cobrable y se congelaría con su
+            // propio anillo. Barato de mantener, caro de reponer después del bug.
             if (entityGuid == ice.OwnerGuid) return;
 
             if (!ServiceLocator.TryGetService<IStunService>(out var stun) || stun == null)

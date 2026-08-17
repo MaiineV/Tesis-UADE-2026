@@ -79,10 +79,21 @@ namespace Rollgeon.Combat.Threat
         /// <i>would have</i> damaged someone is swallowed instead, and the flag clears itself.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Exists for the design rule "the detonation consumes the flame" — a boss node that already
         /// resolved damage over a tile this turn calls this so the standing fire doesn't bill the
         /// player twice for the same turn. Deliberately does not suppress duration ticking: the
         /// hazard still ages.
+        /// </para>
+        /// <para>
+        /// <b><see cref="HazardDefinitionSO.Affects"/> does not replace this, and deleting it is not a
+        /// cleanup.</b> That filter answers "is this entity billable at all"; this answers "did the
+        /// billable entity already pay for this tile this turn". Both are about the player and they
+        /// never overlap. Drop it and the Croupier's seam column goes back to charging the blast plus
+        /// the fire's 6 on one turn end — worst case 30 instead of 24, with
+        /// <c>CroupierIgnitionTests.PlayerCaughtByTheBlast_FirstFireTickIsSwallowed</c> as the alarm.
+        /// (The commit that added <c>Affects</c> claimed this had become redundant. It had not.)
+        /// </para>
         /// </remarks>
         void SkipNextTick(Guid instanceId);
     }
