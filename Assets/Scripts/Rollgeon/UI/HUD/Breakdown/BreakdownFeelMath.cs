@@ -64,5 +64,18 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             return Mathf.Clamp(contributingCount - 2, 0, 3);
         }
+
+        /// <summary>
+        /// Intensidad 0..1 de la celebración de combo jugado: mezcla mitad y mitad el
+        /// tier de drama del total (<see cref="TierForTotal"/>) y el tier por cantidad
+        /// de dados (<see cref="ComboTier"/>) sobre un piso — el par de 2 dados respira
+        /// suave pero visible, la Generala de 5 con total alto satura en 1.
+        /// </summary>
+        public static float ComboCelebrateIntensity(int finalTotal, int t1, int t2, int diceCount)
+        {
+            float totalPart = TierForTotal(finalTotal, t1, t2) / 2f;
+            float comboPart = ComboTier(diceCount) / 3f;
+            return Mathf.Clamp01(0.25f + 0.375f * totalPart + 0.375f * comboPart);
+        }
     }
 }

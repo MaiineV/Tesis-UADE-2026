@@ -58,6 +58,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Puff al revelar la cara (aterrizaje del spin).")]
         private ParticleSystem _revealPuff;
 
+        [SerializeField, Optional, Tooltip("Burst al participar de un combo jugado (UIParticle).")]
+        private ParticleSystem _comboBurst;
+
         [Title("Tuning")]
         [SerializeField, Tooltip("Cara que cuenta como crit para la variante dorada del reveal.")]
         private int _critFace = 6;
@@ -130,6 +133,27 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>Pulso de reaseguro en un reroll: "este dado se queda". Lo dispara <see cref="DiceZoneJuice"/>.</summary>
         public void PlayKeptPulse() => Play(_keptPulsePlayer);
+
+        /// <summary>
+        /// Celebración de "este dado participó del combo jugado". La dispara
+        /// <see cref="Breakdown.BreakdownJuice"/> con valores ya escalados por la
+        /// potencia del combo. Punch de escala + shake de rotación del root — fases
+        /// sin overlap con la capa de motion, que es dueña de la posición siempre
+        /// (por eso acá no se toca anchoredPosition).
+        /// </summary>
+        public void PlayComboCelebrate(int burstCount, float punchScale, float shakeDegrees)
+        {
+            if (_comboBurst != null && burstCount > 0) _comboBurst.Emit(burstCount);
+
+            if (!Application.isPlaying || DiceUiMotionPrefs.ReducedMotion) return;
+            if (punchScale > 0f)
+                Tween.PunchScale(transform, Vector3.one * punchScale, 0.25f, frequency: 2);
+            // Tiempo escalado a propósito (igual que el punch del director sobre los
+            // slots): el hitstop del clash congela la celebración junto con el resto.
+            if (shakeDegrees > 0f)
+                Tween.ShakeLocalRotation(transform, new Vector3(0f, 0f, shakeDegrees), 0.3f,
+                    frequency: 14f);
+        }
 
         private void HandleSpinStarted() => Play(_spinStartPlayer);
 

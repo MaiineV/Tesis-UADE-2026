@@ -112,6 +112,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             _dieIndex = 0;
             _stepIndex = 0;
             _juice?.OnSequenceStart(_script.FinalN, _script.FinalM, _script.FinalTotal);
+            _juice?.OnComboPlayed(payload.Breakdown, _diceZone);
             CacheCounterHomes();
             PopulateSpinner(_script);
             if (_skipButton != null) _skipButton.gameObject.SetActive(true);
