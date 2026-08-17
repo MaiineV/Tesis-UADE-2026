@@ -131,3 +131,7 @@ Rollgeon/.obsidian/core-plugins.json
 /SELECCION_DADOS.jpeg
 /class_selection_capture.png
 /build_selection_capture.png
+
+# Corridas del boss bot (tools/playtest/run-boss-bot.ps1): capturas + logs por corrida.
+# Fuera de Assets/ a proposito — ahi Unity importaria cada PNG y generaria .meta.
+/PlaytestRuns/
