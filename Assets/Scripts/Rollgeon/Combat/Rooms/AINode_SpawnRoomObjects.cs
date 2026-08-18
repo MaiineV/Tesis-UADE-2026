@@ -131,6 +131,13 @@ namespace Rollgeon.Combat.Rooms
 
             public int TurnsUntilRespawn;
 
+            /// <summary>
+            /// El último guid que ocupó la ranura; sobrevive a la rotura. Es lo que se le publica al
+            /// servicio de armadura: mandarle <see cref="Guid.Empty"/> al romperse le saca el guid
+            /// antes de que pueda mirarle la vida, y la ranura le queda intacta para siempre.
+            /// </summary>
+            public Guid LastObjectGuid;
+
             /// <summary>La ranura no vuelve a llenarse: la definición no repone.</summary>
             public bool Retired;
         }
@@ -201,7 +208,7 @@ namespace Rollgeon.Combat.Rooms
             if (context.SelfGuid == Guid.Empty) return;
 
             var guids = new Guid[_slots.Count];
-            for (int i = 0; i < _slots.Count; i++) guids[i] = _slots[i].ObjectGuid;
+            for (int i = 0; i < _slots.Count; i++) guids[i] = _slots[i].LastObjectGuid;
 
             RoomObjectArmorService.ResolveOrCreate()
                 .Publish(context.SelfGuid, guids, Definition.OwnerDamageReductionPerObject);
@@ -271,6 +278,7 @@ namespace Rollgeon.Combat.Rooms
                 if (!IsPlaceable(grid, slot.Coord)) continue;
 
                 slot.ObjectGuid = Spawn(context, grid, slot.Coord);
+                if (slot.ObjectGuid != Guid.Empty) slot.LastObjectGuid = slot.ObjectGuid;
                 _spawnedThisTick = true;
             }
         }

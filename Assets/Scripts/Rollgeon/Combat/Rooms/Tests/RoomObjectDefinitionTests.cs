@@ -455,6 +455,69 @@ namespace Rollgeon.Combat.Rooms.Tests
             (provider as IDisposable)?.Dispose();
         }
 
+        /// <summary>
+        /// Regresión: la mesa que no se repone quedaba reduciendo con todos sus objetos muertos.
+        /// El nodo vacía la ranura del objeto roto en SU tick y vuelve a publicar; publicando el
+        /// vacío, el servicio perdía el guid antes de poder mirarle la vida —su latch saltea las
+        /// ranuras vacías porque no distingue "nunca se llenó" de "se rompió"— y la contaba intacta
+        /// para siempre. Sólo se salvaba si el jugador le pegaba al jefe entre la muerte del objeto
+        /// y el turno del jefe; limpiando la mesa turno a turno, nunca.
+        /// </summary>
+        [Test]
+        public void Tick_AfterCollectingABreak_TheReductionStaysDown()
+        {
+            // Arrange — sin reposición, que es lo que hace visible el bug: si la ranura se repone en
+            // el mismo tick, el publish lleva el guid nuevo y el vacío no llega nunca.
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            _definition.OwnerDamageReductionPerObject = 0.2f;
+            _definition.RespawnDelayTurns = -1;
+            var node = ExplicitNode(new GridCoord(1, 1), new GridCoord(2, 1), new GridCoord(3, 1));
+            node.Tick(NewContext());
+            Assert.IsTrue(node.TryGetSlot(0, out _, out var doomed));
+            Break(doomed);
+
+            // Act — el turno del jefe que recoge la rotura.
+            node.Tick(NewContext());
+
+            // Assert
+            Assert.IsTrue(ServiceLocator.TryGetService<IIncomingDamageMultiplierProvider>(out var provider)
+                          && provider != null);
+            Assert.IsTrue(provider.TryGetMultiplier(_boss, out float multiplier));
+            Assert.AreEqual(0.6f, multiplier, 0.001f,
+                "Dos de tres en pie × 0.2 = 40% de reducción.");
+
+            (provider as IDisposable)?.Dispose();
+        }
+
+        [Test]
+        public void Tick_WithEveryObjectBroken_LeavesTheOwnerWithNoReductionAtAll()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            ServiceLocator.AddService<AttributesManager>(_attributes);
+            _definition.OwnerDamageReductionPerObject = 0.2f;
+            _definition.RespawnDelayTurns = -1;
+            var node = ExplicitNode(new GridCoord(1, 1), new GridCoord(2, 1), new GridCoord(3, 1));
+            node.Tick(NewContext());
+
+            // Act — una rotura por turno, que es como se juega y como se perdía cada latch.
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.IsTrue(node.TryGetSlot(i, out _, out var guid));
+                Break(guid);
+                node.Tick(NewContext());
+            }
+
+            // Assert
+            Assert.IsTrue(ServiceLocator.TryGetService<IIncomingDamageMultiplierProvider>(out var provider)
+                          && provider != null);
+            Assert.IsFalse(provider.TryGetMultiplier(_boss, out _),
+                "Mesa entera rota: el jefe come el golpe completo, sin resto de reducción.");
+
+            (provider as IDisposable)?.Dispose();
+        }
+
         [Test]
         public void Tick_WithoutArmorAuthored_PublishesNothing()
         {

@@ -12,7 +12,7 @@ namespace Rollgeon.Combat.Rooms.Tests
     /// recibe se reduce, y romper uno se lo devuelve al jugador para siempre.
     /// </summary>
     /// <remarks>
-    /// Los números de La Generala (5 dados × 0.14 = 70%) se pinean en
+    /// Los números de La Generala (5 dados × 0.1 = 50%) se pinean en
     /// <c>GeneralaAssetBuilderTests</c>; acá la mecánica se prueba con valores redondos.
     /// </remarks>
     [TestFixture]

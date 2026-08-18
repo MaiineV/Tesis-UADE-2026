@@ -65,7 +65,7 @@ namespace Rollgeon.Combat.Rooms
         [Header("Owner armor")]
         [Tooltip("Fraction of incoming damage each one of these still standing takes off its OWNER. " +
                  "0 = no armor, which is the default: an object is terrain until someone says " +
-                 "otherwise. Five of these at 0.14 make the boss take 70% less until you break them, " +
+                 "otherwise. Five of these at 0.1 make the boss take 50% less until you break them, " +
                  "and a broken one gives its share back for good. See RoomObjectArmorService.")]
         [Range(0f, 1f)]
         public float OwnerDamageReductionPerObject;

@@ -21,4 +21,4 @@ MonoBehaviour:
   VisualPrefab: {fileID: 191739518141893201, guid: 980e936c83588b3438314f35ab6eecd1, type: 3}
   Portrait: {fileID: 0}
   OnDeathHazard: {fileID: 0}
-  OwnerDamageReductionPerObject: 0.14
+  OwnerDamageReductionPerObject: 0.1

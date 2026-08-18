@@ -96,7 +96,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// dado roto y <b>no vuelve</b>: es lo que hace que desarmarla compre algo estable. Ver
         /// <c>RoomObjectArmorService</c>.
         /// </summary>
-        public const float TableArmorMax = 0.7f;
+        public const float TableArmorMax = 0.5f;
 
         /// <summary>
         /// Lo que descuenta cada dado en pie. Sale de la división y no de un literal: autorar 0.15
