@@ -145,6 +145,39 @@ namespace Rollgeon.UI.Tests
             Assert.AreNotSame(holo, icon.material, "sin encantamiento vuelve al material default");
         }
 
+        [Test]
+        public void should_show_the_cursed_material_only_on_a_cursed_die()
+        {
+            // Arrange — mismo contrato que DiceSlotView: CapCursed ⇒ material maldito,
+            // encantamiento bueno ⇒ holo.
+            var card = MakeCard(out _, out _, out _, out _);
+            var holo = new Material(Shader.Find("UI/Default"));
+            var cursed = new Material(Shader.Find("UI/Default"));
+            _spawned.Add(holo);
+            _spawned.Add(cursed);
+            SetPrivate(card, "_enchantMaterial", holo);
+            SetPrivate(card, "_cursedMaterial", cursed);
+            var icon = (Image)GetPrivate(card, "_diceIcon");
+
+            var goodEnchantment = ScriptableObject.CreateInstance<EnchantmentSO>();
+            var cursedEnchantment = ScriptableObject.CreateInstance<EnchantmentSO>();
+            _spawned.Add(goodEnchantment);
+            _spawned.Add(cursedEnchantment);
+            SetPrivate(cursedEnchantment, "_capabilities",
+                new List<IEnchantmentCapability> { new CapCursed() });
+
+            // Act + Assert
+            card.SetEnchantVisual(cursedEnchantment);
+            Assert.AreSame(cursed, icon.material);
+
+            card.SetEnchantVisual(goodEnchantment);
+            Assert.AreSame(holo, icon.material, "un encantamiento bueno mantiene el holo");
+
+            card.SetEnchantVisual(null);
+            Assert.AreNotSame(cursed, icon.material, "sin encantamiento vuelve al material default");
+            Assert.AreNotSame(holo, icon.material, "sin encantamiento vuelve al material default");
+        }
+
         // ------------------------------------------------------------------
         // Cupo
         // ------------------------------------------------------------------
