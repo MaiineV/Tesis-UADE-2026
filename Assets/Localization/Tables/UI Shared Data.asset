@@ -627,6 +627,10 @@ MonoBehaviour:
     m_Key: tutorial.reroll_teach
     m_Metadata:
       m_Items: []
+  - m_Id: 11862063171076096
+    m_Key: contract.header.description
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

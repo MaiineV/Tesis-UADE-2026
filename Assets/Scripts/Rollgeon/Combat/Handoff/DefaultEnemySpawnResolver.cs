@@ -11,6 +11,7 @@ using Rollgeon.Dungeon.State;
 using Rollgeon.Economy;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Bosses;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
@@ -49,6 +50,7 @@ namespace Rollgeon.Combat.Handoff
         private readonly EnemyGoldDropService _goldDrops;
         private readonly IEntityPortraitResolver _portraits;
         private readonly IRunContextService _runContext;
+        private readonly IFloorProgressionService _floorProgression;
 
         /// <summary>
         /// One-shot: cuando es <c>true</c>, el próximo re-spawn desde estado guardado usa
@@ -68,7 +70,8 @@ namespace Rollgeon.Combat.Handoff
             IEntityVisualService visuals = null,
             EnemyGoldDropService goldDrops = null,
             IEntityPortraitResolver portraits = null,
-            IRunContextService runContext = null)
+            IRunContextService runContext = null,
+            IFloorProgressionService floorProgression = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
@@ -78,6 +81,7 @@ namespace Rollgeon.Combat.Handoff
             _goldDrops = goldDrops;
             _portraits = portraits;
             _runContext = runContext;
+            _floorProgression = floorProgression;
         }
 
         /// <summary>
@@ -149,7 +153,7 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // 2. Primer spawn de la sala.
-            var plan = BuildSpawnPlan(room, layout, rng);
+            var plan = BuildSpawnPlan(room, layout, rng, instance.Boss);
             int spawnIndex = 0;
             foreach (var planned in plan)
             {
@@ -182,7 +186,8 @@ namespace Rollgeon.Combat.Handoff
         // Internals
         // -----------------------------------------------------------------
 
-        private List<PlannedSpawn> BuildSpawnPlan(RoomSO room, RoomLayout layout, System.Random rng)
+        private List<PlannedSpawn> BuildSpawnPlan(
+            RoomSO room, RoomLayout layout, System.Random rng, EnemyDataSO rolledBoss)
         {
             int floor = CurrentFloorNumber;
 
@@ -192,6 +197,21 @@ namespace Rollgeon.Combat.Handoff
             {
                 var forced = BuildPlanFromSetups(room, rng, floor);
                 if (forced != null) return forced;
+            }
+
+            // Boss pool del piso: le gana a los SpawnPointConfig del prefab. Los 3 prefabs
+            // de boss room traen su boss clavado en el spawn point, así que la precedencia
+            // se resuelve acá por código — no vaciando data que el resto del wiring usa.
+            if (room.Type == RoomType.Boss)
+            {
+                var boss = ResolveBossForFloor(rng, rolledBoss);
+                if (boss != null)
+                {
+                    return new List<PlannedSpawn>
+                    {
+                        new PlannedSpawn(boss, boss.ResolveTierForFloor(floor))
+                    };
+                }
             }
 
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
@@ -279,6 +299,41 @@ namespace Rollgeon.Combat.Handoff
                 plan.Add(new PlannedSpawn(slot.Enemy, tier));
             }
             return plan;
+        }
+
+        /// <summary>
+        /// Boss de la sala, por precedencia: el override one-shot de la dev console, después el
+        /// que roleó la generación del piso, y por último el <see cref="BossPoolSO"/> del piso
+        /// actual. <c>null</c> en todos los eslabones (sin override, sin boss rolado, sin
+        /// progresión, piso sin pool, pool sin entries) ⇒ el caller sigue con el path de spawn
+        /// de siempre, sin ruido en consola.
+        /// </summary>
+        /// <param name="rolledBoss">
+        /// El de <c>RoomInstance.Boss</c>: lo decidió la generación junto con la sala, así que
+        /// re-rolear acá daría un boss que no se corresponde con la sala instanciada.
+        /// </param>
+        private EnemyDataSO ResolveBossForFloor(System.Random rng, EnemyDataSO rolledBoss)
+        {
+            if (ServiceLocator.TryGetService<IBossSelectionOverride>(out var bossOverride)
+                && bossOverride != null
+                && bossOverride.TryConsume(out var forcedBoss)
+                && forcedBoss != null)
+            {
+                return forcedBoss;
+            }
+
+            if (rolledBoss != null) return rolledBoss;
+
+            var progression = _floorProgression;
+            if (progression == null)
+                ServiceLocator.TryGetService<IFloorProgressionService>(out progression);
+            if (progression == null) return null;
+
+            var layout = progression.CurrentLayout;
+            var pool = layout != null ? layout.BossPool : null;
+            if (pool == null) return null;
+
+            return pool.Roll(rng);
         }
 
         private Guid RegisterEnemy(

@@ -49,6 +49,15 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
         private GameObject _lockIcon;
 
+        [SerializeField, Optional]
+        [Tooltip("Qué se llevó el dado, escrito sobre el candado (el Croupier pone el número que " +
+                 "cantó). Vacío ⇒ candado pelado, que es lo correcto para los jefes que sortean al " +
+                 "azar: ahí no hay nada que explicar. Opcional.")]
+        private TextMeshProUGUI _lockLabel;
+
+        /// <summary>Nombre del hijo del label del candado — lo busca el instalador del HUD.</summary>
+        public const string LockLabelChildName = "LockLabel";
+
         [Title("Breakdown")]
         [SerializeField, Optional]
         [Tooltip("Label '+N' bajo el dado: lo que este dado suma al combo (cara + bonos de " +
@@ -255,13 +264,31 @@ namespace Rollgeon.UI.HUD
         /// Boss 1 (§2) — marca el dado como bloqueado: grayed-out + ícono de candado, y desactiva
         /// el botón de hold. Al desbloquear, restaura el botón y el visual según el estado real.
         /// </summary>
-        public void SetBlocked(bool blocked)
+        /// <param name="label">
+        /// Qué se lo llevó, escrito sobre el candado. Con el Croupier es el número que cantó la
+        /// ruleta, y es lo que ata el sector que va a caer con el dado que falta. <c>null</c> o vacío
+        /// ⇒ candado pelado.
+        /// </param>
+        /// <remarks>
+        /// La etiqueta <b>no</b> es la posición del dado: el índice sale de <c>número % dados</c>, así
+        /// que con seis sectores y cinco dados el 6 confisca el primero. Dice <i>quién</i> se lo
+        /// llevó; <i>cuál</i> ya lo marca el candado.
+        /// </remarks>
+        public void SetBlocked(bool blocked, string label = null)
         {
             _blocked = blocked;
             if (_lockIcon != null) _lockIcon.SetActive(blocked);
             if (_button != null) _button.interactable = !blocked;
             if (_background != null)
                 _background.color = blocked ? BlockedColor : _defaultColor;
+
+            if (_lockLabel != null)
+            {
+                bool hasLabel = blocked && !string.IsNullOrEmpty(label);
+                _lockLabel.text = hasLabel ? label : string.Empty;
+                _lockLabel.gameObject.SetActive(hasLabel);
+            }
+
             RefreshShape();
         }
 

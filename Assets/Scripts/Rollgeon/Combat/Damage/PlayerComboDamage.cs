@@ -114,7 +114,9 @@ namespace Rollgeon.Combat.Damage
                 for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
 
             int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
-            float m = scratchMultiplier * abilityMultiplier;
+            // La palanca de playtest entra en m y no en n para que escale el golpe entero y no sólo
+            // el término aditivo. Con PlayerDamageDebug apagado esto es ×1 y la fórmula es la real.
+            float m = scratchMultiplier * abilityMultiplier * PlayerDamageDebug.Multiplier;
             int total = block ? 0 : RoundNxM(n, m);
 
             breakdown = new DamageBreakdown

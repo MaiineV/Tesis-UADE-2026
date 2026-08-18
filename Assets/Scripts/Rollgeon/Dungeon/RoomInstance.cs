@@ -25,6 +25,14 @@ namespace Rollgeon.Dungeon
 
         public RoomSO Template;
 
+        /// <summary>
+        /// Boss rolado para esta sala, sólo en salas de tipo Boss. Se decide en la generación
+        /// del piso (<c>FloorTopologyPlanner.AssignBosses</c>) y no al entrar al combate, para
+        /// que <see cref="Template"/> pueda ser la sala propia de ese boss. Null = el resolver
+        /// rolea el pool como antes.
+        /// </summary>
+        public Entities.EnemyDataSO Boss;
+
         /// <summary>Null si Template no tiene RoomPrefab; vive todo el piso.</summary>
         public GameObject SpawnedPrefab;
 

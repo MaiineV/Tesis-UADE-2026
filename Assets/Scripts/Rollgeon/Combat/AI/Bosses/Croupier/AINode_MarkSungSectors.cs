@@ -1,0 +1,76 @@
+using System;
+using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.Pipelines;
+using Sirenix.OdinInspector;
+using UnityEngine;
+
+namespace Rollgeon.Combat.AI.Bosses.Croupier
+{
+    /// <summary>
+    /// Marca como amenazado el sector de cada número que el Croupier acaba de cantar
+    /// (<see cref="AINode_SpinWheel"/>) para que detone en su próximo turno
+    /// (<see cref="AINode_DetonateSungSectors"/>). No hace daño este turno.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Es el equivalente de <c>AINode_TelegraphMark</c> para este jefe, y existe por dos razones que el
+    /// nodo genérico no cubre: el área sale de un número decidido en runtime (no de un <c>Size</c>
+    /// autorado) y en fase 2 hay <b>dos</b> áreas simultáneas, que tienen que resolverse por separado
+    /// para que la columna de costura cobre los dos golpes. Ver
+    /// <see cref="CroupierSectorTelegraph"/>.
+    /// </para>
+    /// <para>
+    /// <b>El daño se congela al marcar.</b> Cada área guarda el daño con el que se marcó, así que un
+    /// sector marcado en fase 1 detona por 20 aunque el jefe cruce el umbral en el medio. La fase
+    /// cambia lo que canta de ahí en adelante, no lo que ya está en la mesa.
+    /// </para>
+    /// </remarks>
+    [Serializable, HideReferenceObjectPicker]
+    public sealed class AINode_MarkSungSectors : AIActionNode
+    {
+        [Tooltip("Daño del sector en fase 1 (un solo número cantado).")]
+        [MinValue(0)]
+        public int SectorDamage = 20;
+
+        [Tooltip("Daño de CADA sector en fase 2. Los dos sectores se resuelven por separado: en la " +
+                 "columna de costura, donde se pisan, el jugador cobra los dos (2 × este valor).")]
+        [MinValue(0)]
+        public int SectorDamagePhase2 = 12;
+
+        [Tooltip("Tipo de ataque del DamageContext al detonar.")]
+        public AttackKind Kind = AttackKind.BasicAttack;
+
+        public override string NodeName => $"Mark Sung Sectors (Croupier, {SectorDamage}/{SectorDamagePhase2})";
+
+        public override AIResult Tick(AIContext context)
+        {
+            if (context == null || context.SelfGuid == Guid.Empty) return AIResult.Failed;
+
+            var wheel = CroupierWheelService.ResolveOrCreate();
+            if (wheel == null) return AIResult.Failed;
+
+            var numbers = wheel.SungNumbers;
+            if (numbers == null || numbers.Count == 0) return AIResult.Failed;
+
+            int damage = wheel.PhaseIndex >= 2 ? SectorDamagePhase2 : SectorDamage;
+
+            bool markedAny = false;
+            for (int slot = 0; slot < numbers.Count; slot++)
+            {
+                if (!CroupierSectorTelegraph.Mark(context.SelfGuid, slot, numbers[slot], damage, Kind)) continue;
+
+                wheel.RecordMark(slot, damage, Kind);
+                markedAny = true;
+            }
+
+            if (!markedAny)
+            {
+                Debug.LogWarning("[AINode_MarkSungSectors] No se marcó ningún sector — ¿sala sin bounds " +
+                                 "o IThreatenedAreaService sin registrar? El paño no va a detonar.");
+                return AIResult.Failed;
+            }
+
+            return AIResult.Succeeded;
+        }
+    }
+}

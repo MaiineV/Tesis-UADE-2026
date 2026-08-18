@@ -3711,6 +3711,7 @@ MonoBehaviour:
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
   DoorSlots: []
+  BossDoorPrefab: {fileID: 4349409642055064947, guid: d40ad2ec1ecd39d48bb1abf4ee3a72bb, type: 3}
   LocalBounds:
     m_Center: {x: 0, y: 1.0504063, z: 0.49999952}
     m_Extent: {x: 6.00375, y: 1.5504069, z: 6.50375}

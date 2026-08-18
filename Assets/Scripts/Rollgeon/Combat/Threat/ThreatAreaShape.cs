@@ -4,6 +4,11 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>Forma del área telegráfica. Cada Boss usa una distinta (Sistemas prerequisito Bosses §1).</summary>
+    /// <remarks>
+    /// Los índices viajan serializados en los <c>.asset</c> de los jefes: las formas nuevas se
+    /// appendean al final. Reordenar o insertar en el medio le cambia la forma a jefes ya
+    /// autorados sin tocar ningún asset.
+    /// </remarks>
     public enum ThreatShape
     {
         /// <summary>Cuadrado (2·radio+1) centrado en el jugador. Boss 1 — cruz/área 3×3 (radio 1).</summary>
@@ -38,6 +43,36 @@ namespace Rollgeon.Combat.Threat
         /// del boss, no la del jugador.
         /// </summary>
         SquareAroundSelf,
+
+        /// <summary>
+        /// Uno de los seis sectores del paño del Croupier (3 columnas × 2 filas de bloques),
+        /// numerados 1-2-3 arriba y 4-5-6 abajo. Ni el jugador ni el boss son el centro: el
+        /// sector se elige por índice, que en <see cref="ThreatAreaShape.Compute"/> viaja en el
+        /// parámetro <c>size</c> (1..6). Los seis bloques <b>cubren la sala entera</b>: ninguna
+        /// casilla caminable queda fuera de la numeración. Ver
+        /// <see cref="ThreatAreaShape.ComputeRoomSector"/>.
+        /// </summary>
+        RoomSector,
+
+        /// <summary>
+        /// Toda la sala caminable MENOS el cuadrado (2·radio+1) centrado en el propio boss — La
+        /// Banca del Tahúr con el pozo en 5: cobra en todos lados salvo La Mesa, su 3×3. Es el
+        /// complemento de <see cref="SquareAroundSelf"/>, así que el centro también es la
+        /// coordenada del boss. Ver <see cref="ThreatAreaShape.ComputeAllExceptSquareAroundSelf"/>.
+        /// </summary>
+        AllExceptSquareAroundSelf,
+
+        /// <summary>
+        /// Franja vertical centrada en el propio boss — la columna del Cajero. Misma matemática que
+        /// <see cref="Column"/>, pero el centro es la coordenada del boss.
+        /// </summary>
+        /// <remarks>
+        /// No es sólo de dónde sale el visual: cambia la lectura de la pelea. Anclada en el jugador
+        /// la columna lo persigue y se esquiva con un paso al costado; anclada en el jefe es una
+        /// franja fija que él ocupa, así que el jugador elige acercarse por otra columna en vez de
+        /// bailar. La presión sigue viniendo del disparo, que es lo que castiga quedarse lejos.
+        /// </remarks>
+        ColumnAroundSelf,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -61,10 +96,12 @@ namespace Rollgeon.Combat.Threat
         /// Devuelve las casillas amenazadas. <paramref name="size"/> es el radio para
         /// <see cref="ThreatShape.SquareAroundPlayer"/>/<see cref="ThreatShape.SquareAroundSelf"/>
         /// (1 ⇒ 3×3) y el ancho (en casillas) de la franja para <see cref="ThreatShape.Row"/> /
-        /// <see cref="ThreatShape.Column"/> (1 ⇒ la línea del jugador; 3 ⇒ ±1). Ignorado para
-        /// <see cref="ThreatShape.HalfRoom"/>. <paramref name="center"/> es la coordenada del
-        /// jugador para todas las shapes salvo <see cref="ThreatShape.SquareAroundSelf"/>, donde
-        /// es la del boss — la resuelve el caller (ver <see cref="Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark"/>).
+        /// <see cref="ThreatShape.Column"/> (1 ⇒ la línea del jugador; 3 ⇒ ±1), y el radio del
+        /// hueco para <see cref="ThreatShape.AllExceptSquareAroundSelf"/> (1 ⇒ hueco 3×3).
+        /// Ignorado para <see cref="ThreatShape.HalfRoom"/>. <paramref name="center"/> es la
+        /// coordenada del jugador salvo en las shapes que devuelven <c>true</c> en
+        /// <see cref="AnchorsOnSelf"/>, donde es la del boss — la resuelve el caller (ver
+        /// <see cref="Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark"/>).
         /// </summary>
         public static HashSet<GridCoord> Compute(
             IGridManager grid, GridCoord center, ThreatShape shape, int size, HalfRoomAxis axis)
@@ -95,7 +132,10 @@ namespace Rollgeon.Combat.Threat
                     break;
                 }
 
+                // Misma cuenta para las dos: lo único que cambia es quién es `center`, y eso lo
+                // resolvió el caller vía AnchorsOnSelf antes de llegar acá.
                 case ThreatShape.Column:
+                case ThreatShape.ColumnAroundSelf:
                 {
                     int half = HalfBand(size);
                     foreach (var c in RoomTiles(grid))
@@ -108,9 +148,195 @@ namespace Rollgeon.Combat.Threat
                     AddHalfRoom(grid, center, axis, result);
                     break;
                 }
+
+                case ThreatShape.RoomSector:
+                {
+                    // El índice del sector viaja en `size` — mismo criterio que el resto de las
+                    // shapes, donde ese parámetro ya significa cosas distintas según la forma
+                    // (radio / ancho de franja / lado del cuadrado). `center` no se usa: el
+                    // sector no está centrado en nadie.
+                    result.UnionWith(ComputeRoomSector(grid, size));
+                    break;
+                }
+
+                case ThreatShape.AllExceptSquareAroundSelf:
+                {
+                    result.UnionWith(ComputeAllExceptSquareAroundSelf(grid, center, size));
+                    break;
+                }
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// <c>true</c> si la shape se ancla en la coordenada del propio boss en vez de la del
+        /// jugador.
+        /// </summary>
+        /// <remarks>
+        /// El caller resuelve el <c>center</c> antes de llamar a <see cref="Compute"/>, pero el
+        /// criterio es de la forma, no del nodo: vive acá para que agregar una shape anclada en el
+        /// boss no dependa de acordarse de tocar cada call site.
+        /// </remarks>
+        public static bool AnchorsOnSelf(ThreatShape shape) =>
+            shape == ThreatShape.SquareAroundSelf ||
+            shape == ThreatShape.AllExceptSquareAroundSelf ||
+            shape == ThreatShape.ColumnAroundSelf;
+
+        /// <summary>
+        /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)
+        /// centrado en <paramref name="self"/> — La Banca del Tahúr: cobra en todos lados salvo
+        /// La Mesa, el 3×3 que el jefe arrastra consigo.
+        /// </summary>
+        /// <remarks>
+        /// El hueco se recorta solo: se filtra por distancia Chebyshev en vez de restar un cuadrado
+        /// proyectado, así contra una pared queda del tamaño que entre sin ningún caso especial.
+        /// Sala sin bounds ⇒ vacío, igual que el resto de las shapes que enumeran la sala.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeAllExceptSquareAroundSelf(
+            IGridManager grid, GridCoord self, int radius)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            int r = radius < 0 ? 0 : radius;
+            foreach (var c in RoomTiles(grid))
+                if (c.Chebyshev(self) > r) result.Add(c);
+
+            return result;
+        }
+
+        /// <summary>Cantidad de sectores del paño (3 columnas × 2 filas de bloques).</summary>
+        public const int RoomSectorCount = 6;
+
+        /// <summary>
+        /// Casillas del sector <paramref name="sector"/> (1..6) del paño del Croupier: 1-2-3 la
+        /// fila de bloques de arriba (izquierda → derecha), 4-5-6 la de abajo. Cada sector es el
+        /// cruce de una banda de columnas (1 de 3) con una banda de filas (1 de 2), y las bandas
+        /// de los dos ejes salen de la misma regla (<see cref="Band"/>).
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Los seis bloques cubren la sala entera.</b> Es la invariante que sostiene la pelea:
+        /// una casilla que no pertenece a ningún sector no se prende fuego nunca, y pararse ahí
+        /// vuelve gratis todo el jefe.
+        /// </para>
+        /// <para>
+        /// Costuras, no huecos: cada banda mide <c>ceil(extensión/bandas)</c> y la última se ancla
+        /// al borde lejano, así que con extensión no múltiplo las bandas se <i>solapan</i> en vez de
+        /// dejar hueco. Las franjas de solape caen con el doble de frecuencia — que la del jefe sea
+        /// una de ellas es deliberado, es lo que impide acampar a su lado.
+        /// </para>
+        /// <para>
+        /// Sala sin bounds o índice fuera de 1..6 ⇒ vacío.
+        /// </para>
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeRoomSector(IGridManager grid, int sector)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+            if (sector < 1 || sector > RoomSectorCount) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            RoomBounds(tiles, out int minX, out int maxX, out int minY, out int maxY);
+
+            int column = (sector - 1) % RoomSectorColumns;                 // 0 izq, 1 medio, 2 der
+            int row = sector <= RoomSectorColumns ? 1 : 0;                 // 1 arriba, 0 abajo
+
+            Band(minX, maxX, column, RoomSectorColumns, out int loX, out int hiX);
+            Band(minY, maxY, row, RoomSectorRows, out int loY, out int hiY);
+
+            foreach (var c in tiles)
+            {
+                if (c.X < loX || c.X > hiX) continue;
+                if (c.Y < loY || c.Y > hiY) continue;
+                result.Add(c);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Fila (o filas) de costura: las casillas que pertenecen a la vez a un bloque de arriba y
+        /// a uno de abajo. Vacío si la altura de la sala es par —ahí las dos bandas encajan justas—
+        /// o si la sala no tiene bounds reales.
+        /// </summary>
+        /// <remarks>
+        /// Expuesto porque la costura es una lectura de diseño en sí misma (la franja que cae con
+        /// el doble de frecuencia, y donde vivía el viejo pasillo seguro): lo consumen los tests de
+        /// invariante y cualquier feedback que quiera pintarla. Sale de las mismas
+        /// <see cref="Band"/> que <see cref="ComputeRoomSector"/> para que las dos definiciones no
+        /// puedan divergir.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeSeamRow(IGridManager grid)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            RoomBounds(tiles, out _, out _, out int minY, out int maxY);
+
+            Band(minY, maxY, 0, RoomSectorRows, out int lowerLo, out int lowerHi);
+            Band(minY, maxY, 1, RoomSectorRows, out int upperLo, out int upperHi);
+
+            int lo = System.Math.Max(lowerLo, upperLo);
+            int hi = System.Math.Min(lowerHi, upperHi);
+
+            foreach (var c in tiles)
+                if (c.Y >= lo && c.Y <= hi) result.Add(c);
+
+            return result;
+        }
+
+        /// <summary>Bandas de columnas del paño: 1-2-3 / 4-5-6 son tres columnas de bloques.</summary>
+        public const int RoomSectorColumns = 3;
+
+        /// <summary>Bandas de filas del paño: los de arriba y los de abajo.</summary>
+        public const int RoomSectorRows = 2;
+
+        /// <summary>
+        /// Banda <paramref name="index"/> de <paramref name="count"/> sobre <c>[min,max]</c>.
+        /// </summary>
+        /// <remarks>
+        /// Tamaño <c>ceil(extensión/count)</c> y la última banda anclada al borde lejano. Con una
+        /// extensión que no divide justo, eso hace que las bandas se solapen en una costura en vez
+        /// de dejar un hueco: la unión de las <paramref name="count"/> bandas es siempre
+        /// <c>[min,max]</c> completo, que es la invariante de la que cuelga el jefe.
+        /// </remarks>
+        private static void Band(int min, int max, int index, int count, out int lo, out int hi)
+        {
+            int extent = max - min + 1;
+            int size = (extent + count - 1) / count; // ceil(extent/count)
+
+            bool last = index >= count - 1;
+            lo = last ? max - size + 1 : min + index * size;
+            hi = last ? max : lo + size - 1;
+
+            // Clamp de las dos puntas: en salas más chicas que la cantidad de bandas el ancla del
+            // borde lejano puede caerse afuera, y una banda vacía sería otra vez un hueco.
+            if (lo < min) lo = min;
+            if (lo > max) lo = max;
+            if (hi > max) hi = max;
+            if (hi < min) hi = min;
+        }
+
+        private static void RoomBounds(
+            List<GridCoord> tiles, out int minX, out int maxX, out int minY, out int maxY)
+        {
+            minX = int.MaxValue; maxX = int.MinValue;
+            minY = int.MaxValue; maxY = int.MinValue;
+
+            foreach (var c in tiles)
+            {
+                if (c.X < minX) minX = c.X;
+                if (c.X > maxX) maxX = c.X;
+                if (c.Y < minY) minY = c.Y;
+                if (c.Y > maxY) maxY = c.Y;
+            }
         }
 
         /// <summary>
@@ -317,11 +543,18 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        // Casillas reales de la sala. Si el grafo está poblado, usamos sus nodos (maneja
-        // salas no rectangulares y orígenes arbitrarios). Si está vacío (stub "infinito"),
-        // no hay extensión que enumerar → vacío; las formas Row/Column/HalfRoom requieren
-        // una sala con bounds reales (siempre el caso en combate).
-        private static IEnumerable<GridCoord> RoomTiles(IGridManager grid)
+        /// <summary>
+        /// Casillas caminables reales de la sala. Si el grafo está poblado, usa sus nodos (maneja
+        /// salas no rectangulares y orígenes arbitrarios). Si está vacío (stub "infinito"), no hay
+        /// extensión que enumerar → vacío; las formas Row/Column/HalfRoom requieren una sala con
+        /// bounds reales (siempre el caso en combate).
+        /// </summary>
+        /// <remarks>
+        /// Pública porque no es sólo de las shapes: cualquier sistema que necesite "toda la sala
+        /// menos X" —el overlay del mostrador del Cajero, por ejemplo— tiene que enumerarla igual, y
+        /// duplicar el manejo del grafo vacío es exactamente donde divergen.
+        /// </remarks>
+        public static IEnumerable<GridCoord> RoomTiles(IGridManager grid)
         {
             var graph = grid.Graph;
             if (graph == null || graph.IsEmpty) yield break;

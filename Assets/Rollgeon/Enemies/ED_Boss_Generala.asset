@@ -1,0 +1,999 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Boss_Generala
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 6f12a6e90ddc6024d9397cdaabf28223, type: 2}
+    - {fileID: 11400000, guid: 94ef097aa99fc544c8ec09256ca43134, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Behaviors
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIRoot
+      Entry: 7
+      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 9
+    - Name: 
+      Entry: 7
+      Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.boss.generala.range
+    - Name: ImpactEventKey
+      Entry: 1
+      Data: hit
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 4|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 6|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Percent
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 9|Rollgeon.Combat.AI.Decisions.AINode_Once, Rollgeon
+    - Name: Child
+      Entry: 7
+      Data: 10|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 12|Rollgeon.Combat.AI.Decisions.AINode_SetHandReroll, Rollgeon
+    - Name: RerollsPerRound
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 13|Rollgeon.Combat.AI.Decisions.AINode_AdoptWeakness, Rollgeon
+    - Name: LogWindow
+      Entry: 3
+      Data: 8
+    - Name: MultiplierOverride
+      Entry: 4
+      Data: 1.5
+    - Name: FailWhenLogEmpty
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 14|Rollgeon.Combat.AI.Decisions.AINode_ApplyStatModifier, Rollgeon
+    - Name: AttackDelta
+      Entry: 3
+      Data: 0
+    - Name: SpeedDelta
+      Entry: 3
+      Data: 0
+    - Name: PhaseIndex
+      Entry: 3
+      Data: 2
+    - Name: EmitPhaseChangedEvent
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 15|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 16|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 18|Rollgeon.Combat.Rooms.AINode_SpawnRoomObjects, Rollgeon
+    - Name: Definition
+      Entry: 10
+      Data: 0
+    - Name: Count
+      Entry: 3
+      Data: 5
+    - Name: Pattern
+      Entry: 3
+      Data: 5
+    - Name: Side
+      Entry: 3
+      Data: 0
+    - Name: Coords
+      Entry: 7
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Grid.GridCoord, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: SpawnFeedbackId
+      Entry: 1
+      Data: anim.boss.generala.summon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 20|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 21|Rollgeon.Combat.AI.Decisions.AINode_RollHand, Rollgeon
+    - Name: SizeSource
+      Entry: 3
+      Data: 0
+    - Name: MaxDice
+      Entry: 3
+      Data: 5
+    - Name: DieFaces
+      Entry: 3
+      Data: 6
+    - Name: SlowCombos
+      Entry: 7
+      Data: 22|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 1
+      Data: combo.generala
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: RollFeedbackId
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 23|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 25|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaCupSlam, Rollgeon
+    - Name: Damage
+      Entry: 3
+      Data: 12
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: Metric
+      Entry: 3
+      Data: 0
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: AnimFeedbackIdOverride
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 26|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 7
+    - Name: 
+      Entry: 7
+      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 30|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 31|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 0
+    - Name: ComboId
+      Entry: 1
+      Data: combo.generala
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 5
+    - Name: Size
+      Entry: 3
+      Data: 3
+    - Name: Depth
+      Entry: 3
+      Data: 2
+    - Name: Count
+      Entry: 3
+      Data: 8
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 45
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 35|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 0
+    - Name: ComboId
+      Entry: 1
+      Data: combo.poker
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 0
+    - Name: Size
+      Entry: 3
+      Data: 2
+    - Name: Depth
+      Entry: 3
+      Data: 2
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 45
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 38|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 39|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 0
+    - Name: ComboId
+      Entry: 1
+      Data: combo.full_house
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 5
+    - Name: Size
+      Entry: 3
+      Data: 3
+    - Name: Depth
+      Entry: 3
+      Data: 2
+    - Name: Count
+      Entry: 3
+      Data: 2
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 20
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 42|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 43|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 0
+    - Name: ComboId
+      Entry: 1
+      Data: combo.ladder
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 4
+    - Name: Size
+      Entry: 3
+      Data: 1
+    - Name: Depth
+      Entry: 3
+      Data: 4
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 45
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 45|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 46|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 47|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 0
+    - Name: ComboId
+      Entry: 1
+      Data: combo.pair
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 4
+    - Name: Size
+      Entry: 3
+      Data: 1
+    - Name: Depth
+      Entry: 3
+      Data: 3
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 25
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 50|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 51|Rollgeon.PreConditions.Concretes.PcBossHandCombo, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Match
+      Entry: 3
+      Data: 1
+    - Name: ComboId
+      Entry: 1
+      Data: combo.generala
+    - Name: RequireArmed
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 52|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: Shape
+      Entry: 3
+      Data: 4
+    - Name: Size
+      Entry: 3
+      Data: 0
+    - Name: Depth
+      Entry: 3
+      Data: 3
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 18
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 53|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 54|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 55|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 56|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 57|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 58|Rollgeon.PreConditions.Concretes.PcRoundNumber, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Mode
+      Entry: 3
+      Data: 3
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 59|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaFrostRing, Rollgeon
+    - Name: Hazard
+      Entry: 10
+      Data: 1
+    - Name: Radius
+      Entry: 3
+      Data: 1
+    - Name: Solid
+      Entry: 5
+      Data: true
+    - Name: StunTurns
+      Entry: 3
+      Data: 1
+    - Name: ReplacePreviousRing
+      Entry: 5
+      Data: true
+    - Name: AnimFeedbackIdOverride
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 60|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 61|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 62|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 63|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+    - Name: Target
+      Entry: 3
+      Data: 1
+    - Name: Count
+      Entry: 3
+      Data: 1
+    - Name: DirectedIndex
+      Entry: 6
+      Data: 
+    - Name: BlockVfxId
+      Entry: 6
+      Data: 
+    - Name: BlockFeelId
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 64|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 65|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 67|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: MaxSteps
+      Entry: 7
+      Data: 68|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 4
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 69|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: DesiredRange
+      Entry: 7
+      Data: 70|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: StopAdjacent
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 71|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: boss.la_generala
+  DisplayName: La Generala
+  Description: "The house playing your own game. Five dice of her own on the table,
+    the same combo sheet you use, and one hand per round. Her roll is public before
+    it detonates: you see the five numbers and you know what is coming. Break a die
+    and you erase a category \u2014 with four she cannot roll Generala, with three
+    she loses Poker \u2014 and you open a hole in a room made of her own dice. Walking
+    up to the table is not free: every roll brings the cup down on whoever is standing
+    next to her."
+  Portrait: {fileID: -1548411135, guid: 2ea80cde72873384bac9f8c1ad22fc73, type: 3}
+  WeaknessComboId: combo.generala
+  WeaknessMultiplierOverride: 1.5
+  BaseHP: 240
+  BaseAttack: 40
+  BaseHealStrength: 0
+  BaseSpeed: 4
+  MaxEnergy: 3
+  BaseAttackRange: 1
+  ExtraTiers: []
+  VisualPrefab: {fileID: 322360141667145346, guid: 118ca78e894b6b049b01efbc0d3e2a18, type: 3}
+  MinGoldDrop: 60
+  MaxGoldDrop: 80

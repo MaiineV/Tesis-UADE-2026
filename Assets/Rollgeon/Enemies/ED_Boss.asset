@@ -59,7 +59,7 @@ MonoBehaviour:
   EntityId: Boss01
   DisplayName: Boss Test
   Description: 
-  Portrait: {fileID: -2114528188, guid: 05b0a715b01245d4087eaf3431f05722, type: 3}
+  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 100

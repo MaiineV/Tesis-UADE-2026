@@ -214,10 +214,129 @@ namespace Rollgeon.Combat.AI.Tests
 
         // ---- Fakes -------------------------------------------------------
 
+        // --- La apertura del combate -------------------------------------------------
+
+        /// <summary>Dispara el evento con el que <c>TurnOrderService</c> anuncia la cola de la ronda.</summary>
+        private void BuildQueue(int round) =>
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, new List<Guid> { _playerId, _enemyId }, round);
+
+        /// <summary>
+        /// La cola se arma en <c>CombatEnterState</c> antes de pasar a <c>PlayerTurnState</c>, así que
+        /// el estado de sala del jefe tiene que quedar puesto acá. Era la ventana ciega que hacía que
+        /// la mesa, el peaje y el dado confiscado aparecieran recién al cerrar el primer turno.
+        /// </summary>
+        [Test]
+        public void QueueBuilt_OnTheOpeningRound_InstallsBossStateWithoutTickingTheTree()
+        {
+            // Arrange
+            var spy = new OpeningSpyNode();
+            _registry.Register(_enemyId, spy, maxHp: 50);
+            using var handler = NewHandler();
+
+            // Act
+            BuildQueue(round: 0);
+
+            // Assert
+            Assert.AreEqual(1, spy.OpeningCount, "El jefe instala su estado antes del primer turno del jugador.");
+            Assert.AreEqual(0, spy.TickCount, "La apertura instala amenaza, no la ejecuta: el árbol no tickea.");
+            Assert.AreEqual(0, _turnCompleteCount, "Abrir no consume un turno de la cola.");
+        }
+
+        [Test]
+        public void QueueBuilt_OnLaterRounds_DoesNotOpenAgain()
+        {
+            // Arrange
+            var spy = new OpeningSpyNode();
+            _registry.Register(_enemyId, spy, maxHp: 50);
+            using var handler = NewHandler();
+
+            // Act — el mismo evento vuelve a disparar en cada ronda.
+            BuildQueue(round: 0);
+            BuildQueue(round: 1);
+            BuildQueue(round: 2);
+
+            // Assert
+            Assert.AreEqual(1, spy.OpeningCount, "Abrir de nuevo volvería a poner la mesa a mitad de pelea.");
+        }
+
+        [Test]
+        public void Opening_DescendsThroughUnconditionalComposites()
+        {
+            // Arrange
+            var deep = new OpeningSpyNode();
+            _registry.Register(_enemyId, new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode>
+                {
+                    new AINode_Selector { Children = new List<AIDecisionNode> { deep } },
+                },
+            }, maxHp: 50);
+            using var handler = NewHandler();
+
+            // Act
+            BuildQueue(round: 0);
+
+            // Assert
+            Assert.AreEqual(1, deep.OpeningCount, "Los jefes autoran su raíz como Sequence de Selectors.");
+        }
+
+        [Test]
+        public void Opening_DoesNotReachNodesBehindAConditionalGate()
+        {
+            // Arrange — un If es la puerta de una fase o de una cadencia.
+            var gated = new OpeningSpyNode();
+            _registry.Register(_enemyId, new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode> { new AINode_If { Then = gated } },
+            }, maxHp: 50);
+            using var handler = NewHandler();
+
+            // Act
+            BuildQueue(round: 0);
+
+            // Assert
+            Assert.AreEqual(0, gated.OpeningCount,
+                "Abrir una rama gateada pondría en la mesa algo que el jefe todavía no se ganó.");
+        }
+
+        [Test]
+        public void Opening_WhenOneNodeThrows_StillOpensTheRest()
+        {
+            // Arrange
+            var survivor = new OpeningSpyNode();
+            _registry.Register(_enemyId, new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode> { new ThrowingOpeningNode(), survivor },
+            }, maxHp: 50);
+            using var handler = NewHandler();
+            LogAssert.Expect(LogType.Error, new Regex("Exception opening"));
+
+            // Act
+            BuildQueue(round: 0);
+
+            // Assert
+            Assert.AreEqual(1, survivor.OpeningCount,
+                "Un nodo roto no puede dejar la pelea arrancando sin el resto del estado de sala.");
+        }
+
         private sealed class SpyNode : AIDecisionNode
         {
             public int TickCount;
             public override AIResult Tick(AIContext context) { TickCount++; return AIResult.Succeeded; }
+        }
+
+        private sealed class OpeningSpyNode : AIDecisionNode, IAIOpeningNode
+        {
+            public int TickCount;
+            public int OpeningCount;
+            public override AIResult Tick(AIContext context) { TickCount++; return AIResult.Succeeded; }
+            public void Opening(AIContext context) => OpeningCount++;
+        }
+
+        private sealed class ThrowingOpeningNode : AIDecisionNode, IAIOpeningNode
+        {
+            public override AIResult Tick(AIContext context) => AIResult.Succeeded;
+            public void Opening(AIContext context) => throw new InvalidOperationException("boom");
         }
 
         private sealed class ThrowingNode : AIDecisionNode

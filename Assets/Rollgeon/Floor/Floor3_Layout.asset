@@ -24,6 +24,7 @@ MonoBehaviour:
   FloorId: floor_3
   DisplayName: Piso 3
   NextFloor: {fileID: 0}
+  BossPool: {fileID: 11400000, guid: ba396edd58736984eb8fd2110337f58c, type: 2}
   Slots:
   - Type: 1
     Count:

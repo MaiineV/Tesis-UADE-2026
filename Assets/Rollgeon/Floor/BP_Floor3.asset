@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f560368867ee1a43b6a993946ae4160, type: 3}
+  m_Name: BP_Floor3
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Bosses.BossPoolSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 7029e4b6980247249b9eb5459f48482b, type: 2}
+    - {fileID: 11400000, guid: 2fa58ced178f4ea48a9033469ce40e58, type: 2}
+    - {fileID: 11400000, guid: 91f3436edd635ee42b65fb577ec47873, type: 2}
+    - {fileID: 11400000, guid: b93b98d6593acb441965af5fc7aeca1b, type: 2}
+    - {fileID: 11400000, guid: b18c68bb8f79bb24e8e0cf5703ce62d7, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Entries
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Bosses.WeightedBoss,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 3
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 0
+    - Name: Weight
+      Entry: 4
+      Data: 9
+    - Name: Enabled
+      Entry: 5
+      Data: true
+    - Name: Room
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 2|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 2
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: Room
+      Entry: 10
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 3|Rollgeon.Entities.Bosses.WeightedBoss, Rollgeon
+    - Name: Boss
+      Entry: 10
+      Data: 4
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: Room
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  Entries:
+  - Boss: {fileID: 11400000, guid: 7029e4b6980247249b9eb5459f48482b, type: 2}
+    Weight: 9
+    Enabled: 1
+    Room: {fileID: 11400000, guid: 2fa58ced178f4ea48a9033469ce40e58, type: 2}
+  - Boss: {fileID: 11400000, guid: 91f3436edd635ee42b65fb577ec47873, type: 2}
+    Weight: 1
+    Enabled: 0
+    Room: {fileID: 11400000, guid: b93b98d6593acb441965af5fc7aeca1b, type: 2}
+  - Boss: {fileID: 11400000, guid: b18c68bb8f79bb24e8e0cf5703ce62d7, type: 2}
+    Weight: 1
+    Enabled: 0
+    Room: {fileID: 0}

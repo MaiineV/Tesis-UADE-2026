@@ -34,6 +34,16 @@ namespace Rollgeon.Combat.Pipelines
         /// <summary>Damage after weakness multiplier (0 if no weakness).</summary>
         public float WeaknessMultiplier;
 
+        /// <summary>
+        /// Stage-3 incoming multiplier applied to this hit. <c>1</c> = nothing modified it, which is
+        /// also the value when no <see cref="IIncomingDamageMultiplierProvider"/> is registered.
+        /// </summary>
+        /// <remarks>
+        /// Initialized to <c>1</c> rather than left at <c>default</c>: a consumer reading <c>0</c>
+        /// would read "fully absorbed" out of a context the pipeline short-circuited.
+        /// </remarks>
+        public float IncomingMultiplier = 1f;
+
         /// <summary>Final damage committed to Health after all stages.</summary>
         public int FinalDamage;
 

@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Rollgeon",
+        "Rollgeon.DevConsole",
         "Rollgeon.Steam",
         "MoreMountains.Tools",
         "Unity.Addressables.Editor",

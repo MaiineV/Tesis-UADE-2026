@@ -1987,8 +1987,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1812290135}
+  m_Children: [{fileID: 1812290135}]
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1690433641
@@ -2611,6 +2610,10 @@ PrefabInstance:
     - target: {fileID: 4492679302366172888, guid: 0e2150a90603c9e4080d143a668cdceb, type: 3}
       propertyPath: m_Name
       value: Canvas_PauseMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 4492679302366172888, guid: 0e2150a90603c9e4080d143a668cdceb, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7377420874640509665, guid: 0e2150a90603c9e4080d143a668cdceb, type: 3}
       propertyPath: m_Pivot.x
@@ -3702,6 +3705,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5265948129287710525, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 4681834541978581477, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278979082
@@ -3823,11 +3830,11 @@ PrefabInstance:
       value: 48
       objectReference: {fileID: 0}
     - target: {fileID: 7338850719064030320, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
-      propertyPath: 'm_fontMaterials.Array.data[0]'
+      propertyPath: m_fontMaterials.Array.data[0]
       value: 
       objectReference: {fileID: 1305866204}
     - target: {fileID: 7338850719064030320, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
-      propertyPath: 'm_fontSharedMaterials.Array.data[0]'
+      propertyPath: m_fontSharedMaterials.Array.data[0]
       value: 
       objectReference: {fileID: 1305866204}
     - target: {fileID: 7443568256689707734, guid: 34b9bffce14abab40b2c0e995e0d3202, type: 3}
@@ -4280,6 +4287,10 @@ PrefabInstance:
     - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Name
       value: Canvas_Defeat
+      objectReference: {fileID: 0}
+    - target: {fileID: 3669499952167686905, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9014833472966344738, guid: 11fc7f2627afae24e9ad58118375746e, type: 3}
       propertyPath: m_Pivot.x
