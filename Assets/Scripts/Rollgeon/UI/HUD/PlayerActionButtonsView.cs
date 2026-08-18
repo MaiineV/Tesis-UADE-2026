@@ -14,7 +14,6 @@ using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using LocalizedContent = Rollgeon.Localization.LocalizedContent;
@@ -41,28 +40,11 @@ namespace Rollgeon.UI.HUD
         private ActionButton[] _buttons = new ActionButton[4];
 
         // ======================================================================
-        // Serialized fields — confirm button
-        // ======================================================================
-
-        [Title("Confirm")]
-        [Required("Arrastrar el boton de Confirm.")]
-        [SerializeField]
-        private Button _confirmButton;
-
-        [Tooltip("DiceZoneView del HUD compartido. Se usa para chequear si hay al menos " +
-                 "un dado holdeado antes de habilitar Confirm. Auto-resolve si null en Bind.")]
-        [SerializeField]
-        private DiceZoneView _diceZone;
-
-        // ======================================================================
         // Events
         // ======================================================================
 
-        [Title("Events")]
-        [SerializeField]
-        private UnityEvent _onConfirmPressed = new UnityEvent();
-
-        public UnityEvent OnConfirmPressed => _onConfirmPressed;
+        // El botón Confirm ya no vive acá: lo absorbió el botón contextual de turno
+        // (EndTurnButtonView, modo Confirm) — este view solo maneja los 4 chips.
 
         public Action<int> OnBehaviorSelected;
 
@@ -126,8 +108,6 @@ namespace Rollgeon.UI.HUD
                 _buttons[i].OnRejected += () => HandleBehaviorRejected(captured);
                 _buttons[i].OnBlockedPressed += _ => ShowRejectToast(captured);
             }
-
-            if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClick);
         }
 
         private void OnDestroy()
@@ -142,8 +122,6 @@ namespace Rollgeon.UI.HUD
                 _buttons[i].OnRejected = null;
                 _buttons[i].OnBlockedPressed = null;
             }
-
-            if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClick);
         }
 
         private void OnDisable()
@@ -174,14 +152,8 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             EventManager.Subscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             EventManager.Subscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
-            TypedEvent<ComboMatchedPayload>.Subscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(true);
-
-            if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
-            // Spin/outro de dados en curso lockea el Confirm — re-gateamos en cada
-            // cambio de estado de animación (el hotkey ya respeta interactable).
-            if (_diceZone != null) _diceZone.DiceAnimationStateChanged += RecomputeButtonStates;
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
             {
@@ -226,13 +198,6 @@ namespace Rollgeon.UI.HUD
             return false;
         }
 
-        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
-        public bool TryGetConfirmRect(out RectTransform rect)
-        {
-            rect = _confirmButton != null ? _confirmButton.transform as RectTransform : null;
-            return rect != null;
-        }
-
         public void Unbind()
         {
             if (!_bound) return;
@@ -250,11 +215,8 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
             EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             EventManager.UnSubscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
-            TypedEvent<ComboMatchedPayload>.Unsubscribe(HandleComboMatchedForConfirm);
 
             HookHotkeys(false);
-
-            if (_diceZone != null) _diceZone.DiceAnimationStateChanged -= RecomputeButtonStates;
 
             if (_movementService != null)
             {
@@ -416,15 +378,6 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
-        // DiceZoneView dispara TypedEvent<ComboMatchedPayload> en cada toggle de hold.
-        // Lo usamos como hook para recomputar el Confirm — gate del Confirm requiere
-        // que haya al menos un dado holdeado, así que cada cambio de holds dispara
-        // un recompute para reflejar el estado.
-        private void HandleComboMatchedForConfirm(ComboMatchedPayload _)
-        {
-            RecomputeButtonStates();
-        }
-
         // ======================================================================
         // Click handler
         // ======================================================================
@@ -499,7 +452,6 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
-                _hotkeys.Subscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
             }
             else
             {
@@ -508,7 +460,6 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
-                _hotkeys.Unsubscribe(GameplayHotkey.Confirm, OnHotkeyConfirm);
                 _hotkeys = null;
             }
         }
@@ -519,21 +470,11 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
 
-        private void OnHotkeyConfirm(InputAction.CallbackContext _)
-        {
-            if (_confirmButton != null && _confirmButton.interactable)
-            {
-                // Space también dispara EndTurn. Consumimos el frame para que, cuando confirmar
-                // el roll re-habilite el botón End Turn en el mismo press, éste no pase turno.
-                _hotkeys?.ConsumeFrame();
-                _confirmButton.onClick.Invoke();
-            }
-        }
-
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
-        // click real → HandleBehaviorClick con el index correcto). Si el botón no está
-        // interactable porque no alcanza la energía, la tecla responde con el mismo
-        // rechazo que el mouse en vez de no hacer nada.
+        // click real → HandleBehaviorClick con el index correcto). Si el botón está
+        // bloqueado (sin energía, locked, usado), la tecla responde con el MISMO
+        // rechazo completo que el mouse — shake + SFX + toast vía TryRejectPress,
+        // que es el camino de OnPointerDown.
         private void TriggerSlotHotkey(HeroBehaviorSlot slot)
         {
             for (int i = 0; i < _buttons.Length; i++)
@@ -542,31 +483,10 @@ namespace Rollgeon.UI.HUD
                 if (button == null || button.Slot != slot) continue;
                 if (button.Button != null && button.Button.interactable)
                     button.Button.onClick.Invoke();
-                else if (button.State == ActionButtonState.Unaffordable || !button.IsAffordable)
-                    button.PlayRejectFeedback();
+                else
+                    button.TryRejectPress();
                 return;
             }
-        }
-
-        private void HandleConfirmClick()
-        {
-            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Confirm = resolver la
-            // tirada actual via el service. NO disparar el flow normal de combate
-            // (CombatHandoffService.OnConfirmRequested) — eso ejecutaria el behavior dos veces.
-            if (ServiceLocator.TryGetService<IActionRollService>(out var rs)
-                && rs != null && rs.IsActive)
-            {
-                rs.DeclineReroll();
-                return;
-            }
-            _onConfirmPressed?.Invoke();
-
-            // BUG-018: en chain el OnRollResolved que apagaría el botón viene diferido por
-            // el feedback del golpe — lo apagamos ya para que el spam ni llegue al service
-            // (que igual tiene su propio lock de re-entrada). El próximo Recompute con
-            // estado fresco lo re-habilita cuando corresponda.
-            if (_inChain && _confirmButton != null)
-                _confirmButton.interactable = false;
         }
 
         // ======================================================================
@@ -587,24 +507,6 @@ namespace Rollgeon.UI.HUD
                 // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
                 if (behavior != null) _buttons[i].SetAffordable(HasEnoughEnergy(behavior));
             }
-
-            // Confirm se habilita cuando hay dados rolleados AND el jugador holdeó
-            // al menos un dado. Sin holds confirmar no tiene sentido (no hay combo
-            // posible), y el botón quedaría engañando al usuario. Mientras los dados
-            // giran o vuelan (modo Classic) tampoco: el resultado aún no se reveló.
-            if (_confirmButton != null)
-                _confirmButton.interactable = _isPlayerTurn && _rolled && AnyDieHeld()
-                                              && !(_diceZone != null && _diceZone.IsDiceAnimating);
-        }
-
-        private bool AnyDieHeld()
-        {
-            if (_diceZone == null) return false;
-            var holds = _diceZone.GetHeldStates();
-            if (holds == null) return false;
-            for (int i = 0; i < holds.Length; i++)
-                if (holds[i]) return true;
-            return false;
         }
 
         private ActionButtonState ComputeStateForSlot(int slotIndex, HeroActionBehavior behavior)

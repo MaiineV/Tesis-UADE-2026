@@ -70,4 +70,36 @@ namespace Rollgeon.Upgrades.Dice
         [MinValue(1)]
         public int MaxAccumulation = 3;
     }
+
+    /// <summary>
+    /// Maldición: el encantamiento es un downside puro. La UI pinta el dado con el
+    /// visual maldito (negativo + banda oscura) en vez del holo. Consumidor:
+    /// <c>DiceEnchantVisualResolver</c>.
+    /// </summary>
+    [Serializable, HideReferenceObjectPicker]
+    public sealed class CapCursed : IEnchantmentCapability
+    {
+    }
+
+    /// <summary>
+    /// Queries sobre las capabilities de un encantamiento. Viven del lado dominio para
+    /// que futuros consumidores (pricing de tienda, tooltips) no dependan de UI.
+    /// </summary>
+    public static class EnchantmentCapabilityQueries
+    {
+        /// <summary><c>true</c> si el encantamiento declara <see cref="CapCursed"/>. Null-safe.</summary>
+        public static bool IsCursed(this EnchantmentSO enchantment)
+        {
+            if (enchantment == null) return false;
+
+            var caps = enchantment.Capabilities;
+            if (caps == null) return false;
+
+            // 'is' también filtra entradas null que pueda dejar la autoría.
+            for (int i = 0; i < caps.Count; i++)
+                if (caps[i] is CapCursed) return true;
+
+            return false;
+        }
+    }
 }

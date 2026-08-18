@@ -19,7 +19,7 @@ MonoBehaviour:
     ImageType: 1
     LogoSprite: {fileID: 0}
     LogoTint: {r: 1, g: 1, b: 1, a: 1}
-    TextColor: {r: 0.94, g: 0.88, b: 0.75, a: 1}
+    TextColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
     Feedback:
       EffectTag: 
       AmplitudeMin: 0
@@ -31,7 +31,7 @@ MonoBehaviour:
     ImageType: 1
     LogoSprite: {fileID: 1498743206, guid: dac8bb8f9f8670c4b865c496b361929c, type: 3}
     LogoTint: {r: 1, g: 1, b: 1, a: 1}
-    TextColor: {r: 0.89, g: 0.29, b: 0.29, a: 1}
+    TextColor: {r: 0.81960785, g: 0.21176471, b: 0.3529412, a: 1}
     Feedback:
       EffectTag: shake
       AmplitudeMin: 0
@@ -43,7 +43,7 @@ MonoBehaviour:
     ImageType: 1
     LogoSprite: {fileID: -1199590904, guid: dac8bb8f9f8670c4b865c496b361929c, type: 3}
     LogoTint: {r: 1, g: 1, b: 1, a: 1}
-    TextColor: {r: 0.37, g: 0.77, b: 0.42, a: 1}
+    TextColor: {r: 0.6392157, g: 0.7019608, b: 0.69411767, a: 1}
     Feedback:
       EffectTag: wave
       AmplitudeMin: 0

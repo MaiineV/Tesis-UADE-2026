@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Audio;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -30,12 +31,26 @@ namespace Rollgeon.UI.HUD.Status
         [Tooltip("Contenedor de la fila — lleva el HorizontalLayoutGroup.")]
         private RectTransform _container;
 
+        [SerializeField, Tooltip("SFX cuando un estado pasa de inactivo a ACTIVO (ej. la " +
+                 "pasiva de clase prendiéndose). No suena en el primer Refresh de un Bind " +
+                 "ni al apagarse. Null = mudo.")]
+        private AudioClip _activateClip;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Volumen del SFX de activación.")]
+        private float _activateVolume = 0.9f;
+
         [ShowInInspector, ReadOnly] private Guid _playerGuid;
         [ShowInInspector, ReadOnly] private bool _bound;
 
         private readonly List<IStatusIconProvider> _providers = new();
         private readonly List<StatusIconState> _states = new();
         private readonly List<StatusEffectIconView> _slots = new();
+
+        // Último Active visto por estado (key = StatusIconState.Id) para detectar el
+        // flanco apagado→prendido. Sobrevive Unbind/Bind a propósito: un rebind por
+        // toggle del canvas no debe re-anunciar un estado que ya venía activo.
+        private readonly Dictionary<string, bool> _lastActiveById = new();
+        private bool _announceReady;
 
         public void Bind(Guid playerGuid)
         {
@@ -53,7 +68,11 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.Subscribe(EventName.OnTurnStarted, HandleOwnerEvent);
             _bound = true;
 
+            // Primer repintado en silencio: si el estado ya venía activo (rebind, load
+            // de save), el "se activó" ya sonó — o nunca correspondió — en su momento.
+            _announceReady = false;
             Refresh();
+            _announceReady = true;
         }
 
         public void Unbind()
@@ -98,6 +117,7 @@ namespace Rollgeon.UI.HUD.Status
             foreach (var provider in _providers)
                 provider?.Collect(_playerGuid, _states);
 
+            AnnounceActivations();
             EnsureSlots(_states.Count);
 
             for (int i = 0; i < _slots.Count; i++)
@@ -106,6 +126,28 @@ namespace Rollgeon.UI.HUD.Status
                 _slots[i].gameObject.SetActive(used);
                 if (used) _slots[i].Show(_states[i]);
             }
+        }
+
+        // Flanco apagado→prendido por estado: acompaña con sonido a la aparición del
+        // arte "activo" del ícono (la pasiva de clase prendiéndose). El repintado en sí
+        // sigue siendo idempotente — solo el flanco anuncia.
+        private void AnnounceActivations()
+        {
+            for (int i = 0; i < _states.Count; i++)
+            {
+                var state = _states[i];
+                if (string.IsNullOrEmpty(state.Id)) continue;
+                bool wasActive = _lastActiveById.TryGetValue(state.Id, out bool prev) && prev;
+                if (_announceReady && state.Active && !wasActive) PlayActivateSfx();
+                _lastActiveById[state.Id] = state.Active;
+            }
+        }
+
+        private void PlayActivateSfx()
+        {
+            if (!Application.isPlaying || _activateClip == null) return;
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx2D(_activateClip, _activateVolume, isImportant: true);
         }
 
         // Los slots se reusan y solo se apagan: la fila se repinta en cada cambio de HP y

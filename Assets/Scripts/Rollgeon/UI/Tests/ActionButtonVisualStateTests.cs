@@ -59,6 +59,51 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void test_actionButton_externalScaleMultiplier_composesWithSelectedScale()
+        {
+            // Arrange
+            float selectedScale = (float)GetPrivate(_button, "_selectedScale");
+            _button.SetState(ActionButtonState.Selected);
+
+            // Act
+            _button.SetExternalScaleMultiplier(1.1f);
+
+            // Assert
+            Assert.AreEqual(selectedScale * 1.1f, _button.transform.localScale.x, 1e-4f,
+                "el multiplicador externo se compone con la escala del estado Selected");
+        }
+
+        [Test]
+        public void test_actionButton_externalScaleMultiplier_resetRestoresStateScale()
+        {
+            // Arrange
+            float selectedScale = (float)GetPrivate(_button, "_selectedScale");
+            _button.SetState(ActionButtonState.Selected);
+            _button.SetExternalScaleMultiplier(1.1f);
+
+            // Act
+            _button.SetExternalScaleMultiplier(1f);
+
+            // Assert
+            Assert.AreEqual(selectedScale, _button.transform.localScale.x, 1e-4f,
+                "resetear el multiplicador a 1 debe dejar la escala del estado intacta");
+        }
+
+        [Test]
+        public void test_actionButton_stateChange_preservesExternalMultiplier()
+        {
+            // Arrange
+            _button.SetExternalScaleMultiplier(1.1f);
+
+            // Act — el state machine reescribe la escala en cada cambio de estado.
+            _button.SetState(ActionButtonState.Available);
+
+            // Assert
+            Assert.AreEqual(1.1f, _button.transform.localScale.x, 1e-4f,
+                "el cambio de estado no debe pisar el multiplicador externo (breath en curso)");
+        }
+
+        [Test]
         public void test_actionButton_unaffordable_paintsCostAndOutlineRed()
         {
             // Arrange

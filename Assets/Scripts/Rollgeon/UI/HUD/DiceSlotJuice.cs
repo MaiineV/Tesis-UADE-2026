@@ -58,6 +58,9 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Puff al revelar la cara (aterrizaje del spin).")]
         private ParticleSystem _revealPuff;
 
+        [SerializeField, Optional, Tooltip("Burst al participar de un combo jugado (UIParticle).")]
+        private ParticleSystem _comboBurst;
+
         [Title("Tuning")]
         [SerializeField, Tooltip("Cara que cuenta como crit para la variante dorada del reveal.")]
         private int _critFace = 6;
@@ -74,8 +77,15 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Período (segundos) de medio ciclo del pulso de glow.")]
         private float _glowPulseSeconds = 0.7f;
 
+        [SerializeField, Tooltip("Partículas por pulso de la llama sostenida de combo armado.")]
+        private int _comboFlamePulseCount = 1;
+
+        [SerializeField, Tooltip("Segundos entre pulsos de la llama sostenida.")]
+        private float _comboFlamePulseSeconds = 0.9f;
+
         private DiceSlotAnimator _animator;
         private Tween _glowTween;
+        private Coroutine _comboFlame;
 
         private void OnEnable()
         {
@@ -126,10 +136,67 @@ namespace Rollgeon.UI.HUD
             // devolver los springs a su reposo explícitamente (ver MmfJuice).
             StopAll();
             StopGlow();
+            // El StopCoroutine explícito no hace falta (el disable ya la mata), pero
+            // el handle debe quedar null o el próximo SetComboFlame(true) se traga.
+            _comboFlame = null;
         }
 
         /// <summary>Pulso de reaseguro en un reroll: "este dado se queda". Lo dispara <see cref="DiceZoneJuice"/>.</summary>
         public void PlayKeptPulse() => Play(_keptPulsePlayer);
+
+        /// <summary>
+        /// Celebración de "este dado participó del combo jugado". La dispara
+        /// <see cref="Breakdown.BreakdownJuice"/> con valores ya escalados por la
+        /// potencia del combo. Punch de escala + shake de rotación del root — fases
+        /// sin overlap con la capa de motion, que es dueña de la posición siempre
+        /// (por eso acá no se toca anchoredPosition).
+        /// </summary>
+        public void PlayComboCelebrate(int burstCount, float punchScale, float shakeDegrees)
+        {
+            if (_comboBurst != null && burstCount > 0) _comboBurst.Emit(burstCount);
+
+            if (!Application.isPlaying || DiceUiMotionPrefs.ReducedMotion) return;
+            if (punchScale > 0f)
+                Tween.PunchScale(transform, Vector3.one * punchScale, 0.25f, frequency: 2);
+            // Tiempo escalado a propósito (igual que el punch del director sobre los
+            // slots): el hitstop del clash congela la celebración junto con el resto.
+            if (shakeDegrees > 0f)
+                Tween.ShakeLocalRotation(transform, new Vector3(0f, 0f, shakeDegrees), 0.3f,
+                    frequency: 14f);
+        }
+
+        /// <summary>
+        /// Llama sostenida mientras el dado participa del combo ARMADO (pre-confirm) —
+        /// el momento en que el jugador está mirando los dados seleccionados. La
+        /// enciende/apaga <see cref="DiceZoneJuice"/> con cada ComboMatchedPayload.
+        /// Driver por pulsos de <c>Emit()</c> y NO por rateOverTime: bajo el bake de
+        /// UIParticle los sistemas quedan pausados y la emisión por rate no corre —
+        /// Emit es el único camino que probadamente pinta píxeles.
+        /// </summary>
+        public void SetComboFlame(bool on)
+        {
+            if (on == (_comboFlame != null)) return;
+            if (on)
+            {
+                if (!Application.isPlaying || _comboBurst == null || !isActiveAndEnabled) return;
+                _comboFlame = StartCoroutine(ComboFlameRoutine());
+            }
+            else
+            {
+                StopCoroutine(_comboFlame);
+                _comboFlame = null;
+            }
+        }
+
+        private System.Collections.IEnumerator ComboFlameRoutine()
+        {
+            var wait = new WaitForSeconds(_comboFlamePulseSeconds);
+            while (true)
+            {
+                _comboBurst.Emit(_comboFlamePulseCount);
+                yield return wait;
+            }
+        }
 
         private void HandleSpinStarted() => Play(_spinStartPlayer);
 
@@ -165,12 +232,14 @@ namespace Rollgeon.UI.HUD
         {
             Play(_throwPlayer);
             StopGlow();
+            SetComboFlame(false);
         }
 
         private void HandleDiscarded()
         {
             Play(_discardPlayer);
             StopGlow();
+            SetComboFlame(false);
         }
 
         // Glow pulsante mientras el dado está holdeado — feedback constante de estado,

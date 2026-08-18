@@ -341,7 +341,10 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
 
         // Invoca el onClick del botón cuyo slot (via _slots) matchea, solo si está
-        // activo e interactable → mismo camino y gating que un click real.
+        // activo e interactable → mismo camino y gating que un click real. Si está
+        // visible pero deshabilitado, responde con el mismo rechazo completo que el
+        // mouse (shake + SFX + toast vía ChipButtonVisual.TryRejectPress). Los
+        // botones ocultos (Movement/ForceDoor en exploración) siguen siendo no-op.
         private void TriggerSlotHotkey(HeroBehaviorSlot slot)
         {
             for (int i = 0; i < _buttons.Count; i++)
@@ -350,8 +353,14 @@ namespace Rollgeon.UI.HUD
                 if (btn == null) continue;
                 var s = (_slots != null && i < _slots.Count) ? _slots[i] : (HeroBehaviorSlot)i;
                 if (s != slot) continue;
-                if (btn.gameObject.activeInHierarchy && btn.interactable)
+                if (!btn.gameObject.activeInHierarchy) return;
+                if (btn.interactable)
+                {
                     btn.onClick.Invoke();
+                    return;
+                }
+                var visual = btn.GetComponent<ChipButtonVisual>();
+                if (visual != null) visual.TryRejectPress();
                 return;
             }
         }

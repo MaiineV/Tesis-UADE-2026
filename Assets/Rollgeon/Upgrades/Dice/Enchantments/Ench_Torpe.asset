@@ -81,13 +81,19 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 2
     - Name: 
       Entry: 7
       Data: 4|Rollgeon.Upgrades.Dice.CapForceRerollOnTurn, Rollgeon
     - Name: TriggerOnTurn
       Entry: 3
       Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 5|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -101,13 +107,17 @@ MonoBehaviour:
     rid: -2
   _triggers: []
   _capabilities:
-  - rid: 8131244039720141461
+  - rid: 3043746564886758306
+  - rid: 3043746564886758307
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141461
+    - rid: 3043746564886758306
       type: {class: CapForceRerollOnTurn, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data:
         TriggerOnTurn: 2
+    - rid: 3043746564886758307
+      type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
+      data: 

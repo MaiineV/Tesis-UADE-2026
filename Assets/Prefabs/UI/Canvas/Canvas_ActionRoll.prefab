@@ -1188,7 +1188,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3453130874214142240
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1873,7 +1873,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
+  m_fontSize: 48
   m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
@@ -7112,7 +7112,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8565,6 +8565,16 @@ MonoBehaviour:
   _firstRollText: Roll
   _rerollFreeText: Reroll
   _rerollPaidText: Reroll  -1 {ENERGY}
+  _buttonSprites: {fileID: 8351240976524183017}
+  _freeRollSprites:
+    _normal: {fileID: 321470633, guid: fb2ea25711d4a8b4492c64d20f5a705b, type: 3}
+    _hover: {fileID: 172019166, guid: fb2ea25711d4a8b4492c64d20f5a705b, type: 3}
+    _disabled: {fileID: 0}
+  _paidRollSprites:
+    _normal: {fileID: 1147401300, guid: 8d30ec7cea6121b4480cb66bb6b03cb4, type: 3}
+    _hover: {fileID: -1008810917, guid: 8d30ec7cea6121b4480cb66bb6b03cb4, type: 3}
+    _disabled: {fileID: 0}
+  _sinkSpeed: 900
   _onExtraRollPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -8601,6 +8611,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!1 &5184496500816605141
 GameObject:
   m_ObjectHideFlags: 0
@@ -8618,7 +8629,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &542324650164022120
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9278,14 +9289,14 @@ MonoBehaviour:
   m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3b3fdbbeca84b9a4ba18e3a96a9eb12d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.9607843, g: 0.9372549, b: 0.8784314, a: 1}
+  m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -9552,14 +9563,14 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3b3fdbbeca84b9a4ba18e3a96a9eb12d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -14621,7 +14632,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14857,6 +14868,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!114 &5429327609465198990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15588,14 +15600,14 @@ MonoBehaviour:
   m_text: -/-
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-  m_sharedMaterial: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3b3fdbbeca84b9a4ba18e3a96a9eb12d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -20445,7 +20457,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20720,6 +20732,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!1 &7443568256689707734
 GameObject:
   m_ObjectHideFlags: 0
@@ -20875,6 +20888,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 1
 --- !u!114 &983462008495742793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20933,6 +20947,7 @@ GameObject:
   - component: {fileID: 5677890952102468458}
   - component: {fileID: 894105085831096394}
   - component: {fileID: 1930492831528009749}
+  - component: {fileID: 8351240976524183017}
   m_Layer: 0
   m_Name: ExtraRollButton
   m_TagString: Untagged
@@ -20981,7 +20996,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 0
+  m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -21027,16 +21042,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 321470633, guid: fb2ea25711d4a8b4492c64d20f5a705b, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -21087,6 +21102,24 @@ MonoBehaviour:
   _label: {fileID: 7337146339442222323}
   _underline: {fileID: 542324650164022120}
   _settings: {fileID: 11400000, guid: 10caaefb5bd514845b3a841d2dbeda59, type: 2}
+--- !u!114 &8351240976524183017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7461747152606384234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a637b3eb4804724a903d6beb6bb7b6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.HudButtonSpriteSwap
+  _button: {fileID: 9096947631067445121}
+  _image: {fileID: 5915192695769427606}
+  _initialSet:
+    _normal: {fileID: 321470633, guid: fb2ea25711d4a8b4492c64d20f5a705b, type: 3}
+    _hover: {fileID: 172019166, guid: fb2ea25711d4a8b4492c64d20f5a705b, type: 3}
+    _disabled: {fileID: 0}
 --- !u!1 &7691686402624895758
 GameObject:
   m_ObjectHideFlags: 0
@@ -21645,6 +21678,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 0
+  _explorationOnly: 0
 --- !u!1 &7956540871538038925
 GameObject:
   m_ObjectHideFlags: 0
@@ -27283,7 +27317,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -27752,10 +27786,6 @@ PrefabInstance:
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-    - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -27870,10 +27900,6 @@ PrefabInstance:
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-    - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -27988,10 +28014,6 @@ PrefabInstance:
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-    - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28106,10 +28128,6 @@ PrefabInstance:
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-    - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28224,10 +28242,6 @@ PrefabInstance:
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
-    - target: {fileID: 8048459842649218551, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 7762297115091505959, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

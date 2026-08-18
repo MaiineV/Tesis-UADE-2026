@@ -1,5 +1,7 @@
 using System;
+using Patterns;
 using PrimeTween;
+using Rollgeon.Audio;
 using Rollgeon.Heroes;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -104,6 +106,13 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Frecuencia del shake de rechazo (Hz).")]
         private float _rejectShakeFrequency = 22f;
 
+        [SerializeField, Optional, Tooltip("SFX genérico de rechazo — suena en todo press " +
+                 "bloqueado, sin importar el motivo. Null = mudo.")]
+        private AudioClip _rejectClip;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Volumen del SFX de rechazo.")]
+        private float _rejectVolume = 0.9f;
+
 
         [Title("Activación")]
         [SerializeField, Tooltip("Si false, el click NO invoca OnClicked — el botón se activa " +
@@ -121,6 +130,12 @@ namespace Rollgeon.UI.HUD
         private Image _image;
         private Outline _outline;
         private Vector3 _baseScale;
+
+        // Escala del estado actual (1 o _selectedScale) y multiplicador externo
+        // (breath/punch del CombatHudZoneFlow) — ApplyScale los compone para que el
+        // state machine y los tweens externos no se pisen el localScale entre sí.
+        private float _stateScale = 1f;
+        private float _externalScaleMul = 1f;
 
         // Sprite de reposo del chip, capturado del prefab en Awake — el swap de
         // hover/selected/disabled vuelve siempre a este.
@@ -271,6 +286,22 @@ namespace Rollgeon.UI.HUD
 
         public bool IsAffordable => _affordable;
 
+        /// <summary>
+        /// Multiplicador de escala externo (breath/punch de <c>CombatHudZoneFlow</c>).
+        /// 1 = sin efecto. Tweenear <c>localScale</c> directo pelearía con
+        /// <see cref="ApplyVisual"/>, que reescribe la escala en cada cambio de estado.
+        /// </summary>
+        public void SetExternalScaleMultiplier(float value)
+        {
+            _externalScaleMul = value;
+            ApplyScale();
+        }
+
+        private void ApplyScale()
+        {
+            transform.localScale = _baseScale * _stateScale * _externalScaleMul;
+        }
+
         private void ApplyVisual()
         {
             if (_button == null) return;
@@ -287,7 +318,7 @@ namespace Rollgeon.UI.HUD
                 case ActionButtonState.Unaffordable:
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: true);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null)
                     {
                         _outline.effectColor = _unaffordableColor;
@@ -301,7 +332,7 @@ namespace Rollgeon.UI.HUD
                 case ActionButtonState.Locked:
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: false);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
@@ -316,21 +347,21 @@ namespace Rollgeon.UI.HUD
                         if (usedSprite != null) _image.sprite = usedSprite;
                         _image.color = _baseColor;
                     }
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Available:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: _hovered);
-                    transform.localScale = _baseScale;
+                    _stateScale = 1f;
                     if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Selected:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: true);
-                    transform.localScale = _baseScale * _selectedScale;
+                    _stateScale = _selectedScale;
                     if (_outline != null)
                     {
                         _outline.effectColor = _glowColor;
@@ -338,6 +369,8 @@ namespace Rollgeon.UI.HUD
                     }
                     break;
             }
+
+            ApplyScale();
         }
 
         /// <summary>
@@ -461,17 +494,25 @@ namespace Rollgeon.UI.HUD
         /// contestar algo. Antes salia por Unaffordable, que es excluyente, y esos casos
         /// se sentian como un boton muerto.
         /// </remarks>
-        public void OnPointerDown(PointerEventData eventData)
+        public void OnPointerDown(PointerEventData eventData) => TryRejectPress();
+
+        /// <summary>
+        /// Camino compartido mouse/hotkey del intento de uso bloqueado: shake + SFX +
+        /// <see cref="OnBlockedPressed"/> (toast del view). No-op y false si el chip
+        /// no está bloqueado. El shake responde siempre; la pila de energía
+        /// (<see cref="OnRejected"/>) solo cuando el problema ES la energía —
+        /// sacudirla por un lock de rango confunde.
+        /// </summary>
+        public bool TryRejectPress()
         {
             bool energyProblem = !_affordable || _state == ActionButtonState.Unaffordable;
             bool blocked = energyProblem
                            || _state is ActionButtonState.Locked or ActionButtonState.Used;
-            if (!blocked) return;
+            if (!blocked) return false;
 
-            // El shake responde siempre; la pila de energía (OnRejected) solo cuando
-            // el problema ES la energía — sacudirla por un lock de rango confunde.
             PlayRejectFeedback(notifyEnergy: energyProblem);
             OnBlockedPressed?.Invoke(this);
+            return true;
         }
 
         // ======================================================================
@@ -503,13 +544,15 @@ namespace Rollgeon.UI.HUD
         /// parenteado), asi que escalarlo pulsaria el marco entero descentrado. El chip
         /// se mueve como una pieza y se lee mejor.
         /// </remarks>
-        public void PlayRejectFeedback() => PlayRejectFeedback(notifyEnergy: true);
-
         public void PlayRejectFeedback(bool notifyEnergy)
         {
             if (_rejectShake.isAlive) return;
 
             if (notifyEnergy) OnRejected?.Invoke();
+
+            // Antes del gate de ReducedMotion: el sonido es feedback, no movimiento.
+            // El guard de arriba lo debounce-a contra el mashing igual que al shake.
+            PlayRejectSfx();
 
             if (!Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
 
@@ -521,6 +564,19 @@ namespace Rollgeon.UI.HUD
                 duration: _rejectShakeDuration,
                 frequency: _rejectShakeFrequency,
                 useUnscaledTime: true);
+        }
+
+        // Con ReducedMotion el shake nunca vive, así que el guard de arriba no
+        // debounce-a: rate limit propio para que el mashing no ametralle el clip.
+        private float _lastRejectSfxAt = float.NegativeInfinity;
+
+        private void PlayRejectSfx()
+        {
+            if (!Application.isPlaying || _rejectClip == null) return;
+            if (Time.unscaledTime - _lastRejectSfxAt < 0.15f) return;
+            _lastRejectSfxAt = Time.unscaledTime;
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx2D(_rejectClip, _rejectVolume);
         }
     }
 }

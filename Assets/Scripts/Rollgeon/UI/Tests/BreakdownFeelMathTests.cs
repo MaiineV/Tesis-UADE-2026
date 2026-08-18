@@ -101,5 +101,46 @@ namespace Rollgeon.UI.Tests
         [TestCase(6, ExpectedResult = 3)]
         [TestCase(0, ExpectedResult = 0)]
         public int ComboTier_PorCantidadDeDados(int count) => BreakdownFeelMath.ComboTier(count);
+
+        [Test]
+        public void ComboCelebrateIntensity_PisoYTecho()
+        {
+            // Arrange — umbrales default (30/80).
+            // Act + Assert: el combo mínimo (2 dados, total chico) queda en el piso
+            // visible; el máximo (5 dados, total grande) satura en 1.
+            Assert.AreEqual(0.25f, BreakdownFeelMath.ComboCelebrateIntensity(5, 30, 80, 2), 1e-5f);
+            Assert.AreEqual(1f, BreakdownFeelMath.ComboCelebrateIntensity(120, 30, 80, 5), 1e-5f);
+        }
+
+        [Test]
+        public void ComboCelebrateIntensity_MonotonaEnTotalYEnCantidadDeDados()
+        {
+            // Arrange
+            const int t1 = 30, t2 = 80;
+
+            // Act
+            float smallTotal = BreakdownFeelMath.ComboCelebrateIntensity(10, t1, t2, 3);
+            float midTotal = BreakdownFeelMath.ComboCelebrateIntensity(40, t1, t2, 3);
+            float bigTotal = BreakdownFeelMath.ComboCelebrateIntensity(100, t1, t2, 3);
+            float pair = BreakdownFeelMath.ComboCelebrateIntensity(40, t1, t2, 2);
+            float generala = BreakdownFeelMath.ComboCelebrateIntensity(40, t1, t2, 5);
+
+            // Assert — más total y más dados nunca bajan la intensidad.
+            Assert.Less(smallTotal, midTotal, "Subir de tier de total debe subir la intensidad.");
+            Assert.Less(midTotal, bigTotal, "Subir de tier de total debe subir la intensidad.");
+            Assert.Less(pair, generala, "Más dados contribuyentes deben subir la intensidad.");
+        }
+
+        [Test]
+        public void ComboCelebrateIntensity_SiempreEnRango01()
+        {
+            foreach (int total in new[] { -10, 0, 29, 30, 79, 80, 5000 })
+                foreach (int count in new[] { 0, 2, 3, 5, 9 })
+                {
+                    float value = BreakdownFeelMath.ComboCelebrateIntensity(total, 30, 80, count);
+                    Assert.That(value, Is.InRange(0f, 1f),
+                        $"Intensidad fuera de rango para total={total}, count={count}.");
+                }
+        }
     }
 }

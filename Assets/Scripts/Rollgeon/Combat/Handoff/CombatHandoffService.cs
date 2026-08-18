@@ -382,14 +382,7 @@ namespace Rollgeon.Combat.Handoff
 
                 if (_activeChain != null)
                 {
-                    if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
-                        _chainSelectionController.CancelSelection();
-
-                    if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
-                        chainBudget.EndBudget();
-                    var chainResolved = _lastFaces ?? Array.Empty<int>();
-                    EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
-                    FinishChain(hud, playerGuid, true);
+                    PassActiveChain(hud, playerGuid);
                     _playerActions.EndPlayerTurn();
                     return;
                 }
@@ -896,21 +889,14 @@ namespace Rollgeon.Combat.Handoff
 
             hud.OnConfirmRequested = () => DoConfirm();
 
+            // Botón contextual en modo Pass (fase de chain con entrada paga y sin
+            // tirada): pasar el chain SIN cerrar el turno — el jugador puede seguir
+            // moviéndose o usando otra acción. End Turn sigue haciendo pass+cierre.
             hud.OnChainPassRequested = () =>
             {
+                if (_forcedRerollPending) return;
                 if (_activeChain == null) return;
-
-                if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
-                    _chainSelectionController.CancelSelection();
-
-                if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
-                    chainBudget.EndBudget();
-
-                var chainResolved = _lastFaces ?? Array.Empty<int>();
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
-
-                Debug.Log($"[CombatHandoff] Chain pass at phase {_chainPhaseIndex}");
-                FinishChain(hud, playerGuid, true);
+                PassActiveChain(hud, playerGuid);
             };
 
             hud.OnEnergyRerollRequested = () => TryEnergyReroll(hud, playerGuid);
@@ -1337,6 +1323,23 @@ namespace Rollgeon.Combat.Handoff
             if (remainingFreeRolls > 0) return ChainPhaseEntry.Free;
             if (energy > 0 && allowsEnergyReroll) return ChainPhaseEntry.Paid;
             return ChainPhaseEntry.Finish;
+        }
+
+        /// <summary>
+        /// Pasa el chain activo: cancela el targeting abierto, cierra el budget,
+        /// resuelve la tirada vigente (o vacía) y termina el chain como pass. NO
+        /// cierra el turno — eso queda en manos del caller (End Turn sí, Pass no).
+        /// </summary>
+        private void PassActiveChain(CombatHUDView hud, Guid playerGuid)
+        {
+            if (_chainSelectionController != null && _chainSelectionController.IsSelecting)
+                _chainSelectionController.CancelSelection();
+
+            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var chainBudget) && chainBudget != null)
+                chainBudget.EndBudget();
+            var chainResolved = _lastFaces ?? Array.Empty<int>();
+            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
+            FinishChain(hud, playerGuid, true);
         }
 
         private void FinishChain(CombatHUDView hud, Guid playerGuid, bool wasPass)

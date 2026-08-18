@@ -49,7 +49,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 _outlineApplied = true;
                 _label.outlineWidth = 0.2f;
-                _label.outlineColor = Color.black;
+                // Outline oscuro de la paleta de la mesa (#0A0A0C) — mismo que ValueTextOutline.mat.
+                _label.outlineColor = new Color32(0x0A, 0x0A, 0x0C, 0xFF);
             }
 
             // Stagger: aparece en cascada con pop OutBack. Cualquier Hide() lo cancela,

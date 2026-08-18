@@ -261,7 +261,13 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 0
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 15|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -271,14 +277,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 8131244039720141448
-  _capabilities: []
+  - rid: 3043746564886758302
+  _capabilities:
+  - rid: 3043746564886758303
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141448
+    - rid: 3043746564886758302
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 2
@@ -290,10 +297,13 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 8131244039720141449
+          - rid: 3043746564886758304
           TargetSelector:
             rid: -2
-    - rid: 8131244039720141449
+    - rid: 3043746564886758303
+      type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
+      data: 
+    - rid: 3043746564886758304
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -317,8 +327,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 8131244039720141450
-    - rid: 8131244039720141450
+          rid: 3043746564886758305
+    - rid: 3043746564886758305
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: -1

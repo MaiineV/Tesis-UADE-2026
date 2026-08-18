@@ -35,6 +35,7 @@ namespace Rollgeon.EditorTools.HUD
         private const string RuneSheetPath = "Assets/Art/UI/Rune/Rune.png";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string EnchantMaterialPath = "Assets/Art/2D/UI/Materials/EnchantHoloUI.mat";
+        private const string CursedMaterialPath = "Assets/Art/2D/UI/Materials/EnchantCurseUI.mat";
 
         private const string DieIdleSlice = "UI-sheet_7";
         private const string DieSelectedSlice = "UI-sheet_5";
@@ -93,6 +94,10 @@ namespace Rollgeon.EditorTools.HUD
             if (enchantMaterial == null)
                 Debug.LogWarning($"[DiceBag] {EnchantMaterialPath} no encontrado — las cards no van " +
                                  "a mostrar el holo de encantado.");
+            var cursedMaterial = AssetDatabase.LoadAssetAtPath<Material>(CursedMaterialPath);
+            if (cursedMaterial == null)
+                Debug.LogWarning($"[DiceBag] {CursedMaterialPath} no encontrado — las cards malditas " +
+                                 "van a caer al holo.");
 
             RebuildPrefab(DieCardPrefabPath, "DiceBagDieCard", root =>
             {
@@ -142,6 +147,7 @@ namespace Rollgeon.EditorTools.HUD
                 so.FindProperty("_idleFrame").objectReferenceValue = idle;
                 so.FindProperty("_selectedFrame").objectReferenceValue = selected;
                 so.FindProperty("_enchantMaterial").objectReferenceValue = enchantMaterial;
+                so.FindProperty("_cursedMaterial").objectReferenceValue = cursedMaterial;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var layout = Ensure<LayoutElement>(root);
