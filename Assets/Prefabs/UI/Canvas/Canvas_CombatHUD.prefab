@@ -2336,7 +2336,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.PassiveBadgeView
   _container: {fileID: 2711231839340872621}
   _text: {fileID: 1553533031354232835}
-  _activateClip: {fileID: 8300000, guid: a6a4ec83c80842e497d3f0b92c96b377, type: 3}
+  _activateClip: {fileID: 0}
   _activateVolume: 0.9
 --- !u!1 &4267624581562163750
 GameObject:

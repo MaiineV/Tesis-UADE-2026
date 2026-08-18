@@ -2,7 +2,6 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Audio;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
@@ -38,13 +37,6 @@ namespace Rollgeon.UI.HUD
                  "puesto a mano en el prefab (ej. 'Pasiva activa').")]
         private TextMeshProUGUI _text;
 
-        [SerializeField, Tooltip("SFX al ACTIVARSE la pasiva (flanco apagada→prendida). " +
-                 "No suena en el Bind inicial ni al apagarse. Null = mudo.")]
-        private AudioClip _activateClip;
-
-        [SerializeField, Range(0f, 1f), Tooltip("Volumen del SFX de activación.")]
-        private float _activateVolume = 0.9f;
-
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
 
@@ -63,9 +55,7 @@ namespace Rollgeon.UI.HUD
             Rollgeon.Localization.LocalizationRefresh.Subscribe(Refresh);
             _bound = true;
 
-            // Estado inicial en silencio: si el player ya estaba low-HP al bindear
-            // (rebind por cambio de escena), el "se activó" ya sonó en su momento.
-            Refresh(announce: false);
+            Refresh();
         }
 
         public void Unbind()
@@ -102,27 +92,16 @@ namespace Rollgeon.UI.HUD
             Refresh();
         }
 
-        private void Refresh() => Refresh(announce: true);
-
-        private void Refresh(bool announce)
+        private void Refresh()
         {
             bool active = ServiceLocator.TryGetService<AttributesManager>(out var attrs) && attrs != null
                           && EffLowHpAttackBuff.IsActiveFor(attrs, _playerGuid);
-            bool wasActive = _container != null && _container.activeSelf;
             SetVisible(active);
-            if (announce && active && !wasActive) PlayActivateSfx();
         }
 
         private void SetVisible(bool visible)
         {
             if (_container != null) _container.SetActive(visible);
-        }
-
-        private void PlayActivateSfx()
-        {
-            if (!Application.isPlaying || _activateClip == null) return;
-            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
-                audio.PlaySfx2D(_activateClip, _activateVolume, isImportant: true);
         }
 
         private void ResolvePassiveLabel()
