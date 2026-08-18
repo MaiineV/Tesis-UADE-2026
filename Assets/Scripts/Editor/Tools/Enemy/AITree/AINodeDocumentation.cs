@@ -121,9 +121,11 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "paño que va a caer el turno que viene y el dado de la bolsa que se " +
                 "confisca — así que este nodo sólo lo elige: marcar y confiscar son los dos " +
                 "nodos siguientes, que leen de la rueda.\n\n" +
-                "Abre el windup: desde acá y hasta que el sector detona, pegarle al jefe " +
-                "corre la rueda +1 y, si el número es impar, cobra RetaliationDamage al " +
-                "atacante. Con la rueda trucada (fase 2) no dispara ninguno de los dos.\n\n" +
+                "Abre el windup, y mientras dura pasan dos cosas distintas. Pegarle al jefe " +
+                "le cobra RetaliationDamage al atacante: cualquier golpe no letal que haya " +
+                "hecho daño o comido escudo, sin importar el número ni si la rueda está " +
+                "trucada. Y cerrar el turno parado DENTRO de un sector cantado corre ese " +
+                "número un lugar — eso sí se apaga con la rueda trucada (fase 2).\n\n" +
                 "AvoidRepeatingLastNumber saca el número del turno anterior del pool (no " +
                 "re-sortea), así el paño se mueve todos los turnos sin sesgar el azar.",
 
