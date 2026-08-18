@@ -7112,7 +7112,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8574,6 +8574,7 @@ MonoBehaviour:
     _normal: {fileID: 1147401300, guid: 8d30ec7cea6121b4480cb66bb6b03cb4, type: 3}
     _hover: {fileID: -1008810917, guid: 8d30ec7cea6121b4480cb66bb6b03cb4, type: 3}
     _disabled: {fileID: 0}
+  _sinkSpeed: 900
   _onExtraRollPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -8610,6 +8611,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!1 &5184496500816605141
 GameObject:
   m_ObjectHideFlags: 0
@@ -14630,7 +14632,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14866,6 +14868,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!114 &5429327609465198990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20454,7 +20457,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20729,6 +20732,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
+  _explorationOnly: 0
 --- !u!1 &7443568256689707734
 GameObject:
   m_ObjectHideFlags: 0
@@ -20881,7 +20885,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd9d267af7a0053459f32ae5bc21b27d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 1
   _explorationOnly: 1
@@ -21035,7 +21039,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -21093,7 +21097,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4f05ad139512bc41889536fb7388410, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Menu.JuicyMenuButton
   _label: {fileID: 7337146339442222323}
   _underline: {fileID: 542324650164022120}
@@ -21108,7 +21112,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a637b3eb4804724a903d6beb6bb7b6f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.HudButtonSpriteSwap
   _button: {fileID: 9096947631067445121}
   _image: {fileID: 5915192695769427606}
@@ -21674,6 +21678,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActionRollExplorationVisibility
   _forceButtonInteractable: 0
+  _explorationOnly: 0
 --- !u!1 &7956540871538038925
 GameObject:
   m_ObjectHideFlags: 0
@@ -27312,7 +27317,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bfbb7f518b7b0984289fe7b573903cd9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

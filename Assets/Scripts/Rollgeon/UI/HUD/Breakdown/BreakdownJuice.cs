@@ -95,13 +95,14 @@ namespace Rollgeon.UI.HUD.Breakdown
         /// <summary>
         /// Celebración en el board al jugarse un combo: SOLO los dados contribuyentes
         /// burstean partículas y se sacuden, escalado por la potencia (total final +
-        /// cantidad de dados). El fallback sin combo (ComboBase 0) no celebra.
+        /// cantidad de dados). El fallback sin combo (ComboBase 0) no celebra — pero
+        /// los combos de 1 dado (Número Más Alto) SÍ: son el caso más común.
         /// </summary>
         public void OnComboPlayed(in DamageBreakdown breakdown, DiceZoneView zone)
         {
             if (!Active || zone == null) return;
             var dice = breakdown.Dice;
-            if (dice == null || dice.Count < 2 || breakdown.ComboBase <= 0) return;
+            if (dice == null || dice.Count == 0 || breakdown.ComboBase <= 0) return;
 
             int t1 = _settings != null ? _settings.TierThreshold1 : 30;
             int t2 = _settings != null ? _settings.TierThreshold2 : 80;
