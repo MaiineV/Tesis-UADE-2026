@@ -248,7 +248,7 @@ MonoBehaviour:
       Data: 23|Rollgeon.Combat.AI.Bosses.Croupier.AIReadCroupierWheelNumber, Rollgeon
     - Name: Source
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: Slot
       Entry: 3
       Data: 0

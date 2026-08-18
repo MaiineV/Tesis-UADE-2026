@@ -610,21 +610,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 3. Canta el número (o los dos) y abre el windup.
                     Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
 
-                    // 4. Confisca el dado del número que ACABA DE CAER. Se había sacado por leerse
+                    // 4. Confisca el dado del número que ACABA DE CANTAR. Se había sacado por leerse
                     //    como el bloqueo al azar del Sunken Grand; vuelve con la presentación que
-                    //    faltaba y, sobre todo, con el número a la vista un turno antes: el jugador
-                    //    ve el sector marcado en el turno N y sabe que en el N+1 pierde ese dado.
+                    //    faltaba y con el número a la vista: el sector marcado en el piso y el dado
+                    //    con candado son el mismo dato, leído en el mismo instante.
                     //
-                    //    Detonated y no Sung: el número que se lleva el dado es el que resolvió,
-                    //    no el que se acaba de cantar. Y va ACÁ, antes de la ignición — que
-                    //    consume DetonatedSectors con ClearDetonated() y dejaría al reader leyendo
-                    //    una lista vacía. Hay un test que fija ese orden.
+                    //    Sung y no Detonated, por playtest. Con Detonated el bloqueo dependía de que
+                    //    hubiera algo resuelto: el turno 1 no tiene número caído todavía, el reader
+                    //    devolvía -1, y RotateDice ya había hecho dice.Clear() — el jugador arrancaba
+                    //    la pelea sin ningún dado bloqueado y veía aparecer y desaparecer el candado
+                    //    según el estado del paño, que desde afuera se lee como un porcentaje. Leído
+                    //    acá —después del paso 3, que canta— SungNumbers siempre tiene número, así
+                    //    que hay exactamente un dado bloqueado en todos los turnos desde el primero.
+                    //
+                    //    El precio es el turno de aviso: antes veías el sector en N y perdías el dado
+                    //    en N+1. Ahora lo perdés en el mismo turno en que se canta. A cambio la regla
+                    //    es una sola y siempre está puesta, que es lo que se pidió.
+                    //
+                    //    Sigue yendo ACÁ y no más abajo: el paso 3 tiene que haber cantado para que
+                    //    SungNumbers esté poblado, y el paso 1 del turno siguiente lo consume con
+                    //    ConsumeWindup(). Hay un test que fija el orden.
                     Guarded(new AINode_RotateBlock
                     {
                         Target = AINode_RotateBlock.BlockTarget.Dice,
                         DirectedIndex = new AIReadCroupierWheelNumber
                         {
-                            Source = AIReadCroupierWheelNumber.NumberSource.Detonated,
+                            Source = AIReadCroupierWheelNumber.NumberSource.Sung,
                             Slot = 0,
                         },
                         BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,

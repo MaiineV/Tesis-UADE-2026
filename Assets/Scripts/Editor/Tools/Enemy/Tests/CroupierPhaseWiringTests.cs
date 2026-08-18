@@ -271,9 +271,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Sin el reader de la ruleta el nodo cae al sorteo al azar, que es exactamente la " +
                 "versión que se había sacado por leerse como el Sunken Grand.");
 
-            Assert.AreEqual(AIReadCroupierWheelNumber.NumberSource.Detonated, reader.Source,
-                "Detonated y no Sung: el dado se lo lleva el número que YA resolvió. Leer Sung acá " +
-                "devuelve el número siguiente sin fallar — la peor forma de estar mal.");
+            Assert.AreEqual(AIReadCroupierWheelNumber.NumberSource.Sung, reader.Source,
+                "Sung y no Detonated: el candado tiene que estar puesto desde el primer turno. Con " +
+                "Detonated el turno 1 no tiene nada resuelto, el reader devuelve -1 y RotateDice ya " +
+                "hizo Clear() — el jugador arranca sin dado bloqueado y el candado va y viene, que " +
+                "desde afuera se lee como un porcentaje.");
+        }
+
+        /// <summary>
+        /// La confiscación lee después de que la ruleta cantó. Es lo que hace que el bloqueo exista
+        /// <b>todos</b> los turnos: <c>SungNumbers</c> se puebla en <c>AINode_SpinWheel</c>, así que
+        /// leer antes devolvería <c>-1</c> y dejaría el turno sin candado.
+        /// </summary>
+        [Test]
+        public void Confiscation_RunsAfterTheWheelHasSung_SoThereIsAlwaysANumberToTake()
+        {
+            var order = Descendants(_root);
+
+            int spin = order.FindIndex(n => n is AINode_SpinWheel);
+            int block = order.FindIndex(n => n is AINode_RotateBlock);
+
+            Assert.Greater(spin, -1, "No hay tirada de ruleta en el árbol.");
+            Assert.Greater(block, -1, "No hay confiscación en el árbol.");
+            Assert.Less(spin, block,
+                "La ruleta tiene que cantar antes de la confiscación: SungNumbers se puebla en " +
+                "SpinWheel, y leerlo antes deja el turno sin dado bloqueado.");
         }
 
         /// <summary>
@@ -290,27 +312,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El orden que hace que el reader tenga algo que leer.
+        /// La otra mitad del orden que hace que el reader tenga algo que leer.
         /// </summary>
         /// <remarks>
-        /// <c>AINode_IgniteDetonatedSectors</c> consume la lista con <c>ClearDetonated()</c>. Si la
-        /// confiscación quedara después, el reader leería una lista vacía, devolvería <c>-1</c> y el
-        /// nodo no bloquearía nada — sin error, sin warning, sin nada en pantalla. Este test es el
-        /// que atrapa ese reordenamiento.
+        /// <c>AINode_DetonateSungSectors</c> llama a <c>ConsumeWindup()</c>, que vacía
+        /// <c>SungNumbers</c>. Tiene que correr <b>antes</b> de la tirada: detrás, se comería el
+        /// número que la ruleta acaba de cantar y la confiscación leería una lista vacía,
+        /// devolvería <c>-1</c> y no bloquearía nada — sin error, sin warning, sin nada en pantalla.
+        /// Este test es el que atrapa ese reordenamiento.
         /// </remarks>
         [Test]
-        public void Confiscation_RunsBeforeTheIgnitionConsumesTheDetonatedSectors()
+        public void TheWindupIsConsumedBeforeTheWheelSings_SoTheFreshNumberSurvives()
         {
             var order = Descendants(_root);
 
-            int block = order.FindIndex(n => n is AINode_RotateBlock);
-            int ignite = order.FindIndex(n => n is AINode_IgniteDetonatedSectors);
+            int detonate = order.FindIndex(n => n is AINode_DetonateSungSectors);
+            int spin = order.FindIndex(n => n is AINode_SpinWheel);
 
-            Assert.Greater(block, -1, "No hay confiscación en el árbol.");
-            Assert.Greater(ignite, -1, "No hay ignición en el árbol.");
-            Assert.Less(block, ignite,
-                "La confiscación tiene que correr antes de la ignición: la ignición consume " +
-                "DetonatedSectors y dejaría al reader leyendo una lista vacía.");
+            Assert.Greater(detonate, -1, "No hay detonación en el árbol.");
+            Assert.Greater(spin, -1, "No hay tirada de ruleta en el árbol.");
+            Assert.Less(detonate, spin,
+                "La detonación tiene que consumir el windup ANTES de que la ruleta cante: detrás, " +
+                "vaciaría el número recién cantado y la confiscación se quedaría sin nada que leer.");
         }
 
         [Test]
